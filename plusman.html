@@ -9,11 +9,17 @@
     background: #080810;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
     min-height: 100vh;
     font-family: 'Courier New', monospace;
     user-select: none;
+  }
+  #game-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   #hud {
     width: 780px;
@@ -34,14 +40,13 @@
   }
 </style>
 <style>
-  #game-nav { position:fixed; top:0; left:0; right:0; z-index:9999; height:38px; background:#080810; border-bottom:1px solid #222; display:flex; align-items:stretch; justify-content:center; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; }
+  #game-nav { position:sticky; top:0; z-index:9999; height:38px; background:#080810; border-bottom:1px solid #222; display:flex; align-items:stretch; justify-content:center; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; flex-shrink:0; }
   #game-nav a { display:flex; align-items:center; padding:0 16px; text-decoration:none; color:#555; transition:color 0.15s,background 0.15s; white-space:nowrap; }
   #game-nav .nav-portal { color:#444; border-right:1px solid #333; }
   #game-nav .nav-samurai:hover, #game-nav .nav-samurai.active { color:#c0392b; box-shadow:inset 0 -2px #c0392b; }
   #game-nav .nav-plusman:hover, #game-nav .nav-plusman.active { color:#f0d060; box-shadow:inset 0 -2px #f0d060; }
   #game-nav .nav-space:hover, #game-nav .nav-space.active { color:#38bdf8; box-shadow:inset 0 -2px #38bdf8; }
   #game-nav a:hover { background:#0d0d18; }
-  body { padding-top:38px !important; }
 </style>
 </head>
 <body>
@@ -51,6 +56,7 @@
   <a href="plusman.html" class="nav-plusman active">💣 PLUSMAN</a>
   <a href="space_invaders.html" class="nav-space">👾 SPACE INV</a>
 </nav>
+<div id="game-wrap">
 <div id="hud">
   <span id="hud-score">SCORE: 0</span>
   <span id="hud-level">LEVEL 1</span>
@@ -58,6 +64,7 @@
 </div>
 <canvas id="canvas" width="624" height="528"></canvas>
 <div id="info">移動: ↑↓←→ &nbsp;|&nbsp; ボム: SPACE &nbsp;|&nbsp; ポーズ: P</div>
+</div>
 
 <script>
 const canvas = document.getElementById('canvas');

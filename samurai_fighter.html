@@ -9,12 +9,19 @@
     background: #0a0008;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
     height: 100vh;
     font-family: 'Courier New', monospace;
     overflow: hidden;
     user-select: none;
+  }
+  #game-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
   #title {
     color: #c0392b;
@@ -101,14 +108,13 @@
   }
 </style>
 <style>
-  #game-nav { position:fixed; top:0; left:0; right:0; z-index:9999; height:38px; background:#080810; border-bottom:1px solid #222; display:flex; align-items:stretch; justify-content:center; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; }
+  #game-nav { position:sticky; top:0; z-index:9999; height:38px; background:#080810; border-bottom:1px solid #222; display:flex; align-items:stretch; justify-content:center; font-family:'Courier New',monospace; font-size:0.72em; letter-spacing:2px; flex-shrink:0; }
   #game-nav a { display:flex; align-items:center; padding:0 16px; text-decoration:none; color:#555; transition:color 0.15s,background 0.15s; white-space:nowrap; }
   #game-nav .nav-portal { color:#444; border-right:1px solid #333; }
   #game-nav .nav-samurai:hover, #game-nav .nav-samurai.active { color:#c0392b; box-shadow:inset 0 -2px #c0392b; }
   #game-nav .nav-plusman:hover, #game-nav .nav-plusman.active { color:#f0d060; box-shadow:inset 0 -2px #f0d060; }
   #game-nav .nav-space:hover, #game-nav .nav-space.active { color:#38bdf8; box-shadow:inset 0 -2px #38bdf8; }
   #game-nav a:hover { background:#0d0d18; }
-  body { padding-top:38px !important; }
 </style>
 </head>
 <body>
@@ -118,6 +124,7 @@
   <a href="plusman.html" class="nav-plusman">💣 PLUSMAN</a>
   <a href="space_invaders.html" class="nav-space">👾 SPACE INV</a>
 </nav>
+<div id="game-wrap">
 <div id="title">⚔ SAMURAI FIGHTER ⚔</div>
 <div id="hud">
   <div class="player-hud">
@@ -136,6 +143,7 @@
 <div id="controls">
   <span>MUSASHI 操作</span> &nbsp;|&nbsp;
   移動: ← / → &nbsp;|&nbsp; ガード: ↑ &nbsp;|&nbsp; 斬り: A &nbsp;|&nbsp; 重斬り: Z &nbsp;|&nbsp; 必殺（居合）: X（ゲージ満タン時） &nbsp;|&nbsp; ポーズ: SPACE
+</div>
 </div>
 
 <script>
