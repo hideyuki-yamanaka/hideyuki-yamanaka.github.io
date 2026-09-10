@@ -470,6 +470,11 @@
         const cards = Object.assign({}, s.cards);
         ids.forEach((id) => { cards[id] = cards[id] || { label: '', script: '' }; });
         PN.saveScripts({ order: ids, cards });
+        // Figmaが更新されていたら、左のサムネイル画像のキャッシュを丸ごと捨てて取り直す。
+        // （サムネは撮った時点のFigma画像URLを覚えているだけなので、修正しても
+        //   そのURLが古い絵を指したまま。lastModified が変わったら作り直す）
+        const _prevMod = localStorage.getItem('pn_filemod_' + PN.getActiveDeckId()) || '';
+        if (_prevMod !== String(data.lastModified || '')) { thumbCache = {}; thumbKey = null; }
         // Figmaの最終更新時刻を控える。これが変わっていたらバックアップ画像も取り直す
         try { localStorage.setItem('pn_filemod_' + PN.getActiveDeckId(), String(data.lastModified || '')); } catch (e) {}
         PN.post({ type: 'scripts-updated' });
