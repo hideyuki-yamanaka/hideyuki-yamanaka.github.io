@@ -591,7 +591,8 @@
       // カンペ（トークスクリプト）を別ウィンドウで先に開く（1クリック内の最初の window.open なのでブロックされにくい）
       // 画面サイズの0.7倍で、中央に開く（Macのディスプレイ比率に合わせる）
       const sw = screen.availWidth, sh = screen.availHeight;
-      let w = Math.round(sw * 0.45), h = Math.round(sh * 0.45);      // 初期値：画面の0.45倍（比率は画面と同じ）
+      // 初期値：横長・縦低め（原稿を横に広く読める形。ヒデさん指定の比率 ≒ 2.5:1）
+      let w = Math.round(sw * 0.66), h = Math.round(sh * 0.42);
       let left = Math.round((sw - w) / 2), top = Math.round((sh - h) / 2);
       // 前回のウィンドウの大きさ・位置があればそれを再現する
       try {

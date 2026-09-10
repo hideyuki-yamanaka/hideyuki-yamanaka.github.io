@@ -14,7 +14,7 @@
 </head>
 <body class="notes">
   <div class="notes-top">
-    <span class="dot" id="conn" title="スライドとの接続"></span>
+    <button class="btn ghost ico" id="pvToggle" title="スライドプレビューを隠す／表示" aria-label="スライドプレビューの表示"><span data-ic="panelLeft"></span></button>
     <span class="grow"></span>
     <div class="font-ctl">
       <button class="btn" id="fdown" title="文字を小さく">A−</button>
@@ -73,7 +73,6 @@
   <script src="store.js?v=8"></script>
   <script>
     const els = {
-      conn: document.getElementById('conn'),
       pnum: document.getElementById('pnum'),
       ptotal: document.getElementById('ptotal'),
       label: document.getElementById('label'),
@@ -219,10 +218,9 @@
     let lastBeat = 0; // 最後に発表タブから合図が来た時刻（接続監視用）
     PN.onMessage((msg) => {
       if (!msg) return;
-      if (msg.type === 'present-ready') { lastBeat = Date.now(); els.conn.classList.add('on'); }
+      if (msg.type === 'present-ready') { lastBeat = Date.now(); }
       if (msg.type === 'node') {
         lastBeat = Date.now();
-        els.conn.classList.add('on');
         render(msg.nodeId);       // 原稿を更新
         previewGoto(msg.nodeId);  // プレビューも同じページへ
       }
@@ -316,6 +314,30 @@
       });
     })();
 
+    // 左のスライドプレビューを畳む／出す（エディターの ◧ と同じ考え方）
+    // ボタンが青く光っている＝プレビューが出ている状態。既定は表示。
+    (function () {
+      const main = document.querySelector('.notes-main');
+      const preview = document.querySelector('.notes-preview');
+      const editbar = document.querySelector('.notes-editbar');
+      const pill = document.getElementById('nPill');
+      const btn = document.getElementById('pvToggle');
+      function setPreviewVisible(show) {
+        main.classList.toggle('nopreview', !show);
+        btn.classList.toggle('on', show);
+        // ページ送りはプレビューの中に置いてあるので、畳む時は下のバーへ引っ越す
+        // （そのままだと一緒に消えて、手元から送れなくなる）
+        if (show) preview.appendChild(pill); else editbar.insertBefore(pill, editbar.firstChild);
+        // 隠している間はFigma埋め込みが止まることがあるので、戻した時に必ず追いつかせる
+        if (show) { pvNode = null; requestSync(); }
+        try { localStorage.setItem('pn_showpreview', show ? '1' : '0'); } catch (e) {}
+      }
+      btn.onclick = () => setPreviewVisible(main.classList.contains('nopreview'));
+      let saved = '1';
+      try { saved = localStorage.getItem('pn_showpreview') || '1'; } catch (e) {}
+      setPreviewVisible(saved !== '0');
+    })();
+
     // ウィンドウの大きさ・位置を記憶（次回「プレゼンを開始」でこの状態で開く）
     (function rememberWindowBox() {
       if (window.name !== 'pn_notes') return;   // アプリが開いた窓の時だけ記憶する
@@ -341,11 +363,10 @@
     window.addEventListener('focus', requestSync);
     setInterval(() => { if (!document.hidden) applyPreview(); }, 1500); // プレビュー取りこぼしの保険
 
-    // 接続監視：発表タブの合図(ハートビート)が4秒来なければ切れかけと判断→●を消して再同期要求
+    // 接続監視：発表タブの合図(ハートビート)が4秒来なければ切れかけと判断し、
+    // 黙って再同期を要求する（表示は出さない。切れていても画面には出さず自力で復帰する）
     setInterval(() => {
-      const alive = Date.now() - lastBeat < 4000;
-      els.conn.classList.toggle('on', alive);
-      if (!alive) PN.post({ type: 'sync-request' });
+      if (Date.now() - lastBeat >= 4000) PN.post({ type: 'sync-request' });
     }, 1000);
   </script>
 </body>

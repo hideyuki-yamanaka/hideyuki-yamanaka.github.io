@@ -143,7 +143,7 @@ body.editing { overflow: hidden; }
 .ed-body.nolist .ed-resize { display: none; }
 /* トークスクリプト欄を畳む（スライドを大きく見る） */
 .ed-body.nonotes .ed-notes, .ed-body.nonotes .ed-vresize { display: none; }
-.ed-top .btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ed-top .btn.on, .notes-top .btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 body.col-drag { user-select: none; cursor: col-resize; }
 body.col-drag iframe { pointer-events: none; }   /* ドラッグ中にiframeがマウスを奪わないように */
 .ed-prow.current .thumb { border-color: var(--accent); }
@@ -291,3 +291,9 @@ body.col-drag video { pointer-events: none; }
  * 色は currentColor なので、ボタンが青くなればアイコンも白く追従する。 */
 .ic { display: block; flex: 0 0 auto; }
 .btn.ico { padding: 9px 11px; }        /* アイコンだけのボタンは正方形に近い余白に */
+
+/* カンペ：左のスライドプレビューを畳む（エディターの ◧ と同じ挙動） */
+.notes-main.nopreview .notes-preview,
+.notes-main.nopreview .notes-vsplit { display: none; }
+/* 畳んだ時はページ送りを下のバーへ移すので、絶対配置を解除して行内に置く */
+.notes-editbar .pv-nav { position: static; transform: none; margin-right: 4px; }
