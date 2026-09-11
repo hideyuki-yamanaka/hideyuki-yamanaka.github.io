@@ -81,12 +81,12 @@ function h1(text) { return { object: 'block', type: 'heading_1', heading_1: { ri
 function h3(text, color) { const h = { rich_text: [{ type: 'text', text: { content: text } }] }; if (color) h.color = color; return { object: 'block', type: 'heading_3', heading_3: h }; }
 function divider() { return { object: 'block', type: 'divider', divider: {} }; }
 
-// 原稿の冒頭を短く取り出して見出しのプレビューにする（改行までの先頭16文字）
-function snippet(runs) {
-  let t = (runs || []).map((r) => (r && r.t) || '').join('');
-  t = t.replace(/\r/g, '').split('\n')[0].trim();
-  if (!t) return '';
-  return t.length > 16 ? (t.slice(0, 16) + '…') : t;
+// 見出しのプレビュー：原稿の中の「最初の太字」を使う。太字が無ければ空（＝番号だけ）
+function firstBold(runs) {
+  const r = (runs || []).find((x) => x && x.b && String(x.t).trim());
+  if (!r) return '';
+  const t = String(r.t).replace(/\r/g, '').split('\n')[0].trim();
+  return t.length > 28 ? (t.slice(0, 28) + '…') : t;
 }
 
 module.exports = async (req, res) => {
@@ -133,8 +133,8 @@ module.exports = async (req, res) => {
     // 案1：番号＋冒頭プレビューの見出しを青く → 本文 → 細い区切り線
     pages.forEach((pg, i) => {
       const num = String(pg.n || (i + 1)).padStart(pad, '0');
-      const sn = snippet(pg.runs);
-      blocks.push(h3(num + (sn ? ' ｜ ' + sn : '　（原稿なし）'), 'blue'));
+      const sn = firstBold(pg.runs);   // 最初の太字だけ見出しに（なければ番号のみ）
+      blocks.push(h3(num + (sn ? ' ｜ ' + sn : ''), 'blue'));
       blocks.push(para(pg.runs && pg.runs.length ? pg.runs : [{ t: '（原稿なし）' }]));
       if (i < pages.length - 1) blocks.push(divider());
     });
