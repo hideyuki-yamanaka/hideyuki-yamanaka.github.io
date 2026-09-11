@@ -517,8 +517,17 @@
         const ids = frames.map((f) => f.id);
         const s = PN.loadScripts();
         const _orderChanged = JSON.stringify(s.order) !== JSON.stringify(ids);  // 並び替え/追加/削除を検知
-        // 原稿は一切捨てない：既存の全カードを保持しつつ、並びだけFigmaの39枚に合わせる
+        // 原稿は一切捨てない：既存の全カードを保持しつつ、並びだけFigmaに合わせる
         const cards = Object.assign({}, s.cards);
+        // 【ファイル引っ越し対策】新旧で nodeId が全く重ならない（＝別ファイルに移設）時は、
+        // 同じ並び順（位置）で原稿を引き継ぐ。スライドの枚数・順番は同じ前提。
+        const overlap = ids.filter((id) => s.order.includes(id)).length;
+        if (overlap === 0 && s.order.length && ids.length) {
+          ids.forEach((id, i) => {
+            const src = s.order[i];
+            if (src && s.cards[src] && !cards[id]) cards[id] = s.cards[src];   // 位置で原稿を移す
+          });
+        }
         ids.forEach((id) => { cards[id] = cards[id] || { label: '', script: '' }; });
         PN.saveScripts({ order: ids, cards });
         // スライドの並び（枚数・順番）が変わったら、Notionバックアップにも反映を予約
@@ -663,12 +672,14 @@
       if (v === null) return;
       PN.setUrl(v.trim());
       edNode = null; loadStage(v.trim()); renderEdList(); loadNote(); updateCounter();
+      autoBackup();   // 新ファイルから再取得＋原稿を位置で引き継ぎ（引っ越し対応）
     };
     $('edUrlSave').onclick = () => {
       const v = $('edUrlInput').value.trim();
       if (!v) return;
       PN.setUrl(v);
       edNode = null; loadStage(v); renderEdList(); loadNote(); updateCounter();
+      autoBackup();   // 新ファイルから再取得＋原稿を位置で引き継ぎ（引っ越し対応）
     };
 
     // ▶ プレゼンを開始：トークスクリプトを別ウィンドウで開き、このタブを共有用スライドに切り替える
