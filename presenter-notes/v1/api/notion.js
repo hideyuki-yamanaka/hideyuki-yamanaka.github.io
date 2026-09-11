@@ -47,10 +47,18 @@ function toRich(runs) {
   if (!out.length) out.push({ type: 'text', text: { content: '' } });
   return out.slice(0, 100); // 1ブロックあたり100片まで
 }
-function para(runs) { return { object: 'block', type: 'paragraph', paragraph: { rich_text: toRich(runs) } }; }
+function para(runs, color) { const p = { rich_text: toRich(runs) }; if (color) p.color = color; return { object: 'block', type: 'paragraph', paragraph: p }; }
 function h1(text) { return { object: 'block', type: 'heading_1', heading_1: { rich_text: [{ type: 'text', text: { content: text } }] } }; }
-function h2(text) { return { object: 'block', type: 'heading_2', heading_2: { rich_text: [{ type: 'text', text: { content: text } }] } }; }
+function h3(text, color) { const h = { rich_text: [{ type: 'text', text: { content: text } }] }; if (color) h.color = color; return { object: 'block', type: 'heading_3', heading_3: h }; }
 function divider() { return { object: 'block', type: 'divider', divider: {} }; }
+
+// 原稿の冒頭を短く取り出して見出しのプレビューにする（改行までの先頭16文字）
+function snippet(runs) {
+  let t = (runs || []).map((r) => (r && r.t) || '').join('');
+  t = t.replace(/\r/g, '').split('\n')[0].trim();
+  if (!t) return '';
+  return t.length > 16 ? (t.slice(0, 16) + '…') : t;
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return j(res, 405, { ok: false, error: 'POST only' });
@@ -86,13 +94,19 @@ module.exports = async (req, res) => {
     const now = new Date();
     const stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
       String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    // 番号のゼロ埋め桁数（全12ページなら 01、全120ページなら 001）
+    const pad = String(pages.length).length < 2 ? 2 : String(pages.length).length;
     const blocks = [
       h1(deckName + '（トークスクリプト）'),
-      para([{ t: '最終更新: ' + stamp + ' ／ 全 ' + pages.length + ' ページ' }]),
+      para([{ t: '最終更新: ' + stamp + ' ／ 全 ' + pages.length + ' ページ' }], 'gray'),
     ];
+    // 案1：番号＋冒頭プレビューの見出しを青く → 本文 → 細い区切り線
     pages.forEach((pg, i) => {
-      blocks.push(h2('ページ ' + (pg.n || (i + 1))));
+      const num = String(pg.n || (i + 1)).padStart(pad, '0');
+      const sn = snippet(pg.runs);
+      blocks.push(h3(num + (sn ? ' ｜ ' + sn : '　（原稿なし）'), 'blue'));
       blocks.push(para(pg.runs && pg.runs.length ? pg.runs : [{ t: '（原稿なし）' }]));
+      if (i < pages.length - 1) blocks.push(divider());
     });
 
     // 3) 100ブロックずつ追加
