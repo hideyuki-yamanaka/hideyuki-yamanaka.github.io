@@ -76,7 +76,9 @@ export default function SoundUi({
   const audioRef = useRef<HTMLAudioElement>(null);
   /** ユーザーの意思（ONにしたい/したくない）。セッション中記憶 */
   const intentRef = useRef(false);
-  /** 実際に音が鳴っているか（ボタン表示はこれに追従） */
+  /** ボタン表示用のON/OFF。「実際に鳴っているか」ではなく「意思」に追従する。
+      自動再生ブロック中（意思はONだが音はまだ）でもONと表示し、最初の操作で鳴り始める
+      （2026-09-11 ヒデさん指示：リロード後にOFF表示に見えるのを解消） */
   const [audible, setAudible] = useState(false);
   const duckRef = useRef(false); /* 動画再生中フラグ（動画の音声優先） */
   /* 環境音の音量（0〜1）。既定は bgmConfig.ts。調整パネルから変えられる */
@@ -145,6 +147,7 @@ export default function SoundUi({
 
   const saveIntent = (next: boolean) => {
     intentRef.current = next;
+    setAudible(next); /* ボタン表示は意思に即追従（鳴るのを待たない） */
     try {
       sessionStorage.setItem(KEY, next ? "on" : "off");
     } catch {}
@@ -180,20 +183,9 @@ export default function SoundUi({
     return () => window.removeEventListener("pointerdown", onDown);
   }, [showVol]);
 
-  /* 表示状態は audio の実際の再生状態に常に同期 */
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const upd = () => setAudible(!a.paused);
-    a.addEventListener("play", upd);
-    a.addEventListener("pause", upd);
-    a.addEventListener("ended", upd);
-    return () => {
-      a.removeEventListener("play", upd);
-      a.removeEventListener("pause", upd);
-      a.removeEventListener("ended", upd);
-    };
-  }, []);
+  /* 以前は audio の play/pause イベントに表示を同期していたが、
+     自動再生ブロック中に OFF 表示へ落ちてしまうためやめた（saveIntent で更新する）。
+     動画中の一時停止（duck）はここでは表示に反映しない＝意思はONのまま */
 
   /* 初期化：記憶を読む＋必要ならダイアログ。
      ON記憶で自動再生がブロックされたら、最初の操作でそっと再開 */
