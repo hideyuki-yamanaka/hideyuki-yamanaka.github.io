@@ -178,8 +178,12 @@ body.col-drag iframe { pointer-events: none; }   /* ドラッグ中にiframeが�
 .ed-vresize:hover, .ed-vresize.active { background: var(--accent); }
 body.row-drag { user-select: none; cursor: row-resize; }
 body.row-drag iframe { pointer-events: none; }
-.ed-notectl { display: flex; align-items: center; gap: 8px; }
-.ed-notectl-lb { font-size: 12px; color: var(--muted); }
+/* 文字を選ぶと選択範囲の上にふわっと出る「太さ」ツールバー */
+.wt-bar { position: fixed; z-index: 9999; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.55); }
+.wt-bar .wt-sel { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 7px; padding: 6px 10px; font-size: 13px; font-family: inherit; cursor: pointer; }
+.wt-bar .wt-sel:focus { outline: none; border-color: var(--accent); }
 /* 原稿は太さを埋め込めるリッチ入力。カンペと同じ Noto・既定 Light 300 */
 .ed-notes .rich { min-height: 80px; max-height: 70vh; overflow-y: auto; background: var(--panel2);
   border: 1px solid var(--line); color: #f3f5f8; border-radius: 8px; padding: 12px; font-size: 16px;
@@ -269,11 +273,12 @@ body.col-drag video { pointer-events: none; }
 .notes-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 /* 直接編集モード */
 .notes-edit { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
-.notes-edit input { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
-  border-radius: 8px; padding: 8px 10px; font-size: 14px; font-family: inherit; }
-.notes-edit input:focus, .notes-edit textarea:focus { outline: none; border-color: var(--accent); }
-.notes-edit textarea { flex: 1; min-height: 120px; resize: none; background: var(--panel2); color: #f3f5f8;
-  border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-size: 20px; line-height: 1.6; font-family: inherit; }
+.notes-edit .rich { flex: 1; min-height: 120px; overflow-y: auto; background: var(--panel2); color: #f3f5f8;
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-size: 20px; line-height: 1.6; font-weight: 300;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  font-family: "Noto Sans JP", -apple-system, "Hiragino Sans", system-ui, sans-serif; }
+.notes-edit .rich:focus { outline: none; border-color: var(--accent); }
+.notes-edit .rich:empty:before { content: attr(data-ph); color: #5b6472; pointer-events: none; }
 .notes-editbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding-top: 10px; }
 .notes-editbar .grow { flex: 1; }
 .notes-editbar .btn { padding: 8px 14px; font-size: 14px; }

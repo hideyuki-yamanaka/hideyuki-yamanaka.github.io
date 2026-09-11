@@ -45,8 +45,7 @@
         <div class="notes-script" id="script">発表タブでページを送ると、ここに原稿が出ます。手元の「送る ▶」でも送れます。</div>
       </div>
       <div class="notes-edit" id="editArea" hidden>
-        <input id="editLabel" placeholder="見出し（任意）例：課題の説明" />
-        <textarea id="editScript" placeholder="テキストを入力してください"></textarea>
+        <div id="editScript" class="rich" contenteditable="true" data-ph="テキストを入力してください（太くしたい所をドラッグで選ぶと、太さツールが出ます）"></div>
       </div>
       <div class="notes-editbar">
         <button class="btn" id="editBtn"><span data-ic="edit"></span>このページを編集</button>
@@ -60,6 +59,7 @@
 
 
   <script src="icons.js?v=1"></script>
+  <script src="weighttool.js?v=1"></script>
   <script src="store.js?v=8"></script>
   <script>
     const els = {
@@ -73,7 +73,6 @@
       pvBadge: document.getElementById('pvBadge'),
       displayWrap: document.getElementById('displayWrap'),
       editArea: document.getElementById('editArea'),
-      editLabel: document.getElementById('editLabel'),
       editScript: document.getElementById('editScript'),
       editBtn: document.getElementById('editBtn'),
       saveBtn: document.getElementById('saveBtn'),
@@ -231,8 +230,8 @@
       if (!currentId) { alert('スライドのページに来てから編集してください（発表タブでそのページを表示）。'); return; }
       editing = true; editingId = currentId;
       const c = (PN.loadScripts().cards[editingId]) || { label: '', script: '' };
-      els.editLabel.value = c.label || '';
-      els.editScript.value = c.script || '';
+      if (c.html != null && c.html !== '') els.editScript.innerHTML = c.html;
+      else els.editScript.innerHTML = c.script ? escapeHtml(c.script).replace(/\n/g, '<br>') : '';
       els.displayWrap.hidden = true; els.editArea.hidden = false;
       els.editBtn.hidden = true; els.saveBtn.hidden = false; els.cancelBtn.hidden = false;
       els.editScript.focus();
@@ -247,7 +246,7 @@
       const s = PN.loadScripts();
       if (!s.order.includes(editingId)) s.order.push(editingId);
       s.cards[editingId] = Object.assign({ label: '', script: '' }, s.cards[editingId],
-        { label: els.editLabel.value, script: els.editScript.value });
+        { script: els.editScript.innerText, html: els.editScript.innerHTML });
       PN.saveScripts(s);
       PN.post({ type: 'scripts-updated' }); // 設定ページ等にも即反映
       exitEdit();
@@ -263,6 +262,8 @@
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); saveEdit(); }
       if (e.key === 'Escape') { e.preventDefault(); exitEdit(); render(currentId); }
     });
+    // 文字を選ぶとふわっと出る太さツール（選んだ所だけ変わる。ページごとに独立）
+    WT.init(els.editScript);
 
     // ---- 手元から送り（共有スライドが真実の元。発表タブへ依頼→跳ね返りで全部が揃う）----
     document.getElementById('next').onclick = () => PN.post({ type: 'nav', dir: 'forward' });
@@ -339,6 +340,13 @@
       window.addEventListener('beforeunload', save);
       setTimeout(save, 1000);
     })();
+
+    // 開いた直後、自分自身を最前面へ（発表タブを開くと後ろに隠れがちなので）
+    if (window.name === 'pn_notes') {
+      const selfFront = () => { try { window.focus(); } catch (e) {} };
+      selfFront();
+      [80, 250, 600].forEach((t) => setTimeout(selfFront, t));
+    }
 
     // 発表タブに「今のページを教えて」と依頼（開く順番に依存しないように）
     PN.post({ type: 'notes-ready' });

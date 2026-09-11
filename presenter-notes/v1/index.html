@@ -68,21 +68,7 @@
         </div>
         <div class="ed-vresize" id="edVResize" title="ドラッグで高さを変更"></div>
         <div class="ed-notes">
-          <div class="ed-notectl">
-            <span class="ed-notectl-lb">選んだ文字の太さ</span>
-            <select id="edWeight" class="wsel" title="原稿の中で太くしたい所を選んでから、太さを選びます">
-              <option value="200">ExtraLight 200</option>
-              <option value="300" selected>Light 300（標準）</option>
-              <option value="400">Regular 400</option>
-              <option value="500">Medium 500</option>
-              <option value="600">SemiBold 600</option>
-              <option value="700">Bold 700</option>
-              <option value="800">ExtraBold 800</option>
-              <option value="900">Black 900</option>
-            </select>
-          </div>
-          <input class="lbl" id="edLabel" hidden />
-          <div id="edScript" class="rich" contenteditable="true" data-ph="テキストを入力してください"></div>
+          <div id="edScript" class="rich" contenteditable="true" data-ph="テキストを入力してください（太くしたい所をドラッグで選ぶと、太さツールが出ます）"></div>
         </div>
       </div>
     </div>
@@ -119,6 +105,7 @@
   </div>
 
   <script src="icons.js?v=1"></script>
+  <script src="weighttool.js?v=1"></script>
   <script src="store.js?v=8"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -366,7 +353,6 @@
 
     function loadNote() {
       const c = edNode ? (PN.loadScripts().cards[edNode] || {}) : {};
-      $('edLabel').value = c.label || '';
       const ed = $('edScript');
       // 新形式は太さ付きHTML。旧形式(プレーン)は escape して改行を <br> に
       if (c.html != null && c.html !== '') ed.innerHTML = c.html;
@@ -379,40 +365,14 @@
       if (!s.order.includes(edNode)) s.order.push(edNode);
       const ed = $('edScript');
       s.cards[edNode] = Object.assign({ label: '', script: '' }, s.cards[edNode],
-        { label: $('edLabel').value, script: ed.innerText, html: ed.innerHTML });
+        { script: ed.innerText, html: ed.innerHTML });
       PN.saveScripts(s);
       PN.post({ type: 'scripts-updated' });
       renderEdList();
     }
-    $('edLabel').addEventListener('input', saveNote);
     $('edScript').addEventListener('input', saveNote);
-
-    // 選択した文字だけ太さを変える（見出し欄は作らず、原稿の中で自由に強調できる）
-    function applyEdWeight(w) {
-      const ed = $('edScript');
-      const sel = window.getSelection();
-      if (!sel || !sel.rangeCount || sel.isCollapsed) return;                    // 範囲選択が無ければ何もしない
-      if (!ed.contains(sel.anchorNode) || !ed.contains(sel.focusNode)) return;   // 原稿の外は無視
-      const range = sel.getRangeAt(0);
-      const frag = range.extractContents();
-      // 選択内に残っている古い太さ指定を消す（二重がけ防止）
-      if (frag.querySelectorAll) frag.querySelectorAll('[style]').forEach((el) => { el.style.fontWeight = ''; });
-      const span = document.createElement('span');
-      if (parseInt(w, 10) !== 300) span.style.fontWeight = String(w);            // 300＝標準は素に戻す
-      span.appendChild(frag);
-      range.insertNode(span);
-      ed.normalize();
-      const r = document.createRange(); r.selectNodeContents(span);              // 選択を保って続けて調整できる
-      sel.removeAllRanges(); sel.addRange(r);
-      saveNote();
-    }
-    $('edWeight').addEventListener('change', (e) => { applyEdWeight(e.target.value); $('edScript').focus(); });
-    // 貼り付けは書式を持ち込まずプレーンテキストで（余計なHTML混入を防ぐ）
-    $('edScript').addEventListener('paste', (e) => {
-      e.preventDefault();
-      const t = (e.clipboardData || window.clipboardData).getData('text/plain');
-      document.execCommand('insertText', false, t);
-    });
+    // 文字を選ぶとふわっと出る太さツール（選んだ所だけ変わる。ページごとに独立）
+    WT.init($('edScript'), saveNote);
 
     // スライド（編集用の埋め込み）からの通知
     window.addEventListener('message', (e) => {
@@ -662,12 +622,14 @@
         return; // 許可後に押し直してもらう
       }
       // 共有用スライドは「新しいタブ」で開く（このエディターのタブはそのまま残す）
-      window.open('present.html', '_blank');
-      // 最後にトークスクリプト窓を前面へ（共有タブを開くと前面を奪われるため、少し遅らせて呼び戻す）
-      const toFront = () => { try { notesWin.focus(); } catch (e) {} };
+      // ※ present をアクティブにすると前面を奪うので、ここではフォーカスを渡さない
+      const presentWin = window.open('present.html', '_blank');
+      // トークスクリプト窓を前面へ何度も呼び戻す（タブ生成で前面を奪われるため）
+      const toFront = () => { try { notesWin.focus(); notesWin.moveBy(0, 0); } catch (e) {} };
+      // 共有タブは開いたらすぐ裏へ（このエディター側にフォーカスを戻し、カンペを最前面に）
+      try { if (presentWin) setTimeout(() => { try { window.focus(); } catch (e) {} }, 60); } catch (e) {}
       toFront();
-      setTimeout(toFront, 300);
-      setTimeout(toFront, 900);
+      [120, 350, 700, 1200].forEach((t) => setTimeout(toFront, t));
     };
 
     // 一覧へは「ブラウザの戻る」で帰る（画面内に戻るボタンは置かない）
