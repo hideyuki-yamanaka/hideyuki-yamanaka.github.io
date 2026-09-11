@@ -78,6 +78,7 @@ function toRich(runs) {
 }
 function para(runs, color) { const p = { rich_text: toRich(runs) }; if (color) p.color = color; return { object: 'block', type: 'paragraph', paragraph: p }; }
 function h1(text) { return { object: 'block', type: 'heading_1', heading_1: { rich_text: [{ type: 'text', text: { content: text } }] } }; }
+function h2(text, color) { const h = { rich_text: [{ type: 'text', text: { content: text } }] }; if (color) h.color = color; return { object: 'block', type: 'heading_2', heading_2: h }; }
 function h3(text, color) { const h = { rich_text: [{ type: 'text', text: { content: text } }] }; if (color) h.color = color; return { object: 'block', type: 'heading_3', heading_3: h }; }
 function divider() { return { object: 'block', type: 'divider', divider: {} }; }
 
@@ -87,6 +88,38 @@ function firstBold(runs) {
   if (!r) return '';
   const t = String(r.t).replace(/\r/g, '').split('\n')[0].trim();
   return t.length > 28 ? (t.slice(0, 28) + '…') : t;
+}
+
+// 原稿を「行」に割る（各行は {t,b} 断片の配列）。空行は捨てる。
+function splitLines(runs) {
+  const lines = []; let cur = [];
+  (runs || []).forEach((r) => {
+    const parts = String(r.t == null ? '' : r.t).split('\n');
+    parts.forEach((p, idx) => {
+      if (idx > 0) { lines.push(cur); cur = []; }
+      if (p !== '') cur.push({ t: p, b: !!r.b });
+    });
+  });
+  lines.push(cur);
+  return lines.filter((l) => l.length && l.some((s) => s.t.trim() !== ''));
+}
+// 「太字だけの行」＝グループの見出し（サブラベル）とみなす
+function isLabelLine(l) { return l.length && l.every((s) => s.t.trim() === '' || s.b); }
+
+// 案B：ページ見出し=H2(青)、サブ見出し(太字だけの行)=H3、本文=段落(内側は詰める)。区切り線なし。
+function pageBlocks(numLabel, runs) {
+  const out = [h2(numLabel, 'blue')];
+  const lines = splitLines(runs);
+  let buf = []; let skippedHead = false;
+  const flush = () => { if (buf.length) { out.push(para(buf)); buf = []; } };
+  lines.forEach((l) => {
+    const lab = isLabelLine(l);
+    if (lab && !skippedHead) { skippedHead = true; return; }   // 先頭の見出し行はH2に出したので本文では省く
+    if (lab) { flush(); out.push(h3(l.map((s) => s.t).join(''))); }   // サブ見出し（黒H3）
+    else { if (buf.length) buf.push({ t: '\n', b: false }); l.forEach((s) => buf.push(s)); }
+  });
+  flush();
+  return out;
 }
 
 // ブロックの中身を比較するための署名（差分更新の判定用）。既存(APIの形)と生成(送信の形)の両対応
@@ -142,13 +175,11 @@ module.exports = async (req, res) => {
       h1(deckName + '（トークスクリプト）'),
       para([{ t: '最終更新: ' + stamp + ' ／ 全 ' + pages.length + ' ページ' }], 'gray'),
     ];
-    // 案1：番号＋冒頭プレビューの見出しを青く → 本文 → 細い区切り線
+    // 案B：ページ見出し=H2(青)、サブ見出し=H3、本文=段落。ページ間はH2の余白で区切る（区切り線なし）
     pages.forEach((pg, i) => {
       const num = String(pg.n || (i + 1)).padStart(pad, '0');
-      const sn = firstBold(pg.runs);   // 最初の太字だけ見出しに（なければ番号のみ）
-      blocks.push(h3(num + (sn ? ' ｜ ' + sn : ''), 'blue'));
-      blocks.push(para(pg.runs && pg.runs.length ? pg.runs : [{ t: '（原稿なし）' }]));
-      if (i < pages.length - 1) blocks.push(divider());
+      const sn = firstBold(pg.runs);   // 最初の太字をページ見出しに（なければ番号のみ）
+      pageBlocks(num + (sn ? ' ｜ ' + sn : ''), pg.runs).forEach((b) => blocks.push(b));
     });
 
     // 3) 【最速＆安全】構造（数・種類）が既存と一致するなら、"変わったブロックだけ"書き換える。
