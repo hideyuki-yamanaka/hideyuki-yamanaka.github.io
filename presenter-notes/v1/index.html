@@ -697,9 +697,11 @@
         ? '<span style="color:var(--accent2)">● 設定済み。原稿を直すと自動でバックアップされます。</span>'
         : '未設定：トークンとページの両方を保存すると有効になります。';
     }
-    $('saveNToken').onclick = () => { PN.setNotionToken($('ntoken').value); refreshNHint(); updateNStatus('idle'); };
-    $('saveNPage').onclick = () => { PN.setNotionPage($('npage').value); refreshNHint(); updateNStatus('idle'); };
-    $('ntest').onclick = async () => { $('nHint').textContent = '送信中…'; await NotionSync.flush(); };
+    // トークンとページは常に両方まとめて保存する（片方だけ保存し忘れる事故を防ぐ）
+    function saveNotionFields() { PN.setNotionToken($('ntoken').value); PN.setNotionPage($('npage').value); refreshNHint(); updateNStatus('idle'); }
+    $('saveNToken').onclick = saveNotionFields;
+    $('saveNPage').onclick = saveNotionFields;
+    $('ntest').onclick = async () => { saveNotionFields(); $('nHint').textContent = '送信中…'; await NotionSync.flush(); };
     // 上部バーのステータス表示（クリックで今すぐ保存）
     function updateNStatus(state, detail) {
       const el = $('nStatus'); if (!el) return;
