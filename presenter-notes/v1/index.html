@@ -744,7 +744,12 @@
     }
     $('openSettings').onclick = openSettings;
     $('bannerSetup').onclick = openSettings;
-    $('closeSettings').onclick = () => { $('settingsModal').hidden = true; renderGallery(); };
+    function closeSettings() { $('settingsModal').hidden = true; renderGallery(); }
+    $('closeSettings').onclick = closeSettings;
+    // 背景（暗い部分）クリックで閉じる
+    $('settingsModal').addEventListener('mousedown', (e) => { if (e.target === $('settingsModal')) closeSettings(); });
+    // Esc でも閉じる
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('settingsModal').hidden) closeSettings(); });
     $('saveCid').onclick = () => { PN.setClientId($('cid').value); refreshCidHint(); renderGallery(); };
     $('saveToken').onclick = () => {
       PN.setFigmaToken($('ftoken').value); refreshTokenHint();
