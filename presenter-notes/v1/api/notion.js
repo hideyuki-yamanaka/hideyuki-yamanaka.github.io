@@ -173,7 +173,6 @@ module.exports = async (req, res) => {
     const pad = String(pages.length).length < 2 ? 2 : String(pages.length).length;
     const blocks = [
       h1(deckName + '（トークスクリプト）'),
-      para([{ t: '最終更新: ' + stamp + ' ／ 全 ' + pages.length + ' ページ' }], 'gray'),
     ];
     // 案B：ページ見出し=H2(青)、サブ見出し=H3、本文=段落。ページ間はH2の余白で区切る（区切り線なし）
     pages.forEach((pg, i) => {
