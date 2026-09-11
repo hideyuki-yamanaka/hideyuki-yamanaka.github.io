@@ -37,7 +37,7 @@
       <button class="btn ghost ico" id="listToggle" title="左のスライド一覧を隠す／表示" aria-label="スライド一覧の表示"><span data-ic="panelLeft"></span></button>
       <button class="btn ghost ico" id="notesToggle" title="トークスクリプトを隠す／表示" aria-label="トークスクリプトの表示"><span data-ic="notes"></span></button>
       <input class="ed-name" id="edName" placeholder="プレゼン名" />
-      <button class="btn ghost" id="edUrlBtn" title="Figma URL を変更"><span data-ic="link"></span>URL</button>
+      <button class="btn ghost" id="edUrlBtn" title="このプレゼンのスライド連携先（Figmaのプレゼン共有リンク）を設定・変更"><span data-ic="link"></span>スライド連携先</button>
       <span class="grow"></span>
       <span class="dot" id="edConn" hidden></span>
       <span class="chip" id="nStatus" title="Notionバックアップの状態" hidden style="margin-right:4px;cursor:pointer;"></span>
@@ -59,7 +59,7 @@
           <!-- 保存済み画像を即出しして待ち時間を体感ゼロに。Figmaが表示できたら消える -->
           <img id="edPoster" hidden alt="" />
           <div class="ed-empty" id="edEmpty" hidden>
-            <div>このプレゼンの Figma プロトタイプ共有URLを貼ってください。</div>
+            <div>スライド連携先：Figmaの「プレゼン（プロト）共有リンク」を貼ってください（…/proto/… の形）。</div>
             <input class="field" id="edUrlInput" placeholder="https://www.figma.com/proto/……" />
             <button class="btn primary" id="edUrlSave">読み込む</button>
           </div>
@@ -668,7 +668,7 @@
     // URL の設定・変更
     $('edUrlBtn').onclick = () => {
       const cur = PN.getActiveDeck().url || '';
-      const v = prompt('このプレゼンの Figma プロトタイプ共有URL', cur);
+      const v = prompt('スライド連携先：Figmaの「プレゼン（プロト）共有リンク」を貼ってください（…/proto/… の形）', cur);
       if (v === null) return;
       PN.setUrl(v.trim());
       edNode = null; loadStage(v.trim()); renderEdList(); loadNote(); updateCounter();
