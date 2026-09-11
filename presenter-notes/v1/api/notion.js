@@ -31,7 +31,36 @@ async function notion(token, method, path, body) {
   });
   const txt = await r.text();
   let data = null; try { data = txt ? JSON.parse(txt) : null; } catch (e) {}
-  return { ok: r.ok, status: r.status, data };
+  return { ok: r.ok, status: r.status, data, retryAfter: r.headers.get('retry-after') };
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 混雑(429)やサーバ一時エラー(5xx)は少し待って自動リトライ
+async function notionRetry(token, method, path, body, tries) {
+  tries = tries || 4;
+  let last = null;
+  for (let a = 0; a < tries; a++) {
+    const r = await notion(token, method, path, body);
+    if (r.status !== 429 && r.status < 500) return r;
+    last = r;
+    const wait = r.retryAfter ? Math.min(3000, parseFloat(r.retryAfter) * 1000) : 350 * (a + 1);
+    await sleep(wait || 350);
+  }
+  return last;
+}
+
+// 独立した処理を同時に走らせる（同時実行数を絞ってレート超過を防ぐ）
+async function runPool(items, worker, concurrency) {
+  let i = 0; const errors = [];
+  async function lane() {
+    while (i < items.length) {
+      const idx = i++;
+      try { const r = await worker(items[idx]); if (r && r.ok === false) errors.push(r); }
+      catch (e) { errors.push(e); }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length || 1) }, lane));
+  return errors;
 }
 
 // 長文は 2000 文字ごとに分割（Notion の rich_text 上限）
@@ -88,7 +117,8 @@ module.exports = async (req, res) => {
       (r.data.results || []).forEach((b) => ids.push(b.id));
       if (r.data.has_more) cursor = r.data.next_cursor; else break;
     }
-    for (const id of ids) { await notion(token, 'DELETE', '/blocks/' + id); }
+    // 削除は1件ずつだと遅い（数十秒）ので、同時8本＋自動リトライで一気に消す
+    await runPool(ids, (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
 
     // 2) 新しい中身を作る
     const now = new Date();
@@ -109,9 +139,9 @@ module.exports = async (req, res) => {
       if (i < pages.length - 1) blocks.push(divider());
     });
 
-    // 3) 100ブロックずつ追加
+    // 3) 100ブロックずつ追加（リトライ付き）
     for (let i = 0; i < blocks.length; i += 100) {
-      const r = await notion(token, 'PATCH', '/blocks/' + pageId + '/children', { children: blocks.slice(i, i + 100) });
+      const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', { children: blocks.slice(i, i + 100) });
       if (!r.ok) return j(res, r.status, { ok: false, error: (r.data && r.data.message) || '書き込みに失敗しました。' });
     }
     return j(res, 200, { ok: true, pages: pages.length, at: stamp });
