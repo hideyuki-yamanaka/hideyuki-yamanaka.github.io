@@ -100,12 +100,7 @@ window.WT = (function () {
     document.addEventListener('mousedown', function (e) {
       if (!bar.contains(e.target) && e.target !== el && !el.contains(e.target)) bar.hidden = true;
     });
-    // 貼り付けは書式を持ち込まずプレーンテキストで
-    el.addEventListener('paste', function (e) {
-      e.preventDefault();
-      var t = (e.clipboardData || window.clipboardData).getData('text/plain');
-      document.execCommand('insertText', false, t);
-    });
+    // 貼り付けの処理は mdcopy.js が担当（**太字** を実際の太字に変換）。ここでは何もしない。
 
     return { place: place, hide: function () { bar.hidden = true; } };
   }
