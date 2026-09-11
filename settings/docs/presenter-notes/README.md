@@ -129,3 +129,15 @@ cd "/Users/hideyuki/Developer/Claude Code/presenter-notes/v1" && npx vercel --pr
 
 - **カンペをスマホ/iPadで見る**（＝画面全体共有でも隠す）には、別端末同期の中継サーバーが必要
   （Supabase Realtime / Upstash 等）。2026-09-02 時点は「Chrome ウィンドウ共有」で運用する方針。
+
+## Notion バックアップ（2026-09-11・自動リアルタイム同期）
+
+ツールが動かない時の保険として、トークスクリプトを Notion の1ページへ自動保存する。
+
+- 仕組み：ブラウザ →`/api/notion`（Vercelサーバー関数）→ Notion API。Notion はブラウザから直接書けない（CORS＋鍵）ため中継する。
+- `presenter-notes/v1/api/notion.js`：受け取った原稿でページを毎回作り直し最新に保つ。太字は Notion の bold に反映。ページID は URL でも ID でも抽出。
+- `presenter-notes/v1/notionsync.js`：原稿HTML→太字つき文字列片へ変換、編集の4秒後にまとめてPOST。閉じる/裏に回る直前にも送る。
+- 保存キー：`pn_notion_token`（全体）＋ deck ごとの `notionPage`。
+- 設定は⚙モーダルの「③ Notionバックアップ」。Notionトークンはブラウザ内のみ保存し、サーバーは転送だけで保存しない。
+- 利用の前提（ユーザー操作）：① Notionで内部インテグレーション作成→トークン取得 ② バックアップ先ページの「•••›接続」で連携を追加 ③ ⚙にトークンとページURLを保存。
+- 本番の疎通確認：`curl -X POST .../api/notion -d '{}'` → 400（トークン未設定）が正常。
