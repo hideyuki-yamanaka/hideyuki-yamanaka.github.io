@@ -111,7 +111,7 @@
         <button class="btn primary" id="saveNPage">保存</button>
       </div>
       <div class="row" style="margin-top:12px;align-items:center;">
-        <button class="btn" id="ntest">今すぐ Notion に保存してテスト</button>
+        <button class="btn" id="ntest">Notionへ反映</button>
         <span class="hint" id="nHint" style="margin:0;"></span>
       </div>
 
@@ -495,10 +495,13 @@
         frames.sort((a, b) => (band(a) - band(b)) || (bb(a).x - bb(b).x));
         const ids = frames.map((f) => f.id);
         const s = PN.loadScripts();
+        const _orderChanged = JSON.stringify(s.order) !== JSON.stringify(ids);  // 並び替え/追加/削除を検知
         // 原稿は一切捨てない：既存の全カードを保持しつつ、並びだけFigmaの39枚に合わせる
         const cards = Object.assign({}, s.cards);
         ids.forEach((id) => { cards[id] = cards[id] || { label: '', script: '' }; });
         PN.saveScripts({ order: ids, cards });
+        // スライドの並び（枚数・順番）が変わったら、Notionバックアップにも反映を予約
+        if (_orderChanged) { try { if (window.NotionSync) NotionSync.schedule(); } catch (e) {} }
         // Figmaが更新されていたら、左のサムネイル画像のキャッシュを丸ごと捨てて取り直す。
         // （サムネは撮った時点のFigma画像URLを覚えているだけなので、修正しても
         //   そのURLが古い絵を指したまま。lastModified が変わったら作り直す）
