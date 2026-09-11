@@ -178,10 +178,15 @@ body.col-drag iframe { pointer-events: none; }   /* ドラッグ中にiframeが�
 .ed-vresize:hover, .ed-vresize.active { background: var(--accent); }
 body.row-drag { user-select: none; cursor: row-resize; }
 body.row-drag iframe { pointer-events: none; }
-.ed-notes textarea { min-height: 80px; max-height: 70vh; resize: none; background: var(--panel2);
+.ed-notectl { display: flex; align-items: center; gap: 8px; }
+.ed-notectl-lb { font-size: 12px; color: var(--muted); }
+/* 原稿は太さを埋め込めるリッチ入力。カンペと同じ Noto・既定 Light 300 */
+.ed-notes .rich { min-height: 80px; max-height: 70vh; overflow-y: auto; background: var(--panel2);
   border: 1px solid var(--line); color: #f3f5f8; border-radius: 8px; padding: 12px; font-size: 16px;
-  line-height: 1.6; font-family: inherit; }
-.ed-notes textarea:focus { outline: none; border-color: var(--accent); }
+  line-height: 1.6; font-weight: 300; white-space: pre-wrap; overflow-wrap: anywhere;
+  font-family: "Noto Sans JP", -apple-system, "Hiragino Sans", system-ui, sans-serif; }
+.ed-notes .rich:focus { outline: none; border-color: var(--accent); }
+.ed-notes .rich:empty:before { content: attr(data-ph); color: #5b6472; pointer-events: none; }
 
 /* 小さなモーダル（設定） */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center;
@@ -274,7 +279,7 @@ body.col-drag video { pointer-events: none; }
 .notes-editbar .btn { padding: 8px 14px; font-size: 14px; }
 .saved-flash { color: var(--accent2); font-size: 13px; opacity: 0; transition: opacity .2s; }
 .saved-flash.show { opacity: 1; }
-.notes-script { white-space: pre-wrap; line-height: 1.65; color: #f3f5f8;
+.notes-script { white-space: pre-wrap; line-height: 1.65; color: #f3f5f8; font-weight: 300;
   font-family: "Noto Sans JP", -apple-system, "Hiragino Sans", system-ui, sans-serif; font-style: normal; }
 .notes-script.empty { color: #5b6472; font-style: normal; }
 .notes-bottom {

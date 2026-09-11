@@ -20,16 +20,6 @@
       <button class="btn" id="fdown" title="文字を小さく">A−</button>
       <span class="chip" id="fsize">40px</span>
       <button class="btn" id="fup" title="文字を大きく">A＋</button>
-      <select id="fweight" class="wsel" title="文字の太さ">
-        <option value="200">ExtraLight 200</option>
-        <option value="300">Light 300</option>
-        <option value="400">Regular 400</option>
-        <option value="500">Medium 500</option>
-        <option value="600">SemiBold 600</option>
-        <option value="700">Bold 700</option>
-        <option value="800">ExtraBold 800</option>
-        <option value="900">Black 900</option>
-      </select>
     </div>
   </div>
 
@@ -102,24 +92,17 @@
     let editing = false; // 直接編集中か
     let editingId = null;// 編集対象のノード（編集中に送られても対象は固定）
 
-    // ---- 文字サイズ・太さ ----
+    // ---- 文字サイズ ----（太さはエディター側で原稿に埋め込む。ここでは変えない＝既定 Light 300）
     const F_MIN = 12, F_MAX = 240;                 // 幅を広げた（12〜240px）
     function fStep(px) { return px < 40 ? 2 : px < 80 ? 4 : px < 140 ? 8 : 12; }  // 大きいほど大きく動く
-    const WEIGHTS = [200, 300, 400, 500, 600, 700, 800, 900];
-    function getWeight() { const w = parseInt(localStorage.getItem('pn_weight') || '300', 10); return WEIGHTS.includes(w) ? w : 300; }
-    function setWeight(w) { localStorage.setItem('pn_weight', String(w)); }
     function applyFont() {
       const px = PN.getFont();
-      const w = getWeight();
       els.script.style.fontSize = px + 'px';
-      els.script.style.fontWeight = w;
       els.label.style.fontSize = Math.round(px * 0.42) + 'px';
       els.fsize.textContent = px + 'px';
-      document.getElementById('fweight').value = String(w);
     }
     document.getElementById('fup').onclick = () => { const p = PN.getFont(); PN.setFont(Math.min(F_MAX, p + fStep(p))); applyFont(); };
     document.getElementById('fdown').onclick = () => { const p = PN.getFont(); PN.setFont(Math.max(F_MIN, p - fStep(p - 1))); applyFont(); };
-    document.getElementById('fweight').onchange = (e) => { setWeight(parseInt(e.target.value, 10)); applyFont(); };
     applyFont();
 
     // ---- スライドプレビュー（同じFigmaプロトを埋め込み、共有スライドと同じページへ動かす）----
@@ -207,10 +190,13 @@
       if (label) { els.label.textContent = label; els.label.hidden = false; }
       else { els.label.hidden = true; }
 
-      const text = card && card.script ? card.script : '';
-      if (text) { els.script.textContent = text; els.script.classList.remove('empty'); }
-      else { els.script.textContent = 'テキストを入力してください'; els.script.classList.add('empty'); }
-
+      const html = card && card.html ? card.html : '';
+      const plain = card && card.script ? card.script : '';
+      // HTMLから中身だけ抜いて「実際に文字があるか」を見る（空タグだけの時はプレースホルダー）
+      const stripped = html ? html.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').trim() : plain.trim();
+      if (!stripped) { els.script.textContent = 'テキストを入力してください'; els.script.classList.add('empty'); }
+      else if (html) { els.script.innerHTML = html; els.script.classList.remove('empty'); }   // 太さ付き
+      else { els.script.textContent = plain; els.script.classList.remove('empty'); }           // 旧プレーン
     }
     function escapeHtml(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
