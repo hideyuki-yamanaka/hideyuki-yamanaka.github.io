@@ -201,11 +201,12 @@ export default function SoundUi({
       setShowDialog(false);
       markConsentDone();
     }
-    /* リロード（記憶あり）では、前回OFFでも環境音ONで開始する
-       （2026-08-31 ヒデさん指示「リロードした際はデフォルトON」）。
-       自動再生がブロックされた時は、最初の操作でそっと鳴り始める */
-    if (saved !== null) {
-      intentRef.current = true;
+    /* リロードでは「最後に自分で選んだ状態」をそのまま再現する
+       （2026-09-11 ヒデさん指示。旧「リロードは強制ON」は撤去）。
+       モーダルでOFF→OFFのまま／途中でONに変えた→ONのまま。
+       ONの時に自動再生がブロックされたら、最初の操作でそっと鳴り始める
+       （表示は意思基準なので、鳴る前からONと出る） */
+    if (saved === "on") {
       saveIntent(true);
       play();
       const resume = () => {
@@ -220,6 +221,7 @@ export default function SoundUi({
         window.removeEventListener("keydown", resume);
       };
     }
+    if (saved === "off") saveIntent(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
