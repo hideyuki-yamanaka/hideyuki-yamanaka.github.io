@@ -23,6 +23,7 @@
 | ファイル | 中身 | いつ読む |
 |---|---|---|
 | [general/WORKING-RULES.md](general/WORKING-RULES.md) | 推測・質問・報告の共通ルール（🔴最重要・持ち運び用） | **作業に着手する前に必ず** |
+| DEPLOY-RULES | 無駄なVercelデプロイを消す方法(Ignored Build Step)＋24h集計コマンド | [general/DEPLOY-RULES.md](general/DEPLOY-RULES.md) | 2026-09-11 |
 | [SCROLL-RULES.md](general/SCROLL-RULES.md) | スクロール事故の防止（1画面超えは必ずスクロールバー・実測してから渡す） |
 | [general/DESIGN-SYSTEM-RULES.md](general/DESIGN-SYSTEM-RULES.md) | Figma カンプの読み方（🔴スペック表をコードより先に作る・数値を推測で埋めない） | カンプ通りに実装する時 |
 | [general/RESPONSIVE-RULES.md](general/RESPONSIVE-RULES.md) | レスポンシブ実装（🔴SP は "別のカンプ" として一から実装＝スペック表を breakpoint ごとに通す・実機の短い innerHeight で検証） | スマホ/ブレイクポイント対応をする時 |
