@@ -51,6 +51,7 @@ window.PN = (function () {
   const K_FONT = 'pn_font';       // カンペの文字サイズ(px)   … 全体設定
   const K_CID = 'pn_client_id';   // Figma OAuthアプリの client-id … 全体設定（デッキ非依存）
   const K_TOKEN = 'pn_figma_token'; // Figma 個人アクセストークン（サムネイル画像取得用・任意）
+  const K_NOTION_TOKEN = 'pn_notion_token'; // Notion 連携トークン（バックアップ用・任意）
   const K_DECKS = 'pn_decks';     // { activeId, order:[id...], decks:{ id:{name,url,scripts} } }
   // 旧バージョンのキー（1組だけ持っていた時代）。読み込んでデッキへ移行する。
   const K_OLD_URL = 'pn_url';
@@ -71,6 +72,11 @@ window.PN = (function () {
   function setClientId(v) { localStorage.setItem(K_CID, (v || '').trim()); }
   function getFigmaToken() { return (localStorage.getItem(K_TOKEN) || '').trim(); }
   function setFigmaToken(v) { localStorage.setItem(K_TOKEN, (v || '').trim()); }
+  function getNotionToken() { return (localStorage.getItem(K_NOTION_TOKEN) || '').trim(); }
+  function setNotionToken(v) { localStorage.setItem(K_NOTION_TOKEN, (v || '').trim()); }
+  // Notion バックアップ先ページはプレゼン（デッキ）ごとに持つ
+  function getNotionPage() { return (getActiveDeck().notionPage || '').trim(); }
+  function setNotionPage(v) { const d = loadDecks(); d.decks[d.activeId].notionPage = (v || '').trim(); saveDecks(d); }
   function getFont() { return parseInt(localStorage.getItem(K_FONT) || '18', 10); }
   function setFont(px) { localStorage.setItem(K_FONT, String(px)); }
 
@@ -213,6 +219,7 @@ window.PN = (function () {
     CHANNEL, normId,
     getClientId, setClientId,
     getFigmaToken, setFigmaToken,
+    getNotionToken, setNotionToken, getNotionPage, setNotionPage,
     isLightMode, setLightMode, putImg, getImg, countImg,
     getFont, setFont,
     // デッキ

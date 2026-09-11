@@ -60,7 +60,8 @@
 
   <script src="icons.js?v=1"></script>
   <script src="weighttool.js?v=1"></script>
-  <script src="store.js?v=8"></script>
+  <script src="store.js?v=9"></script>
+  <script src="notionsync.js?v=1"></script>
   <script>
     const els = {
       pnum: document.getElementById('pnum'),
@@ -249,6 +250,7 @@
         { script: els.editScript.innerText, html: els.editScript.innerHTML });
       PN.saveScripts(s);
       PN.post({ type: 'scripts-updated' }); // 設定ページ等にも即反映
+      try { if (window.NotionSync) NotionSync.schedule(); } catch (e) {}
       exitEdit();
       render(currentId);
       els.savedFlash.classList.add('show');
