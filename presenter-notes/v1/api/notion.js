@@ -189,30 +189,55 @@ module.exports = async (req, res) => {
       pageBlocks(num + (sn ? ' ｜ ' + sn : ''), pg.runs).forEach((b) => blocks.push(b));
     });
 
-    // 3) 【差分優先】先頭から「型が一致する範囲」は中身だけ書き換え（削除しない＝事故らない）。
-    //    食い違い始めた位置から先だけ、既存を消して新しいのを足す（＝入れ替えは最小限）。
+    // 3) 【差分優先・churn最小】前後の一致部分は残し、変わった“真ん中だけ”を差し替える。
+    //    ・先頭から型が一致する範囲 … 中身が違えばパッチ（削除しない）
+    //    ・末尾から型が一致する範囲 … 同上
+    //    ・その間（middle）だけ … 既存を削除し、新規を「先頭側の直後」に挿入
+    //    これで前の方を編集しても後続ページが巻き込まれて消えない。
     const bodyFor = (blk) => { const t = blk.type; const b = {}; b[t] = { rich_text: blk[t].rich_text }; if (blk[t].color) b[t].color = blk[t].color; return b; };
-    let k = 0; const patchJobs = [];
-    const min = Math.min(existing.length, blocks.length);
-    while (k < min && existing[k].type === blocks[k].type) {
-      const t = blocks[k].type;
-      if (t !== 'divider' && blockSig(existing[k]) !== blockSig(blocks[k])) {
-        patchJobs.push({ id: existing[k].id, body: bodyFor(blocks[k]) });
+    const n = existing.length, m = blocks.length;
+    const patchJobs = [];
+    let p = 0;                                           // 先頭の一致数
+    while (p < n && p < m && existing[p].type === blocks[p].type) {
+      if (blocks[p].type !== 'divider' && blockSig(existing[p]) !== blockSig(blocks[p])) patchJobs.push({ id: existing[p].id, body: bodyFor(blocks[p]) });
+      p++;
+    }
+    let sfx = 0;                                          // 末尾の一致数（先頭と重ならない範囲で）
+    while (sfx < (n - p) && sfx < (m - p) && existing[n - 1 - sfx].type === blocks[m - 1 - sfx].type) {
+      const e = existing[n - 1 - sfx], d = blocks[m - 1 - sfx];
+      if (e.type !== 'divider' && blockSig(e) !== blockSig(d)) patchJobs.push({ id: e.id, body: bodyFor(d) });
+      sfx++;
+    }
+    const delMiddle = existing.slice(p, n - sfx).map((b) => b.id);
+    const insMiddle = blocks.slice(p, m - sfx);
+    const afterId = p > 0 ? existing[p - 1].id : null;   // 挿入位置（先頭一致の最後の直後）
+
+    // 先頭への挿入（afterが取れない）だけは安全に全書き換えへフォールバック（稀）
+    if (insMiddle.length && afterId === null) {
+      await runPool(existing.map((b) => b.id), (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
+      for (let i = 0; i < blocks.length; i += 100) {
+        const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', { children: blocks.slice(i, i + 100) });
+        if (!r.ok) return j(res, r.status, { ok: false, error: (r.data && r.data.message) || '書き込みに失敗しました。' });
       }
-      k++;
+      return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: 'rebuild' });
     }
-    // 共通の先頭：中身が変わったブロックだけ並列パッチ
+
+    // 変わった前後ブロックの中身だけパッチ（削除しない）
     const patchErrs = await runPool(patchJobs, (job) => notionRetry(token, 'PATCH', '/blocks/' + job.id, job.body), 8);
-    // 食い違い位置より後ろ：既存の残りを削除 → 新しい残りを末尾に追加（＝共通先頭の直後に並ぶ）
-    const toDelete = existing.slice(k).map((b) => b.id);
-    const toAppend = blocks.slice(k);
-    if (toDelete.length) await runPool(toDelete, (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
-    for (let i = 0; i < toAppend.length; i += 100) {
-      const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', { children: toAppend.slice(i, i + 100) });
+    // 真ん中の既存を削除
+    if (delMiddle.length) await runPool(delMiddle, (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
+    // 真ん中の新規を「先頭一致の直後」に挿入（after で位置指定・末尾一致は残るので順序は保たれる）
+    let cursorId = afterId;
+    for (let i = 0; i < insMiddle.length; i += 100) {
+      const body = { children: insMiddle.slice(i, i + 100) };
+      if (cursorId) body.after = cursorId;
+      const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', body);
       if (!r.ok) return j(res, r.status, { ok: false, error: (r.data && r.data.message) || '書き込みに失敗しました。' });
+      const results = (r.data && r.data.results) || [];
+      if (results.length) cursorId = results[results.length - 1].id;   // 次チャンクはこの後ろへ
     }
-    const mode = (toDelete.length === 0 && toAppend.length === 0) ? 'diff' : (k === 0 ? 'rebuild' : 'partial');
-    return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: mode, patched: patchJobs.length, appended: toAppend.length, deleted: toDelete.length, patchErrs: patchErrs.length });
+    const mode = (delMiddle.length === 0 && insMiddle.length === 0) ? 'diff' : 'partial';
+    return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: mode, patched: patchJobs.length, inserted: insMiddle.length, deleted: delMiddle.length, patchErrs: patchErrs.length });
   } catch (e) {
     return j(res, 500, { ok: false, error: String((e && e.message) || e) });
   }
