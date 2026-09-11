@@ -87,9 +87,8 @@ module.exports = async (req, res) => {
     const stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
       String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     const blocks = [
-      h1(deckName + '（トークスクリプト 自動バックアップ）'),
-      para([{ t: '最終更新: ' + stamp + '　／　全 ' + pages.length + ' ページ' }]),
-      divider(),
+      h1(deckName + '（トークスクリプト）'),
+      para([{ t: '最終更新: ' + stamp + ' ／ 全 ' + pages.length + ' ページ' }]),
     ];
     pages.forEach((pg, i) => {
       blocks.push(h2('ページ ' + (pg.n || (i + 1))));
