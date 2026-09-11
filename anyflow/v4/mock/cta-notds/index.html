@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400&display=swap" rel="stylesheet">
   <style>
     /* ============================================================
        【V4.0 モック 2026-09-11】
@@ -27,12 +27,12 @@
       --brand-pink: #FF5D97;
       --brand-cyan: #0EBBFF;
 
-      --font-jp: 'Noto Sans JP', -apple-system, 'system-ui', 'Helvetica Neue', Arial, sans-serif;
+      --font-jp: 'Noto Sans JP', sans-serif;   /* 【修正 2026-09-11】現サイトと同一のフォールバックに */
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
-      font-family: var(--font-jp);
+      font-family: 'Noto Sans JP', sans-serif;   /* 【修正 2026-09-11】現サイト body と同一 */
       font-weight: 300;
       color: var(--anyflow-ink);
       background: var(--anyflow-bg);
@@ -77,7 +77,7 @@
       color: var(--nds-ink);
       width: 100%;
       max-width: 300px;
-      font: 600 15px/1.4 var(--font-jp);
+      font: 300 15px/1.4 var(--font-jp);   /* 【修正 2026-09-11】現サイト .cta / .cv-btn の font-weight:300 に合わせる */
       letter-spacing: .06em;
       background: var(--nds-orange);
       border-radius: 8px;
