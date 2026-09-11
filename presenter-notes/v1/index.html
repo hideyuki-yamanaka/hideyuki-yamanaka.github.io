@@ -42,7 +42,7 @@
       <span class="dot" id="edConn" hidden></span>
       <span class="chip" id="nStatus" title="Notionバックアップの状態" hidden style="margin-right:4px;cursor:pointer;"></span>
       <span class="chip refresh-flash" id="refreshFlash" hidden></span>
-      <button class="btn ghost ico" id="refreshBtn" title="Figmaから再取得（スライドを増やした時など）" aria-label="再取得" style="margin-right:12px;"><span data-ic="refresh"></span></button>
+      <button class="btn ghost ico" id="refreshBtn" title="最新化：Figmaから再取得＋Notionへ反映" aria-label="最新化" style="margin-right:12px;"><span data-ic="refresh"></span></button>
       <button class="btn primary" id="startBtn"><span data-ic="play"></span>プレゼンを開始</button>
     </div>
     <div class="ed-body">
@@ -131,6 +131,7 @@
   <script src="weighttool.js?v=1"></script>
   <script src="store.js?v=9"></script>
   <script src="notionsync.js?v=1"></script>
+  <script src="mdcopy.js?v=1"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     function escapeHtml(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
@@ -410,6 +411,7 @@
     $('edScript').addEventListener('input', saveNote);
     // 文字を選ぶとふわっと出る太さツール（選んだ所だけ変わる。ページごとに独立）
     WT.init($('edScript'), saveNote);
+    MDCopy.bind($('edScript'));   // コピーで太字を **…** にする
     // 原稿を直したら Notion バックアップも予約（設定済みのときだけ動く）
     function scheduleNotion(){ try { if (window.NotionSync) NotionSync.schedule(); } catch (e) {} }
     $('edScript').addEventListener('input', scheduleNotion);
@@ -558,6 +560,13 @@
     setNotesVisible(localStorage.getItem('pn_shownotes') === '1');
 
     // ↻ 手動再取得：Figmaからスライド一覧を取り直し、新しいページのバックアップ画像だけ追加保存
+    // 「最新化」＝Figmaから再取得＋（設定済みなら）Notionへ反映。↻とNotionボタンで共通利用
+    async function refreshAll() {
+      await autoBackup();   // Figma再取得＋バックアップ画像
+      try {
+        if (window.NotionSync && PN.getNotionToken() && PN.getNotionPage()) await NotionSync.flush();
+      } catch (e) {}
+    }
     let refreshFlashTimer = null;
     $('refreshBtn').onclick = async () => {
       const b = $('refreshBtn');
@@ -566,7 +575,7 @@
       b.classList.remove('done'); b.classList.add('loading');   // 取得中はうっすら（回り続けない）
       const before = PN.loadScripts().order.length;
       try {
-        await autoBackup();
+        await refreshAll();
         // 完了フィードバック：ポンッと光って「✓ N枚に更新」を短く出す
         const n = PN.loadScripts().order.length;
         const diff = n - before;
@@ -744,7 +753,7 @@
     function saveNotionFields() { PN.setNotionToken($('ntoken').value); PN.setNotionPage($('npage').value); refreshNHint(); updateNStatus('idle'); }
     $('saveNToken').onclick = saveNotionFields;
     $('saveNPage').onclick = saveNotionFields;
-    $('ntest').onclick = async () => { saveNotionFields(); $('nHint').textContent = '送信中…'; await NotionSync.flush(); };
+    $('ntest').onclick = async () => { saveNotionFields(); $('nHint').textContent = '反映中…'; await refreshAll(); };
     // 上部バーのステータス表示（クリックで今すぐ保存）
     function updateNStatus(state, detail) {
       const el = $('nStatus'); if (!el) return;

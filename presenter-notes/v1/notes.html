@@ -62,6 +62,7 @@
   <script src="weighttool.js?v=1"></script>
   <script src="store.js?v=9"></script>
   <script src="notionsync.js?v=1"></script>
+  <script src="mdcopy.js?v=1"></script>
   <script>
     const els = {
       pnum: document.getElementById('pnum'),
@@ -266,6 +267,8 @@
     });
     // 文字を選ぶとふわっと出る太さツール（選んだ所だけ変わる。ページごとに独立）
     WT.init(els.editScript);
+    MDCopy.bind(els.editScript);   // 編集中のコピーもマークダウンで
+    MDCopy.bind(els.script);      // 読む用表示からのコピーもマークダウンで
 
     // ---- 手元から送り（共有スライドが真実の元。発表タブへ依頼→跳ね返りで全部が揃う）----
     document.getElementById('next').onclick = () => PN.post({ type: 'nav', dir: 'forward' });
