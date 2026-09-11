@@ -128,7 +128,7 @@
       display: flex;
     }
     .apply-link .label-group { flex: 0 0 auto; display: flex; }
-    .apply-link .label-copy { flex: 0 0 auto; padding-right: 2.2em; display: block; }
+    .apply-link .label-copy { flex: 0 0 auto; padding-right: .9em; display: block; }   /* 【修正 2026-09-11】文言間ギャップを詰める(2.2em→.9em) */
 
     /* ホバーでラベルの2段目に切替（上ロール） */
     .apply-link:is(:hover, :focus-visible) .label-reel { transform: translateY(-50%); }
@@ -141,30 +141,31 @@
       display: grid;
     }
     .apply-link .arrow svg {
-      width: 18px; height: 19px;
+      width: 20px; height: 16px;   /* 【修正2 2026-09-11】viewBox 20x16 に合わせる(縦潰れ回避) */
       display: block;
-      transform: rotate(135deg);
+      /* 【修正 2026-09-11】矢印は右向き(回転なし)。ホバー時は右に3pxスライド */
       transition: translate .3s;
     }
-    .apply-link:hover .arrow svg { translate: 3px -3px; }
+    .apply-link:hover .arrow svg { translate: 3px 0; }
 
     /* サイズバリアント */
     .apply-link.small { border-radius: 6px; gap: 16px; padding: 10px 16px 10px 20px; font-size: 13px; max-width: 220px; }
     .apply-link.small .arrow { width: 23px; height: 23px; }
-    .apply-link.small .arrow svg { width: 16px; height: 17px; }
+    .apply-link.small .arrow svg { width: 18px; height: 14px; }   /* 20x16 比率 */
     .apply-link.large { padding: 24px; font-size: 18px; max-width: 380px; }
     .apply-link.large .label { gap: 16px; }
     .apply-link.large .dot { width: 8px; height: 8px; }
     .apply-link.large .arrow { width: 33px; height: 33px; }
-    .apply-link.large .arrow svg { width: 23px; height: 24px; }
+    .apply-link.large .arrow svg { width: 26px; height: 21px; }   /* 20x16 比率 */
 
     /* Anyflowブランド色バリアント（お好みで） */
     .apply-link.brand-cyan { background: var(--brand-cyan); }
     .apply-link.brand-cyan:hover { background: var(--nds-black); }
     .apply-link.brand-pink { background: var(--brand-pink); }
     .apply-link.brand-pink:hover { background: var(--nds-black); }
+    /* 【採用 2026-09-11】通常=黒 → ホバー=シアン */
     .apply-link.mono { background: #090909; color: #fff; }
-    .apply-link.mono:hover { background: var(--nds-orange); color: var(--nds-ink); }
+    .apply-link.mono:hover { background: var(--brand-cyan); color: #fff; }
 
     /* マーキー本体 */
     @keyframes cta-label-loop {
@@ -244,7 +245,6 @@
           <div class="card-body">
             <a class="apply-link small" href="/contact.html">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#F3F1E7"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row">
@@ -263,7 +263,7 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#F3F1E7" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="#F3F1E7" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
@@ -275,7 +275,6 @@
           <div class="card-body">
             <a class="apply-link" href="/contact.html">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#F3F1E7"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row">
@@ -294,7 +293,7 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#F3F1E7" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="#F3F1E7" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
@@ -306,7 +305,6 @@
           <div class="card-body">
             <a class="apply-link large" href="/contact.html">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#F3F1E7"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row">
@@ -325,7 +323,7 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#F3F1E7" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="#F3F1E7" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
@@ -346,7 +344,6 @@
           <div class="card-body">
             <a class="apply-link brand-cyan" href="/contact.html">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#fff"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row"><span class="label-track">
@@ -361,7 +358,7 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#fff" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="#fff" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
@@ -373,7 +370,6 @@
           <div class="card-body">
             <a class="apply-link brand-pink" href="/contact.html">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#fff"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row"><span class="label-track">
@@ -388,7 +384,7 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#fff" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="#fff" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
@@ -396,11 +392,10 @@
         </div>
 
         <div class="card">
-          <div class="card-label"><b>モノトーン（現Anyflow寄り）</b><span>黒 → オレンジに反転</span></div>
+          <div class="card-label"><b>採用：黒 → シアン</b><span>#090909 → #0EBBFF（ホバー）</span></div>
           <div class="card-body">
             <a class="apply-link mono" href="/contact.html">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#0EBBFF"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row"><span class="label-track">
@@ -415,7 +410,7 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
@@ -435,7 +430,6 @@
           <a class="current-cta" href="/contact.html">お問い合わせ</a>
           <a class="apply-link small" href="/contact.html" style="max-width:180px;">
             <span class="label" aria-hidden="true">
-              <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#F3F1E7"/></svg>
               <span class="label-window">
                 <span class="label-reel">
                   <span class="label-row"><span class="label-track">
@@ -450,7 +444,7 @@
               </span>
             </span>
             <span class="arrow" aria-hidden="true">
-              <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#F3F1E7" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+              <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="#F3F1E7" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
             </span>
             <span style="position:absolute;left:-9999px">お問い合わせ</span>
           </a>
@@ -471,9 +465,9 @@
             <div class="fake-nav">
               <span>ビジョン</span><span>提供できること</span><span>使用イメージ</span><span>導入事例</span>
             </div>
-            <a class="apply-link small" href="/contact.html" style="max-width:200px;">
+            <!-- 【採用 2026-09-11】ヘッダー用は「.mono .small」＝黒→ホバーでシアン -->
+            <a class="apply-link small mono" href="/contact.html" style="max-width:200px;">
               <span class="label" aria-hidden="true">
-                <svg class="dot" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#F3F1E7"/></svg>
                 <span class="label-window">
                   <span class="label-reel">
                     <span class="label-row"><span class="label-track">
@@ -488,15 +482,15 @@
                 </span>
               </span>
               <span class="arrow" aria-hidden="true">
-                <svg viewBox="0 0 18 19" fill="none"><path d="M2 17 L16 3 M6 3 H16 V13" stroke="#F3F1E7" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+                <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>
               </span>
               <span style="position:absolute;left:-9999px">お問い合わせ</span>
             </a>
           </div>
         </div>
         <p class="placement-note">
-          ※ 現状のヘッダーは黒CTA（150×32）。オレンジは目立つがブランドの黒地/白地と衝突しやすいので、
-          シアン/ピンク版・モノトーン版とも比較して選ぶ想定です。
+          ※ 【採用 2026-09-11】<b>黒 → ホバーでシアン</b> に決定。既存の黒トーンから外れず、
+          ホバー時にブランドカラー（#0EBBFF）が発色して action を促す挙動。マーキー・矢印スライドは共通。
         </p>
       </div>
     </div>
