@@ -89,6 +89,20 @@ function firstBold(runs) {
   return t.length > 28 ? (t.slice(0, 28) + '…') : t;
 }
 
+// ブロックの中身を比較するための署名（差分更新の判定用）。既存(APIの形)と生成(送信の形)の両対応
+function sigRich(rt) {
+  return (rt || []).map((r) => {
+    const t = (r.plain_text != null) ? r.plain_text : ((r.text && r.text.content) || '');
+    const b = (r.annotations && r.annotations.bold) ? 1 : 0;
+    return b + ':' + t;
+  }).join('|');
+}
+function blockSig(b) {
+  const t = b.type; const o = b[t] || {};
+  if (t === 'divider') return 'divider';
+  return t + '|' + (o.color || 'default') + '|' + sigRich(o.rich_text);
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return j(res, 405, { ok: false, error: 'POST only' });
   try {
@@ -108,19 +122,17 @@ module.exports = async (req, res) => {
     if (!token) return j(res, 400, { ok: false, error: 'Notion連携トークンが未設定です。' });
     if (!pageId) return j(res, 400, { ok: false, error: 'Notionページが未設定です。' });
 
-    // 1) 既存の中身を消す（毎回まるごと作り直して最新に保つ）
-    let cursor = undefined, ids = [];
-    for (let guard = 0; guard < 30; guard++) {
+    // 1) 既存ブロックを取得（idだけでなく中身も。差分更新の判定に使う）
+    let cursor = undefined, existing = [];
+    for (let guard = 0; guard < 40; guard++) {
       const q = '/blocks/' + pageId + '/children?page_size=100' + (cursor ? '&start_cursor=' + cursor : '');
       const r = await notion(token, 'GET', q);
       if (!r.ok) return j(res, r.status, { ok: false, error: (r.data && r.data.message) || 'ページを読めません（トークンをこのページに接続しましたか？）' });
-      (r.data.results || []).forEach((b) => ids.push(b.id));
+      (r.data.results || []).forEach((b) => existing.push(b));
       if (r.data.has_more) cursor = r.data.next_cursor; else break;
     }
-    // 削除は1件ずつだと遅い（数十秒）ので、同時8本＋自動リトライで一気に消す
-    await runPool(ids, (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
 
-    // 2) 新しい中身を作る
+    // 2) 望ましい中身を作る
     const now = new Date();
     const stamp = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
       String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
@@ -139,12 +151,32 @@ module.exports = async (req, res) => {
       if (i < pages.length - 1) blocks.push(divider());
     });
 
-    // 3) 100ブロックずつ追加（リトライ付き）
+    // 3) 【最速＆安全】構造（数・種類）が既存と一致するなら、"変わったブロックだけ"書き換える。
+    //    削除も追加もしないので、途中で空になる瞬間が無い（＝事故らない）。
+    const sameShape = existing.length === blocks.length &&
+      existing.every((b, i) => b.type === blocks[i].type);
+    if (sameShape) {
+      const jobs = [];
+      for (let i = 0; i < blocks.length; i++) {
+        const t = blocks[i].type;
+        if (t === 'divider') continue;                         // 区切り線は不変
+        if (blockSig(existing[i]) === blockSig(blocks[i])) continue;  // 中身が同じなら触らない
+        const body = {}; body[t] = { rich_text: blocks[i][t].rich_text };
+        if (blocks[i][t].color) body[t].color = blocks[i][t].color;
+        jobs.push({ id: existing[i].id, body: body });
+      }
+      const errs = await runPool(jobs, (job) => notionRetry(token, 'PATCH', '/blocks/' + job.id, job.body), 8);
+      if (!errs.length) return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: 'diff', changed: jobs.length });
+      // 一部失敗した時だけ、安全のため全書き換えにフォールバック（下へ）
+    }
+
+    // 4) 構造が変わった（ページ増減・並び替えで種類が食い違う等）→ 全消し＋全追加（従来の確実版）
+    await runPool(existing.map((b) => b.id), (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
     for (let i = 0; i < blocks.length; i += 100) {
       const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', { children: blocks.slice(i, i + 100) });
       if (!r.ok) return j(res, r.status, { ok: false, error: (r.data && r.data.message) || '書き込みに失敗しました。' });
     }
-    return j(res, 200, { ok: true, pages: pages.length, at: stamp });
+    return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: 'rebuild' });
   } catch (e) {
     return j(res, 500, { ok: false, error: String((e && e.message) || e) });
   }
