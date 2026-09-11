@@ -555,7 +555,7 @@
         b.classList.remove('loading'); b.classList.add('done');
         const f = $('refreshFlash');
         if (f) {
-          f.textContent = '✓ ' + n + '枚に更新' + (diff > 0 ? '（+' + diff + '）' : '');
+          f.textContent = '✓ 最新にしました（全' + n + '枚）' + (diff > 0 ? '　＋' + diff + '枚' : (diff < 0 ? '　−' + (-diff) + '枚' : ''));
           f.hidden = false; f.classList.add('show');
         }
         clearTimeout(refreshFlashTimer);
