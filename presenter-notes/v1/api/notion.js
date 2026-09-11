@@ -180,9 +180,8 @@ module.exports = async (req, res) => {
       String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     // 番号のゼロ埋め桁数（全12ページなら 01、全120ページなら 001）
     const pad = String(pages.length).length < 2 ? 2 : String(pages.length).length;
-    const blocks = [
-      h1(deckName + '（トークスクリプト）'),
-    ];
+    // 先頭のタイトル見出しは付けない（Notionのページ名と重複するため）。1ページ目から始める。
+    const blocks = [];
     // 案B：ページ見出し=H2(青)、サブ見出し=H3、本文=段落。ページ間はH2の余白で区切る（区切り線なし）
     pages.forEach((pg, i) => {
       const num = String(pg.n || (i + 1)).padStart(pad, '0');
