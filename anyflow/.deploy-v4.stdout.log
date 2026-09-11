@@ -1,0 +1,4 @@
+[2026-09-11 21:50:28] === V4.0 自動デプロイ開始 ===
+[2026-09-11 21:50:28] V4.0(新規開発版): プロジェクト = anyflow-embed-v4
+[2026-09-11 21:50:28] V4.0(新規開発版): 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 27: npx: command not found 
+[2026-09-11 21:50:28] === まだ完了していない（次回リトライ） ===
