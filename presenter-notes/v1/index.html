@@ -235,6 +235,7 @@
       $('edConn').classList.remove('on');
       // ブラウザの「戻る」で一覧へ帰れるように履歴を1つ積む（画面内に戻るボタンは置かない）
       try { history.pushState({ view: 'editor' }, '', location.pathname + '#edit'); } catch (e) {}
+      try { localStorage.setItem('pn_lastview', 'editor'); } catch (e) {}   // リロード後に復帰する用
       showView('editor');
       renderEdList();
       loadNote();
@@ -717,7 +718,7 @@
     };
 
     // 一覧へは「ブラウザの戻る」で帰る（画面内に戻るボタンは置かない）
-    window.addEventListener('popstate', () => { showView('gallery'); renderGallery(); });
+    window.addEventListener('popstate', () => { try { localStorage.setItem('pn_lastview', 'gallery'); } catch (e) {} showView('gallery'); renderGallery(); });
 
     /* ================= 設定モーダル ================= */
     $('origin').textContent = location.origin;
@@ -791,6 +792,13 @@
     /* ================= 起動 ================= */
     applyDocTitle();
     renderGallery();
+    // リロード時は最後にいた画面を維持：直前がエディターなら、そのプレゼンの編集画面に復帰
+    try {
+      if (localStorage.getItem('pn_lastview') === 'editor') {
+        const id = PN.getActiveDeckId();
+        if (id) openEditor(id);
+      }
+    } catch (e) {}
     // 他ウィンドウでの編集を一覧/リストに反映
     PN.onMessage((msg) => {
       if (!msg) return;
