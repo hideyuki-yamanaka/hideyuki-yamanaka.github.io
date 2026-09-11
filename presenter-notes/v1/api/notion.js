@@ -106,17 +106,26 @@ function splitLines(runs) {
 // 「太字だけの行」＝グループの見出し（サブラベル）とみなす
 function isLabelLine(l) { return l.length && l.every((s) => s.t.trim() === '' || s.b); }
 
-// 案B：ページ見出し=H2(青)、サブ見出し(太字だけの行)=H3、本文=段落(内側は詰める)。区切り線なし。
+// 案B：ページ見出し=H2(青)、サブ見出し=H3、本文=段落。ページ間はH2の余白で区切る（区切り線なし）。
+// サブ見出しの判定を統一：行の「先頭にある太字」をラベル(H3)とし、同じ行の残りは本文に回す。
+// （太字直後に改行があるか無いかで見た目が割れていたのを解消）
 function pageBlocks(numLabel, runs) {
   const out = [h2(numLabel, 'blue')];
   const lines = splitLines(runs);
   let buf = []; let skippedHead = false;
   const flush = () => { if (buf.length) { out.push(para(buf)); buf = []; } };
-  lines.forEach((l) => {
-    const lab = isLabelLine(l);
-    if (lab && !skippedHead) { skippedHead = true; return; }   // 先頭の見出し行はH2に出したので本文では省く
-    if (lab) { flush(); out.push(h3(l.map((s) => s.t).join(''))); }   // サブ見出し（黒H3）
-    else { if (buf.length) buf.push({ t: '\n', b: false }); l.forEach((s) => buf.push(s)); }
+  const pushPara = (segs) => { const has = segs.some((s) => s.t.trim() !== ''); if (!has) return; if (buf.length) buf.push({ t: '\n', b: false }); segs.forEach((s) => buf.push(s)); };
+  lines.forEach((line) => {
+    let li = 0; while (li < line.length && line[li].b) li++;   // 行頭の連続太字＝ラベル
+    const labelText = li > 0 ? line.slice(0, li).map((s) => s.t).join('').trim() : '';
+    const rest = line.slice(li);
+    if (labelText) {
+      if (!skippedHead) { skippedHead = true; }                 // 先頭ラベルはH2に出したので見出しは出さない
+      else { flush(); out.push(h3(labelText)); }                // サブ見出し（黒H3）
+      pushPara(rest);                                           // 同じ行の残り（本文）は段落へ
+    } else {
+      pushPara(line);
+    }
   });
   flush();
   return out;
@@ -181,32 +190,30 @@ module.exports = async (req, res) => {
       pageBlocks(num + (sn ? ' ｜ ' + sn : ''), pg.runs).forEach((b) => blocks.push(b));
     });
 
-    // 3) 【最速＆安全】構造（数・種類）が既存と一致するなら、"変わったブロックだけ"書き換える。
-    //    削除も追加もしないので、途中で空になる瞬間が無い（＝事故らない）。
-    const sameShape = existing.length === blocks.length &&
-      existing.every((b, i) => b.type === blocks[i].type);
-    if (sameShape) {
-      const jobs = [];
-      for (let i = 0; i < blocks.length; i++) {
-        const t = blocks[i].type;
-        if (t === 'divider') continue;                         // 区切り線は不変
-        if (blockSig(existing[i]) === blockSig(blocks[i])) continue;  // 中身が同じなら触らない
-        const body = {}; body[t] = { rich_text: blocks[i][t].rich_text };
-        if (blocks[i][t].color) body[t].color = blocks[i][t].color;
-        jobs.push({ id: existing[i].id, body: body });
+    // 3) 【差分優先】先頭から「型が一致する範囲」は中身だけ書き換え（削除しない＝事故らない）。
+    //    食い違い始めた位置から先だけ、既存を消して新しいのを足す（＝入れ替えは最小限）。
+    const bodyFor = (blk) => { const t = blk.type; const b = {}; b[t] = { rich_text: blk[t].rich_text }; if (blk[t].color) b[t].color = blk[t].color; return b; };
+    let k = 0; const patchJobs = [];
+    const min = Math.min(existing.length, blocks.length);
+    while (k < min && existing[k].type === blocks[k].type) {
+      const t = blocks[k].type;
+      if (t !== 'divider' && blockSig(existing[k]) !== blockSig(blocks[k])) {
+        patchJobs.push({ id: existing[k].id, body: bodyFor(blocks[k]) });
       }
-      const errs = await runPool(jobs, (job) => notionRetry(token, 'PATCH', '/blocks/' + job.id, job.body), 8);
-      if (!errs.length) return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: 'diff', changed: jobs.length });
-      // 一部失敗した時だけ、安全のため全書き換えにフォールバック（下へ）
+      k++;
     }
-
-    // 4) 構造が変わった（ページ増減・並び替えで種類が食い違う等）→ 全消し＋全追加（従来の確実版）
-    await runPool(existing.map((b) => b.id), (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
-    for (let i = 0; i < blocks.length; i += 100) {
-      const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', { children: blocks.slice(i, i + 100) });
+    // 共通の先頭：中身が変わったブロックだけ並列パッチ
+    const patchErrs = await runPool(patchJobs, (job) => notionRetry(token, 'PATCH', '/blocks/' + job.id, job.body), 8);
+    // 食い違い位置より後ろ：既存の残りを削除 → 新しい残りを末尾に追加（＝共通先頭の直後に並ぶ）
+    const toDelete = existing.slice(k).map((b) => b.id);
+    const toAppend = blocks.slice(k);
+    if (toDelete.length) await runPool(toDelete, (id) => notionRetry(token, 'DELETE', '/blocks/' + id), 8);
+    for (let i = 0; i < toAppend.length; i += 100) {
+      const r = await notionRetry(token, 'PATCH', '/blocks/' + pageId + '/children', { children: toAppend.slice(i, i + 100) });
       if (!r.ok) return j(res, r.status, { ok: false, error: (r.data && r.data.message) || '書き込みに失敗しました。' });
     }
-    return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: 'rebuild' });
+    const mode = (toDelete.length === 0 && toAppend.length === 0) ? 'diff' : (k === 0 ? 'rebuild' : 'partial');
+    return j(res, 200, { ok: true, pages: pages.length, at: stamp, mode: mode, patched: patchJobs.length, appended: toAppend.length, deleted: toDelete.length, patchErrs: patchErrs.length });
   } catch (e) {
     return j(res, 500, { ok: false, error: String((e && e.message) || e) });
   }
