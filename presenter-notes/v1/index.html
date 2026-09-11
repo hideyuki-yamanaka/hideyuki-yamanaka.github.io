@@ -47,6 +47,11 @@
     </div>
     <div class="ed-body">
       <div class="ed-list" id="edList"></div>
+      <!-- サムネイル列を上下に移動する矢印（左下に固定表示） -->
+      <div class="ed-listnav" id="edListNav">
+        <button class="pv-btn" id="edUp" title="前のスライド（上へ）" aria-label="上へ"><span data-ic="up"></span></button>
+        <button class="pv-btn" id="edDown" title="次のスライド（下へ）" aria-label="下へ"><span data-ic="down"></span></button>
+      </div>
       <div class="ed-resize" id="edResize" title="ドラッグで幅を変更"></div>
       <div class="ed-center">
         <div class="ed-stage">
@@ -122,7 +127,7 @@
     </div>
   </div>
 
-  <script src="icons.js?v=1"></script>
+  <script src="icons.js?v=2"></script>
   <script src="weighttool.js?v=1"></script>
   <script src="store.js?v=9"></script>
   <script src="notionsync.js?v=1"></script>
@@ -333,7 +338,20 @@
         box.appendChild(row);
       });
       applyThumbs();
+      // 現在のサムネイルが常に見える位置に来るよう自動スクロール
+      const cur = box.querySelector('.ed-prow.current');
+      if (cur) cur.scrollIntoView({ block: 'nearest' });
     }
+    // 左サムネイル列の上下移動（▲▼ボタン＋キーボード上下キー）
+    $('edUp').onclick = () => edStep(-1);
+    $('edDown').onclick = () => edStep(1);
+    window.addEventListener('keydown', (e) => {
+      if ($('editorView').hidden) return;                 // エディター表示中だけ
+      const t = e.target, tag = t && t.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable)) return; // 入力中は邪魔しない
+      if (e.key === 'ArrowUp') { e.preventDefault(); edStep(-1); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); edStep(1); }
+    });
 
     // ---- サムネイル（Figma画像API・アクセストークンがある時だけ表示）----
     let thumbCache = {};  // nodeId -> 画像URL（セッション内キャッシュ）

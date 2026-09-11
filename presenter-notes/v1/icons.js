@@ -32,6 +32,8 @@ window.PNI = (function () {
     play: '<path d="M8.5 5.4v13.2L19 12z"/>',
     prev: '<path d="M14.5 5.5 8 12l6.5 6.5"/>',
     next: '<path d="M9.5 5.5 16 12l-6.5 6.5"/>',
+    up: '<path d="M5.5 14.5 12 8l6.5 6.5"/>',
+    down: '<path d="M5.5 9.5 12 16l6.5-6.5"/>',
     edit: '<path d="M4 20h4.2L19 9.2a2.97 2.97 0 0 0-4.2-4.2L4 15.8V20z"/><path d="M13.9 6.1l4.2 4.2"/>',
     more: DOT(5) + DOT(12) + DOT(19),
     plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
