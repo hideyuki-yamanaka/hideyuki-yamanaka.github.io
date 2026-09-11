@@ -41,6 +41,7 @@
       <span class="grow"></span>
       <span class="dot" id="edConn" hidden></span>
       <span class="chip" id="nStatus" title="Notionバックアップの状態" hidden style="margin-right:4px;cursor:pointer;"></span>
+      <span class="chip refresh-flash" id="refreshFlash" hidden></span>
       <button class="btn ghost ico" id="refreshBtn" title="Figmaから再取得（スライドを増やした時など）" aria-label="再取得" style="margin-right:12px;"><span data-ic="refresh"></span></button>
       <button class="btn primary" id="startBtn"><span data-ic="play"></span>プレゼンを開始</button>
     </div>
@@ -539,11 +540,32 @@
     setNotesVisible(localStorage.getItem('pn_shownotes') === '1');
 
     // ↻ 手動再取得：Figmaからスライド一覧を取り直し、新しいページのバックアップ画像だけ追加保存
+    let refreshFlashTimer = null;
     $('refreshBtn').onclick = async () => {
       const b = $('refreshBtn');
       if (b.disabled) return;
-      b.disabled = true;                      // 回転アニメは付けない（二重押しだけ防ぐ）
-      try { await autoBackup(); } finally { b.disabled = false; }
+      b.disabled = true;
+      b.classList.remove('done'); b.classList.add('loading');   // 取得中はうっすら（回り続けない）
+      const before = PN.loadScripts().order.length;
+      try {
+        await autoBackup();
+        // 完了フィードバック：ポンッと光って「✓ N枚に更新」を短く出す
+        const n = PN.loadScripts().order.length;
+        const diff = n - before;
+        b.classList.remove('loading'); b.classList.add('done');
+        const f = $('refreshFlash');
+        if (f) {
+          f.textContent = '✓ ' + n + '枚に更新' + (diff > 0 ? '（+' + diff + '）' : '');
+          f.hidden = false; f.classList.add('show');
+        }
+        clearTimeout(refreshFlashTimer);
+        refreshFlashTimer = setTimeout(() => {
+          b.classList.remove('done');
+          if (f) { f.classList.remove('show'); setTimeout(() => { f.hidden = true; }, 300); }
+        }, 1600);
+      } catch (e) {
+        b.classList.remove('loading');
+      } finally { b.disabled = false; }
     };
 
     // トークスクリプト欄の高さを上端ドラッグで変更（上へ＝大きく／下へ＝小さく）。高さは記憶する

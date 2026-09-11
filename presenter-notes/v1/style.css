@@ -307,3 +307,11 @@ body.col-drag video { pointer-events: none; }
 .notes-main.nopreview .notes-vsplit { display: none; }
 /* 畳んだ時はページ送りを下のバーへ移すので、絶対配置を解除して行内に置く */
 .notes-editbar .pv-nav { position: static; transform: none; margin-right: 4px; }
+
+/* 再取得（↻）の完了フィードバック：回り続けず、完了時にポンッと光る */
+.ed-top .btn.loading { opacity: .55; }
+.ed-top .btn.done { color: var(--accent2); border-color: var(--accent2); animation: pn-pop .42s ease; }
+@keyframes pn-pop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.refresh-flash { color: var(--accent2); border-color: var(--accent2); margin-right: 8px;
+  opacity: 0; transform: translateX(6px); transition: opacity .25s, transform .25s; white-space: nowrap; }
+.refresh-flash.show { opacity: 1; transform: none; }
