@@ -84,9 +84,7 @@ window.NotionSync = (function () {
     setStatus('pending');
   }
 
-  // 画面を閉じる/裏に回る直前に、未送信があれば送る
-  window.addEventListener('beforeunload', () => { if (timer) { try { navigator.sendBeacon; } catch (e) {} flush(); } });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && timer) flush(); });
+  // 自動送信はしない（『Notionへ反映』ボタンで flush() を呼んだ時だけ送る）
 
   return { onStatus, schedule, flush, buildPayload };
 })();

@@ -106,7 +106,7 @@
       <p class="hint" id="tokenHint" style="margin-top:10px;"></p>
 
       <hr style="border:none;border-top:1px solid var(--line);margin:20px 0;">
-      <p class="hint" style="margin:0 0 10px;"><b>③ Notion バックアップ（任意・保険）</b>：原稿を直すと数秒後に自動で Notion の1ページへ保存します。ツールが動かない時の保険用。<br>
+      <p class="hint" style="margin:0 0 10px;"><b>③ Notion バックアップ（任意・保険）</b>：<b>「Notionへ反映」ボタンを押した時だけ</b> Notion の1ページへ保存します（自動反映はしません）。ツールが動かない時の保険用。<br>
         手順：① <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener" style="color:var(--accent)">Notionで連携（Integration）を作成</a> → 「内部インテグレーションシークレット」をコピーして下に貼る。② バックアップ先の Notion ページを開き、右上「•••」› <b>接続</b> から、作った連携を追加（これをしないと書き込めません）。このブラウザ内だけに保存。</p>
       <div class="row" style="margin-bottom:10px;">
         <input class="field" id="ntoken" type="password" placeholder="ntn_ または secret_ で始まるトークンを貼る" style="flex:1;min-width:240px;" />
@@ -130,7 +130,7 @@
   <script src="icons.js?v=2"></script>
   <script src="weighttool.js?v=2"></script>
   <script src="store.js?v=9"></script>
-  <script src="notionsync.js?v=1"></script>
+  <script src="notionsync.js?v=2"></script>
   <script src="mdcopy.js?v=2"></script>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -414,8 +414,7 @@
     WT.init($('edScript'), saveNote);
     MDCopy.bind($('edScript'));   // コピーで太字を **…** にする
     // 原稿を直したら Notion バックアップも予約（設定済みのときだけ動く）
-    function scheduleNotion(){ try { if (window.NotionSync) NotionSync.schedule(); } catch (e) {} }
-    $('edScript').addEventListener('input', scheduleNotion);
+    // ※ Notionは自動反映しない（『Notionへ反映』ボタンを押した時だけ送る）
 
     // スライド（編集用の埋め込み）からの通知
     window.addEventListener('message', (e) => {
@@ -532,7 +531,6 @@
         ids.forEach((id) => { cards[id] = cards[id] || { label: '', script: '' }; });
         PN.saveScripts({ order: ids, cards });
         // スライドの並び（枚数・順番）が変わったら、Notionバックアップにも反映を予約
-        if (_orderChanged) { try { if (window.NotionSync) NotionSync.schedule(); } catch (e) {} }
         // Figmaが更新されていたら、左のサムネイル画像のキャッシュを丸ごと捨てて取り直す。
         // （サムネは撮った時点のFigma画像URLを覚えているだけなので、修正しても
         //   そのURLが古い絵を指したまま。lastModified が変わったら作り直す）
