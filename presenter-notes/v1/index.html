@@ -465,7 +465,7 @@
       const need = [];
       if (stale) need.push(...ids);
       else for (const id of ids) { if (!(await PN.getImg(deckId, id))) need.push(id); }  // 新しいページだけ
-      if (!need.length) { setPrefetchStatus('✓ 保存済'); return; }
+      if (!need.length) { setPrefetchStatus('✓ 保存済'); return false; }
       setPrefetchStatus('画像URL取得中…');
       try {
         const res = await fetch('https://api.figma.com/v1/images/' + key + '?format=png&scale=1.25&ids=' + encodeURIComponent(need.join(',')), { headers: { 'X-Figma-Token': token } });
@@ -479,7 +479,9 @@
         }
         try { localStorage.setItem('pn_imgmod_' + deckId, fileMod); } catch (e) {}   // この版で撮ったと記録
         setPrefetchStatus('✓ ' + done + '/' + ids.length + ' 保存済');
+        return done > 0;   // 画像を（撮り直しを含めて）保存した＝中央プレビューを更新する合図
       } catch (e) { setPrefetchStatus('失敗'); alert('保存に失敗しました: ' + (e && e.message)); }
+      return false;
     }
 
     // ---- Figmaから同期：「スライド」セクション内の“数字名フレーム”だけをスライドとして取り直す（トークスクリプト除外）----
@@ -551,8 +553,11 @@
     async function autoBackup() {
       if (!PN.getFigmaToken() || !PN.getActiveDeck().url) return;   // トークンかURLが無ければ何もしない
       try { await syncFromFigma(); } catch (e) {}
-      try { await prefetchImages(); } catch (e) {}
+      let imgChanged = false;
+      try { imgChanged = await prefetchImages(); } catch (e) {}
       try { loadThumbs(); } catch (e) {}
+      // 画像を撮り直した時は、中央の大きいプレビュー（保存画像）も描き直す
+      try { if (imgChanged && edMode === 'image' && edNode) await edGo(edNode); } catch (e) {}
     }
     // 左のスライド一覧を隠す／表示（Figma Slides風）
     $('listToggle').onclick = () => document.querySelector('.ed-body').classList.toggle('nolist');
