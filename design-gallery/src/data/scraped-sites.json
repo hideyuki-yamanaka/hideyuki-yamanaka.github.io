@@ -23343,6 +23343,20 @@
     "lastCheckedAt": "2026-08-02T05:28:51.511Z"
   },
   {
+    "id": "791c005cf9bd",
+    "title": "Goodpatch",
+    "url": "https://goodpatch.com/ja",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/11-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "white"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
     "id": "1534be08c590",
     "title": "くまWeb",
     "url": "https://kumaweb-coding.jp/",
@@ -24317,20 +24331,18 @@
     "lastCheckedAt": "2026-08-02T05:29:01.238Z"
   },
   {
-    "id": "fb885ba2f39a",
-    "title": "ZettaJoule",
-    "url": "https://zetta-joule.com/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/06/02.webp",
-    "source": "muuuuu",
+    "id": "fcd3e2be051b",
+    "title": "株式会社TVer 採用サイト",
+    "url": "https://recruit.tver.co.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260911_02-498x328.jpg",
+    "source": "webdesignclip",
     "category": [
-      "company"
+      "採用サイト・転職・求人"
     ],
     "taste": [],
-    "date": "2026-06",
+    "date": "2026-09",
     "starred": false,
-    "firstSeen": "2026-06-06T15:43:15.583Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:28:59.122Z"
+    "firstSeen": "2026-09-12T03:49:19.410Z"
   },
   {
     "id": "f91c999745a7",
@@ -28589,20 +28601,18 @@
     "lastCheckedAt": "2026-08-02T05:31:37.224Z"
   },
   {
-    "id": "e1138af71a76",
-    "title": "東急株式会社 新卒採用サイト",
-    "url": "https://www.tokyu-recruit.jp/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/20251204_03-498x328.jpg",
+    "id": "eb7a076558e9",
+    "title": "Shopify Design",
+    "url": "https://shopify.design/",
+    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/wd20260911_01-498x328.jpg",
     "source": "webdesignclip",
     "category": [
-      "採用サイト・転職・求人"
+      "アート・デザイン"
     ],
     "taste": [],
-    "date": "2025-12",
+    "date": "2026-09",
     "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": true,
-    "lastCheckedAt": "2026-08-02T05:29:21.791Z"
+    "firstSeen": "2026-09-12T03:49:19.410Z"
   },
   {
     "id": "a4ee610973c8",
@@ -35147,20 +35157,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:29:18.408Z"
-  },
-  {
-    "id": "393a0dfca873",
-    "title": "鼎邦投資",
-    "url": "https://www.dingbon.com/",
-    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/20240311_01-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "建築・住宅・不動産"
-    ],
-    "taste": [],
-    "date": "2024-03",
-    "starred": false,
-    "firstSeen": "2026-09-08T03:42:41.474Z"
   },
   {
     "id": "12c67ab2fb60",
@@ -43369,6 +43365,26 @@
     "firstSeen": "2026-08-20T01:41:40.168Z"
   },
   {
+    "id": "299262319c45",
+    "title": "東急株式会社 新卒採用サイト",
+    "url": "https://www.tokyu-recruit.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/11/251128-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "採用サイト",
+      "暮らし",
+      "建築",
+      "不動産"
+    ],
+    "taste": [],
+    "agency": "FunTech",
+    "date": "2025-11",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": true,
+    "lastCheckedAt": "2026-08-02T05:29:21.791Z"
+  },
+  {
     "id": "4d72c39f7c73",
     "title": "株式会社ポンドルド | 神戸｜構造物の調査・設計・解析",
     "url": "https://www.pondold.co.jp/",
@@ -47990,6 +48006,176 @@
     "firstSeen": "2026-06-07T04:20:55.700Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:30:50.520Z"
+  },
+  {
+    "id": "befbf88e49e0",
+    "title": "WARP SPACE | VI special site",
+    "url": "https://v2.warpspace.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/di7qj9x3zskc-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "特設サイト",
+      "ランディングページ",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [
+      "タイポグラフィー･文字",
+      "ロゴデザイン"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "8b1dfcff9f04",
+    "title": "丸通工芸",
+    "url": "https://marutsu-kougei.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/qbv47mpryjs9-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ランディングページ",
+      "インテリア･家具･雑貨"
+    ],
+    "taste": [
+      "動画･映像",
+      "写真･フォトディレクション"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "6dd86ba2730b",
+    "title": "石橋建設興業株式会社",
+    "url": "https://www.ishibashi-kensetsu.net/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/4l3g92tkhny1-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoCコーポレートサイト",
+      "BtoBコーポレートサイト",
+      "建築･建設･不動産･家"
+    ],
+    "taste": [
+      "写真･フォトディレクション",
+      "動画･映像"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "df3407ca12d1",
+    "title": "AMIDUS",
+    "url": "https://amidus.co.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/z6w2sloymgfu-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "デザイン･制作･開発会社",
+      "広告代理店",
+      "その他"
+    ],
+    "taste": [
+      "タイポグラフィー･文字"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "28a33f8de72b",
+    "title": "CYANTYPE ",
+    "url": "https://cyantype.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/s2dnbvh5cri4-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoCコーポレートサイト",
+      "BtoBコーポレートサイト",
+      "ポートフォリオ･アーティストサイト",
+      "建築･建設･不動産･家"
+    ],
+    "taste": [
+      "グリッドデザイン",
+      "モチーフ 線"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "165c3bd9b4ed",
+    "title": "Office Premium Frozen",
+    "url": "https://office-premiumfrozen.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/orue9i3qg7zm-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "飲料･食品･メーカー"
+    ],
+    "taste": [
+      "動画･映像",
+      "写真･フォトディレクション"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "0b3ca3e8b909",
+    "title": "cozzi.inc",
+    "url": "https://cozzi.co.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/znd9sph1eo4b-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoCコーポレートサイト",
+      "BtoBコーポレートサイト",
+      "建築･建設･不動産･家"
+    ],
+    "taste": [
+      "タイポグラフィー･文字"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "951021fb035b",
+    "title": "神戸大学循環器内科",
+    "url": "https://kobe-u-cardio.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/8kmfh6c1jig0-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "特設サイト",
+      "BtoCコーポレートサイト",
+      "BtoBコーポレートサイト",
+      "学校･教育･医療･福祉"
+    ],
+    "taste": [
+      "タイポグラフィー･文字",
+      "3Dアニメーション･3Dモデル",
+      "動画･映像",
+      "パララックス",
+      "スクロールエフェクト"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
+  },
+  {
+    "id": "aa8169c8c35a",
+    "title": "Yohaku. | 茨城県水戸市の小さなプライベートヘアサロン",
+    "url": "https://yohaku.salon/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/g3uao452zvrs-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoCコーポレートサイト",
+      "美容･健康･化粧品･コスメ･サロン"
+    ],
+    "taste": [
+      "スクロールエフェクト"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z"
   },
   {
     "id": "c5acf0dc3427",
@@ -52696,119 +52882,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:37:16.812Z"
-  },
-  {
-    "id": "30961b11f8c4",
-    "title": "フクビの採用情報",
-    "url": "https://www.fukuvi.co.jp/recruit/top.html",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ujhawc2nzkgs-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "採用･仕事･アルバイトサイト",
-      "軽工•重工•製造"
-    ],
-    "taste": [
-      "イラスト",
-      "UI フラット"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:16.960Z"
-  },
-  {
-    "id": "f800c46d61a5",
-    "title": "ウェブラボ株式会社",
-    "url": "https://www.weblab.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/imdjtr9fx2w1-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "IT･コンピューター･テクノロジー"
-    ],
-    "taste": [
-      "グラフィカル･コラージュ",
-      "イラスト",
-      "動画･映像",
-      "UI 手描き･ラフ"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:18.714Z"
-  },
-  {
-    "id": "23e23a9c2e65",
-    "title": "TIMELESS KOKUTO",
-    "url": "https://timelesskokuto.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/098zybrwd65g-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:16.945Z"
-  },
-  {
-    "id": "83577385a85d",
-    "title": "株式会社フォーサイトクリエイション",
-    "url": "https://hp.f-creation.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ambd29354ejy-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト"
-    ],
-    "taste": [],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:17.545Z"
-  },
-  {
-    "id": "9a08ccaaa538",
-    "title": "neighby",
-    "url": "https://www.neighby.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/078kn15d9fiz-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "デザイン･制作･開発会社",
-      "ポートフォリオ･アーティストサイト",
-      "アート･芸術"
-    ],
-    "taste": [
-      "タイポグラフィー･文字"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z"
-  },
-  {
-    "id": "c21b56b8f016",
-    "title": "東京都下水道サービス　新卒採用サイト",
-    "url": "https://www.tgs-sw.co.jp/saiyou/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/fl7yknwtg4av-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "採用･仕事･アルバイトサイト",
-      "軽工•重工•製造"
-    ],
-    "taste": [
-      "写真･フォトディレクション",
-      "動画･映像",
-      "スクロールエフェクト"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:18.156Z"
   },
   {
     "id": "61dbd2acd28e",
