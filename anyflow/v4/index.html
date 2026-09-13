@@ -928,6 +928,75 @@
   #results.rfx-6 .r2v-h { font-size: 44px; line-height: 1.5; }
   #results.rfx-6 .r2v-p { font-size: 16px; line-height: 2; }
 
+  /* ===== 【2026-09-14 ヒデさん指定】追加5案(10〜14): ピクトのアニメーションが際立つスクロール連動。「強調して見せて次へ」 =====
+     10 スポットライト / 11 ピクトの行進 / 12 カードの重なり / 13 回転する舞台 / 14 スクロールで組み上がる。動きは JS(resFxFrame) */
+  /* 共通(10/13/14): 案6と同じ「導入(見出し+数値)と SaaS/AI を同じ場所で切替」の舞台。ピクト左(1.12fr)・文章右 */
+  html:not(.mb) #results.rfx-10 .res2, html:not(.mb) #results.rfx-13 .res2, html:not(.mb) #results.rfx-14 .res2 { display: grid; grid-template-columns: 1fr; align-items: center; justify-items: stretch; }
+  #results.rfx-10 .res2-top, #results.rfx-10 .r2v, #results.rfx-13 .res2-top, #results.rfx-13 .r2v, #results.rfx-14 .res2-top, #results.rfx-14 .r2v { grid-area: 1 / 1; will-change: transform, opacity; }
+  #results.rfx-10 .res2-vals, #results.rfx-10 .r2v-track, #results.rfx-13 .res2-vals, #results.rfx-13 .r2v-track, #results.rfx-14 .res2-vals, #results.rfx-14 .r2v-track { display: contents; }
+  #results.rfx-10 .res2-hr, #results.rfx-10 .res2-vline, #results.rfx-13 .res2-hr, #results.rfx-13 .res2-vline, #results.rfx-14 .res2-hr, #results.rfx-14 .res2-vline { display: none; }
+  #results.rfx-10 .res2-top, #results.rfx-13 .res2-top, #results.rfx-14 .res2-top { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+  #results.rfx-10 .res2-head, #results.rfx-13 .res2-head, #results.rfx-14 .res2-head { font-size: 40px; line-height: 1.5; }
+  #results.rfx-10 .res2-stats, #results.rfx-13 .res2-stats, #results.rfx-14 .res2-stats { gap: 64px; justify-content: center; }
+  #results.rfx-10 .res2-stats .r2s span, #results.rfx-13 .res2-stats .r2s span, #results.rfx-14 .res2-stats .r2s span { font-size: 88px; line-height: 1.08; }
+  #results.rfx-10 .res2-stats .r2s b, #results.rfx-13 .res2-stats .r2s b, #results.rfx-14 .res2-stats .r2s b { font-size: 14px; }
+  #results.rfx-10 .r2v, #results.rfx-13 .r2v, #results.rfx-14 .r2v { display: grid; grid-template-columns: 1.12fr 1fr; gap: 65px; align-items: center; min-width: 0; }
+  #results.rfx-10 .r2v-fig, #results.rfx-13 .r2v-fig, #results.rfx-14 .r2v-fig { display: block; order: -1; min-width: 0; transform-origin: center; will-change: transform, opacity; }
+  #results.rfx-10 .r2v-fig::before, #results.rfx-13 .r2v-fig::before, #results.rfx-14 .r2v-fig::before { content: attr(data-tag); display: block; text-align: center; font-family: var(--font-en); font-weight: 300; font-size: 25px; line-height: 1.2; margin-bottom: 8px; color: var(--rfx-tag-ink, var(--brand-pink)); }
+  #results.rfx-10 .r2v-fig-ai::before, #results.rfx-13 .r2v-fig-ai::before, #results.rfx-14 .r2v-fig-ai::before { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
+  #results.rfx-10 .r2v-graphic, #results.rfx-13 .r2v-graphic, #results.rfx-14 .r2v-graphic { width: 100%; height: 420px; }
+  #results.rfx-10 .r2v-text, #results.rfx-13 .r2v-text, #results.rfx-14 .r2v-text { width: auto; max-width: 506px; gap: 30px; will-change: transform, opacity; }
+  #results.rfx-10 .r2v-tagh, #results.rfx-13 .r2v-tagh, #results.rfx-14 .r2v-tagh { gap: 0; }
+  #results.rfx-10 .r2v-tag, #results.rfx-13 .r2v-tag, #results.rfx-14 .r2v-tag { display: none; }
+  #results.rfx-10 .r2v-h, #results.rfx-13 .r2v-h, #results.rfx-14 .r2v-h { font-size: 44px; line-height: 1.5; }
+  #results.rfx-10 .r2v-p, #results.rfx-13 .r2v-p, #results.rfx-14 .r2v-p { font-size: 16px; line-height: 2; }
+  /* 案10 スポットライト: 文章はピクトを中心にした丸い窓(clip-path)で現れる(JS が半径と中心を書く) */
+  #results.rfx-10 .r2v-text { clip-path: circle(0px at 0px 50%); }
+  /* 案13 回転する舞台: ピクトは Y 軸で回る(裏面は見せない) */
+  #results.rfx-13 .r2v-fig { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  /* 案11 ピクトの行進: 案5と同じ上下の帯。中段はレーン(両方の値を同じ場所に重ね、ピクトだけが横に動く) */
+  html:not(.mb) #results.rfx-11 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: 100vh; box-sizing: border-box; }
+  #results.rfx-11 .res2-top { display: contents; }
+  #results.rfx-11 .res2-head { order: 1; font-size: 33px; line-height: 1.6; padding: 0 30px 30px; }
+  #results.rfx-11 .res2-vals { order: 2; flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; overflow: hidden; }
+  #results.rfx-11 .r2v-track { display: grid; width: 100%; }
+  #results.rfx-11 .res2-vline, #results.rfx-11 .res2-hr { display: none; }
+  #results.rfx-11 .r2v { grid-area: 1 / 1; box-sizing: border-box; min-width: 0; padding: 0 max(70px, calc((100% - 1138px) / 2)); display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; }
+  #results.rfx-11 .r2v-fig { display: block; order: -1; min-width: 0; transform-origin: center; will-change: transform; }
+  #results.rfx-11 .r2v-fig::before { content: attr(data-tag); display: block; text-align: center; font-family: var(--font-en); font-weight: 300; font-size: 22px; line-height: 1.2; margin-bottom: 8px; color: var(--rfx-tag-ink, var(--brand-pink)); }
+  #results.rfx-11 .r2v-fig-ai::before { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
+  #results.rfx-11 .r2v-graphic { width: 100%; height: 320px; }
+  #results.rfx-11 .r2v-text { width: auto; max-width: 490px; gap: 28px; will-change: transform, opacity; }
+  #results.rfx-11 .r2v-tagh { gap: 0; }
+  #results.rfx-11 .r2v-tag { display: none; }
+  #results.rfx-11 .r2v-h { font-size: 48px; line-height: 1.5; }
+  #results.rfx-11 .r2v-p { font-size: 16px; line-height: 1.95; }
+  #results.rfx-11 .res2-stats { order: 3; width: min(1138px, 100% - 140px); margin: 20px auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); justify-content: space-between; gap: 24px; }
+  #results.rfx-11 .res2-stats .r2s { flex-direction: row; align-items: center; gap: 24px; }
+  #results.rfx-11 .res2-stats .r2s span { font-size: 44px; }
+  #results.rfx-11 .res2-stats .r2s b { font-size: 12px; }
+  /* 案12 カードの重なり: 実績/SaaS/AI の3枚を sticky で積む。1枚=100vh・地色つき(前の1枚を覆う)。末尾に読む区間(+30vh・仮置き) */
+  html:not(.mb) #results.rfx-12 .pin-stage { height: auto; display: block; }
+  html:not(.mb) #results.rfx-12 .res2 { width: 100%; max-width: none; display: block; height: 330vh; margin: 0; }
+  #results.rfx-12 .res2-vals, #results.rfx-12 .r2v-track { display: contents; }
+  #results.rfx-12 .res2-hr, #results.rfx-12 .res2-vline { display: none; }
+  #results.rfx-12 .res2-top, #results.rfx-12 .r2v { position: sticky; top: 0; height: 100vh; width: 100%; box-sizing: border-box; background: var(--surface); will-change: transform, opacity; transform-origin: center 30%; }
+  #results.rfx-12 .res2-top { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px; }
+  #results.rfx-12 .res2-head { font-size: 40px; line-height: 1.5; }
+  #results.rfx-12 .res2-stats { gap: 64px; justify-content: center; }
+  #results.rfx-12 .res2-stats .r2s span { font-size: 88px; line-height: 1.08; }
+  #results.rfx-12 .res2-stats .r2s b { font-size: 14px; }
+  #results.rfx-12 .r2v { display: grid; grid-template-columns: 1.12fr 1fr; gap: 65px; align-items: center; padding: 0 max(60px, calc((100% - 1138px) / 2)); min-width: 0; }
+  #results.rfx-12 .r2v-fig { display: block; order: -1; min-width: 0; transform-origin: center; will-change: transform, opacity, filter; }
+  #results.rfx-12 .r2v-fig::before { content: attr(data-tag); display: block; text-align: center; font-family: var(--font-en); font-weight: 300; font-size: 25px; line-height: 1.2; margin-bottom: 8px; color: var(--rfx-tag-ink, var(--brand-pink)); }
+  #results.rfx-12 .r2v-fig-ai::before { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
+  #results.rfx-12 .r2v-graphic { width: 100%; height: 420px; }
+  #results.rfx-12 .r2v-text { width: auto; max-width: 506px; gap: 30px; will-change: transform, opacity; }
+  #results.rfx-12 .r2v-tagh { gap: 0; }
+  #results.rfx-12 .r2v-tag { display: none; }
+  #results.rfx-12 .r2v-h { font-size: 44px; line-height: 1.5; }
+  #results.rfx-12 .r2v-p { font-size: 16px; line-height: 2; }
+
   /* ===== SP(html.mb) の案別レイアウト(MD 6章・390×664 のサンプル実測を目安に。等倍・C = 100% - 40px) =====
      PC をそのまま縮めない。図上/文章下の縦積み。縦が短い端末(html.rfx-short・≤600px)は固定案も縦流れ(原本の max-height:600px 相当)。 */
   html.mb #results.rfx-on .pin-stage { position: relative; top: auto; left: auto; width: 100%; height: 100vh; transform: none; display: flex; align-items: center; justify-content: center; }
@@ -1000,6 +1069,44 @@
   html.mb #results.rfx-6 .r2v-text { max-width: none; width: 100%; gap: 14px; }
   html.mb #results.rfx-6 .r2v-h { font-size: 28px; line-height: 1.5; }
   html.mb #results.rfx-6 .r2v-p { font-size: 14px; line-height: 1.9; }
+  /* --- 追加5案(SP): 10/13/14 は案6と同じ縦積みの舞台(図300×220 上/言葉 下)。11 はレーン(案5の帯)。12 は 100vh のカード --- */
+  html.mb #results.rfx-10 .res2-top, html.mb #results.rfx-13 .res2-top, html.mb #results.rfx-14 .res2-top { gap: 28px; }
+  html.mb #results.rfx-10 .res2-head, html.mb #results.rfx-13 .res2-head, html.mb #results.rfx-14 .res2-head, html.mb #results.rfx-12 .res2-head { font-size: 29px; line-height: 1.5; }
+  html.mb #results.rfx-10 .res2-stats, html.mb #results.rfx-13 .res2-stats, html.mb #results.rfx-14 .res2-stats, html.mb #results.rfx-12 .res2-stats { flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+  html.mb #results.rfx-10 .res2-stats .r2s span, html.mb #results.rfx-13 .res2-stats .r2s span, html.mb #results.rfx-14 .res2-stats .r2s span, html.mb #results.rfx-12 .res2-stats .r2s span { font-size: 40px; }
+  html.mb #results.rfx-10 .res2-stats .r2s b, html.mb #results.rfx-13 .res2-stats .r2s b, html.mb #results.rfx-14 .res2-stats .r2s b, html.mb #results.rfx-12 .res2-stats .r2s b { font-size: 12px; }
+  html.mb #results.rfx-10 .r2v, html.mb #results.rfx-13 .r2v, html.mb #results.rfx-14 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+  html.mb #results.rfx-10 .r2v-fig, html.mb #results.rfx-13 .r2v-fig, html.mb #results.rfx-14 .r2v-fig { order: -1; align-self: center; width: 300px; transform-origin: center; }
+  html.mb #results.rfx-10 .r2v-fig::before, html.mb #results.rfx-13 .r2v-fig::before, html.mb #results.rfx-14 .r2v-fig::before { font-size: 20px; margin-bottom: 0; }
+  html.mb #results.rfx-10 .r2v-graphic, html.mb #results.rfx-13 .r2v-graphic, html.mb #results.rfx-14 .r2v-graphic { width: 300px; height: 220px; }
+  html.mb #results.rfx-10 .r2v-text, html.mb #results.rfx-13 .r2v-text, html.mb #results.rfx-14 .r2v-text { max-width: none; width: 100%; gap: 14px; }
+  html.mb #results.rfx-10 .r2v-h, html.mb #results.rfx-13 .r2v-h, html.mb #results.rfx-14 .r2v-h { font-size: 28px; line-height: 1.5; }
+  html.mb #results.rfx-10 .r2v-p, html.mb #results.rfx-13 .r2v-p, html.mb #results.rfx-14 .r2v-p { font-size: 14px; line-height: 1.9; }
+  /* 案11(SP): 上下の帯は案5と同じ。中段のレーンをピクト(235×145)が横切る。文章は下 */
+  html.mb #results.rfx-11 .res2 { width: 100%; padding: 22px 0 12px; }
+  html.mb #results.rfx-11 .res2-head { font-size: 24px; line-height: 1.5; padding: 0 20px 14px; }
+  html.mb #results.rfx-11 .r2v { padding: 0 20px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  html.mb #results.rfx-11 .r2v-fig { order: -1; align-self: center; width: 235px; }
+  html.mb #results.rfx-11 .r2v-fig::before { font-size: 16px; margin-bottom: 4px; }
+  html.mb #results.rfx-11 .r2v-graphic { width: 235px; height: 145px; }
+  html.mb #results.rfx-11 .r2v-text { max-width: none; width: 100%; gap: 10px; margin-top: 10px; }
+  html.mb #results.rfx-11 .r2v-h { font-size: 25px; line-height: 1.45; }
+  html.mb #results.rfx-11 .r2v-p { font-size: 14px; line-height: 1.8; }
+  html.mb #results.rfx-11 .res2-stats { width: calc(100% - 40px); margin: 14px auto 0; padding: 14px 0 10px; gap: 14px; justify-content: space-between; }
+  html.mb #results.rfx-11 .res2-stats .r2s { flex-direction: column; align-items: flex-start; gap: 4px; }
+  html.mb #results.rfx-11 .res2-stats .r2s span { font-size: 33px; }
+  html.mb #results.rfx-11 .res2-stats .r2s b { font-size: 10px; }
+  /* 案12(SP): カードは 100vh の縦積み(図上/言葉下) */
+  html.mb #results.rfx-12 .res2 { width: 100%; height: 330vh; }
+  html.mb #results.rfx-12 .res2-top, html.mb #results.rfx-12 .r2v { padding: 0 20px; }
+  html.mb #results.rfx-12 .res2-top { gap: 28px; }
+  html.mb #results.rfx-12 .r2v { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 14px; }
+  html.mb #results.rfx-12 .r2v-fig { order: -1; align-self: center; width: 300px; }
+  html.mb #results.rfx-12 .r2v-fig::before { font-size: 20px; margin-bottom: 0; }
+  html.mb #results.rfx-12 .r2v-graphic { width: 300px; height: 220px; }
+  html.mb #results.rfx-12 .r2v-text { max-width: none; width: 100%; gap: 14px; }
+  html.mb #results.rfx-12 .r2v-h { font-size: 28px; line-height: 1.5; }
+  html.mb #results.rfx-12 .r2v-p { font-size: 14px; line-height: 1.9; }
   /* --- 案の SP 共通: 価値見出しは設計の改行(<br>)を生かして2行。
          現行SPの「1行 nowrap」は 22px の時だけ成立し、案の 28〜32px では本文幅 350px に収まらない
          (2026-09-14 実測: AI 側「コンテキスト取得から実行まで」= 案1 405px・案6 391・案4 447)。
@@ -1020,6 +1127,14 @@
   html.mb.rfx-short #results.rfx-6 .res2 { display: flex; flex-direction: column; gap: 50px; padding: 40px 0; }
   html.mb.rfx-short #results.rfx-6 .res2-top, html.mb.rfx-short #results.rfx-6 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-6 .r2v-fig, html.mb.rfx-short #results.rfx-6 .r2v-text { transform: none !important; opacity: 1 !important; }
+  html.mb.rfx-short #results.rfx-10 .res2, html.mb.rfx-short #results.rfx-13 .res2, html.mb.rfx-short #results.rfx-14 .res2 { display: flex; flex-direction: column; gap: 50px; padding: 40px 0; }
+  html.mb.rfx-short #results.rfx-10 .res2-top, html.mb.rfx-short #results.rfx-10 .r2v, html.mb.rfx-short #results.rfx-13 .res2-top, html.mb.rfx-short #results.rfx-13 .r2v, html.mb.rfx-short #results.rfx-14 .res2-top, html.mb.rfx-short #results.rfx-14 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+  html.mb.rfx-short #results.rfx-10 .r2v-fig, html.mb.rfx-short #results.rfx-10 .r2v-text, html.mb.rfx-short #results.rfx-13 .r2v-fig, html.mb.rfx-short #results.rfx-13 .r2v-text, html.mb.rfx-short #results.rfx-14 .r2v-fig, html.mb.rfx-short #results.rfx-14 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; clip-path: none !important; }
+  html.mb.rfx-short #results.rfx-11 .res2 { height: auto; }
+  html.mb.rfx-short #results.rfx-11 .res2-vals { display: block; overflow: visible; }
+  html.mb.rfx-short #results.rfx-11 .r2v-track { display: block; }
+  html.mb.rfx-short #results.rfx-11 .r2v { padding: 30px 20px; }
+  html.mb.rfx-short #results.rfx-11 .r2v-fig, html.mb.rfx-short #results.rfx-11 .r2v-text { transform: none !important; opacity: 1 !important; pointer-events: auto !important; }
 
   /* ---- 案A: 画像が左に横長 ----
      右端が画面右から683px固定 / 左端-183px → 画面幅ぶん横に伸びる */
@@ -4061,7 +4176,7 @@ let params = load();
 /* 【2026-09-13 比較検証】URL に ?resFx=1|4|5|6|7|9|default を付けると実績の演出案を指定できる(共有用)。
    パネルで別の値を触るまでは保存されない。 */
 try {
-  const _rfx = location.search.match(/[?&]resFx=(default|1|4|5|6)(?:&|$)/);
+  const _rfx = location.search.match(/[?&]resFx=(default|10|11|12|13|14|1|4|5|6)(?:&|$)/);
   if (_rfx) { params.patterns = params.patterns || {}; params.patterns.resFx = _rfx[1]; }
 } catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
@@ -9630,8 +9745,14 @@ const RES_FX = {
   '4': { vh: 0, flow: true },    // 自然な縦流れ(中身なりの高さ。原本 PC 約829px)
   '5': { vh: 330 },              // 上下を残し中段だけ横へ(原本 330svh)
   '6': { vh: 340 },              // 導入(60vh)+SaaS(90vh)+AI(90vh) の固定走路+1画面(原本は各190svh)
+  /* 【2026-09-14 ヒデさん指定】追加5案: ピクトのアニメーションが際立つスクロール連動(「強調して見せて次へ」) */
+  '10': { vh: 330 },             // スポットライト: ピクトを中心にした丸い光で文章が現れる
+  '11': { vh: 330 },             // ピクトの行進: 上下の帯を残し、レーンをピクトが右から左へ
+  '12': { vh: 0, flow: true },   // カードの重なり: 実績/SaaS/AI の3枚を sticky で積む(自然な縦流れ・.res2 が 330vh)
+  '13': { vh: 330 },             // 回転する舞台: 同じ場所で Y軸回転して次のピクトへ
+  '14': { vh: 360 },             // スクロールで組み上がる: ピクト自身の描き上がりをスクロールで進める
 };
-const RES_FX_KEYS = ['1', '4', '5', '6'];
+const RES_FX_KEYS = ['1', '4', '5', '6', '10', '11', '12', '13', '14'];
 function resFxKey() { const v = params.patterns && params.patterns.resFx; return RES_FX[v] ? v : 'default'; }
 function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
@@ -9643,7 +9764,7 @@ function resFxVh(k) {
   return o[k] != null ? o[k] : base;
 }
 /* faceT0: 案1 の SaaS/AI 面ごとの出現クロック(面が着いた時刻)。faceHi/tHi/slotHi: 「速い方を採用」の高水位(巻き戻さない) */
-const resFxSt = { key: 'default', faceT0: [null, null], faceHi: [0, 0], tHi: 0, slotHi: 0 };
+const resFxSt = { key: 'default', faceT0: [null, null], faceHi: [0, 0], tHi: 0, slotHi: 0, valOff: [null, null] };
 function resFxEls() {
   const S = SECS.results, q = s => S.querySelector(s), qa = s => [...S.querySelectorAll(s)];
   return { res2: q('.res2'), track: q('.r2v-track'), top: q('.res2-top'), r2v: qa('.r2v'), fig: qa('.r2v-fig'),
@@ -9659,7 +9780,7 @@ function resFxClear() {
   E.r2v.forEach(el => wipe(el, ['opacity', 'transform', 'pointerEvents']));
   E.fig.forEach(el => wipe(el, ['transform', 'opacity', 'filter', 'pointerEvents']));
   E.g.forEach(el => wipe(el, ['transform']));
-  E.tx.forEach(el => wipe(el, ['opacity', 'transform']));
+  E.tx.forEach(el => wipe(el, ['opacity', 'transform', 'clipPath', 'pointerEvents']));
   E.hli.forEach(el => wipe(el, ['transform']));
   E.tag.forEach(el => wipe(el, ['opacity', 'transform']));
   E.p.forEach(el => wipe(el, ['opacity', 'transform']));
@@ -9671,6 +9792,7 @@ function resFxClear() {
   SECS.results.style.removeProperty('--rfx-line');
   SECS.results.style.removeProperty('--rfx-tag-ink');
   resFxSt.faceT0 = [null, null]; resFxSt.faceHi = [0, 0]; resFxSt.tHi = 0; resFxSt.slotHi = 0;
+  resFxSt.valOff = [null, null]; valTOv.saas = null; valTOv.ai = null;   /* 案14 のピクト時計の上書きを解除 */
 }
 function applyResFx() {
   const k = resFxActive();
@@ -9716,6 +9838,20 @@ function rfxCenterX(el, trackShift) {
   for (let n = el; n; n = n.offsetParent) x += n.offsetLeft;
   return x - (window.scrollX || 0) - (trackShift || 0);
 }
+/* 案14: ピクト(valSaas/valAi)の描画時計の上書き。null=通常(時間) / {fixed:秒}=その時刻で止める(スクロールで進める) /
+   {off:秒}=時間 - off で続きを描く(描き切った位相から切れ目なく再開)。drawValueIcons が参照 */
+const valTOv = { saas: null, ai: null };
+function rfxValT(ov, et) { return ov == null ? et : (ov.fixed != null ? ov.fixed : Math.max(0, et - ov.off)); }
+/* ピクト関数の1周(秒)を関数本文の「T = 3.6」から読む(全バリエーション共通の書き方)。読めなければ 4.0 */
+const rfxValPeriodCache = {};
+function rfxValPeriod(table, key) {
+  if (rfxValPeriodCache[key] != null) return rfxValPeriodCache[key];
+  let T = 4.0;
+  try { const m = String(table[key] || '').match(/\bT\s*=\s*([\d.]+)/); if (m) T = parseFloat(m[1]); } catch (e) {}
+  return (rfxValPeriodCache[key] = T);
+}
+/* 案5/11: 実績帯が画面の下端(上端 88%H)にあるので、既定の「数字が 85%H より上に入ったら回す」では永久に回らない → 帯が見えていれば回す */
+function resFxSlotEnter(v) { return (resFxSt.key === '5' || resFxSt.key === '11') ? 0.995 : v; }
 /* 毎フレーム(updateResults から)。t=入場リビールの再生位置(秒・マイナスは未再生)。 */
 function resFxFrame(t) {
   const k = resFxSt.key;
@@ -9735,7 +9871,7 @@ function resFxFrame(t) {
     SECS.results.style.removeProperty('--rfx-tag-ink');
   }
   /* 縦が短い端末(SP・高さ600px以下)は固定案(1/5/6)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
-  if (resFxShort() && (k === '1' || k === '5' || k === '6')) return;
+  if (resFxShort() && (k === '1' || k === '5' || k === '6' || k === '10' || k === '11' || k === '13' || k === '14')) { valTOv.saas = null; valTOv.ai = null; return; }
 
   if (k === '1') {
     const p = resFxPin();
@@ -9831,6 +9967,129 @@ function resFxFrame(t) {
       if (E.fig[i]) { const dx = (innerWidth / 2 - rfxCenterX(E.fig[i], 0)) * (1 - draw); tf(E.fig[i], `translateX(${dx.toFixed(2)}px) scale(${s.toFixed(4)})`); }
       if (E.tx[i]) { setStyle(E.tx[i], 'opacity', draw.toFixed(3)); tf(E.tx[i], `translateY(${((1 - draw) * TY6).toFixed(2)}px)`); }
     });
+
+  } else if (k === '10') {
+    const p = resFxPin();
+    /* 【案10 スポットライト】導入 [0,0.22] → SaaS [0.22,0.61] → AI [0.61,1]。
+       各場面 q: 主役(中央 1.3倍) 0-0.1 → 左へ収まる 0.1-0.45 / 文章はピクトを中心にした丸い光(clip-path)が 0.15-0.55 で広がって現れる
+       → 読む → SaaS の終盤 0.92-1 で光が閉じて次へ */
+    const SC = [[0.22, 0.61], [0.61, 1.0]];
+    const introOut = rfxRange(p, 0.205, 0.22);
+    vis(E.top, on ? 1 - introOut : 0);
+    tf(E.top, `translateY(${(-introOut * 60).toFixed(2)}px)`);
+    E.r2v.forEach((el, i) => {
+      const [a, b] = SC[i];
+      const q = clamp01((p - a) / (b - a));
+      const fin = rfxRange(p, a, a + 0.015), fout = i === 0 ? rfxRange(p, b - 0.015, b) : 0;
+      vis(el, on ? fin * (1 - fout) : 0);
+      tf(el, `translateY(${((1 - fin) * 60 - fout * 60).toFixed(2)}px)`);
+      const fig = E.fig[i], tx = E.tx[i]; if (!fig) return;
+      const settle = rfxRange(q, 0.10, 0.45);
+      const S10 = isMobile ? 1.2 : 1.3;
+      const s = S10 - (S10 - 1) * settle;
+      const dx = (innerWidth / 2 - rfxCenterX(fig, 0)) * (1 - settle);
+      tf(fig, `translateX(${dx.toFixed(2)}px) scale(${s.toFixed(4)})`);
+      if (tx) {
+        const close = i === 0 ? rfxRange(q, 0.92, 1.0) : 0;
+        const R = rfxRange(q, 0.15, 0.55) * (1 - close) * (isMobile ? 900 : 1600);
+        const fr = fig.getBoundingClientRect(), tr = tx.getBoundingClientRect();
+        const cx = fr.left + fr.width / 2 - tr.left, cy = fr.top + fr.height / 2 - tr.top;
+        setStyle(tx, 'clipPath', `circle(${R.toFixed(1)}px at ${cx.toFixed(1)}px ${cy.toFixed(1)}px)`);
+        setStyle(tx, 'opacity', '1');
+      }
+    });
+
+  } else if (k === '11') {
+    const s = resFxPin();
+    /* 【案11 ピクトの行進】上の見出し・下の実績帯は案5と同じ。中段のレーンを「ラベル+ピクト」が右から左へ行進する。
+       SaaS: 右から入る 0-0.2 → 定位置で止まる 0.2-0.45(この間だけ文章) → 左へ去る 0.45-0.62
+       AI: 0.45-0.65 で右から続いて入り、そのまま読む。移動中は 1.25倍、止まると 1倍 */
+    const W = innerWidth;
+    setStyle(resEls.vals, 'opacity', '1'); setStyle(resEls.vals, 'filter', ''); setStyle(resEls.vals, 'pointerEvents', '');
+    const lane = [{ inA: 0, inB: 0.20, outA: 0.45, outB: 0.62 }, { inA: 0.45, inB: 0.65, outA: 2, outB: 3 }];
+    E.r2v.forEach((el, i) => {
+      const L = lane[i], fig = E.fig[i]; if (!fig) return;
+      const kin = rfxRange(s, L.inA, L.inB), kout = rfxRange(s, L.outA, L.outB);
+      const x = (1 - kin) * W * 0.9 - kout * W * 0.9;
+      const still = kin * (1 - kout);
+      const sc = 1 + 0.25 * (1 - still);
+      tf(fig, `translateX(${x.toFixed(2)}px) scale(${sc.toFixed(4)})`);
+      const to = rfxRange(s, L.inB - 0.03, L.inB + 0.06) * (1 - rfxRange(s, L.outA, L.outA + 0.05));
+      if (E.tx[i]) { setStyle(E.tx[i], 'opacity', to.toFixed(3)); tf(E.tx[i], `translateY(${((1 - to) * 30).toFixed(2)}px)`); setStyle(E.tx[i], 'pointerEvents', to < 0.02 ? 'none' : ''); }
+      vis(el, 1);
+    });
+
+  } else if (k === '12') {
+    /* 【案12 カードの重なり】実績/SaaS/AI の3枚(sticky・100vh)。各カードの「入り」 e=(vh-top)/vh (0=下端に顔を出す / 1=上端に着いた)。
+       次のカードに覆われる前のカードは少し縮んで(0.94)薄く(0.55)なる。ピクトはカードの入口で 1.3倍+ブラーから収まる。文章は後から */
+    const vh = innerHeight || 1;
+    const cards = [E.top, E.r2v[0], E.r2v[1]];
+    const ent = cards.map(c => c ? clamp01((vh - rectOf(c).top) / vh) : 0);
+    cards.forEach((c, i) => {
+      if (!c) return;
+      const cover = i < cards.length - 1 ? ent[i + 1] : 0;
+      const k2 = rfxSmooth(cover);
+      tf(c, `scale(${(1 - 0.06 * k2).toFixed(4)})`);
+      setStyle(c, 'opacity', (1 - 0.45 * k2).toFixed(3));
+      if (i === 0) return;
+      const e = ent[i], fig = E.fig[i - 1], tx = E.tx[i - 1];
+      const grow = rfxRange(e, 0.35, 1.0);
+      const S12 = isMobile ? 1.15 : 1.3;
+      if (fig) { rv(fig, easeOutQ(clamp01((e - 0.25) / 0.45)), 14, 0); tf(fig, `scale(${(S12 - (S12 - 1) * grow).toFixed(4)})`); }
+      if (tx) { const kt = rfxRange(e, 0.55, 1.0); setStyle(tx, 'opacity', kt.toFixed(3)); tf(tx, `translateY(${((1 - kt) * 40).toFixed(2)}px)`); }
+    });
+
+  } else if (k === '13') {
+    const p = resFxPin();
+    /* 【案13 回転する舞台】導入 [0,0.22] → 左の舞台: SaaS が手前に回って登場 0.22-0.34 → 読む → 0.55-0.68 で向こうへ回る。
+       AI は 0.58-0.72 で裏から回って登場(回転ドアのように同じ場所で入れ替わる) → 読む。文章は入れ替わり(SaaS は上へ・AI は下から) */
+    const introOut = rfxRange(p, 0.205, 0.22);
+    vis(E.top, on ? 1 - introOut : 0);
+    tf(E.top, `translateY(${(-introOut * 60).toFixed(2)}px)`);
+    const ROT = [{ inA: 0.22, inB: 0.34, outA: 0.55, outB: 0.68 }, { inA: 0.58, inB: 0.72, outA: 2, outB: 3 }];
+    E.r2v.forEach((el, i) => {
+      const R = ROT[i], fig = E.fig[i], tx = E.tx[i];
+      const kin = rfxRange(p, R.inA, R.inB), kout = rfxRange(p, R.outA, R.outB);
+      vis(el, on && kin > 0.001 && kout < 0.999 ? 1 : 0);
+      if (fig) {
+        const deg = -75 * (1 - kin) + 90 * kout;
+        const sc = 0.85 + 0.15 * kin + 0.15 * Math.sin(Math.PI * kout);   /* 回る途中は少し大きく(舞台の手前を通る) */
+        tf(fig, `perspective(1200px) rotateY(${deg.toFixed(2)}deg) scale(${sc.toFixed(4)})`);
+        setStyle(fig, 'opacity', (kin * (1 - rfxRange(kout, 0.7, 1))).toFixed(3));
+      }
+      if (tx) { const kt = rfxRange(kin, 0.3, 1) * (1 - rfxRange(kout, 0, 0.5)); setStyle(tx, 'opacity', kt.toFixed(3)); tf(tx, `translateY(${((1 - kt) * 30 * (kout > 0.001 ? -1 : 1)).toFixed(2)}px)`); }
+    });
+
+  } else if (k === '14') {
+    const p = resFxPin();
+    /* 【案14 スクロールで組み上がる】導入 [0,0.2] → SaaS [0.2,0.6] → AI [0.6,1]。
+       各場面 q: ピクトは中央 1.4倍で「描き上がり(ピクト自身のアニメ1周)」をスクロールで進める 0-0.55(手を止めれば止まる)
+       → 0.55-0.8 で左へ収まりながら文章が出る → 読む。描き切った後は時間で続きを描く(位相を合わせて切れ目なし) */
+    const SC = [[0.20, 0.60], [0.60, 1.0]];
+    const introOut = rfxRange(p, 0.185, 0.20);
+    vis(E.top, on ? 1 - introOut : 0);
+    tf(E.top, `translateY(${(-introOut * 60).toFixed(2)}px)`);
+    const _rs = params.sections.results, spd = (_rs && _rs.pictoSpeed != null) ? _rs.pictoSpeed : 1, et = elapsed * spd;
+    const pat = params.patterns || {};
+    const TS = [rfxValPeriod(VAL_SAAS, pat.valSaas || 'S1'), rfxValPeriod(VAL_AI, pat.valAi || 'A1')];
+    E.r2v.forEach((el, i) => {
+      const [a, b] = SC[i];
+      const q = clamp01((p - a) / (b - a));
+      const fin = rfxRange(p, a, a + 0.015), fout = i === 0 ? rfxRange(p, b - 0.015, b) : 0;
+      vis(el, on ? fin * (1 - fout) : 0);
+      tf(el, `translateY(${((1 - fin) * 60 - fout * 60).toFixed(2)}px)`);
+      const fig = E.fig[i], tx = E.tx[i]; if (!fig) return;
+      const drawK = clamp01(q / 0.55);
+      const key = i === 0 ? 'saas' : 'ai';
+      if (drawK < 1) { valTOv[key] = { fixed: TS[i] * 0.999 * drawK }; resFxSt.valOff[i] = null; }
+      else { if (resFxSt.valOff[i] == null) resFxSt.valOff[i] = et - TS[i] * 0.999; valTOv[key] = { off: resFxSt.valOff[i] }; }
+      const settle = rfxRange(q, 0.55, 0.80);
+      const S14 = isMobile ? 1.25 : 1.4;
+      const s = S14 - (S14 - 1) * settle;
+      const dx = (innerWidth / 2 - rfxCenterX(fig, 0)) * (1 - settle);
+      tf(fig, `translateX(${dx.toFixed(2)}px) scale(${s.toFixed(4)})`);
+      if (tx) { setStyle(tx, 'opacity', settle.toFixed(3)); tf(tx, `translateY(${((1 - settle) * 40).toFixed(2)}px)`); }
+    });
   }
 }
 
@@ -9897,7 +10156,7 @@ function updateResults(p) {
   /* ④ スロット: 数値が出てきたら(restK≒出そろい)0から回す */
   const nr = rectOf(resEls.stats);
   if (slotT0 === null) {
-    if (restK >= 0.6 && nr.top < innerHeight * c.slotEnterAt && nr.bottom > 0) slotT0 = elapsed;
+    if (restK >= 0.6 && nr.top < innerHeight * resFxSlotEnter(c.slotEnterAt) && nr.bottom > 0) slotT0 = elapsed;   /* 案5/11 は帯が下端なので条件を緩める */
   } else if (nr.top > innerHeight * 1.2) {
     slotT0 = null;
   }
@@ -12473,9 +12732,9 @@ function drawValueIcons() {
   const _sp = (_rs && _rs.pictoSpeed != null) ? _rs.pictoSpeed : 1;
   const _et = elapsed * _sp;
   const a = valEnsure('saas', 'valSaas');
-  if (a) { const f = VAL_SAAS[p.valSaas] || VAL_SAAS.S1; try { f(a, _et); } catch (e) {} valDone(a); }
+  if (a) { const f = VAL_SAAS[p.valSaas] || VAL_SAAS.S1; try { f(a, rfxValT(valTOv.saas, _et)); } catch (e) {} valDone(a); }
   const b = valEnsure('ai', 'valAi');
-  if (b) { const f = VAL_AI[p.valAi] || VAL_AI.A1; try { f(b, _et); } catch (e) {} valDone(b); }
+  if (b) { const f = VAL_AI[p.valAi] || VAL_AI.A1; try { f(b, rfxValT(valTOv.ai, _et)); } catch (e) {} valDone(b); }
 }
 
 function frame(ts) {
@@ -15258,6 +15517,11 @@ function buildPanel() {
       ['4 ピクトが語る', '4', '見出し37px→2列(各533px)に大きなピクト(280×244)を上・言葉(見出し34px)を下→実績指標(46px)。自然な縦スクロール(固定なし・約829px)。'],
       ['5 二つの横景色', '5', '上の見出し(33px)と下の実績帯(44px)を残し、中段だけ SaaS→AI へ横移動(固定・330vh)。各面の入口は「ラベル+ピクト」が中段の左右中央で1.4倍の主役→スクロールで左の所定位置(577×320)に収まり、文章が一緒に出る。'],
       ['6 主役ピクト', '6', '導入(見出し40px・数値88px)→「ラベル+ピクト」が画面の左右中央で794×588の主役→567×420で左に収まって説明(見出し44px)→AIも同じ流れ。縦に進む(固定・340vh)。'],
+      ['10 スポットライト', '10', '導入→「ラベル+ピクト」が中央で主役(1.3倍)→左へ収まりながら、ピクトを中心に丸い光が広がって文章が現れる→終盤に光が閉じて AI へ(固定・330vh)。'],
+      ['11 ピクトの行進', '11', '上の見出しと下の実績帯を残し、中段のレーンを「ラベル+ピクト」が右から左へ行進。定位置で止まっている間だけ文章が出て、去ると AI が後ろから続く(固定・330vh)。'],
+      ['12 カードの重なり', '12', '実績→SaaS→AI の3枚を1画面ずつ積み重ねる。次の1枚が前の1枚に覆いかぶさり、前は少し縮んで奥へ。ピクトは各カードの入口で大きく+ブラーから収まる(自然な縦流れ・sticky)。'],
+      ['13 回転する舞台', '13', '導入→左の舞台にピクトが手前へ回って登場→読む→ピクトが向こうへ回ると、裏から AI のピクトが回って出てくる(回転ドア)。文章は入れ替わり(固定・330vh)。'],
+      ['14 スクロールで組み上がる', '14', '導入→中央の大きなピクトの「描き上がり」をスクロールで進める(手を止めれば止まる)→描き切ると左へ収まり文章が出る→AI も同じ(固定・360vh)。'],
     ];
     segRow('案', RFX_OPTS.map(o => [o[0], o[1]]),
       () => resFxKey(),
@@ -15271,7 +15535,7 @@ function buildPanel() {
       () => { const k = resFxKey(); return resFxVh(k) || (RES_FX[k] && RES_FX[k].vh) || 100; },
       v => { const k = resFxKey(); if (!(RES_FX[k] && RES_FX[k].vh)) return; const r = params.sections.results; r.rfxVh = r.rfxVh || {}; r.rfxVh[k] = v; fit(); },
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
-      '固定して読む区間の長さ(1/5/6 のみ)。大きいほどゆっくり進みます。'));
+      '固定して読む区間の長さ(1/5/6/10/11/13/14。4・12 は固定なし)。大きいほどゆっくり進みます。'));
   }
 
   /* 【2026-08-30 ヒデさん指定】実績→開発者体験の切替は「スムーズフェード」固定(既定)。選択UIは廃止。 */
