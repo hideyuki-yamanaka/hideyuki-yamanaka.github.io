@@ -48,6 +48,7 @@
 | ファイル | 中身 |
 |---|---|
 | [anyflow/HANDOFF.md](anyflow/HANDOFF.md) | 実装の引き継ぎ書（一番厚い。実測値と経緯が全部ここ） |
+| [anyflow/RESULTS-MOTION-HANDOFF.md](anyflow/RESULTS-MOTION-HANDOFF.md) | 実績1・4・5・6・7・9案の演出を、Claude Code側の最新実装とグラデーション遷移を守って取り込む依頼文 |
 | [anyflow/BLENDER-3D-HERO-HANDOFF.md](anyflow/BLENDER-3D-HERO-HANDOFF.md) | TOPキービジュアルを Blender で3D立体化する引き継ぎ（構図の実測座標・ガラス質感・Figmaノード番号つき。ローカルClaude＋Blender MCP 向け） |
 | [anyflow/DESIGN-SYSTEM-V3.md](anyflow/DESIGN-SYSTEM-V3.md) | **V3の実装デザインシステム**（色/余白/角丸/影/モーションのトークン一覧・Low/Mid/High 3段階・切替方法・整理の記録・戻し方） |
 | [anyflow/DESIGN-TOKENS.md](anyflow/DESIGN-TOKENS.md) | デザイントークン一覧（v1/v2時代の紙の整理。V3実装はDESIGN-SYSTEM-V3.mdが後継） |

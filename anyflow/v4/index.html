@@ -799,6 +799,63 @@
   .r2v-graphic svg * { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
   .res2-vline { width: 1px; height: 182px; background: var(--line-grid); flex: 0 0 auto; }   /* 2026-09-09: 導入事例と同じ濃さ(--line-grid #ACACAC) */
 
+  /* ===== 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出 6案 (Codex 1/4/5/6/7/9) =====
+     調整パネル「📈 実績 > 演出の案」で切替(既定=現行・クラス無し)。スマホは JS 側で常に現行。
+     方針(RESULTS-MOTION-HANDOFF.md): 既存DOM・コピー・書体・色・ピクトの中身はそのまま。
+     案ごとに変えるのは「配置・段組・相対的な拡大縮小・余白」と「読む区間(固定の尺)」だけ。
+     実績→開発者体験の暗転/白反転(devDarkK 連動)は共通＝伸ばした尺の終端がそのまま既存の入口になる。 */
+  .r2v-track { display: contents; }     /* 既定: 何もしないラッパー(現行の見た目は不変) */
+  .res2-plain { display: none; }         /* 案7専用の1文(既定は非表示) */
+  /* 固定して読む区間がある案(1/5/6/7/9): pin-vp を sticky に戻す(セクション高さは fit() が伸ばす) */
+  html:not(.mb) #results.rfx-pin .pin-vp { position: sticky; top: 0; height: 100vh; }
+  html.tab #results.rfx-pin .pin-vp { height: 100vh; }
+  #results.rfx-1 .pin-stage, #results.rfx-5 .pin-stage { overflow: hidden; }   /* 横に並ぶ面が外に見えない */
+  /* --- 案1: 余韻をつくる横パノラマ(実績 → SaaS → AI を1面ずつ。面の間だけ動く) --- */
+  #results.rfx-1 .res2 { width: 100%; max-width: none; flex-direction: row; gap: 0; align-items: center; will-change: transform; }
+  #results.rfx-1 .res2-vals, #results.rfx-1 .r2v-track { display: contents; }
+  #results.rfx-1 .res2-hr, #results.rfx-1 .res2-vline { display: none; }
+  #results.rfx-1 .res2-top, #results.rfx-1 .r2v { flex: 0 0 100%; box-sizing: border-box; display: flex; justify-content: center; }
+  #results.rfx-1 .res2-top { flex-direction: column; align-items: center; }
+  #results.rfx-1 .r2v { align-items: center; gap: var(--space-72); }
+  #results.rfx-1 .r2v-text { width: 360px; }
+  #results.rfx-1 .r2v-graphic { width: 300px; height: 300px; }
+  /* --- 案4: ピクトが語る二つの価値(2カラム・ピクト上/言葉下・数値は最後に下へ。固定なし) --- */
+  #results.rfx-4 .res2 { display: grid; grid-template-columns: 1fr; justify-items: center; gap: var(--space-40); }
+  #results.rfx-4 .res2-top { display: contents; }
+  #results.rfx-4 .res2-head { order: 1; }
+  #results.rfx-4 .res2-hr { display: none; }
+  #results.rfx-4 .res2-vals { order: 2; width: 100%; justify-content: center; align-items: stretch; gap: var(--space-72); }
+  #results.rfx-4 .r2v { flex-direction: column-reverse; align-items: center; text-align: center; gap: var(--space-24); width: 440px; }
+  #results.rfx-4 .r2v-text { width: 100%; align-items: center; }
+  #results.rfx-4 .r2v-tagh { align-items: center; }
+  #results.rfx-4 .r2v-graphic { width: 280px; height: 280px; }
+  #results.rfx-4 .res2-vline { height: auto; align-self: stretch; }
+  #results.rfx-4 .res2-stats { order: 3; }
+  /* --- 案5: 実績を残す、二つの横景色(見出し+数値は残し、SaaS → AI を横へ。図と言葉に小さな速度差) --- */
+  #results.rfx-5 .res2-vals { display: block; width: 100%; overflow: hidden; }
+  #results.rfx-5 .r2v-track { display: flex; width: 100%; will-change: transform; }
+  #results.rfx-5 .res2-vline { display: none; }
+  #results.rfx-5 .r2v { flex: 0 0 100%; box-sizing: border-box; justify-content: center; gap: var(--space-72); }
+  #results.rfx-5 .r2v-text { width: 360px; will-change: transform; }
+  #results.rfx-5 .r2v-graphic { width: 260px; height: 260px; will-change: transform; }
+  /* --- 案6: ピクトを主役の大きさへ(場面ごとに切替。ピクトは中央に大→縮小して説明の隣へ) --- */
+  #results.rfx-6 .res2 { display: grid; grid-template-columns: 1fr; align-items: center; justify-items: center; }
+  #results.rfx-6 .res2-top, #results.rfx-6 .r2v { grid-area: 1 / 1; }
+  #results.rfx-6 .res2-vals, #results.rfx-6 .r2v-track { display: contents; }
+  #results.rfx-6 .res2-hr, #results.rfx-6 .res2-vline { display: none; }
+  #results.rfx-6 .r2v { gap: var(--space-72); }
+  #results.rfx-6 .r2v-text { width: 340px; }
+  #results.rfx-6 .r2v-graphic { width: 260px; height: 260px; transform-origin: 50% 50%; will-change: transform; }
+  /* --- 案7: 言葉をなぞる(1文の濃淡・タイピング無し。見出しに読む進みで伸びる下線) --- */
+  #results.rfx-7 .res2-hl1, #results.rfx-7 .res2-hl2 { display: none; }
+  #results.rfx-7 .res2-plain { display: inline; white-space: pre; }   /* 書体・ウェイト・字間は .res2-head を継承(分割は inline なので字間は変わらない) */
+  #results.rfx-7 .res2-plain .rp-c { display: inline; }
+  #results.rfx-7 .r2v-h { position: relative; align-self: flex-start; width: fit-content; }
+  #results.rfx-7 .r2v-h::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: currentColor; opacity: .6;
+    transform: scaleX(var(--r2v-uline, 0)); transform-origin: left center; }
+  /* --- 案9: 数字からひらく(連携実績の数値を大きく→縮小して所定位置へ) --- */
+  #results.rfx-9 .res2-stats .r2s span { transform-origin: 50% 50%; will-change: transform; }
+
   /* ---- 案A: 画像が左に横長 ----
      右端が画面右から683px固定 / 左端-183px → 画面幅ぶん横に伸びる */
   #results.pat-a .res-img-frame { position: absolute; left: -183px; right: 683px; top: 147.5px; height: 480px; }
@@ -2223,6 +2280,9 @@
      300px 幅では、100px のままだと「スクロール駆動」が折り返して
      「貼りつけない」が見切れた（2026-08-19 実測） */
   .row.seg-row label { flex: 0 0 74px; }
+  /* 【2026-09-13】選択肢が多い行(実績の演出案 7つ)は折り返して全部見せる */
+  .row.seg-row.seg-wrap .seg { flex-wrap: wrap; }
+  .row.seg-row.seg-wrap .seg button { flex: 1 1 auto; min-width: 0; white-space: nowrap; }
   .seg button.on { background: #090909; color: #fff; }
 </style>
   <script>(function(){try{var m=(location.search+location.hash).match(/ds=(low|mid|high)/);if(m)document.documentElement.setAttribute("data-ds",m[1]);}catch(e){}})();</script>
@@ -2434,6 +2494,8 @@
       <div class="res2-hr" id="resHr"></div>
       <!-- 下段: 2つの価値 -->
       <div class="res2-vals" id="resVals">
+        <!-- 【2026-09-13 比較検証】.r2v-track は既定 display:contents(=見た目不変)。案5で横に動く走路になる -->
+        <div class="r2v-track" id="resTrack">
         <div class="r2v">
           <div class="r2v-text">
             <div class="r2v-tagh">
@@ -2459,6 +2521,7 @@
           </div>
           <div class="r2v-graphic" id="valAi"></div>
         </div>
+        </div><!-- /.r2v-track -->
       </div>
     </div>
     </div>
@@ -3677,6 +3740,9 @@ const DEFAULTS = {
     /* 【2026-08-28 ヒデさん指定】実績の2つの価値の、右側ピクトグラムの動き(各5案) */
     valSaas: 'S9',       // for SaaS「リアルタイムにデータ同期」2026-09-08: S1完全削除に伴い生存案へ
     valAi: 'A21',        // for AI「コンテキスト取得から実行」2026-09-08: 折れて進む・改(矢印/三角フェードイン)を既定に
+    /* 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出案(Codex 1/4/5/6/7/9)。'default'=現行。
+       採用前の比較用。本番の焼き込み(SHIPPED_SETTINGS)には入れない＝本番は常に現行。 */
+    resFx: 'default',
   },   // セクション演出の採用案
 };
 /* ⚠️ パラメータの「意味」を変えたら必ずこのバージョンを上げること。
@@ -3826,6 +3892,12 @@ try {
   }
 } catch (e) {}
 let params = load();
+/* 【2026-09-13 比較検証】URL に ?resFx=1|4|5|6|7|9|default を付けると実績の演出案を指定できる(共有用)。
+   パネルで別の値を触るまでは保存されない。 */
+try {
+  const _rfx = location.search.match(/[?&]resFx=(default|1|4|5|6|7|9)(?:&|$)/);
+  if (_rfx) { params.patterns = params.patterns || {}; params.patterns.resFx = _rfx[1]; }
+} catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
    世代ガードは『保存世代 < 焼き込み世代』でしか発火しないため、いったん現行世代のまま
    古い(遅い)値で固まったブラウザは値を直しても永久に直らなかった(実測: 現行世代+npOrbitDur3.5
@@ -9376,6 +9448,186 @@ let resInvertOn = false;   /* 白反転のインライン color を今かけて�
 let resGrinAnchor = null;  /* 黒オブジェクトを上げ始めるスクロール位置(リビール完了時にセット) */
 let grinShown = 0;         /* 黒のせり上がりの“実際の表示量”(時間で目標へ追いつく＝ゆったり) */
 let resBlackK = 0;         /* 黒がどれだけ覆ったか(0→1)。dev1 の出現ゲートに共有 */
+
+/* ===== 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出 6案 (Codex 1/4/5/6/7/9) =====
+   RESULTS-MOTION-HANDOFF.md の方針:
+   ・現行(default)を正とし、案は「配置・段組・拡大縮小・余白」と「読む区間」だけを足す(CSS の #results.rfx-N)
+   ・実績→開発者体験の暗転/白反転(devDarkK 連動)はそのまま。伸ばした尺の終端が既存の入口になる
+   ・スクロール管理は frame()→updateResults(p) の既存ループに乗る(別リスナー/別ループは足さない)
+   ・スマホ(html.mb)は全案とも現行のまま(採用後にSP化)
+   仮置き: 各案の尺(vh)・読む区間の配分・拡大率は提案値。パネル「この案のスクロール量」で尺は可変。 */
+const RES_FX = {
+  default: { vh: 0 },
+  '1': { vh: 380 },   // 横パノラマ(実績→SaaS→AI)。各面に読む区間
+  '4': { vh: 0 },     // ピクトが語る(2カラム)。固定なし(現行と同じ1画面)
+  '5': { vh: 320 },   // 見出し+数値を残し SaaS→AI を横へ
+  '6': { vh: 400 },   // ピクト主役(大→縮小して説明の隣へ)。SaaS→AI 縦(最後の読む区間を確保するため 360→400)
+  '7': { vh: 300 },   // 言葉をなぞる(1文の濃淡→数値→2つの価値+下線)(同上 260→300)
+  '9': { vh: 260 },   // 数字からひらく(20,000+ 大→所定位置→見出し/他数値→2つの価値)
+};
+const RES_FX_KEYS = ['1', '4', '5', '6', '7', '9'];
+function resFxKey() { const v = params.patterns && params.patterns.resFx; return RES_FX[v] ? v : 'default'; }
+function resFxActive() { return isMobile ? 'default' : resFxKey(); }
+function resFxVh(k) {
+  const base = RES_FX[k] ? RES_FX[k].vh : 0;
+  if (!base) return 0;
+  const o = (params.sections && params.sections.results && params.sections.results.rfxVh) || {};
+  return o[k] != null ? o[k] : base;
+}
+const resFxSt = { key: 'default', plain: null, chars: [], shrink: 0, numDy: null };
+function resFxEls() {
+  const S = SECS.results, q = s => S.querySelector(s), qa = s => [...S.querySelectorAll(s)];
+  return { res2: q('.res2'), track: q('.r2v-track'), top: q('.res2-top'), r2v: qa('.r2v'),
+    g: qa('.r2v-graphic'), tx: qa('.r2v-text'), hs: qa('.r2v-h'), r2s: qa('.r2s'), num1: resEls.cntSub1 };
+}
+/* 案が書いたインライン style を掃除(案の切替時)。base(rv)が毎フレーム書く要素は base が上書きするので触らない */
+function resFxClear() {
+  const E = resFxEls();
+  const wipe = (el, props) => { if (el) props.forEach(pr => setStyle(el, pr, '')); };
+  wipe(E.res2, ['transform']);
+  wipe(E.track, ['transform']);
+  wipe(E.top, ['opacity', 'transform', 'pointerEvents']);
+  E.r2v.forEach(el => wipe(el, ['opacity', 'transform', 'pointerEvents']));
+  E.g.forEach(el => wipe(el, ['transform']));
+  E.tx.forEach(el => wipe(el, ['opacity', 'transform']));
+  E.hs.forEach(el => el.style.removeProperty('--r2v-uline'));
+  E.r2s.forEach(el => { wipe(el, ['opacity']); const b = el.querySelector('b'); if (b) wipe(b, ['opacity']); });
+  wipe(E.num1, ['transform']);
+  wipe(resEls.head, ['opacity']);
+  if (resFxSt.plain) wipe(resFxSt.plain, ['opacity']);
+  resFxSt.chars.forEach(s => { s.style.color = ''; });
+  resFxSt.shrink = 0;
+}
+/* 案7: 「事業の推進力を、Anyflowが支えます。」を1文字ずつ inline の span にする(字間は変えない) */
+function resFxBuildPlain() {
+  if (resFxSt.plain) return;
+  const d = document.createElement('div');
+  d.className = 'res2-plain'; d.setAttribute('aria-hidden', 'true');
+  const text = '事業の推進力を、' + RES_TYPE_TEXT + 'が支えます。';
+  resFxSt.chars = Array.from(text).map(ch => { const s = document.createElement('span'); s.className = 'rp-c'; s.textContent = ch; d.appendChild(s); return s; });
+  resEls.head.appendChild(d);
+  resFxSt.plain = d;
+}
+/* 案9: 数値(連携実績)の中心をステージ中央へ寄せるための距離(ステージ座標・px) */
+function resFxMeasure() {
+  resFxSt.numDy = null;
+  if (resFxSt.key !== '9' || !resEls.cntSub1) return;
+  resEls.cntSub1.style.transform = '';
+  const st = SECS.results.querySelector('.pin-stage'); if (!st) return;
+  const sr = st.getBoundingClientRect(), nr = resEls.cntSub1.getBoundingClientRect();
+  const sc = (sr.height / (DH || 921)) || 1;
+  resFxSt.numDy = ((sr.top + sr.height / 2) - (nr.top + nr.height / 2)) / sc;
+}
+function applyResFx() {
+  const k = resFxActive();
+  if (resFxSt.key !== k) { resFxClear(); resFxSt.key = k; }
+  RES_FX_KEYS.forEach(n => SECS.results.classList.toggle('rfx-' + n, k === n));
+  SECS.results.classList.toggle('rfx-on', k !== 'default');
+  SECS.results.classList.toggle('rfx-pin', !!resFxVh(k));
+  if (k === '7') resFxBuildPlain();
+  resFxMeasure();
+}
+/* 固定区間の進み: 0=セクション上端が画面上端に着いた / 1=区間の終わり(下端が画面下端)。固定なしの案は 0 */
+function resFxPin() {
+  const r = rectOf(SECS.results), vh = innerHeight || 1;
+  const travel = r.height - vh;
+  return travel > 1 ? clamp01(-r.top / travel) : 0;
+}
+const rfxRange = (p, a, b) => easeIO(clamp01((p - a) / Math.max(1e-4, b - a)));
+/* 「面ごとに止まって読む」横移動。segs=[[動き始め,動き終わり],...]。返り値=いまの面(0〜n-1、途中は小数) */
+function rfxHeld(p, segs) { let pos = 0; for (const s of segs) pos += rfxRange(p, s[0], s[1]); return pos; }
+/* 毎フレーム(updateResults から)。t=入場リビールの再生位置(秒・マイナスは未再生)。 */
+function resFxFrame(t) {
+  const k = resFxSt.key;
+  if (k === 'default') return;
+  const E = resFxEls();
+  const p = resFxPin();
+  const on = t >= 0;
+  const dark = devDarkK;   /* 暗転(白反転)の度合い。案7の強調色より優先 */
+  const vis = (el, v) => { setStyle(el, 'opacity', v.toFixed(3)); setStyle(el, 'pointerEvents', v < 0.02 ? 'none' : ''); };
+  /* base が今フレーム書いた opacity に案の係数を掛ける(setStyle 経由＝キャッシュ整合) */
+  const gateEl = (el, g) => { if (!el) return; const cur = parseFloat(el.style.opacity); setStyle(el, 'opacity', ((isNaN(cur) ? 1 : cur) * g).toFixed(3)); };
+
+  if (k === '1') {
+    /* 3面: [0]実績(見出し+数値) [1]SaaS [2]AI。0.26-0.40 で 0→1、0.60-0.74 で 1→2。残りは読む区間 */
+    const pos = rfxHeld(p, [[0.26, 0.40], [0.60, 0.74]]);
+    setStyle(E.res2, 'transform', `translateX(${(-pos * 100).toFixed(3)}%)`);
+    vis(E.top, on ? 1 - clamp01(Math.abs(pos) / 0.9) : 0);
+    E.r2v.forEach((el, i) => vis(el, on ? 1 - clamp01(Math.abs(pos - (i + 1)) / 0.9) : 0));
+
+  } else if (k === '4') {
+    /* 見出し → ピクト+説明 → 数値 の順(穏やかに)。base の出そろい(vals)に対して数値だけ遅らせる */
+    const gv = clamp01(parseFloat(resEls.vals.style.opacity) || 0);
+    const late = easeOutQ(clamp01((gv - 0.55) / 0.45));
+    setStyle(resEls.stats, 'opacity', late.toFixed(3));
+    setStyle(resEls.stats, 'filter', late >= 1 ? '' : `blur(${((1 - late) * 8).toFixed(2)}px)`);
+
+  } else if (k === '5') {
+    /* 2面(SaaS→AI)。0.40-0.56 で移動。図は言葉より少し多く動く(読む間 d≈0 は静止) */
+    const pos = rfxHeld(p, [[0.40, 0.56]]);
+    setStyle(E.track, 'transform', `translateX(${(-pos * 100).toFixed(3)}%)`);
+    E.r2v.forEach((el, i) => {
+      const d = pos - i;
+      vis(el, on ? 1 - clamp01(Math.abs(d) / 0.95) : 0);
+      if (E.g[i]) setStyle(E.g[i], 'transform', `translateX(${(d * 56).toFixed(2)}px)`);
+      if (E.tx[i]) setStyle(E.tx[i], 'transform', `translateX(${(-d * 28).toFixed(2)}px)`);
+    });
+
+  } else if (k === '6') {
+    /* 場面: 0=見出し+数値 / 1=SaaS / 2=AI。[入り, 読み終わり, 消え終わり] */
+    const sc = [[0, 0.22, 0.28], [0.26, 0.60, 0.66], [0.64, 1.0, 1.01]];
+    const sceneVis = i => { const [a, b, c] = sc[i]; const fin = i === 0 ? 1 : rfxRange(p, a, a + 0.06); return fin * (1 - rfxRange(p, b, c)); };
+    const v0 = on ? sceneVis(0) : 0;
+    vis(E.top, v0);
+    setStyle(E.top, 'transform', `translateY(${((1 - v0) * -18).toFixed(2)}px)`);
+    [1, 2].forEach(i => {
+      const el = E.r2v[i - 1]; if (!el) return;
+      vis(el, on ? sceneVis(i) : 0);
+      const a = sc[i][0];
+      const shrink = rfxRange(p, a + 0.06, a + 0.24);   /* 大(1.9倍・中央) → 所定位置(1倍) */
+      const tk = rfxRange(p, a + 0.18, a + 0.28);       /* 言葉の出現 */
+      const s = 1 + (1 - shrink) * 0.9;
+      const dx = -((340 + 72) / 2) * (1 - shrink);       /* r2v の中心と図の中心の差(text幅+gap の半分)ぶん左へ */
+      if (E.g[i - 1]) setStyle(E.g[i - 1], 'transform', `translate(${dx.toFixed(2)}px, 0px) scale(${s.toFixed(4)})`);
+      if (E.tx[i - 1]) { setStyle(E.tx[i - 1], 'opacity', tk.toFixed(3)); setStyle(E.tx[i - 1], 'transform', `translateY(${((1 - tk) * 10).toFixed(2)}px)`); }
+    });
+
+  } else if (k === '7') {
+    /* 文頭から順に濃く(0.42 までで全文)。暗転が始まったら既存の白反転を優先(全文を白へ) */
+    const n = resFxSt.chars.length || 1;
+    const read = clamp01(p / 0.42);
+    const white = b => Math.round(b + (255 - b) * dark);
+    resFxSt.chars.forEach((s, i) => {
+      const kk = clamp01((read * (n + 1.5) - i) / 1.5);   /* 1.5文字幅でなめらかに。read=1 で最後の文字も 1.0 に到達 */
+      const a = dark > 0.002 ? 1 : (0.22 + 0.78 * kk);
+      s.style.color = dark > 0.002 ? `rgb(${white(30)},${white(34)},${white(42)})` : `rgba(0,0,0,${a.toFixed(3)})`;
+    });
+    if (resFxSt.plain) setStyle(resFxSt.plain, 'opacity', resEls.hl1.style.opacity || '0');   /* 入場のフェードは見出し1行目と同じ */
+    const gate = rfxRange(p, 0.44, 0.56);                 /* 全文を読んでから 数値→2つの価値 */
+    [resEls.hr, resEls.stats, resEls.vals].forEach(el => gateEl(el, gate));
+    const u1 = rfxRange(p, 0.62, 0.74), u2 = rfxRange(p, 0.76, 0.88);   /* 見出しの下線(読む進みで伸びる) */
+    if (E.hs[0]) E.hs[0].style.setProperty('--r2v-uline', u1.toFixed(3));
+    if (E.hs[1]) E.hs[1].style.setProperty('--r2v-uline', u2.toFixed(3));
+
+  } else if (k === '9') {
+    /* 入口: 連携実績(20,000+)を大きく中央に。スロットが回り終わってから縮小して所定位置へ(二重の演出を重ねない) */
+    if (resFxSt.numDy == null) resFxMeasure();
+    const slotDone = slotT0 !== null && (elapsed - slotT0) >= slotEnd() + 0.2;
+    const target = slotDone ? rfxRange(p, 0.12, 0.40) : 0;
+    resFxSt.shrink += (target - resFxSt.shrink) * (1 - Math.exp(-(frameDt || 0.016) / 0.3));
+    if (Math.abs(target - resFxSt.shrink) < 0.001) resFxSt.shrink = target;
+    const sh = resFxSt.shrink;
+    const s = 1 + (1 - sh) * 1.6;                          /* 2.6倍 → 1倍 */
+    const dy = (resFxSt.numDy || 0) * (1 - sh);
+    if (E.num1) setStyle(E.num1, 'transform', `translateY(${dy.toFixed(2)}px) scale(${s.toFixed(4)})`);
+    const rest = easeOutQ(clamp01((sh - 0.72) / 0.28));    /* ほぼ収まってから 見出し・他の数値 */
+    setStyle(resEls.head, 'opacity', rest.toFixed(3));
+    E.r2s.forEach((el, i) => { if (i === 1) { const b = el.querySelector('b'); if (b) setStyle(b, 'opacity', rest.toFixed(3)); } else setStyle(el, 'opacity', rest.toFixed(3)); });
+    const gate = rfxRange(p, 0.44, 0.58);                  /* その後 2つの価値。以降は読む区間 */
+    [resEls.hr, resEls.vals].forEach(el => gateEl(el, gate));
+  }
+}
+
 function updateResults(p) {
   const c = params.sections.results;
   SECS.results.classList.add('pat-c');                 // 単一レイアウト(pin-vp 地色/z-index に使用)
@@ -9398,6 +9650,7 @@ function updateResults(p) {
     if (resEls.ghost) resEls.ghost.style.setProperty('--res-uline', 'rgba(17,17,17,0)');
     renderSlots(-1);
     slotT0 = null;
+    resFxFrame(t);   /* 【2026-09-13 比較検証】案の配置(未再生時も面の位置は保つ) */
     return;
   }
 
@@ -9442,6 +9695,7 @@ function updateResults(p) {
   }
   /* 【2026-09-08】静的モバイル: スロットは回さず最終値(実数字)で固定 */
   renderSlots(slotT0 === null ? -1 : elapsed - slotT0);
+  resFxFrame(t);   /* 【2026-09-13 比較検証】実績の演出案(既定=現行は何もしない)。暗転/白反転は下の既存処理のまま */
 
   /* ===== 実績 → 開発者体験 のつなぎ(黒せり上がり + 白反転) ===== */
   const devTop = rectOf(SECS.dev).top;
@@ -12176,6 +12430,10 @@ function fit() {
   /* 【2026-08-29】スムーズフェード時は実績も固定追従なし＝1画面(100vh)で普通に流す。 */
   SECS.results.style.height = resSmooth() ? nopinSecVh : H('results');
   SECS.results.classList.toggle('res-smooth', resSmooth());
+  /* 【2026-09-13 比較検証】実績の演出案(resFx)。固定して読む区間がある案は sticky に戻し、セクション高さを伸ばす。
+     #dev は実績直後に続くので、伸ばした尺の終端がそのまま既存の暗転入口(devDarkK)になる。 */
+  applyResFx();
+  { const _k = resFxActive(), _vh = resFxVh(_k); if (_vh) SECS.results.style.height = _vh + 'vh'; }
   /* 【2026-09-09 ヒデさん指定・見切れ根治】静的モバイル: pin-vp(100vh)より中身が高いセクションは
      下が見切れる。最下要素の位置から実コンテンツ高さを測り、section と pin-vp に明示的に設定して
      クリップを解除する(絶対配置でも最下要素のrectで測れる)。 */
@@ -14778,6 +15036,34 @@ function buildPanel() {
   /* ========== 📈 実績 ========== */
   const catRes = category('📈 実績（導入企業◯◯社などの数字）', false);
   catNote(catRes, '見出し → 数字と本文 → 見終わると暗くなって次のセクションへ。');
+
+  /* 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出 6案(Codex 1/4/5/6/7/9)。既定=現行。
+     PC のみ(スマホは全案とも現行)。各ボタンのツールチップ(title)に狙いを表示。?resFx=1 などURLでも指定可。 */
+  sub(catRes, '演出の案（比較検証・PCのみ）', true, { fixed: true });
+  {
+    const RFX_OPTS = [
+      ['現行', 'default', '現在の演出(既定)。見出し→タイピング→数値と2つの価値がフェードイン。'],
+      ['1 横パノラマ', '1', '実績・SaaS・AI を1面ずつ横へ。各面で止まって読む区間あり(固定・380vh)。'],
+      ['4 ピクトが語る', '4', 'SaaS/AI を2カラムに。上に大きなピクト、下にタグ・見出し・説明。数値は最後に下へ(固定なし)。'],
+      ['5 二つの横景色', '5', '見出しと3つの数値を残したまま、SaaS→AI のピクト+言葉を横へ。図と言葉に小さな速度差(固定・320vh)。'],
+      ['6 主役ピクト', '6', '見出し・数値の後、SaaS/AI のピクトを中央に大きく→縮小して説明の隣へ。縦に進む(固定・400vh)。'],
+      ['7 言葉をなぞる', '7', '「事業の推進力を、Anyflowが支えます。」を文頭から濃くして読ませる。その後 数値→2つの価値(見出しに伸びる下線)(固定・300vh)。'],
+      ['9 数字からひらく', '9', '連携実績の数値を大きく見せ、縮小して所定位置へ。その後 見出し・他の数値→2つの価値(固定・260vh)。'],
+    ];
+    segRow('案', RFX_OPTS.map(o => [o[0], o[1]]),
+      () => resFxKey(),
+      v => { params.patterns.resFx = v; markDirty(); fit(); renderFrame(); });
+    const _row = mount.lastElementChild;
+    const _seg = _row && _row.querySelector('.seg');
+    if (_row) _row.classList.add('seg-wrap');   /* 7択なので折り返す */
+    if (_seg) [..._seg.querySelectorAll('button')].forEach((b, i) => { if (RFX_OPTS[i]) b.title = RFX_OPTS[i][2]; });
+    note('比較用(採用前)。ボタンに乗せると狙いが出ます。スマホは全案とも現行のまま。実績→開発者体験の暗転・白反転は全案共通(伸ばした尺の終端が入口)。');
+    rows.push(slider('固定の長さ', 100, 700, 10,
+      () => { const k = resFxKey(); return resFxVh(k) || (RES_FX[k] && RES_FX[k].vh) || 100; },
+      v => { const k = resFxKey(); if (!(RES_FX[k] && RES_FX[k].vh)) return; const r = params.sections.results; r.rfxVh = r.rfxVh || {}; r.rfxVh[k] = v; fit(); },
+      v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
+      '固定して読む区間の長さ(1/5/6/7/9 のみ)。大きいほどゆっくり進みます。'));
+  }
 
   /* 【2026-08-30 ヒデさん指定】実績→開発者体験の切替は「スムーズフェード」固定(既定)。選択UIは廃止。 */
 
