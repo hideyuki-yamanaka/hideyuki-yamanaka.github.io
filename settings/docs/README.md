@@ -48,7 +48,8 @@
 | ファイル | 中身 |
 |---|---|
 | [anyflow/HANDOFF.md](anyflow/HANDOFF.md) | 実装の引き継ぎ書（一番厚い。実測値と経緯が全部ここ） |
-| [anyflow/RESULTS-MOTION-HANDOFF.md](anyflow/RESULTS-MOTION-HANDOFF.md) | 実績1・4・5・6・7・9案の演出を、Claude Code側の最新実装とグラデーション遷移を守って取り込む依頼文 |
+| [anyflow/RESULTS-VISUAL-HANDOFF.md](anyflow/RESULTS-VISUAL-HANDOFF.md) | **最新版**：実績1・4・5・6・7・9案のサイズ・画面占有率・構図・全アニメーション場面・スマホ・Visionから開発者体験以降までの接続仕様。添付比較画像は `anyflow/results-reference/`、持ち運び一式は `anyflow/RESULTS-VISUAL-HANDOFF.zip` |
+| [anyflow/RESULTS-MOTION-HANDOFF.md](anyflow/RESULTS-MOTION-HANDOFF.md) | 旧版の演出概要。実装時は上の最新版を優先 |
 | [anyflow/BLENDER-3D-HERO-HANDOFF.md](anyflow/BLENDER-3D-HERO-HANDOFF.md) | TOPキービジュアルを Blender で3D立体化する引き継ぎ（構図の実測座標・ガラス質感・Figmaノード番号つき。ローカルClaude＋Blender MCP 向け） |
 | [anyflow/DESIGN-SYSTEM-V3.md](anyflow/DESIGN-SYSTEM-V3.md) | **V3の実装デザインシステム**（色/余白/角丸/影/モーションのトークン一覧・Low/Mid/High 3段階・切替方法・整理の記録・戻し方） |
 | [anyflow/DESIGN-TOKENS.md](anyflow/DESIGN-TOKENS.md) | デザイントークン一覧（v1/v2時代の紙の整理。V3実装はDESIGN-SYSTEM-V3.mdが後継） |
