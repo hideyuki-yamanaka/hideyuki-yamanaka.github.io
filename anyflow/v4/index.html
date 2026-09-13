@@ -88,46 +88,81 @@
   /* 5: 色が変わる(シアン) */
   .header[data-navhover="cyan"] .nav-links a { transition: color .26s; }
   .header[data-navhover="cyan"] .nav-links a:hover { color: var(--brand-cyan); }
-  .cta {
+  /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
+     を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
+     通常=黒(#090909) / ホバー=シアン(#0EBBFF)
+     マーキー: 9s linear 無限ループで文言が横に流れる / ホバーで上ロールして矢印3px右へ
+     旧 .header[data-btnhover=*] 5案は不要になったため撤去。 */
+  .cta, .cv-btn {
     background: var(--surface-cta);
     color: var(--ink-on-dark);
+    font-family: inherit;
     font-weight: 300;
     font-size: 14px;
-    width: 150px;   /* 2026-09-09: 矢印とテキストが近すぎるので気持ち広げる(140→150) */
-    padding: var(--space-10) var(--space-16);
-    border-radius: var(--radius-xs);
+    letter-spacing: .06em;
+    padding: 10px 16px 10px 20px;
+    border-radius: 6px;
     border: none;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 16px;
+    text-decoration: none;
     cursor: pointer;
-    font-family: inherit;
-    text-decoration: none;   /* 【V4.0】button→a に変更したのでアンカーの下線を消す */
-    box-sizing: border-box;   /* 【V4.0】a のときも padding 込みで幅150pxを維持 */
-    transition:opacity var(--t-fast) var(--e-fast);
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    transition: background-color .3s, color .3s;
   }
+  .cta { width: 200px; height: 44px; }   /* ヘッダー用サイズ(モック section4 の 200×43 準拠) */
+  .cv-btn { width: 200px; height: 44px; margin-top: 36px; }
+  .cta:hover, .cv-btn:hover { background: var(--brand-cyan); color: #fff; }
+  .cta:focus-visible, .cv-btn:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 3px; }
+
+  /* 左: 流れるラベル窓 (2段ロール + 横マーキー) */
+  .cta .cta-label, .cv-btn .cta-label {
+    white-space: nowrap; flex: 1 1 0%; align-items: center; min-width: 0; display: flex;
+  }
+  .cta .cta-window, .cv-btn .cta-window {
+    width: 100%; min-width: 0; display: block; overflow: hidden;
+    height: 1.4em;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+  }
+  .cta .cta-reel, .cv-btn .cta-reel { transition: transform .4s cubic-bezier(.22,1,.36,1); display: block; }
+  .cta .cta-row,  .cv-btn .cta-row  { height: 1.4em; display: block; }
+  .cta .cta-track,.cv-btn .cta-track{ width: max-content; animation: cta-marquee 9s linear infinite; display: flex; }
+  .cta .cta-group,.cv-btn .cta-group{ flex: 0 0 auto; display: flex; }
+  .cta .cta-copy, .cv-btn .cta-copy { flex: 0 0 auto; padding-right: .9em; display: block; }
+  .cta:is(:hover,:focus-visible) .cta-reel,
+  .cv-btn:is(:hover,:focus-visible) .cta-reel { transform: translateY(-50%); }
+
+  /* 右: 矢印(1px 右向き) */
+  .cta .cta-arrow, .cv-btn .cta-arrow {
+    flex: 0 0 auto; place-items: center; width: 23px; height: 23px; display: grid;
+  }
+  .cta .cta-arrow svg, .cv-btn .cta-arrow svg {
+    width: 18px; height: 14px; display: block;
+    transition: translate .3s;
+  }
+  .cta:hover .cta-arrow svg, .cv-btn:hover .cta-arrow svg { translate: 3px 0; }
+
+  @keyframes cta-marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cta, .cv-btn, .cta .cta-arrow svg, .cv-btn .cta-arrow svg,
+    .cta .cta-reel, .cv-btn .cta-reel { transition: none; }
+    .cta .cta-track, .cv-btn .cta-track { animation: none; }
+    .cta .cta-window, .cv-btn .cta-window { -webkit-mask-image: none; mask-image: none; }
+    .cta .cta-group:nth-child(2), .cta .cta-copy:nth-child(2),
+    .cv-btn .cta-group:nth-child(2), .cv-btn .cta-copy:nth-child(2) { display: none; }
+    .cta .cta-copy, .cv-btn .cta-copy { padding: 0; }
+  }
+
   /* 【V4.0 2026-09-09】事例カードを <a> にしたため、アンカー既定色/下線を無効化 */
   a.cg-cell { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
-  /* --- お問い合わせ黒ボタンのホバー 5案。既定 data-btnhover="lighten"。テキストは JS で <span> にラップ --- */
-  .cta { position: relative; overflow: hidden; }
-  .cta > span { position: relative; z-index: 2; }
-  /* 1: 明るく(既定) */
-  .header[data-btnhover="lighten"] .cta { transition: opacity var(--t-fast) var(--e-fast); }
-  .header[data-btnhover="lighten"] .cta:hover { opacity: .78; }
-  /* 2: 色が満ちる(下からワイプ) */
-  .header[data-btnhover="fill"] .cta::before { content:''; position:absolute; inset:0; z-index:1; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-pink)); transform: translateY(101%); transition: transform .34s var(--e-out); }
-  .header[data-btnhover="fill"] .cta:hover::before { transform: translateY(0); }
-  /* 3: ふわっと拡大 */
-  .header[data-btnhover="scale"] .cta { transition: transform .24s var(--e-out), box-shadow .24s; }
-  .header[data-btnhover="scale"] .cta:hover { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.2); }
-  /* 4: 矢印が出て文字がずれる */
-  .header[data-btnhover="arrow"] .cta > span { transition: transform .24s var(--e-out); }
-  .header[data-btnhover="arrow"] .cta:hover > span { transform: translateX(-9px); }   /* 2026-09-09: テキストと矢印の間隔を気持ち広く(-6→-9) */
-  .header[data-btnhover="arrow"] .cta::after { content:'→'; position:absolute; right:16px; top:50%; z-index:2; color: var(--ink-on-dark); transform: translateY(-50%) translateX(8px); opacity:0; transition: opacity .24s, transform .24s var(--e-out); }
-  .header[data-btnhover="arrow"] .cta:hover::after { opacity:1; transform: translateY(-50%) translateX(0); }
-  /* 5: 白黒反転 */
-  .header[data-btnhover="invert"] .cta { transition: background .26s, color .26s, box-shadow .26s; }
-  .header[data-btnhover="invert"] .cta:hover { background: #fff; color: var(--surface-cta); box-shadow: inset 0 0 0 1.5px var(--surface-cta); }
   /* ロゴはクリックでトップへ。戻る間だけ軽く透過フェード(ヒデさん「透過でOK」) */
   .header .logo, .ft-logo { cursor: pointer; }
   html.to-top-fade body { opacity: .82; transition: opacity .28s ease; }
@@ -1376,21 +1411,7 @@
   }
   .cv-head { font-weight: 300; font-size: 34px; line-height: 1.7; }   /* Noto Sans JP Light 34 */
   .cv-sub  { font-weight: 300; font-size: 16px; line-height: 1.8; margin: 24px 0 0; }   /* 2026-09-09: 見出しのline-height(1.7)ぶんを相殺し本文の上下の見た目余白を均等に(上30→24) */
-  .cv-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 150px; height: 40px; margin-top: 36px;   /* 2026-09-09: 本文の下側を+6して上下均等に(30→36)。幅は140→150に気持ち拡張(矢印とテキストの余白) */
-    background: var(--surface-cta); color: var(--ink-on-dark); border-radius: var(--radius-xs);
-    font-weight: 300; font-size: 14px; text-decoration: none;
-    transition:opacity var(--t-fast) ease;
-  }
-  /* 【2026-09-09 ヒデさん確定】コンバージョンの「フォームを記入」も、お問い合わせボタンと同じ「矢印」ホバーに。
-     テキストは JS で <span> にラップ済み。 */
-  .cv-btn { position: relative; overflow: hidden; }
-  .cv-btn > span { position: relative; z-index: 2; transition: transform .24s var(--e-out); }
-  .cv-btn:hover > span { transform: translateX(-9px); }   /* 2026-09-09: テキストと矢印の間隔を気持ち広く(-6→-9) */
-  .cv-btn::after { content: '→'; position: absolute; right: 16px; top: 50%; z-index: 2; color: var(--ink-on-dark);
-    transform: translateY(-50%) translateX(8px); opacity: 0; transition: opacity .24s, transform .24s var(--e-out); }
-  .cv-btn:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+  /* 【V4.0 2026-09-13】.cv-btn は .cta と共通の marquee CSS へ統合済み(上部)。ここでは削除。 */
 
   /* ================= フッター (カンプ 16083:23592 に差し替え・2026-09-09) =================
      1440×327: 上100 / 下40 / 左右120。上段=「ロゴ+住所」と「2列ナビ」を両端寄せ、その下 60 に © を中央。
@@ -1429,7 +1450,7 @@
     .header { left: 32px; right: 32px; }
     .nav-links { gap: var(--space-20); }
     .nav-links a { font-size: 15px; }
-    .cta { font-size: 15px; }
+    .cta { font-size: 14px; }   /* タブレット：マーキー化に伴い基本サイズは維持 */
     .headline { left: 32px; }
     .hl-eyebrow { font-size: 15px; }
     .vis-label { left: 32px; }
@@ -1447,7 +1468,9 @@
     .header { left: 17px; right: 17px; top: 18px; }
     .header .logo img { width: 180px; height: 33px; }
     .nav-links { display: none; }            /* カンプSP にナビリンクは無い(ロゴ＋お問い合わせのみ) */
-    .cta { width: 120px; font-size: 14px; padding: 6px 16px; }
+    .cta { width: 150px; height: 36px; font-size: 12px; padding: 6px 12px 6px 14px; gap: 10px; border-radius: 5px; }   /* 【V4.0 2026-09-13】マーキー化に伴いスマホでも矢印+マーキー入る幅を確保 */
+    .cta .cta-arrow { width: 18px; height: 18px; }
+    .cta .cta-arrow svg { width: 15px; height: 12px; }
 
     /* --- キービジュアル (2026-09-02 ヒデさん指定: モバイルは【グラフィックが上・コピーが下】) --- */
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
@@ -2226,7 +2249,26 @@
           <a href="#dev">使用イメージ</a>
           <a href="#cases">導入事例</a>
         </div>
-        <a class="cta" href="/contact.html">お問い合わせ</a>
+        <!-- 【V4.0 2026-09-13】notds風マーキーCTA(通常=黒／ホバー=シアン) -->
+        <a class="cta" href="/contact.html" aria-label="お問い合わせ">
+          <span class="cta-label" aria-hidden="true">
+            <span class="cta-window">
+              <span class="cta-reel">
+                <span class="cta-row"><span class="cta-track">
+                  <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                  <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                </span></span>
+                <span class="cta-row"><span class="cta-track">
+                  <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                  <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                </span></span>
+              </span>
+            </span>
+          </span>
+          <span class="cta-arrow" aria-hidden="true">
+            <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+          </span>
+        </a>
       </nav>
     </header>
 
@@ -2611,7 +2653,26 @@
     <div class="cv-content">
       <div class="cv-head">お問い合わせ</div>
       <p class="cv-sub">弊社が事業の推進力を支えます。API連携にまつわるお悩み、その他<br>連携にまつわるご相談はAnyflowにお任せください。</p>
-      <a class="cv-btn" href="/contact.html">フォームを記入</a>
+      <!-- 【V4.0 2026-09-13】notds風マーキーCV(通常=黒／ホバー=シアン) -->
+      <a class="cv-btn" href="/contact.html" aria-label="フォームを記入">
+        <span class="cta-label" aria-hidden="true">
+          <span class="cta-window">
+            <span class="cta-reel">
+              <span class="cta-row"><span class="cta-track">
+                <span class="cta-group"><span class="cta-copy">フォームを記入</span><span class="cta-copy">フォームを記入</span></span>
+                <span class="cta-group"><span class="cta-copy">フォームを記入</span><span class="cta-copy">フォームを記入</span></span>
+              </span></span>
+              <span class="cta-row"><span class="cta-track">
+                <span class="cta-group"><span class="cta-copy">フォームを記入</span><span class="cta-copy">フォームを記入</span></span>
+                <span class="cta-group"><span class="cta-copy">フォームを記入</span><span class="cta-copy">フォームを記入</span></span>
+              </span></span>
+            </span>
+          </span>
+        </span>
+        <span class="cta-arrow" aria-hidden="true">
+          <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+        </span>
+      </a>
     </div>
   </div>
 </section>

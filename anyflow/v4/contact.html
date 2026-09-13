@@ -82,25 +82,50 @@
       transition: opacity var(--t-fast) var(--e-fast);
     }
     .nav-links a:hover { opacity: .5; }
+    /* 【V4.0 2026-09-13】notds風マーキーCTA (通常=黒／ホバー=シアン) */
     .cta {
       background: var(--surface-cta);
       color: var(--ink-on-dark);
+      font-family: inherit;
       font-weight: 300;
       font-size: 14px;
-      width: 150px;
-      padding: var(--space-10) var(--space-16);
-      border-radius: var(--radius-xs);
+      letter-spacing: .06em;
+      width: 200px; height: 44px;
+      padding: 10px 16px 10px 20px;
+      border-radius: 6px;
       border: none;
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
       cursor: pointer;
-      font-family: inherit;
       text-decoration: none;
       box-sizing: border-box;
       position: relative; overflow: hidden;
-      transition: opacity var(--t-fast) var(--e-fast);
+      transition: background-color .3s, color .3s;
     }
-    .cta:hover { opacity: .78; }
-    .cta > span { position: relative; z-index: 2; }
+    .cta:hover { background: var(--brand-cyan); color: #fff; }
+    .cta .cta-label { white-space: nowrap; flex: 1 1 0%; align-items: center; min-width: 0; display: flex; }
+    .cta .cta-window {
+      width: 100%; min-width: 0; display: block; overflow: hidden; height: 1.4em;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+              mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+    }
+    .cta .cta-reel { transition: transform .4s cubic-bezier(.22,1,.36,1); display: block; }
+    .cta .cta-row { height: 1.4em; display: block; }
+    .cta .cta-track { width: max-content; animation: cta-marquee 9s linear infinite; display: flex; }
+    .cta .cta-group { flex: 0 0 auto; display: flex; }
+    .cta .cta-copy { flex: 0 0 auto; padding-right: .9em; display: block; }
+    .cta:is(:hover,:focus-visible) .cta-reel { transform: translateY(-50%); }
+    .cta .cta-arrow { flex: 0 0 auto; place-items: center; width: 23px; height: 23px; display: grid; }
+    .cta .cta-arrow svg { width: 18px; height: 14px; display: block; transition: translate .3s; }
+    .cta:hover .cta-arrow svg { translate: 3px 0; }
+    @keyframes cta-marquee { 0% { transform: translateX(0);} 100% { transform: translateX(-50%);} }
+    @media (prefers-reduced-motion: reduce) {
+      .cta, .cta .cta-arrow svg, .cta .cta-reel { transition: none; }
+      .cta .cta-track { animation: none; }
+      .cta .cta-window { -webkit-mask-image: none; mask-image: none; }
+      .cta .cta-group:nth-child(2), .cta .cta-copy:nth-child(2) { display: none; }
+      .cta .cta-copy { padding: 0; }
+    }
 
     /* ============ メイン ============ */
     main {
@@ -217,7 +242,7 @@
       .site-header .logo img { width: 220px; height: auto; }
       .nav-links { gap: var(--space-20); }
       .nav-links a { font-size: 15px; }
-      .cta { font-size: 15px; }
+      .cta { font-size: 14px; }   /* タブレット：マーキー化に伴い基本サイズは維持 */
       main { padding: 160px 32px 100px; }
       .contact-title { font-size: 36px; }
 
@@ -232,7 +257,9 @@
       .site-header .logo img { width: 180px; height: 33px; }
       .nav { gap: var(--space-16); }
       .nav-links { display: none; }
-      .cta { width: 120px; font-size: 14px; padding: 6px 16px; }
+      .cta { width: 150px; height: 36px; font-size: 12px; padding: 6px 12px 6px 14px; gap: 10px; border-radius: 5px; }
+      .cta .cta-arrow { width: 18px; height: 18px; }
+      .cta .cta-arrow svg { width: 15px; height: 12px; }
 
       main { padding: 110px 24px 80px; }
       .contact-title { font-size: 28px; }
@@ -260,7 +287,25 @@
         <a href="/#dev">使用イメージ</a>
         <a href="/#cases">導入事例</a>
       </div>
-      <a class="cta" href="#hs-form"><span>お問い合わせ</span></a>
+      <a class="cta" href="#hs-form" aria-label="お問い合わせ">
+        <span class="cta-label" aria-hidden="true">
+          <span class="cta-window">
+            <span class="cta-reel">
+              <span class="cta-row"><span class="cta-track">
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+              </span></span>
+              <span class="cta-row"><span class="cta-track">
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+              </span></span>
+            </span>
+          </span>
+        </span>
+        <span class="cta-arrow" aria-hidden="true">
+          <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+        </span>
+      </a>
     </nav>
   </header>
 
