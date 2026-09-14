@@ -1144,7 +1144,6 @@
   #results.rfx-24 .r2v-graphic, #results.rfx-25 .r2v-graphic { width: 300px; height: 300px; }
   #results.rfx-24 .r2v-big, #results.rfx-25 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: 70px; line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-24 .r2v-big-ai, #results.rfx-25 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
-  html:not(.mb) #results.rfx-25 .res2 { padding: calc(10 * var(--rvh)) 0 calc(30 * var(--rvh)); }   /* 案25: 固定なし。通り過ぎながら読めるよう下に余白 */
   /* ===== 【2026-09-15 ヒデさん指定】「読み飛ばさない・しっかり読ませる」10案(27〜36) =====
      共通(29/31/32/34/35/36): 案6と同じ舞台(導入と SaaS/AI を同じ場所で切替)。文章 左(560)・ピクト 右(300)。見出しは行ごとの窓、本文は文ごとの span(.rs) */
   html:not(.mb) #results.rfx-29 .res2, html:not(.mb) #results.rfx-31 .res2, html:not(.mb) #results.rfx-32 .res2, html:not(.mb) #results.rfx-34 .res2, html:not(.mb) #results.rfx-35 .res2, html:not(.mb) #results.rfx-36 .res2 { display: grid; grid-template-columns: 1fr; align-items: center; justify-items: stretch; }
@@ -10209,7 +10208,7 @@ const RES_FX = {
   '22': { vh: 520 },             // 視差(ピクトは速く・文章は遅れて)
   '23': { vh: 520 },             // ピクト先行(面より先に着く)
   '24': { vh: 480, mobileFlow: true },   // for SaaS/for AI から入る(絵コンテ Figma 17271:23392)。SP は2列を縦に積むと1画面に収まらないので縦流れ
-  '25': { vh: 0, flow: true },           // 案24 の通常スクロール版(固定しない。通り過ぎる間に同じ変化)
+  '25': { vh: 240, mobileFlow: true },   // 案24 の短い版: 大見出しが画面の中央に来た所で固定が始まり、短いスクロールで一気に終点へ(2026-09-15)
   '26': { vh: 560 },                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
   /* 【2026-09-15 ヒデさん指定】「読み飛ばさない・しっかり読ませる」10案。前半(27〜31)は残っている案の別版、後半(32〜36)は新しいアプローチ */
   '27': { vh: 480 },             // 行ごとに読ませる(案1の別版: 文章左・ピクト右。行が順に出る)
@@ -10327,7 +10326,7 @@ function rfxSp() { if (isMobile || resFxSt.key === '12' || resFxSt.key === '30')
 function rfxCenterX(el, trackShift) { const st = rfxStage(); let x = el.offsetWidth / 2; for (let n = el; n && n !== st; n = n.offsetParent) x += n.offsetLeft; return x - (trackShift || 0); }
 function rfxCenterY(el) { const st = rfxStage(); let y = el.offsetHeight / 2; for (let n = el; n && n !== st; n = n.offsetParent) y += n.offsetTop; return y; }
 function rfxVW() { const st = rfxStage(); return st ? st.offsetWidth : innerWidth; }
-function rfxVH() { const st = rfxStage(); const k = resFxSt.key; return (st && k !== '4' && k !== '12' && k !== '25' && k !== '30' && k !== '33') ? st.offsetHeight : innerHeight / rfxSp(); }
+function rfxVH() { const st = rfxStage(); const k = resFxSt.key; return (st && k !== '4' && k !== '12' && k !== '30' && k !== '33') ? st.offsetHeight : innerHeight / rfxSp(); }
 /* 案14: ピクト(valSaas/valAi)の描画時計の上書き。null=通常(時間) / {fixed:秒}=その時刻で止める(スクロールで進める) /
    {off:秒}=時間 - off で続きを描く(描き切った位相から切れ目なく再開)。drawValueIcons が参照 */
 const valTOv = { saas: null, ai: null };
@@ -10490,9 +10489,9 @@ function resFxFrame(t) {
     SECS.results.style.removeProperty('--rfx-tag-ink');
   }
   /* 縦流れの案(4/25・PC): ステージは --sp 倍に縮めて表示するので、レイアウト上の高さとの差を margin-bottom で詰める */
-  if (!isMobile && (k === '4' || k === '25' || k === '33')) { const st = rfxStage(); const sp = rfxSp(); if (st) setStyle(st, 'marginBottom', (-(st.offsetHeight * (1 - sp))).toFixed(1) + 'px'); }
+  if (!isMobile && (k === '4' || k === '33')) { const st = rfxStage(); const sp = rfxSp(); if (st) setStyle(st, 'marginBottom', (-(st.offsetHeight * (1 - sp))).toFixed(1) + 'px'); }
   /* 縦が短い端末(SP・高さ600px以下)は固定案(1/5/6)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
-  if ((resFxShort() || (isMobile && RES_FX[k] && RES_FX[k].mobileFlow)) && ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '26', '27', '28', '29', '31', '32', '34', '35', '36'].includes(k)) { valTOv.saas = null; valTOv.ai = null; return; }
+  if ((resFxShort() || (isMobile && RES_FX[k] && RES_FX[k].mobileFlow)) && ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '31', '32', '34', '35', '36'].includes(k)) { valTOv.saas = null; valTOv.ai = null; return; }
 
   if (k === '1') {
     const p = resFxPin();
@@ -10908,36 +10907,40 @@ function resFxFrame(t) {
       if (tx) { setStyle(tx, 'opacity', (on ? TK : 0).toFixed(3)); tf(tx, `translateY(${((1 - TK) * 16).toFixed(2)}px)`); }
     });
   } else if (k === '25') {
-    /* 【案25 案24の通常スクロール版】(2026-09-15 ヒデさん指定「固定せず、下にスクロールできる通常スクロールでアニメを挟む」の比較用)
-       固定しない。セクションが下から通り過ぎる間に案24と同じ変化: e=(vh−上端)/(0.85vh) → 0=下端に顔を出す / 1=上端が画面の15%に着いた。
-       大見出しは列の中央のまま一緒に上がってくる → e 0.30-0.52 で小さく上へ・ピクトがその場で大きく → 0.56-0.80 で収まる → 説明 → 下段 */
-    const H = rfxHero(), F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
-    const vh = innerHeight || 1, r = rectOf(E.res2);
-    const e = clamp01((vh - r.top) / (vh * 0.85));
-    const L2 = rfxRange(e, 0.30, 0.52), P1 = rfxRange(e, 0.36, 0.52), D = rfxRange(e, 0.56, 0.80), TK = rfxRange(D, 0.55, 1), B = rfxRange(e, 0.74, 0.92);
+    const p = resFxPin(), H = rfxHero(), vh = rfxVH();
+    const F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
+    /* 【案25 案24の短い版】(2026-09-15 ヒデさん指定「アニメーションの発火はビューポートの中央に来てから。そこからスクロールすると動いていく」)
+       入場中は動かない(「for SaaS」「for AI」が下から一緒に上がってくる) → 大見出しが画面の中央に来た所(=固定の始まり)から、
+       短い固定(240vh)のスクロールで一気に: 文字が小さく上へ(0.04-0.26)・ピクトが各列の中央に大きく(0.10-0.28) → 終点へ収まる(0.34-0.60) → 説明 → 下段(0.58-0.78)。固定が終わると通常スクロールへ */
+    const L2 = rfxRange(p, 0.04, 0.26), P1 = rfxRange(p, 0.10, 0.28), D = rfxRange(p, 0.34, 0.60);
+    const TK = rfxRange(D, 0.55, 1), B = rfxRange(p, 0.58, 0.78);
     resFxSt.gate24 = on && B > 0.05;
     E.res2.style.setProperty('--rfx-vline', P1.toFixed(3));
-    E.res2.style.setProperty('--rfx-hr', rfxRange(e, 0.70, 0.82).toFixed(3));
+    E.res2.style.setProperty('--rfx-hr', rfxRange(p, 0.50, 0.64).toFixed(3));
     vis(E.top, on ? B : 0);
     tf(E.top, `translateY(${((1 - B) * 24).toFixed(2)}px)`);
     E.r2v.forEach((el, i) => {
       vis(el, on ? 1 : 0);
       const big = resFxSt.big[i], fig = E.fig[i], tx = E.tx[i];
       if (big) {
+        const base = isMobile ? 0 : (vh / 2) - rfxCenterY(el);
         const sc = 1 - (1 - 40 / 70) * L2;
         const o = (on ? 1 : 0) * (1 - rfxRange(D, 0, 0.5));
         setStyle(big, 'opacity', o.toFixed(3));
-        setStyle(big, 'transform', `translate(-50%, calc(-50% - ${((isMobile ? 60 : F.labelUp) * L2).toFixed(2)}px)) scale(${sc.toFixed(4)})`);
+        setStyle(big, 'transform', `translate(-50%, calc(-50% + ${(base - (isMobile ? 60 : F.labelUp) * L2).toFixed(2)}px)) scale(${sc.toFixed(4)})`);
       }
       if (fig) {
+        const cy = rfxCenterY(fig);
         const S = isMobile ? 1.25 : F.heroScale;
         const s = S - (S - 1) * D;
+        const dy = isMobile ? 0 : ((vh * 0.55) - cy) * (1 - D);
         setStyle(fig, 'opacity', (on ? P1 : 0).toFixed(3));
         const bf = H.pictoBlur * (1 - P1); setStyle(fig, 'filter', bf > 0.05 ? `blur(${bf.toFixed(2)}px)` : '');
-        tf(fig, `scale(${s.toFixed(4)})`);   /* 位置は動かさず、その場で大きく→収まる */
+        tf(fig, `translateY(${dy.toFixed(2)}px) scale(${s.toFixed(4)})`);
       }
       if (tx) { setStyle(tx, 'opacity', (on ? TK : 0).toFixed(3)); tf(tx, `translateY(${((1 - TK) * 16).toFixed(2)}px)`); }
     });
+
   } else if (k === '26') {
     const p = resFxPin(), W = rfxVW(), vh = rfxVH();
     const F = Object.assign({ numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 }, (params.sections.results.fx26 || {}));
@@ -16610,7 +16613,7 @@ function buildPanel() {
       ['22 数値が大きく→横へ(視差)', '22', '21と同じ流れで、横移動の時にピクトは面より速く・文章は遅れて動く(奥行きのある視差)(固定・520vh)。'],
       ['23 数値が大きく→横へ(ピクト先行)', '23', '21と同じ流れで、横移動の時に AI のピクトが面より先に着き、SaaS のピクトが先に去る(ピクトが導く)(固定・520vh)。'],
       ['24 for SaaS/for AI から入る', '24', '絵コンテ(Figma 17271:23392): 「for SaaS」「for AI」(70px)が左右に並ぶ→文字は小さく上へ、各列の中央にピクトが大きく(モーションは動いたまま)→終点: 上に説明・下にピクト、その下に見出しと数値(固定・480vh)。'],
-      ['25 同・通常スクロール版', '25', '案24 を固定せずに。セクションが下から通り過ぎる間に同じ変化(大見出し→小さく上へ・ピクトがその場で大きく→収まる→説明→下段)。固定なし。'],
+      ['25 同・短い固定版', '25', '案24 の短い版: 入場中は動かず、大見出しが画面の中央に来た所で固定が始まり、短いスクロール(240vh)で一気に終点へ(文字が小さく上へ→ピクトが中央に大きく→収まる→説明→下段)。固定が終わると通常スクロールへ。'],
       ['26 数値→線→下段が横へ', '26', '絵コンテ(Figma 17283:23622): 3つの数値が中央に大きく→上段の終点(見出し 左・数値 右)へ→横線が伸びきる→下段(説明・ピクト)がブラーで→横に動いて for AI→縦に戻る(固定・560vh)。'],
       ['27 行ごとに読ませる', '27', '【読ませる・案1の別版】横パノラマ(文章 左・ピクト 右)。各面でラベル→見出し2行→文1→文2がスクロールで1つずつ出る(飛ばせない)。左の細い線が読み進みのガイド(固定・480vh)。'],
       ['28 数値が一つずつ', '28', '【読ませる・案21の別版】導入企業→連携実績→連携アプリ数が1つずつ中央に大きく出て、その数値だけがスクロールで回る→上段へ収まる→線→説明はその場で SaaS→AI(縦・固定560vh)。'],
@@ -16630,9 +16633,9 @@ function buildPanel() {
       () => { const k = resFxKey(); return resFxVh(k) || (RES_FX[k] && RES_FX[k].vh) || 100; },
       v => { const k = resFxKey(); if (!(RES_FX[k] && RES_FX[k].vh)) return; const r = params.sections.results; r.rfxVh = r.rfxVh || {}; r.rfxVh[k] = v; fit(); },
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
-      '固定して読む区間の長さ(固定のある案のみ。4・12・25・30・33 は固定なし)。大きいほどゆっくり進みます。'));
+      '固定して読む区間の長さ(固定のある案のみ。4・12・30・33 は固定なし)。大きいほどゆっくり進みます。'));
     { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
-      rfxDyn(_vr, ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '26', '27', '28', '29', '31', '32', '34', '35', '36']); }   /* 25/30/33 は固定なし */   /* 固定のある案の時だけ出す */
+      rfxDyn(_vr, ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '31', '32', '34', '35', '36']); }   /* 4/12/30/33 は固定なし */   /* 固定のある案の時だけ出す */
     /* 【2026-09-14 ヒデさん指定】主役ピクト系(案6・15〜19)の「数値の訴求 → ピクトのアニメーション」の移行を詰めるスライダー(値は params.sections.results.hero) */
     sub(catRes, '主役ピクト系（案6・14〜20）：数値→ピクトの移行', true, { fixed: true });
     const _heroGrp = catRes.lastElementChild;
