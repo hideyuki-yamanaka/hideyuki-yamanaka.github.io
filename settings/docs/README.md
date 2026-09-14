@@ -50,7 +50,8 @@
 | [anyflow/HANDOFF.md](anyflow/HANDOFF.md) | 実装の引き継ぎ書（一番厚い。実測値と経緯が全部ここ） |
 | [anyflow/RESULTS-INITIAL-RESTORATION.md](anyflow/RESULTS-INITIAL-RESTORATION.md) | 最初に納品した10案の復元。独立URL /mock/results-initial/、当時のレイアウト・操作・CSS、復元元と実測、現在の一覧とは別の番号・保存領域 |
 | [anyflow/RESULTS-SECOND-RESTORATION.md](anyflow/RESULTS-SECOND-RESTORATION.md) | 2回目に納品した10案の復元。2026/09/13 22:50版、独立URL /mock/results-second/、横スクロール3案・Visionから開発者体験まで |
-| [anyflow/RESULTS-REVEAL-STUDY.md](anyflow/RESULTS-REVEAL-STUDY.md) | バリエーション検討・現行13案（No.02〜05、09〜17）。背景統一、初回のピクト主体案をNo.16、縦読み案をNo.17で復元。縦スクロール、ズーム＋横移動、用途名強調、発火式タイピング、V4ピクト・スロット、ブックマークと削除・復元、画面占有率と移植用文面 |
+| [anyflow/RESULTS-REVEAL-STUDY.md](anyflow/RESULTS-REVEAL-STUDY.md) | 現在の検討一覧、残存案の連番、2回目No.03の追加、新規10案（既存の別版5＋新しいアプローチ5）、画面占有率・発火条件・移植用文面。削除済みの専用ファイルを除去。No.01は着地後に横移動し、通常の縦スクロールへ復帰 |
+| [anyflow/RESULTS-ATTENTION-DESIGN-QA.md](anyflow/RESULTS-ATTENTION-DESIGN-QA.md) | 2026/09/15追加10案の画面・動作確認。PC／390px実測、原本との比較、修正内容、削除状態の確認 |
 | [anyflow/RESULTS-VISUAL-HANDOFF.md](anyflow/RESULTS-VISUAL-HANDOFF.md) | **最新版**：実績1・4・5・6・7・9案のサイズ・画面占有率・構図・全アニメーション場面・スマホ・Visionから開発者体験以降までの接続仕様。添付比較画像は `anyflow/results-reference/`、持ち運び一式は `anyflow/RESULTS-VISUAL-HANDOFF.zip` |
 | [anyflow/RESULTS-MOTION-HANDOFF.md](anyflow/RESULTS-MOTION-HANDOFF.md) | 旧版の演出概要。実装時は上の最新版を優先 |
 | [anyflow/BLENDER-3D-HERO-HANDOFF.md](anyflow/BLENDER-3D-HERO-HANDOFF.md) | TOPキービジュアルを Blender で3D立体化する引き継ぎ（構図の実測座標・ガラス質感・Figmaノード番号つき。ローカルClaude＋Blender MCP 向け） |

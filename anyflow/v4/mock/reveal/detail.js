@@ -3,10 +3,10 @@ import {createStage,renderStage,setStageInk,clamp} from './stage.js';
 import {conceptHistory,timeHTML} from './history.js';
 import {createDocumentStage,renderDocumentStage,documentThumbnail} from './document-stage.js';
 import {applyV4MotionSettings,polishPictograms,createV4Slots} from './v4-motion.js';
-import {createRestoredPictoStage,observeRestoredPicto,restoredPictoThumbnail} from './restored-picto.js';
 import {createRestoredReadingStage,observeRestoredReading,restoredReadingThumbnail} from './restored-reading.js';
 import {createRestoredNumberStage,observeRestoredNumber,restoredNumberThumbnail} from './restored-number.js';
 import {createAttentionStage,renderAttentionStage,attentionThumbnail} from './attention-stage.js';
+import {createDockedHorizontal,renderDockedHorizontal,dockedHorizontalThumbnail} from './docked-horizontal.js';
 
 const query=new URLSearchParams(location.search);
 const concept=resolveConcept(query.get('concept')||concepts[0]?.id);
@@ -33,12 +33,13 @@ if(content.values.length!==2||content.stats.length!==3)throw new Error('V4 conte
 params.patterns.resFx='default';
 applyResFx();
 applyV4MotionSettings();
+const dockedMode=concept.mode==='docked-horizontal';
 const readingMode=concept.mode==='restored-reading';
 const numberMode=concept.mode==='restored-number';
 const attentionMode=concept.mode.startsWith('attention-');
-const restoredMode=concept.mode==='restored-picto'||readingMode||numberMode;
-const documentMode=concept.mode==='document'||restoredMode||attentionMode;
-const stage=attentionMode?createAttentionStage(content,concept):numberMode?createRestoredNumberStage(content):readingMode?createRestoredReadingStage(content):restoredMode?createRestoredPictoStage(content):documentMode?createDocumentStage(content,concept):createStage(content);
+const restoredMode=readingMode||numberMode;
+const documentMode=concept.mode==='document'||restoredMode||attentionMode||dockedMode;
+const stage=dockedMode?createDockedHorizontal(content):attentionMode?createAttentionStage(content,concept):numberMode?createRestoredNumberStage(content):readingMode?createRestoredReadingStage(content):documentMode?createDocumentStage(content,concept):createStage(content);
 results.classList.add('pf-study');if(!documentMode)results.style.setProperty('--study-height',`${concept.vh}vh`);
 results.querySelector('.pin-vp').append(stage.el);
 const hosts=[document.getElementById('valSaas'),document.getElementById('valAi')];
@@ -47,13 +48,14 @@ document.body.classList.toggle('pf-document',documentMode);
 document.title=`${concept.label} ${record.version} | ${concept.name}`;
 let flowing=false,initialized=false;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-if(numberMode)observeRestoredNumber(stage,reduced);else if(readingMode)observeRestoredReading(stage,reduced);else if(restoredMode)observeRestoredPicto(stage,reduced);
+if(numberMode)observeRestoredNumber(stage,reduced);else if(readingMode)observeRestoredReading(stage,reduced);
 const tickSlots=createV4Slots(stage.el,reduced);
 function layout(){
   const next=!documentMode&&(innerWidth<=800||innerHeight<=600||reduced.matches);
   document.body.classList.toggle('pf-flow',next);
   if(!initialized||next!==flowing){hosts.forEach((host,i)=>(next?stage.mobileArt[i]:stage.art[i]).append(host));flowing=next;initialized=true;}
-  if(attentionMode)renderAttentionStage(stage,-results.getBoundingClientRect().top,innerWidth,innerHeight,reduced.matches);
+  if(dockedMode)renderDockedHorizontal(stage,innerWidth,innerHeight,reduced.matches);
+  else if(attentionMode)renderAttentionStage(stage,-results.getBoundingClientRect().top,innerWidth,innerHeight,reduced.matches);
   else if(documentMode&&!restoredMode)renderDocumentStage(stage,-results.getBoundingClientRect().top,innerWidth,innerHeight,reduced.matches);
   fit();
 }
@@ -84,7 +86,7 @@ window.REVEAL_STUDY={concept:concept.id,content,source:'anyflow/v4/index.html',f
       const graphics=hosts.map(host=>{const g=host.cloneNode(true);g.removeAttribute('id');g.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));return g;});
       const snapshots=concepts.map(item=>{
         let element;
-        if(item.mode==='restored-picto')element=restoredPictoThumbnail(content,graphics);
+        if(item.mode==='docked-horizontal')element=dockedHorizontalThumbnail(content,graphics);
         else if(item.mode==='restored-reading')element=restoredReadingThumbnail(content,graphics);
         else if(item.mode==='restored-number')element=restoredNumberThumbnail(content,graphics);
         else if(item.mode.startsWith('attention-'))element=attentionThumbnail(content,item,graphics);
@@ -105,7 +107,9 @@ window.REVEAL_STUDY={concept:concept.id,content,source:'anyflow/v4/index.html',f
     this.flow=documentMode||flowing;
     const p=clamp(-rect.top/Math.max(1,rect.height-innerHeight));this.progress=p;
     if(dark!==lastDark){setStageInk(stage,dark);lastDark=dark;}
-    if(attentionMode){
+    if(dockedMode){
+      renderDockedHorizontal(stage,stage.el.clientWidth,innerHeight,reduced.matches);
+    }else if(attentionMode){
       renderAttentionStage(stage,-rect.top,stage.el.clientWidth,innerHeight,reduced.matches);
     }else if(restoredMode){
       // The original composition scrolls as a document; IntersectionObserver owns entrances.

@@ -1,8 +1,8 @@
 @import url('./document-stage.css');
-@import url('./restored-picto.css');
 @import url('./restored-reading.css');
 @import url('./restored-number.css');
 @import url('./attention-stage.css');
+@import url('./docked-horizontal.css');
 /* Scoped to the study. Current V4 owns every section outside #results. */
 body.reveal-study #results.pf-study{height:var(--study-height,540vh)!important;overflow:clip;isolation:isolate}
 body.reveal-study #results.pf-study>.pin-vp{position:sticky!important;top:0!important;height:100svh!important;min-height:0!important;overflow:visible!important;background:transparent!important;transform:none!important}

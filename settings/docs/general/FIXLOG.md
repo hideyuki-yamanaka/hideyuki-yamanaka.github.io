@@ -56,3 +56,5 @@
 | 2026-09-10 | presenter-notes | エディター左のサムネイルがFigma修正後も古いまま更新されない | サムネは取得済み nodeId を thumbCache にセッションキャッシュし `need = ids.filter(id => !(id in thumbCache))` で二度と取り直さず、別ファイルの時しか捨てていなかった。Figma画像URLは修正で別ハッシュになるのに古いURLを指したまま。→ syncFromFigma で lastModified の変化を検知したら thumbCache を破棄し直後の loadThumbs で撮り直す（変化なしはキャッシュ維持で無駄打ちしない）。実測: v1→(Figma修正)→v2 に更新、修正なし再取得はv2維持 |
 | 2026-09-14 | abashiri v3 | スポット詳細ページがスクロールできない | html/bodyがoverflow:hidden（演出サイト共通仕様）なのに詳細ページを通常フロー(min-h-dvh)で実装。検証もプログラムスクロールだったため見逃した | mainをh-dvh overflow-y-autoの自前スクロール容器に。検証は実ホイール入力(computer scroll)で行う |
 | 2026-09-14 | abashiri v3 | イベントセクションが白背景でなく後ろの写真が透ける・縦書き見出しが見えない | CSS描画順: sticky兄弟(positioned)が静的sectionの背景より上に描かれ、白背景とh2が沈む(absolute imgだけ見えた)。computed styleは白でも描画は青=computed確認だけでは検出不能 | sectionにrelative z-10。検証はスクショの目視も併用 |
+
+| 2026-09-15 | anyflow v4・reveal No.01 | 実績の20,000+と隣の数字が重なる | 等幅3列に対して固定比率の文字サイズが大きすぎた。No.01を専用モジュールへ分離、数字を6vw・最大94pxへ縮小。1280幅で76.8px、数字間132.8px。1461幅で87.66px、数字間150.5pxを実測。本文の入口と横移動後の着地、縦スクロール復帰も確認 | 1 |

@@ -1,15 +1,16 @@
 // Fixed timestamps in JST. Past creation dates were recovered from file records.
-export const catalogUpdatedAt='2026-09-15T00:54:31+09:00';
+export const catalogUpdatedAt='2026-09-15T01:23:33+09:00';
+const attentionUpdatedAt='2026-09-15T01:07:30+09:00';
+const attentionCreatedAt='2026-09-15T00:54:31+09:00';
 const previousUpdate='2026-09-14T22:30:52+09:00';
 const records={
- ...Object.fromEntries(['19','20','21','22','23','24','25','26','27','28'].map(id=>[id,{version:'v1.0',createdAt:catalogUpdatedAt,updatedAt:catalogUpdatedAt}])),
+ ...Object.fromEntries(['19','20','21','22','23','24','25','26','27','28'].map(id=>[id,{version:'v1.0',createdAt:attentionCreatedAt,updatedAt:attentionUpdatedAt}])),
  '18':{version:'v1.0',createdAt:'2026-09-13T21:49:11+09:00',updatedAt:'2026-09-15T00:44:04+09:00'},
- '02':{version:'v2.1',createdAt:'2026-09-14T16:03:28+09:00',updatedAt:'2026-09-14T23:18:28+09:00'},
+ '02':{version:'v2.2',createdAt:'2026-09-14T16:03:28+09:00',updatedAt:'2026-09-15T01:23:33+09:00'},
  '03':{version:'v2.0',createdAt:'2026-09-14T17:53:25+09:00',updatedAt:previousUpdate},
  ...Object.fromEntries(['04','05'].map(id=>[id,{version:'v1.2',createdAt:'2026-09-14T20:43:45+09:00',updatedAt:previousUpdate}])),
  ...Object.fromEntries(['09','10','11','12','13','14','15'].map(id=>[id,{version:'v1.0',createdAt:previousUpdate,updatedAt:previousUpdate}])),
  '17':{version:'v1.0',createdAt:'2026-09-13T21:49:11+09:00',updatedAt:'2026-09-15T00:29:57+09:00'},
- '16':{version:'v1.0',createdAt:'2026-09-13T21:49:11+09:00',updatedAt:'2026-09-14T23:18:28+09:00'}
 };
 export const conceptHistory=concept=>records[concept.id];
 export function formatDate(iso){

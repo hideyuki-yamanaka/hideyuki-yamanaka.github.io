@@ -2,7 +2,7 @@
 let deletedIds=[];
 try{const saved=JSON.parse(localStorage.getItem('anyflow-reveal-selection-v1')||'null');if(Array.isArray(saved?.removed))deletedIds=saved.removed;}catch{}
 export const concepts = [
- {id:'02',preview:.045,entry:0,name:'余白から現れ、左へ収まる',brief:'空白から図と見出しが現れ、図が左へ収まる。余白を下へ抜けてAIでも繰り返す。',mode:'document',layout:'staged'},
+ {id:'02',preview:.32,entry:0,name:'余白から現れ、横へつながる',brief:'空白から図と見出しが現れ、図が左へ収まる。説明を読んだ後、AIへ横移動し、終わると通常の縦スクロールへ戻る。',mode:'docked-horizontal'},
  {id:'03',preview:.42,name:'見出しを綴り、本文が現れる',brief:'所定の位置で自動タイピング。スクロールを止めても打ち終わり、本文のブラーがほどける。',steps:['実績に目を留める','見出しをタイピング','本文がブラーから現れる'],vh:640,mode:'trigger-typing'},
  {id:'04',preview:.02,name:'数字を、信頼の起点に',brief:'20,000+を大きく見せ、三つの実績へ収めてから図へ続く。',mode:'document',layout:'proof'},
  {id:'05',preview:.14,name:'図から、言葉が広がる',brief:'中央の大きなピクトが上へ収まり、その下へ言葉が広がる。',mode:'document',layout:'center'},
@@ -13,7 +13,6 @@ export const concepts = [
  {id:'13',preview:.12,entry:0,name:'用途名を、横へ受け渡す',brief:'大きな用途名が図と本文の見出しに収まり、横スクロールで次の大きな用途名へ。',steps:['用途名に注目','図と説明を読む','横に次の用途へ'],vh:660,mode:'title-horizontal'},
  {id:'14',preview:.34,entry:0,name:'用途名を上へ、図を中央へ',brief:'大きな用途名が中央上部へ収まり、図、その下の説明へと視線を下へ渡す。',steps:['大きな用途名','中央の図','下の説明へ'],vh:610,mode:'title-stack'},
  {id:'15',preview:.34,entry:0,name:'用途名を残し、言葉を迎える',brief:'大きな用途名を左上へ収め、右に図、左に説明を迎える。用途名が読む位置を示す。',steps:['用途名に注目','左上の目印へ','言葉と図を迎える'],vh:610,mode:'title-editorial'},
- {id:'16',preview:0,entry:0,name:'ピクトが語る二つの価値',brief:'初回のピクト主役案を復元。左右の大きな図から、その下の用途名・説明へ。実績は下部の帯で支える。',mode:'restored-picto'},
  {id:'17',preview:0,entry:0,name:'メッセージを残す縦読み',brief:'初回No.07を復元。左にメッセージと実績を残し、右のSaaS・AIを順に読み進める。',mode:'restored-reading'},
  {id:'18',preview:0,entry:0,name:'20,000を主役に',brief:'2回目No.03を追加。大きな20,000+と右の2指標から、下のSaaS・AIへ読み進める。',mode:'restored-number'},
  {id:'19',preview:.64,entry:0,name:'二つの図が、読む余白をひらく',brief:'大きな2つの図が左右の定位置へ。SaaS、AIの順に本文を迎え、最後に実績を読む。',mode:'attention-duet'},
