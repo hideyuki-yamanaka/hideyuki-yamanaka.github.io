@@ -163,7 +163,7 @@ function MapEmbed({ spot, light }: { spot: SpotDetail; light?: boolean }) {
 
 function Variant1({ spot }: { spot: SpotDetail }) {
   return (
-    <main className="min-h-dvh bg-white">
+    <main className="h-dvh overflow-y-auto overscroll-contain bg-white">
       <BackPill />
       {/* 写真いっぱいのヒーロー。下端に向けて暗くして文字を乗せる */}
       <div className="relative h-dvh w-full overflow-hidden">
@@ -225,7 +225,7 @@ function Variant1({ spot }: { spot: SpotDetail }) {
 
 function Variant2({ spot }: { spot: SpotDetail }) {
   return (
-    <main className="min-h-dvh bg-white">
+    <main className="h-dvh overflow-y-auto overscroll-contain bg-white">
       <BackPill dark />
       <div className="mx-auto w-[1200px] max-w-full px-6 pb-[120px] pt-[120px]">
         {/* 上段：縦書きの名前 ＋ 横長写真（オモロいセクションと同じ縦書きの世界観） */}
@@ -296,7 +296,7 @@ function Variant2({ spot }: { spot: SpotDetail }) {
 
 function Variant3({ spot }: { spot: SpotDetail }) {
   return (
-    <main className="min-h-dvh bg-gradient-to-b from-brand via-brand/80 to-sky-bottom">
+    <main className="h-dvh overflow-y-auto overscroll-contain bg-gradient-to-b from-brand via-brand/80 to-sky-bottom">
       <BackPill />
       <div className="mx-auto flex w-[960px] max-w-full flex-col items-center gap-[72px] px-6 pb-[140px] pt-[120px]">
         {/* 体験ページの窓の意匠：白枠＋大きな角丸の写真 */}
