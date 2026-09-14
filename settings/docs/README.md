@@ -48,6 +48,7 @@
 | ファイル | 中身 |
 |---|---|
 | [anyflow/HANDOFF.md](anyflow/HANDOFF.md) | 実装の引き継ぎ書（一番厚い。実測値と経緯が全部ここ） |
+| [anyflow/RESULTS-REVEAL-STUDY.md](anyflow/RESULTS-REVEAL-STUDY.md) | 新規15案（P1〜P5・T1〜T5・R1〜R5）。最新V4全ページを土台にしたモック、実績3数値の訴求、サイズ・占有率・移植方法・検証状況 |
 | [anyflow/RESULTS-VISUAL-HANDOFF.md](anyflow/RESULTS-VISUAL-HANDOFF.md) | **最新版**：実績1・4・5・6・7・9案のサイズ・画面占有率・構図・全アニメーション場面・スマホ・Visionから開発者体験以降までの接続仕様。添付比較画像は `anyflow/results-reference/`、持ち運び一式は `anyflow/RESULTS-VISUAL-HANDOFF.zip` |
 | [anyflow/RESULTS-MOTION-HANDOFF.md](anyflow/RESULTS-MOTION-HANDOFF.md) | 旧版の演出概要。実装時は上の最新版を優先 |
 | [anyflow/BLENDER-3D-HERO-HANDOFF.md](anyflow/BLENDER-3D-HERO-HANDOFF.md) | TOPキービジュアルを Blender で3D立体化する引き継ぎ（構図の実測座標・ガラス質感・Figmaノード番号つき。ローカルClaude＋Blender MCP 向け） |

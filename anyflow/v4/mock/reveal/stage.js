@@ -36,19 +36,19 @@ export function renderStage(s, c, p, w, h) {
   if(k==='split') {
     const spread=ramp(p,.10,.36),words=ramp(p,.32,.52);
     [0,1].forEach(i=>{const x=w*lerp(i?.61:.39,i?.735:.265,spread);art(i,x,h*lerp(.48,.32,spread),lerp(540,340,spread));copy(i,w*(i?.735:.265),h*lerp(.67,.60,words),Math.min(w*.38,u(490)),38,words);});
-    head(h*.105,38,ramp(p,.54,.66));stats(h*.875,52,ramp(p,.69,.83));
+    head(h*.105,38,ramp(p,.54,.66));stats(h*.825,52,ramp(p,.69,.83));
   } else if(k==='surround') {
     const open=ramp(p,.10,.35);[0,1].forEach(i=>art(i,w*lerp(i?.60:.4,i?.84:.16,open),h*lerp(.48,.36,open),lerp(540,325,open)));
     head(h*.12,42,ramp(p,.28,.42));
     stat(1,mid,h*.39,u(500),150,ramp(p,.31,.48));
     stat(0,w*.40,h*.57,u(220),66,ramp(p,.43,.57));stat(2,w*.63,h*.57,u(220),66,ramp(p,.49,.63));
-    [0,1].forEach(i=>copy(i,w*(i?.74:.26),h*.79,Math.min(w*.39,u(500)),30,ramp(p,.61,.78),14));
+    [0,1].forEach(i=>copy(i,w*(i?.74:.26),h*.755,Math.min(w*.39,u(500)),30,ramp(p,.61,.78),14));
   } else if(k==='pair') {
-    const up=ramp(p,.12,.38);[0,1].forEach(i=>{copy(i,w*(i?.735:.265),h*lerp(.47,.30,up),Math.min(w*.38,u(490)),38);art(i,w*(i?.735:.265),h*.65,340,ramp(p,i?.48:.29,i?.67:.48));});
-    head(h*.09,36,ramp(p,.7,.79));stats(h*.895,48,ramp(p,.78,.88));
+    const up=ramp(p,.12,.38);[0,1].forEach(i=>{copy(i,w*(i?.735:.265),h*lerp(.47,.30,up),Math.min(w*.38,u(490)),38);art(i,w*(i?.735:.265),h*.60,340,ramp(p,i?.48:.29,i?.67:.48));});
+    head(h*.09,36,ramp(p,.7,.79));stats(h*.825,48,ramp(p,.78,.88));
   } else if(k==='overview') {
     const shrink=ramp(p,.10,.29);head(h*lerp(.44,.105,shrink),lerp(76,38,shrink));
-    [0,1].forEach(i=>{copy(i,w*(i?.735:.265),h*.61,Math.min(w*.38,u(490)),38,ramp(p,.24,.43));art(i,w*(i?.735:.265),h*.33,340,ramp(p,.48,.67));});stats(h*.875,52,ramp(p,.72,.85));
+    [0,1].forEach(i=>{copy(i,w*(i?.735:.265),h*.60,Math.min(w*.38,u(490)),38,ramp(p,.24,.43));art(i,w*(i?.735:.265),h*.33,340,ramp(p,.48,.67));});stats(h*.825,52,ramp(p,.72,.85));
   } else if(['lift','lines','panorama','explain','rise','text-panorama'].includes(k)) {
     const sideways=k.includes('panorama'),transfer=ramp(p,.43,.55);
     head(h*.095,36,ramp(p,.78,.89));
@@ -58,10 +58,10 @@ export function renderStage(s, c, p, w, h) {
       const dx=sideways?w*(i-transfer):0;
       if(k==='lift') {
         art(i,mid,h*lerp(.47,.28,open),lerp(720,430,open),alpha);
-        copy(i,mid,h*lerp(.72,.66,open),Math.min(w*.62,u(720)),44,alpha*ramp(local,.33,.53));
+        copy(i,mid,h*lerp(.72,.60,open),Math.min(w*.62,u(720)),44,alpha*ramp(local,.33,.53));
       } else if(k==='rise') {
         copy(i,mid,h*lerp(.46,.29,open),Math.min(w*.65,u(750)),46,alpha);
-        art(i,mid,h*lerp(1.13,.71,open),470,alpha*ramp(local,.22,.42));
+        art(i,mid,h*lerp(1.13,.62,open),470,alpha*ramp(local,.22,.42));
       } else if(k==='explain'||k==='text-panorama') {
         copy(i,w*lerp(.5,.30,open)+dx,h*.50,Math.min(w*.43,u(570)),lerp(58,48,open),alpha);
         art(i,w*lerp(.92,.76,open)+dx,h*.51,560,alpha*ramp(local,.30,.49));
@@ -74,11 +74,11 @@ export function renderStage(s, c, p, w, h) {
         }
       }
     });
-    stats(h*.89,48,ramp(p,.89,.96));
+    stats(h*.825,48,ramp(p,.89,.96));
   } else if(k==='proof-sequence') {
     const enter=ramp(p,.06,.21),end=ramp(p,.67,.83);
     head(h*lerp(lerp(.45,.19,enter),.105,end),lerp(lerp(74,46,enter),38,end));
-    stats(h*lerp(.51,.875,end),lerp(138,52,end),i=>ramp(p,.21+i*.065,.36+i*.065));
+    stats(h*lerp(.51,.825,end),lerp(138,52,end),i=>ramp(p,.21+i*.065,.36+i*.065));
     duet(ramp(p,.73,.88));
   } else if(k==='proof-chapters') {
     const gather=ramp(p,.62,.73),end=ramp(p,.79,.90);
@@ -87,7 +87,7 @@ export function renderStage(s, c, p, w, h) {
     s.stat.forEach((el,i)=>{
       const alpha=(i===0?1:ramp(p,i*.21-.025,i*.21+.025))*(i===2?1:1-ramp(p,(i+1)*.21-.025,(i+1)*.21+.025));
       const x=lerp(mid,mid-contentW/2+contentW*xs[i],gather);
-      const y=h*lerp(.52,.875,end);
+      const y=h*lerp(.52,.825,end);
       stat(i,x,y,lerp(u(i===1?990:640),contentW*ws[i],gather),lerp(lerp(230,138,gather),52,end),lerp(alpha,1,gather));
     });duet(ramp(p,.82,.93));
   } else if(k==='proof-anchor'||k==='proof-aside') {
@@ -105,7 +105,7 @@ export function renderStage(s, c, p, w, h) {
     head(h*lerp(.17,.09,open),lerp(44,36,open));
     stat(1,mid,h*lerp(.49,.255,open),u(lerp(lerp(920,560,spread),400,open)),lerp(lerp(220,145,spread),76,open));
     [0,2].forEach((i,j)=>stat(i,w*(j?.83:.17),h*lerp(.49,.255,open),u(245),lerp(100,76,open),ramp(p,.15+j*.07,.31+j*.07)));
-    [0,1].forEach(i=>{art(i,w*(i?.735:.265),h*.51,300,ramp(p,.57,.73));copy(i,w*(i?.735:.265),h*.78,Math.min(w*.39,u(500)),32,ramp(p,.66,.81),14);});
+    [0,1].forEach(i=>{art(i,w*(i?.735:.265),h*.49,300,ramp(p,.57,.73));copy(i,w*(i?.735:.265),h*.74,Math.min(w*.39,u(500)),32,ramp(p,.66,.81),14);});
   }
 }
 

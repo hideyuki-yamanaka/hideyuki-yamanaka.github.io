@@ -9,6 +9,7 @@
 
 | 日付 | プロダクト | 症状（ヒデさんの言葉で） | 真因 | 対処回数 |
 |---|---|---|---|---|
+| 2026-09-14 | anyflow v4・revealモック | 比較用ナビが実績の数字に重なる | 画面下89.5%の数値中心と固定ナビの領域が重なった。新規案の小数値中心を82.5%へ上げて下余白を確保。1280×720のT5で数値下端633px、ナビ開始666pxを確認 | 1 |
 | 2026-09-02 | presenter-notes | サムネイルが出ない/「関数じゃない」エラー（store.js更新が効かない） | store.jsがブラウザキャッシュされ古い版が使われた→vercel.jsonでno-cache＋`store.js?v=2`でバスト | 1 |
 | 2026-09-02 | presenter-notes | カンペから「送る」を押してもスライドが動かない/プレビューが同期しない | Figma埋め込みへのpostMessage(NAVIGATE_*)の送信先originが間違い。`embed.figma.com`宛だと黙って無視される→`'*'`宛で解決（受信はclient-idだけで動く） | 1 |
 | 2026-09-02 | presenter-notes | 編集エリア・保存ボタンが hidden にしても消えない | `hidden`属性が `.btn{display:inline-flex}`/`.notes-edit{display:flex}` に上書きされていた→ `[hidden]{display:none!important}` を先頭に追加 | 1 |

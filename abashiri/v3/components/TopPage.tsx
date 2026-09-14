@@ -166,6 +166,7 @@ import HeroCombo from "./HeroCombo";
 import HeroBlurSeq from "./HeroBlurSeq";
 import SpotShowcase from "./SpotShowcase";
 import GourmetSection from "./GourmetSection";
+import OmoroiSection from "./OmoroiSection";
 import { DEFAULT_HERO_TIMING, type HeroTiming } from "./heroTiming";
 import { DEFAULT_BIRDS, type BirdsConfig } from "./birdConfig";
 import { type BubbleTune } from "./bubbleConfig";
@@ -886,6 +887,10 @@ export default function TopPage({
           }
           finale={<GourmetSection />}
         />
+
+        {/* V3.0: グルメの下に「意外とオモロい、網走。」（カンプ 17230:25481）。
+            SpotShowcase（sticky区間）を抜けたあとの通常フローに置く */}
+        <OmoroiSection />
 
         {/* v1.1 の プロモ／旧グルメ／体験・イベント は撤去済み。
             旧部品（Card / CardRow 等）はこのファイル上部に残っている。
