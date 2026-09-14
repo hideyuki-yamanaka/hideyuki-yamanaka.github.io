@@ -1071,7 +1071,7 @@
   #results.rfx-20 .res2-stats .r2s b { font-size: 14px; }
   #results.rfx-20 .r2v { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 65px; align-items: center; min-width: 0; }
   #results.rfx-20 .r2v-fig { display: block; order: 1; min-width: 0; transform-origin: center; }
-  #results.rfx-20 .r2v-graphic { width: 100%; height: 300px; }
+  #results.rfx-20 .r2v-graphic { width: 340px; height: 340px; }   /* 2026-09-15 ヒデさん指定: 終点は今より少し大きく(300→340) */
   #results.rfx-20 .r2v-text { order: 0; width: auto; max-width: 440px; gap: 16px; }
   #results.rfx-20 .r2v-tagh { gap: 8px; }
   #results.rfx-20 .r2v-tag { font-size: 20px; line-height: 1; }
@@ -4257,7 +4257,7 @@ const DEFAULTS = {
         switchLen: 0.03,    // SaaS→AI の切替の長さ(固定区間の進み)
       },
       fx14: { drawLen: 0.55, drift: 12, settleLen: 0.2 },   // 案14: 描き上がりの長さ(場面の割合)・描きながら上がる距離(vh)・収まる長さ
-      fx20: { labelRise: 120, heroScale: 1.35 },            // 案20: 大見出しが上へ抜ける距離(px)・ピクトの主役の大きさ(絵コンテ 304×405≒1.35)
+      fx20: { labelRise: 120, heroScale: 1.55 },            // 案20: 大見出しが上へ抜ける距離(px)・ピクトの主役の大きさ(2026-09-15 ヒデさん指定: 主役を約1.3倍に=527px相当。終点の枠は 340px)
       fx21: { numScale: 3.0, settleAt: 0.06, settleLen: 0.20, panAt: 0.50, panLen: 0.22 },   // 案21〜23: 数値の大きさ・収まり始め/長さ・横移動の始め/長さ(固定区間の割合)
       fx24: { heroScale: 1.7, labelUp: 190 },   // 案24: ピクトの主役の大きさ(絵コンテ 666枠/386枠≒1.7)・文字が上へ動く距離(px)
       fx26: { numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 },   // 案26: 数値の大きさ(120/70)・収まり・線・横移動(固定区間の割合)
@@ -10770,7 +10770,7 @@ function resFxFrame(t) {
 
   } else if (k === '20') {
     const p = resFxPin(), H = rfxHero();
-    const F = Object.assign({ labelRise: 120, heroScale: 1.35 }, (params.sections.results.fx20 || {}));
+    const F = Object.assign({ labelRise: 120, heroScale: 1.55 }, (params.sections.results.fx20 || {}));
     /* 【案20 見出しが大きく登場】(絵コンテ Figma 17271:23166・2026-09-14 ヒデさん指定)
        導入 → 「for SaaS」(130px)が中央に登場(q 0-0.10) → 上へ抜けながらブラーで消える(0.16-0.30) → ピクトが中央に大きく現れる(0.24-0.36)
        → 右へ収まる(0.40-0.62)。左に説明(ラベル・見出し・本文)(0.52-0.68) → 読む → ブロックごと上へ抜ける(0.90-1) → 「for AI」が中央に登場して同じ流れ */
@@ -16668,10 +16668,10 @@ function buildPanel() {
     sub(catRes, '案20：大見出しとピクトの大きさ', true, { fixed: true });
     const _g20 = catRes.lastElementChild;
     const f20 = () => { const r = params.sections.results; r.fx20 = r.fx20 || {}; return r.fx20; };
-    const F20 = { labelRise: 120, heroScale: 1.35 };
+    const F20 = { labelRise: 120, heroScale: 1.55 };
     const s20 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f20()[key] != null ? f20()[key] : F20[key]), v => { f20()[key] = v; markDirty(); }, fmt, tip));
     s20('大見出しが上へ抜ける距離', 'labelRise', 40, 240, 5, v => v + 'px', '「for SaaS」が中央から上へ抜ける距離(絵コンテは120px)。');
-    s20('ピクトの主役の大きさ', 'heroScale', 1, 1.8, 0.05, v => '×' + v.toFixed(2), '中央に大きく出る時の倍率(絵コンテ 304×405 ≒ 1.35)。');
+    s20('ピクトの主役の大きさ', 'heroScale', 1, 2.2, 0.05, v => '×' + v.toFixed(2), '中央に大きく出る時の倍率(終点の枠 340px に対して。1.55 ≒ 527px)。');
     rfxDyn(_g20, ['20']);
     /* 案21〜23: 数値の大きさと横移動(その案の時だけ出す) */
     sub(catRes, '案21〜23：数値の大きさと横移動', true, { fixed: true });
