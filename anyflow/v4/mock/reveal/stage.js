@@ -1,6 +1,7 @@
 // Proposed choreography only. Copy, fonts, artwork and the next section come from V4.
-import {renderNewConcept} from './new-concepts.js';
 import {renderTypingConcept} from './typing.js';
+import {renderHorizontalConcept} from './horizontal.js';
+import {renderTitleConcept} from './title-stage.js';
 export const clamp = x => Math.max(0, Math.min(1, x));
 const lerp = (a,b,t) => a+(b-a)*t;
 const ramp = (p,a,b) => {const t=clamp((p-a)/(b-a));return t*t*(3-2*t);};
@@ -9,11 +10,10 @@ const copyMarkup = v => `<span class="pf-tag">${esc(v.tag)}</span><h3>${v.title.
 export function createStage(content) {
   const el=document.createElement('div');el.className='pf-stage';
   el.innerHTML=`<h2 class="pf-head">${content.head}</h2>${content.values.map((v,i)=>`<div class="pf-art" data-i="${i}"></div><div class="pf-copy" data-i="${i}">${copyMarkup(v)}</div>`).join('')}${content.stats.map((s,i)=>`<div class="pf-stat" data-i="${i}"><span class="pf-label">${esc(s.label)}</span><span class="pf-number">${esc(s.number)}</span></div>`).join('')}<div class="pf-rule"></div><div class="pf-cue" aria-hidden="true"><b></b><span>Scroll ↓</span><i></i></div><div class="pf-mobile-content"><h2>${content.head}</h2>${content.values.map((v,i)=>`<article class="pf-mobile-value" data-i="${i}"><div class="pf-mobile-art"></div><div class="pf-mobile-copy">${copyMarkup(v)}</div></article>`).join('')}<div class="pf-mobile-stats">${content.stats.map(s=>`<div><b>${esc(s.label)}</b><span>${esc(s.number)}</span></div>`).join('')}</div></div>`;
-  el.insertAdjacentHTML('afterbegin','<div class="pf-plane" aria-hidden="true"></div><div class="pf-frame" aria-hidden="true"></div><div class="pf-frame" aria-hidden="true"></div><div class="pf-orbit" aria-hidden="true"></div><svg class="pf-connect" aria-hidden="true"><path fill="none" pathLength="1"/></svg><div class="pf-guide" aria-hidden="true"></div>');
   const art=[...el.querySelectorAll('.pf-art')];
   const artLabels=art.map((a,i)=>{const label=document.createElement('span');label.className='pf-art-label';label.textContent=content.values[i].tag;a.append(label);return label;});
   el.querySelectorAll('.pf-mobile-art').forEach((a,i)=>{const label=document.createElement('span');label.className='pf-art-label';label.textContent=content.values[i].tag;a.append(label);});
-  return {el,head:el.querySelector('.pf-head'),copy:[...el.querySelectorAll('.pf-copy')],art,artLabels,stat:[...el.querySelectorAll('.pf-stat')],rule:el.querySelector('.pf-rule'),cue:el.querySelector('.pf-cue b'),mobileArt:[...el.querySelectorAll('.pf-mobile-art')],mobile:[...el.querySelectorAll('.pf-mobile-content>h2,.pf-mobile-art,.pf-mobile-copy,.pf-mobile-stats')],frames:[...el.querySelectorAll('.pf-frame')],orbit:el.querySelector('.pf-orbit'),connect:el.querySelector('.pf-connect'),guide:el.querySelector('.pf-guide'),plane:el.querySelector('.pf-plane')};
+  return {el,head:el.querySelector('.pf-head'),copy:[...el.querySelectorAll('.pf-copy')],art,artLabels,stat:[...el.querySelectorAll('.pf-stat')],rule:el.querySelector('.pf-rule'),cue:el.querySelector('.pf-cue b'),mobileArt:[...el.querySelectorAll('.pf-mobile-art')],mobile:[...el.querySelectorAll('.pf-mobile-content>h2,.pf-mobile-art,.pf-mobile-copy,.pf-mobile-stats')]};
 }
 export function renderStage(s, c, p, w, h) {
   p=clamp(p); const unit=Math.min(w/1440,h/850,1.18), u=n=>n*unit;
@@ -30,27 +30,23 @@ export function renderStage(s, c, p, w, h) {
   };
   const stat=(i,x,y,width,size=130,a=1)=>{put(s.stat[i],x,y,width,a);s.stat[i].querySelector('.pf-number').style.fontSize=`${u(size)}px`;s.stat[i].querySelector('.pf-label').style.fontSize=`${u(size>95?16:13)}px`;};
   const stats=(y,size=130,a=1)=>{
-    const widths=[.25,.43,.24],xs=[.125,.505,.88];
-    s.stat.forEach((e,i)=>stat(i,mid-contentW/2+contentW*xs[i],y,contentW*widths[i],size,typeof a==='function'?a(i):a));
+    s.stat.forEach((e,i)=>stat(i,mid-contentW/2+contentW*(i+.5)/3,y,contentW/3,size,typeof a==='function'?a(i):a));
   };
   const duet=(a=1,ay=.32,cy=.60,size=38,aw=340)=>{[0,1].forEach(i=>{const x=w*(i?.735:.265);art(i,x,h*ay,aw,a);copy(i,x,h*cy,Math.min(w*.38,u(490)),size,a);});};
   [s.head,...s.copy,...s.art,...s.stat,s.rule].forEach(e=>e.style.opacity='0');
-  [s.plane,...s.frames,s.orbit,s.connect,s.guide].forEach(e=>e.style.opacity='0');
   s.copy.forEach(e=>{e.style.clipPath='none';e.style.filter='none';});
   s.stat.forEach(e=>{e.style.zIndex='3';const n=e.querySelector('.pf-number');n.style.color='inherit';n.style.webkitTextStroke='0px';});
   s.el.dataset.mode=c.mode;
   s.rule.style.transform='none';
   s.el.style.setProperty('--pf-progress',p.toFixed(4));
-  s.cue.textContent=`${c.id} / ${c.steps[Math.min(2,Math.floor(p*3))]}`;
+  s.cue.textContent=`${c.label} / ${c.steps[Math.min(2,Math.floor(p*3))]}`;
   const k=c.mode;
-  if(c.group==='TY') {
+  if(c.mode.startsWith('title-')) {
+    renderTitleConcept({s,c,p,w,h,u,contentW,head,art,copy,stat,stats,lerp,ramp});return;
+  } else if(c.mode.endsWith('-horizontal')) {
+    renderHorizontalConcept({s,c,p,w,h,u,contentW,head,art,copy,stat,stats,lerp,ramp});
+  } else if(c.mode==='trigger-typing') {
     renderTypingConcept({s,c,p,w,h,u,unit,contentW,mid,put,head,art,copy,stat,stats,duet,lerp,ramp,clamp});
-  } else if(c.group==='N') {
-    renderNewConcept({s,c,p,w,h,u,unit,contentW,mid,put,head,art,copy,stat,stats,duet,lerp,ramp,clamp});
-  } else if(k==='split') {
-    const spread=ramp(p,.10,.36),words=ramp(p,.32,.52);
-    [0,1].forEach(i=>{const x=w*lerp(i?.61:.39,i?.735:.265,spread);art(i,x,h*lerp(.48,.32,spread),lerp(540,340,spread));copy(i,w*(i?.735:.265),h*lerp(.67,.60,words),Math.min(w*.38,u(490)),38,words);});
-    head(h*.105,38,ramp(p,.54,.66));stats(h*.825,52,ramp(p,.69,.83));
   } else if(k==='surround') {
     const open=ramp(p,.10,.35);[0,1].forEach(i=>art(i,w*lerp(i?.60:.4,i?.84:.16,open),h*lerp(.48,.36,open),lerp(540,325,open)));
     head(h*.12,42,ramp(p,.28,.42));

@@ -1,8 +1,11 @@
-// Proposal values: scroll controls every character. No timer or automatic advance.
-export function typingState(local){
+// Proposal values: crossing a trigger starts a clock; scroll never scrubs letters.
+export function typingState(entry,active,total,preview=false){
  const clamp=x=>Math.max(0,Math.min(1,x));
  const smooth=x=>{const t=clamp(x);return t*t*(3-2*t);};
- return {typed:clamp((local-.05)/.40),body:smooth((local-.49)/.17)};
+ if(preview)return{typed:1,body:1};
+ if(active&&entry.startedAt==null)entry.startedAt=performance.now();
+ const elapsed=entry.startedAt==null?-1:performance.now()-entry.startedAt;
+ return {typed:clamp(elapsed/(total*75)),body:smooth((elapsed-total*75-120)/500)};
 }
 function prepare(copy){
  const heading=copy.querySelector('h3');
@@ -16,19 +19,18 @@ function prepare(copy){
  });
  return {chars,heading,body:copy.querySelector('p')};
 }
-export function renderTypingConcept({s,p,w,h,u,head,art,copy,stats,lerp,ramp,clamp}){
+export function renderTypingConcept({s,c,p,w,h,u,head,art,copy,stats,lerp,ramp,clamp}){
  if(!s.typing)s.typing=s.copy.map(prepare);
  const settle=ramp(p,.12,.20);
  head(h*lerp(.20,.105,settle),lerp(46,36,settle));
  stats(h*lerp(.51,.825,settle),lerp(138,52,settle));
  const scenes=[{start:.17,end:.53,alpha:ramp(p,.16,.20)*(1-ramp(p,.53,.57))},{start:.57,end:.96,alpha:ramp(p,.57,.61)}];
  scenes.forEach(({start,end,alpha},i)=>{
-   const local=clamp((p-start)/(end-start));
    art(i,w*.28,h*.49,600,alpha);
    copy(i,w*.705,h*.31,Math.min(w*.41,u(555)),48,alpha,16);
    // Anchor the full reserved text block at its top; typing never changes its layout.
    s.copy[i].style.transform='translateX(-50%)';
-   const state=typingState(local),entry=s.typing[i];
+   const entry=s.typing[i],state=typingState(entry,p>=start,entry.chars.length,s.preview);
    const count=Math.floor(state.typed*entry.chars.length);
    entry.chars.forEach((char,j)=>{
      char.style.opacity=j<count?'1':'0';
@@ -40,5 +42,5 @@ export function renderTypingConcept({s,p,w,h,u,head,art,copy,stats,lerp,ramp,cla
    entry.body.style.filter=`blur(${(1-state.body)*10}px)`;
    entry.body.style.transform=`translateY(${(1-state.body)*12}px)`;
  });
- s.cue.textContent=p<.17?'TY1 / 三つの実績':p<.57?'TY1 / for SaaS — 見出しから本文へ':'TY1 / for AI — 見出しから本文へ';
+ s.cue.textContent=`${c.label} / ${p<.17?'三つの実績':p<.57?'for SaaS — 見出しから本文へ':'for AI — 見出しから本文へ'}`;
 }
