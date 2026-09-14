@@ -288,6 +288,7 @@ w("'SF Pro Text'");  // カンプの指定 → 一致すれば正しい
 | **anyflow-embed-v4（現・新規開発）** | **https://anyflow-embed-v4.vercel.app** | 親リポ subdir (main) | anyflow-embed-v4 | 手動（`vercel --prod`） |
 | **abashiri-site（網走 V1.0・公開中）** | **https://abashiri-site.vercel.app** | 親リポ subdir (main) | abashiri-site | ✋ 手動（Git連携解除・Root Directory空）。push しても本番は動かない。上げ直しは `cd abashiri/v1 && npx vercel --prod --yes` |
 | **abashiri-site-v2（網走 アップデート案）** | **https://abashiri-site-v2.vercel.app** | 親リポ subdir (main) | abashiri-site-v2 | 手動（`vercel --prod`） |
+| **abashiri-site-v3（網走 V3.0 作業版）** | **https://abashiri-site-v3.vercel.app** | 親リポ subdir (main) | abashiri-site-v3 | 手動（`vercel --prod`） |
 | **presenter-notes（カンペ連動プレゼン）** | **https://presenter-notes-seven.vercel.app** | 親リポ subdir (main) | presenter-notes | 手動（`cd presenter-notes/v1 && npx vercel --prod --yes`）。※Figma OAuth の client-id 必須・別URLは embed origin 追加登録。詳細 [settings/docs/presenter-notes/README.md](settings/docs/presenter-notes/README.md) |
 | travel-shiori（旅のしおり） | https://tabinoshiori-swart.vercel.app | 親リポ subdir (main) | **tabinoshiori**（※ project 名が違う） | - |
 | nittei-chousei | https://nittei-chousei-pi.vercel.app | submodule (master) | nittei-chousei | - |
@@ -300,11 +301,12 @@ w("'SF Pro Text'");  // カンプの指定 → 一致すれば正しい
 
 注意事項：
 - 📁 **バージョンはプロダクト親の下に `v1` / `v2` で置く**（2026-08-23 から）。「凍結（触るな）」の概念は廃止し、**V1.0＝公開版（安定）／ V2＝更新作業版**の対等な2バージョンとして扱う。両方とも手動デプロイ。
-- **abashiri（網走）＝ `abashiri/v1` と `abashiri/v2`**（別URL・別Vercelプロジェクトで公開）。
+- **abashiri（網走）＝ `abashiri/v1`〜`abashiri/v3`**（別URL・別Vercelプロジェクトで公開）。
   - `abashiri/v1/` = V1.0（公開版・安定）。Vercel `abashiri-site` → https://abashiri-site.vercel.app
   - `abashiri/v2/` = V2（更新作業版）。Vercel `abashiri-site-v2` → https://abashiri-site-v2.vercel.app
   - V1.0 は 2026-08-23 に Git 連携を解除＋Root Directory を空に（push しても本番は動かない）。上げ直しは `abashiri/v1/` 内で `npx vercel --prod --yes`
   - V2 は `abashiri/v2/` 内で `npx vercel --prod --yes`
+  - `abashiri/v3/` = V3.0（2026-09-14〜の更新作業版。v2のコピーから開始）。Vercel `abashiri-site-v3` → https://abashiri-site-v3.vercel.app 。ローカル dev は port 3095（launch.json name: abashiri-v3）
 - **anyflow ＝ `anyflow/v1` と `anyflow/v2`**（別URL・別Vercelプロジェクト）。
   - `anyflow/v1/` = V1.0（公開版）。Vercel `anyflow-embed` → https://anyflow-embed.vercel.app
   - `anyflow/v2/` = V2（更新作業版）。Vercel `anyflow-embed-v2` → https://anyflow-embed-v2.vercel.app

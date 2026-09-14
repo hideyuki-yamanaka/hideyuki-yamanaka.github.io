@@ -1,0 +1,364 @@
+@import "tailwindcss";
+
+/* ============================================================
+   網走サイト デザイントークン
+   ここが唯一の出どころ。コンポーネント側では生の数値を書かない。
+   載せているのは「本番の画面で実際に使っている値」だけ。
+   比較検討用（/mock/ 配下）でしか使わない値はここに入れない。
+
+   名前の付け方
+   - 大きさで決まるもの（テキスト・角丸・ブラー・余白・線・不透明度）
+     → カテゴリ + 値。ドキュメント上は Title_48px のように書く
+   - 意味で決まるもの（色・シャドウ・イージング）
+     → カテゴリ + 役割。ドキュメント上は Brand_Primary のように書く
+
+   詳細は DESIGN-SYSTEM.md / Figma「デザインシステム」セクション参照。
+   ============================================================ */
+@theme inline {
+  /* ---------- 書体 ----------
+     実体は next/font が html に注入する --font-zen / --font-rounded。
+     inline にしているのは、その実行時変数を展開して埋め込むため。 */
+  --font-body: var(--font-noto), "Noto Sans JP", "Hiragino Kaku Gothic ProN",
+    sans-serif;
+  --font-num: var(--font-inter), "Inter", "SF Pro Text", sans-serif;
+  /* v1.0 の書体。まだ差し替えていないセクションが参照している */
+  --font-zen-body: var(--font-zen), "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN",
+    sans-serif;
+  --font-rounded-num: var(--font-rounded), "M PLUS Rounded 1c", sans-serif;
+}
+
+@theme {
+  /* ══════════ ブランドカラー ══════════
+     サイト全体の印象を決める色。網走の空そのもの。 */
+  --color-brand: #0070c9; /* Brand_Primary    押せるもの全部・アクティブな状態 */
+  --color-sky-top: #35c3ea; /* Brand_SkyTop     空グラデの上端 */
+  --color-sky-bottom: #b5d7ff; /* Brand_SkyBottom  空グラデの下端 */
+
+  /* ══════════ ベースカラー ══════════ */
+  /* ── テキスト ── */
+  --color-ink: #1e1e1e; /* Text_Default      白地の上の文字 */
+  --color-ink-muted: #7ba7cc; /* Text_Muted        補助・OFF 状態の文字とアイコン */
+  /* ── バックグラウンド ── */
+  --color-canvas: #e6f3ff; /* Background_Canvas 白い板の中の地 */
+  /* ── コントロール ── */
+  --color-sky-pale: #b6dafc; /* Control_Pale      未選択・未到達・装飾 */
+  /* ── 影 ── */
+  --color-shadow: #005fb3; /* Shadow_Base       影とスクリム。黒ではなく深い海の青 */
+
+  /* ══════════ アクセントカラー ══════════
+     青の世界に対して差す色。似た値は 1 つにまとめてある。 */
+  --color-accent: #87d500; /* Accent_Green  「選んだ」を伝える緑。ひまわり畑の色かぶせにも使う */
+  --color-tint-tento: #031fac; /* Accent_Tento  天都山展望台の色かぶせ */
+  --color-tint-sango: #ac3303; /* Accent_Sango  さんご草の色かぶせ */
+  --color-tint-ryuhyo: #0368ac; /* Accent_Ryuhyo 流氷クルーズの色かぶせ */
+
+  /* ══════════ 角丸（4 段） ══════════ */
+  --radius-12: 12px; /* Radius_12px  場面サムネイル */
+  --radius-30: 30px; /* Radius_30px  板の中の面：タブレット内側・プロモカード・ダイアログ */
+  --radius-60: 60px; /* Radius_60px  タブレット外枠 */
+  --radius-290: 290px; /* Radius_290px 楕円カード */
+
+  /* ══════════ テキストサイズ（11 段） ══════════ */
+  /* Title — 見出し */
+  --text-title-48: 48px;
+  --text-title-34: 34px;
+  --text-title-32: 32px;
+  /* Body — 読ませる文字 */
+  --text-body-18: 18px;
+  --text-body-16: 16px;
+  --text-body-15: 15px;
+  /* Control — ボタン・チップ・小さいラベル */
+  --text-control-20: 20px;
+  --text-control-14: 14px;
+  /* Number — font-num 専用 */
+  --text-number-140: 140px;
+  --text-number-80: 80px;
+  --text-number-28: 28px;
+
+  /* ══════════ v1.1 のテキストサイズ ══════════
+     キービジュアル／ぼーっと体験のカンプ（15071:24641・15176:2415）から。
+     Noto Sans JP の Thin 100 / Light 300 / Regular 400 / Medium 500 だけを使う。 */
+  --text-title-44: 44px; /* Title_44px   「ぼーっと体験」「どこでぼーっとする？」 Thin */
+  --text-number-120: 120px; /* Number_120px ぼーっとタイマー Inter Thin */
+  /* Body_16px / Body_18px は上の既存トークンと同値なのでそのまま使う */
+
+  /* v1.1 の角丸・ブラー。すりガラスの面が 65px、背景の引きが 32/42px に変わった */
+  --radius-16: 16px; /* Radius_16px  タイマーの札 */
+  --radius-120: 120px; /* Radius_120px カルーセルのカード */
+  --blur-32: 32px; /* Blur_32px  ぼーっと体験の背景（手前） */
+  --blur-42: 42px; /* Blur_42px  ぼーっと体験の背景（奥） */
+  --blur-65: 65px; /* Blur_65px  すりガラスのボタン・タイマー */
+  --blur-90: 90px; /* Blur_90px  タイマーのラベル札 */
+
+  /* ══════════ v2.0 のテキストサイズ（2026-08-22 再整理） ══════════
+     メッセージ（カンプ 15480:22896）とグルメ（15490:21764）から。
+     数値ルール：4の倍数・8の倍数を基本、10px以下は2の倍数を許容。
+     カンプの端数は丸めて登録（丸め表は DESIGN-SYSTEM-V2.md）。 */
+  --text-hero-90: 90px; /* Hero_90px   メッセージ見出し「網走は何もない。」 Thin */
+  --text-title-36: 36px; /* Title_36px  グルメ見出し Thin・行間1.8 */
+  --text-title-28: 28px; /* Title_28px  グルメカードの店名 Thin */
+  --text-body-20: 20px; /* Body_20px   メッセージ本文 Light・行間2・字間0.4px */
+  --text-body-14: 14px; /* Body_14px   カードの説明文 ExtraLight・行間2・字間0.7px */
+
+  /* ══════════ ブラー（4 段） ══════════ */
+  --blur-6: 6px; /* Blur_6px  触れた時のうっすら。ボタン・カードの幕・タイマー札 */
+  --blur-16: 16px; /* Blur_16px 登場時にピントが合う。KV・カード・STEP 切り替え */
+  --blur-22: 22px; /* Blur_22px 奥へ引く／背面を隠す。KVスクロール・ダイアログ背面 */
+  --blur-30: 30px; /* Blur_30px すりガラスの面。環境音ボタン・プロモカード */
+
+  /* ══════════ シャドウ（4 種） ══════════
+     色はすべて --color-shadow(#005fb3)。濃さだけ用途で変える。
+     Tailwind が値を解析できるよう rgba で書いてあるが、中身は同じ色。 */
+  --drop-shadow-illust: -8px 1px 2px rgba(0, 95, 179, 0.25); /* Shadow_Illust   切り抜きイラスト */
+  --shadow-floating: 0 8px 20px -6px rgba(0, 95, 179, 0.35); /* Shadow_Floating 浮いた小物 */
+  --shadow-modal: 0 25px 50px -12px rgba(0, 95, 179, 0.35); /* Shadow_Modal    ダイアログ */
+  /* Shadow_Device（タブレットの浮遊感）は shadowConfig.ts のパラメーター */
+
+  /* ══════════ イージング ══════════ */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1); /* Ease_Standard 動くものは全部これ */
+  /* Ease_Linear（カモメ・キラキラのコマ送り）は Tailwind 既定の ease-linear */
+}
+
+/* ══════════ 人物イラストまわりの位置・大きさ ══════════
+   既定値はカンプ 15071:24641 の採寸。
+   画面右下の調整パネル（TopTunePanel）がここを直接書き換えるので、
+   ドラッグ中も React を通さずその場で動く。
+   ⚠️ 数値を変えたい時はここを直す（コンポーネント側に生の px を書かない） */
+:root {
+  /* 210x241 の枠。右端・上端からの距離 */
+  --illust-frame-right: 57px;
+  --illust-frame-top: 750px;
+  /* 人物（648x1067。絵は上 907 ぶんで、下 160 は跳ねた時に切れ目を見せないための延長） */
+  --illust-person-x: 0px;
+  --illust-person-y: 14px;
+  --illust-person-w: 162px;
+  /* 「たまらねー」（縦横比 75:53）。ヒデさん調整値 2026-08-20 */
+  --illust-tamaranee-x: 107px;
+  --illust-tamaranee-y: -10px;
+  --illust-tamaranee-w: 75px;
+  /* 「ぼーっ」（動画視聴中。高さは元の比率まかせ） */
+  --illust-bo-x: 135px;
+  --illust-bo-y: 8px;
+  --illust-bo-w: 62px;
+  /* キラキラ（2コマのGIF風）。ヒデさん指示 2026-08-20 で独立要素として復活。
+     絵から切り出した sparkle-2f.png を、1コマ目=この位置 → 2コマ目=ずらした位置 で
+     パキッと切り替える。位置・ずらし・速さは調整パネルから */
+  --illust-sparkle-x: 4px;
+  --illust-sparkle-y: 53px;
+  --illust-sparkle-w: 18px;
+  --illust-sparkle2-dx: -5px; /* ヒデさん調整値 2026-08-21 */
+  --illust-sparkle2-dy: -5px;
+  --illust-sparkle-period: 1.2s;
+  /* ぼーっと体験ページ・左側のカモメ（🟡仮置き。右下パネルから調整・保存） */
+  --bird-exp-x: 150px;
+  --bird-exp-y: 180px;
+  --bird-exp-w: 84px;
+  --bird-exp-rotate: -8deg;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  /* 上に引っ張った時のバウンドでステージが見切れないように */
+  overscroll-behavior: none;
+  background: linear-gradient(
+    to bottom,
+    var(--color-sky-top),
+    var(--color-sky-bottom)
+  );
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+/* スクロールバー非表示 */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===== ヘッダーの白背景対応（2026-08-22 ヒデさん依頼） =====
+   グルメ（白背景の場面）に入ると TopPage が html[data-header-dark="1"] を立てる。
+   ナビの文字は GlobalNav の theme が黒にし、BGMスイッチはここで黒系に切り替える */
+html[data-header-dark="1"] .bgm-switch {
+  background: rgba(0, 0, 0, 0.08);
+}
+html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive {
+  color: rgba(30, 30, 30, 0.5); /* Text_Default の50% */
+}
+html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive:hover {
+  color: rgba(30, 30, 30, 0.8);
+}
+html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive img {
+  /* 白い线のアイコンを黒に落とす */
+  filter: brightness(0);
+  opacity: 0.45;
+}
+
+/* ===== BGM音量インジケーターのスライダー（2026-08-30 ヒデさん依頼） =====
+   トラックは inline style のグラデ（進捗ぶんだけ白）で描くので、
+   ここでは「つまみ」だけ白い丸に整える */
+.bgm-vol-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.bgm-vol-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== カモメ（2コマ切り替えのGIF風パタパタ） ===== */
+@keyframes bird-frame-a {
+  0%, 49.99% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+@keyframes bird-frame-b {
+  0%, 49.99% {
+    opacity: 0;
+  }
+  50%, 100% {
+    opacity: 1;
+  }
+}
+.bird-frame-a,
+.bird-frame-b {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* 開始ディレイ中もキーフレームの0%状態を適用する。
+     これが無いと、ディレイ中に全コマが素の不透明度1で重なって
+     「残像」に見える（2026-08-23 ヒデさん報告のバグ） */
+  animation-fill-mode: backwards;
+}
+.bird-frame-a {
+  animation-name: bird-frame-a;
+}
+.bird-frame-b {
+  animation-name: bird-frame-b;
+  /* アニメが走る前の保険：2コマ目は素の状態では見せない */
+  opacity: 0;
+}
+
+/* 3コマ版：上げ→中間→下げ→中間 のループ */
+@keyframes bird3-a {
+  0%, 24.99% { opacity: 1; }
+  25%, 100% { opacity: 0; }
+}
+@keyframes bird3-m {
+  0%, 24.99% { opacity: 0; }
+  25%, 49.99% { opacity: 1; }
+  50%, 74.99% { opacity: 0; }
+  75%, 100% { opacity: 1; }
+}
+@keyframes bird3-b {
+  0%, 49.99% { opacity: 0; }
+  50%, 74.99% { opacity: 1; }
+  75%, 100% { opacity: 0; }
+}
+.bird3-a, .bird3-m, .bird3-b {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* ディレイ中もキーフレームの0%状態を適用（残像防止。2026-08-23） */
+  animation-fill-mode: backwards;
+}
+.bird3-a { animation-name: bird3-a; }
+/* アニメが走る前の保険：2コマ目以降は素の状態では見せない */
+.bird3-m { animation-name: bird3-m; opacity: 0; }
+.bird3-b { animation-name: bird3-b; opacity: 0; }
+
+/* ふわふわ漂う */
+@keyframes bird-drift {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(12px, -8px);
+  }
+  50% {
+    transform: translate(24px, 4px);
+  }
+  75% {
+    transform: translate(8px, 8px);
+  }
+}
+.bird-drift {
+  animation: bird-drift 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ===== キラキラ（2コマのGIF風。フェード無しでパキッと切替） =====
+   コマは2つだけ：基準の位置 → --illust-sparkle2-dx/dy だけずれた位置。
+   位置・ずらし量・切替の速さは :root の変数（＝調整パネル）から */
+@keyframes sparkle-2f {
+  0%, 49.99% {
+    transform: translate(0, 0);
+  }
+  50%, 100% {
+    transform: translate(var(--illust-sparkle2-dx), var(--illust-sparkle2-dy));
+  }
+}
+.sparkle-2f {
+  animation: sparkle-2f var(--illust-sparkle-period) linear infinite;
+}
+
+/* ===== グルメのカルーセル（右から左へゆっくり流れ続ける） =====
+   2セット並べた列を半分だけ動かしてループ。速さはカンプに指定が無く仮の40秒 */
+@keyframes gourmet-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.gourmet-marquee {
+  /* 1周の秒数は調整パネル「グルメ｜カルーセル」から（--gourmet-speed） */
+  animation: gourmet-marquee var(--gourmet-speed, 40s) linear infinite;
+  will-change: transform;
+}
+/* カーソルを乗せている間は流れを止める（ホバーの文字を読ませるため）。
+   止めるかどうかは調整パネルのスイッチ（html[data-gourmet-pause]）で切り替え */
+html[data-gourmet-pause="1"] .gourmet-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ===== 疑似ムービー（ゆっくりズーム） ===== */
+@keyframes kenburns {
+  0% {
+    transform: scale(1.02) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.22) translate(-2.5%, -2%);
+  }
+}
+.kenburns {
+  animation: kenburns 36s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ===== ぼーっと体験のカルーセル（右から左へゆっくり自動送り） ===== */
+@keyframes botto-marquee {
+  from { transform: translateX(0); }
+  /* 同じ並びを2周ぶん置いてあるので、半分流れたら先頭に戻る＝継ぎ目なく回る */
+  to   { transform: translateX(-50%); }
+}
+
+/* 窓枠が出た瞬間のカクつきを吸収する、ごく短いフェード */
+@keyframes botto-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

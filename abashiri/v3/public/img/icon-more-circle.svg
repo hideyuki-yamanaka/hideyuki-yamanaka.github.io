@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="62" height="62" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="View More Button Icon" clip-path="url(#clip0_0_29)">
+<circle id="Ellipse 22" cx="31.0015" cy="31.0322" r="29.5557" stroke="white" stroke-width="2"/>
+<path id="Line 36" d="M36.8789 31.3858C37.0742 31.1905 37.0742 30.8739 36.8789 30.6787L33.697 27.4967C33.5017 27.3014 33.1851 27.3014 32.9899 27.4967C32.7946 27.692 32.7946 28.0085 32.9899 28.2038L35.8183 31.0322L32.9899 33.8607C32.7946 34.0559 32.7946 34.3725 32.9899 34.5678C33.1851 34.763 33.5017 34.763 33.697 34.5678L36.8789 31.3858ZM25.4746 31.0322V31.5322H36.5254V31.0322V30.5322H25.4746V31.0322Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_0_29">
+<rect width="62" height="62" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="264" height="264" viewBox="0 0 264 264" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="PlayCircle">
+<foreignObject x="21" y="21" width="222" height="222"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(6px);height:100%;width:100%;border-radius:50%"></div></foreignObject>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M132 33C186.676 33 231 77.3238 231 132C231 186.676 186.676 231 132 231C77.3238 231 33 186.676 33 132C33 77.3238 77.3238 33 132 33ZM113 96.5C113 95.1 114.5 94.2 115.7 94.9L173.5 129.4C174.7 130.1 174.7 131.9 173.5 132.6L115.7 167.1C114.5 167.8 113 166.9 113 165.5V96.5Z" fill="white" fill-opacity="0.85"/>
+</g>
+</svg>
