@@ -29,6 +29,7 @@ import { DEFAULT_FACE, type FaceConfig } from "./faceConfig";
 import { DEFAULT_KV_EXIT, type KvExit } from "./kvExitConfig";
 import { DEFAULT_HERO_ENTER, type HeroEnter } from "./heroEnterConfig";
 import { DEFAULT_MSG, MSG_PATTERNS, type MsgTune } from "./msgConfig";
+import { EVENT_HOVER_EVENT, EVENT_HOVER_PATTERNS } from "./EventSection";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -161,6 +162,8 @@ type Params = {
   hero: HeroEnter;
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
+  /** イベントセクション（グルメの下）のホバー挙動 1〜5 */
+  events: { pattern: number };
   expIntro: IntroPace;
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
@@ -214,6 +217,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
+      events: { pattern: 1 }, /* イベントのホバー挙動（案1が基準） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -751,6 +755,21 @@ export default function TopTunePanel({
                 toggle: "ホバーで一時停止",
                 path: "gourmet.pauseOnHover",
                 hint: "ONだと、カードにカーソルを乗せている間は流れが止まり、ホバーの文字をゆっくり読めます。",
+              },
+              { sub: "イベント（グルメの下）" },
+              {
+                note: "「意外とオモロい、網走。」の写真4枚。ホバーで1枚が全面に開くときの動き5案です。選んでから写真にカーソルを乗せて確かめてください。",
+              },
+              {
+                pills: "ホバーの動き",
+                path: "events.pattern",
+                immediate: true,
+                options: Object.entries(EVENT_HOVER_PATTERNS).map(([v, p]) => ({
+                  name: p.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: p.note,
+                })),
               },
               { sub: "人物イラスト" },
               { sub: "登場のタイミング", deep: true },
@@ -1301,9 +1320,15 @@ export default function TopTunePanel({
             ],
           },
         ],
-        onChange: () => {
+        onChange: (info?: { path?: string }) => {
           applyVars();
           applyVolume();
+          /* イベントセクションのホバー案はイベントで直接届ける（ページ再構築なしで即反映） */
+          if (info?.path === "events.pattern") {
+            window.dispatchEvent(
+              new CustomEvent(EVENT_HOVER_EVENT, { detail: { v: params.events.pattern } })
+            );
+          }
         },
         onSave: (p: Params, panelRef: { flash?: (m: string) => void }) => {
           /* ローカルで保存したら、デプロイ用ファイルにも自動で書き込む（自動焼き込み）。
@@ -1355,6 +1380,10 @@ export default function TopTunePanel({
       applyVars();
       applyVolume();
       pushValues();
+      /* イベントセクションのホバー案も初回反映（保存値が焼き込みと違う時のため） */
+      window.dispatchEvent(
+        new CustomEvent(EVENT_HOVER_EVENT, { detail: { v: params.events.pattern } })
+      );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの
          スライダー表示も追従させる（逆方向同期。2026-08-30） */

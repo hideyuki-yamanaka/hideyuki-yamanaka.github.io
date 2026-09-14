@@ -16,7 +16,61 @@
  *   ・2〜4枚目のタグ・タイトル・説明文（カンプはかまぼこのダミー文）→ 実在ネタで作文
  *   ・たたまれた写真の幅 0px（スリバーを残さない。戻りはマウスが列から出た時）
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+/* ── ホバー挙動の5案（2026-09-14 ヒデさん依頼。調整パネルから切替） ──
+   幅の開き方（時間・緩急・閉じた写真の残し方・写真の寄り）だけを変え、
+   レイアウトはカンプ通りのまま */
+export const EVENT_HOVER_EVENT = "abashiri:event-hover";
+export type EventHoverPattern = {
+  name: string;
+  note: string;
+  /** 開閉にかける時間(ms) */
+  dur: number;
+  ease: string;
+  /** 閉じた写真を何pxの帯で残すか（0=完全に閉じる） */
+  closed: number;
+  /** true: 開いている間、写真がゆっくり寄る（scale 1→1.06） */
+  zoom?: boolean;
+};
+export const EVENT_HOVER_PATTERNS: Record<number, EventHoverPattern> = {
+  1: {
+    name: "案1",
+    note: "するり。0.7秒でなめらかに開く（いまの基準）",
+    dur: 700,
+    ease: "cubic-bezier(0.33, 0, 0.2, 1)",
+    closed: 0,
+  },
+  2: {
+    name: "案2",
+    note: "ゆったり。1.2秒かけて開き、写真がゆっくり寄ってくる",
+    dur: 1200,
+    ease: "cubic-bezier(0.22, 1, 0.36, 1)",
+    closed: 0,
+    zoom: true,
+  },
+  3: {
+    name: "案3",
+    note: "きびきび。0.3秒でパッと切り替わる",
+    dur: 320,
+    ease: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    closed: 0,
+  },
+  4: {
+    name: "案4",
+    note: "帯のこし。閉じた3枚が48pxの帯で残り、帯にホバーすると乗り換えられる",
+    dur: 700,
+    ease: "cubic-bezier(0.33, 0, 0.2, 1)",
+    closed: 48,
+  },
+  5: {
+    name: "案5",
+    note: "ばね。少し行き過ぎて戻る、弾みのある開き方",
+    dur: 900,
+    ease: "cubic-bezier(0.34, 1.3, 0.64, 1)",
+    closed: 0,
+  },
+};
 
 type OmoroiItem = {
   tag: string;
@@ -57,6 +111,24 @@ const ITEMS: OmoroiItem[] = [
 
 export default function EventSection() {
   const [hover, setHover] = useState<number | null>(null);
+  /* ホバー挙動の案（1〜5）。初期値は焼き込み → パネル操作でライブ更新 */
+  const [pat, setPat] = useState(1);
+  useEffect(() => {
+    fetch("/tune-defaults.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const v = d?.events?.pattern;
+        if (typeof v === "number" && EVENT_HOVER_PATTERNS[v]) setPat(v);
+      })
+      .catch(() => {});
+    const onTune = (e: Event) => {
+      const v = (e as CustomEvent<{ v: number }>).detail?.v;
+      if (typeof v === "number" && EVENT_HOVER_PATTERNS[v]) setPat(v);
+    };
+    window.addEventListener(EVENT_HOVER_EVENT, onTune);
+    return () => window.removeEventListener(EVENT_HOVER_EVENT, onTune);
+  }, []);
+  const P = EVENT_HOVER_PATTERNS[pat] ?? EVENT_HOVER_PATTERNS[1];
 
   return (
     <section id="events" className="w-full bg-white py-[140px]">
@@ -76,20 +148,29 @@ export default function EventSection() {
         >
           {ITEMS.map((it, i) => {
             const opened = hover === i;
+            /* 開いた幅は「見える幅1261」から帯の分を引く（案4は帯48px×3が残る） */
             const width =
-              hover === null ? 335 : opened ? 1261 : 0; /* 🟡たたみ幅0 */
+              hover === null ? 335 : opened ? 1261 - 3 * P.closed : P.closed;
             return (
               <div
                 key={it.title}
                 onMouseEnter={() => setHover(i)}
-                className="relative h-[674px] shrink-0 cursor-pointer overflow-hidden transition-[width] duration-700 ease-[cubic-bezier(0.33,0,0.2,1)]"
-                style={{ width }}
+                className="relative h-[674px] shrink-0 cursor-pointer overflow-hidden"
+                style={{
+                  width,
+                  transition: `width ${P.dur}ms ${P.ease}`,
+                }}
               >
-                {/* 写真は枠の中央を見せたまま幅だけ変える（object-cover） */}
+                {/* 写真は枠の中央を見せたまま幅だけ変える（object-cover）。
+                    案2は開いている間ゆっくり寄る（scale） */}
                 <img
                   src={it.img}
                   alt={it.title}
                   className="absolute inset-0 size-full object-cover"
+                  style={{
+                    transform: P.zoom && opened ? "scale(1.06)" : "scale(1)",
+                    transition: `transform ${Math.round(P.dur * 2)}ms ${P.ease}`,
+                  }}
                 />
                 {/* 展開時だけの暗幕（カンプ：118° 黒60%→透明） */}
                 <div
