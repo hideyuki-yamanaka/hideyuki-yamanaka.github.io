@@ -131,7 +131,9 @@ export default function EventSection() {
   const P = EVENT_HOVER_PATTERNS[pat] ?? EVENT_HOVER_PATTERNS[1];
 
   return (
-    <section id="events" className="w-full bg-white py-[140px]">
+    /* ⚠️ relative z-10 は必須。前の兄弟（背景写真やKVの sticky＝positioned要素）が
+       描画順で上に来るため、無いと白背景と見出しが青背景の下に沈む（2026-09-14 実測） */
+    <section id="events" className="relative z-10 w-full bg-white py-[140px]">
       {/* カンプ：left147 / 見出しと画像列の間 69px。列は右へはみ出すので clip */}
       <div className="flex w-full items-start gap-[69px] overflow-x-clip pl-[147px]">
         {/* 縦書き見出し（Thin 36px 行間1.3）。色はトンマナの ink（🟡カンプ表記は black） */}
