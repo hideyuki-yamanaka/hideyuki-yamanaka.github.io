@@ -1,15 +1,17 @@
 import {concepts,groups,fallbackContent} from './catalog.js';
 import {createStage,renderStage} from './stage.js';
-const thumbs={P1:.84,P2:.36,P3:.37,P4:.34,P5:.91,T1:.35,T2:.35,T3:.85,T4:.35,T5:.9,R1:.53,R2:.14,R3:.44,R4:.45,R5:.43};
+import {rounds,conceptHistory,timeHTML,historyRegisteredAt} from './history.js';
+const thumbs={TY1:.40,N1:.55,N2:.62,N3:.36,N4:.19,N5:.46,N6:.91,N7:.38,N8:.17,N9:.20,N10:.37,P1:.02,P2:.36,P3:.37,P4:.34,P5:.91,T1:.35,T2:.35,T3:.85,T4:.35,T5:.9,R1:.53,R2:.14,R3:.44,R4:.45,R5:.43};
 const root=document.getElementById('concepts');
+document.getElementById('study-history').innerHTML=`<div class="history-heading"><h2>いつ、何を作ったか。</h2><span>履歴の整理：${timeHTML(historyRegisteredAt)} JST</span></div><ol>${[...rounds].reverse().map(r=>`<li><b>第${r.round}回</b><div>${r.anchor?`<a href="#${r.anchor}">${r.title} ↗</a>`:`<strong>${r.title}</strong>`}<small>${r.ids}${r.anchor?'':' · 旧モック'}</small></div><div class="history-date">${timeHTML(r.at)}<small>${r.basis}</small></div></li>`).join('')}</ol><p class="history-note">日時は日本時間。第1〜4回はファイルの作成・保存記録から復元した目安で、完成・納品時刻ではありません。v1.0／v1.1は今回から付けた各案の管理番号です。サイト本体のV4とは別です。</p>`;
 const stages=[];
-Object.entries(groups).forEach(([key,g])=>{
+['TY','N','P','T','R'].forEach(key=>{const g=groups[key];const list=concepts.filter(c=>c.group===key);const groupHistory=conceptHistory(list[0]);
   const section=document.createElement('section');section.className='gallery-group';section.id=`group-${key}`;
-  section.innerHTML=`<div class="group-heading"><h2><small>${key} / 01—05</small>${g.title}</h2><p>${g.lead}</p></div><div class="gallery-grid"></div>`;
+  section.innerHTML=`<div class="group-heading"><div><div class="group-record">第${groupHistory.round}回 · ${list.length}案 · 作成記録 ${timeHTML(groupHistory.createdAt)}</div><h2><small>${key}</small>${g.title}</h2></div><p>${g.lead}</p></div><div class="gallery-grid"></div>`;
   root.append(section);
   concepts.filter(c=>c.group===key).forEach(c=>{
-    const card=document.createElement('article');card.className='concept-card';
-    card.innerHTML=`<a href="./demo.html?concept=${c.id}#results" aria-label="${c.id} ${c.name}をスクロールで見る"><div class="mini" aria-hidden="true"></div><div class="card-caption"><span>${c.id}</span><h3>${c.name}</h3><b>↗</b></div><p>${c.brief}</p><div class="concept-steps">${c.steps.map(t=>`<span>${t}</span>`).join('')}</div></a>`;
+    const card=document.createElement('article');card.className='concept-card';const record=conceptHistory(c);
+    card.innerHTML=`<a href="./demo.html?concept=${c.id}#results" aria-label="第${record.round}回 ${c.id} ${record.version} ${c.name}をスクロールで見る"><div class="card-version"><b>第${record.round}回 · ${c.id} · ${record.version}</b>${record.round===5?'<span>今回追加</span>':''}</div><div class="mini" aria-hidden="true"></div><div class="card-caption"><span>${c.id}</span><h3>${c.name}</h3><b>↗</b></div><div class="card-dates"><span>作成記録 ${timeHTML(record.createdAt)}</span><span>内容更新 ${timeHTML(record.updatedAt)}</span></div><p>${c.brief}</p><div class="concept-steps">${c.steps.map(t=>`<span>${t}</span>`).join('')}</div></a>`;
     section.querySelector('.gallery-grid').append(card);
     const s=createStage(fallbackContent);const mini=card.querySelector('.mini');mini.append(s.el);
     s.art.forEach((e,i)=>{const img=document.createElement('img');img.src=`/assets/results-val-${i?'ai':'saas'}.svg`;img.alt='';e.append(img);});

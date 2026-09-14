@@ -1,5 +1,16 @@
 // All new layout sizes and scroll ranges are proposal values for this study.
 export const concepts = [
+ {id:'TY1',group:'TY',name:'見出しを綴り、本文が現れる',brief:'スクロールで見出しを一文字ずつ。打ち終わってから本文のブラーがほどけ、読む時間が続く。',steps:['実績に目を留める','見出しをタイピング','本文がブラーから現れる'],vh:640,mode:'scroll-typing'},
+ {id:'N1',group:'N',name:'一本の線が、価値をつなぐ',brief:'実績から伸びた線が、図と説明をつなぐ。視線の通り道をつくる案。',steps:['三つの実績','線をたどる','価値を読む'],vh:580,mode:'connection'},
+ {id:'N2',group:'N',name:'余白がひらく、二つの窓',brief:'名前の付いた図の窓が広がり、説明を含む二つの展示面になる。',steps:['名前とピクト','窓が広がる','説明と実績'],vh:460,mode:'aperture'},
+ {id:'N3',group:'N',name:'読む位置に、しるしを添える',brief:'情報は見せたまま、細いしるしが見出し・SaaS・AI・実績へ案内する。',steps:['全体を見渡す','説明に目を留める','実績に目を留める'],vh:500,mode:'reading-guide'},
+ {id:'N4',group:'N',name:'数字の奥から、価値が現れる',brief:'大きな輪郭の数字を背景に、手前へ図と説明が現れる。奥行きとジャンプ率で印象をつくる。',steps:['実績を大きく','数字が奥へ','価値が手前へ'],vh:560,mode:'depth'},
+ {id:'N5',group:'N',name:'一枚ずつ、縦にめくる',brief:'実績・SaaS・AIを縦のフィルムのように送る。各場面に読む余白を残す。',steps:['実績の一枚','SaaSの一枚','AIの一枚'],vh:640,mode:'film'},
+ {id:'N6',group:'N',name:'対角線で、意味が向かい合う',brief:'左右交互の図と説明を対角に配置。視線がジグザグに進み、全体が揃う。',steps:['実績を読む','SaaSからAIへ','対角の構図が揃う'],vh:500,mode:'diagonal'},
+ {id:'N7',group:'N',name:'数字が通る、水平の帯',brief:'大きな実績が上の帯を通り、下では図と文章が落ち着いて読める。',steps:['実績の帯','図と説明','次の実績と価値'],vh:620,mode:'proof-ribbon'},
+ {id:'N8',group:'N',name:'円弧をめぐり、意味に出会う',brief:'三つの実績を円弧に沿って見渡す。円弧が図を囲み、説明につながる。',steps:['円弧と三つの実績','図を囲む','説明へ視線を渡す'],vh:580,mode:'orbit'},
+ {id:'N9',group:'N',name:'余白が、見せ場を選ぶ',brief:'境界線が動いて、図と文章に交互に大きな場所を与える。途中で実績を読む。',steps:['SaaSの見せ場','三つの実績','AIの見せ場'],vh:620,mode:'partition'},
+ {id:'N10',group:'N',name:'見出しを、栞にする',brief:'左にメッセージと実績を残し、右の図と説明を読み進める。雑誌の見開きのような案。',steps:['メッセージと実績','SaaSを読む','AIを読む'],vh:560,mode:'editorial'},
  {id:'P1',group:'P',name:'中央から、二つの意味へ',brief:'二つのピクトが左右にほどけ、その下に説明が現れる。',steps:['ピクトに目を留める','左右へ開く','説明と実績を読む'],vh:420,mode:'split'},
  {id:'P2',group:'P',name:'図が上へ、言葉が下へ',brief:'大きな図が上に収まり、空いた場所に言葉が浮かび上がる。',steps:['大きなピクト','上へ収まる','下に説明'],vh:540,mode:'lift'},
  {id:'P3',group:'P',name:'図を残し、言葉を渡す',brief:'図を左に残し、見出しの一行目、二行目、本文へ視線を導く。',steps:['図を見せる','一行ずつ伝える','本文を読む'],vh:580,mode:'lines'},
@@ -21,3 +32,5 @@ export const fallbackContent={head:'事業の推進力を、<em>Anyflow</em>が�
  {tag:'for SaaS',title:['リアルタイムに','データ同期'],body:'外部サービスと自動でデータを同期（インポート/エクスポート）。自社データx外部データの掛け算により「データで戦うSaaS」へ。'},
  {tag:'for AI',title:['コンテキスト取得','から実行まで'],body:'AIの業務に必要な膨大なコンテキストを1つのツールで取得。さらに業務実行のためのアクションツールも豊富に提供。'}
 ],stats:[{label:'導入企業',number:'100+'},{label:'連携実績',number:'20,000+'},{label:'連携アプリ数',number:'200+'}]};
+groups.N={title:'視線の集め方を、変える。',lead:'新しい構図と仕掛け。大きさも、読む順番も。',label:'新規10案'};
+groups.TY={title:'一文字ずつ、意味を伝える。',lead:'見出しを綴り、本文を読む。スクロールと文字を連動。',label:'タイピング'};

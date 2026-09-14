@@ -1,4 +1,6 @@
 // Proposed choreography only. Copy, fonts, artwork and the next section come from V4.
+import {renderNewConcept} from './new-concepts.js';
+import {renderTypingConcept} from './typing.js';
 export const clamp = x => Math.max(0, Math.min(1, x));
 const lerp = (a,b,t) => a+(b-a)*t;
 const ramp = (p,a,b) => {const t=clamp((p-a)/(b-a));return t*t*(3-2*t);};
@@ -7,7 +9,11 @@ const copyMarkup = v => `<span class="pf-tag">${esc(v.tag)}</span><h3>${v.title.
 export function createStage(content) {
   const el=document.createElement('div');el.className='pf-stage';
   el.innerHTML=`<h2 class="pf-head">${content.head}</h2>${content.values.map((v,i)=>`<div class="pf-art" data-i="${i}"></div><div class="pf-copy" data-i="${i}">${copyMarkup(v)}</div>`).join('')}${content.stats.map((s,i)=>`<div class="pf-stat" data-i="${i}"><span class="pf-label">${esc(s.label)}</span><span class="pf-number">${esc(s.number)}</span></div>`).join('')}<div class="pf-rule"></div><div class="pf-cue" aria-hidden="true"><b></b><span>Scroll ↓</span><i></i></div><div class="pf-mobile-content"><h2>${content.head}</h2>${content.values.map((v,i)=>`<article class="pf-mobile-value" data-i="${i}"><div class="pf-mobile-art"></div><div class="pf-mobile-copy">${copyMarkup(v)}</div></article>`).join('')}<div class="pf-mobile-stats">${content.stats.map(s=>`<div><b>${esc(s.label)}</b><span>${esc(s.number)}</span></div>`).join('')}</div></div>`;
-  return {el,head:el.querySelector('.pf-head'),copy:[...el.querySelectorAll('.pf-copy')],art:[...el.querySelectorAll('.pf-art')],stat:[...el.querySelectorAll('.pf-stat')],rule:el.querySelector('.pf-rule'),cue:el.querySelector('.pf-cue b'),mobileArt:[...el.querySelectorAll('.pf-mobile-art')],mobile:[...el.querySelectorAll('.pf-mobile-content>h2,.pf-mobile-art,.pf-mobile-copy,.pf-mobile-stats')]};
+  el.insertAdjacentHTML('afterbegin','<div class="pf-plane" aria-hidden="true"></div><div class="pf-frame" aria-hidden="true"></div><div class="pf-frame" aria-hidden="true"></div><div class="pf-orbit" aria-hidden="true"></div><svg class="pf-connect" aria-hidden="true"><path fill="none" pathLength="1"/></svg><div class="pf-guide" aria-hidden="true"></div>');
+  const art=[...el.querySelectorAll('.pf-art')];
+  const artLabels=art.map((a,i)=>{const label=document.createElement('span');label.className='pf-art-label';label.textContent=content.values[i].tag;a.append(label);return label;});
+  el.querySelectorAll('.pf-mobile-art').forEach((a,i)=>{const label=document.createElement('span');label.className='pf-art-label';label.textContent=content.values[i].tag;a.append(label);});
+  return {el,head:el.querySelector('.pf-head'),copy:[...el.querySelectorAll('.pf-copy')],art,artLabels,stat:[...el.querySelectorAll('.pf-stat')],rule:el.querySelector('.pf-rule'),cue:el.querySelector('.pf-cue b'),mobileArt:[...el.querySelectorAll('.pf-mobile-art')],mobile:[...el.querySelectorAll('.pf-mobile-content>h2,.pf-mobile-art,.pf-mobile-copy,.pf-mobile-stats')],frames:[...el.querySelectorAll('.pf-frame')],orbit:el.querySelector('.pf-orbit'),connect:el.querySelector('.pf-connect'),guide:el.querySelector('.pf-guide'),plane:el.querySelector('.pf-plane')};
 }
 export function renderStage(s, c, p, w, h) {
   p=clamp(p); const unit=Math.min(w/1440,h/850,1.18), u=n=>n*unit;
@@ -29,11 +35,19 @@ export function renderStage(s, c, p, w, h) {
   };
   const duet=(a=1,ay=.32,cy=.60,size=38,aw=340)=>{[0,1].forEach(i=>{const x=w*(i?.735:.265);art(i,x,h*ay,aw,a);copy(i,x,h*cy,Math.min(w*.38,u(490)),size,a);});};
   [s.head,...s.copy,...s.art,...s.stat,s.rule].forEach(e=>e.style.opacity='0');
+  [s.plane,...s.frames,s.orbit,s.connect,s.guide].forEach(e=>e.style.opacity='0');
+  s.copy.forEach(e=>{e.style.clipPath='none';e.style.filter='none';});
+  s.stat.forEach(e=>{e.style.zIndex='3';const n=e.querySelector('.pf-number');n.style.color='inherit';n.style.webkitTextStroke='0px';});
+  s.el.dataset.mode=c.mode;
   s.rule.style.transform='none';
   s.el.style.setProperty('--pf-progress',p.toFixed(4));
   s.cue.textContent=`${c.id} / ${c.steps[Math.min(2,Math.floor(p*3))]}`;
   const k=c.mode;
-  if(k==='split') {
+  if(c.group==='TY') {
+    renderTypingConcept({s,c,p,w,h,u,unit,contentW,mid,put,head,art,copy,stat,stats,duet,lerp,ramp,clamp});
+  } else if(c.group==='N') {
+    renderNewConcept({s,c,p,w,h,u,unit,contentW,mid,put,head,art,copy,stat,stats,duet,lerp,ramp,clamp});
+  } else if(k==='split') {
     const spread=ramp(p,.10,.36),words=ramp(p,.32,.52);
     [0,1].forEach(i=>{const x=w*lerp(i?.61:.39,i?.735:.265,spread);art(i,x,h*lerp(.48,.32,spread),lerp(540,340,spread));copy(i,w*(i?.735:.265),h*lerp(.67,.60,words),Math.min(w*.38,u(490)),38,words);});
     head(h*.105,38,ramp(p,.54,.66));stats(h*.825,52,ramp(p,.69,.83));
@@ -107,6 +121,9 @@ export function renderStage(s, c, p, w, h) {
     [0,2].forEach((i,j)=>stat(i,w*(j?.83:.17),h*lerp(.49,.255,open),u(245),lerp(100,76,open),ramp(p,.15+j*.07,.31+j*.07)));
     [0,1].forEach(i=>{art(i,w*(i?.735:.265),h*.49,300,ramp(p,.57,.73));copy(i,w*(i?.735:.265),h*.74,Math.min(w*.39,u(500)),32,ramp(p,.66,.81),14);});
   }
+  // The subject is named from its first visible frame. The label is handed to the copy,
+  // so it does not appear twice once the full explanation is readable.
+  s.artLabels.forEach((label,i)=>{label.style.opacity=String(1-clamp(+s.copy[i].style.opacity||0));label.style.fontSize=`${Math.max(18,u(24))}px`;});
 }
 
 export function setStageInk(s,dark) {

@@ -131,6 +131,34 @@ function Sections({ spot, light }: { spot: SpotDetail; light?: boolean }) {
   );
 }
 
+/** 周辺マップ（公式サイトの「周辺マップ」相当。Googleマップ埋め込み＋外部リンク） */
+function MapEmbed({ spot, light }: { spot: SpotDetail; light?: boolean }) {
+  return (
+    <div className="relative w-full">
+      <iframe
+        title={`${spot.name} 周辺マップ`}
+        src={`https://maps.google.com/maps?q=${encodeURIComponent(spot.map.query)}&z=11&hl=ja&output=embed`}
+        className={`h-[420px] w-full border-0 ${light ? "rounded-[24px]" : ""}`}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+      <a
+        href={spot.map.link}
+        target="_blank"
+        rel="noreferrer"
+        className={`absolute left-4 top-4 flex items-center gap-1.5 rounded-full px-4 py-2 text-body-14 font-light backdrop-blur-[62px] transition-colors duration-300 ease-standard ${
+          light
+            ? "bg-white/85 text-ink hover:bg-white"
+            : "bg-white/90 text-ink shadow-modal hover:bg-white"
+        }`}
+      >
+        マップで開く
+        <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
+      </a>
+    </div>
+  );
+}
+
 /* ───────────────────────── 案1 全画面ヒーロー ───────────────────────── */
 
 function Variant1({ spot }: { spot: SpotDetail }) {
@@ -181,6 +209,12 @@ function Variant1({ spot }: { spot: SpotDetail }) {
             基本情報
           </h2>
           <InfoTable spot={spot} />
+        </div>
+        <div className="flex flex-col gap-6">
+          <h2 className="text-title-36 font-thin leading-[1.8] text-ink">
+            周辺マップ
+          </h2>
+          <MapEmbed spot={spot} />
         </div>
       </div>
     </main>
@@ -241,6 +275,12 @@ function Variant2({ spot }: { spot: SpotDetail }) {
                 />
               ))}
             </div>
+            <div className="flex flex-col gap-6">
+              <h2 className="text-title-28 font-thin leading-[1.6] text-ink">
+                周辺マップ
+              </h2>
+              <MapEmbed spot={spot} />
+            </div>
           </div>
           <aside className="sticky top-10 w-[360px] shrink-0 bg-sky-bottom/40 p-8">
             <h2 className="mb-4 text-body-18 font-thin text-ink">基本情報</h2>
@@ -296,6 +336,12 @@ function Variant3({ spot }: { spot: SpotDetail }) {
             基本情報
           </h2>
           <InfoTable spot={spot} light />
+        </div>
+        <div className="w-full rounded-16 bg-white/10 p-[56px] backdrop-blur-65">
+          <h2 className="mb-6 text-title-28 font-thin leading-[1.6] text-white">
+            周辺マップ
+          </h2>
+          <MapEmbed spot={spot} light />
         </div>
       </div>
     </main>

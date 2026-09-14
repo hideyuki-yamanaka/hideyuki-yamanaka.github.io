@@ -32,6 +32,8 @@ export type SpotDetail = {
   points: string[];
   /** 基本情報（表） */
   info: { label: string; value: string }[];
+  /** 周辺マップ（Googleマップ検索語と外部リンク）。公式サイトの「周辺マップ」に相当 */
+  map: { query: string; link: string };
 };
 
 export const SPOT_DETAILS: Record<string, SpotDetail> = {
@@ -79,5 +81,9 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
         value: "0152-44-5849（一般社団法人 網走市観光協会）",
       },
     ],
+    map: {
+      query: "能取岬",
+      link: "https://maps.google.com/?q=%E8%83%BD%E5%8F%96%E5%B2%AC",
+    },
   },
 };

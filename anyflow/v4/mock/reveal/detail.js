@@ -1,8 +1,10 @@
 import {concepts} from './catalog.js';
 import {createStage,renderStage,setStageInk,clamp} from './stage.js';
+import {conceptHistory,timeHTML} from './history.js';
 
 const query=new URLSearchParams(location.search);
 const concept=concepts.find(c=>c.id===query.get('concept'))||concepts[0];
+const record=conceptHistory(concept);
 const results=document.getElementById('results');
 // Read static source text, not a live counter while it happens to be animating.
 const source=await fetch('/mock/reveal/reference.html').then(r=>{if(!r.ok)throw new Error('V4 source unavailable');return r.text();});
@@ -23,7 +25,7 @@ results.classList.add('pf-study');results.style.setProperty('--study-height',`${
 results.querySelector('.pin-vp').append(stage.el);
 const hosts=[document.getElementById('valSaas'),document.getElementById('valAi')];
 document.body.classList.add('reveal-study');document.body.dataset.group=concept.group;
-document.title=`${concept.id} ${concept.name} | Anyflow Motion Study`;
+document.title=`第${record.round}回 ${concept.id} ${record.version} | ${concept.name}`;
 let flowing=false,initialized=false;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 function layout(){
@@ -53,7 +55,7 @@ window.REVEAL_STUDY={concept:concept.id,content,source:'anyflow/v4/index.html',f
 const observer=new ResizeObserver(()=>{lastProgress=-1;});observer.observe(stage.el);
 const next=concepts[(concepts.indexOf(concept)+1)%concepts.length];
 const dock=document.createElement('nav');dock.className='study-dock';dock.setAttribute('aria-label','モック比較用ナビゲーション');
-dock.innerHTML=`<a href="/mock/reveal/">一覧</a><span>${concept.id} / ${concept.name}</span><a href="#vision">Visionから</a><a href="#results">実績から</a><a href="/mock/reveal/demo.html?concept=${next.id}#results">次の案 →</a>`;
+dock.innerHTML=`<a href="/mock/reveal/">一覧</a><span class="study-dock-meta" title="${concept.name}。過去の日時はファイル記録から復元。日本時間。"><b>第${record.round}回 · ${concept.id} · ${record.version} <em>${concept.name}</em></b><small><i>作成記録 ${timeHTML(record.createdAt)}</i><i>更新 ${timeHTML(record.updatedAt)} JST</i></small></span><a class="study-shortcut" href="#vision">Visionから</a><a class="study-shortcut" href="#results">実績から</a><a href="/mock/reveal/demo.html?concept=${next.id}#results">次の案 →</a>`;
 document.body.append(dock);
 function jump(hash){const target=document.querySelector(hash);if(!target)return;if(lenis)lenis.scrollTo(target,{immediate:true});else target.scrollIntoView();}
 dock.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();jump(a.getAttribute('href'));}));
