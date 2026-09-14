@@ -1108,6 +1108,11 @@
   #results.rfx-22.rfx22-end .res2-head { flex-direction: column; align-items: flex-start; }
   #results.rfx-22 .res2-stats { order: 0; width: auto; margin: 14px 0 0; padding: 0; border-bottom: 0; gap: 44px; align-items: flex-start; }
   #results.rfx-22 .res2-stats .r2s { gap: 8px; }
+  /* 【2026-09-15 ヒデさん指定】案22 終点の並び順: 左から 連携実績 → 導入企業 → 連携アプリ数(主役の連携実績が画面中央から一番近い左の枠へ)。
+     DOM(導入企業/連携実績/連携アプリ数)は動かさず order だけ(JS は DOM index で主役 i=1 を扱う) */
+  #results.rfx-22 .res2-stats .r2s:nth-child(1) { order: 1; }
+  #results.rfx-22 .res2-stats .r2s:nth-child(2) { order: 0; }
+  #results.rfx-22 .res2-stats .r2s:nth-child(3) { order: 2; }
   #results.rfx-22 .res2-stats .r2s span { font-size: 70px; line-height: 1; }
   #results.rfx-22 .res2-stats .r2s b { font-size: 16px; line-height: 24px; }
   #results.rfx-22 .slot .fx:last-child { font-size: 40px; }
@@ -6033,7 +6038,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["F 惑星に寄る","I 大小の入れ子","J 地平線","K 斜めの流れ","ジャイロ・速い","E 大きく包む","G ヘアライン","B ジャイロ交差","ジャイロ・直交","H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["C 薄い皿","D 立ちクロス","I 大小の入れ子","A カンプ通り","B 深く交差","E 大きく包む","アトム 4本","アトム 6本","アトム 8本","花のリング","H 縦のクロス","J 地平線","K 斜めの流れ","ジャイロ・直交","ジャイロ・斜めの流れ","G ヘアライン","ジャイロ・速い","F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["J 地平線","F 立ちクロスの網","ジャイロ・斜めの流れ","H 縦のクロス","花のリング","土星の輪","G ヘアライン","ジャイロ・縦のクロス","アトム 8本","アトム 6本","アトム 4本","ジャイロ・直交","ジャイロ・ゆるやか","E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["B 大きく薄い円盤","E 大きく包む円盤","F 惑星に密着","G ヘアライン","J 地平線","ジャイロ・直交","L 前後を貫く軌道","H 縦のクロス","I 大小の入れ子","K 斜めの流れ","C 軌道つき・きつい渦","ジャイロ・速い","ジャイロ・斜めの流れ","ジャイロ・縦のクロス","ジャイロ・ゆるやか","D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["C 大きく弧を描く","G ヘアライン","I 大小の入れ子","J 地平線","ジャイロ・直交","ジャイロ・速い","E 遠くから長い線","B まっすぐ放射","F 密な短い線","H 縦のクロス","K 斜めの流れ","ジャイロ・縦のクロス","ジャイロ・斜めの流れ","D 立ちクロスの線","A 標準","ジャイロ・ゆるやか"],"gyro":["F 片寄せジャイロ","G ヘアライン","I 大小の入れ子","J 地平線","D 高速スピン","A 標準のジャイロ","E 同じ向きで転がる","花のリング","アトム 4本","アトム 6本","アトム 8本","土星の輪","C ゆっくり大きく","K 斜めの流れ","B 立ちクロスで転がる","H 縦のクロス"],"beads":["G ヘアライン","J 地平線","ジャイロ・斜めの流れ","ジャイロ・縦のクロス","ジャイロ・速い","ジャイロ・直交","H 縦のクロス","A 標準","B 細かい粒","I 大小の入れ子","K 斜めの流れ","F 惑星に寄るリング","D 立ちクロスのリング","E 大きいリング","ジャイロ・ゆるやか","P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["C ゆったり大回り","E 大きく包む渦","F 近くで速い渦","G ヘアライン","I 大小の入れ子","K 斜めの流れ","H 縦のクロス","B 大げさな渦巻き","アトム 8本","花のリング","アトム 6本","ジャイロ・縦のクロス","ジャイロ・斜めの流れ","コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S13","S14","S12","S11","S6","S15","S5","S8","S16","S10","S17"],"valAi":["A2","A11","A14","A15","A12","A9","A7","A19","A17","A3","A5","A18","A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":["k5","k6","k9","k1","k4","k8"],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23"]};
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36"]};   /* 2026-09-15 最新化: VARIANT_REMOVED/KEY と重複する古い名前を外し、実績の案 27/29/31/32/34/35/36 を追加 */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
@@ -6042,6 +6047,21 @@ const VARIANT_REMOVED_KEY = {
   valAi:    ['A2', 'A11', 'A14', 'A15', 'A12', 'A9', 'A7', 'A19', 'A17', 'A3', 'A5', 'A18'],
 };
 const variantRemovedKey = (bucket, key) => (VARIANT_REMOVED_KEY[bucket] || []).includes(key) || (VARIANT_REMOVED_EXTRA[bucket] || []).includes(key);
+/* 【2026-09-15 ヒデさん指定】「消した案」の控え(gfxVariantHidden)の最新化。
+   焼き込み済み(=コードから恒久的に消えている)案が控えに残ったままだと、「完全削除リストをコピー」に毎回その古い案まで混ざって出る。
+   焼き込み済みぶん・重複を控えから外す(見た目は変わらない: 焼き込み済みはどのみち一覧に出ない)。変わった時だけ保存 */
+function hiddenListRefresh() {
+  const h = params && params.gfxVariantHidden; if (!h || typeof h !== 'object') return false;
+  let changed = false;
+  for (const m in h) {
+    if (!Array.isArray(h[m])) continue;
+    const seen = new Set();
+    const keep = h[m].filter(nm => { if (seen.has(nm) || variantRemoved(m, nm) || variantRemovedKey(m, nm)) return false; seen.add(nm); return true; });
+    if (keep.length !== h[m].length) { h[m] = keep; changed = true; }
+  }
+  if (changed) { try { presetStoreSave(); } catch (e) {} }
+  return changed;
+}
 /* ===== さらに5案 (2026-08-27 ヒデさん指定) =====
    狙う印象は【先進的 / 上品 / 洗練】。A〜F より思い切って見た目を変える。
    ⚠️ デザイン(惑星・軌道・ドットの絵)は変えない。変えるのは配置と、その案のつまみだけ。
@@ -15166,6 +15186,7 @@ function buildPanel() {
   const keepScroll = body.scrollTop;   // 作り直しでスクロール位置が飛ばないように退避
   body.innerHTML = '';
   rows.length = 0;
+  hiddenListRefresh();   /* 【2026-09-15】焼き込み済みの案を「消した案」の控えから外す(完全削除リストの最新化) */
   liveEdit = false;                    // 既定は「頭から流し直す」。見た目だけの所で true にする
   const sv = () => params.sections;
 
@@ -17021,9 +17042,15 @@ function buildPanel() {
   purgeBtn.title = 'いま「削除」で隠している案の一覧をコピーします。Claudeに貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。';
   purgeBtn.onclick = () => {
     try { save(); } catch (e) {}
-    const st = JSON.parse(localStorage.getItem(PRESET_KEY) || '{}');
-    const payload = { hidden: st.hidden || {}, trash: st.trash || {} };
-    const text = '【完全削除の依頼】以下の案を VARIANT_REMOVED_EXTRA に焼き込んで、コードから恒久的に消してください。\n'
+    /* 【2026-09-15 ヒデさん指定・最新化】焼き込み済み(コードから消えている)案は控えから外し、「まだ焼き込んでいない案」だけを出す。空のまとまりは載せない */
+    hiddenListRefresh();
+    const nonEmpty = v => Array.isArray(v) ? v.length > 0 : !!(v && typeof v === 'object' && Object.keys(v).length);
+    const pick = src => { const o = {}; for (const m in (src || {})) { if (nonEmpty(src[m])) o[m] = JSON.parse(JSON.stringify(src[m])); } return o; };
+    const payload = { hidden: pick(params.gfxVariantHidden), trash: pick(params.gfxPresetTrash) };
+    const nHid = Object.values(payload.hidden).reduce((a, b) => a + (Array.isArray(b) ? b.length : 1), 0);
+    const text = (nHid
+      ? '【完全削除の依頼】以下の案を VARIANT_REMOVED_EXTRA に焼き込んで、コードから恒久的に消してください。(焼き込み済みの案は含めていません)\n'
+      : '【完全削除の依頼】新しく消した案はありません(いま隠している案はすべて焼き込み済みです)。\n')
       + JSON.stringify(payload, null, 1);
     const done = () => {
       purgeBtn.textContent = '✅ コピーしました（Claudeに貼ってください）';
