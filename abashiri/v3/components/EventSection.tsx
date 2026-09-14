@@ -1,7 +1,7 @@
 "use client";
 
 /*
- * 「意外とオモロい、網走。」セクション（グルメの下・V3.0 新設）
+ * イベントセクション（グルメの下・V3.0 新設。見出しは「意外とオモロい、網走。」）
  *
  * カンプ：通常時 17230:25481 ／ ホバー時 17230:25703（2026-09-14 実測）
  *   ・縦書き見出し「意外とオモロい、網走。」Noto Sans JP Thin(100) 36px 行間1.3
@@ -55,11 +55,11 @@ const ITEMS: OmoroiItem[] = [
   },
 ];
 
-export default function OmoroiSection() {
+export default function EventSection() {
   const [hover, setHover] = useState<number | null>(null);
 
   return (
-    <section id="omoroi" className="w-full bg-white py-[140px]">
+    <section id="events" className="w-full bg-white py-[140px]">
       {/* カンプ：left147 / 見出しと画像列の間 69px。列は右へはみ出すので clip */}
       <div className="flex w-full items-start gap-[69px] overflow-x-clip pl-[147px]">
         {/* 縦書き見出し（Thin 36px 行間1.3）。色はトンマナの ink（🟡カンプ表記は black） */}
