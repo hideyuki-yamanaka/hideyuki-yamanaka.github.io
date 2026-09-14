@@ -12,6 +12,7 @@ export const concepts = [
  {id:'14',preview:.34,entry:0,name:'用途名を上へ、図を中央へ',brief:'大きな用途名が中央上部へ収まり、図、その下の説明へと視線を下へ渡す。',steps:['大きな用途名','中央の図','下の説明へ'],vh:610,mode:'title-stack'},
  {id:'15',preview:.34,entry:0,name:'用途名を残し、言葉を迎える',brief:'大きな用途名を左上へ収め、右に図、左に説明を迎える。用途名が読む位置を示す。',steps:['用途名に注目','左上の目印へ','言葉と図を迎える'],vh:610,mode:'title-editorial'},
  {id:'16',preview:0,entry:0,name:'ピクトが語る二つの価値',brief:'初回のピクト主役案を復元。左右の大きな図から、その下の用途名・説明へ。実績は下部の帯で支える。',mode:'restored-picto'},
+ {id:'17',preview:0,entry:0,name:'メッセージを残す縦読み',brief:'初回No.07を復元。左にメッセージと実績を残し、右のSaaS・AIを順に読み進める。',mode:'restored-reading'},
 ].map(c=>({...c,label:`No.${c.id}`}));
 export const fallbackContent={head:'事業の推進力を、<em>Anyflow</em>が支えます。',values:[
  {tag:'for SaaS',title:['リアルタイムに','データ同期'],body:'外部サービスと自動でデータを同期（インポート/エクスポート）。自社データx外部データの掛け算により「データで戦うSaaS」へ。'},

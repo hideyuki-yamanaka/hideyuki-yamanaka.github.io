@@ -4,6 +4,7 @@ import {conceptHistory,timeHTML} from './history.js';
 import {createDocumentStage,renderDocumentStage,documentThumbnail} from './document-stage.js';
 import {applyV4MotionSettings,polishPictograms,createV4Slots} from './v4-motion.js';
 import {createRestoredPictoStage,observeRestoredPicto,restoredPictoThumbnail} from './restored-picto.js';
+import {createRestoredReadingStage,observeRestoredReading,restoredReadingThumbnail} from './restored-reading.js';
 
 const query=new URLSearchParams(location.search);
 const concept=resolveConcept(query.get('concept')||concepts[0].id);
@@ -30,9 +31,10 @@ if(content.values.length!==2||content.stats.length!==3)throw new Error('V4 conte
 params.patterns.resFx='default';
 applyResFx();
 applyV4MotionSettings();
-const restoredMode=concept.mode==='restored-picto';
+const readingMode=concept.mode==='restored-reading';
+const restoredMode=concept.mode==='restored-picto'||readingMode;
 const documentMode=concept.mode==='document'||restoredMode;
-const stage=restoredMode?createRestoredPictoStage(content):documentMode?createDocumentStage(content,concept):createStage(content);
+const stage=readingMode?createRestoredReadingStage(content):restoredMode?createRestoredPictoStage(content):documentMode?createDocumentStage(content,concept):createStage(content);
 results.classList.add('pf-study');if(!documentMode)results.style.setProperty('--study-height',`${concept.vh}vh`);
 results.querySelector('.pin-vp').append(stage.el);
 const hosts=[document.getElementById('valSaas'),document.getElementById('valAi')];
@@ -41,7 +43,7 @@ document.body.classList.toggle('pf-document',documentMode);
 document.title=`${concept.label} ${record.version} | ${concept.name}`;
 let flowing=false,initialized=false;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-if(restoredMode)observeRestoredPicto(stage,reduced);
+if(readingMode)observeRestoredReading(stage,reduced);else if(restoredMode)observeRestoredPicto(stage,reduced);
 const tickSlots=createV4Slots(stage.el,reduced);
 function layout(){
   const next=!documentMode&&(innerWidth<=800||innerHeight<=600||reduced.matches);
@@ -78,6 +80,7 @@ window.REVEAL_STUDY={concept:concept.id,content,source:'anyflow/v4/index.html',f
       const snapshots=concepts.map(item=>{
         let element;
         if(item.mode==='restored-picto')element=restoredPictoThumbnail(content,graphics);
+        else if(item.mode==='restored-reading')element=restoredReadingThumbnail(content,graphics);
         else if(item.mode==='document')element=documentThumbnail(content,item,graphics);
         else{
           const preview=createStage(content);preview.preview=true;
