@@ -38,6 +38,7 @@ const layouts={
 function toolbar(){return `<header class="study-bar"><a class="all-link" href="/mock/results-initial/">← <span>10案の一覧</span></a><div class="study-identity"><span class="variant-no">No.${String(id).padStart(2,'0')}</span><strong>${concept.name}</strong></div><nav class="study-controls" aria-label="比較用コントロール"><button type="button" id="context-toggle" aria-pressed="${context}">前後の流れ</button><button type="button" id="motion-toggle" aria-pressed="${reduced}">${reduced?'動き：オフ':'動き：オン'}</button><button type="button" id="replay">再生</button><a href="/mock/results-initial/${String(id===1?10:id-1).padStart(2,'0')}/${context?'?context=1':''}" aria-label="前の案">←</a><a href="/mock/results-initial/${String(id===10?1:id+1).padStart(2,'0')}/${context?'?context=1':''}" aria-label="次の案">→</a></nav></header><details class="study-note"><summary><span>${concept.group} / ${concept.focus}</span><span>案の狙いと操作方法</span></summary><div><p>${concept.desc}</p><p><b>操作：</b>${concept.action}</p><p class="note-small">サイズ・配置・演出は比較用の提案。実績数値と説明本文はV4を継承。「前後の流れ」は接続確認用の抜粋です。</p></div></details>`;}
 
 function init(){
+ try{const saved=JSON.parse(localStorage.getItem('anyflow-initial-results-selection-v1')||'null');if(saved?.removed?.includes(String(id).padStart(2,'0'))){location.replace('/mock/results-initial/');return;}}catch{}
  cleanupIcons();
  document.body.className=`study-page variant-${id} ${preview?'is-preview':''} ${reduced?'reduced-motion':''} ${context?'with-context':''}`;
  document.title=`初回復元 No.${String(id).padStart(2,'0')} ${concept.name} | Anyflow 実績セクション`;

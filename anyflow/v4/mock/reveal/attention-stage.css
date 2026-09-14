@@ -63,3 +63,5 @@
 .at-static .at-copy h3{font-size:32px!important;opacity:1!important}.at-static .at-copy h3>span{position:static!important;transform:none!important;width:auto!important}.at-static .at-copy h3 i{opacity:1!important}
 .at-static .at-copy p{position:static!important;width:auto!important;margin:24px 0 0;font-size:16px!important;opacity:1!important;filter:none!important}
 .at-static .at-track,.at-static .at-values:before,.at-static .at-values:after{display:none}
+
+.at-static.at-depth .at-scene{background:transparent!important}

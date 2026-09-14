@@ -9,7 +9,7 @@ import {createRestoredNumberStage,observeRestoredNumber,restoredNumberThumbnail}
 import {createAttentionStage,renderAttentionStage,attentionThumbnail} from './attention-stage.js';
 
 const query=new URLSearchParams(location.search);
-const concept=resolveConcept(query.get('concept')||concepts[0].id);
+const concept=resolveConcept(query.get('concept')||concepts[0]?.id);
 if(!concept){
  location.replace('/mock/reveal/?removed=1');
 }else{

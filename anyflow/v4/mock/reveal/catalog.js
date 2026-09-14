@@ -1,4 +1,6 @@
-// IDs are stable URL/storage keys. Display numbers follow the catalog order.
+// IDs are stable URL/storage keys. Display numbers follow the remaining catalog.
+let deletedIds=[];
+try{const saved=JSON.parse(localStorage.getItem('anyflow-reveal-selection-v1')||'null');if(Array.isArray(saved?.removed))deletedIds=saved.removed;}catch{}
 export const concepts = [
  {id:'02',preview:.045,entry:0,name:'余白から現れ、左へ収まる',brief:'空白から図と見出しが現れ、図が左へ収まる。余白を下へ抜けてAIでも繰り返す。',mode:'document',layout:'staged'},
  {id:'03',preview:.42,name:'見出しを綴り、本文が現れる',brief:'所定の位置で自動タイピング。スクロールを止めても打ち終わり、本文のブラーがほどける。',steps:['実績に目を留める','見出しをタイピング','本文がブラーから現れる'],vh:640,mode:'trigger-typing'},
@@ -24,7 +26,7 @@ export const concepts = [
  {id:'26',preview:.58,entry:0,name:'図から言葉へ、焦点を渡す',brief:'大きな図に目を留めたあと、図が引き、本文のブラーがほどける。',mode:'attention-focus'},
  {id:'27',preview:.58,entry:0,name:'中央の軸を、下へたどる',brief:'中央の細い線を読書の目印に、図と説明を左右交互にたどる。',mode:'attention-path'},
  {id:'28',preview:.22,entry:0,name:'奥行きで、主役を受け渡す',brief:'読み終えた用途が奥へ引き、次の用途が手前の正面へ。読める距離で長く留める。',mode:'attention-depth'},
-].map((c,index)=>({...c,number:String(index+1).padStart(2,'0'),label:`No.${String(index+1).padStart(2,'0')}`}));
+].filter(c=>!deletedIds.includes(c.id)).map((c,index)=>({...c,number:String(index+1).padStart(2,'0'),label:`No.${String(index+1).padStart(2,'0')}`}));
 export const fallbackContent={head:'事業の推進力を、<em>Anyflow</em>が支えます。',values:[
  {tag:'for SaaS',title:['リアルタイムに','データ同期'],body:'外部サービスと自動でデータを同期（インポート/エクスポート）。自社データx外部データの掛け算により「データで戦うSaaS」へ。'},
  {tag:'for AI',title:['コンテキスト取得','から実行まで'],body:'AIの業務に必要な膨大なコンテキストを1つのツールで取得。さらに業務実行のためのアクションツールも豊富に提供。'}

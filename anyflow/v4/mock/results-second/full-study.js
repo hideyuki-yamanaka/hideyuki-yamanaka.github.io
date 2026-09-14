@@ -15,6 +15,7 @@ function toolbar(){
  '<details class="study-note"><summary><span>'+concept.group+' / '+concept.focus+'</span><span>案の狙いと見どころ</span></summary><div><p>'+concept.desc+'</p><p><b>見どころ：</b>'+concept.action+'</p><p class="note-small">全案共通：Our Visionの図と2つの価値 → 実績 → 開発者体験のStrength 01・02（API／CLI／SDK）。サイズ・配置・スクロール距離は比較用の提案値です。</p></div></details>';
 }
 function init(){
+ try{const saved=JSON.parse(localStorage.getItem('anyflow-second-results-selection-v1')||'null');if(saved?.removed?.includes(String(id).padStart(2,'0'))){location.replace('/mock/results-second/');return;}}catch{}
  stopMotion();stopPictos();observer?.disconnect();
  document.body.className='study-page full-flow variant-'+id+(preview?' is-preview':'')+(reduced?' reduced-motion':'');
  document.title='No.'+String(id).padStart(2,'0')+' '+concept.name+' | Anyflow 2回目の復元';

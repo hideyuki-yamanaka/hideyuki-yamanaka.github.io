@@ -11,7 +11,7 @@ let saved={bookmarks:[],removed:[]};
 try{const value=JSON.parse(localStorage.getItem(storageKey)||'null');if(value&&Array.isArray(value.bookmarks)&&Array.isArray(value.removed))saved=value;}catch{}
 const bookmarks=new Set(saved.bookmarks),removed=new Set(saved.removed);let view='all';
 const toolbar=document.createElement('div');toolbar.className='comparison-tools';toolbar.setAttribute('aria-label','案の絞り込み');
-toolbar.innerHTML='<button type="button" data-view="all">すべて</button><button type="button" data-view="bookmarks">★ ブックマーク</button><button type="button" data-view="removed">削除済み</button>';
+toolbar.innerHTML='<button type="button" data-view="all">すべて</button><button type="button" data-view="bookmarks">★ ブックマーク</button>';
 document.querySelector('.comparison-intro').append(toolbar);
 const empty=document.createElement('p');empty.className='comparison-empty';empty.hidden=true;root.after(empty);
 const announcement=document.createElement('span');announcement.className='sr-only';announcement.setAttribute('role','status');root.after(announcement);
@@ -21,26 +21,25 @@ function refresh(){
  for(const [id,card] of cards){
   const label=concepts.find(c=>c.id===id).label;
   const selected=bookmarks.has(id),deleted=removed.has(id);
-  card.hidden=view==='removed'?!deleted:deleted||view==='bookmarks'&&!selected;
+  card.hidden=deleted||view==='bookmarks'&&!selected;
   if(!card.hidden)count++;
   const star=card.querySelector('.bookmark-choice');star.textContent=selected?'★':'☆';star.setAttribute('aria-pressed',String(selected));star.setAttribute('aria-label',`${label}のブックマークを${selected?'解除':'登録'}`);
-  const trash=card.querySelector('.remove-choice');trash.textContent=deleted?'↶':'×';trash.setAttribute('aria-label',`${label}を${deleted?'復元':'削除'}`);
+  const trash=card.querySelector('.remove-choice');trash.textContent='×';trash.setAttribute('aria-label',`${label}を削除`);
  }
  toolbar.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.view===view)));
  toolbar.querySelector('[data-view="bookmarks"]').textContent=`★ ブックマーク ${concepts.filter(c=>bookmarks.has(c.id)&&!removed.has(c.id)).length}`;
- toolbar.querySelector('[data-view="removed"]').textContent=`削除済み ${concepts.filter(c=>removed.has(c.id)).length}`;
  const cols=Math.min(5,Math.max(3,count));root.style.setProperty('--comparison-columns',cols);root.dataset.columns=String(cols);
  root.setAttribute('aria-label',`表示中の${count}案`);
- empty.hidden=!!count;empty.textContent=view==='bookmarks'?'カードの☆からブックマークできます。':view==='removed'?'削除した案はありません。':'表示する案はありません。「削除済み」から復元できます。';
+ empty.hidden=!!count;empty.textContent=view==='bookmarks'?'カードの☆からブックマークできます。':'表示する案はありません。';
 }
 toolbar.addEventListener('click',event=>{const button=event.target.closest('button');if(button){view=button.dataset.view;refresh();}});
 for(const c of concepts){
  const record=conceptHistory(c),card=document.createElement('article');card.className='comparison-card';card.id=`concept-${c.id}`;
  const sceneURL=`./demo.html?concept=${c.id}&at=${c.entry??c.preview}#results`;
- card.innerHTML=`<div class="choice-heading"><div class="choice-number"><h2>${c.label}</h2><span>${record.version}</span></div><h3>${c.name}</h3></div><a class="scene-link" href="${sceneURL}" aria-label="${c.label} ${c.name}を${c.entry===0?'最初':'この場面'}から見る"><div class="preview-window" aria-hidden="true"><span class="preview-loading">実装画面を読み込み中</span></div></a><div class="choice-actions"><button type="button" class="bookmark-choice" title="ブックマーク">☆</button><button type="button" class="remove-choice" title="削除・復元">×</button></div>`;
+ card.innerHTML=`<div class="choice-heading"><div class="choice-number"><h2>${c.label}</h2><span>${record.version}</span></div><h3>${c.name}</h3></div><a class="scene-link" href="${sceneURL}" aria-label="${c.label} ${c.name}を${c.entry===0?'最初':'この場面'}から見る"><div class="preview-window" aria-hidden="true"><span class="preview-loading">実装画面を読み込み中</span></div></a><div class="choice-actions"><button type="button" class="bookmark-choice" title="ブックマーク">☆</button><button type="button" class="remove-choice" title="削除">×</button></div>`;
  root.append(card);cards.set(c.id,card);
  card.querySelector('.bookmark-choice').addEventListener('click',()=>{if(bookmarks.has(c.id))bookmarks.delete(c.id);else bookmarks.add(c.id);persist();refresh();});
- card.querySelector('.remove-choice').addEventListener('click',()=>{const restore=removed.has(c.id);if(restore)removed.delete(c.id);else removed.add(c.id);persist();refresh();announcement.textContent=`${c.label}を${restore?'復元しました。':'削除しました。「削除済み」から復元できます。'}`;});
+ card.querySelector('.remove-choice').addEventListener('click',()=>{removed.add(c.id);bookmarks.delete(c.id);persist();card.remove();cards.delete(c.id);announcement.textContent=`${c.label}を削除しました。`;location.reload();});
  const ro=new ResizeObserver(()=>fitPreview(card));ro.observe(card);
 }
 refresh();
@@ -69,4 +68,4 @@ const receive=event=>{
  window.removeEventListener('message',receive);renderer.remove();
 };
 window.addEventListener('message',receive);
-renderer.src=`./demo.html?concept=${concepts[0].id}&thumbnail=1#results`;document.body.append(renderer);
+if(concepts.length){renderer.src=`./demo.html?concept=${concepts[0].id}&thumbnail=1#results`;document.body.append(renderer);}

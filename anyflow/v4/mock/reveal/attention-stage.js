@@ -82,6 +82,8 @@ export function renderAttentionStage(s,scroll,w,h,reduced=false){
     const t=i?1-move:move,side=i?1:-1;
     el.style.transform=`perspective(1300px) translate3d(${side*t*w*1.05}px,${t*h*.07}px,${-t*650}px) rotateY(${side*t*16}deg)`;
     el.style.opacity=i?(move>.001?'1':'0'):'1';el.style.zIndex=i?'2':'1';
+    // Once AI has landed, expose V4's original gradient during the handoff to development.
+    el.style.backgroundColor=i&&move>.995?'transparent':'#e7e7e7';
    }
   });
   if(kind==='number'){
