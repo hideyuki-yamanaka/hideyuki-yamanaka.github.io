@@ -19,11 +19,12 @@ function persist(){try{localStorage.setItem(storageKey,JSON.stringify({bookmarks
 function refresh(){
  let count=0;
  for(const [id,card] of cards){
+  const label=concepts.find(c=>c.id===id).label;
   const selected=bookmarks.has(id),deleted=removed.has(id);
   card.hidden=view==='removed'?!deleted:deleted||view==='bookmarks'&&!selected;
   if(!card.hidden)count++;
-  const star=card.querySelector('.bookmark-choice');star.textContent=selected?'★':'☆';star.setAttribute('aria-pressed',String(selected));star.setAttribute('aria-label',`No.${id}のブックマークを${selected?'解除':'登録'}`);
-  const trash=card.querySelector('.remove-choice');trash.textContent=deleted?'↶':'×';trash.setAttribute('aria-label',`No.${id}を${deleted?'復元':'削除'}`);
+  const star=card.querySelector('.bookmark-choice');star.textContent=selected?'★':'☆';star.setAttribute('aria-pressed',String(selected));star.setAttribute('aria-label',`${label}のブックマークを${selected?'解除':'登録'}`);
+  const trash=card.querySelector('.remove-choice');trash.textContent=deleted?'↶':'×';trash.setAttribute('aria-label',`${label}を${deleted?'復元':'削除'}`);
  }
  toolbar.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.view===view)));
  toolbar.querySelector('[data-view="bookmarks"]').textContent=`★ ブックマーク ${concepts.filter(c=>bookmarks.has(c.id)&&!removed.has(c.id)).length}`;

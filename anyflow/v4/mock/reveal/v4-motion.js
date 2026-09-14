@@ -24,7 +24,11 @@ export function polishPictograms(root){
 export function createV4Slots(root,reduced){
  buildSlots();
  const groups=[...root.querySelectorAll('.pf-number,.ds-stat>span,.pf-mobile-stats>div>span')].map((host,i)=>{
-  const original=slots[i%3];
+  // A composition may place the 20,000+ metric first. Match its explicit source
+  // index instead of cloning the 100+ reel just because it is first in the DOM.
+  const requested=Number(host.dataset.slotIndex);
+  const index=Number.isInteger(requested)&&requested>=0&&requested<slots.length?requested:i%3;
+  const original=slots[index];
   host.dataset.finalNumber=host.textContent;host.setAttribute('aria-label',host.textContent);
   const wrap=original.host.firstElementChild.cloneNode(true);wrap.setAttribute('aria-hidden','true');host.replaceChildren(wrap);
   return {host,reels:[...wrap.querySelectorAll('.rl')].map(rl=>({rl,stp:rl.firstElementChild,len:rl.firstElementChild.children.length})),startedAt:null};
@@ -33,7 +37,7 @@ export function createV4Slots(root,reduced){
   const now=performance.now(),original=slots;
   try{for(const group of groups){
    const rect=group.host.getBoundingClientRect();
-   const reveal=group.host.closest('.rp-reveal');
+   const reveal=group.host.closest('.rp-reveal,.rn-reveal');
    const visible=group.host.offsetWidth>0&&rect.top<innerHeight*.85&&rect.bottom>0&&Number(getComputedStyle(group.host.parentElement).opacity)>.15&&(!reveal||Number(getComputedStyle(reveal).opacity)>.15);
    if(visible&&group.startedAt==null)group.startedAt=now;
    // Run the actual V4 reel renderer: same sequence, stagger, duration and easing.
