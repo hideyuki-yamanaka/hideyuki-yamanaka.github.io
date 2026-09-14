@@ -1100,6 +1100,30 @@
   #results.rfx-24 .r2v-big, #results.rfx-25 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: 70px; line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-24 .r2v-big-ai, #results.rfx-25 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
   html:not(.mb) #results.rfx-25 .res2 { padding: calc(10 * var(--rvh)) 0 calc(30 * var(--rvh)); }   /* 案25: 固定なし。通り過ぎながら読めるよう下に余白 */
+  /* ===== 案26 数字が大きく→上段の終点→線→下段がブラー→横スクロール(絵コンテ Figma 17283:23622・2026-09-15)。
+     カンプ実測: 大きい数値 120px(「+」60)・上段: 見出し 34px/1.7(左・x90) 数値 70px(「+」40・ラベル16/24)(右・x677) / 線 y409 幅1214 /
+     下段: 説明 530(ラベル20・見出し44/1.6 1行・本文14/1.8) 左・ピクト 416枠(内容219) 右 ===== */
+  html:not(.mb) #results.rfx-26 .res2 { width: min(1226px, 100% - 120px); display: flex; flex-direction: column; gap: 0; }
+  #results.rfx-26 .res2-top { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 40px; }
+  #results.rfx-26 .res2-head { flex-direction: column; align-items: flex-start; justify-content: flex-start; font-size: 34px; line-height: 1.7; }
+  #results.rfx-26 .res2-stats { gap: 44px; align-items: flex-start; margin-top: 14px; }
+  #results.rfx-26 .res2-stats .r2s { gap: 8px; transform-origin: center center; }
+  #results.rfx-26 .res2-stats .r2s span { font-size: 70px; line-height: 1; }
+  #results.rfx-26 .res2-stats .r2s b { font-size: 16px; line-height: 24px; }
+  #results.rfx-26 .slot .fx:last-child { font-size: 40px; }
+  #results.rfx-26 .res2-hr { display: block; margin: 97px 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  #results.rfx-26 .res2-vals { display: flex; width: 100%; overflow: hidden; margin: 0; }
+  #results.rfx-26 .r2v-track { display: flex; width: 100%; }
+  #results.rfx-26 .res2-vline { display: none; }
+  #results.rfx-26 .r2v { flex: 0 0 100%; box-sizing: border-box; min-width: 0; display: grid; grid-template-columns: 530px 1fr; gap: 40px; align-items: center; padding: 0; min-height: 416px; }
+  #results.rfx-26 .r2v-text { order: 0; width: 530px; max-width: 530px; gap: 16px; }
+  #results.rfx-26 .r2v-tagh { gap: 8px; }
+  #results.rfx-26 .r2v-tag { font-size: 20px; line-height: 1; }
+  #results.rfx-26 .r2v-h { font-size: 44px; line-height: 1.6; white-space: nowrap; }
+  #results.rfx-26 .r2v-h br { display: none; }
+  #results.rfx-26 .r2v-p { font-size: 14px; line-height: 1.8; }
+  #results.rfx-26 .r2v-fig { display: block; order: 1; justify-self: end; margin-right: 60px; }
+  #results.rfx-26 .r2v-graphic { width: 325px; height: 325px; }   /* 描画 148/220 → 219px ＝ カンプの内容 219px */
 
   /* ===== SP(html.mb) の案別レイアウト(MD 6章・390×664 のサンプル実測を目安に。等倍・C = 100% - 40px) =====
      PC をそのまま縮めない。図上/文章下の縦積み。縦が短い端末(html.rfx-short・≤600px)は固定案も縦流れ(原本の max-height:600px 相当)。 */
@@ -1271,6 +1295,21 @@
   html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 300px; transform-origin: center; }
   html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: 300px; height: 220px; }
   html.mb #results.rfx-24 .r2v-big, html.mb #results.rfx-25 .r2v-big { font-size: 40px; }
+  /* --- 案26(SP): 上段は見出し(29px・2行)と数値(40px)を縦に。線 → 下段は図235×145 上/言葉 下の面が横に動く。数値の拡大は 1.1倍 --- */
+  html.mb #results.rfx-26 .res2 { width: 100%; padding: 22px 0 12px; }
+  html.mb #results.rfx-26 .res2-top { flex-direction: column; align-items: flex-start; gap: 16px; padding: 0 20px; }
+  html.mb #results.rfx-26 .res2-head { flex-direction: column; align-items: flex-start; font-size: 29px; line-height: 1.5; }
+  html.mb #results.rfx-26 .res2-stats { flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; width: 100%; margin-top: 0; }
+  html.mb #results.rfx-26 .res2-stats .r2s span { font-size: 40px; }
+  html.mb #results.rfx-26 .res2-stats .r2s b { font-size: 12px; line-height: 18px; }
+  html.mb #results.rfx-26 .res2-hr { margin: 28px 20px 0; width: auto; }
+  html.mb #results.rfx-26 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 24px 20px 0; min-height: 0; }
+  html.mb #results.rfx-26 .r2v-fig { order: -1; align-self: center; width: 235px; margin: 0; }
+  html.mb #results.rfx-26 .r2v-graphic { width: 235px; height: 145px; }
+  html.mb #results.rfx-26 .r2v-text { max-width: none; width: 100%; gap: 10px; margin-top: 10px; }
+  html.mb #results.rfx-26 .r2v-tag { font-size: 16px; }
+  html.mb #results.rfx-26 .r2v-h { font-size: 25px; line-height: 1.45; white-space: nowrap; }
+  html.mb #results.rfx-26 .r2v-p { font-size: 14px; line-height: 1.8; }
   /* --- 案の SP 共通: 価値見出しは設計の改行(<br>)を生かして2行。
          現行SPの「1行 nowrap」は 22px の時だけ成立し、案の 28〜32px では本文幅 350px に収まらない
          (2026-09-14 実測: AI 側「コンテキスト取得から実行まで」= 案1 405px・案6 391・案4 447)。
@@ -1315,6 +1354,10 @@
   html.mb.rfx-short #results.rfx-24 .res2-top, html.mb.rfx-short #results.rfx-24 .r2v, html.mb.rfx-short #results.rfx-24 .r2v-fig, html.mb.rfx-short #results.rfx-24 .r2v-text, html.mb.rfx-short #results.rfx-25 .res2-top, html.mb.rfx-short #results.rfx-25 .r2v, html.mb.rfx-short #results.rfx-25 .r2v-fig, html.mb.rfx-short #results.rfx-25 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-24 .res2-hr, html.mb.rfx-short #results.rfx-25 .res2-hr { transform: none !important; }
   html.mb.rfx-short #results.rfx-24 .r2v-big, html.mb.rfx-short #results.rfx-25 .r2v-big { display: none; }
+  html.mb.rfx-short #results.rfx-26 .res2-vals { display: block; overflow: visible; }
+  html.mb.rfx-short #results.rfx-26 .r2v-track { display: block; transform: none !important; }
+  html.mb.rfx-short #results.rfx-26 .r2v-fig, html.mb.rfx-short #results.rfx-26 .r2v-text, html.mb.rfx-short #results.rfx-26 .res2-head, html.mb.rfx-short #results.rfx-26 .r2s { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
+  html.mb.rfx-short #results.rfx-26 .res2-hr { transform: none !important; }
   /* 案24(SP): 常に縦流れ(rfx-flow)。全部見せる */
   html.mb #results.rfx-24.rfx-flow .res2, html.mb #results.rfx-25.rfx-flow .res2 { padding: 40px 0; }
   html.mb #results.rfx-24.rfx-flow .res2-top, html.mb #results.rfx-24.rfx-flow .r2v, html.mb #results.rfx-24.rfx-flow .r2v-fig, html.mb #results.rfx-24.rfx-flow .r2v-text, html.mb #results.rfx-25.rfx-flow .res2-top, html.mb #results.rfx-25.rfx-flow .r2v, html.mb #results.rfx-25.rfx-flow .r2v-fig, html.mb #results.rfx-25.rfx-flow .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
@@ -4020,6 +4063,7 @@ const DEFAULTS = {
       fx20: { labelRise: 120, heroScale: 1.35 },            // 案20: 大見出しが上へ抜ける距離(px)・ピクトの主役の大きさ(絵コンテ 304×405≒1.35)
       fx21: { numScale: 3.0, settleAt: 0.06, settleLen: 0.20, panAt: 0.50, panLen: 0.22 },   // 案21〜23: 数値の大きさ・収まり始め/長さ・横移動の始め/長さ(固定区間の割合)
       fx24: { heroScale: 1.7, labelUp: 190 },   // 案24: ピクトの主役の大きさ(絵コンテ 666枠/386枠≒1.7)・文字が上へ動く距離(px)
+      fx26: { numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 },   // 案26: 数値の大きさ(120/70)・収まり・線・横移動(固定区間の割合)
       /* 数字のスロット (2026-08-17 指定)。
          数字は最初から出しておき、回転そのものを見せる。ブラー出現は見出しだけ。
          ⚠️ 下の4つは「回転が見えるように」仮で置いた値。パネルで詰めてください */
@@ -4378,7 +4422,7 @@ let params = load();
 /* 【2026-09-13 比較検証】URL に ?resFx=1|4|5|6|7|9|default を付けると実績の演出案を指定できる(共有用)。
    パネルで別の値を触るまでは保存されない。 */
 try {
-  const _rfx = location.search.match(/[?&]resFx=(default|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|1|4|5|6)(?:&|$)/);
+  const _rfx = location.search.match(/[?&]resFx=(default|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|1|4|5|6)(?:&|$)/);
   if (_rfx) { params.patterns = params.patterns || {}; params.patterns.resFx = _rfx[1]; }
 } catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
@@ -9966,8 +10010,9 @@ const RES_FX = {
   '23': { vh: 520 },             // ピクト先行(面より先に着く)
   '24': { vh: 480, mobileFlow: true },   // for SaaS/for AI から入る(絵コンテ Figma 17271:23392)。SP は2列を縦に積むと1画面に収まらないので縦流れ
   '25': { vh: 0, flow: true },           // 案24 の通常スクロール版(固定しない。通り過ぎる間に同じ変化)
+  '26': { vh: 560 },                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
 };
-const RES_FX_KEYS = ['1', '4', '5', '6', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25'];
+const RES_FX_KEYS = ['1', '4', '5', '6', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26'];
 function resFxKey() { const v = params.patterns && params.patterns.resFx; return (RES_FX[v] && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resFx', v))) ? v : 'default'; }   /* 恒久除外(VARIANT_REMOVED_EXTRA.resFx)した案は現行に落とす */
 function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
@@ -10181,7 +10226,7 @@ function resFxFrame(t) {
   /* 縦流れの案(4/25・PC): ステージは --sp 倍に縮めて表示するので、レイアウト上の高さとの差を margin-bottom で詰める */
   if (!isMobile && (k === '4' || k === '25')) { const st = rfxStage(); const sp = rfxSp(); if (st) setStyle(st, 'marginBottom', (-(st.offsetHeight * (1 - sp))).toFixed(1) + 'px'); }
   /* 縦が短い端末(SP・高さ600px以下)は固定案(1/5/6)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
-  if ((resFxShort() || (isMobile && RES_FX[k] && RES_FX[k].mobileFlow)) && ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24'].includes(k)) { valTOv.saas = null; valTOv.ai = null; return; }
+  if ((resFxShort() || (isMobile && RES_FX[k] && RES_FX[k].mobileFlow)) && ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '26'].includes(k)) { valTOv.saas = null; valTOv.ai = null; return; }
 
   if (k === '1') {
     const p = resFxPin();
@@ -10607,6 +10652,36 @@ function resFxFrame(t) {
         tf(fig, `scale(${s.toFixed(4)})`);   /* 位置は動かさず、その場で大きく→収まる */
       }
       if (tx) { setStyle(tx, 'opacity', (on ? TK : 0).toFixed(3)); tf(tx, `translateY(${((1 - TK) * 16).toFixed(2)}px)`); }
+    });
+  } else if (k === '26') {
+    const p = resFxPin(), W = rfxVW(), vh = rfxVH();
+    const F = Object.assign({ numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 }, (params.sections.results.fx26 || {}));
+    /* 【案26 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール】(絵コンテ Figma 17283:23622・2026-09-15 ヒデさん指定)
+       A: 3つの数値が中央に大きく(120px相当=1.714倍) → 上段の終点(見出し 左・数値 右)へ収まり、見出しが薄く現れる
+       B: 横線が左から伸びきる → C: 下段(説明 左・ピクト 右)がブラーで現れる(ピクト→文章の順) → D: 下段が横に動いて for AI(到着の終盤にブラーで) → 読む → 縦に戻って開発者体験へ。パネル「案26」 */
+    setStyle(resEls.vals, 'opacity', '1'); setStyle(resEls.vals, 'filter', ''); setStyle(resEls.vals, 'pointerEvents', '');
+    const shrink = rfxRange(p, F.settleAt, F.settleAt + Math.max(0.05, F.settleLen));
+    const S0 = isMobile ? 1.1 : F.numScale;
+    const OFF = isMobile ? [-100, 0, 100] : [-423, -10, 412];   /* 絵コンテ: 大きい時の3つの中心(画面中央からのずれ) */
+    E.r2s.forEach((el, i) => {
+      const cx = rfxCenterX(el, 0), cy = rfxCenterY(el);
+      const dx = (W / 2 + OFF[i] - cx) * (1 - shrink), dy = (vh / 2 - 25 - cy) * (1 - shrink);
+      tf(el, `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${(S0 - (S0 - 1) * shrink).toFixed(4)})`);
+    });
+    const hk = rfxRange(p, F.settleAt + F.settleLen * 0.6, F.settleAt + F.settleLen + 0.04);   /* 見出し(上段左)は数値が収まる終盤に */
+    if (resEls.head) { setStyle(resEls.head, 'opacity', hk.toFixed(3)); setStyle(resEls.head, 'pointerEvents', hk < 0.02 ? 'none' : ''); tf(resEls.head, `translateY(${((1 - hk) * 16).toFixed(2)}px)`); }
+    const lineEnd = F.lineAt + Math.max(0.03, F.lineLen);
+    E.res2.style.setProperty('--rfx-hr', rfxRange(p, F.lineAt, lineEnd).toFixed(3));
+    const fk = rfxRange(p, lineEnd, lineEnd + 0.08), tk = rfxRange(p, lineEnd + 0.04, lineEnd + 0.12);   /* 線が伸びきってから: ピクト → 文章 */
+    const pos = rfxHeld(p, [[F.panAt, F.panAt + Math.max(0.05, F.panLen)]]);
+    tf(E.track, `translateX(${(-pos * 100).toFixed(3)}%)`);
+    E.r2v.forEach((el, i) => {
+      const fig = E.fig[i], tx = E.tx[i];
+      const arrive = rfxRange(pos, 0.55, 1);
+      const kf = on ? (i === 0 ? fk : arrive) : 0, kt = on ? (i === 0 ? tk : arrive) : 0;
+      if (fig) rv(fig, kf, 14, 0);
+      if (tx) rv(tx, kt, 14, 0);
+      vis(el, on ? 1 : 0);
     });
   }
 }
@@ -16104,6 +16179,7 @@ function buildPanel() {
       ['23 数値が大きく→横へ(ピクト先行)', '23', '21と同じ流れで、横移動の時に AI のピクトが面より先に着き、SaaS のピクトが先に去る(ピクトが導く)(固定・520vh)。'],
       ['24 for SaaS/for AI から入る', '24', '絵コンテ(Figma 17271:23392): 「for SaaS」「for AI」(70px)が左右に並ぶ→文字は小さく上へ、各列の中央にピクトが大きく(モーションは動いたまま)→終点: 上に説明・下にピクト、その下に見出しと数値(固定・480vh)。'],
       ['25 同・通常スクロール版', '25', '案24 を固定せずに。セクションが下から通り過ぎる間に同じ変化(大見出し→小さく上へ・ピクトがその場で大きく→収まる→説明→下段)。固定なし。'],
+      ['26 数値→線→下段が横へ', '26', '絵コンテ(Figma 17283:23622): 3つの数値が中央に大きく→上段の終点(見出し 左・数値 右)へ→横線が伸びきる→下段(説明・ピクト)がブラーで→横に動いて for AI→縦に戻る(固定・560vh)。'],
     ];
     /* 【2026-09-14 ヒデさん指定】案は × で消せる(KV のバリエーションと同じ仕組み。「現行」は消せない・番号は振り直さない) */
     resFxRow(RFX_OPTS);
@@ -16114,7 +16190,7 @@ function buildPanel() {
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
       '固定して読む区間の長さ(1/5/6/10/11/13〜24。4・12・25 は固定なし)。大きいほどゆっくり進みます。'));
     { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
-      rfxDyn(_vr, ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']); }   /* 固定のある案の時だけ出す */
+      rfxDyn(_vr, ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '26']); }   /* 25 は固定なし */   /* 固定のある案の時だけ出す */
     /* 【2026-09-14 ヒデさん指定】主役ピクト系(案6・15〜19)の「数値の訴求 → ピクトのアニメーション」の移行を詰めるスライダー(値は params.sections.results.hero) */
     sub(catRes, '主役ピクト系（案6・14〜20）：数値→ピクトの移行', true, { fixed: true });
     const _heroGrp = catRes.lastElementChild;
@@ -16173,6 +16249,20 @@ function buildPanel() {
     s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。');
     s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。');
     rfxDyn(_g24, ['24', '25']);
+    /* 案26: 数値の大きさ・線・横移動(その案の時だけ出す) */
+    sub(catRes, '案26：数値の大きさ・線・横移動', true, { fixed: true });
+    const _g26 = catRes.lastElementChild;
+    const f26 = () => { const r = params.sections.results; r.fx26 = r.fx26 || {}; return r.fx26; };
+    const F26 = { numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 };
+    const s26 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f26()[key] != null ? f26()[key] : F26[key]), v => { f26()[key] = v; markDirty(); }, fmt, tip));
+    s26('数値の大きさ', 'numScale', 1.2, 3, 0.05, v => '×' + v.toFixed(2), '最初に中央へ大きく出す倍率(70px に対して。絵コンテは 120px=1.71倍)。');
+    s26('数値が収まり始める位置', 'settleAt', 0, 0.3, 0.01, pct, '固定区間のどこから上段の終点へ動き始めるか。');
+    s26('収まる長さ', 'settleLen', 0.05, 0.5, 0.01, pct, '終点に収まり切るまでの長さ。');
+    s26('線が伸び始める位置', 'lineAt', 0.1, 0.6, 0.01, pct, '横線が左から伸び始める位置。伸びきると下段がブラーで現れます。');
+    s26('線が伸びる長さ', 'lineLen', 0.03, 0.4, 0.01, pct, '線が伸びきるまでの長さ。');
+    s26('横に動き始める位置', 'panAt', 0.3, 0.85, 0.01, pct, '下段が for SaaS → for AI へ動き始める位置。');
+    s26('横移動の長さ', 'panLen', 0.05, 0.5, 0.01, pct, '横移動にかける長さ。');
+    rfxDyn(_g26, ['26']);
     syncRfxDyn();
   }
 
