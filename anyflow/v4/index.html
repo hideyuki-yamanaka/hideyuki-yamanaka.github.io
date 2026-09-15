@@ -2443,7 +2443,11 @@
   #footer.ft-hidden { display: none; }
   /* 【2026-09-15 ヒデさん指定】縦幅(パネル「コンバージョン」): 枠の案は高さそのもの、一体型は最小の高さ(内容より大きい時だけ効く) */
   html:not(.mb) #conversion:not(.cv-fi) .cv-inner { height: var(--cv-h, 416px); }
-  html:not(.mb) #conversion { margin-top: var(--cv-gap, 0px); }   /* 導入事例との間隔(パネル。0=いままで) */
+  /* 【2026-09-15 ヒデさん指定】導入事例との間隔(パネル。0=いままで)
+     一体型(canvas がセクション全体を覆う案)は padding で足す＝広げた分も【色の面】になる(上に地色の帯ができない)。
+     枠の案は canvas が中の箱なので従来どおり余白(margin)。マイナス(詰める)はどちらも margin で引き上げる。 */
+  html:not(.mb) #conversion:not(.cv-fi) { margin-top: var(--cv-gap, 0px); }
+  html:not(.mb) #conversion.cv-fi { margin-top: min(0px, var(--cv-gap, 0px)); }   /* マイナス(詰める)だけ margin。プラスは下の padding で色の面にする */
   html:not(.mb) #conversion.cv-fi { display: flex; flex-direction: column; min-height: var(--cv-h, 0px); }
   html:not(.mb) #conversion.cv-fi .cv-foot { margin-top: auto; }
   /* 暗い配色(カラー案 8〜10 や「暗さ」)では文字を白に。params.cv.ink = auto(色から判定) / dark / light */
@@ -2453,7 +2457,7 @@
   /* 【2026-09-15 ヒデさん指定】ボタンのホバー色(パネル): --cv-hov-bg / --cv-hov-fg。白文字の案でも同じ指定が勝つ */
   #conversion .cv-btn.cv-btn:hover { background: var(--cv-hov-bg, var(--brand-cyan)); color: var(--cv-hov-fg, #fff); }
   /* 共通: フッター一体型(1・2・3・8・10) */
-  #conversion.cv-fi { position: relative; overflow: hidden; padding: 0; }
+  #conversion.cv-fi { position: relative; overflow: hidden; padding: 0; padding-top: max(0px, var(--cv-gap, 0px)); }   /* 間隔(プラス)は padding＝canvas が覆う＝色の面になる。自前の padding を持つ案(13)はそちらが後勝ちで無効 */
   #conversion.cv-fi .cv-inner { position: static; width: auto; height: auto; overflow: visible; margin: 0; }
   #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: 150px auto 120px; }
   #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; position: relative; z-index: 2; padding: 28px max(120px, calc((100% - 1200px) / 2)) 36px; border-top: 1px solid rgba(0,0,0,.16); color: var(--ink-strong); }   /* 左右は本文と同じグリッド(1200px 中央) */
@@ -2480,7 +2484,9 @@
   #conversion.cvs-13 .cv-foot-addr { margin-top: 4px; white-space: nowrap; }
   /* 案10: 溶け込む一体型(上端をページの地色から) */
   #conversion.cvs-10 { background: var(--surface); }
-  #conversion.cvs-10 #cvCanvas { -webkit-mask-image: linear-gradient(180deg, transparent var(--cv-fade0, 0%), #000 var(--cv-fade1, 44%)); mask-image: linear-gradient(180deg, transparent var(--cv-fade0, 0%), #000 var(--cv-fade1, 44%)); }   /* 溶け込みの境界(パネル) */
+  /* 【2026-09-15 ヒデさん指摘・根治】溶け込みの境界は % ではなく px で持つ(JS が「伸ばす前の高さ」から算出)。
+     % のままだと、縦幅や間隔を伸ばすほど【薄い帯もいっしょに伸びて】上がどんどん白っぽくなっていた。 */
+  #conversion.cvs-10 #cvCanvas { -webkit-mask-image: linear-gradient(180deg, transparent var(--cv-fade0, 0px), #000 min(var(--cv-fade1, 294px), 96%)); mask-image: linear-gradient(180deg, transparent var(--cv-fade0, 0px), #000 min(var(--cv-fade1, 294px), 96%)); }
   #conversion.cvs-10 .cv-content { margin: 210px auto 120px; }
 
   /* ================= フッター (カンプ 16083:23592 に差し替え・2026-09-09) =================
@@ -6112,6 +6118,37 @@ function cvInkLight() {
   const dark = Math.max(c.dark || 0, (typeof cvStyleDef === 'function' && cvStyleDef().dark) ? 1 : 0);
   return (mid * (1 - dark * 0.7)) < 0.42;
 }
+/* ===== 【2026-09-15 ヒデさん指摘】縦幅や間隔を伸ばしても「上が薄くならない」ための土台 =====
+   ① 溶け込みの薄い帯は【伸ばす前の高さ】を基準にした px で持つ(% だと伸ばした分だけ薄い帯も伸びる)
+   ② グラデ自体も canvas の高さで縦に引き伸ばされるので、シェーダに uVK(=いまの高さ ÷ 伸ばす前の高さ)を渡して
+      上端を固定したまま【下へ伸ばす】。伸ばした分は濃い側が増える＝上は元のまま濃い */
+let cvNatH = 0, cvNatKey = '';
+function cvNaturalH(sec) {
+  if (!sec) return 0;
+  const key = (sec.className || '') + '|' + Math.round(window.innerWidth || 0);
+  if (key === cvNatKey && cvNatH > 20) return cvNatH;
+  const st = sec.style, mh = st.minHeight, pt = st.paddingTop;
+  st.minHeight = '0px'; st.paddingTop = '0px';                 /* 伸ばす指定を一時的に外して素の高さを測る */
+  const h = sec.getBoundingClientRect().height;
+  st.minHeight = mh; st.paddingTop = pt;
+  if (h > 20) { cvNatH = h; cvNatKey = key; }
+  return cvNatH || h;
+}
+function cvApplyFade(sec) {
+  const base = cvNaturalH(sec) || sec.getBoundingClientRect().height || 609;
+  const f0 = (params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0;
+  const f1 = (params.cv && params.cv.fade1 != null) ? params.cv.fade1 : 44;
+  sec.style.setProperty('--cv-fade0', Math.round(base * f0 / 100) + 'px');
+  sec.style.setProperty('--cv-fade1', Math.round(base * f1 / 100) + 'px');
+}
+/* 画面幅が変わったら素の高さも変わる(文字の折返し)ので測り直す */
+function cvSyncStretch() {
+  const sec = document.getElementById('conversion'); if (!sec) return 1;
+  const before = cvNatH, base = cvNaturalH(sec);
+  if (base !== before) cvApplyFade(sec);
+  const now = sec.getBoundingClientRect().height;
+  return (base > 20 && now > 20) ? Math.min(3, Math.max(0.5, now / base)) : 1;
+}
 function applyCvStyle(fromSwitch) {
   const sec = document.getElementById('conversion'); if (!sec) return;
   const st = cvStyleDef();
@@ -6125,9 +6162,9 @@ function applyCvStyle(fromSwitch) {
   sec.style.setProperty('--cv-h', ((params.cv && params.cv.h) || 416) + 'px');   /* 縦幅(パネル) */
   { const HV = { cyan: ['#0EBBFF', '#fff'], black: ['#090909', '#fff'], white: ['#ffffff', '#111'], pink: ['#FF5D97', '#fff'], navy: ['#0E4497', '#fff'] };
     const hv = HV[(params.cv && params.cv.btnHover) || 'cyan'] || HV.cyan; sec.style.setProperty('--cv-hov-bg', hv[0]); sec.style.setProperty('--cv-hov-fg', hv[1]); }
-  sec.style.setProperty('--cv-gap', ((params.cv && params.cv.gapTop) || 0) + 'px');   /* 導入事例との間隔 */
-  sec.style.setProperty('--cv-fade0', ((params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0) + '%');   /* 溶け込みの始まり */
-  sec.style.setProperty('--cv-fade1', ((params.cv && params.cv.fade1 != null) ? params.cv.fade1 : 44) + '%');   /* 溶け込みの終わり */
+  const _mb = document.documentElement.classList.contains('mb');
+  sec.style.setProperty('--cv-gap', (_mb ? 0 : ((params.cv && params.cv.gapTop) || 0)) + 'px');   /* 導入事例との間隔(SP は従来どおり効かせない) */
+  cvApplyFade(sec);   /* 溶け込みの境界(「伸ばす前の高さ」基準の px。伸ばしても薄い帯は広がらない) */
   /* 案11: 黒ボタンをフッター帯(©の左)へ移す。他の案では本文の下へ戻す */
   const btn = sec.querySelector('.cv-btn'), footR = sec.querySelector('.cv-foot-r'), content = sec.querySelector('.cv-content');
   if (btn && footR && content) { if (st.btnInFoot) { if (btn.parentElement !== footR) footR.insertBefore(btn, footR.firstChild); } else if (btn.parentElement !== content) content.appendChild(btn); }
@@ -6151,6 +6188,7 @@ uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラ�
 uniform float uGMode, uGAng, uDark; uniform vec2 uGC, uGR; uniform vec3 uDarkCol;   /* 形(0=カンプ/1=放射/2=線形)・中心・広がり・回転、暗さ(黒ベース) */
 uniform float uShape, uWaveF, uWaveMix;   /* 【2026-09-15】色のウェーブ(造形): 0=なし / 1=横の波 / 2=波紋 / 3=斜めの縞 / 4=大きなうねり / 5=くねる帯。波の数・混ぜる強さ */
 uniform float uHue;   /* 【2026-09-15】色味の移ろい(色相の回転・ラジアン。JS が時間で回す) */
+uniform float uVK;    /* 【2026-09-15】縦に伸ばした倍率(=いまの高さ ÷ 伸ばす前の高さ)。上端を固定して下へ伸ばす＝上が薄くならない */
 vec3 hueRot(vec3 c, float a) { const vec3 k = vec3(0.57735); float ca = cos(a), sa = sin(a); return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca); }
 uniform vec3 uGA, uGB;   /* radial gradientTransform の係数(PC/SP でカンプが違うので JS から渡す) */
 float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
@@ -6176,6 +6214,7 @@ void main(){
   vec2 fc = (cellId + 0.5) * CELL;
   vec2 uv = fc / uRes;
   uv.y = 1.0 - uv.y;                       /* Figmaのオブジェクト座標(y下向き)に合わせる */
+  uv.y *= uVK;                             /* 伸ばした分は下へ(上端 y=0 は固定)。1.0 のときは従来どおり */
   /* 流れ: 惑星と同じ発想で、uv を fbm でゆらしてから色を引く(ドメインワープ) */
   vec2 w = uv * uFlowScale;
   float n1 = fbm(w + vec2(uTime * uSpeed, 0.0));
@@ -6227,7 +6266,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(p, 'aP');
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uShape', 'uWaveF', 'uWaveMix', 'uHue'])
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uShape', 'uWaveF', 'uWaveMix', 'uHue', 'uVK'])
       uni[k] = gl.getUniformLocation(p, k);
   }
   function visible() {
@@ -6270,6 +6309,8 @@ void main(){
     gl.uniform1f(uni.uWaveMix, c.waveMix != null ? c.waveMix : 1);
     /* 色相の回転は使わない(ブランドにない色が出るため)。移ろいは上のパレット入れ替えで行う */
     gl.uniform1f(uni.uHue, 0);
+    /* 縦に伸ばしても上が薄くならないように、グラデは上端を固定して下へ伸ばす */
+    gl.uniform1f(uni.uVK, (typeof cvSyncStretch === 'function') ? cvSyncStretch() : 1);
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
        SP は M=[-31.225 24.205 -22.32 -26.671 300.25 32.955], r=10 を u,v∈[0,1] に正規化して
        gx = 係数·(u,v,1)/20 + 0.5 の形にした値(中心(300,33)=右上で t=0(淡ピンク白)、左下 t≒0.98(ピンク)、右下 0.70(青紫))。 */
@@ -17840,11 +17881,11 @@ function buildPanel() {
   rows.push(slider('波の数', 0.5, 6, 0.1, () => (cvv().waveF != null ? cvv().waveF : 2), v => { cvv().waveF = v; }, v => '×' + v.toFixed(1), '波(縞・輪・うねり)の細かさ。'));
   rows.push(slider('混ぜる強さ', 0, 1, 0.02, () => (cvv().waveMix != null ? cvv().waveMix : 1), v => { cvv().waveMix = v; }, v => Math.round(v * 100) + '%', '100%で波だけ、下げるほど元の流れのグラデと混ざります。'));
   sub(catCv, '縦幅・間隔');
-  rows.push(slider('縦幅（PC）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '枠の案は高さそのもの(カンプ 416)。一体型は「最小の高さ」＝内容より大きくした時だけ下に余白が増えます。SP は変わりません。'));
-  rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの間の余白の増減。0 がいままで。マイナスで詰まります(PC のみ)。', { signed: true }));
+  rows.push(slider('縦幅（PC）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '枠の案は高さそのもの(カンプ 416)。一体型は「最小の高さ」。伸ばした分は【濃い色の面】が増えます(上の薄い部分は広がりません)。SP は変わりません。'));
+  rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの間隔。一体型の案では、広げた分も【色(ディザ)の面】になります＝上に地色の帯ができません。枠の案は余白のまま。マイナスで詰まります(PC のみ)。', { signed: true }));
   sub(catCv, '溶け込みの境界（一体型・溶け込む）'); CV_DYN10.push(catCv.lastElementChild);
-  rows.push(slider('溶け込み 始まり', 0, 80, 1, () => (cvv().fade0 != null ? cvv().fade0 : 0), v => { cvv().fade0 = v; applyCvStyle(); }, v => Math.round(v) + '%', '上端からどこまでを完全に地色にするか。0%＝上端から徐々に。'));
-  rows.push(slider('溶け込み 終わり', 5, 100, 1, () => (cvv().fade1 != null ? cvv().fade1 : 44), v => { cvv().fade1 = v; applyCvStyle(); }, v => Math.round(v) + '%', 'ここでディザが完全に出る。始まりとの差が「切り返しのぼかし幅」。近づけるとくっきり、離すとゆるやか。'));
+  rows.push(slider('溶け込み 始まり', 0, 80, 1, () => (cvv().fade0 != null ? cvv().fade0 : 0), v => { cvv().fade0 = v; applyCvStyle(); }, v => Math.round(v) + '%', '上端からどこまでを完全に地色にするか。0%＝上端から徐々に。%は【伸ばす前の高さ】に対する割合なので、縦幅や間隔を伸ばしても薄い帯は広がりません。'));
+  rows.push(slider('溶け込み 終わり', 5, 100, 1, () => (cvv().fade1 != null ? cvv().fade1 : 44), v => { cvv().fade1 = v; applyCvStyle(); }, v => Math.round(v) + '%', 'ここでディザが完全に出る。始まりとの差が「切り返しのぼかし幅」。近づけるとくっきり、離すとゆるやか。既定44%＝上から約294px で完全に色が出ます(伸ばしても同じ)。'));
   syncCvDyn();
   sub(catCv, 'ディザリング（粗さ・階調）');
   rows.push(slider('粗さ（ドットの大きさ）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px',
