@@ -44,30 +44,20 @@
   --color-sky-top: #35c3ea; /* Brand_SkyTop     空グラデの上端 */
   --color-sky-bottom: #b5d7ff; /* Brand_SkyBottom  空グラデの下端 */
 
-  /* 🟡 2026-09-16 時点で V3.0 の画面からの参照が 0 件の色（V1/V2 からの継承）:
-     Text_Muted / Background_Canvas / Control_Pale / Accent_Green /
-     Accent_Tento / Accent_Sango / Accent_Ryuhyo。
-     ブランドのパレットなので消さずに残してある。使わないと決まったら削除する */
-
   /* ══════════ ベースカラー ══════════ */
   /* ── テキスト ── */
   --color-ink: #1e1e1e; /* Text_Default      白地の上の文字 */
-  --color-ink-muted: #7ba7cc; /* Text_Muted        補助・OFF 状態の文字とアイコン */
-  /* ── バックグラウンド ── */
-  --color-canvas: #e6f3ff; /* Background_Canvas 白い板の中の地 */
-  /* ── コントロール ── */
-  --color-sky-pale: #b6dafc; /* Control_Pale      未選択・未到達・装飾 */
   /* ── 影 ── */
   --color-shadow: #005fb3; /* Shadow_Base       影とスクリム。黒ではなく深い海の青 */
 
-  /* ══════════ アクセントカラー ══════════
-     青の世界に対して差す色。似た値は 1 つにまとめてある。 */
-  --color-accent: #87d500; /* Accent_Green  「選んだ」を伝える緑。ひまわり畑の色かぶせにも使う */
-  --color-tint-tento: #031fac; /* Accent_Tento  天都山展望台の色かぶせ */
-  --color-tint-sango: #ac3303; /* Accent_Sango  さんご草の色かぶせ */
-  --color-tint-ryuhyo: #0368ac; /* Accent_Ryuhyo 流氷クルーズの色かぶせ */
+  /* 2026-09-16 ヒデさん判断で削除（V3.0 の本番画面からの参照が 0 件だったため）:
+     Text_Muted #7ba7cc / Background_Canvas #e6f3ff / Control_Pale #b6dafc /
+     Accent_Green #87d500 / Accent_Tento #031fac / Accent_Sango #ac3303 /
+     Accent_Ryuhyo #0368ac
+     ※ /mock/ 配下の比較ページと SVG アセットには同じ色が直値で入っているが、
+       トークンとは無関係なのでそのまま動く。復活が必要になったらここに戻す */
 
-  /* ══════════ 角丸（4 段） ══════════ */
+  /* ══════════ 角丸（3 段） ══════════ */
   --radius-30: 30px; /* Radius_30px  板の中の面：タブレット内側・プロモカード・ダイアログ */
   --radius-290: 290px; /* Radius_290px 楕円カード */
 

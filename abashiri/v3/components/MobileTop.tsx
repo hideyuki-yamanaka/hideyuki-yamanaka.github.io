@@ -84,6 +84,11 @@ const EVENTS = [
 /* KV / メッセージ / スポット×4 / グルメ / 体験 / フッター
    （2026-09-16 ヒデさん指示で体験とフッターを追加。PCと同じ中身をスマホでも見せる） */
 const SCENE_COUNT = 9;
+
+/** キービジュアルの作字ブロック（PC カンプ 415×379）をスマホで何倍にするか。
+    PC との位置関係を壊さないよう、ブロックごと拡大縮小する。
+    0.8 → 0.64（2026-09-16 ヒデさん指示「もう少し80%ぐらいに縮小」） */
+const KV_SCALE = 0.64;
 const DUR = 800; // トランジション時間(ms)
 
 export default function MobileTop() {
@@ -213,9 +218,18 @@ export default function MobileTop() {
           <div className="flex flex-1 -translate-y-8 flex-col items-center justify-center">
             {/* 作字ブロックは PC カンプ 415×379 の相対配置そのまま
                 （網走市観光サイトは吹き出しの右上）。スマホ幅に合わせて縮小。
-                2026-08-28 ヒデさん指示：位置を勝手に変えずPC踏襲 */}
-            <div style={{ width: 415 * 0.8, height: 379 * 0.8 }} className="relative">
-              <div className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left scale-[0.8]">
+                2026-08-28 ヒデさん指示：位置を勝手に変えずPC踏襲
+                縮小率は KV_SCALE の1か所だけで管理する（枠の寸法も連動させる。
+                片方だけ直すと中身と枠がずれるため）。
+                2026-09-16 ヒデさん指示で 0.8 → さらに80%の 0.64 へ */}
+            <div
+              style={{ width: 415 * KV_SCALE, height: 379 * KV_SCALE }}
+              className="relative"
+            >
+              <div
+                className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left"
+                style={{ transform: `scale(${KV_SCALE})` }}
+              >
                 {/* ⚠️ 作字は 471x390。415px の枠に直接置くと img の max-width:100% で
                    415px まで縮められ（実測 390→343.6px）、「網走市観光サイト」との
                    位置関係が PC とずれる。PC と同じく入れ子の div に逃がして、
