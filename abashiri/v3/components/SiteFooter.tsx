@@ -23,25 +23,27 @@ import { motion } from "framer-motion";
 export const FOOTER_EVENT = "abashiri:footer";
 
 export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
+  /* どの案も「作字（な〜んにもない／たまらない）をいちばん見せる」ための組み方。
+     2026-09-16 ヒデさん指示で、縦ロゴ前提の旧レイアウトから全面的に作り直した */
   1: {
     name: "案1",
-    note: "白地・横並び（既定）。作字ロゴ（青）＋リンク＋SNSを一列に",
+    note: "中央に大きく（既定）。作字を真ん中に大きく置き、上下にたっぷり余白。リンクは下に小さく",
   },
   2: {
     name: "案2",
-    note: "空グラデ。下へ向かって空色になり、白文字。サイトの世界観に沈んで終わる",
+    note: "空に還る。下へ向かって青くなる空の中に、白い作字を大きく。KVの世界で終わる",
   },
   3: {
     name: "案3",
-    note: "ロゴ大きめ。作字を主役に置き、リンクは右へ小さく添える",
+    note: "左に大きく。作字を左に寄せて大きく置き、リンクとSNSは右端にそろえる",
   },
   4: {
     name: "案4",
-    note: "ミニマル1行。作字ロゴとSNSだけ。いちばん軽い終わり方",
+    note: "ポスター。作字をうんと大きく、下端にリンクを一行。いちばん潔い",
   },
   5: {
     name: "案5",
-    note: "中央そろえ。作字ロゴを真ん中に置き、リンクとSNSを上下に配置",
+    note: "作字が中心。リンクを作字の左右に振り分けて、作字が真ん中の軸になる",
   },
 };
 
@@ -98,13 +100,25 @@ function Logo({ h, light = false }: { h: number; light?: boolean }) {
   );
 }
 
-function NavLinks({ light = false, className = "" }: { light?: boolean; className?: string }) {
+function NavLinks({
+  light = false,
+  className = "",
+  only,
+}: {
+  light?: boolean;
+  className?: string;
+  /** 案5用：作字の左右に振り分けるとき、前半／後半だけを出す */
+  only?: "left" | "right";
+}) {
   const c = light
     ? "text-white/85 hover:text-white"
     : "text-ink/70 hover:text-ink";
+  const half = Math.ceil(LINKS.length / 2);
+  const items =
+    only === "left" ? LINKS.slice(0, half) : only === "right" ? LINKS.slice(half) : LINKS;
   return (
     <nav className={`flex flex-wrap items-center gap-x-8 gap-y-3 ${className}`}>
-      {LINKS.map((l) =>
+      {items.map((l) =>
         l.href ? (
           <Link
             key={l.label}
@@ -167,61 +181,63 @@ const reveal = {
 
 function Body({ pat }: { pat: number }) {
   switch (pat) {
-    /* 案2 空グラデ：下へ向かって空色になり、白文字で終わる */
+    /* 案2 空に還る：青い空の中に白の作字。KVと同じ世界で終わらせる */
     case 2:
       return (
-        <div className="flex w-full flex-col gap-[56px] px-[120px] py-[100px]">
-          <div className="flex items-end justify-between gap-10">
-            <Logo h={130} light />
-            <div className="flex flex-col items-end gap-6">
-              <NavLinks light className="justify-end" />
-              <SnsRow light />
-            </div>
+        <div className="flex w-full flex-col items-center gap-[64px] px-6 py-[130px]">
+          <Logo h={230} light />
+          <div className="flex flex-col items-center gap-8">
+            <NavLinks light className="justify-center" />
+            <SnsRow light />
           </div>
         </div>
       );
 
-    /* 案3 作字ロゴ大きめ：ロゴを主役に、リンクは右へ小さく */
+    /* 案3 左に大きく：作字を左へ寄せ、情報は右端にそろえる（非対称の余白が効く） */
     case 3:
       return (
-        <div className="flex w-full items-start justify-between gap-[80px] px-[120px] py-[120px]">
-          <Logo h={180} />
-          <div className="flex flex-col items-end gap-10 pt-2">
+        <div className="flex w-full items-center justify-between gap-[80px] px-[120px] py-[120px]">
+          <Logo h={220} />
+          <div className="flex flex-col items-end gap-8">
             <NavLinks className="justify-end" />
             <SnsRow />
           </div>
         </div>
       );
 
-    /* 案4 ミニマル1行：いちばん軽い終わり方 */
+    /* 案4 ポスター：作字をうんと大きく、下端にリンクを一行だけ */
     case 4:
       return (
-        <div className="flex w-full items-center justify-between gap-10 px-[120px] py-[56px]">
-          <Logo h={70} />
-          <SnsRow size={18} />
+        <div className="flex w-full flex-col items-center gap-[100px] px-[120px] pb-[64px] pt-[140px]">
+          <Logo h={300} />
+          <div className="flex w-full items-center justify-between gap-10">
+            <NavLinks />
+            <SnsRow size={18} />
+          </div>
         </div>
       );
 
-    /* 案5 中央そろえ：ロゴを真ん中に、上下にリンクとSNS */
+    /* 案5 作字が中心：リンクを左右に振り分けて、作字を真ん中の軸にする */
     case 5:
       return (
-        <div className="flex w-full flex-col items-center gap-[48px] px-6 py-[110px]">
-          <NavLinks className="justify-center" />
-          <Logo h={150} />
+        <div className="flex w-full flex-col items-center gap-[56px] px-[120px] py-[120px]">
+          <div className="flex w-full items-center justify-center gap-[72px]">
+            <NavLinks className="flex-1 justify-end" only="left" />
+            <Logo h={210} />
+            <NavLinks className="flex-1 justify-start" only="right" />
+          </div>
           <SnsRow />
         </div>
       );
 
-    /* 案1（既定）白地・横並び：いまのトンマナのまま */
+    /* 案1（既定）中央に大きく：作字を真ん中に、上下にたっぷり余白 */
     default:
       return (
-        <div className="flex w-full flex-col gap-[56px] px-[120px] py-[100px]">
-          <div className="flex items-end justify-between gap-10">
-            <Logo h={140} />
-            <div className="flex flex-col items-end gap-8">
-              <NavLinks className="justify-end" />
-              <SnsRow />
-            </div>
+        <div className="flex w-full flex-col items-center gap-[72px] px-6 py-[140px]">
+          <Logo h={240} />
+          <div className="flex flex-col items-center gap-8">
+            <NavLinks className="justify-center" />
+            <SnsRow />
           </div>
         </div>
       );
