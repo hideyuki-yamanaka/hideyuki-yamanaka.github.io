@@ -16,6 +16,11 @@ import {
   V3Gallery,
   V4Minimal,
   V5Window,
+  V6PhotoOnly,
+  V7Reveal,
+  V8SplitSticky,
+  V9Stack,
+  V10BigQuiet,
 } from "./SpotDetailVariants";
 
 /* tune-panel.js（依存ゼロの素のJS）の必要なところだけの型 */
@@ -47,6 +52,27 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案5",
     note: "窓がひらく。小さな窓が全画面へ広がり、景色の中に入っていく",
   },
+  /* ここから下は「写真が主役・動きはその下支え」で作った5案（2026-09-15 追加） */
+  6: {
+    name: "案6",
+    note: "写真だけで語る。全画面の写真が続き、文字は短く挟まるだけ",
+  },
+  7: {
+    name: "案7",
+    note: "写真がひらく。細い帯から上下に開いて、写真が大きく現れる",
+  },
+  8: {
+    name: "案8",
+    note: "写真は貼り付いたまま。左に写真、右の文章だけが流れ、章ごとに写真が替わる",
+  },
+  9: {
+    name: "案9",
+    note: "重なって送られる。全画面の写真が次々に覆いかぶさる",
+  },
+  10: {
+    name: "案10",
+    note: "大きな一枚を静かに。白い余白に大きな写真、文字は縦書きで小さく添える",
+  },
 };
 
 export default function SpotDetailPage({ slug }: { slug: string }) {
@@ -68,8 +94,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
         title: "⚙️ スポット詳細 調整パネル",
         storageKey: "abashiri-spot-detail-tune",
         /* ⚠️ 案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
-           v2: 旧3案 → 写真主体の5案に作り直し（2026-09-15） */
-        version: 2,
+           v2: 旧3案 → 5案に作り直し
+           v3: 写真主体の案6〜10を追加・案1の視差を弱めた（2026-09-15） */
+        version: 3,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -80,7 +107,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             open: true,
             items: [
               {
-                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出の5案。選ぶとその場で切り替わります。どれも写真が主役で、ゆっくり眺める速さにしてあります。",
+                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。案1〜5は最初に作った版（案1の視差は弱めました）、案6〜10は「写真が引き立ち、動きがそれを下支えする」方向で作り直した版です。",
               },
               {
                 pills: "デザインと動きの案",
@@ -124,15 +151,18 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   }
 
   /* 案ごとにスクロール容器そのものが変わるので、key で作り直す */
-  const V =
-    pattern === 2
-      ? V2Crossfade
-      : pattern === 3
-        ? V3Gallery
-        : pattern === 4
-          ? V4Minimal
-          : pattern === 5
-            ? V5Window
-            : V1Parallax;
+  const MAP: Record<number, (p: { spot: typeof spot }) => React.ReactElement> = {
+    1: V1Parallax,
+    2: V2Crossfade,
+    3: V3Gallery,
+    4: V4Minimal,
+    5: V5Window,
+    6: V6PhotoOnly,
+    7: V7Reveal,
+    8: V8SplitSticky,
+    9: V9Stack,
+    10: V10BigQuiet,
+  };
+  const V = MAP[pattern] ?? V1Parallax;
   return <V key={pattern} spot={spot} />;
 }

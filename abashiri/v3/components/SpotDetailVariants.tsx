@@ -16,7 +16,7 @@
  *   （Noto Thin/ExtraLight・white/10 + blur65 のガラス・空グラデ・brand青・
  *    body-14 行間2 字間0.7px など）
  */
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -271,8 +271,10 @@ export function V1Parallax({ spot }: VProps) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ container: ref });
   /* 最初の1画面ぶんで、写真は0.35倍の速さでしか動かない＝視差 */
-  const heroY = useTransform(scrollYProgress, [0, 0.35], ["0%", "18%"]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.35], [1, 1.12]);
+  /* 視差は控えめに。18%/1.12倍は「効きすぎて酔う」と指摘があったので
+     7%/1.04倍まで落とした（2026-09-15 ヒデさん指示） */
+  const heroY = useTransform(scrollYProgress, [0, 0.35], ["0%", "7%"]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.35], [1, 1.04]);
   const titleOp = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
   const titleY = useTransform(scrollYProgress, [0, 0.12], [0, -60]);
 
@@ -622,6 +624,372 @@ export function V5Window({ spot }: VProps) {
           <Sections spot={spot} root={ref} light />
         </motion.div>
         <FooterBlocks spot={spot} root={ref} kind="glass" />
+      </div>
+    </main>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   写真が主役の5案（2026-09-15 追加）
+   ヒデさん指示：「写真が引き立ち、インタラクションがそれを下支えする」
+   → 文字は控えめ・小さく、動きは写真の見え方を助けるためだけに使う。
+     視差は弱め（酔わない範囲）、拡大は transform のみでレイアウトは動かさない
+   ═══════════════════════════════════════════════════════════ */
+
+/** 写真の上に薄く敷く暗幕（文字を置く時だけ） */
+const VEIL = "absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent";
+
+/* ═══════════ 案6 写真だけで語る ═══════════
+   全画面の写真が続き、文字は写真と写真のあいだに短く挟まるだけ。
+   写真は画面に入るとゆっくり実寸へ寄る（1.06→1.00）だけの静かな動き */
+export function V6PhotoOnly({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const shots = [spot.hero, ...spot.photos, spot.hero];
+  return (
+    <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-ink">
+      <BackPill />
+      <div className="relative h-dvh w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
+        <div className={VEIL} />
+        <div className="absolute inset-x-0 bottom-0 px-[120px] pb-[88px]">
+          <HeroTitle spot={spot} />
+        </div>
+      </div>
+      {spot.sections.map((s, i) => (
+        <div key={i}>
+          {/* 文字は白地の細い帯。読ませすぎず、写真へすぐ返す */}
+          <motion.div
+            className="mx-auto w-[720px] max-w-[88%] py-[120px]"
+            variants={reveal}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.4 }}
+          >
+            {s.heading && (
+              <h3 className="mb-5 text-title-28 font-thin leading-[1.4] text-white">
+                {s.heading}
+              </h3>
+            )}
+            <p className="text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-white/80">
+              {s.text}
+            </p>
+          </motion.div>
+          <QuietShot src={shots[(i + 1) % shots.length]} root={ref} />
+        </div>
+      ))}
+      <div className="mx-auto flex w-[880px] max-w-[92%] flex-col gap-[88px] py-[140px]">
+        <FooterBlocks spot={spot} root={ref} kind="solid" />
+      </div>
+    </main>
+  );
+}
+
+/** 全画面の1枚。画面に入るとゆっくり実寸へ寄る（弱い動きで写真を邪魔しない） */
+function QuietShot({
+  src,
+  root,
+  h = "h-dvh",
+}: {
+  src: string;
+  root: React.RefObject<HTMLElement | null>;
+  h?: string;
+}) {
+  return (
+    <div className={`w-full overflow-hidden ${h}`}>
+      <motion.img
+        src={src}
+        alt=""
+        className="size-full object-cover"
+        initial={{ scale: 1.06, opacity: 0.6 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        viewport={{ root, once: true, amount: 0.3 }}
+        transition={{ duration: 1.8, ease: EASE }}
+      />
+    </div>
+  );
+}
+
+/* ═══════════ 案7 写真がひらく ═══════════
+   細い帯から上下に開いて写真が現れる。開ききると全画面。
+   clip-path なのでレイアウトは動かず、写真の“登場”だけが際立つ */
+export function V7Reveal({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const shots = [spot.hero, ...spot.photos];
+  return (
+    <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-white">
+      <BackPill />
+      <div className="relative h-dvh w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
+        <div className={VEIL} />
+        <div className="absolute inset-x-0 bottom-0 px-[120px] pb-[88px]">
+          <HeroTitle spot={spot} />
+        </div>
+      </div>
+      <div className="flex flex-col gap-[160px] py-[160px]">
+        {spot.sections.map((s, i) => (
+          <div key={i} className="flex flex-col gap-[80px]">
+            <OpenShot src={shots[i % shots.length]} root={ref} />
+            <motion.div
+              className="mx-auto flex w-[760px] max-w-[88%] flex-col gap-5"
+              variants={reveal}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.4 }}
+            >
+              {s.heading && (
+                <h3 className="text-title-28 font-thin leading-[1.4] text-ink">{s.heading}</h3>
+              )}
+              <p className="text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/85">
+                {s.text}
+              </p>
+            </motion.div>
+          </div>
+        ))}
+        <div className="mx-auto flex w-[880px] max-w-[92%] flex-col gap-[88px]">
+          <FooterBlocks spot={spot} root={ref} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function OpenShot({
+  src,
+  root,
+}: {
+  src: string;
+  root: React.RefObject<HTMLElement | null>;
+}) {
+  return (
+    <motion.div
+      className="h-[70dvh] w-full overflow-hidden"
+      initial={{ clipPath: "inset(42% 0% 42% 0%)" }}
+      whileInView={{ clipPath: "inset(0% 0% 0% 0%)" }}
+      viewport={{ root, once: true, amount: 0.35 }}
+      transition={{ duration: 1.6, ease: EASE }}
+    >
+      <motion.img
+        src={src}
+        alt=""
+        className="size-full object-cover"
+        initial={{ scale: 1.12 }}
+        whileInView={{ scale: 1 }}
+        viewport={{ root, once: true, amount: 0.35 }}
+        transition={{ duration: 2.2, ease: EASE }}
+      />
+    </motion.div>
+  );
+}
+
+/* ═══════════ 案8 写真が固定、文字が流れる ═══════════
+   左半分に写真が貼り付いたまま、右半分の文章だけがスクロールする。
+   章が変わると写真が静かに入れ替わる＝写真をいちばん長く見ていられる形 */
+export function V8SplitSticky({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const [idx, setIdx] = useState(0);
+  const shots = [spot.hero, ...spot.photos];
+  return (
+    <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-white">
+      <BackPill />
+      <div className="relative h-dvh w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
+        <div className={VEIL} />
+        <div className="absolute inset-x-0 bottom-0 px-[120px] pb-[88px]">
+          <HeroTitle spot={spot} />
+        </div>
+      </div>
+      <div className="flex w-full items-start">
+        {/* 左：貼り付く写真（章に合わせてクロスフェード） */}
+        <div className="sticky top-0 h-dvh w-1/2 shrink-0 overflow-hidden">
+          {shots.map((src, i) => (
+            <motion.img
+              key={src + i}
+              src={src}
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+              animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.04 }}
+              transition={{ duration: 1.4, ease: EASE }}
+            />
+          ))}
+        </div>
+        {/* 右：流れる文章。章ごとに左の写真を切り替える */}
+        <div className="flex w-1/2 flex-col">
+          {spot.sections.map((s, i) => (
+            <motion.div
+              key={i}
+              className="flex min-h-dvh flex-col justify-center gap-6 px-[88px]"
+              onViewportEnter={() => setIdx(i % shots.length)}
+              viewport={{ root: ref, amount: 0.5 }}
+            >
+              <motion.div
+                className="flex flex-col gap-5"
+                variants={reveal}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ root: ref, once: true, amount: 0.4 }}
+              >
+                {s.heading && (
+                  <h3 className="text-title-28 font-thin leading-[1.4] text-ink">{s.heading}</h3>
+                )}
+                <p className="text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/85">
+                  {s.text}
+                </p>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-[92%] flex-col gap-[88px] py-[140px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </main>
+  );
+}
+
+/* ═══════════ 案9 写真が重なって送られる ═══════════
+   写真が画面いっぱいに積み重なり、次の1枚が下から覆いかぶさる。
+   1枚ずつ必ず全画面で見ることになるので、写真がいちばん強く出る */
+export function V9Stack({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const shots = [spot.hero, ...spot.photos];
+  return (
+    <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-ink">
+      <BackPill />
+      <div className="relative w-full" style={{ height: `${shots.length * 100}dvh` }}>
+        {shots.map((src, i) => (
+          <StackCard key={src + i} src={src} i={i} n={shots.length} root={ref} spot={spot} />
+        ))}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-[92%] flex-col gap-[100px] py-[140px]">
+        <Sections spot={spot} root={ref} light />
+        <FooterBlocks spot={spot} root={ref} kind="solid" />
+      </div>
+    </main>
+  );
+}
+
+function StackCard({
+  src,
+  i,
+  n,
+  root,
+  spot,
+}: {
+  src: string;
+  i: number;
+  n: number;
+  root: React.RefObject<HTMLElement | null>;
+  spot: SpotDetail;
+}) {
+  return (
+    <div
+      className="sticky top-0 h-dvh w-full overflow-hidden"
+      style={{ zIndex: i + 1 }}
+    >
+      <motion.img
+        src={src}
+        alt=""
+        className="size-full object-cover"
+        initial={{ scale: 1.08 }}
+        whileInView={{ scale: 1 }}
+        viewport={{ root, once: true, amount: 0.3 }}
+        transition={{ duration: 2.4, ease: EASE }}
+      />
+      {i === 0 && (
+        <>
+          <div className={VEIL} />
+          <div className="absolute inset-x-0 bottom-0 px-[120px] pb-[88px]">
+            <HeroTitle spot={spot} />
+          </div>
+        </>
+      )}
+      {/* 何枚目かの控えめな表示（写真の邪魔をしない小ささ） */}
+      <p className="font-num absolute right-[56px] top-[56px] text-body-14 font-extralight text-white/70">
+        {String(i + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+      </p>
+    </div>
+  );
+}
+
+/* ═══════════ 案10 大きな一枚をゆっくり見る ═══════════
+   白い余白の中に、大きな写真を1枚ずつ。スクロールで写真が実寸へ育ち、
+   文字は写真の横に小さく添えるだけ。いちばん静かで、写真が引き立つ */
+export function V10BigQuiet({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const shots = [spot.hero, ...spot.photos];
+  return (
+    <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-white">
+      <BackPill dark />
+      {/* 表紙は白地。名前だけ置いて、写真は次から */}
+      <div className="flex h-dvh flex-col items-center justify-center gap-5">
+        <motion.p
+          className="text-body-18 font-thin text-ink/50"
+          variants={reveal}
+          initial="hidden"
+          animate="show"
+        >
+          {spot.category} {spot.no}
+        </motion.p>
+        <motion.h1
+          className="text-[88px] font-thin leading-none text-ink"
+          variants={reveal}
+          initial="hidden"
+          animate="show"
+        >
+          {spot.name}
+        </motion.h1>
+        <motion.p
+          className="text-body-14 font-extralight tracking-[4px] text-ink/40"
+          variants={reveal}
+          initial="hidden"
+          animate="show"
+        >
+          {spot.kana}
+        </motion.p>
+      </div>
+      <div className="flex flex-col items-center gap-[180px] pb-[180px]">
+        {spot.sections.map((s, i) => (
+          <div key={i} className="flex w-[1240px] max-w-[94%] items-start gap-[48px]">
+            {/* 写真：枠は固定、中の絵だけ育つ（レイアウトは動かない） */}
+            <div className="h-[680px] min-w-0 flex-1 overflow-hidden">
+              <motion.img
+                src={shots[i % shots.length]}
+                alt=""
+                className="size-full object-cover"
+                initial={{ scale: 0.86, opacity: 0.4 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ root: ref, once: true, amount: 0.25 }}
+                transition={{ duration: 1.8, ease: EASE }}
+              />
+            </div>
+            {/* 文字は縦書きで小さく添える。写真の面積を奪わない */}
+            <motion.div
+              className="flex shrink-0 gap-5 pt-2"
+              variants={reveal}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.4 }}
+            >
+              {s.heading && (
+                <h3
+                  className="whitespace-nowrap text-title-28 font-thin leading-[1.6] text-ink"
+                  style={{ writingMode: "vertical-rl" }}
+                >
+                  {s.heading}
+                </h3>
+              )}
+              <p
+                className="h-[600px] text-body-14 font-extralight leading-[2.2] tracking-[0.7px] text-ink/70"
+                style={{ writingMode: "vertical-rl" }}
+              >
+                {s.text}
+              </p>
+            </motion.div>
+          </div>
+        ))}
+        <div className="flex w-[880px] max-w-[92%] flex-col gap-[88px]">
+          <FooterBlocks spot={spot} root={ref} />
+        </div>
       </div>
     </main>
   );
