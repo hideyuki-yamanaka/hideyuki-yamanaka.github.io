@@ -1154,10 +1154,10 @@
   #results.rfx-24 .r2v-track > .r2v:nth-of-type(1), #results.rfx-25 .r2v-track > .r2v:nth-of-type(1) { grid-area: 1 / 1 / 2 / 2; }
   #results.rfx-24 .r2v-track > .r2v:nth-of-type(3), #results.rfx-25 .r2v-track > .r2v:nth-of-type(3) { grid-area: 1 / 3 / 2 / 4; }
   #results.rfx-24 .res2-vline, #results.rfx-25 .res2-vline { display: block; grid-area: 1 / 2 / 2 / 3; width: 1px; height: auto; align-self: stretch; margin: 0; background: var(--rfx-line); transform-origin: center top; transform: scaleY(var(--rfx-vline, 0)); }
-  /* 【2026-09-15 ヒデさん指摘】2つの価値のブロックが上に詰まり、下(区切り線まで)が空いていた。
-     枠の上端→ブロック→区切り線 の余白が均等(約72px ずつ)になるよう、区切り線の上の余白を 36→72px に。
-     ブロック全体は中央寄せなので、これで上が 90→約72px に詰まり、下が 36→約72px に広がる。 */
-  #results.rfx-24 .res2-hr, #results.rfx-25 .res2-hr { display: block; grid-area: 2 / 1 / 3 / 4; margin: 72px 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  /* 【2026-09-15 ヒデさん指摘】2つの価値のブロックと区切り線の間の余白。36→72→(つまみ)100px。
+     ブロック全体は中央寄せなので、ここを広げると線と「事業の推進力を、Anyflowが支えます。」が下がり、
+     上のブロックとの間が空く。調整パネル「実績」→ 案24 のまとまりの「区切り線の上の余白」で変えられる。 */
+  #results.rfx-24 .res2-hr, #results.rfx-25 .res2-hr { display: block; grid-area: 2 / 1 / 3 / 4; margin: var(--rfx-hr-gap, 100px) 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
   #results.rfx-24 .res2-top, #results.rfx-25 .res2-top { grid-area: 3 / 1 / 4 / 4; display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 40px; padding-top: 28px; }
   #results.rfx-24 .res2-head, #results.rfx-25 .res2-head { flex-direction: column; align-items: flex-start; justify-content: flex-start; font-size: 34px; line-height: 1.7; }   /* カンプ: Noto Sans JP Light 34px / 1.7 の2行 */
   #results.rfx-24 .res2-stats, #results.rfx-25 .res2-stats { gap: 44px; align-items: flex-end; }
@@ -4749,6 +4749,7 @@ const DEFAULTS = {
     /* 尺(中央で止まる) / カウント時間 / 画像のぼけ。
        尺の8割ぶんスクロールすると全部出そろい、残り2割で下のセクションへ抜ける */
     results: {
+      hrGap: 100,   /* 2026-09-15: 案24系「2つの価値」と区切り線の間の余白(px) */
       pictoW: 1,         // 【2026-09-02 ヒデさん指定】for SaaS/for AI ピクトグラムの線幅倍率(1=1px基準)
       pictoSpeed: 1,     // 【2026-09-08 ヒデさん指定】ピクトの再生速度(SaaS/AI共通・全案に適用。1=標準)
       driveLen: 2.0,     // スクロール駆動の時、尺を何倍に伸ばすか（小さいほどスクロール量が減る。2026-08-25 3.0→2.0）
@@ -13472,6 +13473,12 @@ function applyResSlotGap() {
   document.documentElement.style.setProperty('--res-slot-gap', (v != null ? v : 4) + 'px');
 }
 applyResSlotGap();
+/* 【2026-09-15 ヒデさん指定】案24 系: 2つの価値のブロックと区切り線の間の余白(px) */
+function applyResHrGap() {
+  const v = params.sections && params.sections.results ? params.sections.results.hrGap : 100;
+  document.documentElement.style.setProperty('--rfx-hr-gap', (v != null ? v : 100) + 'px');
+}
+applyResHrGap();
 applyPfGradStops();   /* 【2026-09-01】軌道グラデの色ストップを保存値で反映 */
 /* 【2026-08-31 ヒデさん指定・バグ修正】バリエーションの「いまの設定で上書き」がリロード後に
    見た目へ反映されない問題: 上書き自体は保存されていたが、開いた直後は誰も適用していなかった。
@@ -17802,6 +17809,8 @@ function buildPanel() {
     const s24 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip));
     s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。');
     s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。');
+    rows.push(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
+      '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。', { fixedMax: true }));
     rfxDyn(_g24, ['24', '24-2', '25']);
     /* 案26: 数値の大きさ・線・横移動(その案の時だけ出す) */
     subT(catRes, () => '案' + rfxNo('26') + '：数値の大きさ・線・横移動');
