@@ -2452,6 +2452,10 @@
      プラスで隙間が空き、マイナスで詰まる(お問い合わせが上へ食い込む)。
      ⚠️ 以前はプラスをお問い合わせ側の padding にしていたため“色の面”が増えるだけで隙間が空かなかった。
         見出しの上の色を増やしたい時は「上に足す高さ（一体型）」を使う。 */
+  /* 【2026-09-15 ヒデさん指摘】マイナスで詰めた時に導入事例のカードが切れていた。
+     原因は「詰めすぎ」= お問い合わせの不透明な地色がカードの上に乗っていたこと。
+     → 詰められる量を JS 側で「導入事例の下に空いている分」までに自動制限する(applyCvStyle)。
+        ここは素直に margin-bottom で上下の間隔を作る。 */
   html:not(.mb) #cases { margin-bottom: var(--cv-gap, 0px); }
   html:not(.mb) #conversion.cv-fi { display: flex; flex-direction: column; min-height: var(--cv-h, 0px); }
   html:not(.mb) #conversion.cv-fi .cv-foot { margin-top: auto; }
@@ -6173,7 +6177,16 @@ function applyCvStyle(fromSwitch) {
     const hv = HV[(params.cv && params.cv.btnHover) || 'cyan'] || HV.cyan; sec.style.setProperty('--cv-hov-bg', hv[0]); sec.style.setProperty('--cv-hov-fg', hv[1]); }
   const _mb = document.documentElement.classList.contains('mb');
   /* ⚠️ 間隔は #cases(別のセクション)に効かせるので、変数はルート(html)に置く。#conversion に置くと届かない */
-  document.documentElement.style.setProperty('--cv-gap', (_mb ? 0 : ((params.cv && params.cv.gapTop) || 0)) + 'px');   /* 導入事例との間隔(SP は従来どおり効かせない) */
+  { let _g = _mb ? 0 : ((params.cv && params.cv.gapTop) || 0);
+    /* 詰める(マイナス)は「導入事例の下に空いている分」までに制限する。これ以上詰めるとカードが切れるため */
+    if (_g < 0) {
+      const _cs = document.getElementById('cases'), _gr = document.getElementById('caseGrid');
+      if (_cs && _gr) {
+        const _slack = Math.max(0, Math.round(_cs.getBoundingClientRect().bottom - _gr.getBoundingClientRect().bottom - 8));
+        _g = Math.max(_g, -_slack);
+      }
+    }
+    document.documentElement.style.setProperty('--cv-gap', Math.round(_g) + 'px');   /* 導入事例との間隔(SP は従来どおり効かせない) */ }
   cvApplyFade(sec);   /* 溶け込みの境界(「伸ばす前の高さ」基準の px。伸ばしても薄い帯は広がらない) */
   /* 案11: 黒ボタンをフッター帯(©の左)へ移す。他の案では本文の下へ戻す */
   const btn = sec.querySelector('.cv-btn'), footR = sec.querySelector('.cv-foot-r'), content = sec.querySelector('.cv-content');
@@ -17965,7 +17978,7 @@ function buildPanel() {
   rows.push(slider('下に足す高さ（一体型）', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
     'ボタンの【下】(フッターとの間)に足す高さ。0 でいままで。', { fixedMax: true }));
   rows.push(slider('縦幅（枠の案）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '「現行」のように枠で見せる案の高さ(カンプ 416)。一体型では上の「追加の高さ」を使います。'));
-  rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの【あいだの余白】(地色)。プラスで隙間が空き、マイナスで詰まります(お問い合わせが上へ食い込む)。見出しの上の【色の面】を増やしたい時は下の「上に足す高さ」を使ってください(PC のみ)。', { signed: true }));
+  rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの【あいだの余白】(地色)。プラスで隙間が空きます。マイナスは導入事例の“下の空き”を詰めます(カードが切れないところまでで自動的に止まります)。見出しの上の【色の面】を増やしたい時は下の「上に足す高さ」を使ってください(PC のみ)。', { signed: true }));
   sub(catCv, '溶け込みの境界（一体型・溶け込む）'); CV_DYN10.push(catCv.lastElementChild);
   rows.push(slider('溶け込み 始まり', 0, 80, 1, () => (cvv().fade0 != null ? cvv().fade0 : 0), v => { cvv().fade0 = v; applyCvStyle(); }, v => Math.round(v) + '%', '上端からどこまでを完全に地色にするか。0%＝上端から徐々に。%は【伸ばす前の高さ】に対する割合なので、縦幅や間隔を伸ばしても薄い帯は広がりません。'));
   rows.push(slider('溶け込み 終わり', 5, 100, 1, () => (cvv().fade1 != null ? cvv().fade1 : 44), v => { cvv().fade1 = v; applyCvStyle(); }, v => Math.round(v) + '%', 'ここでディザが完全に出る。始まりとの差が「切り返しのぼかし幅」。近づけるとくっきり、離すとゆるやか。既定44%＝上から約294px で完全に色が出ます(伸ばしても同じ)。'));
