@@ -2422,15 +2422,6 @@
     overflow: hidden;
   }
   #cvCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  /* 【2026-09-15 ヒデさん指摘】上の暖かさ。既定色 #ffe0cc は地色 #E7E7E7 と明るさ(輝度231)が同じなので、
-     重ねても「明るさは変えずに色味だけ暖かくなる」。上端は 0 なので導入事例との継ぎ目はできない。
-     高さは JS が「伸ばす前の高さ」から px で入れる(縦幅を伸ばしても帯は伸びない) */
-  .cv-warm { position: absolute; left: 0; right: 0; top: 0; height: var(--cv-warm-h, 0px); z-index: 1; pointer-events: none;
-    background: linear-gradient(180deg,
-      rgba(var(--cv-warm-rgb, 255,224,204), 0) 0%,
-      rgba(var(--cv-warm-rgb, 255,224,204), var(--cv-warm-a, 0)) 24%,
-      rgba(var(--cv-warm-rgb, 255,224,204), calc(var(--cv-warm-a, 0) * .34)) 58%,
-      rgba(var(--cv-warm-rgb, 255,224,204), 0) 100%); }
   /* 惑星グラフィック(カンプの Group1119 の見えている部分を 2倍PNGで)。右上に配置 */
   .cv-planet { position: absolute; right: 0; top: 46px; width: 409.5px; height: 315px; pointer-events: none; }
   .cv-content {
@@ -2544,7 +2535,6 @@
      グラデの写り方はセクションの高さ基準のまま(シェーダの uRise で補正)なので、ニュアンスは変わらない。 */
   #conversion.cvs-10 { overflow: visible; }
   #conversion.cvs-10 #cvCanvas { top: calc(-1 * var(--cv-rise, 0px)); height: calc(100% + var(--cv-rise, 0px)); }
-  #conversion.cvs-10 .cv-warm { top: calc(-1 * var(--cv-rise, 0px)); height: calc(var(--cv-warm-h, 0px) + var(--cv-rise, 0px)); }
   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白(既定210px)を調整パネルから変えられるように */
   #conversion.cvs-10 .cv-content { margin: var(--cv-head-top, 210px) auto 120px; }
 
@@ -3820,9 +3810,6 @@
 <section id="conversion">
   <div class="cv-inner">
     <canvas id="cvCanvas"></canvas>
-    <!-- 【2026-09-15 ヒデさん指摘】「上の部分が少し冷たい」。上の帯は地色(#E7E7E7＝無彩色)が見えている所が
-         大半なので、ディザ側だけ暖色にしても効かない。上端は地色のまま(継ぎ目を作らない)で山なりに暖色をかぶせる -->
-    <div class="cv-warm" aria-hidden="true"></div>
     <!-- 【2026-08-29】惑星グラフィックはFigma書き出しに #E7E7E7 の地色が焼き込まれてグレーになるため一旦外す。
          透明PNG(または透明SVG)が用意できたら .cv-planet を戻す。 -->
     <div class="cv-content">
@@ -4450,7 +4437,7 @@ const DEFAULTS = {
   /* 【2026-08-29 ヒデさん指定】コンバージョン背景(流れるグラデ+Bayerディザ)。
      既定はカンプのディザ設定(Bayer16×16 / Size1 / Levels3 / Brightness104% / Contrast1.38)に合わせる */
   cv: { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38,
-        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, warm: 0.5, warmCol: '#ffe0cc', warmSpan: 0.42, addT: 0, addB: 0 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
+        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, addT: 0, addB: 0 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
   cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
@@ -6056,7 +6043,7 @@ function cvMoodAt(p, mode, wAmt) {
 function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
 const CV_BLEND_DEF = 150;      /* 【2026-09-15 ヒデさん指摘】上の溶け込み(ぼかし幅)の既定 px。導入事例の下の空きへ逃がすので、お問い合わせの上に余白が増えない */
 const CV_HEAD_TOP_DEF = 120;   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
-const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, warm: 0.5, warmCol: '#ffe0cc', warmSpan: 0.42, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, addT: 0, addB: 0 };
+const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, wave: 0.10, waveLen: 1.0, waveSpd: 0.14, addT: 0, addB: 0 };
 const CV_COLORS = [
   { key: 'C1',  name: 'カンプ（現行）', tip: 'カンプ実測の5色(淡ピンク白→淡ブルー→シアン→青紫→ピンク)・カンプの放射グラデ・Bayer 1px 3段。', cv: {} },
   { key: 'C2',  name: 'ブルー寄り', tip: 'ピンクを青紫に置き換え、シアン〜ブルーで統一。放射の中心は右上。', cv: { colors: ['#eef7ff', '#9ad9ff', '#0ebbff', '#1f5fd6', '#6a4bd8'], gMode: 1, gcx: 0.8, gcy: 0.1, gr: 0.95, gAspect: 1.25 } },
@@ -6203,14 +6190,6 @@ function cvApplyFade(sec) {
     sec.style.setProperty('--cv-fade0', '0px');
     sec.style.setProperty('--cv-fade1', cvRisePx + 'px');
   }
-  /* 【2026-09-15 ヒデさん指摘】上の暖かさ。帯の高さも「伸ばす前の高さ」基準の px にして、
-     縦幅や間隔を伸ばしても暖かい帯までいっしょに伸びないようにする */
-  const wm = (params.cv && params.cv.warm != null) ? params.cv.warm : 0.5;
-  const ws = (params.cv && params.cv.warmSpan != null) ? params.cv.warmSpan : 0.42;
-  const wc = cvHex(params.cv && params.cv.warmCol, '#ffe0cc').map(v => Math.round(v * 255));
-  sec.style.setProperty('--cv-warm-h', Math.round(base * ws) + 'px');
-  sec.style.setProperty('--cv-warm-a', (Math.max(0, Math.min(1, wm)) * 0.32).toFixed(3));
-  sec.style.setProperty('--cv-warm-rgb', wc.join(','));
 }
 /* 画面幅が変わったら素の高さも変わる(文字の折返し)ので測り直す */
 function cvSyncStretch() {
@@ -6279,8 +6258,11 @@ uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラ�
 uniform vec3 uTopCol;   /* 【2026-09-15 ヒデさん指定】いちばん明るい所(カンプでは右上)の色。既定は薄い水色 */
 uniform float uWhite;   /* 同・そこに白をどれだけ残すか(かすかに=0.12 くらい) */
 uniform float uCeil;    /* 【2026-09-15】明るさの頭打ち。コントラスト(1.38)で淡い色が白に飛んで『欠けて見える』のを防ぐ */
-uniform float uWarm; uniform vec3 uWarmCol; uniform float uWarmSpan;
-uniform float uRise;   /* 【2026-09-15】canvas が上へはみ出した高さ(デバイスpx)。グラデはセクションの高さ基準のまま保つ */   /* 【2026-09-15 ヒデさん指摘】上の方が冷たい(頭打ちで無彩色の灰になる)ので、上側の淡い所だけ暖色に寄せる。強さ・色・届く範囲 */
+uniform float uRise;   /* 【2026-09-15】canvas が上へはみ出した高さ(デバイスpx)。グラデはセクションの高さ基準のまま保つ */
+/* 【2026-09-15 ヒデさん指摘】「うねりが小刻みにしかつけられない」。fbm は3オクターブなので強くすると細かいノイズも一緒に増え、
+   大きな波にならず荒れるだけだった。→ なめらかな正弦波3本の合成で「大きなうねり」を別レイヤーとして足す。
+   uWaveAmp=強さ / uWaveLen=波の細かさ(小さいほど大きな波) / uWaveSpd=ゆっくりさ */
+uniform float uWaveAmp, uWaveLen, uWaveSpd;
 uniform float uGSpread;   /* 【2026-09-15】カンプの放射の広がり。1=カンプ / 大きいほど淡い中心が小さくなり、端まで色が届く */
 uniform float uGMode, uGAng, uDark; uniform vec2 uGC, uGR; uniform vec3 uDarkCol;   /* 形(0=カンプ/1=放射/2=線形)・中心・広がり・回転、暗さ(黒ベース) */
 uniform float uHue;   /* 【2026-09-15】色味の移ろい(色相の回転・ラジアン。JS が時間で回す) */
@@ -6317,6 +6299,15 @@ void main(){
   float n1 = fbm(w + vec2(uTime * uSpeed, 0.0));
   float n2 = fbm(w + vec2(0.0, uTime * uSpeed * 0.8) + 7.3);
   vec2 uvW = uv + (vec2(n1, n2) - 0.5) * uSwell;
+  /* 大きなうねり: 周期の違う正弦波を重ねて、ゆっくり大きく押し引きする(細かいノイズが増えないので上品に揺れる) */
+  if (uWaveAmp > 0.0001) {
+    float tw = uTime * uWaveSpd;
+    vec2 q = uv * max(0.15, uWaveLen);
+    float w1 = sin((q.x * 1.00 + q.y * 0.35) * 6.2832 + tw * 1.00);
+    float w2 = sin((q.x * 0.55 - q.y * 0.80) * 6.2832 - tw * 0.73 + 1.7);
+    float w3 = sin((q.y * 0.70) * 6.2832 + tw * 0.49 + 3.1);
+    uvW += vec2(w1 * 0.55 + w3 * 0.45, w2 * 0.60 + w1 * 0.40) * uWaveAmp;
+  }
   /* カンプの gradientTransform(実測) で radial の t を出す(係数は uGA/uGB: PC と SP で別) */
   float t;
   if (uGMode < 0.5) {
@@ -6342,11 +6333,6 @@ void main(){
   col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
   col *= uBright;                          /* Brightness 104% */
   col = min(col, vec3(uCeil));             /* 白飛びの頭打ち(1.0 で従来どおり) */
-  if (uWarm > 0.001) {                     /* 【2026-09-15】上の暖かさ: 上ほど・淡いほど強く暖色へ。頭打ちの『後』に掛けないと灰色に戻る */
-    float topw = smoothstep(clamp(uWarmSpan, 0.05, 1.0), 0.0, uv.y);          /* 上端=1 → 届く範囲=0 */
-    float pale = smoothstep(0.55, 0.95, dot(col, vec3(0.299, 0.587, 0.114))); /* 淡い(白っぽい)所ほど */
-    col = mix(col, uWarmCol, clamp(uWarm, 0.0, 1.0) * topw * mix(0.35, 1.0, pale));
-  }
   col = mix(col, mix(uDarkCol, col, 0.42), uDark);   /* 暗さ: 黒ベースに寄せる(色は残り火のように残る) */
   float dith = bayer16(cellId);
   vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread) + 0.5) / uLevels, 0.0, 1.0);
@@ -6371,7 +6357,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(p, 'aP');
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uWarm', 'uWarmCol', 'uWarmSpan', 'uRise'])
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uRise', 'uWaveAmp', 'uWaveLen', 'uWaveSpd'])
       uni[k] = gl.getUniformLocation(p, k);
   }
   function visible() {
@@ -6420,10 +6406,10 @@ void main(){
     { const tc = cvHex(c.topCol, '#7cc9e8'); gl.uniform3f(uni.uTopCol, tc[0], tc[1], tc[2]); }
     gl.uniform1f(uni.uWhite, c.topWhite != null ? c.topWhite : 0.12);
     gl.uniform1f(uni.uCeil, c.ceil != null ? c.ceil : 0.9);
-    gl.uniform1f(uni.uWarm, c.warm != null ? c.warm : 0.5);                       /* 【2026-09-15】上の暖かさ */
-    { const wc = cvHex(c.warmCol, '#ffe0cc'); gl.uniform3f(uni.uWarmCol, wc[0], wc[1], wc[2]); }
-    gl.uniform1f(uni.uWarmSpan, c.warmSpan != null ? c.warmSpan : 0.42);
     gl.uniform1f(uni.uRise, cvRisePx * dpr);   /* 【2026-09-15】上へのはみ出し(CSSpx→デバイスpx) */
+    gl.uniform1f(uni.uWaveAmp, c.wave != null ? c.wave : 0.10);      /* 【2026-09-15】大きなうねり */
+    gl.uniform1f(uni.uWaveLen, c.waveLen != null ? c.waveLen : 1.0);
+    gl.uniform1f(uni.uWaveSpd, c.waveSpd != null ? c.waveSpd : 0.14);
     gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
        SP は M=[-31.225 24.205 -22.32 -26.671 300.25 32.955], r=10 を u,v∈[0,1] に正規化して
@@ -18052,13 +18038,6 @@ function buildPanel() {
     'いちばん明るい所に白をどれだけ混ぜるか。0%＝上の色そのまま / 100%＝真っ白。既定12%＝白はかすかに。', { fixedMax: true }));
   rows.push(slider('白飛びの頭打ち', 0.6, 1, 0.01, () => (cvv().ceil != null ? cvv().ceil : 0.9), v => { cvv().ceil = v; markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
     'コントラスト(138%)で淡い色が真っ白に飛ぶのを止める上限。100%＝従来どおり(白く飛ぶ) / 下げるほど淡い所にも色が残ります。既定90%。', { fixedMax: true }));
-  /* 【2026-09-15 ヒデさん指摘】「上の部分が少し冷たい」。頭打ちで淡い所が無彩色の灰になるのが原因なので、上側だけ暖色に寄せるつまみを足す */
-  rows.push(slider('上の暖かさ', 0, 1, 0.05, () => (cvv().warm != null ? cvv().warm : 0.5), v => { cvv().warm = v; applyCvStyle(); markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
-    'グラデの【上の方】を暖色に寄せる強さ。0%＝いままで(淡い所が無彩色の灰になって冷たく見える) / 上げるほど上部がほんのり暖かくなります。既定50%。', { fixedMax: true }));
-  colorRow('暖かさの色', () => cvv().warmCol || '#ffe0cc', v => { cvv().warmCol = v; applyCvStyle(); markDirty(); renderFrame(); },
-    '上の方を寄せる先の色。既定はごく薄いクリーム(#ffe0cc)。ブランド寄りにしたい時は淡いピンク(#fee0f8)にすると、カンプの元の色味に近づきます。');
-  rows.push(slider('暖かさの届く範囲', 0.1, 1, 0.05, () => (cvv().warmSpan != null ? cvv().warmSpan : 0.42), v => { cvv().warmSpan = v; applyCvStyle(); markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
-    '上端からどこまで暖かさを効かせるか。セクションの高さに対する割合で、そこへ向かってなめらかに消えます。既定42%。', { fixedMax: true }));
   sub(catCv, '縦幅・間隔');
   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白はここで減らせる */
   rows.push(slider('見出しの上の余白（一体型）', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px',
@@ -18087,8 +18066,16 @@ function buildPanel() {
     'グラデが流れる速さ。0で止まります。'));
   rows.push(slider('うねりの強さ', 0, 0.6, 0.02, () => cvv().swell, v => { cvv().swell = v; }, v => '×' + v.toFixed(2),
     '流れのゆらぎ(うねり)の大きさ。大きいほど大きくうねります。'));
-  rows.push(slider('流れの細かさ', 1, 8, 0.2, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1),
-    '大きいほど細かい流れ、小さいほど大きな流れになります。'));
+  rows.push(slider('流れの細かさ', 0.3, 8, 0.1, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1),
+    '大きいほど細かい流れ、小さいほど大きな流れになります。1より小さくすると1画面に1つ分の大きなゆらぎになります。'));
+  /* 【2026-09-15 ヒデさん指摘】上の「うねり」は細かいノイズ由来なので、強くしても小刻みにしかならない。
+     大きな波は別レイヤー(なめらかな正弦波の合成)として持つ */
+  rows.push(slider('大きなうねりの強さ', 0, 0.2, 0.005, () => (cvv().wave != null ? cvv().wave : 0.10), v => { cvv().wave = v; }, v => '×' + v.toFixed(3),
+    'ゆっくり大きく揺らぐ波の強さ。上の「うねりの強さ」が細かいノイズなのに対し、こちらはなめらかな大波なので、上げても粒っぽくなりません。0で止まります。', { fixedMax: true }));
+  rows.push(slider('波の大きさ', 0.15, 2, 0.05, () => (cvv().waveLen != null ? cvv().waveLen : 1.0), v => { cvv().waveLen = v; }, v => '×' + v.toFixed(2),
+    '小さいほど【大きな波】(1画面に1つ分)、大きいほど波の数が増えます。既定1.00＝画面に1つ分くらいの大きな波。', { fixedMax: true }));
+  rows.push(slider('波のゆっくりさ', 0.02, 0.6, 0.01, () => (cvv().waveSpd != null ? cvv().waveSpd : 0.14), v => { cvv().waveSpd = v; }, v => '×' + v.toFixed(2),
+    '大きな波が動く速さ。小さいほどゆっくり優雅に揺れます。既定0.14＝1往復およそ45秒。', { fixedMax: true }));
   sub(catCv, '明るさ・コントラスト');
   rows.push(slider('明るさ', 0.7, 1.4, 0.01, () => cvv().bright, v => { cvv().bright = v; }, v => Math.round(v * 100) + '%',
     'カンプは104%。'));
