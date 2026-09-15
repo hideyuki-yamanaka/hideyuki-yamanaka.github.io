@@ -29,7 +29,7 @@ import { DEFAULT_FACE, type FaceConfig } from "./faceConfig";
 import { DEFAULT_KV_EXIT, type KvExit } from "./kvExitConfig";
 import { DEFAULT_HERO_ENTER, type HeroEnter } from "./heroEnterConfig";
 import { DEFAULT_MSG, MSG_PATTERNS, type MsgTune } from "./msgConfig";
-import { EVENT_HOVER_EVENT, EVENT_HOVER_PATTERNS } from "./EventSection";
+import { EVENT_LAYOUT_EVENT, EVENT_LAYOUT_PATTERNS } from "./EventSection";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -162,7 +162,7 @@ type Params = {
   hero: HeroEnter;
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
-  /** イベントセクション（グルメの下）のホバー挙動 1〜5 */
+  /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
   events: { pattern: number };
   expIntro: IntroPace;
   expPick: { pattern: number };
@@ -217,7 +217,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1 }, /* イベントのホバー挙動（案1が基準） */
+      events: { pattern: 1 }, /* 体験セクションのレイアウト（案1が基準） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -758,13 +758,13 @@ export default function TopTunePanel({
               },
               { sub: "体験セクション（グルメの下）" },
               {
-                note: "「意外とオモロい、網走。」の写真4枚。カーソルを乗せた1枚が全面になる時の見せ方5案です。どれも写真タイル自体は動かさないので、以前のようなグラつきは出ません。",
+                note: "「意外とオモロい、網走。」の見せ方10案。どれも白地・余白多め・ミニマルで、トップの他のセクションと同じ書体づかいにしてあります（ホバーで開く仕掛けは廃止）。",
               },
               {
-                pills: "ホバーの動き",
+                pills: "レイアウトの案",
                 path: "events.pattern",
                 immediate: true,
-                options: Object.entries(EVENT_HOVER_PATTERNS).map(([v, p]) => ({
+                options: Object.entries(EVENT_LAYOUT_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
                   swatch: "#0070c9",
@@ -1326,7 +1326,7 @@ export default function TopTunePanel({
           /* イベントセクションのホバー案はイベントで直接届ける（ページ再構築なしで即反映） */
           if (info?.path === "events.pattern") {
             window.dispatchEvent(
-              new CustomEvent(EVENT_HOVER_EVENT, { detail: { v: params.events.pattern } })
+              new CustomEvent(EVENT_LAYOUT_EVENT, { detail: { v: params.events.pattern } })
             );
           }
         },
@@ -1382,7 +1382,7 @@ export default function TopTunePanel({
       pushValues();
       /* イベントセクションのホバー案も初回反映（保存値が焼き込みと違う時のため） */
       window.dispatchEvent(
-        new CustomEvent(EVENT_HOVER_EVENT, { detail: { v: params.events.pattern } })
+        new CustomEvent(EVENT_LAYOUT_EVENT, { detail: { v: params.events.pattern } })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの

@@ -2520,11 +2520,20 @@
   #conversion.cvs-10 #cvCanvas {
     --cv-f0: var(--cv-fade0, 0px);
     --cv-f1: min(var(--cv-fade1, 294px), 96%);
+    /* 【2026-09-15 ヒデさん指摘「境界線が気持ち悪い」】以前のカーブは後半に変化が集中していて(終わりの20%で 58%→100%)、
+       帯が短くなった今は「色が始まる線」がはっきり見えていた。→ 両端がなだらかな S 字(smootherstep)に置き換え、
+       始まりも終わりも傾きを 0 に近づける。途中はやや速いが、線として認識されるのは端の段差なので馴染む。 */
     --cv-fade-mask: linear-gradient(180deg,
-      rgba(0,0,0,0) var(--cv-f0),
-      rgba(0,0,0,.04) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .30),
-      rgba(0,0,0,.20) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .55),
-      rgba(0,0,0,.58) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .80),
+      rgba(0,0,0,0)    var(--cv-f0),
+      rgba(0,0,0,.005) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .10),
+      rgba(0,0,0,.03)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .20),
+      rgba(0,0,0,.10)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .32),
+      rgba(0,0,0,.24)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .43),
+      rgba(0,0,0,.50)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .55),
+      rgba(0,0,0,.76)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .67),
+      rgba(0,0,0,.90)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .78),
+      rgba(0,0,0,.975) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .88),
+      rgba(0,0,0,.996) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .95),
       #000 var(--cv-f1));
     -webkit-mask-image: var(--cv-fade-mask); mask-image: var(--cv-fade-mask); }
   /* 【2026-09-15 ヒデさん指摘】「赤枠の余白が詰まらない」。溶け込みの薄い帯が【お問い合わせの中】にあったので、
