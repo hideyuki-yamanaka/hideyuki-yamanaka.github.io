@@ -39,6 +39,7 @@ import {
   PAGE_TRANSITION_EVENT,
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
+import { FOOTER_EVENT, FOOTER_PATTERNS } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -175,6 +176,8 @@ type Params = {
   events: { pattern: number; tailPad: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
+  /** 全ページ共通フッターのデザイン 1〜5 */
+  footer: { pattern: number };
   expIntro: IntroPace;
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
@@ -230,6 +233,7 @@ export default function TopTunePanel({
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
+      footer: { pattern: 1 }, /* フッター（案1「白地・横並び」＝いまのトンマナが既定） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -400,6 +404,21 @@ export default function TopTunePanel({
             cat: "🌐 サイト共通",
             open: false,
             items: [
+              { sub: "フッター（全ページ共通）" },
+              {
+                note: "ページ下部のフッターのデザイン5案。既定の案1は、いまのサイトのトンマナ（白地・細い書体・余白多め）をそのまま踏襲したものです。トップと各詳細ページの一番下で確認できます。",
+              },
+              {
+                pills: "フッターの案",
+                path: "footer.pattern",
+                immediate: true,
+                options: Object.entries(FOOTER_PATTERNS).map(([v, p]) => ({
+                  name: p.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: p.note,
+                })),
+              },
               { sub: "ページ遷移の演出" },
               {
                 note: "ページを移る時にかぶせる幕の5案。どれもサイトの雰囲気に合わせてブラー主体にしてあります。選ぶとその場で一度再生して見せます（実際の遷移でも同じ動きになります）。",
@@ -1370,6 +1389,11 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
             );
           }
+          if (info?.path === "footer.pattern") {
+            window.dispatchEvent(
+              new CustomEvent(FOOTER_EVENT, { detail: { v: params.footer.pattern } })
+            );
+          }
           if (info?.path === "pageTrans.pattern") {
             /* preview:true で、その場で一度幕を見せる */
             window.dispatchEvent(
@@ -1438,6 +1462,9 @@ export default function TopTunePanel({
       );
       window.dispatchEvent(
         new CustomEvent(PAGE_TRANSITION_EVENT, { detail: { v: params.pageTrans.pattern } })
+      );
+      window.dispatchEvent(
+        new CustomEvent(FOOTER_EVENT, { detail: { v: params.footer.pattern } })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの

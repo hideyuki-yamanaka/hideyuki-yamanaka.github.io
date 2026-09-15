@@ -155,9 +155,12 @@
   },
   "events": {
     "pattern": 1,
-    "tailPad": 982
+    "tailPad": 0
   },
   "pageTrans": {
+    "pattern": 1
+  },
+  "footer": {
     "pattern": 1
   }
 }

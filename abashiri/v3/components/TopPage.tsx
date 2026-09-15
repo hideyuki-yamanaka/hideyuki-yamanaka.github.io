@@ -167,6 +167,7 @@ import HeroBlurSeq from "./HeroBlurSeq";
 import SpotShowcase from "./SpotShowcase";
 import GourmetSection from "./GourmetSection";
 import EventSection from "./EventSection";
+import SiteFooter from "./SiteFooter";
 import { DEFAULT_HERO_TIMING, type HeroTiming } from "./heroTiming";
 import { DEFAULT_BIRDS, type BirdsConfig } from "./birdConfig";
 import { type BubbleTune } from "./bubbleConfig";
@@ -898,6 +899,10 @@ export default function TopPage({
         {/* V3.0: グルメの下のイベントセクション（カンプ 17230:25481。白背景でグルメから地続き）。
             SpotShowcase（sticky区間）を抜けたあとの通常フローに置く */}
         <EventSection />
+
+        {/* 全ページ共通フッター。⚠️ このページは window ではなくこの箱がスクロールするので、
+            レイアウトではなくスクローラーの中に置く必要がある */}
+        <SiteFooter />
 
         {/* v1.1 の プロモ／旧グルメ／体験・イベント は撤去済み。
             旧部品（Card / CardRow 等）はこのファイル上部に残っている。

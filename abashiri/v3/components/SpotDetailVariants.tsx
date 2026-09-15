@@ -26,6 +26,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import type { SpotDetail } from "./spotDetailData";
+import SiteFooter from "./SiteFooter";
 
 /* ゆったり共通のイージング（既存サイトと同じ緩急） */
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -345,6 +346,7 @@ export function V1Parallax({ spot }: VProps) {
           <FooterBlocks spot={spot} root={ref} />
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
@@ -377,6 +379,7 @@ export function V2Hero({ spot }: VProps) {
         </div>
         <FooterBlocks spot={spot} root={ref} />
       </div>
+      <SiteFooter />
     </main>
   );
 }
@@ -436,6 +439,7 @@ export function V3Editorial({ spot }: VProps) {
           </aside>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
@@ -469,6 +473,7 @@ export function V4SkyGlass({ spot }: VProps) {
         </div>
         <FooterBlocks spot={spot} root={ref} kind="glass" />
       </div>
+      <SiteFooter />
     </main>
   );
 }
@@ -560,6 +565,7 @@ export function V8SplitSticky({ spot }: VProps) {
       <div className="mx-auto flex w-[880px] max-w-[92%] flex-col gap-[88px] py-[140px]">
         <FooterBlocks spot={spot} root={ref} />
       </div>
+      <SiteFooter />
     </main>
   );
 }
@@ -644,6 +650,7 @@ export function V10BigQuiet({ spot }: VProps) {
           <FooterBlocks spot={spot} root={ref} />
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
