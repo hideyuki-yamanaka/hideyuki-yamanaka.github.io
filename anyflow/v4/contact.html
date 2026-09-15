@@ -6,6 +6,13 @@
   <title>お問い合わせ｜Anyflow Embed</title>
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <meta name="description" content="Anyflow Embed へのお問い合わせフォームです。API連携にまつわるご相談はこちらから。">
+  <!-- 【2026-09-15 ヒデさん指摘】フォーム(HubSpot)の読み込みが遅く、出た瞬間に下が動く(レイアウトシフト)対策 ①
+       先に接続だけ済ませておく(DNS/TLS)。フォーム本体は forms.hsforms.com から来る -->
+  <link rel="preconnect" href="https://js.hsforms.net" crossorigin>
+  <link rel="preconnect" href="https://forms.hsforms.com" crossorigin>
+  <link rel="dns-prefetch" href="https://forms-na1.hsforms.com">
+  <!-- ② ライブラリは head で async 取得(HTML を読みながら並行で落とす)。https を明示(http 経由の余計な転送を避ける) -->
+  <script async src="https://js.hsforms.net/forms/embed/v2.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400&display=swap" rel="stylesheet">
@@ -120,6 +127,7 @@
     .cta:hover .cta-arrow svg { translate: 3px 0; }
     @keyframes cta-marquee { 0% { transform: translateX(0);} 100% { transform: translateX(-50%);} }
     @media (prefers-reduced-motion: reduce) {
+      .hs-skeleton .sk { animation: none; }
       .cta, .cta .cta-arrow svg, .cta .cta-reel { transition: none; }
       .cta .cta-track { animation: none; }
       .cta .cta-window { -webkit-mask-image: none; mask-image: none; }
@@ -162,7 +170,35 @@
       border: 1px solid var(--line-grid);
       border-radius: var(--radius-lg);
       padding: 40px;
+      position: relative;   /* スケルトンを重ねる基準 */
     }
+    /* 【2026-09-15 ヒデさん指摘・レイアウトシフト対策 ③】
+       HubSpot のフォームは iframe で後から入るので、それまで #hs-form は高さ0。
+       そのぶん下(フッター)が上に詰まっていて、フォームが出た瞬間にガクッと下がっていた(実測 CLS 0.287)。
+       → 出来上がりの高さを先に確保しておき、フォームが準備できたら解除する。実測値: 892px(通常) / 1013px(細い画面は姓・名が2段になる) */
+    #hs-form { min-height: 892px; opacity: 0; transition: opacity .3s ease; }
+    .form-card:not(.is-hs-loading) #hs-form { min-height: 0; opacity: 1; }
+    /* 細い画面ほど姓・名や選択肢が段組みされて縦に伸びる。実測値をそのまま段にしてある(360/375=1033・390〜430=1013・450〜489=998) */
+    @media (max-width: 489px) { #hs-form { min-height: 998px; } }
+    @media (max-width: 440px) { #hs-form { min-height: 1013px; } }
+    @media (max-width: 380px) { #hs-form { min-height: 1033px; } }
+    /* 待っている間の骨組み(入力欄の形)。場所取りは #hs-form がやるので、これは重ねるだけ＝レイアウトに影響しない */
+    .hs-skeleton {
+      position: absolute; left: 40px; right: 40px; top: 40px; bottom: 40px;
+      display: flex; flex-direction: column; gap: 16px; pointer-events: none;
+      opacity: 1; transition: opacity .25s ease;
+    }
+    .form-card:not(.is-hs-loading) .hs-skeleton { opacity: 0; visibility: hidden; }
+    .hs-skeleton .sk { display: block; border-radius: 6px;
+      background: linear-gradient(90deg, #eef0f3 25%, #f7f8fa 37%, #eef0f3 63%); background-size: 400% 100%;
+      animation: skShine 1.4s ease-in-out infinite; }
+    .hs-skeleton .sk-lab { width: 96px; height: 11px; border-radius: 3px; margin-bottom: 8px; }
+    .hs-skeleton .sk-in { height: 44px; }
+    .hs-skeleton .sk-area { height: 104px; }
+    .hs-skeleton .sk-btn { width: 200px; height: 44px; margin-top: 4px; }
+    .hs-skeleton .sk-2 { display: flex; gap: 16px; }
+    .hs-skeleton .sk-2 > div { flex: 1 1 0; min-width: 0; }
+    @keyframes skShine { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
     .hs-form-frame { font-family: inherit !important; }
     .form-card .hs-form fieldset { max-width: none !important; }
     .form-card label,
@@ -317,7 +353,20 @@
       <p class="contact-lead">API連携にまつわるお悩み、その他ご相談はAnyflowにお任せください。<br>下記フォームよりお問い合わせください。</p>
     </div>
 
-    <section class="form-card" aria-label="お問い合わせフォーム">
+    <section class="form-card is-hs-loading" aria-label="お問い合わせフォーム">
+      <!-- フォームが来るまでの骨組み(見た目だけ。読み上げ対象外) -->
+      <div class="hs-skeleton" aria-hidden="true">
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div class="sk-2">
+          <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+          <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        </div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-area"></span></div>
+        <span class="sk sk-btn"></span>
+      </div>
       <div id="hs-form"></div>
     </section>
   </main>
@@ -346,17 +395,34 @@
     </div>
   </footer>
 
-  <!-- HubSpot フォーム埋め込み -->
-  <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
+  <!-- HubSpot フォーム埋め込み(ライブラリは head で async 取得済み) -->
   <script>
     (function () {
+      var card = document.querySelector('.form-card');
+      var done = false;
+      /* フォームが入ったら: 確保していた高さを解除し、骨組みを消してフォームを出す */
+      function ready() {
+        if (done || !card) return; done = true;
+        card.classList.remove('is-hs-loading');
+      }
+      /* 保険1: onFormReady が来なくても、iframe が入ったら解除 */
+      var target = document.getElementById('hs-form');
+      if (target && window.MutationObserver) {
+        var mo = new MutationObserver(function () {
+          if (target.querySelector('iframe')) { mo.disconnect(); setTimeout(ready, 120); }
+        });
+        mo.observe(target, { childList: true, subtree: true });
+      }
+      /* 保険2: 10秒たっても来なければ骨組みを畳む(空の箱を見せ続けない) */
+      setTimeout(ready, 10000);
       function boot() {
-        if (typeof hbspt === 'undefined' || !hbspt.forms) { setTimeout(boot, 100); return; }
+        if (typeof hbspt === 'undefined' || !hbspt.forms) { setTimeout(boot, 60); return; }
         hbspt.forms.create({
           portalId: "47236172",
           formId: "6db15437-1dd9-4e3b-b562-6f6f323e42a8",
           region: "na1",
-          target: "#hs-form"
+          target: "#hs-form",
+          onFormReady: ready
         });
       }
       boot();
