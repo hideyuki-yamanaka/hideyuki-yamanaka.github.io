@@ -277,11 +277,13 @@ export default function MobileTop() {
             alt={spot.title}
             className="absolute inset-0 h-full w-full object-cover"
           />
-          {/* 説明のかたまりごとタップで詳細ページへ（2026-09-16 ヒデさん指示） */}
+          {/* 文字は写真に直接載せず、PC版と同じ「すりガラスのカード」に載せる
+              （white/10 + backdrop-blur-65。角丸なし。2026-09-16 ヒデさん指示）。
+              カードごとタップで詳細ページへ */}
           <button
             type="button"
             onClick={() => router.push(`/spot/${spot.slug}`)}
-            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent px-6 pb-12 pt-28 text-left text-white"
+            className="absolute inset-x-6 bottom-[72px] flex flex-col gap-4 bg-white/10 p-6 text-left text-white backdrop-blur-65"
           >
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
@@ -297,7 +299,7 @@ export default function MobileTop() {
                 <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
               </span>
             </div>
-            <p className="mt-3 text-[13px] font-extralight leading-[1.9] tracking-[0.3px]">
+            <p className="text-[13px] font-extralight leading-[1.9] tracking-[0.3px]">
               {spot.body}
             </p>
           </button>
@@ -324,7 +326,7 @@ export default function MobileTop() {
             {[...GOURMET, ...GOURMET].map((card, idx) => (
               <div
                 key={idx}
-                className="relative w-[230px] shrink-0 overflow-hidden rounded-3xl"
+                className="relative w-[230px] shrink-0 overflow-hidden"
               >
                 <img
                   src={card.img}
@@ -362,7 +364,7 @@ export default function MobileTop() {
               onClick={() => router.push(`/spot/${e.slug}`)}
               className="flex flex-col gap-2 text-left"
             >
-              <div className="overflow-hidden rounded-2xl">
+              <div className="overflow-hidden">
                 <img
                   src={e.img}
                   alt={e.title}
