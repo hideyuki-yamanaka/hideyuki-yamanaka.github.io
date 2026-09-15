@@ -42,6 +42,7 @@
 | [abashiri/DESIGN-SYSTEM.md](abashiri/DESIGN-SYSTEM.md) | 完成したデザインシステム（色・文字・余白のトークン一覧） |
 | [abashiri/DESIGN-SYSTEM-V2.md](abashiri/DESIGN-SYSTEM-V2.md) | V2.0 用に再整理したデザインシステム（4/8の倍数ルール・丸め表つき） |
 | [abashiri/DESIGN-SYSTEM-V3.md](abashiri/DESIGN-SYSTEM-V3.md) | **V3.0 の最新版**（直値をトークンへ寄せた統合表・レスポンシブ900px区切り・ブラーとスクロール演出の落とし穴） |
+| [abashiri/TUNE-PANEL-V3.md](abashiri/TUNE-PANEL-V3.md) | 調整パネルを anyflow 仕様に統一した記録（四辺リサイズ・行ごとの↺・プリセット・スマホのシート） |
 | [abashiri/V1.1-STATUS.md](abashiri/V1.1-STATUS.md) | v1.1 のいまの状態・仮置き一覧・実装の地雷・次にやること（引き継ぎ用） |
 | [abashiri/TASKS.md](abashiri/TASKS.md) | ヒデさんからの依頼台帳（依頼・進捗・概算時間。受けたら即追記） |
 

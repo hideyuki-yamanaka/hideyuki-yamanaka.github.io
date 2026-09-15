@@ -108,7 +108,10 @@
 
   var CSS = [
     '.tp{position:fixed;z-index:2147483000;display:flex;flex-direction:column;overflow:hidden;',
-    '  width:360px;height:520px;min-width:240px;min-height:44px;max-width:92vw;max-height:92vh;',
+    /* 既定サイズは anyflow の調整パネルに合わせる（2026-09-16 ヒデさん指示）。
+       外寸は固定して中身だけスクロールさせる：開閉のたびに外寸が変わると
+       パネルごと動いて、触っている場所がズレるため */
+    '  width:450px;height:520px;min-width:240px;min-height:44px;max-width:92vw;max-height:92vh;',
     '  resize:both;background:rgba(255,255,255,.93);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
     '  border:1px solid #e2e2e2;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.10);',
     '  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;',
@@ -160,6 +163,59 @@
     '.tp-grp.deep{margin-top:8px;padding-top:8px;border-top:1px dashed #eee;padding-left:10px;border-left:2px solid #ececec;}',
     '.tp-grp.deep .tp-grp-title{font-size:11px;color:#666;}',
     '.tp-note{font-size:10px;line-height:1.6;color:#999;margin:-2px 0 6px;}',
+    /* 小見出しもたためる（2026-09-16 anyflow 準拠）。
+       見出し全体が押せるので、行が多いカテゴリでも目的の所まで一気に畳める */
+    '.tp-grp-title{cursor:pointer;}',
+    '.tp-grp-chev{font-size:9px;color:#aaa;transition:transform .2s;flex:0 0 auto;}',
+    '.tp-grp.closed .tp-grp-chev{transform:rotate(-90deg);}',
+    '.tp-grp.closed .tp-grp-body{display:none;}',
+    /* 四辺リサイズ（右下つまみだけでなく、上下左右の辺も掴める。anyflow 準拠） */
+    '.tp-z{position:absolute;z-index:3;}',
+    '.tp-z-t{top:-3px;left:10px;right:10px;height:8px;cursor:ns-resize;}',
+    '.tp-z-b{bottom:-3px;left:10px;right:16px;height:8px;cursor:ns-resize;}',
+    '.tp-z-l{left:-3px;top:10px;bottom:10px;width:8px;cursor:ew-resize;}',
+    '.tp-z-r{right:-3px;top:10px;bottom:16px;width:8px;cursor:ew-resize;}',
+    '.tp.closed .tp-z{display:none;}',
+    /* 行ごとの↺リセット（その項目だけ既定値に戻す） */
+    '.tp-item-rst{border:none;background:none;cursor:pointer;font-size:10px;opacity:.5;padding:2px 3px;line-height:1;}',
+    '.tp-item-rst:hover{opacity:1;}',
+    /* プリセット（いまの値に名前を付けて保存し、あとで呼び戻す） */
+    '.tp-pset{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px;}',
+    '.tp-pset-lab{flex:0 0 auto;font-size:10px;color:#999;}',
+    '.tp-pset-chip{display:inline-flex;align-items:stretch;border:1px solid #e2e2e2;border-radius:999px;',
+    '  overflow:hidden;background:#fff;}',
+    '.tp-pset-name{border:0;background:transparent;padding:3px 4px 3px 11px;font:inherit;font-size:11px;',
+    '  color:#333;cursor:pointer;max-width:128px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+    '.tp-pset-menu{border:0;background:transparent;padding:3px 8px 3px 3px;font-size:12px;color:#bbb;cursor:pointer;}',
+    '.tp-pset-menu:hover{color:#666;}',
+    '.tp-pset-add{border:1px dashed #d8d8d8;border-radius:999px;background:#fff;color:#777;',
+    '  font:inherit;font-size:11px;padding:3px 11px;cursor:pointer;}',
+    '.tp-pset-add:hover{border-color:#999;color:#333;}',
+    '.tp-pmenu{position:fixed;z-index:2147483002;background:#fff;border:1px solid #e4e4e4;border-radius:9px;',
+    '  box-shadow:0 8px 24px rgba(0,0,0,.16);padding:4px;min-width:138px;}',
+    '.tp-pmenu button{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;',
+    '  font-size:11px;padding:7px 10px;border-radius:6px;cursor:pointer;color:#222;}',
+    '.tp-pmenu button:hover{background:#f2f2f2;}',
+    '.tp-pmenu button.danger{color:#d94141;}',
+    '.tp-pmenu button.danger:hover{background:#fdecec;}',
+    '.tp.dark .tp-pset-chip,.tp.dark .tp-pset-add{background:#1b1b1e;border-color:#3a3a3f;}',
+    '.tp.dark .tp-pset-name{color:#eee;}',
+    '.tp.dark .tp-pmenu{background:#1b1b1e;border-color:#3a3a3f;}',
+    '.tp.dark .tp-pmenu button{color:#eee;}',
+    '.tp.dark .tp-pmenu button:hover{background:#2a2a2f;}',
+    /* スマホ：画面の下からせり上がるシート（anyflow 準拠）。
+       小さい画面で右下に浮かせると、指でも掴みにくく中身も読めないため */
+    '@media (max-width:640px){',
+    '  .tp{left:0 !important;right:0 !important;bottom:0 !important;top:auto !important;',
+    '    width:100% !important;max-width:100%;height:62vh !important;max-height:82vh;',
+    '    border-radius:14px 14px 0 0;resize:none;}',
+    '  .tp.closed{height:auto !important;}',
+    '  .tp-head{cursor:default;padding:12px 14px;}',
+    '  .tp-z{display:none;}',
+    '  .tp-secret-hot{top:auto;bottom:0;width:72px;height:72px;}',
+    /* パネルが出ている間は、シートの下端（保存・リセット）と重ならないよう上へ逃がす */
+    '  .tp-secret-hot.shown{top:0;bottom:auto;}',
+    '}',
     /* 項目ツール（🗑削除・⠿並び替え）と削除確認モーダル（2026-08-23） */
     '.tp-item{position:relative;}',
     '.tp-item-tools{position:absolute;right:0;top:-3px;display:none;gap:0;align-items:center;z-index:6;',
@@ -328,7 +384,10 @@
         cats: this.catOpen,
         scroll: this.body.scrollTop,
         hidden: this.hiddenItems,
-        order: this.itemOrder
+        order: this.itemOrder,
+        /* 幅の既定を 360→450 に上げる一度きりの移行を済ませた印。
+           これが付いていれば、自分で 360px に狭めても勝手に広げ直さない */
+        w450: true
       }));
     } catch (e) {}
   };
@@ -340,8 +399,12 @@
     }
     var size = this.cfg.size || {};
     /* 潰れた保存値（過去バージョンで入り込んだもの）は無視して既定サイズに戻す */
-    var w = (ui && ui.w > 120 ? ui.w : 0) || size.w || 360;
+    var w = (ui && ui.w > 120 ? ui.w : 0) || size.w || 450;
     var h = (ui && ui.h > 80 ? ui.h : 0) || size.h || 520;
+    /* 2026-09-16 既定幅を anyflow に合わせて 360→450 に変えた。
+       旧既定のまま（＝自分で広げていない）保存値は、一度だけ新しい既定に引き上げる。
+       自分で動かした幅は尊重したいので、ぴったり360の時だけ */
+    if (ui && ui.w === 360 && !ui.w450) { w = 450; }
     this._openW = w; this._openH = h;
     this.el.style.width = w + 'px';
     this.el.style.height = h + 'px';
@@ -410,6 +473,14 @@
     toast.className = 'tp-toast';
 
     el.append(head, body, foot, toast);
+    /* 四辺リサイズのつまみ（2026-09-16 anyflow 準拠）。
+       右下の標準つまみだけだと、左や上に広げたい時にいちど動かす手間がいる */
+    ['t', 'b', 'l', 'r'].forEach(function (side) {
+      var z = document.createElement('div');
+      z.className = 'tp-z tp-z-' + side;
+      z.addEventListener('pointerdown', function (e) { self._edgeResize(side, e); });
+      el.appendChild(z);
+    });
     (this.cfg.mount || document.body).appendChild(el);
 
     /* 開閉 */
@@ -452,6 +523,7 @@
     var secret = this.cfg.secret === undefined ? true : this.cfg.secret;
     var setShown = this._setShown = function (on) {
       el.style.display = on ? '' : 'none';
+      if (self._hot) self._hot.classList.toggle('shown', !!on);
       if (!secret) return;
       try { sessionStorage.setItem('tp-secret-' + (self.cfg.storageKey || 'panel'), on ? '1' : '0'); } catch (e) {}
     };
@@ -462,6 +534,7 @@
       var hot = this._hot = document.createElement('div');
       hot.className = 'tp-secret-hot';
       (this.cfg.mount || document.body).appendChild(hot);
+      hot.classList.toggle('shown', shown0);
       hot.addEventListener('click', function () { setShown(el.style.display === 'none'); });
     }
 
@@ -477,6 +550,39 @@
       };
       window.addEventListener('keydown', this._onKey);
     }
+  };
+
+  /* 辺を掴んでのリサイズ。上と左は「掴んだ辺を動かす」ので、位置も一緒に動かす */
+  Panel.prototype._edgeResize = function (side, e) {
+    var self = this, el = this.el;
+    if (el.classList.contains('closed')) return;
+    e.preventDefault();
+    var r = el.getBoundingClientRect();
+    var sx = e.clientX, sy = e.clientY;
+    var w0 = r.width, h0 = r.height, x0 = r.left, y0 = r.top;
+    var MIN_W = 240, MIN_H = 120;
+    var move = function (ev) {
+      var dx = ev.clientX - sx, dy = ev.clientY - sy;
+      var w = w0, h = h0, x = x0, y = y0;
+      if (side === 'r') w = w0 + dx;
+      if (side === 'b') h = h0 + dy;
+      if (side === 'l') { w = w0 - dx; x = x0 + dx; }
+      if (side === 't') { h = h0 - dy; y = y0 + dy; }
+      /* 最小サイズに当たったら、そこで辺を止める（位置だけ動いて痩せ続けるのを防ぐ） */
+      if (w < MIN_W) { if (side === 'l') x = x0 + (w0 - MIN_W); w = MIN_W; }
+      if (h < MIN_H) { if (side === 't') y = y0 + (h0 - MIN_H); h = MIN_H; }
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+      self._place(x, y);
+    };
+    var up = function () {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      self._openW = el.offsetWidth; self._openH = el.offsetHeight;
+      self._saveUI();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
   };
 
   /* ---------- 通知 ---------- */
@@ -679,17 +785,36 @@
     if (!item) return;
     if (item.when && !item.when(this.params)) return;
 
-    /* 小見出し */
+    /* 小見出し。2026-09-16 から anyflow と同じくここもたためる。
+       中身は .tp-grp-body に入れて、見出しクリックで開閉する。
+       開いているかどうかは他の折りたたみと同じく localStorage に覚える */
     if (item.sub !== undefined) {
       var g = document.createElement('div');
       g.className = 'tp-grp' + (item.deep ? ' deep' : '');
-      if (item.deep) g.dataset.okey = (catBody.dataset.okey || '') + '>' + String(item.sub);
+      var gkey = (catBody.dataset.okey || '') + '>' + String(item.sub);
+      g.dataset.okey = gkey;
       var t = document.createElement('div');
       t.className = 'tp-grp-title';
-      t.innerHTML = item.sub;
-      g.appendChild(t);
+      var tLabel = document.createElement('span');
+      tLabel.innerHTML = item.sub;
+      tLabel.style.flex = '1 1 auto';
+      tLabel.style.minWidth = '0';
+      var gchev = document.createElement('span');
+      gchev.className = 'tp-grp-chev';
+      gchev.textContent = '▾';
+      t.append(tLabel, gchev);
+      var gbody = document.createElement('div');
+      gbody.className = 'tp-grp-body';
+      g.append(t, gbody);
+      /* 既定は開いた状態。閉じたものだけ覚える */
+      if (this.secOpen[gkey] === false) g.classList.add('closed');
+      t.addEventListener('click', function () {
+        var closed = g.classList.toggle('closed');
+        self.secOpen[gkey] = !closed;
+        self._saveUI();
+      });
       catBody.appendChild(g);
-      this._mount = item.deep ? g : catBody;
+      this._mount = gbody;
       return;
     }
     var mount = this._mount || catBody;
@@ -737,15 +862,33 @@
       row._hint = h;
     }
     if (row) this.rows.push(row);
-    if (row && wrapItem) this._itemTools(wrapItem);
+    if (row && wrapItem) this._itemTools(wrapItem, item, row);
     else if (wrapItem && !row) { wrapItem.remove(); }
   };
 
   /* --- 項目ごとのツール（🗑削除・⠿並び替え）。2026-08-23 ヒデさん依頼 --- */
-  Panel.prototype._itemTools = function (wrap) {
+  Panel.prototype._itemTools = function (wrap, item, row) {
     var self = this;
     var tools = document.createElement('div');
     tools.className = 'tp-item-tools';
+    /* ↺ この項目だけ既定値に戻す（2026-09-16 anyflow 準拠）。
+       全体リセットだと他の調整まで巻き添えになるため、行ごとに戻せるようにした */
+    if (item && item.path !== undefined) {
+      var rst = document.createElement('button');
+      rst.type = 'button';
+      rst.className = 'tp-item-rst';
+      rst.textContent = '↺';
+      rst.title = 'この項目だけ最初の値に戻す';
+      rst.addEventListener('click', function (e) {
+        e.stopPropagation();
+        self._set(item, clone(self._default(item)));
+        if (row && row._sync) row._sync();
+        self._changed({ path: item.path });
+        self.flash('「' + String(item.slider || item.pills || item.toggle || item.select ||
+          item.color || item.text || item.seg || 'この項目') + '」を最初の値に戻しました');
+      });
+      tools.appendChild(rst);
+    }
     var grab = document.createElement('span');
     grab.className = 'tp-item-grab';
     grab.textContent = '⠿';
@@ -1186,9 +1329,131 @@
 
   /* ---------- フッター ---------- */
 
+  /* ---------- プリセット（2026-09-16 anyflow 準拠） ----------
+     いまのつまみの値ぜんぶに名前を付けて保存し、あとで一発で呼び戻せる。
+     案を見比べる時に「さっきの状態」へ戻れないのが不便だったため。
+     保存先は localStorage（このパネル専用のキー）。 */
+
+  Panel.prototype._psKey = function () { return 'tp:' + this.storageKey + ':presets'; };
+
+  Panel.prototype._presets = function () {
+    if (!this.storageKey) return [];
+    try { return JSON.parse(localStorage.getItem(this._psKey())) || []; } catch (e) { return []; }
+  };
+
+  Panel.prototype._savePresets = function (list) {
+    try { localStorage.setItem(this._psKey(), JSON.stringify(list)); } catch (e) {}
+  };
+
+  Panel.prototype._renderPresets = function (mount) {
+    var self = this;
+    if (!this.storageKey || this.cfg.presets === false) return;
+    var list = this._presets();
+    var box = document.createElement('div');
+    box.className = 'tp-pset';
+    var lab = document.createElement('span');
+    lab.className = 'tp-pset-lab';
+    lab.textContent = 'プリセット';
+    box.appendChild(lab);
+
+    list.forEach(function (p, i) {
+      var chip = document.createElement('span');
+      chip.className = 'tp-pset-chip';
+      var name = document.createElement('button');
+      name.type = 'button';
+      name.className = 'tp-pset-name';
+      name.textContent = p.name;
+      name.title = '押すとこの状態に戻す';
+      name.addEventListener('click', function () {
+        assignDeep(self.params, clone(p.params));
+        self._markDirty(true);
+        self.rebuild();
+        self._changed({});
+        self.flash('「' + p.name + '」を呼び出しました（保存はまだです）');
+      });
+      var menu = document.createElement('button');
+      menu.type = 'button';
+      menu.className = 'tp-pset-menu';
+      menu.textContent = '⋯';
+      menu.title = '名前の変更・上書き・削除';
+      menu.addEventListener('click', function (e) {
+        e.stopPropagation();
+        self._presetMenu(e.currentTarget, i);
+      });
+      chip.append(name, menu);
+      box.appendChild(chip);
+    });
+
+    var add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'tp-pset-add';
+    add.textContent = '＋ いまの状態を保存';
+    add.addEventListener('click', function () {
+      var n = window.prompt('この状態に名前を付けてください', '案' + (list.length + 1));
+      if (!n) return;
+      list.push({ name: n, params: clone(self.params) });
+      self._savePresets(list);
+      self._renderFoot();
+      self.flash('「' + n + '」として保存しました');
+    });
+    box.appendChild(add);
+    mount.appendChild(box);
+  };
+
+  Panel.prototype._presetMenu = function (anchor, idx) {
+    var self = this;
+    var old = document.querySelector('.tp-pmenu');
+    if (old) old.remove();
+    var list = this._presets();
+    var m = document.createElement('div');
+    m.className = 'tp-pmenu';
+    var r = anchor.getBoundingClientRect();
+    m.style.left = Math.min(r.left, window.innerWidth - 150) + 'px';
+    m.style.top = (r.bottom + 4) + 'px';
+    var mk = function (label, danger, fn) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      if (danger) b.className = 'danger';
+      b.addEventListener('click', function () { m.remove(); fn(); });
+      m.appendChild(b);
+    };
+    mk('いまの状態で上書き', false, function () {
+      list[idx].params = clone(self.params);
+      self._savePresets(list);
+      self.flash('「' + list[idx].name + '」を上書きしました');
+    });
+    mk('名前を変える', false, function () {
+      var n = window.prompt('新しい名前', list[idx].name);
+      if (!n) return;
+      list[idx].name = n;
+      self._savePresets(list);
+      self._renderFoot();
+    });
+    mk('削除する', true, function () {
+      var n = list[idx].name;
+      list.splice(idx, 1);
+      self._savePresets(list);
+      self._renderFoot();
+      self.flash('「' + n + '」を削除しました');
+    });
+    document.body.appendChild(m);
+    /* 外side を押したら閉じる */
+    setTimeout(function () {
+      var off = function (ev) {
+        if (m.contains(ev.target)) return;
+        m.remove();
+        document.removeEventListener('pointerdown', off);
+      };
+      document.addEventListener('pointerdown', off);
+    }, 0);
+  };
+
   Panel.prototype._renderFoot = function () {
     var self = this;
     if (this.cfg.footer === false) { this.foot.style.display = 'none'; return; }
+    this.foot.innerHTML = '';
+    this._renderPresets(this.foot);
     var box = document.createElement('div');
     box.className = 'tp-btns';
     box.style.marginTop = '0';
