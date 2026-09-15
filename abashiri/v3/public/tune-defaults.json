@@ -154,7 +154,7 @@
     "swayFirst": true
   },
   "events": {
-    "pattern": 10,
+    "pattern": 1,
     "tailPad": 982
   }
 }

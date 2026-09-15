@@ -40,16 +40,18 @@ export const EVENT_LAYOUT_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  1: { name: "案1", note: "育つ一列。小さな4枚が、スクロールにつれて画面幅いっぱいまで伸びる" },
-  2: { name: "案2", note: "中央が開く。真ん中の1枚が大きく育ち、両脇がそっと引いていく" },
-  3: { name: "案3", note: "横に流れる。写真が横へ送られ、中央に来た1枚だけが大きくなる" },
-  4: { name: "案4", note: "グリッド崩し。2×2の小さな組が、ほどけながら大きく広がる" },
-  5: { name: "案5", note: "幕が開く。細い帯から上下に開いて写真が現れ、そのまま育つ" },
-  6: { name: "案6", note: "重なりがほどける。かさなった4枚が、扇のように開いて並ぶ" },
-  7: { name: "案7", note: "縦から横へ。縦長の写真が、スクロールで横長の景色に変わる" },
-  8: { name: "案8", note: "通り抜け。1枚に寄っていき、抜けると次の写真が待っている" },
-  9: { name: "案9", note: "速さ違い。4枚が別々の速さで上がり、手前の1枚だけ大きく育つ" },
-  10: { name: "案10", note: "文字主役。見出しを大きく中央に、写真は小さく一列（現行の採用候補）" },
+  /* 全案とも「画面の真ん中に来た時がいちばん良く見える」設計。
+     案1・案6 が採用候補で、他はその2つから広げたバリエーション */
+  1: { name: "案1", note: "【候補】育つ一列。小さな4枚が、中央に来るまでに実寸まで伸びる" },
+  2: { name: "案2", note: "育つ一列（縦書き見出し）。案1と同じ育ち方で、見出しを縦書きに" },
+  3: { name: "案3", note: "中央から開く一列。内側に寄っていた4枚が、外へ広がりながら育つ" },
+  4: { name: "案4", note: "縦に伸びる一列。低い帯から上下に開いて、背の高い写真になる" },
+  5: { name: "案5", note: "重なり→2×2。かさなった4枚が、格子にほどけて大きくなる" },
+  6: { name: "案6", note: "【候補】重なりがほどける。かさなった4枚が扇のように開いて並ぶ" },
+  7: { name: "案7", note: "奥行きの一列。中央の2枚が手前に出て、両端は少し奥へ引く" },
+  8: { name: "案8", note: "静かな扇。案6と同じほどけ方で、回転させず平行に開くだけ" },
+  9: { name: "案9", note: "上下にほどける。重なりが上下にずれて開く（扇の縦版）" },
+  10: { name: "案10", note: "主役1枚＋脇3枚。中央の1枚が大きく育ち、脇は控えめに開く" },
 };
 
 type EventItem = { tag: string; title: string; body: string; img: string };
@@ -196,9 +198,14 @@ const seg = (i: number, n: number, pad = 0.12) => {
 
 /* ── 案の中身 ───────────────────────────── */
 
+/* ── 案の中身 ─────────────────────────────
+   ⚠️ ここに来る p は「画面中央で 1 になる進捗」。
+   セクションが画面の真ん中に来た時がいちばん良く見える状態で、
+   そこから先は 1 のまま保たれる（通り過ぎてから育つ挙動を 2026-09-15 に是正） */
+
 function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
   switch (pat) {
-    /* 案1 育つ一列：小さな4枚 →（スクロール）→ 画面幅いっぱいまで伸びる */
+    /* 案1【採用候補】育つ一列：小さな4枚が、中央に来るまでに実寸へ伸びる */
     case 1:
       return (
         <div className="flex w-full flex-col gap-[90px]">
@@ -208,14 +215,7 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
               const [a, b] = seg(i, 4, 0.3);
               return (
                 <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
-                  <GrowShot
-                    it={it}
-                    p={p}
-                    from={a}
-                    to={b}
-                    start={0.55}
-                    className="h-[560px] w-full"
-                  />
+                  <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[560px] w-full" />
                   <Caption it={it} />
                 </div>
               );
@@ -224,214 +224,72 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
         </div>
       );
 
-    /* 案2 中央が開く：真ん中の1枚が大きく育ち、両脇はそっと引く */
-    case 2:
-      return <CenterOpens p={p} />;
-
-    /* 案3 横に流れる：中央に来た1枚だけが大きくなる */
-    case 3:
-      return <SideScroll p={p} />;
-
-    /* 案4 グリッド崩し：2×2の小さな組が、ほどけながら広がる */
-    case 4:
-      return <GridUnfold p={p} />;
-
-    /* 案5 幕が開く：細い帯から上下に開いて現れ、そのまま育つ */
-    case 5:
-      return <CurtainOpen p={p} />;
-
-    /* 案6 重なりがほどける：かさなった4枚が扇のように開く */
+    /* 案6【採用候補】重なりがほどける：かさなった4枚が扇のように開く */
     case 6:
       return <FanOut p={p} />;
 
-    /* 案7 縦から横へ：縦長の写真が横長の景色に変わる */
-    case 7:
-      return <TallToWide p={p} />;
+    /* ── ここから下は 案1・案6 の系統から広げたバリエーション ── */
 
-    /* 案8 通り抜け：1枚に寄って抜けると、次の写真が待っている */
-    case 8:
-      return <PassThrough p={p} />;
-
-    /* 案9 速さ違い：4枚が別々の速さで上がり、手前の1枚が大きく育つ */
-    case 9:
-      return <SpeedLayers p={p} />;
-
-    /* 案10 文字主役（そのまま据え置き） */
-    case 10:
+    /* 案2 育つ一列（縦書き見出し）：案1と同じ育ち方で、見出しだけ縦書き＋右付け */
+    case 2:
       return (
-        <div className="mx-auto flex w-[1100px] max-w-[92%] flex-col items-center gap-[120px]">
-          <motion.h2
-            className="text-center text-[64px] font-thin leading-[1.6] text-ink"
-            variants={reveal}
-            initial="hidden"
-            whileInView="show"
-            viewport={VIEW}
-          >
-            意外とオモロい、網走。
-          </motion.h2>
-          <div className="flex w-full gap-5">
-            {ITEMS.map((it) => (
-              <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-4">
-                <motion.img
-                  src={it.img}
-                  alt={it.title}
-                  className="h-[260px] w-full object-cover"
-                  variants={reveal}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={VIEW}
-                />
-                <Caption it={it} />
-              </div>
-            ))}
+        <div className="flex w-full items-start gap-[69px] pl-[147px]">
+          <VTitle className="mt-[40px]" />
+          <div className="flex min-w-0 flex-1 gap-[5px]">
+            {ITEMS.map((it, i) => {
+              const [a, b] = seg(i, 4, 0.3);
+              return (
+                <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
+                  <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[600px] w-full" />
+                  <Caption it={it} />
+                </div>
+              );
+            })}
           </div>
         </div>
       );
+
+    /* 案3 中央から左右へ開く一列：真ん中にかたまった4枚が、外へ広がりながら育つ */
+    case 3:
+      return <SpreadRow p={p} />;
+
+    /* 案4 縦に伸びる一列：低い帯だった4枚が、中央で背の高い写真になる */
+    case 4:
+      return <TallGrowRow p={p} />;
+
+    /* 案5 重なり → 2×2：かさなった4枚が、格子にほどけて大きくなる */
+    case 5:
+      return <StackToGrid p={p} />;
+
+    /* 案7 奥行きのある一列：中央の1枚が手前に出て、両端は少し奥へ引く */
+    case 7:
+      return <DepthRow p={p} />;
+
+    /* 案8 静かな扇：案6と同じほどけ方だが、回転させず平行に開くだけ */
+    case 8:
+      return <FanOut p={p} quiet />;
+
+    /* 案9 上下にほどける：重なりが上下にずれて開く（扇の縦版） */
+    case 9:
+      return <FanVertical p={p} />;
+
+    /* 案10 主役1枚＋脇3枚：中央の1枚が大きく育ち、脇は控えめに開く */
+    case 10:
+      return <HeroAndSides p={p} />;
 
     default:
       return null;
   }
 }
 
-/* 案2 中央が開く */
-function CenterOpens({ p }: { p: MotionValue<number> }) {
-  const mid = useTransform(p, [0.1, 0.75], [0.62, 1]);
-  const side = useTransform(p, [0.1, 0.75], [1, 0.82]);
-  const sideOp = useTransform(p, [0.1, 0.75], [1, 0.45]);
-  return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full items-center gap-6 px-[60px]">
-        <motion.div
-          className="h-[360px] min-w-0 flex-1 overflow-hidden"
-          style={{ scale: side, opacity: sideOp }}
-        >
-          <img src={ITEMS[0].img} alt="" className="size-full object-cover" />
-        </motion.div>
-        <div className="flex w-[640px] shrink-0 flex-col gap-6">
-          <motion.div
-            className="h-[560px] w-full overflow-hidden"
-            style={{ scale: mid }}
-          >
-            <img src={ITEMS[1].img} alt="" className="size-full object-cover" />
-          </motion.div>
-          <Caption it={ITEMS[1]} size="lg" />
-        </div>
-        <motion.div
-          className="h-[360px] min-w-0 flex-1 overflow-hidden"
-          style={{ scale: side, opacity: sideOp }}
-        >
-          <img src={ITEMS[2].img} alt="" className="size-full object-cover" />
-        </motion.div>
-      </div>
-    </div>
-  );
-}
-
-/* 案3 横に流れる（中央のものが大きい） */
-function SideScroll({ p }: { p: MotionValue<number> }) {
-  const x = useTransform(p, [0, 1], ["8%", "-42%"]);
-  return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="w-full overflow-hidden">
-        <motion.div className="flex w-max items-center gap-8 px-[20%]" style={{ x }}>
-          {ITEMS.map((it, i) => {
-            const [a, b] = seg(i, 4, 0.25);
-            return (
-              <div key={it.title} className="flex w-[520px] shrink-0 flex-col gap-5">
-                <GrowShot
-                  it={it}
-                  p={p}
-                  from={a}
-                  to={b}
-                  start={0.7}
-                  className="h-[420px] w-full"
-                />
-                <Caption it={it} />
-              </div>
-            );
-          })}
-        </motion.div>
-      </div>
-    </div>
-  );
-}
-
-/* 案4 グリッド崩し */
-function GridUnfold({ p }: { p: MotionValue<number> }) {
-  const spread = useTransform(p, [0.1, 0.8], [0, 1]);
-  const gap = useTransform(spread, (v) => 8 + v * 56);
-  const s = useTransform(spread, [0, 1], [0.7, 1]);
-  return (
-    <div className="mx-auto flex w-[1180px] max-w-[92%] items-start gap-[80px]">
-      <VTitle />
-      <motion.div
-        className="grid min-w-0 flex-1 grid-cols-2"
-        style={{ gap }}
-      >
-        {ITEMS.map((it) => (
-          <div key={it.title} className="flex flex-col gap-5">
-            <motion.div
-              className="h-[340px] w-full overflow-hidden"
-              style={{ scale: s }}
-            >
-              <img src={it.img} alt="" className="size-full object-cover" />
-            </motion.div>
-            <Caption it={it} />
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
-
-/* 案5 幕が開く（clip-path で上下から） */
-function CurtainOpen({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full flex-col gap-[70px] px-[60px]">
-        {ITEMS.map((it, i) => {
-          const [a, b] = seg(i, 4, 0.2);
-          return <CurtainRow key={it.title} it={it} p={p} from={a} to={b} />;
-        })}
-      </div>
-    </div>
-  );
-}
-function CurtainRow({
-  it,
-  p,
-  from,
-  to,
-}: {
-  it: EventItem;
-  p: MotionValue<number>;
-  from: number;
-  to: number;
-}) {
-  const clip = useTransform(p, [from, to], ["inset(45% 0% 45% 0%)", "inset(0% 0% 0% 0%)"]);
-  const s = useTransform(p, [from, to], [1.12, 1]);
-  return (
-    <div className="flex items-end gap-10">
-      <motion.div className="h-[380px] min-w-0 flex-1 overflow-hidden" style={{ clipPath: clip }}>
-        <motion.img src={it.img} alt="" className="size-full object-cover" style={{ scale: s }} />
-      </motion.div>
-      <Caption it={it} className="w-[300px] shrink-0 pb-2" />
-    </div>
-  );
-}
-
-/* 案6 重なりがほどける（扇） */
-function FanOut({ p }: { p: MotionValue<number> }) {
-  const open = useTransform(p, [0.1, 0.8], [0, 1]);
+/* 案6/案8 重なりがほどける（扇）。quiet=回転なしの静かな開き方 */
+function FanOut({ p, quiet = false }: { p: MotionValue<number>; quiet?: boolean }) {
   return (
     <div className="flex w-full flex-col items-center gap-[90px]">
       <HTitle />
       <div className="relative h-[520px] w-full">
         {ITEMS.map((it, i) => (
-          <FanCard key={it.title} it={it} i={i} open={open} />
+          <FanCard key={it.title} it={it} i={i} open={p} quiet={quiet} />
         ))}
       </div>
       <div className="flex w-[1100px] max-w-[92%] gap-5">
@@ -446,16 +304,17 @@ function FanCard({
   it,
   i,
   open,
+  quiet,
 }: {
   it: EventItem;
   i: number;
   open: MotionValue<number>;
+  quiet?: boolean;
 }) {
-  /* 閉じている時は中央に重なり、開くと左右へ広がる */
   const offs = [-540, -180, 180, 540];
   const rots = [-6, -2, 2, 6];
   const x = useTransform(open, [0, 1], [0, offs[i]]);
-  const rot = useTransform(open, [0, 1], [0, rots[i]]);
+  const rot = useTransform(open, [0, 1], [0, quiet ? 0 : rots[i]]);
   const s = useTransform(open, [0, 1], [0.8, 1]);
   return (
     <motion.div
@@ -467,83 +326,196 @@ function FanCard({
   );
 }
 
-/* 案7 縦から横へ */
-function TallToWide({ p }: { p: MotionValue<number> }) {
+/* 案9 上下にほどける（扇の縦版） */
+function FanVertical({ p }: { p: MotionValue<number> }) {
   return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full flex-col gap-[80px] px-[60px]">
-        {ITEMS.slice(0, 3).map((it, i) => {
-          const [a, b] = seg(i, 3, 0.2);
-          return <MorphRow key={it.title} it={it} p={p} from={a} to={b} />;
-        })}
+    <div className="flex w-full items-start gap-[69px] px-[120px]">
+      <VTitle className="mt-[40px]" />
+      <div className="relative h-[620px] min-w-0 flex-1">
+        {ITEMS.map((it, i) => (
+          <VFanCard key={it.title} it={it} i={i} open={p} />
+        ))}
       </div>
     </div>
   );
 }
-function MorphRow({
+function VFanCard({
   it,
-  p,
-  from,
-  to,
+  i,
+  open,
 }: {
   it: EventItem;
-  p: MotionValue<number>;
-  from: number;
-  to: number;
+  i: number;
+  open: MotionValue<number>;
 }) {
-  /* 縦長（幅を絞った状態）→ 横長（全幅）へ。clip-path なのでレイアウトは動かない */
-  const clip = useTransform(
-    p,
-    [from, to],
-    ["inset(0% 33% 0% 33%)", "inset(0% 0% 0% 0%)"]
-  );
-  const s = useTransform(p, [from, to], [1.15, 1]);
+  const xs = [-480, -160, 160, 480];
+  const ys = [40, -40, 40, -40];
+  const x = useTransform(open, [0, 1], [0, xs[i]]);
+  const y = useTransform(open, [0, 1], [0, ys[i]]);
+  const s = useTransform(open, [0, 1], [0.78, 1]);
   return (
-    <div className="flex flex-col gap-5">
-      <motion.div className="h-[460px] w-full overflow-hidden" style={{ clipPath: clip }}>
-        <motion.img src={it.img} alt="" className="size-full object-cover" style={{ scale: s }} />
+    <motion.div
+      className="absolute left-1/2 top-[40px] h-[460px] w-[300px] overflow-hidden"
+      style={{ x, y, scale: s, marginLeft: -150, zIndex: 10 - i }}
+    >
+      <img src={it.img} alt={it.title} className="size-full object-cover" />
+    </motion.div>
+  );
+}
+
+/* 案3 中央から左右へ開く一列 */
+function SpreadRow({ p }: { p: MotionValue<number> }) {
+  return (
+    <div className="flex w-full flex-col gap-[90px]">
+      <HTitle className="px-[147px]" />
+      <div className="flex w-full justify-center gap-[5px] px-[40px]">
+        {ITEMS.map((it, i) => (
+          <SpreadCell key={it.title} it={it} i={i} p={p} />
+        ))}
+      </div>
+    </div>
+  );
+}
+function SpreadCell({
+  it,
+  i,
+  p,
+}: {
+  it: EventItem;
+  i: number;
+  p: MotionValue<number>;
+}) {
+  /* 内側へ寄っていた状態から、定位置へ戻りながら育つ */
+  const pulls = [180, 60, -60, -180];
+  const x = useTransform(p, [0, 1], [pulls[i], 0]);
+  const s = useTransform(p, [0, 1], [0.6, 1]);
+  const o = useTransform(p, [0, 0.5], [0.4, 1]);
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      <div className="h-[540px] w-full overflow-hidden">
+        <motion.img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover"
+          style={{ x, scale: s, opacity: o }}
+        />
+      </div>
+      <Caption it={it} />
+    </div>
+  );
+}
+
+/* 案4 縦に伸びる一列（低い帯 → 背の高い写真） */
+function TallGrowRow({ p }: { p: MotionValue<number> }) {
+  return (
+    <div className="flex w-full flex-col gap-[90px]">
+      <HTitle className="px-[147px]" />
+      <div className="flex w-full gap-[5px] px-[40px]">
+        {ITEMS.map((it, i) => (
+          <TallCell key={it.title} it={it} i={i} p={p} />
+        ))}
+      </div>
+    </div>
+  );
+}
+function TallCell({
+  it,
+  i,
+  p,
+}: {
+  it: EventItem;
+  i: number;
+  p: MotionValue<number>;
+}) {
+  const [a, b] = seg(i, 4, 0.35);
+  /* 上下だけを開く（clip-path なのでレイアウトは動かない） */
+  const clip = useTransform(p, [a, b], ["inset(35% 0% 35% 0%)", "inset(0% 0% 0% 0%)"]);
+  const s = useTransform(p, [a, b], [1.14, 1]);
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      <motion.div className="h-[620px] w-full overflow-hidden" style={{ clipPath: clip }}>
+        <motion.img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover"
+          style={{ scale: s }}
+        />
       </motion.div>
       <Caption it={it} />
     </div>
   );
 }
 
-/* 案8 通り抜け（ズームスルー） */
-function PassThrough({ p }: { p: MotionValue<number> }) {
+/* 案5 重なり → 2×2 の格子へ */
+function StackToGrid({ p }: { p: MotionValue<number> }) {
   return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full flex-col gap-[48px] px-[40px]">
-        {ITEMS.map((it, i) => {
-          const [a, b] = seg(i, 4, 0.22);
-          return <ThroughRow key={it.title} it={it} p={p} from={a} to={b} />;
-        })}
+    <div className="mx-auto flex w-[1180px] max-w-[92%] items-start gap-[80px]">
+      <VTitle className="mt-[40px]" />
+      <div className="relative h-[820px] min-w-0 flex-1">
+        {ITEMS.map((it, i) => (
+          <GridCell key={it.title} it={it} i={i} p={p} />
+        ))}
       </div>
     </div>
   );
 }
-function ThroughRow({
+function GridCell({
   it,
+  i,
   p,
-  from,
-  to,
 }: {
   it: EventItem;
+  i: number;
   p: MotionValue<number>;
-  from: number;
-  to: number;
 }) {
-  const mid = (from + to) / 2;
-  /* 小さく現れ → 実寸を通り過ぎ → わずかに寄って見送る */
-  const s = useTransform(p, [from, mid, to], [0.78, 1, 1.06]);
-  const o = useTransform(p, [from, mid, to], [0.3, 1, 0.85]);
+  /* 中央に重なった状態 → 2×2 の定位置へ */
+  const col = i % 2;
+  const row = Math.floor(i / 2);
+  const x = useTransform(p, [0, 1], [0, col === 0 ? -230 : 230]);
+  const y = useTransform(p, [0, 1], [0, row === 0 ? -210 : 210]);
+  const s = useTransform(p, [0, 1], [0.72, 1]);
   return (
-    <div className="flex flex-col gap-5">
-      <div className="h-[520px] w-full overflow-hidden">
+    <motion.div
+      className="absolute left-1/2 top-1/2 h-[380px] w-[440px] overflow-hidden"
+      style={{ x, y, scale: s, marginLeft: -220, marginTop: -190, zIndex: 10 - i }}
+    >
+      <img src={it.img} alt={it.title} className="size-full object-cover" />
+    </motion.div>
+  );
+}
+
+/* 案7 奥行きのある一列（中央が手前・両端が奥） */
+function DepthRow({ p }: { p: MotionValue<number> }) {
+  return (
+    <div className="flex w-full flex-col gap-[90px]">
+      <HTitle className="px-[147px]" />
+      <div className="flex w-full items-center gap-[5px] px-[40px]">
+        {ITEMS.map((it, i) => (
+          <DepthCell key={it.title} it={it} i={i} p={p} />
+        ))}
+      </div>
+    </div>
+  );
+}
+function DepthCell({
+  it,
+  i,
+  p,
+}: {
+  it: EventItem;
+  i: number;
+  p: MotionValue<number>;
+}) {
+  /* 中央寄りの2枚は大きく、外側の2枚は少し小さく落ち着く */
+  const near = i === 1 || i === 2;
+  const s = useTransform(p, [0, 1], [0.66, near ? 1.04 : 0.92]);
+  const o = useTransform(p, [0, 0.6], [0.35, near ? 1 : 0.8]);
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      <div className="h-[560px] w-full overflow-hidden">
         <motion.img
           src={it.img}
-          alt=""
+          alt={it.title}
           className="size-full object-cover"
           style={{ scale: s, opacity: o }}
         />
@@ -553,49 +525,46 @@ function ThroughRow({
   );
 }
 
-/* 案9 速さ違い（手前の1枚だけ大きく育つ） */
-function SpeedLayers({ p }: { p: MotionValue<number> }) {
+/* 案10 主役1枚＋脇3枚 */
+function HeroAndSides({ p }: { p: MotionValue<number> }) {
+  const heroS = useTransform(p, [0, 1], [0.7, 1]);
+  const sideS = useTransform(p, [0, 1], [0.6, 1]);
+  const sideO = useTransform(p, [0, 0.6], [0.3, 1]);
   return (
-    <div className="flex w-full items-start gap-[69px] px-[120px]">
-      <VTitle className="mt-[40px]" />
-      <div className="flex min-w-0 flex-1 items-start gap-8">
-        {ITEMS.map((it, i) => (
-          <SpeedCol key={it.title} it={it} i={i} p={p} />
-        ))}
+    <div className="mx-auto flex w-[1260px] max-w-[94%] flex-col gap-[90px]">
+      <HTitle />
+      <div className="flex items-stretch gap-6">
+        <div className="flex w-[660px] max-w-[54%] flex-col gap-6">
+          <div className="h-[620px] w-full overflow-hidden">
+            <motion.img
+              src={ITEMS[0].img}
+              alt={ITEMS[0].title}
+              className="size-full object-cover"
+              style={{ scale: heroS }}
+            />
+          </div>
+          <Caption it={ITEMS[0]} size="lg" />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+          {ITEMS.slice(1).map((it) => (
+            <div key={it.title} className="flex flex-col gap-3">
+              <div className="h-[180px] w-full overflow-hidden">
+                <motion.img
+                  src={it.img}
+                  alt={it.title}
+                  className="size-full object-cover"
+                  style={{ scale: sideS, opacity: sideO }}
+                />
+              </div>
+              <Caption it={it} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-function SpeedCol({
-  it,
-  i,
-  p,
-}: {
-  it: EventItem;
-  i: number;
-  p: MotionValue<number>;
-}) {
-  const speeds = [-90, -30, -150, -60];
-  const y = useTransform(p, [0, 1], [0, speeds[i]]);
-  /* 3枚目（i=2）だけ主役として大きく育つ */
-  const s = useTransform(p, [0.1, 0.8], i === 2 ? [0.72, 1.06] : [0.85, 1]);
-  const h = i === 2 ? 520 : 360;
-  return (
-    <motion.div className="flex min-w-0 flex-1 flex-col gap-5" style={{ y }}>
-      <div className="w-full overflow-hidden" style={{ height: h }}>
-        <motion.img
-          src={it.img}
-          alt={it.title}
-          className="size-full object-cover"
-          style={{ scale: s }}
-        />
-      </div>
-      <Caption it={it} />
-    </motion.div>
-  );
-}
 
-/* ── 本体 ───────────────────────────────── */
 
 export default function EventSection() {
   const [pat, setPat] = useState(10); /* 気に入ってもらえた案10を既定に */
@@ -702,9 +671,15 @@ function Scrolled({
     const next = Math.max(0, Math.min(1, v));
     if (Math.abs(next - p.get()) > 0.0005) p.set(next);
   });
+  /* ⚠️ ここが肝。p は「入り始め0 → 抜けきり1」の生の進捗なので、
+     そのまま使うと“通り過ぎた頃にやっと完成”になる（2026-09-15 ヒデさん指摘）。
+     0.5 ＝ セクションが画面のちょうど真ん中に来た瞬間なので、
+     そこで 1 に到達して以降は保つカーブへ変換する。
+     ＝「画面中央がいちばん良く見える」状態になる */
+  const centered = useTransform(p, [0, 0.5], [0, 1]);
   return (
     <div ref={ref} className="w-full">
-      <Pattern pat={pat} p={p} />
+      <Pattern pat={pat} p={centered} />
     </div>
   );
 }
