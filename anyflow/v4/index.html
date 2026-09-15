@@ -16089,8 +16089,11 @@ function varResetResults() { const r = params.sections.results, d = structuredCl
 function varRowX(bucket, items, getSel, setSel, o) {
   o = o || {};
   const box = document.createElement('div'); box.className = 'var-box'; box.dataset.bucket = bucket;
+  /* 【2026-09-16 ヒデさん依頼】ピン留めした案は、通常の案に紛れないよう【上部に見出し付きの別セクション】で出す(全バリエーション共通) */
+  const favHead = document.createElement('div'); favHead.className = 'var-favhead'; favHead.textContent = '★ ピン留め'; favHead.hidden = true;
+  const favRow = document.createElement('div'); favRow.className = 'sw-row sw-favrow'; favRow.hidden = true;
   const row = document.createElement('div'); row.className = 'sw-row';
-  box.appendChild(row); (mount || body).appendChild(box);
+  box.append(favHead, favRow, row); (mount || body).appendChild(box);
   const K = v => String(v);
   const hidden = () => { if (!params.gfxVariantHidden) params.gfxVariantHidden = {}; return params.gfxVariantHidden[bucket] || (params.gfxVariantHidden[bucket] = []); };
   const favs = () => { if (!Array.isArray(params.gfxFav)) params.gfxFav = []; return params.gfxFav; };
@@ -16146,23 +16149,25 @@ function varRowX(bucket, items, getSel, setSel, o) {
     menu.style.top = Math.min(r.bottom + 4, innerHeight - menu.offsetHeight - 8) + 'px';
     setTimeout(() => document.addEventListener('click', close, { once: true }), 0);
   };
-  const pill = (it, label, no) => {
+  const pill = (it, label, no, target) => {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.key = K(it.key); b.dataset.no = no || '';
     b.className = 'var-pill' + (K(getSel()) === K(it.key) ? ' on' : '') + (isFav(it) ? ' fav' : '');
     b.title = plainName(it) + (it.tip ? ' — ' + it.tip : '') + `（ID ${it.key}）` + (ovOf(it) ? '（⤓ 上書き済み・⋯から解除できます）' : '');
     b.append(document.createTextNode(label));
     b.onclick = () => choose(it);
     if (!it.fixed) { const x = document.createElement('button'); x.type = 'button'; x.className = 'var-x'; x.textContent = '⋯'; x.title = 'ピン留め / この設定で上書き / 削除'; x.onclick = menuFor(x, it, label); b.appendChild(x); }
-    row.appendChild(b);
+    (target || row).appendChild(b);
   };
   const fill = () => {
-    row.innerHTML = '';
+    row.innerHTML = ''; favRow.innerHTML = '';
     const alive = items.filter(it => !gone(it)), view = [];
     const pinned = favs().filter(f => f.m === bucket).map(f => alive.find(it => K(it.key) === K(f.name))).filter(Boolean);
-    alive.filter(it => it.fixed).forEach(it => { pill(it, plainName(it), ''); view.push({ key: K(it.key), no: plainName(it) }); });
-    pinned.forEach((it, i) => { const no = '★' + (i + 1); pill(it, no + ' ' + plainName(it), no); view.push({ key: K(it.key), no }); });
+    /* ピン留めは上部の別セクション(favRow)へ。番号(★1..)や VAR_VIEW の順は従来どおり(固定→ピン→その他) */
+    favHead.hidden = favRow.hidden = pinned.length === 0;
+    alive.filter(it => it.fixed).forEach(it => { pill(it, plainName(it), '', row); view.push({ key: K(it.key), no: plainName(it) }); });
+    pinned.forEach((it, i) => { const no = '★' + (i + 1); pill(it, no + ' ' + plainName(it), no, favRow); view.push({ key: K(it.key), no }); });
     let n = 0;
-    alive.forEach(it => { if (it.fixed || pinned.includes(it)) return; n++; pill(it, n + ' ' + plainName(it), String(n)); view.push({ key: K(it.key), no: String(n) }); });
+    alive.forEach(it => { if (it.fixed || pinned.includes(it)) return; n++; pill(it, n + ' ' + plainName(it), String(n), row); view.push({ key: K(it.key), no: String(n) }); });
     VAR_VIEW[bucket] = view;
     const restorable = hidden().filter(kk => !variantRemovedKey(bucket, kk) && items.some(it => K(it.key) === kk));
     if (restorable.length) {
