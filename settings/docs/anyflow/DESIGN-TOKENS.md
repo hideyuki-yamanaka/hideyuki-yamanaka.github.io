@@ -129,3 +129,53 @@ production は元々 high なので **見た目は完全に不変**（computed �
 | `0 8px 32px rgba(0,0,0,.10)` | 調整パネル |
 | `0 10px 40px rgba(0,0,0,.06)` | 導入事例のカード |
 | `0 24px 48px rgba(0,0,0,.2), inset 1px 1px 2px rgba(255,255,255,.2)` | モックのパネル |
+
+---
+
+## 2026-09-16 追記（v4 の総点検・新要素の棚卸し）
+
+anyflow **v4**（`anyflow/v4/index.html`）で、新規追加要素も含めてカラー/テキスト/エフェクト/スペーシングを改めて監査した結果。
+
+### 監査でわかったこと（本番CSSはすでにトークン化済み）
+
+`<style>` 内の生 hex を全数カウントし、トークンと重複する色（`#0ebbff`=cyan / `#ff5d97`=pink / `#090909`=cta / `#acacac`=line-grid / `#161616`=dark-top など）の出どころを分類したところ、**本番サイトのCSSはすでに `var(--token)` で参照済み**で、生 hex が残るのは次の**対象外スコープ**だけだった：
+
+- **調整パネル / ギズモ / サイト編集ツール**（`.panel` `.var-` `.sw-` `.cvg-` `.eb-` `.gbtn` `.chip` `.pset` `.mdl` `.btns` `.cat-head` `.grp` 等）= 生成物ではない開発UI。DSの対象外（従来方針どおり）
+- **開発者体験モック**（`.dm-` `#dev` `.ds-` `.dc-`）= 生成アート寄りの見せ物
+- **WebGLシェーダ / KV / 惑星・軌道 canvas** = 生成アート（JSテンプレート内。`<style>`の外）
+
+→ 近似グレー（`#f2f2f2` `#ececec` `#e2e2e2` `#d8d8d8` 等）も**全て調整パネル内**で、本番サイトには無かった。**本番スコープで統合できる生の色は残っていない**（統合済み）。
+
+### 新要素の棚卸しとスコープ
+
+| 新要素（v4で追加） | 実体 | DSスコープ |
+|---|---|---|
+| デザインカンプ配色 CK（お問い合わせ）| WebGLシェーダの13ストップ放射グラデ（`stopColComp`）| 対象外（生成アート）。色はカンプ node 17383:21430 実測 |
+| 揺らぎパターン（うねり/たゆたう/呼吸/潮/渦/斜め/連動モーフ）| シェーダのドメインワープ | 対象外（生成アート） |
+| グラデ編集ギズモ（Figma風の棒）| 開発UI（`.cv-gizmo` `.cvg-*`）| 対象外（開発UI）。ハンドル色 `#2878ff` はツール色 |
+| ピン留めの別セクション（全バリエーション共通）| 調整パネル（`.var-favhead` `.sw-favrow`）| 対象外（開発UI）。色は `var(--brand-pink)` を参照 |
+
+→ v4で増えた要素は**すべて対象外スコープ**（生成アート or 開発UI）で、本番サイトのトークン体系に新しい生の色・サイズを持ち込んでいない。
+
+### 実施した統合（本番・視覚変化ゼロ）
+
+- **`--fs-stat:34px` を再導入**（旧50pxは削除済みだった）。実績の数値(SP)が 34px 直書きになっていたのをトークン化
+- 実績SP（rfx-24/25）を V3.0 に合わせた際の直書きをトークン参照へ：`22px→var(--fs-title)` / `34px→var(--fs-stat)` / `12px→var(--fs-caption)` / `line-height 1.7→--lh-loose・1.6→--lh-normal・1.8→--lh-body`。computed で 22/34/12px・左24px と一致（視覚変化なし）
+
+### 現在のトークン一覧（本番の唯一の出どころ・`:root` DS-TOKENS）
+
+- **色/ブランド**: `--brand-cyan #0EBBFF` / `--brand-pink #FF5D97` / `--brand-blue-deep #0E4497`
+- **色/インク**: `--ink #101828` / `--ink-strong #000` / `--ink-on-dark #fff`
+- **色/サーフェス**: `--surface #E7E7E7` / `--surface-dark-top #161616` / `--surface-dark-bottom #454545` / `--surface-footer-bottom #363636` / `--surface-cta #090909`
+- **色/線**: `--line #D1D5DC` / `--line-grid #ACACAC`
+- **色/コード**: `--code-green #7CE7A6` **色/ガラス**: `--glass-10` / `--glass-06`
+- **角丸**: `--radius-xs 4 / -sm 8 / -md 14 / -lg 24 / -full 50%`（high で md8 / lg16）
+- **影/ぼかし**: `--shadow-mock-panel` / `--blur-panel 75px`
+- **スペーシング(4pxグリッド)**: `--space-4/5/6/8/10/12/16/20/24/32/40/44/56/60/72/80`
+- **タイプスケール**: `--fs-micro 10 / -caption 12 / -body 14 / -base 16 / -subhead 18 / -lead 20 / -title 22 / -heading 24 / -display 26 / -stat 34 / -hero 46`
+- **行間**: `--lh-tight 1.4 / -normal 1.6 / -loose 1.7 / -body 1.8`
+- **モーション**: `--t-fast .25s / -in .8s / -big 1.3s`・`--e-fast / -out / -soft`
+
+### スコープ方針（据え置き）
+
+DSトークンの対象は**本番サイトのCSSのみ**。KV(iframe)・惑星&軌道 canvas・WebGLシェーダ・調整パネル・ギズモは対象外（生成アート/開発UI）。tier は `<html data-ds="high">` が有効（コードのコメント「既定=mid」は古い）。値は必ず computed で確認する。

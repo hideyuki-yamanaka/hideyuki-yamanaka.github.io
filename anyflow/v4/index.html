@@ -401,6 +401,7 @@
     --fs-micro:10px;     /* 事例タグ(枠付き小ラベル) */
     --fs-subhead:18px;   /* 事例の社名 */
     --fs-heading:24px;   /* 導入事例の見出し(SP) */
+    --fs-stat:34px;      /* 実績の数値(SP)。2026-09-16 再導入(rfx-24 の SP で 34px を使用) */
     --lh-tight:1.4; --lh-normal:1.6; --lh-loose:1.7; --lh-body:1.8;   /* 行間の役割 */
     /* モーション：追加イージング（速さ/基本カーブは上の :root と共通） */
     --e-soft:cubic-bezier(.22,.8,.28,1);
@@ -1575,17 +1576,17 @@
   html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: 12px 0; }   /* 【2026-09-16】V3.0: for SaaS と for AI の間の区切り線 */
   html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: -1; margin: 4px 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
   html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: -2; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 4px; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
-  html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: 22px; line-height: 1.7; }   /* 【2026-09-16】V3.0: 22px・見出しは中央 */
+  html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: var(--fs-title); line-height: var(--lh-loose); }   /* 【2026-09-16】V3.0: 22px(--fs-title)・中央。lh1.7=--lh-loose */
   html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: nowrap; gap: 14px; justify-content: space-between; width: 100%; }   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
-  html.mb #results.rfx-24 .res2-stats .r2s span, html.mb #results.rfx-25 .res2-stats .r2s span { font-size: 34px; }   /* 【2026-09-16】V3.0に合わせて 40→34 */
+  html.mb #results.rfx-24 .res2-stats .r2s span, html.mb #results.rfx-25 .res2-stats .r2s span { font-size: var(--fs-stat); }   /* 【2026-09-16】V3.0: 34px=--fs-stat */
   html.mb #results.rfx-24 .slot .fx:last-child, html.mb #results.rfx-25 .slot .fx:last-child { font-size: 20px; }   /* 【2026-09-16 ヒデさん依頼】+マークをPC同様に数字より小さく上側に(34pxに対し20px=PCの40/70比) */
   html.mb #results.rfx-24 .res2-stats .r2s b, html.mb #results.rfx-25 .res2-stats .r2s b { font-size: 12px; }
   html.mb #results.rfx-24 .r2v, html.mb #results.rfx-25 .r2v { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 18px; order: 0; padding: 0; }   /* 【2026-09-16】中央→左寄せ・基準の左右20pxを解除・DOM順(V3.0) */
   html.mb #results.rfx-24 .r2v-text, html.mb #results.rfx-25 .r2v-text { order: 0; max-width: none; width: 100%; gap: 10px; align-items: flex-start; text-align: left; }   /* 【2026-09-16】左寄せ(V3.0) */
   html.mb #results.rfx-24 .r2v-tagh, html.mb #results.rfx-25 .r2v-tagh { align-items: flex-start; }   /* 【2026-09-16】タグ(for SaaS/AI)を左寄せ(V3.0) */
   html.mb #results.rfx-24 .r2v-tag, html.mb #results.rfx-25 .r2v-tag { font-size: 16px; }
-  html.mb #results.rfx-24 .r2v-h, html.mb #results.rfx-25 .r2v-h { font-size: 22px; line-height: 1.6; text-align: left; }   /* 【2026-09-16】V3.0に合わせて 28中央→22左 */
-  html.mb #results.rfx-24 .r2v-p, html.mb #results.rfx-25 .r2v-p { font-size: 12px; line-height: 1.8; }   /* 【2026-09-16】V3.0に合わせて 14→12 */
+  html.mb #results.rfx-24 .r2v-h, html.mb #results.rfx-25 .r2v-h { font-size: var(--fs-title); line-height: var(--lh-normal); text-align: left; }   /* 【2026-09-16】V3.0: 22px(--fs-title)左・lh1.6=--lh-normal */
+  html.mb #results.rfx-24 .r2v-p, html.mb #results.rfx-25 .r2v-p { font-size: var(--fs-caption); line-height: var(--lh-body); }   /* 【2026-09-16】V3.0: 12px=--fs-caption・lh1.8=--lh-body */
   html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 220px; transform-origin: center; }   /* 【2026-09-16】300→220(V3.0) */
   html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: 220px; height: 220px; }   /* 【2026-09-16】300→220(V3.0) */
   html.mb #results.rfx-24 .r2v-big, html.mb #results.rfx-25 .r2v-big { font-size: 40px; }
