@@ -1863,16 +1863,6 @@
   #dev.dev-st-12 .dm-panel { background: linear-gradient(150deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 50%, rgba(255,255,255,.10)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost)));
     backdrop-filter: blur(var(--dm-blur)) saturate(1.5); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.5);
     border: 1px solid rgba(255,255,255,.26); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.4 * var(--dm-in))), 0 26px 64px rgba(0,0,0,calc(.5 * var(--dm-sh))); }
-  /* 15 思考のパルス: 外側の光が呼吸するように脈打ち、上辺を細い光が横切る */
-  #dev.dev-st-15 .dm-panel { border-color: rgba(255,255,255,.14); animation: dmPulse var(--dm-pulse-sec, 4s) ease-in-out infinite; }
-  @keyframes dmPulse {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(14,187,255,.18), 0 0 calc(18px * var(--dm-pulse-r, 1)) rgba(14,187,255,calc(.18 * var(--dm-pulse-a, 1))), 0 24px 56px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
-    50% { box-shadow: 0 0 0 1px rgba(255,93,151,.26), 0 0 calc(54px * var(--dm-pulse-r, 1)) rgba(255,93,151,calc(.34 * var(--dm-pulse-a, 1))), 0 24px 56px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
-  }
-  #dev.dev-st-15 .dm-panel::after { content: ''; position: absolute; top: 0; height: 2px; width: 38%; z-index: 6; pointer-events: none;
-    background: linear-gradient(90deg, rgba(14,187,255,0), #0ebbff, #ffffff, #ff5d97, rgba(255,93,151,0));
-    animation: dmThink var(--dm-pulse-sec, 4s) ease-in-out infinite; }
-  @keyframes dmThink { 0% { left: -38%; } 100% { left: 100%; } }
 
   /* ===== dev1/dev2 ブロック: 画面高さ100vhに中央寄せ。JS(updateDev)がブラー+フェードで出現→出っ放し ===== */
   .dev-block {
@@ -6229,16 +6219,6 @@ const CV_COLORS = [
   { key: 'C10', name: 'ネオン（黒にシアンとピンクが光る）', tip: '黒の中央から白→シアン→ピンク→黒へ。横長の放射・5段で光の帯に。', cv: { colors: ['#05060a', '#0ebbff', '#ffffff', '#ff5d97', '#05060a'], gMode: 1, gcx: 0.5, gcy: 0.5, gr: 0.7, gAspect: 1.6, levels: 5, contrast: 1.3, bright: 1.0, ink: 'light' } },
   { key: 'C11', name: '色が移ろう（青⇄白⇄ピンク）', tip: 'うねり全体の色味が、ブランドの青とピンクの間を白を通ってゆっくり行き来する(他の中間色は出さない)。既定は30秒で1往復。「色味の移ろい」で往復/巡る・1周の時間・白の入り具合を変えられる。', cv: { hueMode: 'swing', moodSec: 30, moodWhite: 0.85 } },
 ];
-/* 【2026-09-15 ヒデさん指定】色のウェーブ(造形)の案。残したカラー案の中で切り替える(params.cv.shape。カラー案を選んでも保つ) */
-const CV_SHAPES = [
-  { key: '0', name: 'なし（流れのまま）', fixed: true, tip: 'グラデの流れだけ(いままでの見え方)。' },
-  { key: '1', name: '横の波（バンド）', tip: '上から下へ色の帯が波打つ。引きで見ると横に走る色の波。' },
-  { key: '2', name: '波紋（中心から）', tip: '中心(形の「中心」)から輪が広がる。5色が同心円で繰り返す。' },
-  { key: '3', name: '斜めの縞', tip: '回転(角度)の向きに色の縞が流れる。' },
-  { key: '4', name: '大きなうねり', tip: '大きなブロブ状の色のかたまりがゆっくり動く。' },
-  { key: '5', name: 'くねる帯', tip: 'S字にくねる帯状の色の波。' },
-];
-function cvShapeKey() { const v = String((params && params.cv && params.cv.shape) || '0'); return (CV_SHAPES.some(s => s.key === v) && !variantRemovedKey('cvShape', v)) ? v : '0'; }
 function cvColorKey() { const by = (params && params.cvColorBy) || {}; const v = String(by[cvStyleKey()] || 'C1'); return (CV_COLORS.some(s => s.key === v) && !variantRemovedKey('cvColor', v)) ? v : 'C1'; }
 /* カラー案の値(既定＋その案の「上書き」控え)を params.cv に入れる */
 function cvApplyColorFull(key) { cvApplyColor(key); const ov = ((params.gfxVarOverride || {}).cvColor || {})[key]; if (ov) { try { Object.assign(params.cv, structuredClone(ov)); } catch (e) {} } }
@@ -6257,7 +6237,6 @@ const DEV_STYLES = [
   /* 【2026-09-15 ヒデさん指定】AI らしい5案。案を選ぶと調整パネルの項目がその案のものに入れ替わる */
   { key: '11', name: 'ネオンが一周する', tip: '縁に沿って光が走る(既定は反時計回り)。シアン→白→ピンクの尾を引く。速さ・向き・光の長さ・太さを調整できます。' },
   { key: '12', name: 'オーロラの発光', tip: '板の後ろでブランド色のオーロラがゆっくり動き、すりガラス越しに透ける。強さ・速さ・にじみを調整できます。' },
-  { key: '15', name: '思考のパルス', tip: '外側の光が呼吸するように脈打ち、上辺を細い光が横切る。周期・広がり・強さを調整できます。' },
 ];
 /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。パネルでは選んでいる案のまとまりだけ出す(syncDevDyn)。
    値は params.sections.dev.stv[まとまりのkey][項目のkey] に入る(案を切り替えても各案の値が残る)。
@@ -6279,11 +6258,6 @@ const DEV_DYN_SPEC = {
     { k: 'a', label: 'オーロラの強さ', min: 0, max: 1.2, step: 0.02, def: 0.6, v: '--dm-aur-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '後ろの光の濃さ。' },
     { k: 'sec', label: '動く速さ', min: 4, max: 40, step: 1, def: 14, v: '--dm-aur-sec', css: v => v + 's', fmt: v => Math.round(v) + '秒', hint: '片道にかかる時間。長いほどゆったり。' },
     { k: 'blur', label: 'にじみ', min: 20, max: 160, step: 5, def: 80, v: '--dm-aur-blur', css: v => v + 'px', fmt: v => Math.round(v) + 'px', hint: '光のぼかし量。小さいと形が見え、大きいと空気に溶けます。' },
-  ] },
-  '15': { title: 'この案の調整（思考のパルス）', on: ['15'], rows: [
-    { k: 'sec', label: '脈の周期', min: 1.5, max: 12, step: 0.5, def: 4, v: '--dm-pulse-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '1回ふくらんで戻るまでの時間。上辺を横切る光もこれに連動します。' },
-    { k: 'r', label: '光の広がり', min: 0.2, max: 2.5, step: 0.05, def: 1, v: '--dm-pulse-r', css: v => String(v), fmt: v => '×' + v.toFixed(2), hint: '外にどこまで光がにじむか。' },
-    { k: 'a', label: '光の強さ', min: 0, max: 2.5, step: 0.05, def: 1, v: '--dm-pulse-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '光の濃さ。' },
   ] },
 };
 /* ガラス(後ろが透ける)案 = 地色を敷いて後ろのカードをぼかす対象 */
@@ -6485,7 +6459,6 @@ uniform vec2 uRes; uniform float uTime;
 uniform float uCell, uLevels, uSpread, uSpeed, uSwell, uFlowScale, uBright, uContrast;
 uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラー案・パネルで変更可) */
 uniform float uGMode, uGAng, uDark; uniform vec2 uGC, uGR; uniform vec3 uDarkCol;   /* 形(0=カンプ/1=放射/2=線形)・中心・広がり・回転、暗さ(黒ベース) */
-uniform float uShape, uWaveF, uWaveMix;   /* 【2026-09-15】色のウェーブ(造形): 0=なし / 1=横の波 / 2=波紋 / 3=斜めの縞 / 4=大きなうねり / 5=くねる帯。波の数・混ぜる強さ */
 uniform float uHue;   /* 【2026-09-15】色味の移ろい(色相の回転・ラジアン。JS が時間で回す) */
 uniform float uVK;    /* 【2026-09-15】縦に伸ばした倍率(=いまの高さ ÷ 伸ばす前の高さ)。上端を固定して下へ伸ばす＝上が薄くならない */
 vec3 hueRot(vec3 c, float a) { const vec3 k = vec3(0.57735); float ca = cos(a), sa = sin(a); return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca); }
@@ -6527,16 +6500,6 @@ void main(){
     vec2 d = uvW - uGC; float ca = cos(uGAng), sa = sin(uGAng); d = vec2(d.x * ca - d.y * sa, d.x * sa + d.y * ca);
     t = (uGMode < 1.5) ? length(d / max(uGR, vec2(0.05))) : (d.x / max(uGR.x, 0.05) + 0.5);
   }
-  if (uShape > 0.5) {
-    /* 引きで見た時に「色の波」が見える造形。グラデの t を周期的な波で置き換える(uWaveMix で元の流れと混ぜる) */
-    float w;
-    if (uShape < 1.5) w = 0.5 + 0.5 * sin((uvW.y * uWaveF + n1 * 0.6) * 6.2832 + uTime * uSpeed * 2.0);
-    else if (uShape < 2.5) w = 0.5 + 0.5 * sin(length((uvW - uGC) * vec2(1.0, uRes.y / uRes.x)) * uWaveF * 6.2832 - uTime * uSpeed * 2.0 + n2 * 0.8);
-    else if (uShape < 3.5) { float ca2 = cos(uGAng), sa2 = sin(uGAng); w = 0.5 + 0.5 * sin((uvW.x * ca2 + uvW.y * sa2) * uWaveF * 6.2832 + uTime * uSpeed * 2.0 + n2 * 1.5); }
-    else if (uShape < 4.5) w = clamp(fbm(uvW * uWaveF * 1.5 + vec2(uTime * uSpeed * 0.7, -uTime * uSpeed * 0.5)) * 1.7 - 0.35, 0.0, 1.0);
-    else w = 0.5 + 0.5 * sin((uvW.x * 0.7 + uvW.y * 0.5) * uWaveF * 6.2832 + sin(uvW.y * 9.0 + uTime * uSpeed * 1.5) * 0.9 + uTime * uSpeed);
-    t = mix(t, w, uWaveMix);
-  }
   vec3 col = stopCol(t);
   if (abs(uHue) > 0.001) col = clamp(hueRot(col, uHue), 0.0, 1.0);   /* 色味の移ろい: うねり全体が青になったりピンクになったり */
   col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
@@ -6565,7 +6528,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(p, 'aP');
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uShape', 'uWaveF', 'uWaveMix', 'uHue', 'uVK'])
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uVK'])
       uni[k] = gl.getUniformLocation(p, k);
   }
   function visible() {
@@ -6603,9 +6566,6 @@ void main(){
     gl.uniform1f(uni.uGAng, (c.gAng != null ? c.gAng : 0) * Math.PI / 180);
     gl.uniform1f(uni.uDark, Math.max(c.dark != null ? c.dark : 0, (typeof cvStyleDef === 'function' && cvStyleDef().dark) ? 1 : 0));
     const dc = cvHex(c.darkCol, '#0d0f14'); gl.uniform3f(uni.uDarkCol, dc[0], dc[1], dc[2]);
-    gl.uniform1f(uni.uShape, +(typeof cvShapeKey === 'function' ? cvShapeKey() : 0) || 0);
-    gl.uniform1f(uni.uWaveF, c.waveF != null ? c.waveF : 2);
-    gl.uniform1f(uni.uWaveMix, c.waveMix != null ? c.waveMix : 1);
     /* 色相の回転は使わない(ブランドにない色が出るため)。移ろいは上のパレット入れ替えで行う */
     gl.uniform1f(uni.uHue, 0);
     /* 縦に伸ばしても上が薄くならないように、グラデは上端を固定して下へ伸ばす */
@@ -7019,7 +6979,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14"]};   /* 2026-09-15 最新化: お問い合わせの案1(一体型・中央)と、開発者体験モックの案 4/6/7/9/10/13/14 を追加(定義とCSSも削除済み) */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15"],"cvShape":["1","2","3","4","5"]};   /* 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
@@ -18254,11 +18214,6 @@ function buildPanel() {
   sub(catCv, '暗さ（黒ベース）'); CV_DYN.push(catCv.lastElementChild);
   rows.push(slider('暗さ', 0, 1, 0.02, () => (cvv().dark || 0), v => { cvv().dark = v; applyCvStyle(); }, v => Math.round(v * 100) + '%', '黒ベースに寄せる強さ。色は残り火のように残ります。0で元の色。'));
   colorRow('暗い色', () => cvv().darkCol || '#0d0f14', v => { cvv().darkCol = v; }, '「暗さ」で寄せる先の色。');
-  sub(catCv, '色のウェーブ（造形）');  CV_DYN.push(catCv.lastElementChild);
-  varRowX('cvShape', CV_SHAPES, () => cvShapeKey(), v => { cvv().shape = String(v); }, { snap: VAR_SNAP.cv, after: () => { renderFrame(); } });
-  note('引きで見た時に色の波が見える造形。残したカラー案のどれとも組み合わせられます(カラー案を選び直しても造形は保ちます)。');
-  rows.push(slider('波の数', 0.5, 6, 0.1, () => (cvv().waveF != null ? cvv().waveF : 2), v => { cvv().waveF = v; }, v => '×' + v.toFixed(1), '波(縞・輪・うねり)の細かさ。'));
-  rows.push(slider('混ぜる強さ', 0, 1, 0.02, () => (cvv().waveMix != null ? cvv().waveMix : 1), v => { cvv().waveMix = v; }, v => Math.round(v * 100) + '%', '100%で波だけ、下げるほど元の流れのグラデと混ざります。'));
   sub(catCv, '縦幅・間隔');
   rows.push(slider('縦幅（PC）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '枠の案は高さそのもの(カンプ 416)。一体型は「最小の高さ」。伸ばした分は【濃い色の面】が増えます(上の薄い部分は広がりません)。SP は変わりません。'));
   rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの間隔。一体型の案では、広げた分も【色(ディザ)の面】になります＝上に地色の帯ができません。枠の案は余白のまま。マイナスで詰まります(PC のみ)。', { signed: true }));
