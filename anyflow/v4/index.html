@@ -2503,7 +2503,19 @@
   #conversion.cvs-10 { background: var(--surface); }
   /* 【2026-09-15 ヒデさん指摘・根治】溶け込みの境界は % ではなく px で持つ(JS が「伸ばす前の高さ」から算出)。
      % のままだと、縦幅や間隔を伸ばすほど【薄い帯もいっしょに伸びて】上がどんどん白っぽくなっていた。 */
-  #conversion.cvs-10 #cvCanvas { -webkit-mask-image: linear-gradient(180deg, transparent var(--cv-fade0, 0px), #000 min(var(--cv-fade1, 294px), 96%)); mask-image: linear-gradient(180deg, transparent var(--cv-fade0, 0px), #000 min(var(--cv-fade1, 294px), 96%)); }
+  /* 【2026-09-15 ヒデさん指摘】導入事例との境目が線に見えるので、まっすぐな濃度変化(2点)から
+     ゆるやかなS字(5点)へ。出はじめをうんと薄く、終わりにかけて一気に濃くすることで、
+     「ここから色が始まる」という帯の頭が見えなくなる。 */
+  #conversion.cvs-10 #cvCanvas {
+    --cv-f0: var(--cv-fade0, 0px);
+    --cv-f1: min(var(--cv-fade1, 294px), 96%);
+    --cv-fade-mask: linear-gradient(180deg,
+      rgba(0,0,0,0) var(--cv-f0),
+      rgba(0,0,0,.04) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .30),
+      rgba(0,0,0,.20) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .55),
+      rgba(0,0,0,.58) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .80),
+      #000 var(--cv-f1));
+    -webkit-mask-image: var(--cv-fade-mask); mask-image: var(--cv-fade-mask); }
   #conversion.cvs-10 .cv-content { margin: 210px auto 120px; }
 
   /* ================= フッター (カンプ 16083:23592 に差し替え・2026-09-09) =================
