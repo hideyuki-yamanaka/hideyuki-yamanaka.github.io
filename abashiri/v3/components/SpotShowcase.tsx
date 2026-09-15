@@ -24,7 +24,7 @@
  *   サムネイル … (40, 805) 3枚 各 164.845x110.442 / 間 14.4px / 角丸なし
  */
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SPOT_DETAILS } from "./spotDetailData";
 import {
   AnimatePresence,
@@ -103,6 +103,7 @@ export default function SpotShowcase({
   finale?: React.ReactNode;
 }) {
   const t = mergeSpotTransition(tune);
+  const router = useRouter();
   /* 場面数 ＝ 写真4枚 ＋ グルメ */
   const sceneCount = SPOTS.length + (finale ? 1 : 0);
 
@@ -198,7 +199,17 @@ export default function SpotShowcase({
           {!isFinale && (
           <motion.div
             key={spot.id}
-            className="absolute right-[41px] top-[684px] flex h-[238px] w-[712px] flex-col justify-center gap-6 bg-white/10 p-11 backdrop-blur-65"
+            /* ⚠️ カード全体がホバー／クリックの対象（2026-09-15 ヒデさん指示。
+               以前は「もっと見る」の文字だけだった）。詳細があるスポットは
+               このカード全部がリンクになり、ホバーで少し明るくなる */
+            className={`group absolute right-[41px] top-[684px] flex h-[238px] w-[712px] flex-col justify-center gap-6 bg-white/10 p-11 backdrop-blur-65 transition-colors duration-300 ease-standard ${
+              SPOT_DETAILS[spot.id]
+                ? "pointer-events-auto cursor-pointer hover:bg-white/20"
+                : ""
+            }`}
+            onClick={() => {
+              if (SPOT_DETAILS[spot.id]) router.push(`/spot/${spot.id}`);
+            }}
             initial={SWITCH.initial}
             animate={SWITCH.animate}
             exit={SWITCH.exit}
@@ -211,29 +222,14 @@ export default function SpotShowcase({
                 </p>
                 <p className="whitespace-nowrap text-title-36">{spot.title}</p>
               </div>
-              {/* 詳細データがあるスポットだけ、詳細ページ（テンプレ）へ遷移する
-                  （V3.0 2026-09-14。今あるのは能取岬 /spot/notoro のみ） */}
-              {SPOT_DETAILS[spot.id] ? (
-                <Link
-                  href={`/spot/${spot.id}`}
-                  className="flex shrink-0 cursor-pointer items-center gap-1 transition-transform duration-300 ease-standard hover:translate-x-[10px]"
-                >
-                  <span className="whitespace-nowrap text-right text-body-16 font-extralight leading-[1.2] text-white">
-                    もっと見る
-                  </span>
-                  <img src="/img/icon-view-more.svg" alt="" className="size-[18px]" />
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  className="flex shrink-0 cursor-pointer items-center gap-1 transition-opacity hover:opacity-70"
-                >
-                  <span className="whitespace-nowrap text-right text-body-16 font-extralight leading-[1.2] text-white">
-                    もっと見る
-                  </span>
-                  <img src="/img/icon-view-more.svg" alt="" className="size-[18px]" />
-                </button>
-              )}
+              {/* 「もっと見る」は見た目だけ。押す対象はカード全体（上の motion.div）。
+                  カードにカーソルが乗ると group-hover で右へ寄る（2026-09-15） */}
+              <span className="flex shrink-0 items-center gap-1 transition-transform duration-300 ease-standard group-hover:translate-x-[10px]">
+                <span className="whitespace-nowrap text-right text-body-16 font-extralight leading-[1.2] text-white">
+                  もっと見る
+                </span>
+                <img src="/img/icon-view-more.svg" alt="" className="size-[18px]" />
+              </span>
             </div>
             <p className="w-full text-body-14 font-extralight leading-[2.2] tracking-[0.7px] text-white">
               {spot.body}

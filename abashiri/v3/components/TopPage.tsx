@@ -277,11 +277,18 @@ export default function TopPage({
       key = sessionStorage.getItem("abashiri-goto");
       if (key) sessionStorage.removeItem("abashiri-goto");
     } catch {}
-    if (key !== "spotAt" && key !== "gourmetAt") return;
+    if (key !== "spotAt" && key !== "gourmetAt" && key !== "eventsAt") return;
     let tries = 0;
     const id = window.setInterval(() => {
       const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
-      const at = sc?.dataset[key as "spotAt" | "gourmetAt"];
+      /* 体験セクションは実測（フロー要素なので dataset には無い） */
+      const at =
+        key === "eventsAt"
+          ? (() => {
+              const el = document.querySelector<HTMLElement>("#events");
+              return el ? String(el.offsetTop) : undefined;
+            })()
+          : sc?.dataset[key as "spotAt" | "gourmetAt"];
       tries += 1;
       if (at) {
         window.dispatchEvent(

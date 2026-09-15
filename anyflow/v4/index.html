@@ -1778,18 +1778,29 @@
   .dev-bg2 { position: fixed; inset: 0; height: 100vh; background: var(--surface); opacity: 0; z-index: 0; pointer-events: none; }
 
   /* ===== 【2026-09-15 ヒデさん指定・作り直し】開発者体験モックのスタイル案(正面のまま・2D で立体感 10案)と配色。#dev.dev-st-N / #dev.dev-tone-X。値: --dm-blur(ガラスのぼかし) / --dm-sh(影の濃さ) / --dm-in(内側の影・光の強さ) ===== */
-  #dev { --dm-blur: 24px; --dm-sh: 1; --dm-in: 1; }
+  #dev { --dm-blur: 24px; --dm-sh: 1; --dm-in: 1; --dm-frost: .62; --dm-backblur: 10px; --dm-base: 16,17,20; }
+  /* 【2026-09-15 ヒデさん指摘・根治】ガラス案が「透けてしまう」真因:
+     カルーセルの後ろのカード(.dm-ghost)は opacity .55/.38 と 3D 変形(translate3d/rotateY)を持つので、
+     ブラウザはそこを独立した描画面(バックドロップルート)にする。その中の板に backdrop-filter を掛けても
+     【後ろのカードは参照対象に入らない】＝ぼけずに素通し＝後ろのコードがそのまま読めていた(実測で確認)。
+     → ①ガラスの下に地色を敷いて素通しを止める(--dm-frost) ②後ろのカードを実際に filter:blur でぼかす(--dm-backblur)。
+        これで「ガラス越しの物がボケる」＝すりガラスとして正しく見える。backdrop-filter も効く所では併用する。 */
+  #dev.dev-glass .dev2-stack .dm-ghost.dm-back { filter: blur(var(--dm-backblur)); }
+  #dev.dev-tone-graphite { --dm-base: 34,34,38; }
+  #dev.dev-tone-blue { --dm-base: 15,22,38; }
+  #dev.dev-tone-cyan { --dm-base: 11,27,34; }
+  #dev.dev-tone-pink { --dm-base: 30,18,25; }
   /* 1 リキッドグラス: 後ろにブランド色の光、すりガラスの板、上辺の光沢がゆっくり動く */
   #dev.dev-st-1 .dev-block { position: relative; }
   #dev.dev-st-1 .dev-block::before { content: ''; position: absolute; left: 12%; right: 12%; top: 18%; bottom: 14%; background: radial-gradient(circle at 28% 32%, rgba(14,187,255,.55), transparent 48%), radial-gradient(circle at 72% 66%, rgba(255,93,151,.5), transparent 48%), radial-gradient(circle at 55% 20%, rgba(255,255,255,.2), transparent 40%); filter: blur(70px); z-index: 0; pointer-events: none; }
   #dev.dev-st-1 .dev1-mock, #dev.dev-st-1 .dev2-wrap, #dev.dev-st-1 .dev-center { position: relative; z-index: 1; }
-  #dev.dev-st-1 .dm-panel { background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.05) 45%, rgba(255,255,255,.12)); backdrop-filter: blur(var(--dm-blur)) saturate(1.6); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.6); border: 1px solid rgba(255,255,255,.32); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.5 * var(--dm-in))), inset 0 -1px 0 rgba(255,255,255,.1), inset 0 0 40px rgba(255,255,255,calc(.06 * var(--dm-in))), 0 30px 70px rgba(0,0,0,calc(.5 * var(--dm-sh))); }
+  #dev.dev-st-1 .dm-panel { background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.05) 45%, rgba(255,255,255,.12)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); backdrop-filter: blur(var(--dm-blur)) saturate(1.6); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.6); border: 1px solid rgba(255,255,255,.32); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.5 * var(--dm-in))), inset 0 -1px 0 rgba(255,255,255,.1), inset 0 0 40px rgba(255,255,255,calc(.06 * var(--dm-in))), 0 30px 70px rgba(0,0,0,calc(.5 * var(--dm-sh))); }
   #dev.dev-st-1 .dm-panel::before { content: ''; position: absolute; left: -20%; top: -60%; width: 80%; height: 120%; background: radial-gradient(ellipse at center, rgba(255,255,255,.28), rgba(255,255,255,0) 60%); pointer-events: none; z-index: 0; animation: dmLiquid 9s ease-in-out infinite alternate; }
   @keyframes dmLiquid { 0% { transform: translate(0, 0) rotate(-18deg); } 100% { transform: translate(18%, 10%) rotate(-10deg); } }
   #dev.dev-st-1 .dm-panel .dm-side { background: rgba(255,255,255,.08); border-right-color: rgba(255,255,255,.2); }
   #dev.dev-st-1 .dm-ghost .dm-panel { backdrop-filter: blur(var(--dm-blur)) saturate(1.6); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.6); }
   /* 2 クリアガラス: 光沢なしの静かなガラス(白の縁と薄い透け) */
-  #dev.dev-st-2 .dm-panel { background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06)); backdrop-filter: blur(var(--dm-blur)); -webkit-backdrop-filter: blur(var(--dm-blur)); border: 1px solid rgba(255,255,255,.26); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.35 * var(--dm-in))), 0 24px 60px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
+  #dev.dev-st-2 .dm-panel { background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); backdrop-filter: blur(var(--dm-blur)); -webkit-backdrop-filter: blur(var(--dm-blur)); border: 1px solid rgba(255,255,255,.26); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.35 * var(--dm-in))), 0 24px 60px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
   /* 3 インナーシャドウ(深い): 板が奥にくぼんで見える */
   #dev.dev-st-3 .dm-panel { box-shadow: inset 0 24px 48px rgba(0,0,0,calc(.55 * var(--dm-in))), inset 0 -8px 24px rgba(0,0,0,calc(.35 * var(--dm-in))), inset 0 0 0 1px rgba(255,255,255,.06), 0 10px 30px rgba(0,0,0,calc(.35 * var(--dm-sh))); border-color: rgba(0,0,0,.6); }
   /* 4 インナーグロー: 内側に淡い光、上辺にハイライト */
@@ -1813,10 +1824,66 @@
   #dev.dev-tone-blue .dm-panel { background: linear-gradient(rgba(14,68,151,.35), rgba(14,187,255,.10)), linear-gradient(160deg, #0f1626, #131a2a); border-color: rgba(120,180,255,.22); }
   #dev.dev-tone-cyan .dm-panel { background: linear-gradient(rgba(14,187,255,.2), rgba(14,187,255,.05)), linear-gradient(160deg, #0b1b22, #101a1e); border-color: rgba(14,187,255,.28); }
   #dev.dev-tone-pink .dm-panel { background: linear-gradient(rgba(255,93,151,.22), rgba(255,93,151,.06)), linear-gradient(160deg, #241219, #1a1216); border-color: rgba(255,140,180,.22); }
-  #dev.dev-st-1.dev-tone-graphite .dm-panel, #dev.dev-st-2.dev-tone-graphite .dm-panel { background: linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.08) 45%, rgba(255,255,255,.16)); }
-  #dev.dev-st-1.dev-tone-blue .dm-panel, #dev.dev-st-2.dev-tone-blue .dm-panel { background: linear-gradient(135deg, rgba(80,150,255,.30), rgba(14,187,255,.06) 45%, rgba(120,160,255,.16)); }
-  #dev.dev-st-1.dev-tone-cyan .dm-panel, #dev.dev-st-2.dev-tone-cyan .dm-panel { background: linear-gradient(135deg, rgba(14,187,255,.30), rgba(14,187,255,.06) 45%, rgba(120,230,255,.16)); }
-  #dev.dev-st-1.dev-tone-pink .dm-panel, #dev.dev-st-2.dev-tone-pink .dm-panel { background: linear-gradient(135deg, rgba(255,93,151,.30), rgba(255,93,151,.06) 45%, rgba(255,160,200,.16)); }
+  #dev.dev-st-1.dev-tone-graphite .dm-panel, #dev.dev-st-2.dev-tone-graphite .dm-panel, #dev.dev-st-12.dev-tone-graphite .dm-panel { background: linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.08) 45%, rgba(255,255,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-blue .dm-panel, #dev.dev-st-2.dev-tone-blue .dm-panel, #dev.dev-st-12.dev-tone-blue .dm-panel { background: linear-gradient(135deg, rgba(80,150,255,.30), rgba(14,187,255,.06) 45%, rgba(120,160,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-cyan .dm-panel, #dev.dev-st-2.dev-tone-cyan .dm-panel, #dev.dev-st-12.dev-tone-cyan .dm-panel { background: linear-gradient(135deg, rgba(14,187,255,.30), rgba(14,187,255,.06) 45%, rgba(120,230,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-pink .dm-panel, #dev.dev-st-2.dev-tone-pink .dm-panel, #dev.dev-st-12.dev-tone-pink .dm-panel { background: linear-gradient(135deg, rgba(255,93,151,.30), rgba(255,93,151,.06) 45%, rgba(255,160,200,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+
+  /* ===== 【2026-09-15 ヒデさん指定】AI らしい5案(11〜15)。正面のまま、光が走る/読み取る/粒/脈で「動いている・考えている」感を出す。
+     つまみは案ごと(調整パネルで案を選ぶと、その案の項目に入れ替わる) ===== */
+  @property --dm-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  /* 11 ネオンが一周する: 縁を光が走る(既定は反時計回り)。縁取りは padding+mask の枠だけ塗る手法(案8と同じ) */
+  #dev.dev-st-11 .dm-panel { border-color: rgba(255,255,255,.10);
+    box-shadow: 0 0 0 1px rgba(14,187,255,.14), 0 26px 60px rgba(0,0,0,calc(.5 * var(--dm-sh))), inset 0 1px 0 rgba(255,255,255,calc(.14 * var(--dm-in))); }
+  #dev.dev-st-11 .dm-panel::after { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: var(--dm-run-w, 2px); pointer-events: none; z-index: 6;
+    background: conic-gradient(from var(--dm-ang),
+      rgba(14,187,255,0) 0turn,
+      rgba(14,187,255,0) calc(1turn - var(--dm-run-len, .28turn)),
+      rgba(14,187,255,.9) calc(1turn - var(--dm-run-len, .28turn) * .62),
+      #ffffff calc(1turn - var(--dm-run-len, .28turn) * .22),
+      #ff5d97 1turn);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    animation: dmRunAng var(--dm-run-sec, 6s) linear infinite; animation-direction: var(--dm-run-dir, reverse); }
+  @keyframes dmRunAng { to { --dm-ang: 1turn; } }
+  /* 12 オーロラの発光: 後ろでブランド色のオーロラがゆっくり動き、すりガラスの板で透かす */
+  #dev.dev-st-12 .dev-block { position: relative; }
+  #dev.dev-st-12 .dev-block::before { content: ''; position: absolute; left: 6%; right: 6%; top: 10%; bottom: 8%; z-index: 0; pointer-events: none;
+    background: radial-gradient(38% 46% at 24% 30%, rgba(14,187,255,var(--dm-aur-a, .6)), transparent 62%),
+                radial-gradient(42% 40% at 74% 62%, rgba(255,93,151,var(--dm-aur-a, .6)), transparent 62%),
+                radial-gradient(30% 34% at 52% 16%, rgba(255,255,255,calc(var(--dm-aur-a, .6) * .45)), transparent 60%);
+    filter: blur(var(--dm-aur-blur, 80px)); animation: dmAurora var(--dm-aur-sec, 14s) ease-in-out infinite alternate; }
+  @keyframes dmAurora { 0% { transform: translate3d(-4%, -2%, 0) scale(1); } 100% { transform: translate3d(5%, 3%, 0) scale(1.14); } }
+  #dev.dev-st-12 .dev1-mock, #dev.dev-st-12 .dev2-wrap, #dev.dev-st-12 .dev-center { position: relative; z-index: 1; }
+  #dev.dev-st-12 .dm-panel { background: linear-gradient(150deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 50%, rgba(255,255,255,.10)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost)));
+    backdrop-filter: blur(var(--dm-blur)) saturate(1.5); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.5);
+    border: 1px solid rgba(255,255,255,.26); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.4 * var(--dm-in))), 0 26px 64px rgba(0,0,0,calc(.5 * var(--dm-sh))); }
+  /* 13 スキャンの光: 上から下へ光の帯が走る(AI が読み取っている感じ) */
+  #dev.dev-st-13 .dm-panel { border-color: rgba(255,255,255,.12);
+    box-shadow: 0 0 0 1px rgba(14,187,255,.12), 0 24px 56px rgba(0,0,0,calc(.5 * var(--dm-sh))), inset 0 1px 0 rgba(255,255,255,calc(.14 * var(--dm-in))); }
+  #dev.dev-st-13 .dm-panel::after { content: ''; position: absolute; left: 0; right: 0; height: var(--dm-scan-h, 26%); z-index: 6; pointer-events: none;
+    background: linear-gradient(180deg, rgba(14,187,255,0), rgba(14,187,255,calc(.22 * var(--dm-scan-a, 1))) 46%, rgba(255,255,255,calc(.30 * var(--dm-scan-a, 1))) 62%, rgba(255,93,151,0));
+    animation: dmScan var(--dm-scan-sec, 5s) cubic-bezier(.45,0,.55,1) infinite; }
+  @keyframes dmScan { 0% { top: -32%; opacity: 0; } 12% { opacity: 1; } 86% { opacity: 1; } 100% { top: 104%; opacity: 0; } }
+  /* 14 データの粒: 内側に細かい点の格子。ゆっくり明滅しながら少しずつ流れる */
+  #dev.dev-st-14 .dm-panel { border-color: rgba(255,255,255,.12);
+    box-shadow: 0 20px 50px rgba(0,0,0,calc(.45 * var(--dm-sh))), inset 0 1px 0 rgba(255,255,255,calc(.18 * var(--dm-in))); }
+  #dev.dev-st-14 .dm-panel::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle, rgba(255,255,255,var(--dm-dot-a, .16)) 1px, transparent 1.3px);
+    background-size: var(--dm-dot, 22px) var(--dm-dot, 22px);
+    -webkit-mask-image: radial-gradient(120% 100% at 50% 0%, #000 28%, transparent 80%); mask-image: radial-gradient(120% 100% at 50% 0%, #000 28%, transparent 80%);
+    animation: dmDots var(--dm-dot-sec, 7s) ease-in-out infinite alternate; }
+  @keyframes dmDots { 0% { opacity: .5; background-position: 0 0; } 100% { opacity: 1; background-position: var(--dm-dot, 22px) 0; } }
+  /* 15 思考のパルス: 外側の光が呼吸するように脈打ち、上辺を細い光が横切る */
+  #dev.dev-st-15 .dm-panel { border-color: rgba(255,255,255,.14); animation: dmPulse var(--dm-pulse-sec, 4s) ease-in-out infinite; }
+  @keyframes dmPulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(14,187,255,.18), 0 0 calc(18px * var(--dm-pulse-r, 1)) rgba(14,187,255,calc(.18 * var(--dm-pulse-a, 1))), 0 24px 56px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
+    50% { box-shadow: 0 0 0 1px rgba(255,93,151,.26), 0 0 calc(54px * var(--dm-pulse-r, 1)) rgba(255,93,151,calc(.34 * var(--dm-pulse-a, 1))), 0 24px 56px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
+  }
+  #dev.dev-st-15 .dm-panel::after { content: ''; position: absolute; top: 0; height: 2px; width: 38%; z-index: 6; pointer-events: none;
+    background: linear-gradient(90deg, rgba(14,187,255,0), #0ebbff, #ffffff, #ff5d97, rgba(255,93,151,0));
+    animation: dmThink var(--dm-pulse-sec, 4s) ease-in-out infinite; }
+  @keyframes dmThink { 0% { left: -38%; } 100% { left: 100%; } }
 
   /* ===== dev1/dev2 ブロック: 画面高さ100vhに中央寄せ。JS(updateDev)がブラー+フェードで出現→出っ放し ===== */
   .dev-block {
@@ -4312,7 +4379,7 @@ const DEFAULTS = {
   /* 【2026-08-29 ヒデさん指定】コンバージョン背景(流れるグラデ+Bayerディザ)。
      既定はカンプのディザ設定(Bayer16×16 / Size1 / Levels3 / Brightness104% / Contrast1.38)に合わせる */
   cv: { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38,
-        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', hueSpeed: 6, hueRange: 50 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい
+        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
   cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
@@ -4570,7 +4637,9 @@ const DEFAULTS = {
                /* 【2026-08-29 ヒデさん指定】dev2: ブロックの出入り(フェード)は dev1 と同じスクロール位置駆動(vpMode)。
                   ただし箱が左右に割れて開く所は【時間再生】でゆったり。splitDelay=登場から割れ始めるまでの間(秒)、
                   splitDur=割れきるまでの時間(秒。大きいほどゆったり)。 */
-               vpMode: 'center', splitDelay: 0.32, splitDur: 1.2 },   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
+               vpMode: 'center', splitDelay: 0.32, splitDur: 1.2,
+               /* 【2026-09-15】モックのスタイル案のつまみ。stv = 案ごとの値(案を切り替えても各案の設定が残る) */
+               mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {} },   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
     /* 【2026-08-25 刷新・カンプ 15800:24526/24258】導入事例 = 2×2グリッド。
        見出し(ブラー) → 水平線3本が左から(上→下でディレイ) → 中央の垂直線 → カード4枚がブラーで登場。 */
     cases:   { lenVh: 200, driveLen: 3.0, playSec: 2.0, inBlur: 20,
@@ -5858,8 +5927,46 @@ const CV_STYLES = [
 /* ===== 【2026-09-15 ヒデさん指定】お問い合わせのカラー案(10案)。ブランド色を使いつつ、グラデの形・ディザの具合・暗さ(黒ベース)を変える。
    選ぶとその案の値を params.cv に入れる(＝下のつまみで細かく変えられる。⋯「いまの設定で上書き」でその案に保存) ===== */
 const CV_DEF_COLORS = ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'];
+/* ===== 【2026-09-15 ヒデさん指定・作り直し】「色が移ろう」= ブランド色と白の間だけを行き来する =====
+   ⚠️ 以前は色相(hue)をぐるっと回していたので、青からピンクへ行く途中で【ブランドにない色(緑・黄など)】が出ていた。
+      → 色相を回すのをやめ、「ブランド色で作った5色セット(パレット)」ごと入れ替える方式に。
+        間に白のパレットを挟むので、にごった中間色を通らずに色味だけが徐々に変わる。
+        白の入り具合(moodWhite)を下げると、白を通らず直接つなぐ(=中間色が少し出る)。 */
+const CV_MOOD_PAL = {
+  navy:  ['#eaf1ff', '#9dc0f7', '#2f6fd0', '#153f8f', '#0e4497'],   /* 紺 */
+  blue:  ['#eef7ff', '#b6e0ff', '#0ebbff', '#2f6fd0', '#0e4497'],   /* 青(シアン→紺) */
+  cyan:  ['#f2fbff', '#c9edff', '#0ebbff', '#0aa0e0', '#0e79b8'],   /* シアン */
+  white: ['#ffffff', '#f4f9ff', '#ffffff', '#fdf2f7', '#ffffff'],   /* 白(通過点) */
+  pink:  ['#fff0f7', '#ffc2dc', '#ff5d97', '#f2529a', '#c8317a'],   /* ピンク */
+};
+const CV_MOOD_RINGS = { swing: ['blue', 'white', 'pink', 'white'], cycle: ['navy', 'cyan', 'white', 'pink'] };
+let cvMoodCache = null;
+/* 白のパレットは「両隣の中間色」と白の間で混ぜる(白の入り具合 wAmt)。1周ぶんを組み立てて使い回す */
+function cvMoodBuild(mode, wAmt) {
+  if (cvMoodCache && cvMoodCache.m === mode && cvMoodCache.w === wAmt) return cvMoodCache.p;
+  const names = CV_MOOD_RINGS[mode]; if (!names) return null;
+  const N = names.length;
+  const pal = names.map((nm, i) => {
+    const base = CV_MOOD_PAL[nm] || CV_MOOD_PAL.blue;
+    if (nm !== 'white') return base.map(h => cvHex(h, '#ffffff'));
+    const a = CV_MOOD_PAL[names[(i - 1 + N) % N]] || base, b = CV_MOOD_PAL[names[(i + 1) % N]] || base;
+    return base.map((h, j) => {
+      const W = cvHex(h, '#ffffff'), A = cvHex(a[j], '#ffffff'), B = cvHex(b[j], '#ffffff');
+      return [0, 1, 2].map(k => { const mid = (A[k] + B[k]) / 2; return mid + (W[k] - mid) * wAmt; });
+    });
+  });
+  cvMoodCache = { m: mode, w: wAmt, p: pal };
+  return pal;
+}
+/* p = 1周のうちどこにいるか(0〜1)。隣り合うパレットをなめらかに混ぜて5色を返す */
+function cvMoodAt(p, mode, wAmt) {
+  const pal = cvMoodBuild(mode, wAmt); if (!pal) return null;
+  const N = pal.length, x = ((p % 1) + 1) % 1 * N, i = Math.floor(x) % N, f = x - Math.floor(x), e = f * f * (3 - 2 * f);
+  const A = pal[i], B = pal[(i + 1) % N];
+  return A.map((c, j) => [0, 1, 2].map(k => c[k] + (B[j][k] - c[k]) * e));
+}
 function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
-const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', hueSpeed: 6, hueRange: 50 };
+const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85 };
 const CV_COLORS = [
   { key: 'C1',  name: 'カンプ（現行）', tip: 'カンプ実測の5色(淡ピンク白→淡ブルー→シアン→青紫→ピンク)・カンプの放射グラデ・Bayer 1px 3段。', cv: {} },
   { key: 'C2',  name: 'ブルー寄り', tip: 'ピンクを青紫に置き換え、シアン〜ブルーで統一。放射の中心は右上。', cv: { colors: ['#eef7ff', '#9ad9ff', '#0ebbff', '#1f5fd6', '#6a4bd8'], gMode: 1, gcx: 0.8, gcy: 0.1, gr: 0.95, gAspect: 1.25 } },
@@ -5871,7 +5978,7 @@ const CV_COLORS = [
   { key: 'C8',  name: 'ダーク・ブルー（黒に少し白）', tip: '黒ベース。右上に白い光、そこから深い青→黒へ。粒は 1.5px・4段。', cv: { colors: ['#eef0f5', '#3a4a6a', '#0b3b5c', '#12141c', '#08090d'], gMode: 1, gcx: 0.82, gcy: 0.1, gr: 1.1, gAspect: 1.2, levels: 4, cell: 1.5, contrast: 1.2, bright: 1.0, ink: 'light' } },
   { key: 'C9',  name: 'ダーク・ピンクの残り火', tip: '黒ベース。左下に白、ピンクが残り火のように黒へ沈む。粒は 1.5px・4段。', cv: { colors: ['#f3e9ee', '#5a2440', '#8a3358', '#1b1520', '#0a0a0d'], gMode: 1, gcx: 0.2, gcy: 0.85, gr: 1.0, gAspect: 1.3, levels: 4, cell: 1.5, contrast: 1.2, bright: 1.0, ink: 'light' } },
   { key: 'C10', name: 'ネオン（黒にシアンとピンクが光る）', tip: '黒の中央から白→シアン→ピンク→黒へ。横長の放射・5段で光の帯に。', cv: { colors: ['#05060a', '#0ebbff', '#ffffff', '#ff5d97', '#05060a'], gMode: 1, gcx: 0.5, gcy: 0.5, gr: 0.7, gAspect: 1.6, levels: 5, contrast: 1.3, bright: 1.0, ink: 'light' } },
-  { key: 'C11', name: '色が移ろう（青⇄ピンク）', tip: 'カンプの配色のまま、うねり全体の色味が時間で徐々に変わる。既定は青とピンクの間を往復(±50°・約30秒で1往復)。「色味の移ろい」で巡る/往復・速さ・振れ幅を変えられる。', cv: { hueMode: 'swing', hueSpeed: 6, hueRange: 50 } },
+  { key: 'C11', name: '色が移ろう（青⇄白⇄ピンク）', tip: 'うねり全体の色味が、ブランドの青とピンクの間を白を通ってゆっくり行き来する(他の中間色は出さない)。既定は30秒で1往復。「色味の移ろい」で往復/巡る・1周の時間・白の入り具合を変えられる。', cv: { hueMode: 'swing', moodSec: 30, moodWhite: 0.85 } },
 ];
 /* 【2026-09-15 ヒデさん指定】色のウェーブ(造形)の案。残したカラー案の中で切り替える(params.cv.shape。カラー案を選んでも保つ) */
 const CV_SHAPES = [
@@ -5903,7 +6010,54 @@ const DEV_STYLES = [
   { key: '8',  name: 'ネオンの輪郭', tip: 'シアン→ピンクのグラデの縁取りと、外側ににじむ光。' },
   { key: '9',  name: 'エンボス（段差）', tip: '左上に光の縁、右下に影の縁で、一段盛り上がった板。' },
   { key: '10', name: 'グラデーションの板', tip: '上が明るく下が暗い板＋柔らかい影で厚みを出す。' },
+  /* 【2026-09-15 ヒデさん指定】AI らしい5案。案を選ぶと調整パネルの項目がその案のものに入れ替わる */
+  { key: '11', name: 'ネオンが一周する', tip: '縁に沿って光が走る(既定は反時計回り)。シアン→白→ピンクの尾を引く。速さ・向き・光の長さ・太さを調整できます。' },
+  { key: '12', name: 'オーロラの発光', tip: '板の後ろでブランド色のオーロラがゆっくり動き、すりガラス越しに透ける。強さ・速さ・にじみを調整できます。' },
+  { key: '13', name: 'スキャンの光', tip: '上から下へ光の帯が走る(AI が読み取っている感じ)。通る時間・帯の太さ・明るさを調整できます。' },
+  { key: '14', name: 'データの粒', tip: '板の内側に細かい点の格子。ゆっくり明滅しながら少しずつ流れる。点の間隔・濃さ・速さを調整できます。' },
+  { key: '15', name: '思考のパルス', tip: '外側の光が呼吸するように脈打ち、上辺を細い光が横切る。周期・広がり・強さを調整できます。' },
 ];
+/* 【2026-09-15 ヒデさん指定】案ごとのつまみ。パネルでは選んでいる案のまとまりだけ出す(syncDevDyn)。
+   値は params.sections.dev.stv[まとまりのkey][項目のkey] に入る(案を切り替えても各案の値が残る)。
+   css() が返した文字列を #dev の CSS 変数に入れる＝CSS 側は var() を読むだけ */
+const DEV_DYN_SPEC = {
+  glass: { title: 'この案の調整（ガラス）', on: ['1', '2', '12'], rows: [
+    { k: 'frost', label: 'ガラスの濃さ（後ろの隠し具合）', min: 0, max: 1, step: 0.02, def: 0.62, v: '--dm-frost', css: v => String(v), fmt: v => Math.round(v * 100) + '%',
+      hint: '0%で素通し(後ろのカードのコードが読めてしまう)、100%で完全に隠す。既定62%。' },
+    { k: 'backBlur', label: '後ろのカードのぼかし', min: 0, max: 30, step: 1, def: 10, v: '--dm-backblur', css: v => v + 'px', fmt: v => Math.round(v) + 'px',
+      hint: '重なっている後ろのカードを実際にぼかす量。ガラス越しに見えるものがボケる＝すりガラスに見えます。' },
+  ] },
+  '11': { title: 'この案の調整（ネオンが一周する）', on: ['11'], rows: [
+    { k: 'dir', seg: [['反時計回り', 'ccw'], ['時計回り', 'cw']], label: '光の向き', def: 'ccw', v: '--dm-run-dir', css: v => (v === 'cw' ? 'normal' : 'reverse') },
+    { k: 'sec', label: '光が1周する時間', min: 2, max: 24, step: 0.5, def: 6, v: '--dm-run-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '短いほど速く走ります。' },
+    { k: 'len', label: '光の長さ', min: 0.06, max: 0.7, step: 0.02, def: 0.28, v: '--dm-run-len', css: v => v + 'turn', fmt: v => Math.round(v * 100) + '%', hint: '縁1周のうち何割を光が占めるか。短いと点に近く、長いと帯になります。' },
+    { k: 'w', label: '光の太さ', min: 1, max: 6, step: 0.5, def: 2, v: '--dm-run-w', css: v => v + 'px', fmt: v => v.toFixed(1) + 'px', hint: '縁取りの太さ。' },
+  ] },
+  '12': { title: 'この案の調整（オーロラの発光）', on: ['12'], rows: [
+    { k: 'a', label: 'オーロラの強さ', min: 0, max: 1.2, step: 0.02, def: 0.6, v: '--dm-aur-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '後ろの光の濃さ。' },
+    { k: 'sec', label: '動く速さ', min: 4, max: 40, step: 1, def: 14, v: '--dm-aur-sec', css: v => v + 's', fmt: v => Math.round(v) + '秒', hint: '片道にかかる時間。長いほどゆったり。' },
+    { k: 'blur', label: 'にじみ', min: 20, max: 160, step: 5, def: 80, v: '--dm-aur-blur', css: v => v + 'px', fmt: v => Math.round(v) + 'px', hint: '光のぼかし量。小さいと形が見え、大きいと空気に溶けます。' },
+  ] },
+  '13': { title: 'この案の調整（スキャンの光）', on: ['13'], rows: [
+    { k: 'sec', label: '光が通る時間', min: 1.5, max: 14, step: 0.5, def: 5, v: '--dm-scan-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '上から下まで1回通るのにかかる時間。' },
+    { k: 'h', label: '帯の太さ', min: 6, max: 70, step: 2, def: 26, v: '--dm-scan-h', css: v => v + '%', fmt: v => Math.round(v) + '%', hint: '板の高さに対する光の帯の太さ。' },
+    { k: 'a', label: '明るさ', min: 0, max: 2.5, step: 0.05, def: 1, v: '--dm-scan-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '帯の明るさ。' },
+  ] },
+  '14': { title: 'この案の調整（データの粒）', on: ['14'], rows: [
+    { k: 'd', label: '点の間隔', min: 8, max: 48, step: 1, def: 22, v: '--dm-dot', css: v => v + 'px', fmt: v => Math.round(v) + 'px', hint: '小さいほど細かい格子になります。' },
+    { k: 'a', label: '点の濃さ', min: 0, max: 0.5, step: 0.01, def: 0.16, v: '--dm-dot-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '点の白さ。濃くすると文字と競います。' },
+    { k: 'sec', label: '明滅の速さ', min: 2, max: 24, step: 0.5, def: 7, v: '--dm-dot-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '明るさと流れが往復する時間。' },
+  ] },
+  '15': { title: 'この案の調整（思考のパルス）', on: ['15'], rows: [
+    { k: 'sec', label: '脈の周期', min: 1.5, max: 12, step: 0.5, def: 4, v: '--dm-pulse-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '1回ふくらんで戻るまでの時間。上辺を横切る光もこれに連動します。' },
+    { k: 'r', label: '光の広がり', min: 0.2, max: 2.5, step: 0.05, def: 1, v: '--dm-pulse-r', css: v => String(v), fmt: v => '×' + v.toFixed(2), hint: '外にどこまで光がにじむか。' },
+    { k: 'a', label: '光の強さ', min: 0, max: 2.5, step: 0.05, def: 1, v: '--dm-pulse-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '光の濃さ。' },
+  ] },
+};
+/* ガラス(後ろが透ける)案 = 地色を敷いて後ろのカードをぼかす対象 */
+const DEV_GLASS_KEYS = ['1', '2', '12'];
+function devStv(g) { const d = (params.sections && params.sections.dev) || {}; d.stv = d.stv || {}; d.stv[g] = d.stv[g] || {}; return d.stv[g]; }
+function devDynGet(g, r) { const v = devStv(g)[r.k]; return v != null ? v : r.def; }
 const DEV_TONES = [
   { key: 'dark', name: '現行（黒）', fixed: true, tip: '#161616 に白10%(カンプ)。' },
   { key: 'graphite', name: 'グラファイト', tip: '少し明るいグレー。' },
@@ -5922,7 +6076,14 @@ function applyDevStyle() {
   sec.style.setProperty('--dm-blur', (d.mockBlur != null ? d.mockBlur : 24) + 'px');
   sec.style.setProperty('--dm-sh', String(d.mockShadow != null ? d.mockShadow : 1));
   sec.style.setProperty('--dm-in', String(d.mockInner != null ? d.mockInner : 1));
+  /* ガラス案の時だけ、後ろのカードを実際にぼかす(backdrop-filter は後ろのカードを参照できないため) */
+  sec.classList.toggle('dev-glass', DEV_GLASS_KEYS.indexOf(sk) >= 0);
+  /* 案ごとのつまみ → CSS 変数(全まとまりぶん入れておく＝案を切り替えてもその案の値がすぐ効く) */
+  try { Object.keys(DEV_DYN_SPEC).forEach(g => DEV_DYN_SPEC[g].rows.forEach(r => sec.style.setProperty(r.v, r.css(devDynGet(g, r))))); } catch (e) {}
 }
+/* パネル: 選んでいる案のまとまりだけ出す */
+const DEV_DYN = {};
+function syncDevDyn() { const k = devStyleKey(); Object.keys(DEV_DYN).forEach(g => { const el = DEV_DYN[g], sp = DEV_DYN_SPEC[g]; if (el && sp) el.style.display = sp.on.indexOf(k) >= 0 ? '' : 'none'; }); }
 /* ===== 【2026-09-15 ヒデさん指定】ビジョン「つなぐ／強み」の揺らぎのグラデ: 鮮やかな配色 3案＋つまみ(彩度・明るさ・速さ・角度) =====
    値は params.sections.vision.{gradVar, gradSat, gradBri, gradDur, gradAng}。CSS 変数と #vision.vg-N で反映 */
 const VIS_GRADS = [
@@ -6090,7 +6251,13 @@ void main(){
     gl.uniform1f(uni.uContrast, c.contrast != null ? c.contrast : 1.38);
     /* 【2026-09-15 ヒデさん指定】カラー案: 5色・形・暗さ(params.cv。パネル「コンバージョン」で細かく変えられる) */
     const cols = Array.isArray(c.colors) ? c.colors : CV_DEF_COLORS;
-    ['uC0', 'uC1', 'uC2', 'uC3', 'uC4'].forEach((k, i) => { const v = cvHex(cols[i], CV_DEF_COLORS[i]); gl.uniform3f(uni[k], v[0], v[1], v[2]); });
+    /* 色が移ろう案: ブランド色＋白のパレットを時間でなめらかに入れ替える(params.cv.colors は書き換えない=保存値は無事) */
+    let mood = null;
+    if (c.hueMode === 'swing' || c.hueMode === 'cycle') {
+      const msec = Math.max(4, c.moodSec != null ? c.moodSec : 30);
+      mood = cvMoodAt(((performance.now() - t0) / 1000) / msec, c.hueMode, c.moodWhite != null ? c.moodWhite : 0.85);
+    }
+    ['uC0', 'uC1', 'uC2', 'uC3', 'uC4'].forEach((k, i) => { const v = mood ? mood[i] : cvHex(cols[i], CV_DEF_COLORS[i]); gl.uniform3f(uni[k], v[0], v[1], v[2]); });
     gl.uniform1f(uni.uGMode, c.gMode != null ? c.gMode : 0);
     gl.uniform2f(uni.uGC, c.gcx != null ? c.gcx : 0.78, c.gcy != null ? c.gcy : 0.12);
     const gr = c.gr != null ? c.gr : 0.9, ga = c.gAspect != null ? c.gAspect : 1;
@@ -6101,12 +6268,8 @@ void main(){
     gl.uniform1f(uni.uShape, +(typeof cvShapeKey === 'function' ? cvShapeKey() : 0) || 0);
     gl.uniform1f(uni.uWaveF, c.waveF != null ? c.waveF : 2);
     gl.uniform1f(uni.uWaveMix, c.waveMix != null ? c.waveMix : 1);
-    /* 色味の移ろい: cycle=一方向に巡る / swing=±振れ幅で往復(ブランド色の間を行き来)。速さは度/秒 */
-    { const tsec = (performance.now() - t0) / 1000, spd = c.hueSpeed != null ? c.hueSpeed : 6, rng = c.hueRange != null ? c.hueRange : 50;
-      let deg = 0;
-      if (c.hueMode === 'cycle') deg = (tsec * spd) % 360;
-      else if (c.hueMode === 'swing') deg = Math.sin(tsec * spd * Math.PI / 180) * rng;
-      gl.uniform1f(uni.uHue, deg * Math.PI / 180); }
+    /* 色相の回転は使わない(ブランドにない色が出るため)。移ろいは上のパレット入れ替えで行う */
+    gl.uniform1f(uni.uHue, 0);
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
        SP は M=[-31.225 24.205 -22.32 -26.671 300.25 32.955], r=10 を u,v∈[0,1] に正規化して
        gx = 係数·(u,v,1)/20 + 0.5 の形にした値(中心(300,33)=右上で t=0(淡ピンク白)、左下 t≒0.98(ピンク)、右下 0.70(青紫))。 */
@@ -12512,6 +12675,7 @@ function updateDev2Stack() {
     if (!el) return;
     const seatI = (i - sel + nSeat) % nSeat;
     if (el._seat !== seatI) { el._from = el._cur || DEV_STACK[seatI]; el._seat = seatI; el._t0 = elapsed; }
+    el.classList.toggle('dm-back', seatI !== 0);   /* 2026-09-15: 手前以外＝ガラス案ではぼかす(すりガラスの見え方) */
     const to = DEV_STACK[seatI];
     const kk = el._t0 == null ? 1 : swapE.fn(clamp01((elapsed - el._t0) / c.stackDur));
     /* すれ違い中の透け防止(V1.0の対策＋2026-09-03): 暗くなる側は動きがほぼ終わってから暗くし、
@@ -17250,6 +17414,7 @@ function buildPanel() {
   RFX_DYN.length = 0;   /* 案ごとの動的パネルの登録をやり直す(組み立てのたび) */
   RFX_TITLES.length = 0;
   CV_DYN.length = 0; CV_DYN10.length = 0;
+  try { Object.keys(DEV_DYN).forEach(k => { delete DEV_DYN[k]; }); } catch (e) {}   /* 2026-09-15: モックの案ごとのつまみも作り直す */
   catNote(catRes, '見出し → 数字と本文 → 見終わると暗くなって次のセクションへ。');
 
   /* 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出案(Codex 1/4/5/6。7・9 は 2026-09-14 に削除)。既定=現行。
@@ -17541,13 +17706,28 @@ function buildPanel() {
   catNote(catDev, '暗い背景で CLI / SDK の画面が順に切り替わります。');
   /* 【2026-09-15 ヒデさん指定】モックのスタイル案(立体感 5案・リキッドグラス含む)と配色。★ピン留め／上書き／削除は他のバリエーションと同じ */
   sub(catDev, 'モックのスタイル（立体感）', true, { fixed: true });
-  varRowX('devStyle', DEV_STYLES, () => devStyleKey(), v => { params.devStyle = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); } });
-  note('正面のまま(傾け・重ねなし)、ガラス／内側の影や光／落ち影／枠／輪郭の描き方で立体感を出す10案。すぐ下の配色と組み合わせられます。');
+  varRowX('devStyle', DEV_STYLES, () => devStyleKey(), v => { params.devStyle = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); syncDevDyn(); } });
+  note('正面のまま(傾け・重ねなし)で立体感を出す10案(1〜10)と、AI らしい5案(11〜15: 光が縁を走る／オーロラ／スキャン／粒／脈)。案を選ぶと下の「この案の調整」が入れ替わります。配色とも組み合わせられます。');
   sub(catDev, 'モックの配色（スタイル案のすぐ下で選ぶ）', true, { fixed: true });
   varRowX('devTone', DEV_TONES, () => devToneKey(), v => { params.devTone = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); } });
-  rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。'));
-  rows.push(slider('ガラスのぼかし', 6, 48, 1, () => (sv().dev.mockBlur != null ? sv().dev.mockBlur : 24), v => { sv().dev.mockBlur = v; applyDevStyle(); }, v => Math.round(v) + 'px', 'ガラス系(リキッド／クリア)の後ろのぼけ具合。'));
-  rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。'));
+  /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
+  Object.keys(DEV_DYN_SPEC).forEach(g => {
+    const sp = DEV_DYN_SPEC[g];
+    sub(catDev, sp.title, true, { fixed: true });
+    DEV_DYN[g] = catDev.lastElementChild;
+    if (g === 'glass') {
+      note('ガラス案は、後ろのカードを実際にぼかして「すりガラス越し」に見せています(ブラウザの仕様で backdrop-filter だけでは後ろのカードがぼけないため)。');
+      rows.push(slider('ガラスのぼかし', 0, 48, 1, () => (sv().dev.mockBlur != null ? sv().dev.mockBlur : 24), v => { sv().dev.mockBlur = v; applyDevStyle(); }, v => Math.round(v) + 'px', '板ごしの地のぼけ具合(効く環境では backdrop-filter も併用)。', { fixedMax: true }));
+    }
+    sp.rows.forEach(r => {
+      if (r.seg) { segRow(r.label, r.seg, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); markDirty(); renderFrame(); }); return; }
+      rows.push(slider(r.label, r.min, r.max, r.step, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); }, r.fmt, r.hint, { fixedMax: true }));
+    });
+  });
+  syncDevDyn();
+  sub(catDev, '全部の案に効く調整', true, { fixed: true });
+  rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。', { fixedMax: true }));
+  rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。', { fixedMax: true }));
 
   sub(catDev, '基本（長さ）');
   sectionLenSlider('dev', 1600);
@@ -17647,9 +17827,10 @@ function buildPanel() {
   rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。'));
   rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。'));
   sub(catCv, '色味の移ろい（時間で色が変わる）'); CV_DYN.push(catCv.lastElementChild);
-  segRow('動き', [['なし', 'off'], ['往復（青⇄ピンク）', 'swing'], ['巡る（一方向）', 'cycle']], () => (cvv().hueMode || 'off'), v => { cvv().hueMode = v; markDirty(); renderFrame(); });
-  rows.push(slider('速さ', 1, 60, 1, () => (cvv().hueSpeed != null ? cvv().hueSpeed : 6), v => { cvv().hueSpeed = v; }, v => Math.round(v) + '°/秒', '色相が変わる速さ。往復は「速さ」を周期に使う(6°/秒 ≒ 30秒で1往復)、巡るは 360° を回る速さ(6°/秒 ≒ 60秒で1周)。'));
-  rows.push(slider('振れ幅', 10, 180, 5, () => (cvv().hueRange != null ? cvv().hueRange : 50), v => { cvv().hueRange = v; }, v => '±' + Math.round(v) + '°', '往復の時にどこまで色味を振るか。50°で青⇄ピンクの範囲。'));
+  segRow('動き', [['なし', 'off'], ['往復（青⇄白⇄ピンク）', 'swing'], ['巡る（紺→シアン→白→ピンク）', 'cycle']], () => (cvv().hueMode || 'off'), v => { cvv().hueMode = v; markDirty(); renderFrame(); });
+  rows.push(slider('1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '往復は「行って戻る」まで、巡るは「ひとまわり」する時間。長いほどゆっくり移ろいます。', { fixedMax: true }));
+  rows.push(slider('白の入り具合', 0, 1, 0.05, () => (cvv().moodWhite != null ? cvv().moodWhite : 0.85), v => { cvv().moodWhite = v; }, v => Math.round(v * 100) + '%', '色が入れ替わる間に白をどれだけ通すか。100%でいったん白く抜けてから次の色へ(にごらない)。0%にすると白を通らず直接つなぐので中間色が出ます。', { fixedMax: true }));
+  note('色味はブランドの青(シアン〜紺)・ピンク・白だけを行き来します(色相を回すやり方はやめました。途中で緑や黄など、ブランドにない色が出るため)。');
   sub(catCv, '暗さ（黒ベース）'); CV_DYN.push(catCv.lastElementChild);
   rows.push(slider('暗さ', 0, 1, 0.02, () => (cvv().dark || 0), v => { cvv().dark = v; applyCvStyle(); }, v => Math.round(v * 100) + '%', '黒ベースに寄せる強さ。色は残り火のように残ります。0で元の色。'));
   colorRow('暗い色', () => cvv().darkCol || '#0d0f14', v => { cvv().darkCol = v; }, '「暗さ」で寄せる先の色。');
@@ -17799,6 +17980,9 @@ buildPanel();
 applyMarquee();
 applyCaseHover();   /* 導入事例のホバー案を初期反映 (2026-08-27) */
 /* URL ?cvc=C1〜C11 でカラー案(選んでいるデザイン案に紐づく)。全部の定義が済んだここで読む(早い位置だと variantRemovedKey が未定義で黙って失敗していた・実測) */
+/* 【2026-09-15】開発者体験モックの案も URL で確認できるように: ?dev=0〜15 / ?devt=dark|graphite|blue|cyan|pink */
+try { const _dv = location.search.match(/[?&]dev=(\d{1,2})(?:&|$)/); if (_dv && DEV_STYLES.some(d => d.key === _dv[1])) params.devStyle = _dv[1];
+      const _dt = location.search.match(/[?&]devt=([a-z]+)(?:&|$)/); if (_dt && DEV_TONES.some(d => d.key === _dt[1])) params.devTone = _dt[1]; } catch (e) {}
 try { const _cvc = location.search.match(/[?&]cvc=(C\d{1,2})(?:&|$)/); if (_cvc && CV_COLORS.some(s => s.key === _cvc[1])) { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = _cvc[1]; cvApplyColorFull(_cvc[1]); } } catch (e) {}
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
 applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */

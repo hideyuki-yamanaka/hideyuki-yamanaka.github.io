@@ -16,7 +16,9 @@ const ITEMS: { label: string; href?: string; anchor?: string }[] = [
   { label: "ホーム", href: "/" },
   { label: "ぼーっとスポット", anchor: "#spot" },
   { label: "グルメ", anchor: "#gourmet" },
-  { label: "体験", href: "/experience" },
+  /* 「体験」＝トップ下部の体験セクション（旧イベント）へ。
+     体験フロー（/experience）ではなくセクションへ飛ばす（2026-09-15 ヒデさん指示） */
+  { label: "体験", anchor: "#events" },
 ];
 
 export default function GlobalNav({ theme, size = "md" }: GlobalNavProps) {
@@ -43,10 +45,21 @@ export default function GlobalNav({ theme, size = "md" }: GlobalNavProps) {
   /* 「ぼーっとスポット」「グルメ」はトップのスクロールで到達する画面なので、
      アンカーではなく scroller のスクロール量ジャンプで飛ぶ。
      行き先は TopPage が data-spot-at / data-gourmet-at に入れている */
-  const jumpTo = (e: React.MouseEvent, key: "spotAt" | "gourmetAt") => {
+  const jumpTo = (
+    e: React.MouseEvent,
+    key: "spotAt" | "gourmetAt" | "eventsAt"
+  ) => {
     e.preventDefault();
     const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
-    const at = sc?.dataset[key];
+    /* 体験セクションは普通のフロー要素なので、スクロール量は実測して求める
+       （スポット／グルメのように計算で出せる位置ではない） */
+    const at =
+      key === "eventsAt"
+        ? (() => {
+            const el = document.querySelector<HTMLElement>("#events");
+            return el && sc ? String(el.offsetTop) : undefined;
+          })()
+        : sc?.dataset[key];
     if (!sc || !at) {
       /* トップ以外（体験ページなど）から押された：行き先を覚えてトップへ移動し、
          トップ側が着いてからその位置へスクロールする（2026-08-23 ヒデさん報告の修正） */
@@ -99,6 +112,7 @@ export default function GlobalNav({ theme, size = "md" }: GlobalNavProps) {
               if (!item.anchor) e.preventDefault();
               else if (item.anchor === "#gourmet") jumpTo(e, "gourmetAt");
               else if (item.anchor === "#spot") jumpTo(e, "spotAt");
+              else if (item.anchor === "#events") jumpTo(e, "eventsAt");
             }}
             className="transition-opacity hover:opacity-70"
           >
