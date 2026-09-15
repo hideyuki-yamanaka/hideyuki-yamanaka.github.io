@@ -1,5 +1,8 @@
 # 網走サイト デザインシステム
 
+> ⚠️ **最新は [DESIGN-SYSTEM-V3.md](DESIGN-SYSTEM-V3.md)（2026-09-16）。**
+> この文書は V1.0 の記録。abashiri/v3 を触る時は V3.0 の方を見ること。
+
 最終更新: 2026-08-15（命名を `Category_値` / `Category_役割` に統一） ／ 対象: `abashiri-site`（Next.js 16 / Tailwind CSS v4 / framer-motion）
 
 Figma: [works — デザインシステム](https://www.figma.com/design/jSLFEubHMoy3Hxgcw1AZuR/works?node-id=14829-23769)

@@ -347,7 +347,7 @@ export default function SoundUi({
               ref={wrapRef}
               className={`${slot ? "relative" : "fixed bottom-4 left-4 z-50"}`}
             >
-              <div className="bgm-switch flex items-center justify-center rounded-full bg-white/40 p-[2px] backdrop-blur-[62px] transition-colors duration-500 ease-standard">
+              <div className="bgm-switch flex items-center justify-center rounded-full bg-white/40 p-[2px] backdrop-blur-65 transition-colors duration-500 ease-standard">
                 {/* アイコンは状態ごとに別アセット（カンプ 15492:21886=ON時 / 15492:22168=OFF時） */}
                 {seg(true, "ON", "/img/icon-bgm-on.svg", "/img/icon-bgm-on-dim.svg")}
                 {seg(false, "OFF", "/img/icon-bgm-off-active.svg", "/img/icon-bgm-off.svg")}
@@ -356,7 +356,7 @@ export default function SoundUi({
               {/* 音量インジケーター：ONが鳴っている状態でもう一度ONを押すと出る。
                   スイッチと同じ白ガラスのピルに、スピーカー小アイコン＋スライダー＋% */}
               <div
-                className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[184px] items-center gap-2 rounded-full bg-white/40 py-[7px] pl-3 pr-4 backdrop-blur-[62px] transition-all duration-300 ease-standard ${
+                className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[184px] items-center gap-2 rounded-full bg-white/40 py-[7px] pl-3 pr-4 backdrop-blur-65 transition-all duration-300 ease-standard ${
                   showVol
                     ? "pointer-events-auto translate-y-0 opacity-100"
                     : "pointer-events-none -translate-y-1 opacity-0"
@@ -385,7 +385,7 @@ export default function SoundUi({
                     background: `linear-gradient(to right, #fff ${Math.round(vol * 100)}%, rgba(255,255,255,0.35) ${Math.round(vol * 100)}%)`,
                   }}
                 />
-                <span className="font-num w-[34px] shrink-0 text-right text-[13px] font-light leading-none text-white">
+                <span className="font-num w-[34px] shrink-0 text-right text-body-13 font-light leading-none text-white">
                   {Math.round(vol * 100)}%
                 </span>
               </div>

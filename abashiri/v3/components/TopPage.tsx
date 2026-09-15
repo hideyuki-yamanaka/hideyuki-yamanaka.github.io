@@ -914,10 +914,10 @@ export default function TopPage({
       {leaving && (
         <motion.div
           data-dissolve-veil
-          /* ブラーは固定（backdrop-blur-[22px]）。透明度だけをアニメする。
+          /* ブラーは固定（backdrop-blur-22）。透明度だけをアニメする。
              以前は blur を 0→22px と毎フレーム変えていて、それ自体が最も重い処理だった。
              背景は上の useEffect で静止させてあるので、固定ブラーは一度だけ合成され軽い */
-          className="absolute inset-0 z-40 bg-gradient-to-b from-brand via-brand/70 to-sky-bottom backdrop-blur-[22px]"
+          className="absolute inset-0 z-40 bg-gradient-to-b from-brand via-brand/70 to-sky-bottom backdrop-blur-22"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}

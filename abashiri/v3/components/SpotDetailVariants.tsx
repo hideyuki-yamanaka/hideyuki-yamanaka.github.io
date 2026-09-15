@@ -47,7 +47,7 @@ export function BackPill({ dark = false }: { dark?: boolean }) {
   return (
     <Link
       href="/"
-      className={`fixed left-8 top-8 z-50 flex items-center gap-2 rounded-full px-5 py-2.5 text-body-14 font-light backdrop-blur-[62px] transition-colors duration-300 ease-standard ${
+      className={`fixed left-8 top-8 z-50 flex items-center gap-2 rounded-full px-5 py-2.5 text-body-14 font-light backdrop-blur-65 transition-colors duration-300 ease-standard ${
         dark
           ? "bg-ink/10 text-ink hover:bg-ink/20"
           : "bg-white/20 text-white hover:bg-white/35"
@@ -132,7 +132,7 @@ export function MapEmbed({
       <iframe
         title={`${spot.name} 周辺マップ`}
         src={`https://maps.google.com/maps?q=${encodeURIComponent(spot.map.query)}&z=11&hl=ja&output=embed`}
-        className={`h-[280px] w-full border-0 sm:h-[420px] ${light ? "rounded-[24px]" : ""}`}
+        className={`h-[280px] w-full border-0 sm:h-[420px] ${light ? "rounded-30" : ""}`}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
       />
@@ -140,7 +140,7 @@ export function MapEmbed({
         href={spot.map.link}
         target="_blank"
         rel="noreferrer"
-        className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-body-14 font-light text-ink backdrop-blur-[62px] transition-colors duration-300 ease-standard hover:bg-white"
+        className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-body-14 font-light text-ink backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white"
       >
         マップで開く
         <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
@@ -264,7 +264,7 @@ function HeroTitle({
         {spot.category} {spot.no}
       </p>
       <h1
-        className={`font-thin leading-none opacity-95 ${sm ? "text-[34px] sm:text-[56px]" : "text-[40px] sm:text-[80px]"}`}
+        className={`font-thin leading-none opacity-95 ${sm ? "text-title-34 sm:text-title-56" : "text-title-44 sm:text-hero-90"}`}
       >
         {spot.name}
       </h1>
@@ -395,7 +395,7 @@ export function V3Editorial({ spot }: VProps) {
         <div className="flex items-start gap-7 sm:p-[56px]">
           <div className="flex w-full items-start gap-6 pt-2 sm:w-auto sm:shrink-0">
             <h1
-              className="text-[36px] font-thin leading-[1.2] text-ink [writing-mode:horizontal-tb] sm:whitespace-nowrap sm:text-[56px] sm:[writing-mode:vertical-rl]"
+              className="text-title-36 font-thin leading-[1.2] text-ink [writing-mode:horizontal-tb] sm:whitespace-nowrap sm:text-title-56 sm:[writing-mode:vertical-rl]"
             >
               {spot.name}
             </h1>
@@ -457,9 +457,9 @@ export function V4SkyGlass({ spot }: VProps) {
           <p className="text-body-18 font-thin leading-[1.2] text-white/90 [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
             {spot.category} {spot.no}
           </p>
-          <h1 className="text-[36px] font-thin leading-none text-white sm:text-[64px]">{spot.name}</h1>
+          <h1 className="text-title-36 font-thin leading-none text-white sm:text-title-56">{spot.name}</h1>
           <p className="text-body-14 font-extralight tracking-[2px] text-white/70">{spot.kana}</p>
-          <div className="relative h-[300px] w-full overflow-hidden rounded-[24px] border-[3px] border-white/60 sm:h-[520px] sm:rounded-[36px]">
+          <div className="relative h-[300px] w-full overflow-hidden rounded-30 border-[3px] border-white/60 sm:h-[520px] sm:rounded-30">
             <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
           </div>
           <p className="text-body-18 font-extralight leading-[2.2] tracking-[0.7px] text-white/90">
@@ -588,7 +588,7 @@ export function V10BigQuiet({ spot }: VProps) {
           {spot.category} {spot.no}
         </motion.p>
         <motion.h1
-          className="text-[44px] font-thin leading-none text-ink sm:text-[88px]"
+          className="text-title-44 font-thin leading-none text-ink sm:text-hero-90"
           variants={reveal}
           initial="hidden"
           animate="show"

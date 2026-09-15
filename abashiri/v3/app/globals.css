@@ -28,11 +28,26 @@
 }
 
 @theme {
+  /* ───────────────────────────────────────────────
+     2026-09-16 デザインシステム再整理（V3.0）
+       ・新規要素（体験セクション／詳細ページ／フッター／ページ遷移）で
+         増えていた直値を全部トークンへ寄せた（文字44・ブラー12・角丸4か所）
+       ・近い値は統合：80/88/90→Hero_90 ／ 64/56→Title_56 ／ 40/44/46→Title_44
+         ／ 30/28→Title_28 ／ 22/24→Title_24 ／ 32/34→Title_34 ／ 11/12→Body_12
+         ／ blur 62→65・12→16・100→90 ／ 角丸 24/36→Radius_30
+       ・参照ゼロのトークンは削除：Title_48 / Title_32 / Number_80 / Number_28
+         / Blur_30 / Blur_32 / Blur_42 / Radius_60 / Radius_120 / Radius_12
+     ─────────────────────────────────────────────── */
   /* ══════════ ブランドカラー ══════════
      サイト全体の印象を決める色。網走の空そのもの。 */
   --color-brand: #0070c9; /* Brand_Primary    押せるもの全部・アクティブな状態 */
   --color-sky-top: #35c3ea; /* Brand_SkyTop     空グラデの上端 */
   --color-sky-bottom: #b5d7ff; /* Brand_SkyBottom  空グラデの下端 */
+
+  /* 🟡 2026-09-16 時点で V3.0 の画面からの参照が 0 件の色（V1/V2 からの継承）:
+     Text_Muted / Background_Canvas / Control_Pale / Accent_Green /
+     Accent_Tento / Accent_Sango / Accent_Ryuhyo。
+     ブランドのパレットなので消さずに残してある。使わないと決まったら削除する */
 
   /* ══════════ ベースカラー ══════════ */
   /* ── テキスト ── */
@@ -53,40 +68,35 @@
   --color-tint-ryuhyo: #0368ac; /* Accent_Ryuhyo 流氷クルーズの色かぶせ */
 
   /* ══════════ 角丸（4 段） ══════════ */
-  --radius-12: 12px; /* Radius_12px  場面サムネイル */
   --radius-30: 30px; /* Radius_30px  板の中の面：タブレット内側・プロモカード・ダイアログ */
-  --radius-60: 60px; /* Radius_60px  タブレット外枠 */
   --radius-290: 290px; /* Radius_290px 楕円カード */
 
   /* ══════════ テキストサイズ（11 段） ══════════ */
   /* Title — 見出し */
-  --text-title-48: 48px;
   --text-title-34: 34px;
-  --text-title-32: 32px;
   /* Body — 読ませる文字 */
   --text-body-18: 18px;
   --text-body-16: 16px;
   --text-body-15: 15px;
+  --text-body-13: 13px; /* Body_13px  スマホの説明文 ExtraLight */
+  --text-body-12: 12px; /* Body_12px  最小サイズ。タグ・補助文（11pxもここへ統合） */
   /* Control — ボタン・チップ・小さいラベル */
   --text-control-20: 20px;
   --text-control-14: 14px;
   /* Number — font-num 専用 */
   --text-number-140: 140px;
-  --text-number-80: 80px;
-  --text-number-28: 28px;
 
   /* ══════════ v1.1 のテキストサイズ ══════════
      キービジュアル／ぼーっと体験のカンプ（15071:24641・15176:2415）から。
      Noto Sans JP の Thin 100 / Light 300 / Regular 400 / Medium 500 だけを使う。 */
-  --text-title-44: 44px; /* Title_44px   「ぼーっと体験」「どこでぼーっとする？」 Thin */
+  --text-title-56: 56px; /* Title_56px   詳細ページの見出し（PC）Thin。64pxもここへ統合 */
+  --text-title-44: 44px; /* Title_44px   「ぼーっと体験」「どこでぼーっとする？」 Thin。40/46px もここへ統合 */
+  --text-title-24: 24px; /* Title_24px   スマホのカード見出し Thin。22px もここへ統合 */
   --text-number-120: 120px; /* Number_120px ぼーっとタイマー Inter Thin */
   /* Body_16px / Body_18px は上の既存トークンと同値なのでそのまま使う */
 
   /* v1.1 の角丸・ブラー。すりガラスの面が 65px、背景の引きが 32/42px に変わった */
   --radius-16: 16px; /* Radius_16px  タイマーの札 */
-  --radius-120: 120px; /* Radius_120px カルーセルのカード */
-  --blur-32: 32px; /* Blur_32px  ぼーっと体験の背景（手前） */
-  --blur-42: 42px; /* Blur_42px  ぼーっと体験の背景（奥） */
   --blur-65: 65px; /* Blur_65px  すりガラスのボタン・タイマー */
   --blur-90: 90px; /* Blur_90px  タイマーのラベル札 */
 
@@ -104,7 +114,6 @@
   --blur-6: 6px; /* Blur_6px  触れた時のうっすら。ボタン・カードの幕・タイマー札 */
   --blur-16: 16px; /* Blur_16px 登場時にピントが合う。KV・カード・STEP 切り替え */
   --blur-22: 22px; /* Blur_22px 奥へ引く／背面を隠す。KVスクロール・ダイアログ背面 */
-  --blur-30: 30px; /* Blur_30px すりガラスの面。環境音ボタン・プロモカード */
 
   /* ══════════ シャドウ（4 種） ══════════
      色はすべて --color-shadow(#005fb3)。濃さだけ用途で変える。

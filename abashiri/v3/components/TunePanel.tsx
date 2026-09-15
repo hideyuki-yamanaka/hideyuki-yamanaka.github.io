@@ -112,11 +112,11 @@ export default function TunePanel({
           onPointerDown={startDrag}
           title="ドラッグで移動"
         >
-          <p className="text-[14px] font-black text-[#0070c9]">{title}</p>
+          <p className="text-body-14 font-black text-[#0070c9]">{title}</p>
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => setOpen((o) => !o)}
-            className="cursor-pointer rounded-full bg-[#e6f3ff] px-2 py-0.5 text-[11px] font-bold text-[#0070c9]"
+            className="cursor-pointer rounded-full bg-[#e6f3ff] px-2 py-0.5 text-body-12 font-bold text-[#0070c9]"
           >
             {open ? "たたむ" : "ひらく"}
           </button>

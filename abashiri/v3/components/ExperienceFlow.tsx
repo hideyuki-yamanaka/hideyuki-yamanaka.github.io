@@ -805,7 +805,7 @@ function Watch({
       >
         {/* タグ：カンプ 16060:23117 Main Button
             （白20% / blur100 / 角丸full / px16 py6 / Noto Sans JP Light 20px 行間1.2 白） */}
-        <span className="rounded-full bg-white/20 px-4 py-[6px] text-[20px] font-light leading-[1.2] text-white backdrop-blur-[100px]">
+        <span className="rounded-full bg-white/20 px-4 py-[6px] text-body-20 font-light leading-[1.2] text-white backdrop-blur-90">
           ぼーっとタイマー
         </span>
         {/* 数字箱：カンプ 15152:29287（地 white/10 / blur65 / 角丸16 / 左右44・上下24） */}

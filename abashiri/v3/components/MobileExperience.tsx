@@ -145,7 +145,7 @@ export default function MobileExperience() {
   const controls = (ui || !playing) && !tipsVisible;
 
   const glass =
-    "flex items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-inset ring-white/45 backdrop-blur-[12px] transition-transform active:scale-95";
+    "flex items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-inset ring-white/45 backdrop-blur-16 transition-transform active:scale-95";
 
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-brand text-white">
@@ -192,9 +192,9 @@ export default function MobileExperience() {
       {step === "intro" && (
         <section className="relative z-10 flex h-full flex-col">
           <div className="flex flex-1 -translate-y-6 flex-col items-center justify-center px-6 text-center">
-            <p className="text-[13px] font-light">網走に来る前に、まずやってみよう</p>
-            <p className="mt-2 text-[34px] font-thin">ぼーっと体験</p>
-            <div className="mt-10 space-y-5 text-[14px] font-light leading-[1.9]">
+            <p className="text-body-13 font-light">網走に来る前に、まずやってみよう</p>
+            <p className="mt-2 text-title-34 font-thin">ぼーっと体験</p>
+            <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9]">
               <p>網走は何もないけど、それがたまらない。</p>
               <p>
                 忙しなく過ごす、あなたの日常からそっと離れて、
@@ -211,7 +211,7 @@ export default function MobileExperience() {
             <button
               type="button"
               onClick={() => setStep("pick")}
-              className={`${glass} mt-10 px-8 py-[13px] text-[14px] font-medium leading-none`}
+              className={`${glass} mt-10 px-8 py-[13px] text-body-14 font-medium leading-none`}
             >
               次へ進む
             </button>
@@ -222,7 +222,7 @@ export default function MobileExperience() {
       {/* ── 場所えらび（青グラデ＋横カルーセル） ── */}
       {step === "pick" && (
         <section className="relative z-10 flex h-full flex-col items-center pb-10 pt-20">
-          <h2 className="text-center text-[24px] font-thin">どこでぼーっとする？</h2>
+          <h2 className="text-center text-title-24 font-thin">どこでぼーっとする？</h2>
 
           {/* 横カルーセル（PC版のレスポンシブ。中央のカードが選択） */}
           <div
@@ -240,7 +240,7 @@ export default function MobileExperience() {
                 ref={(el) => {
                   cardEls.current[i] = el;
                 }}
-                className={`relative aspect-[902/586] shrink-0 snap-center overflow-hidden rounded-[36px] border-[3px] border-white/60 transition-opacity duration-300 ${
+                className={`relative aspect-[902/586] shrink-0 snap-center overflow-hidden rounded-30 border-[3px] border-white/60 transition-opacity duration-300 ${
                   i === pickIdx ? "opacity-100" : "opacity-55"
                 }`}
                 style={{ width: CARD_W }}
@@ -253,19 +253,19 @@ export default function MobileExperience() {
           {/* ラベル＋ボタン（中央グループ） */}
           <div className="mt-7 flex flex-col items-center gap-5 px-6">
             <div className="flex flex-col items-center">
-              <p className="text-[13px] font-extralight">ぼーっとスポット {active.no}</p>
-              <p className="mt-1 text-[24px] font-thin">{active.label}</p>
+              <p className="text-body-13 font-extralight">ぼーっとスポット {active.no}</p>
+              <p className="mt-1 text-title-24 font-thin">{active.label}</p>
             </div>
             {active.video ? (
               <button
                 type="button"
                 onClick={dive}
-                className={`${glass} w-full max-w-[342px] py-[15px] text-[15px] font-medium leading-none`}
+                className={`${glass} w-full max-w-[342px] py-[15px] text-body-15 font-medium leading-none`}
               >
                 この場所にする
               </button>
             ) : (
-              <p className="text-[12px] font-light text-white/70">
+              <p className="text-body-12 font-light text-white/70">
                 この場所の体験は準備中です
               </p>
             )}
@@ -362,11 +362,11 @@ export default function MobileExperience() {
           >
             {/* タグ：カンプ 16060:23117 の縮小版（白20%/blur100/角丸full/Light）。
                 サイズはモバイル比率で 14px・px-3 py-1 に🟡仮置き */}
-            <span className="rounded-full bg-white/20 px-3 py-1 text-[14px] font-light leading-[1.2] text-white backdrop-blur-[100px]">
+            <span className="rounded-full bg-white/20 px-3 py-1 text-body-14 font-light leading-[1.2] text-white backdrop-blur-90">
               ぼーっとタイマー
             </span>
-            <div className="rounded-2xl bg-white/10 px-6 py-3 backdrop-blur-[65px]">
-              <p className="font-num text-[44px] font-thin leading-none">
+            <div className="rounded-2xl bg-white/10 px-6 py-3 backdrop-blur-65">
+              <p className="font-num text-title-44 font-thin leading-none">
                 {mm}:{ss}
               </p>
             </div>

@@ -216,11 +216,17 @@ export default function MobileTop() {
                 2026-08-28 ヒデさん指示：位置を勝手に変えずPC踏襲 */}
             <div style={{ width: 415 * 0.8, height: 379 * 0.8 }} className="relative">
               <div className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left scale-[0.8]">
-                <img
-                  src="/img/hero-message.svg"
-                  alt="な〜んにもない、たまらない。"
-                  className="absolute left-[-28px] top-[13.1px] w-[471px]"
-                />
+                {/* ⚠️ 作字は 471x390。415px の枠に直接置くと img の max-width:100% で
+                   415px まで縮められ（実測 390→343.6px）、「網走市観光サイト」との
+                   位置関係が PC とずれる。PC と同じく入れ子の div に逃がして、
+                   幅と高さを明示する（2026-09-16 ヒデさん指摘） */}
+                <div className="absolute left-[-28px] top-[13.1px]">
+                  <img
+                    src="/img/hero-message.svg"
+                    alt="な〜んにもない、たまらない。"
+                    className="h-[390px] w-[471px] max-w-none"
+                  />
+                </div>
                 <img
                   src="/img/text-kanko-site.svg"
                   alt="網走市観光サイト"
@@ -231,7 +237,7 @@ export default function MobileTop() {
             <button
               type="button"
               onClick={() => router.push("/experience")}
-              className="mt-6 flex items-center justify-center rounded-full bg-white/10 px-6 py-[13px] text-[14px] font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
+              className="mt-6 flex items-center justify-center rounded-full bg-white/10 px-6 py-[13px] text-body-14 font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
             >
               ぼーっとしてみる
             </button>
@@ -250,8 +256,8 @@ export default function MobileTop() {
         style={scene(1)}
       >
         <div>
-          <h2 className="text-[28px] font-thin leading-[1.5]">{MSG_TITLE}</h2>
-          <div className="mt-9 space-y-6 text-[14px] font-light leading-[2] tracking-[0.3px]">
+          <h2 className="text-title-28 font-thin leading-[1.5]">{MSG_TITLE}</h2>
+          <div className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.3px]">
             {MSG_BLOCKS.map((lines, i) => (
               <p key={i}>
                 {lines.map((l, j) => (
@@ -287,19 +293,19 @@ export default function MobileTop() {
           >
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[13px] font-extralight">
+                <p className="text-body-13 font-extralight">
                   ぼーっとスポット {spot.no}
                 </p>
-                <p className="mt-1 text-[22px] font-thin leading-tight">
+                <p className="mt-1 text-title-24 font-thin leading-tight">
                   {spot.title}
                 </p>
               </div>
-              <span className="flex shrink-0 items-center gap-1 pb-1 text-[12px] font-extralight">
+              <span className="flex shrink-0 items-center gap-1 pb-1 text-body-12 font-extralight">
                 もっと見る
                 <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
               </span>
             </div>
-            <p className="text-[13px] font-extralight leading-[1.9] tracking-[0.3px]">
+            <p className="text-body-13 font-extralight leading-[1.9] tracking-[0.3px]">
               {spot.body}
             </p>
           </button>
@@ -311,7 +317,7 @@ export default function MobileTop() {
         className="absolute inset-0 flex flex-col justify-center bg-white px-6"
         style={scene(6)}
       >
-        <h2 className="text-[20px] font-thin leading-[1.7] text-ink">
+        <h2 className="text-body-20 font-thin leading-[1.7] text-ink">
           なーんにもない、道東の土地、網走。
           <br />
           そこの味が沁みちゃうんです。
@@ -334,10 +340,10 @@ export default function MobileTop() {
                   className="h-[300px] w-full object-cover"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
-                  <p className="text-[12px] font-extralight">
+                  <p className="text-body-12 font-extralight">
                     素朴なグルメ {card.no}
                   </p>
-                  <p className="mt-0.5 text-[16px] font-light leading-snug">
+                  <p className="mt-0.5 text-body-16 font-light leading-snug">
                     {card.title}
                   </p>
                 </div>
@@ -352,7 +358,7 @@ export default function MobileTop() {
         className="absolute inset-0 flex flex-col justify-center bg-white px-6"
         style={scene(7)}
       >
-        <h2 className="text-[20px] font-thin leading-[1.7] text-ink">
+        <h2 className="text-body-20 font-thin leading-[1.7] text-ink">
           意外とオモロい、網走。
         </h2>
         {/* 2列×2段。タップで詳細ページへ */}
@@ -371,10 +377,10 @@ export default function MobileTop() {
                   className="h-[150px] w-full object-cover"
                 />
               </div>
-              <p className="text-[12px] font-extralight leading-[1.4] text-ink/50">
+              <p className="text-body-12 font-extralight leading-[1.4] text-ink/50">
                 体験・イベント
               </p>
-              <p className="text-[14px] font-light leading-[1.5] text-ink">
+              <p className="text-body-14 font-light leading-[1.5] text-ink">
                 {e.title}
               </p>
             </button>
@@ -398,7 +404,7 @@ export default function MobileTop() {
               key={n.label}
               type="button"
               onClick={() => (n.href ? router.push(n.href) : goTo(n.scene ?? 0))}
-              className="text-[13px] font-light leading-[1.2] text-ink/70"
+              className="text-body-13 font-light leading-[1.2] text-ink/70"
             >
               {n.label}
             </button>
@@ -423,26 +429,8 @@ export default function MobileTop() {
         </div>
       </section>
 
-      {/* ── 進行ドット（右端・タップでも移動） ───── */}
-      <div className="absolute right-3 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2">
-        {Array.from({ length: SCENE_COUNT }).map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`${i + 1}枚目へ`}
-            onClick={() => goTo(i)}
-            className={`block rounded-full transition-all duration-300 ${
-              i === active
-                ? headerDark
-                  ? "h-4 w-[6px] bg-ink/70"
-                  : "h-4 w-[6px] bg-white"
-                : headerDark
-                  ? "size-[6px] bg-ink/25"
-                  : "size-[6px] bg-white/45"
-            } ${active === 6 ? "mix-blend-difference" : ""}`}
-          />
-        ))}
-      </div>
+      {/* 右端の進行ドットは 2026-09-16 ヒデさん指示で撤去。
+         場面移動はスワイプとメニューで足りるため */}
 
       {/* ── ハンバーガーメニュー ─────────────── */}
       {menuOpen && (
@@ -467,7 +455,7 @@ export default function MobileTop() {
               key={item.label}
               type="button"
               onClick={() => go(item)}
-              className="text-[18px] font-light leading-none text-white"
+              className="text-body-18 font-light leading-none text-white"
             >
               {item.label}
             </button>
