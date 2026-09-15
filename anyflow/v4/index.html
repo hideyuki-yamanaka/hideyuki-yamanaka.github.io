@@ -42,6 +42,7 @@
     height: var(--dh, 921px);
     transform-origin: top left;
     transform: scale(var(--s, 1));
+    margin-left: max(0px, calc((100% - var(--sw, 1440px)) / 2));   /* 2026-09-15: 設計幅より広い画面では中央に(縮小時は 0) */
   }
 
   /* ---- Header ---- */
@@ -465,7 +466,7 @@
   html.nopin .np-mock .dm-panel { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .pin-stage {
     position: absolute;
-    left: 0;
+    left: max(0px, calc((100% - var(--swp, 1440px) * var(--sp, 1)) / 2));   /* 2026-09-15: 見た目の幅(1440×縮小率)で中央に。縮小で画面幅ぴったりなら 0 */
     top: 50%;
     width: var(--swp, 1440px);
     height: var(--dh, 921px);
@@ -480,6 +481,7 @@
     width: var(--sw, 1440px);
     transform-origin: top left;
     transform: scale(var(--s));
+    margin-left: max(0px, calc((100% - var(--sw, 1440px)) / 2));   /* 2026-09-15: 中央に */
   }
 
   /* ブラー出現の共通初期状態 (JSが毎フレーム上書きする) */
@@ -823,7 +825,7 @@
      基準の .pin-stage と同じく --sp(=min(1, W/1440, H/921)) 倍で表示する(transform 方式・Safari も同じ)。カンプ(1440)の px をそのまま書ける。
      vh は変形で縮まないので、案の CSS では --rvh(=1vh/--sp) で書く。案12(sticky カード)は transform と sticky が相性が悪いので等倍のまま */
   #results.rfx-on { --rvh: calc(1vh / var(--sp, 1)); }
-  html:not(.mb) #results.rfx-on:not(.rfx-12):not(.rfx-30):not(.rfx-39):not(.rfx-41) .pin-stage { position: absolute; left: 0; top: 0; width: var(--swp, 1440px); height: calc(100 * var(--rvh)); transform: scale(var(--sp, 1)); transform-origin: left top; }
+  html:not(.mb) #results.rfx-on:not(.rfx-12):not(.rfx-30):not(.rfx-39):not(.rfx-41) .pin-stage { position: absolute; left: max(0px, calc((100% - var(--swp, 1440px) * var(--sp, 1)) / 2)); top: 0; width: var(--swp, 1440px); height: calc(100 * var(--rvh)); transform: scale(var(--sp, 1)); transform-origin: left top; }
   html:not(.mb) #results.rfx-12 .pin-stage, html:not(.mb) #results.rfx-30 .pin-stage, html:not(.mb) #results.rfx-39 .pin-stage, html:not(.mb) #results.rfx-41 .pin-stage { position: relative; top: auto; left: auto; width: 100%; height: auto; transform: none; display: block; }   /* sticky を使う案は等倍 */
   html:not(.mb) #results.rfx-on .res2 { width: min(1138px, 100% - 120px); max-width: none; margin: 0 auto; }
   html:not(.mb) #results.rfx-on .res2-caret { height: 1em; }
@@ -2381,11 +2383,13 @@
   #conversion.cv-ink-light .cv-content.cv-content, #conversion.cv-ink-light .cv-foot.cv-foot { color: #fff; border-top-color: rgba(255,255,255,.22); }   /* 一体型の共通ルール(同じ強さ)より後勝ちにならないよう、クラスを重ねて強くする */
   #conversion.cv-ink-light .cv-btn { background: #fff; color: #111; }
   #conversion.cv-ink-light .cv-btn:hover { background: var(--brand-cyan); color: #fff; }
+  /* 【2026-09-15 ヒデさん指定】ボタンのホバー色(パネル): --cv-hov-bg / --cv-hov-fg。白文字の案でも同じ指定が勝つ */
+  #conversion .cv-btn.cv-btn:hover { background: var(--cv-hov-bg, var(--brand-cyan)); color: var(--cv-hov-fg, #fff); }
   /* 共通: フッター一体型(1・2・3・8・10) */
   #conversion.cv-fi { position: relative; overflow: hidden; padding: 0; }
   #conversion.cv-fi .cv-inner { position: static; width: auto; height: auto; overflow: visible; margin: 0; }
   #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: 150px auto 120px; }
-  #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; position: relative; z-index: 2; padding: 28px 120px 36px; border-top: 1px solid rgba(0,0,0,.16); color: var(--ink-strong); }
+  #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; position: relative; z-index: 2; padding: 28px max(120px, calc((100% - 1200px) / 2)) 36px; border-top: 1px solid rgba(0,0,0,.16); color: var(--ink-strong); }   /* 左右は本文と同じグリッド(1200px 中央) */
   .cv-foot-r { display: flex; align-items: center; gap: 28px; }
   /* 案11: ボタンをフッター帯に(見出し・本文は左) */
   #conversion.cvs-11 .cv-content { width: min(1200px, 100% - 240px); text-align: left; margin: 140px auto 110px; }
@@ -5958,6 +5962,8 @@ function applyCvStyle(fromSwitch) {
   sec.classList.toggle('cv-fi', !!st.fi && !st.card);
   const ft = document.getElementById('footer'); if (ft) ft.classList.toggle('ft-hidden', !!st.fi);
   sec.style.setProperty('--cv-h', ((params.cv && params.cv.h) || 416) + 'px');   /* 縦幅(パネル) */
+  { const HV = { cyan: ['#0EBBFF', '#fff'], black: ['#090909', '#fff'], white: ['#ffffff', '#111'], pink: ['#FF5D97', '#fff'], navy: ['#0E4497', '#fff'] };
+    const hv = HV[(params.cv && params.cv.btnHover) || 'cyan'] || HV.cyan; sec.style.setProperty('--cv-hov-bg', hv[0]); sec.style.setProperty('--cv-hov-fg', hv[1]); }
   sec.style.setProperty('--cv-gap', ((params.cv && params.cv.gapTop) || 0) + 'px');   /* 導入事例との間隔 */
   sec.style.setProperty('--cv-fade0', ((params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0) + '%');   /* 溶け込みの始まり */
   sec.style.setProperty('--cv-fade1', ((params.cv && params.cv.fade1 != null) ? params.cv.fade1 : 44) + '%');   /* 溶け込みの終わり */
@@ -14493,8 +14499,12 @@ function fit() {
   }
   const s = Math.min(1, w / DW);                   // 設計幅以上では等倍(100%表示)
   const sp = Math.min(1, w / DW, h / DH);          // ピンは縦も収まるように
-  stageW = Math.max(DW, w / s);
-  stagePinW = Math.max(DW, w / sp);
+  /* 【2026-09-15 ヒデさん指定・レスポンシブ】設計幅(1440)より広い画面では、ステージを画面幅まで広げず 1440 のまま中央に置く
+     (広げると絶対配置の要素(ビジョンの見出しなど)が左に寄ったまま動かない。縮小する時は従来どおり画面幅ぴったり)。スマホは従来どおり */
+  stageW = (!isMobile && s >= 1) ? DW : Math.max(DW, w / s);
+  /* 固定(pin)のステージも PC は常に設計幅(1440)。横長で縦が低い窓(例 1512×828・1920×800)では以前 w/sp まで広げていたため、
+     縮小はしても中身が左に寄ったままだった(ビジョンの見出しが中央から −118〜−329px)。1440×sp の枠を中央に置く(枠の外は pin-vp の地色) */
+  stagePinW = isMobile ? Math.max(DW, w / sp) : DW;
   const st = document.documentElement.style;
   st.setProperty('--s', s);
   st.setProperty('--sp', sp);
@@ -17625,6 +17635,7 @@ function buildPanel() {
   CV_DYN.push(catCv.lastElementChild);
   varRowX('cvColor', CV_COLORS, () => cvColorKey(), v => { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = String(v); cvApplyColor(String(v)); }, { snap: VAR_SNAP.cv, after: () => { applyCvStyle(); renderFrame(); } });
   segRow('文字色', [['自動', 'auto'], ['黒', 'dark'], ['白', 'light']], () => (cvv().ink || 'auto'), v => { cvv().ink = v; applyCvStyle(); markDirty(); renderFrame(); });
+  segRow('ボタンのホバー色', [['シアン', 'cyan'], ['黒', 'black'], ['白', 'white'], ['ピンク', 'pink'], ['紺', 'navy']], () => (cvv().btnHover || 'cyan'), v => { cvv().btnHover = v; applyCvStyle(); markDirty(); });
   note('URL: ?cvc=C1〜C10。選ぶと色・形・ディザ・暗さの値が下のつまみに入ります。細かく変えたら ⋯「いまの設定で上書き」でその案に保存できます。');
   sub(catCv, 'グラデーションの色（5段・中心→外側）'); CV_DYN.push(catCv.lastElementChild);
   ['中心（0%）', '26%', '主色（59%）', '76%', '外側（100%）'].forEach((lab, i) => colorRow(lab, () => (cvv().colors || CV_DEF_COLORS)[i], v => { const a = Array.isArray(cvv().colors) ? cvv().colors.slice() : CV_DEF_COLORS.slice(); a[i] = v; cvv().colors = a; applyCvStyle(); }, '5段グラデの' + (i + 1) + '番目。位置はカンプの 0 / 26 / 59 / 76 / 100%。'));
