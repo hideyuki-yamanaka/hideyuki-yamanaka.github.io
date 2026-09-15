@@ -256,9 +256,9 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
     /* 案1【採用候補】育つ一列：小さな4枚が、中央に来るまでに実寸へ伸びる */
     case 1:
       return (
-        <div className="flex w-full flex-col gap-[90px]">
-          <HTitle className="px-[147px]" />
-          <div className="flex w-full gap-[5px] px-[40px]">
+        <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
+          <HTitle className="px-6 sm:px-[147px]" />
+          <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
             {ITEMS.map((it, i) => {
               const [a, b] = seg(i, 4, 0.3);
               return (
@@ -281,7 +281,7 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
     /* 案2 育つ一列（縦書き見出し）：案1と同じ育ち方で、見出しだけ縦書き＋右付け */
     case 2:
       return (
-        <div className="flex w-full items-start gap-[69px] pl-[147px]">
+        <div className="flex w-full items-start gap-8 sm:gap-[69px] pl-6 sm:pl-[147px]">
           <VTitle className="mt-[40px]" />
           <div className="flex min-w-0 flex-1 gap-[5px]">
             {ITEMS.map((it, i) => {
@@ -333,7 +333,7 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
 /* 案6/案8 重なりがほどける（扇）。quiet=回転なしの静かな開き方 */
 function FanOut({ p, quiet = false }: { p: MotionValue<number>; quiet?: boolean }) {
   return (
-    <div className="flex w-full flex-col items-center gap-[90px]">
+    <div className="flex w-full flex-col items-center gap-12 sm:gap-[90px]">
       <HTitle />
       <div className="relative h-[520px] w-full">
         {ITEMS.map((it, i) => (
@@ -379,7 +379,7 @@ function FanCard({
 /* 案9 上下にほどける（扇の縦版） */
 function FanVertical({ p }: { p: MotionValue<number> }) {
   return (
-    <div className="flex w-full items-start gap-[69px] px-[120px]">
+    <div className="flex w-full items-start gap-8 sm:gap-[69px] px-6 sm:px-[120px]">
       <VTitle className="mt-[40px]" />
       <div className="relative h-[620px] min-w-0 flex-1">
         {ITEMS.map((it, i) => (
@@ -418,9 +418,9 @@ function VFanCard({
 /* 案3 中央から左右へ開く一列 */
 function SpreadRow({ p }: { p: MotionValue<number> }) {
   return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full justify-center gap-[5px] px-[40px]">
+    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
+      <HTitle className="px-6 sm:px-[147px]" />
+      <div className="flex w-full justify-center gap-[5px] px-4 sm:px-[40px]">
         {ITEMS.map((it, i) => (
           <SpreadCell key={it.title} it={it} i={i} p={p} />
         ))}
@@ -460,9 +460,9 @@ function SpreadCell({
 /* 案4 縦に伸びる一列（低い帯 → 背の高い写真） */
 function TallGrowRow({ p }: { p: MotionValue<number> }) {
   return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full gap-[5px] px-[40px]">
+    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
+      <HTitle className="px-6 sm:px-[147px]" />
+      <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
         {ITEMS.map((it, i) => (
           <TallCell key={it.title} it={it} i={i} p={p} />
         ))}
@@ -541,9 +541,9 @@ function GridCell({
 /* 案7 奥行きのある一列（中央が手前・両端が奥） */
 function DepthRow({ p }: { p: MotionValue<number> }) {
   return (
-    <div className="flex w-full flex-col gap-[90px]">
-      <HTitle className="px-[147px]" />
-      <div className="flex w-full items-center gap-[5px] px-[40px]">
+    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
+      <HTitle className="px-6 sm:px-[147px]" />
+      <div className="flex w-full items-center gap-[5px] px-4 sm:px-[40px]">
         {ITEMS.map((it, i) => (
           <DepthCell key={it.title} it={it} i={i} p={p} />
         ))}
@@ -585,7 +585,7 @@ function HeroAndSides({ p }: { p: MotionValue<number> }) {
   const sideS = useTransform(p, [0, 1], [0.6, 1]);
   const sideO = useTransform(p, [0, 0.6], [0.3, 1]);
   return (
-    <div className="mx-auto flex w-[1260px] max-w-[94%] flex-col gap-[90px]">
+    <div className="mx-auto flex w-[1260px] max-w-[94%] flex-col gap-12 sm:gap-[90px]">
       <HTitle />
       <div className="flex items-stretch gap-6">
         <div className="flex w-[660px] max-w-[54%] flex-col gap-6">
@@ -669,7 +669,7 @@ export default function EventSection() {
         （2026-09-16 ヒデさん指摘。赤背景テストで「背景の透け」ではないことは確認済み） */}
     <section
       id="events"
-      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white py-[180px]"
+      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white py-[90px] sm:py-[180px]"
     >
       {ready ? (
         <Scrolled pat={pat} container={scRef} />

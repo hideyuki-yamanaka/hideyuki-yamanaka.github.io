@@ -80,10 +80,10 @@ export function InfoTable({
       {spot.info.map((row) => (
         <div
           key={row.label}
-          className={`flex gap-6 border-b py-4 first:border-t ${line}`}
+          className={`flex gap-4 border-b py-4 first:border-t sm:gap-6 ${line}`}
         >
           <dt
-            className={`w-[96px] shrink-0 text-body-14 font-light leading-[2] ${label}`}
+            className={`w-[72px] shrink-0 text-body-14 font-light leading-[2] sm:w-[96px] ${label}`}
           >
             {row.label}
           </dt>
@@ -132,7 +132,7 @@ export function MapEmbed({
       <iframe
         title={`${spot.name} 周辺マップ`}
         src={`https://maps.google.com/maps?q=${encodeURIComponent(spot.map.query)}&z=11&hl=ja&output=embed`}
-        className={`h-[420px] w-full border-0 ${light ? "rounded-[24px]" : ""}`}
+        className={`h-[280px] w-full border-0 sm:h-[420px] ${light ? "rounded-[24px]" : ""}`}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
       />
@@ -209,9 +209,9 @@ function FooterBlocks({
   const light = kind !== "plain";
   const box =
     kind === "glass"
-      ? "w-full rounded-16 bg-white/10 p-[56px] backdrop-blur-65"
+      ? "w-full rounded-16 bg-white/10 p-7 sm:p-[56px] backdrop-blur-65"
       : kind === "solid"
-        ? "w-full rounded-16 bg-black/45 p-[56px]"
+        ? "w-full rounded-16 bg-black/45 p-7 sm:p-[56px]"
         : "flex w-full flex-col gap-6";
   const h = light
     ? "mb-6 text-title-28 font-thin leading-[1.6] text-white"
@@ -264,7 +264,7 @@ function HeroTitle({
         {spot.category} {spot.no}
       </p>
       <h1
-        className={`font-thin leading-none opacity-95 ${sm ? "text-[56px]" : "text-[80px]"}`}
+        className={`font-thin leading-none opacity-95 ${sm ? "text-[34px] sm:text-[56px]" : "text-[40px] sm:text-[80px]"}`}
       >
         {spot.name}
       </h1>
@@ -318,7 +318,7 @@ export function V1Parallax({ spot }: VProps) {
         {/* 左下の見出し。小さめ＋下のセクションから離す
             （2026-09-15 ヒデさん指示：文字が大きく、下にくっつきすぎていた） */}
         <motion.div
-          className="absolute inset-x-0 bottom-0 px-[120px] pb-[180px]"
+          className="absolute inset-x-0 bottom-0 px-6 sm:px-[120px] pb-[90px] sm:pb-[180px]"
           style={{ opacity: titleOp, y: titleY }}
         >
           <HeroTitle spot={spot} size="sm" />
@@ -335,7 +335,7 @@ export function V1Parallax({ spot }: VProps) {
                 key={p}
                 src={p}
                 alt=""
-                className={`h-[420px] w-full object-cover ${i % 2 ? "self-end" : ""}`}
+                className={`h-[240px] w-full object-cover sm:h-[420px] ${i % 2 ? "self-end" : ""}`}
                 variants={reveal}
                 initial="hidden"
                 whileInView="show"
@@ -366,7 +366,7 @@ export function V2Hero({ spot }: VProps) {
       <div className="relative h-dvh w-full overflow-hidden">
         <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
-        <div className="absolute inset-x-0 bottom-0 px-[120px] pb-[88px]">
+        <div className="absolute inset-x-0 bottom-0 px-6 sm:px-[120px] pb-[56px] sm:pb-[88px]">
           <HeroTitle spot={spot} />
         </div>
       </div>
@@ -374,7 +374,7 @@ export function V2Hero({ spot }: VProps) {
         <Sections spot={spot} root={ref} />
         <div className="flex gap-2">
           {spot.photos.map((p) => (
-            <img key={p} src={p} alt="" className="h-[280px] min-w-0 flex-1 object-cover" />
+            <img key={p} src={p} alt="" className="h-[180px] min-w-0 flex-1 object-cover sm:h-[280px]" />
           ))}
         </div>
         <FooterBlocks spot={spot} root={ref} />
@@ -392,29 +392,27 @@ export function V3Editorial({ spot }: VProps) {
     <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-white">
       <BackPill dark />
       <div className="mx-auto w-[1200px] max-w-full px-6 pb-[120px] pt-[120px]">
-        <div className="flex items-start gap-[56px]">
-          <div className="flex shrink-0 items-start gap-6 pt-2">
+        <div className="flex items-start gap-7 sm:p-[56px]">
+          <div className="flex w-full items-start gap-6 pt-2 sm:w-auto sm:shrink-0">
             <h1
-              className="whitespace-nowrap text-[56px] font-thin leading-[1.2] text-ink"
-              style={{ writingMode: "vertical-rl" }}
+              className="text-[36px] font-thin leading-[1.2] text-ink [writing-mode:horizontal-tb] sm:whitespace-nowrap sm:text-[56px] sm:[writing-mode:vertical-rl]"
             >
               {spot.name}
             </h1>
             <p
-              className="whitespace-nowrap pt-1 text-body-14 font-extralight tracking-[2px] text-ink/50"
-              style={{ writingMode: "vertical-rl" }}
+              className="pt-1 text-body-14 font-extralight tracking-[2px] text-ink/50 [writing-mode:horizontal-tb] sm:whitespace-nowrap sm:[writing-mode:vertical-rl]"
             >
               {spot.category} {spot.no}｜{spot.kana}
             </p>
           </div>
-          <div className="relative h-[560px] min-w-0 flex-1 overflow-hidden">
+          <div className="relative h-[300px] w-full min-w-0 overflow-hidden sm:h-[560px] sm:flex-1">
             <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
           </div>
         </div>
         <p className="mt-10 text-body-18 font-extralight leading-[2.2] tracking-[0.7px] text-ink/80">
           {spot.lead}
         </p>
-        <div className="mt-[88px] flex items-start gap-[72px]">
+        <div className="mt-12 flex flex-col items-start gap-10 sm:mt-[88px] sm:flex-row sm:gap-[72px]">
           <div className="flex min-w-0 flex-1 flex-col gap-[72px]">
             <Sections spot={spot} root={ref} />
             <div className="flex flex-col gap-6">
@@ -425,7 +423,7 @@ export function V3Editorial({ spot }: VProps) {
             </div>
             <div className="flex gap-2">
               {spot.photos.map((p) => (
-                <img key={p} src={p} alt="" className="h-[240px] min-w-0 flex-1 object-cover" />
+                <img key={p} src={p} alt="" className="h-[150px] min-w-0 flex-1 object-cover sm:h-[240px]" />
               ))}
             </div>
             <div className="flex flex-col gap-6">
@@ -433,7 +431,7 @@ export function V3Editorial({ spot }: VProps) {
               <MapEmbed spot={spot} />
             </div>
           </div>
-          <aside className="sticky top-10 w-[360px] shrink-0 bg-sky-bottom/40 p-8">
+          <aside className="w-full shrink-0 bg-sky-bottom/40 p-6 sm:sticky sm:top-10 sm:w-[360px] sm:p-8">
             <h2 className="mb-4 text-body-18 font-thin text-ink">基本情報</h2>
             <InfoTable spot={spot} />
           </aside>
@@ -459,16 +457,16 @@ export function V4SkyGlass({ spot }: VProps) {
           <p className="text-body-18 font-thin leading-[1.2] text-white/90 [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
             {spot.category} {spot.no}
           </p>
-          <h1 className="text-[64px] font-thin leading-none text-white">{spot.name}</h1>
+          <h1 className="text-[36px] font-thin leading-none text-white sm:text-[64px]">{spot.name}</h1>
           <p className="text-body-14 font-extralight tracking-[2px] text-white/70">{spot.kana}</p>
-          <div className="relative h-[520px] w-full overflow-hidden rounded-[36px] border-[3px] border-white/60">
+          <div className="relative h-[300px] w-full overflow-hidden rounded-[24px] border-[3px] border-white/60 sm:h-[520px] sm:rounded-[36px]">
             <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
           </div>
           <p className="text-body-18 font-extralight leading-[2.2] tracking-[0.7px] text-white/90">
             {spot.lead}
           </p>
         </div>
-        <div className="w-full rounded-16 bg-white/10 p-[56px] backdrop-blur-65">
+        <div className="w-full rounded-16 bg-white/10 p-7 sm:p-[56px] backdrop-blur-65">
           <Sections spot={spot} root={ref} light />
         </div>
         <FooterBlocks spot={spot} root={ref} kind="glass" />
@@ -511,7 +509,7 @@ export function V8SplitSticky({ spot }: VProps) {
       >
         <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
         <div className={VEIL} />
-        <div className="absolute inset-x-0 bottom-0 px-[120px] pb-[88px]">
+        <div className="absolute inset-x-0 bottom-0 px-6 sm:px-[120px] pb-[56px] sm:pb-[88px]">
           <HeroTitle spot={spot} />
         </div>
       </motion.div>
@@ -519,11 +517,11 @@ export function V8SplitSticky({ spot }: VProps) {
           -mt-[100dvh] でファーストビューに重ねているので、
           「同じ場所で切り替わった」ように見える */}
       <motion.div
-        className="relative -mt-[100dvh] flex w-full items-start"
+        className="relative -mt-[100dvh] flex w-full flex-col items-start sm:flex-row"
         style={{ filter: colFilter, opacity: colOpacity }}
       >
         {/* 左：貼り付く写真（章に合わせてクロスフェード） */}
-        <div className="sticky top-0 h-dvh w-1/2 shrink-0 overflow-hidden">
+        <div className="sticky top-0 h-[45dvh] w-full shrink-0 overflow-hidden sm:h-dvh sm:w-1/2">
           {shots.map((src, i) => (
             <motion.img
               key={src + i}
@@ -536,11 +534,11 @@ export function V8SplitSticky({ spot }: VProps) {
           ))}
         </div>
         {/* 右：流れる文章。章ごとに左の写真を切り替える */}
-        <div className="flex w-1/2 flex-col">
+        <div className="flex w-full flex-col sm:w-1/2">
           {spot.sections.map((s, i) => (
             <motion.div
               key={i}
-              className="flex min-h-dvh flex-col justify-center gap-6 px-[88px]"
+              className="flex min-h-[70dvh] flex-col justify-center gap-6 px-6 sm:min-h-dvh sm:px-[88px]"
               onViewportEnter={() => setIdx(i % shots.length)}
               viewport={{ root: ref, amount: 0.5 }}
             >
@@ -590,7 +588,7 @@ export function V10BigQuiet({ spot }: VProps) {
           {spot.category} {spot.no}
         </motion.p>
         <motion.h1
-          className="text-[88px] font-thin leading-none text-ink"
+          className="text-[44px] font-thin leading-none text-ink sm:text-[88px]"
           variants={reveal}
           initial="hidden"
           animate="show"
@@ -606,11 +604,11 @@ export function V10BigQuiet({ spot }: VProps) {
           {spot.kana}
         </motion.p>
       </div>
-      <div className="flex flex-col items-center gap-[180px] pb-[180px]">
+      <div className="flex flex-col items-center gap-[180px] pb-[90px] sm:pb-[180px]">
         {spot.sections.map((s, i) => (
-          <div key={i} className="flex w-[1240px] max-w-[94%] items-start gap-[48px]">
+          <div key={i} className="flex w-[1240px] max-w-[94%] flex-col items-start gap-8 sm:flex-row sm:gap-[48px]">
             {/* 写真：枠は固定、中の絵だけ育つ（レイアウトは動かない） */}
-            <div className="h-[680px] min-w-0 flex-1 overflow-hidden">
+            <div className="h-[380px] w-full min-w-0 overflow-hidden sm:h-[680px] sm:flex-1">
               <motion.img
                 src={shots[i % shots.length]}
                 alt=""
@@ -631,15 +629,13 @@ export function V10BigQuiet({ spot }: VProps) {
             >
               {s.heading && (
                 <h3
-                  className="whitespace-nowrap text-title-28 font-thin leading-[1.6] text-ink"
-                  style={{ writingMode: "vertical-rl" }}
+                  className="whitespace-nowrap text-title-28 font-thin leading-[1.6] text-ink [writing-mode:horizontal-tb] sm:[writing-mode:vertical-rl]"
                 >
                   {s.heading}
                 </h3>
               )}
               <p
-                className="h-[600px] text-body-14 font-extralight leading-[2.2] tracking-[0.7px] text-ink/70"
-                style={{ writingMode: "vertical-rl" }}
+                className="text-body-14 font-extralight leading-[2.2] tracking-[0.7px] text-ink/70 sm:h-[600px] [writing-mode:horizontal-tb] sm:[writing-mode:vertical-rl]"
               >
                 {s.text}
               </p>

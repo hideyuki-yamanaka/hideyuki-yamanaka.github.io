@@ -18,7 +18,6 @@
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 export const FOOTER_EVENT = "abashiri:footer";
 
@@ -89,13 +88,13 @@ function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
     ⚠️ 元アセットは「白い吹き出し＋青文字／白のたまらない」で濃い背景用。
     白地では消えてしまうので、白⇄青を入れ替えた反転版
     hero-message-blue.svg を使う（light=濃い背景のときだけ元のまま） */
-function Logo({ h, light = false }: { h: number; light?: boolean }) {
+function Logo({ cls, light = false }: { cls: string; light?: boolean }) {
   return (
     <img
       src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
       alt="な〜んにもない たまらない"
-      style={{ height: h }}
-      className="w-auto"
+      /* 高さはクラスで指定（スマホでは小さく。style だと切り替えられない） */
+      className={`w-auto ${cls}`}
     />
   );
 }
@@ -117,7 +116,7 @@ function NavLinks({
   const items =
     only === "left" ? LINKS.slice(0, half) : only === "right" ? LINKS.slice(half) : LINKS;
   return (
-    <nav className={`flex flex-wrap items-center gap-x-8 gap-y-3 ${className}`}>
+    <nav className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8 ${className}`}>
       {items.map((l) =>
         l.href ? (
           <Link
@@ -166,17 +165,6 @@ function SnsRow({ light = false, size = 20 }: { light?: boolean; size?: number }
   );
 }
 
-/* 画面に入ったら静かに現れる（サイト共通の質感） */
-const reveal = {
-  hidden: { opacity: 0, y: 24, filter: "blur(10px)" },
-  show: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 1.0, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
-
 /* ── 案ごとの中身 ─────────────────────────── */
 
 function Body({ pat }: { pat: number }) {
@@ -184,8 +172,8 @@ function Body({ pat }: { pat: number }) {
     /* 案2 空に還る：青い空の中に白の作字。KVと同じ世界で終わらせる */
     case 2:
       return (
-        <div className="flex w-full flex-col items-center gap-[64px] px-6 py-[130px]">
-          <Logo h={230} light />
+        <div className="flex w-full flex-col items-center gap-10 px-6 py-[80px] sm:gap-[64px] sm:py-[130px]">
+          <Logo cls="h-[150px] sm:h-[230px]" light />
           <div className="flex flex-col items-center gap-8">
             <NavLinks light className="justify-center" />
             <SnsRow light />
@@ -196,10 +184,10 @@ function Body({ pat }: { pat: number }) {
     /* 案3 左に大きく：作字を左へ寄せ、情報は右端にそろえる（非対称の余白が効く） */
     case 3:
       return (
-        <div className="flex w-full items-center justify-between gap-[80px] px-[120px] py-[120px]">
-          <Logo h={220} />
-          <div className="flex flex-col items-end gap-8">
-            <NavLinks className="justify-end" />
+        <div className="flex w-full flex-col items-center gap-10 px-6 py-[80px] sm:flex-row sm:items-center sm:justify-between sm:gap-[80px] sm:px-[120px] sm:py-[120px]">
+          <Logo cls="h-[150px] sm:h-[220px]" />
+          <div className="flex flex-col items-center gap-8 sm:items-end">
+            <NavLinks className="justify-center sm:justify-end" />
             <SnsRow />
           </div>
         </div>
@@ -208,10 +196,10 @@ function Body({ pat }: { pat: number }) {
     /* 案4 ポスター：作字をうんと大きく、下端にリンクを一行だけ */
     case 4:
       return (
-        <div className="flex w-full flex-col items-center gap-[100px] px-[120px] pb-[64px] pt-[140px]">
-          <Logo h={300} />
-          <div className="flex w-full items-center justify-between gap-10">
-            <NavLinks />
+        <div className="flex w-full flex-col items-center gap-12 px-6 pb-10 pt-[80px] sm:gap-[100px] sm:px-[120px] sm:pb-[64px] sm:pt-[140px]">
+          <Logo cls="h-[170px] sm:h-[300px]" />
+          <div className="flex w-full flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
+            <NavLinks className="justify-center sm:justify-start" />
             <SnsRow size={18} />
           </div>
         </div>
@@ -220,10 +208,13 @@ function Body({ pat }: { pat: number }) {
     /* 案5 作字が中心：リンクを左右に振り分けて、作字を真ん中の軸にする */
     case 5:
       return (
-        <div className="flex w-full flex-col items-center gap-[56px] px-[120px] py-[120px]">
-          <div className="flex w-full items-center justify-center gap-[72px]">
+        <div className="flex w-full flex-col items-center gap-10 px-6 py-[80px] sm:gap-[56px] sm:px-[120px] sm:py-[120px]">
+          {/* スマホでは左右振り分けをやめて、ロゴの下に一列で置く */}
+          <Logo cls="h-[150px] sm:hidden" />
+          <NavLinks className="justify-center sm:hidden" />
+          <div className="hidden w-full items-center justify-center gap-[72px] sm:flex">
             <NavLinks className="flex-1 justify-end" only="left" />
-            <Logo h={210} />
+            <Logo cls="h-[210px]" />
             <NavLinks className="flex-1 justify-start" only="right" />
           </div>
           <SnsRow />
@@ -233,8 +224,8 @@ function Body({ pat }: { pat: number }) {
     /* 案1（既定）中央に大きく：作字を真ん中に、上下にたっぷり余白 */
     default:
       return (
-        <div className="flex w-full flex-col items-center gap-[72px] px-6 py-[140px]">
-          <Logo h={240} />
+        <div className="flex w-full flex-col items-center gap-12 px-6 py-[80px] sm:gap-[72px] sm:py-[140px]">
+          <Logo cls="h-[160px] sm:h-[240px]" />
           <div className="flex flex-col items-center gap-8">
             <NavLinks className="justify-center" />
             <SnsRow />
@@ -265,20 +256,23 @@ export default function SiteFooter() {
   /* 案2だけ空グラデ＋白文字。ほかは白地 */
   const sky = pat === 2;
   return (
-    <motion.footer
-      /* ⚠️ relative z-10 は必須。前の兄弟に sticky（positioned）があると
-         描画順で上に来て、フッターの地が沈む（体験セクションで実際に起きた） */
-      className={`relative z-10 w-full ${
+    /* ⚠️ フッターは登場アニメを付けない。理由は2つ:
+       ①filter/opacity を動かすと要素が合成レイヤーになり、アニメ完了後も
+         blur(0.003px)・opacity 0.9997 が残って上の白セクションとの境目に
+         薄いヘアラインが出る（2026-09-16 実測）
+       ②whileInView はこのページ構成（スクロールする箱の中＋タブ非表示時）で
+         発火しないことがあり、その場合フッターが opacity:0 のまま見えなくなる
+       ページの末尾なので、素直に常時表示にするのがいちばん確実 */
+    /* relative z-10：前の兄弟に sticky があると描画順で上に来て地が沈むため必須。
+       -mt-[2px]：上のセクションと2px重ねて継ぎ目を出さない */
+    <footer
+      className={`relative z-10 -mt-[2px] w-full ${
         sky
           ? "bg-gradient-to-b from-sky-bottom via-brand/80 to-brand"
           : "bg-white"
       }`}
-      variants={reveal}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.2 }}
     >
       <Body pat={pat} />
-    </motion.footer>
+    </footer>
   );
 }
