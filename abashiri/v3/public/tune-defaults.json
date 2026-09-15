@@ -156,5 +156,8 @@
   "events": {
     "pattern": 1,
     "tailPad": 982
+  },
+  "pageTrans": {
+    "pattern": 1
   }
 }

@@ -170,6 +170,33 @@ function Caption({
   );
 }
 
+/** カードのリンク枠。カード全体がホバー領域で、中の写真が枠内で拡大する。
+    グルメのカードと同じ言葉遣い（1.06倍・700ms・ease-out）。
+    ⚠️ 拡大はこの枠に掛ける。中の写真は framer が transform を直接書くので、
+    写真側に hover クラスを足しても上書きされて効かない（2026-09-16） */
+function CardLink({
+  it,
+  className = "",
+  style,
+  children,
+}: {
+  it: EventItem;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`overflow-hidden ${className}`} style={style}>
+      <Link
+        href={`/spot/${it.slug}`}
+        className="block size-full transition-transform duration-700 ease-out hover:scale-[1.06]"
+      >
+        {children}
+      </Link>
+    </div>
+  );
+}
+
 /* ── 動きの土台 ─────────────────────────────
    写真の「場所」は最初から最終サイズで確保しておき、
    中の絵だけ scale で小さい状態から実寸へ育てる。
@@ -198,14 +225,14 @@ function GrowShot({
   const s = useTransform(p, [from, to], [start, 1]);
   const o = useTransform(p, [from, (from + to) / 2], [0.35, 1]);
   return (
-    <div className={`overflow-hidden ${className}`} style={style}>
+    <CardLink it={it} className={className} style={style}>
       <motion.img
         src={it.img}
         alt={it.title}
         className="size-full object-cover"
         style={{ scale: s, opacity: o, transformOrigin: origin }}
       />
-    </div>
+    </CardLink>
   );
 }
 
@@ -339,10 +366,12 @@ function FanCard({
   const s = useTransform(open, [0, 1], [0.8, 1]);
   return (
     <motion.div
-      className="absolute left-1/2 top-0 h-[520px] w-[340px] overflow-hidden"
+      className="absolute left-1/2 top-0 h-[520px] w-[340px]"
       style={{ x, rotate: rot, scale: s, marginLeft: -170, zIndex: 10 - i }}
     >
-      <img src={it.img} alt={it.title} className="size-full object-cover" />
+      <CardLink it={it} className="size-full">
+        <img src={it.img} alt={it.title} className="size-full object-cover" />
+      </CardLink>
     </motion.div>
   );
 }
@@ -376,10 +405,12 @@ function VFanCard({
   const s = useTransform(open, [0, 1], [0.78, 1]);
   return (
     <motion.div
-      className="absolute left-1/2 top-[40px] h-[460px] w-[300px] overflow-hidden"
+      className="absolute left-1/2 top-[40px] h-[460px] w-[300px]"
       style={{ x, y, scale: s, marginLeft: -150, zIndex: 10 - i }}
     >
-      <img src={it.img} alt={it.title} className="size-full object-cover" />
+      <CardLink it={it} className="size-full">
+        <img src={it.img} alt={it.title} className="size-full object-cover" />
+      </CardLink>
     </motion.div>
   );
 }
@@ -413,14 +444,14 @@ function SpreadCell({
   const o = useTransform(p, [0, 0.5], [0.4, 1]);
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-5">
-      <div className="h-[540px] w-full overflow-hidden">
+      <CardLink it={it} className="h-[540px] w-full">
         <motion.img
           src={it.img}
           alt={it.title}
           className="size-full object-cover"
           style={{ x, scale: s, opacity: o }}
         />
-      </div>
+      </CardLink>
       <Caption it={it} />
     </div>
   );
@@ -497,10 +528,12 @@ function GridCell({
   const s = useTransform(p, [0, 1], [0.72, 1]);
   return (
     <motion.div
-      className="absolute left-1/2 top-1/2 h-[380px] w-[440px] overflow-hidden"
+      className="absolute left-1/2 top-1/2 h-[380px] w-[440px]"
       style={{ x, y, scale: s, marginLeft: -220, marginTop: -190, zIndex: 10 - i }}
     >
-      <img src={it.img} alt={it.title} className="size-full object-cover" />
+      <CardLink it={it} className="size-full">
+        <img src={it.img} alt={it.title} className="size-full object-cover" />
+      </CardLink>
     </motion.div>
   );
 }
@@ -533,14 +566,14 @@ function DepthCell({
   const o = useTransform(p, [0, 0.6], [0.35, near ? 1 : 0.8]);
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-5">
-      <div className="h-[560px] w-full overflow-hidden">
+      <CardLink it={it} className="h-[560px] w-full">
         <motion.img
           src={it.img}
           alt={it.title}
           className="size-full object-cover"
           style={{ scale: s, opacity: o }}
         />
-      </div>
+      </CardLink>
       <Caption it={it} />
     </div>
   );
@@ -569,14 +602,14 @@ function HeroAndSides({ p }: { p: MotionValue<number> }) {
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           {ITEMS.slice(1).map((it) => (
             <div key={it.title} className="flex flex-col gap-3">
-              <div className="h-[180px] w-full overflow-hidden">
-                <motion.img
-                  src={it.img}
-                  alt={it.title}
-                  className="size-full object-cover"
-                  style={{ scale: sideS, opacity: sideO }}
-                />
-              </div>
+              <CardLink it={it} className="h-[180px] w-full">
+        <motion.img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover"
+          style={{ scale: sideS, opacity: sideO }}
+        />
+      </CardLink>
               <Caption it={it} />
             </div>
           ))}
@@ -631,9 +664,12 @@ export default function EventSection() {
     <>
     {/* ⚠️ relative z-10 は必須。前の兄弟（背景写真やKVの sticky＝positioned要素）が
         描画順で上に来るため、無いと白背景と見出しが青背景の下に沈む（2026-09-14 実測） */}
+    {/* ⚠️ -mt-[2px] は必須。前のグルメ場面は filter(blur) の合成レイヤーの中にあり、
+        その縁が薄い水色のヘアラインとして残る。2px重ねて隠している
+        （2026-09-16 ヒデさん指摘。赤背景テストで「背景の透け」ではないことは確認済み） */}
     <section
       id="events"
-      className="relative z-10 w-full overflow-x-clip bg-white py-[180px]"
+      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white py-[180px]"
     >
       {ready ? (
         <Scrolled pat={pat} container={scRef} />

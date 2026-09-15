@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP, Inter, Zen_Kaku_Gothic_New, M_PLUS_Rounded_1c } from "next/font/google";
 import SoundUi from "@/components/SoundUi";
+import PageTransition from "@/components/PageTransition";
 import "./globals.css";
 
 /* v1.1 のカンプ（15071:24641 / 15176:2415）で指定されている書体。
@@ -56,6 +57,8 @@ export default function RootLayout({
         {children}
         {/* 環境音はレイアウト常駐：ページを移動しても途切れず流れ続ける */}
         <SoundUi askConsent />
+        {/* ページ遷移の幕（ブラー5案）。レイアウト常駐で全ページに効く */}
+        <PageTransition />
       </body>
     </html>
   );

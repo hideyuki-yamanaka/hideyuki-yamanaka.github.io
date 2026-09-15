@@ -35,6 +35,10 @@ import {
   EVENT_TAIL_EVENT,
   DEFAULT_EVENT_TAIL,
 } from "./EventSection";
+import {
+  PAGE_TRANSITION_EVENT,
+  PAGE_TRANSITION_PATTERNS,
+} from "./PageTransition";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -169,6 +173,8 @@ type Params = {
   gourmet: { speed: number; pauseOnHover: boolean };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
   events: { pattern: number; tailPad: number };
+  /** ページ遷移の演出 1〜5 */
+  pageTrans: { pattern: number };
   expIntro: IntroPace;
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
@@ -223,6 +229,7 @@ export default function TopTunePanel({
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
+      pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -393,6 +400,21 @@ export default function TopTunePanel({
             cat: "🌐 サイト共通",
             open: false,
             items: [
+              { sub: "ページ遷移の演出" },
+              {
+                note: "ページを移る時にかぶせる幕の5案。どれもサイトの雰囲気に合わせてブラー主体にしてあります。選ぶとその場で一度再生して見せます（実際の遷移でも同じ動きになります）。",
+              },
+              {
+                pills: "遷移の案",
+                path: "pageTrans.pattern",
+                immediate: true,
+                options: Object.entries(PAGE_TRANSITION_PATTERNS).map(([v, p]) => ({
+                  name: p.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: p.note,
+                })),
+              },
               { sub: "環境音（BGM）" },
               {
                 slider: "音量",
@@ -1348,6 +1370,14 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
             );
           }
+          if (info?.path === "pageTrans.pattern") {
+            /* preview:true で、その場で一度幕を見せる */
+            window.dispatchEvent(
+              new CustomEvent(PAGE_TRANSITION_EVENT, {
+                detail: { v: params.pageTrans.pattern, preview: true },
+              })
+            );
+          }
         },
         onSave: (p: Params, panelRef: { flash?: (m: string) => void }) => {
           /* ローカルで保存したら、デプロイ用ファイルにも自動で書き込む（自動焼き込み）。
@@ -1405,6 +1435,9 @@ export default function TopTunePanel({
       );
       window.dispatchEvent(
         new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
+      );
+      window.dispatchEvent(
+        new CustomEvent(PAGE_TRANSITION_EVENT, { detail: { v: params.pageTrans.pattern } })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの
