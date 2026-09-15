@@ -403,8 +403,20 @@ export function useGalleryStore(options: UseGalleryStoreOptions = {}) {
     });
 
     // ソース（メディア）ごとにラウンドロビン
+    // 2026-09-15追記: "pickup" は毎日巡回している日本メディアではなく、2026-07に
+    // 一度だけ手動で流し込んだ参考ストック（868件中 671件＝77%が海外AIサービス等で、
+    // 日本のサイトは197件＝23%のみ）。他の6ソースと同じ1/7の重みで混ぜてしまうと、
+    // 「日本のメディアを多く見たい」という本来の目的が薄まる
+    // （カードの約1枚に1枚が海外の手動シードになってしまう）。
+    // そのためラウンドロビン対象からは外し、日本メディア+Awwwardsを出し切った後ろに
+    // 新しい順でまとめて追加する。データは消さず、検索や（将来pickupピルを復活させた
+    // 場合の）フィルターからは変わらず引ける。
+    const PICKUP_SOURCE: SourceSite = "pickup";
+    const roundRobinSites = filtered.filter((s) => s.source !== PICKUP_SOURCE);
+    const pickupSites = filtered.filter((s) => s.source === PICKUP_SOURCE);
+
     const bySource = new Map<SourceSite, SiteEntry[]>();
-    for (const site of filtered) {
+    for (const site of roundRobinSites) {
       const arr = bySource.get(site.source);
       if (arr) arr.push(site);
       else bySource.set(site.source, [site]);
@@ -412,13 +424,13 @@ export function useGalleryStore(options: UseGalleryStoreOptions = {}) {
     const queues = Array.from(bySource.values());
     const interleaved: SiteEntry[] = [];
     let idx = 0;
-    while (interleaved.length < filtered.length) {
+    while (queues.length > 0 && interleaved.length < roundRobinSites.length) {
       const q = queues[idx % queues.length];
       const next = q.shift();
       if (next) interleaved.push(next);
       idx++;
     }
-    return interleaved;
+    return [...interleaved, ...pickupSites];
   }, [pool, filter, randomSeed]);
 
   // Eagleに含まれていて「本来なら表示されるはず」だったサイト
