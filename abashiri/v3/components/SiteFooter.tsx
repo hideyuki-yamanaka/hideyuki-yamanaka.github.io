@@ -25,7 +25,7 @@ export const FOOTER_EVENT = "abashiri:footer";
 export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
   1: {
     name: "案1",
-    note: "白地・横並び（既定）。いまのトンマナのまま。ロゴ＋リンク＋SNSを一列に",
+    note: "白地・横並び（既定）。作字ロゴ（青）＋リンク＋SNSを一列に",
   },
   2: {
     name: "案2",
@@ -33,15 +33,15 @@ export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
   },
   3: {
     name: "案3",
-    note: "縦ロゴ大きめ。「網走」の縦ロゴを主役に、リンクは右へ小さく添える",
+    note: "ロゴ大きめ。作字を主役に置き、リンクは右へ小さく添える",
   },
   4: {
     name: "案4",
-    note: "ミニマル1行。ロゴとSNSとコピーライトだけ。いちばん軽い終わり方",
+    note: "ミニマル1行。作字ロゴとSNSだけ。いちばん軽い終わり方",
   },
   5: {
     name: "案5",
-    note: "中央そろえ。ロゴを真ん中に置き、リンクとSNSを上下に配置",
+    note: "中央そろえ。作字ロゴを真ん中に置き、リンクとSNSを上下に配置",
   },
 };
 
@@ -59,9 +59,6 @@ const SNS = [
   { icon: "/img/sns-x.svg", label: "X", href: "https://x.com/" },
   { icon: "/img/sns-yt.svg", label: "YouTube", href: "https://www.youtube.com/" },
 ];
-
-const COPY = "© 一般社団法人 網走市観光協会";
-const TEL = "0152-44-5849";
 
 /** トップ内のセクションへ飛ぶ（GlobalNav と同じ仕掛け） */
 function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
@@ -85,16 +82,18 @@ function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
 
 /* ── 部品 ───────────────────────────────── */
 
-/** 縦の「網走」ロゴ。
-    ⚠️ 元アセットは白塗り（濃い背景用）なので、白地の案では黒へ反転させる。
-    そのままだと白地に白で見えない（2026-09-16 実測） */
+/** サイトロゴ＝キービジュアルの作字「な〜んにもない／たまらない」
+    （2026-09-16 ヒデさん指示で「網走」の縦ロゴから差し替え）。
+    ⚠️ 元アセットは「白い吹き出し＋青文字／白のたまらない」で濃い背景用。
+    白地では消えてしまうので、白⇄青を入れ替えた反転版
+    hero-message-blue.svg を使う（light=濃い背景のときだけ元のまま） */
 function Logo({ h, light = false }: { h: number; light?: boolean }) {
   return (
     <img
-      src="/img/logo-abashiri.svg"
-      alt="網走"
+      src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
+      alt="な〜んにもない たまらない"
       style={{ height: h }}
-      className={`w-auto ${light ? "" : "[filter:brightness(0)] opacity-80"}`}
+      className="w-auto"
     />
   );
 }
@@ -153,27 +152,6 @@ function SnsRow({ light = false, size = 20 }: { light?: boolean; size?: number }
   );
 }
 
-function Contact({ light = false }: { light?: boolean }) {
-  const c = light ? "text-white/70" : "text-ink/50";
-  return (
-    <p className={`text-body-14 font-extralight leading-[2] tracking-[0.7px] ${c}`}>
-      一般社団法人 網走市観光協会　TEL {TEL}
-    </p>
-  );
-}
-
-function Copy({ light = false }: { light?: boolean }) {
-  return (
-    <p
-      className={`text-body-14 font-extralight leading-[1.2] tracking-[0.7px] ${
-        light ? "text-white/60" : "text-ink/40"
-      }`}
-    >
-      {COPY}
-    </p>
-  );
-}
-
 /* 画面に入ったら静かに現れる（サイト共通の質感） */
 const reveal = {
   hidden: { opacity: 0, y: 24, filter: "blur(10px)" },
@@ -194,31 +172,23 @@ function Body({ pat }: { pat: number }) {
       return (
         <div className="flex w-full flex-col gap-[56px] px-[120px] py-[100px]">
           <div className="flex items-end justify-between gap-10">
-            <Logo h={110} light />
+            <Logo h={130} light />
             <div className="flex flex-col items-end gap-6">
               <NavLinks light className="justify-end" />
               <SnsRow light />
             </div>
           </div>
-          <div className="flex items-end justify-between gap-10 border-t border-white/20 pt-8">
-            <Contact light />
-            <Copy light />
-          </div>
         </div>
       );
 
-    /* 案3 縦ロゴ大きめ：ロゴを主役に、リンクは右へ小さく */
+    /* 案3 作字ロゴ大きめ：ロゴを主役に、リンクは右へ小さく */
     case 3:
       return (
         <div className="flex w-full items-start justify-between gap-[80px] px-[120px] py-[120px]">
-          <Logo h={200} />
+          <Logo h={180} />
           <div className="flex flex-col items-end gap-10 pt-2">
             <NavLinks className="justify-end" />
             <SnsRow />
-            <div className="flex flex-col items-end gap-2">
-              <Contact />
-              <Copy />
-            </div>
           </div>
         </div>
       );
@@ -227,9 +197,8 @@ function Body({ pat }: { pat: number }) {
     case 4:
       return (
         <div className="flex w-full items-center justify-between gap-10 px-[120px] py-[56px]">
-          <Logo h={56} />
+          <Logo h={70} />
           <SnsRow size={18} />
-          <Copy />
         </div>
       );
 
@@ -238,12 +207,8 @@ function Body({ pat }: { pat: number }) {
       return (
         <div className="flex w-full flex-col items-center gap-[48px] px-6 py-[110px]">
           <NavLinks className="justify-center" />
-          <Logo h={140} />
+          <Logo h={150} />
           <SnsRow />
-          <div className="flex flex-col items-center gap-2">
-            <Contact />
-            <Copy />
-          </div>
         </div>
       );
 
@@ -252,15 +217,11 @@ function Body({ pat }: { pat: number }) {
       return (
         <div className="flex w-full flex-col gap-[56px] px-[120px] py-[100px]">
           <div className="flex items-end justify-between gap-10">
-            <Logo h={120} />
+            <Logo h={140} />
             <div className="flex flex-col items-end gap-8">
               <NavLinks className="justify-end" />
               <SnsRow />
             </div>
-          </div>
-          <div className="flex items-end justify-between gap-10 border-t border-ink/10 pt-8">
-            <Contact />
-            <Copy />
           </div>
         </div>
       );
