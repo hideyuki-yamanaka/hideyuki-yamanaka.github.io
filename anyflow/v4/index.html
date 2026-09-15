@@ -2527,6 +2527,13 @@
       rgba(0,0,0,.58) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .80),
       #000 var(--cv-f1));
     -webkit-mask-image: var(--cv-fade-mask); mask-image: var(--cv-fade-mask); }
+  /* 【2026-09-15 ヒデさん指摘】「赤枠の余白が詰まらない」。溶け込みの薄い帯が【お問い合わせの中】にあったので、
+     帯のぶんだけ上が灰色のまま＝詰めようがなかった。→ canvas を導入事例の下の空きへ【上へはみ出させ】、
+     薄い帯をそこへ逃がす。お問い合わせは上端から色が乗る(=添付2枚目の見え方)。はみ出す量は JS が実測して決める。
+     グラデの写り方はセクションの高さ基準のまま(シェーダの uRise で補正)なので、ニュアンスは変わらない。 */
+  #conversion.cvs-10 { overflow: visible; }
+  #conversion.cvs-10 #cvCanvas { top: calc(-1 * var(--cv-rise, 0px)); height: calc(100% + var(--cv-rise, 0px)); }
+  #conversion.cvs-10 .cv-warm { top: calc(-1 * var(--cv-rise, 0px)); height: calc(var(--cv-warm-h, 0px) + var(--cv-rise, 0px)); }
   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白(既定210px)を調整パネルから変えられるように */
   #conversion.cvs-10 .cv-content { margin: var(--cv-head-top, 210px) auto 120px; }
 
@@ -6036,8 +6043,9 @@ function cvMoodAt(p, mode, wAmt) {
   return A.map((c, j) => [0, 1, 2].map(k => c[k] + (B[j][k] - c[k]) * e));
 }
 function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
+const CV_BLEND_DEF = 150;      /* 【2026-09-15 ヒデさん指摘】上の溶け込み(ぼかし幅)の既定 px。導入事例の下の空きへ逃がすので、お問い合わせの上に余白が増えない */
 const CV_HEAD_TOP_DEF = 120;   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
-const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, warm: 0.5, warmCol: '#ffe0cc', warmSpan: 0.42, headTop: CV_HEAD_TOP_DEF, addT: 0, addB: 0 };
+const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, warm: 0.5, warmCol: '#ffe0cc', warmSpan: 0.42, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, addT: 0, addB: 0 };
 const CV_COLORS = [
   { key: 'C1',  name: 'カンプ（現行）', tip: 'カンプ実測の5色(淡ピンク白→淡ブルー→シアン→青紫→ピンク)・カンプの放射グラデ・Bayer 1px 3段。', cv: {} },
   { key: 'C2',  name: 'ブルー寄り', tip: 'ピンクを青紫に置き換え、シアン〜ブルーで統一。放射の中心は右上。', cv: { colors: ['#eef7ff', '#9ad9ff', '#0ebbff', '#1f5fd6', '#6a4bd8'], gMode: 1, gcx: 0.8, gcy: 0.1, gr: 0.95, gAspect: 1.25 } },
@@ -6158,12 +6166,32 @@ function cvNaturalH(sec) {
   if (h > 20) { cvNatH = h; cvNatKey = key; }
   return cvNatH || h;
 }
+let cvRisePx = 0;                 /* 【2026-09-15】canvas を上へはみ出させている量(CSSpx)。シェーダへ渡す */
 function cvApplyFade(sec) {
   const base = cvNaturalH(sec) || sec.getBoundingClientRect().height || 609;
   const f0 = (params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0;
   const f1 = (params.cv && params.cv.fade1 != null) ? params.cv.fade1 : 44;
-  sec.style.setProperty('--cv-fade0', Math.round(base * f0 / 100) + 'px');
-  sec.style.setProperty('--cv-fade1', Math.round(base * f1 / 100) + 'px');
+  /* 【2026-09-15 ヒデさん指摘】PC は「上の溶け込み(px)」を導入事例の下の空きへ逃がす方式。
+     SP はレイアウトが別物なので従来どおり(素の高さに対する %)。 */
+  const _mbF = document.documentElement.classList.contains('mb');
+  if (_mbF) {
+    cvRisePx = 0;
+    sec.style.setProperty('--cv-rise', '0px');
+    sec.style.setProperty('--cv-fade0', Math.round(base * f0 / 100) + 'px');
+    sec.style.setProperty('--cv-fade1', Math.round(base * f1 / 100) + 'px');
+  } else {
+    const _bl = Math.max(0, (params.cv && params.cv.blend != null) ? params.cv.blend : CV_BLEND_DEF);
+    /* 逃がせる量 = お問い合わせ上端 − 導入事例のカード下端 − 6px(カードに色がかからない余裕) */
+    let _room = 0;
+    const _gr = document.getElementById('caseGrid');
+    if (_gr) _room = Math.max(0, Math.round(sec.getBoundingClientRect().top - _gr.getBoundingClientRect().bottom - 6));
+    /* 空きが足りない時は「お問い合わせの中に帯を残す」のではなく、ぼかし幅の方を詰める。
+       こうすると、間隔をマイナスにして詰めても上に灰色の帯が戻ってこない(＝必ず上端から色が乗る) */
+    cvRisePx = Math.min(_bl, _room);
+    sec.style.setProperty('--cv-rise', cvRisePx + 'px');
+    sec.style.setProperty('--cv-fade0', '0px');
+    sec.style.setProperty('--cv-fade1', cvRisePx + 'px');
+  }
   /* 【2026-09-15 ヒデさん指摘】上の暖かさ。帯の高さも「伸ばす前の高さ」基準の px にして、
      縦幅や間隔を伸ばしても暖かい帯までいっしょに伸びないようにする */
   const wm = (params.cv && params.cv.warm != null) ? params.cv.warm : 0.5;
@@ -6240,7 +6268,8 @@ uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラ�
 uniform vec3 uTopCol;   /* 【2026-09-15 ヒデさん指定】いちばん明るい所(カンプでは右上)の色。既定は薄い水色 */
 uniform float uWhite;   /* 同・そこに白をどれだけ残すか(かすかに=0.12 くらい) */
 uniform float uCeil;    /* 【2026-09-15】明るさの頭打ち。コントラスト(1.38)で淡い色が白に飛んで『欠けて見える』のを防ぐ */
-uniform float uWarm; uniform vec3 uWarmCol; uniform float uWarmSpan;   /* 【2026-09-15 ヒデさん指摘】上の方が冷たい(頭打ちで無彩色の灰になる)ので、上側の淡い所だけ暖色に寄せる。強さ・色・届く範囲 */
+uniform float uWarm; uniform vec3 uWarmCol; uniform float uWarmSpan;
+uniform float uRise;   /* 【2026-09-15】canvas が上へはみ出した高さ(デバイスpx)。グラデはセクションの高さ基準のまま保つ */   /* 【2026-09-15 ヒデさん指摘】上の方が冷たい(頭打ちで無彩色の灰になる)ので、上側の淡い所だけ暖色に寄せる。強さ・色・届く範囲 */
 uniform float uGSpread;   /* 【2026-09-15】カンプの放射の広がり。1=カンプ / 大きいほど淡い中心が小さくなり、端まで色が届く */
 uniform float uGMode, uGAng, uDark; uniform vec2 uGC, uGR; uniform vec3 uDarkCol;   /* 形(0=カンプ/1=放射/2=線形)・中心・広がり・回転、暗さ(黒ベース) */
 uniform float uHue;   /* 【2026-09-15】色味の移ろい(色相の回転・ラジアン。JS が時間で回す) */
@@ -6269,8 +6298,9 @@ void main(){
   float CELL = max(1.0, uCell);
   vec2 cellId = floor(gl_FragCoord.xy / CELL);
   vec2 fc = (cellId + 0.5) * CELL;
-  vec2 uv = fc / uRes;
-  uv.y = 1.0 - uv.y;                       /* Figmaのオブジェクト座標(y下向き)に合わせる */
+  /* Figmaのオブジェクト座標(y下向き)に合わせる。uRise ぶん上へはみ出していても、
+     グラデは【セクションの範囲】に写る(はみ出した所は上へ自然に続く)＝見え方は uRise=0 の時と同じ */
+  vec2 uv = vec2(fc.x / uRes.x, (uRes.y - fc.y - uRise) / max(1.0, uRes.y - uRise));
   /* 流れ: 惑星と同じ発想で、uv を fbm でゆらしてから色を引く(ドメインワープ) */
   vec2 w = uv * uFlowScale;
   float n1 = fbm(w + vec2(uTime * uSpeed, 0.0));
@@ -6330,7 +6360,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(p, 'aP');
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uWarm', 'uWarmCol', 'uWarmSpan'])
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uWarm', 'uWarmCol', 'uWarmSpan', 'uRise'])
       uni[k] = gl.getUniformLocation(p, k);
   }
   function visible() {
@@ -6382,6 +6412,7 @@ void main(){
     gl.uniform1f(uni.uWarm, c.warm != null ? c.warm : 0.5);                       /* 【2026-09-15】上の暖かさ */
     { const wc = cvHex(c.warmCol, '#ffe0cc'); gl.uniform3f(uni.uWarmCol, wc[0], wc[1], wc[2]); }
     gl.uniform1f(uni.uWarmSpan, c.warmSpan != null ? c.warmSpan : 0.42);
+    gl.uniform1f(uni.uRise, cvRisePx * dpr);   /* 【2026-09-15】上へのはみ出し(CSSpx→デバイスpx) */
     gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
        SP は M=[-31.225 24.205 -22.32 -26.671 300.25 32.955], r=10 を u,v∈[0,1] に正規化して
@@ -18028,8 +18059,10 @@ function buildPanel() {
   rows.push(slider('縦幅（枠の案）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '「現行」のように枠で見せる案の高さ(カンプ 416)。一体型では上の「追加の高さ」を使います。'));
   rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの【あいだの余白】(地色)。プラスで隙間が空きます。マイナスは導入事例の“下の空き”を詰めます(カードが切れないところまでで自動的に止まります)。見出しの上の【色の面】を増やしたい時は下の「上に足す高さ」を使ってください(PC のみ)。', { signed: true }));
   sub(catCv, '溶け込みの境界（一体型・溶け込む）'); CV_DYN10.push(catCv.lastElementChild);
-  rows.push(slider('溶け込み 始まり', 0, 80, 1, () => (cvv().fade0 != null ? cvv().fade0 : 0), v => { cvv().fade0 = v; applyCvStyle(); }, v => Math.round(v) + '%', '上端からどこまでを完全に地色にするか。0%＝上端から徐々に。%は【伸ばす前の高さ】に対する割合なので、縦幅や間隔を伸ばしても薄い帯は広がりません。'));
-  rows.push(slider('溶け込み 終わり', 5, 100, 1, () => (cvv().fade1 != null ? cvv().fade1 : 44), v => { cvv().fade1 = v; applyCvStyle(); }, v => Math.round(v) + '%', 'ここでディザが完全に出る。始まりとの差が「切り返しのぼかし幅」。近づけるとくっきり、離すとゆるやか。既定44%＝上から約294px で完全に色が出ます(伸ばしても同じ)。'));
+  /* 【2026-09-15 ヒデさん指摘】溶け込みの薄い帯がお問い合わせの【中】にあったので上の余白が詰まらなかった。
+     帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい */
+  rows.push(slider('上の溶け込み（ぼかし幅）', 0, 300, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px',
+    '導入事例との境目をぼかす幅。この帯は【導入事例の下の空きへ逃がす】ので、お問い合わせは必ず上端から色が乗ります(余白が増えません)。空きが足りない時は自動でぼかし幅の方が縮みます。0px でくっきり。SP は従来どおり(%指定)。', { fixedMax: true }));
   syncCvDyn();
   sub(catCv, 'ディザリング（粗さ・階調）');
   rows.push(slider('粗さ（ドットの大きさ）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px',
