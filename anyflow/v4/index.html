@@ -1104,49 +1104,31 @@
   #results.rfx-20 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: 130px; line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-20 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
   /* ===== 案21〜23 数値が大きく→終点(上の帯)へ、for SaaS→for AI は横スクロール(2026-09-14 ヒデさん指定)。帯は案5と同じ寸法で上に ===== */
-  html:not(.mb) #results.rfx-21 .res2, html:not(.mb) #results.rfx-22 .res2, html:not(.mb) #results.rfx-23 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: calc(100 * var(--rvh)); box-sizing: border-box; }
-  #results.rfx-21 .res2-top, #results.rfx-22 .res2-top, #results.rfx-23 .res2-top { display: contents; }
-  #results.rfx-21 .res2-head, #results.rfx-22 .res2-head, #results.rfx-23 .res2-head { order: 1; font-size: 33px; line-height: 1.6; padding: 0 30px; }
-  #results.rfx-21 .res2-stats, #results.rfx-22 .res2-stats, #results.rfx-23 .res2-stats { order: 2; width: min(1138px, 100% - 140px); margin: 18px auto 0; padding: 14px 0 18px; border-bottom: 1px solid var(--rfx-line); justify-content: space-between; gap: 24px; transform-origin: center center; }
-  #results.rfx-21 .res2-stats .r2s, #results.rfx-22 .res2-stats .r2s, #results.rfx-23 .res2-stats .r2s { flex-direction: row; align-items: center; gap: 24px; transform-origin: center center; }
-  #results.rfx-21 .res2-stats .r2s span, #results.rfx-22 .res2-stats .r2s span, #results.rfx-23 .res2-stats .r2s span { font-size: 44px; }
-  #results.rfx-21 .res2-stats .r2s b, #results.rfx-22 .res2-stats .r2s b, #results.rfx-23 .res2-stats .r2s b { font-size: 12px; }
-  #results.rfx-21 .res2-vals, #results.rfx-22 .res2-vals, #results.rfx-23 .res2-vals { order: 3; flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; overflow: hidden; }
-  #results.rfx-21 .r2v-track, #results.rfx-22 .r2v-track, #results.rfx-23 .r2v-track { display: flex; width: 100%; }
-  #results.rfx-21 .res2-vline, #results.rfx-22 .res2-vline, #results.rfx-23 .res2-vline, #results.rfx-21 .res2-hr, #results.rfx-22 .res2-hr, #results.rfx-23 .res2-hr { display: none; }
-  #results.rfx-21 .r2v, #results.rfx-22 .r2v, #results.rfx-23 .r2v { flex: 0 0 100%; box-sizing: border-box; min-width: 0; padding: 0 max(70px, calc((100% - 1138px) / 2)); display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; }
-  #results.rfx-21 .r2v-fig, #results.rfx-22 .r2v-fig, #results.rfx-23 .r2v-fig { display: block; order: -1; min-width: 0; transform-origin: center; }
-  #results.rfx-21 .r2v-fig::before, #results.rfx-22 .r2v-fig::before, #results.rfx-23 .r2v-fig::before { content: attr(data-tag); display: block; text-align: center; font-family: var(--font-en); font-weight: 300; font-size: 22px; line-height: 1.2; margin-bottom: 8px; color: var(--rfx-tag-ink, var(--brand-pink)); }
-  #results.rfx-21 .r2v-fig-ai::before, #results.rfx-22 .r2v-fig-ai::before, #results.rfx-23 .r2v-fig-ai::before { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
-  #results.rfx-21 .r2v-graphic, #results.rfx-22 .r2v-graphic, #results.rfx-23 .r2v-graphic { width: 100%; height: 320px; }
-  #results.rfx-21 .r2v-text, #results.rfx-22 .r2v-text, #results.rfx-23 .r2v-text { width: auto; max-width: 490px; gap: 28px; }
-  #results.rfx-21 .r2v-tagh, #results.rfx-22 .r2v-tagh, #results.rfx-23 .r2v-tagh { gap: 0; }
-  #results.rfx-21 .r2v-tag, #results.rfx-22 .r2v-tag, #results.rfx-23 .r2v-tag { display: none; }
-  #results.rfx-21 .r2v-h, #results.rfx-22 .r2v-h, #results.rfx-23 .r2v-h { font-size: 48px; line-height: 1.5; }
-  #results.rfx-21 .r2v-p, #results.rfx-22 .r2v-p, #results.rfx-23 .r2v-p { font-size: 16px; line-height: 1.95; }
-  #results.rfx-21 .pin-stage, #results.rfx-22 .pin-stage, #results.rfx-23 .pin-stage { overflow: hidden; }
+  html:not(.mb) #results.rfx-21 .res2, html:not(.mb) #results.rfx-23 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: calc(100 * var(--rvh)); box-sizing: border-box; }
+  #results.rfx-21 .res2-top, #results.rfx-23 .res2-top { display: contents; }
+  #results.rfx-21 .res2-head, #results.rfx-23 .res2-head { order: 1; font-size: 33px; line-height: 1.6; padding: 0 30px; }
+  #results.rfx-21 .res2-stats, #results.rfx-23 .res2-stats { order: 2; width: min(1138px, 100% - 140px); margin: 18px auto 0; padding: 14px 0 18px; border-bottom: 1px solid var(--rfx-line); justify-content: space-between; gap: 24px; transform-origin: center center; }
+  #results.rfx-21 .res2-stats .r2s, #results.rfx-23 .res2-stats .r2s { flex-direction: row; align-items: center; gap: 24px; transform-origin: center center; }
+  #results.rfx-21 .res2-stats .r2s span, #results.rfx-23 .res2-stats .r2s span { font-size: 44px; }
+  #results.rfx-21 .res2-stats .r2s b, #results.rfx-23 .res2-stats .r2s b { font-size: 12px; }
+  #results.rfx-21 .res2-vals, #results.rfx-23 .res2-vals { order: 3; flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; overflow: hidden; }
+  #results.rfx-21 .r2v-track, #results.rfx-23 .r2v-track { display: flex; width: 100%; }
+  #results.rfx-21 .res2-vline, #results.rfx-23 .res2-vline, #results.rfx-21 .res2-hr, #results.rfx-23 .res2-hr { display: none; }
+  #results.rfx-21 .r2v, #results.rfx-23 .r2v { flex: 0 0 100%; box-sizing: border-box; min-width: 0; padding: 0 max(70px, calc((100% - 1138px) / 2)); display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; }
+  #results.rfx-21 .r2v-fig, #results.rfx-23 .r2v-fig { display: block; order: -1; min-width: 0; transform-origin: center; }
+  #results.rfx-21 .r2v-fig::before, #results.rfx-23 .r2v-fig::before { content: attr(data-tag); display: block; text-align: center; font-family: var(--font-en); font-weight: 300; font-size: 22px; line-height: 1.2; margin-bottom: 8px; color: var(--rfx-tag-ink, var(--brand-pink)); }
+  #results.rfx-21 .r2v-fig-ai::before, #results.rfx-23 .r2v-fig-ai::before { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
+  #results.rfx-21 .r2v-graphic, #results.rfx-23 .r2v-graphic { width: 100%; height: 320px; }
+  #results.rfx-21 .r2v-text, #results.rfx-23 .r2v-text { width: auto; max-width: 490px; gap: 28px; }
+  #results.rfx-21 .r2v-tagh, #results.rfx-23 .r2v-tagh { gap: 0; }
+  #results.rfx-21 .r2v-tag, #results.rfx-23 .r2v-tag { display: none; }
+  #results.rfx-21 .r2v-h, #results.rfx-23 .r2v-h { font-size: 48px; line-height: 1.5; }
+  #results.rfx-21 .r2v-p, #results.rfx-23 .r2v-p { font-size: 16px; line-height: 1.95; }
+  #results.rfx-21 .pin-stage, #results.rfx-23 .pin-stage { overflow: hidden; }
   /* --- 案22(ブラッシュアップ 2026-09-15): 終点は上段「見出し 左(34px/1.7・2行) / 数値 右(70px・「+」40・ラベル16/24)」+ 下線(移動しきる直前に左から)。
          最初は見出し1行が数値の上、下の2つの数値は「20,000+」の横幅に両端揃え(JS) --- */
-  #results.rfx-22 .res2-top { position: relative; display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-start; gap: 40px; order: 1; width: 100%; box-sizing: border-box; padding: 0 max(70px, calc((100% - 1300px) / 2)); min-height: 116px; }   /* 上段は 1300 幅(仮置き)。2026-09-15: 見出しは絶対配置(下)なので数値は常に右寄せ・高さは見出し2行ぶんで固定＝レイアウトシフトの根治 */
-  html:not(.mb) #results.rfx-22 .res2-head { position: absolute; left: max(70px, calc((100% - 1300px) / 2)); top: 0; order: 0; font-size: 34px; line-height: 1.7; padding: 0; justify-content: flex-start; flex-direction: column; align-items: flex-start; transform-origin: center center; }   /* 常に2行・左揃え(終点の形)。導入では transform だけで数値の上(中央)へ(1行⇄2行の切替をやめた) */
-  #results.rfx-22 .res2-stats { order: 0; width: auto; margin: 14px 0 0; padding: 0; border-bottom: 0; gap: 44px; align-items: flex-start; }
-  #results.rfx-22 .res2-stats .r2s { gap: 8px; }
   /* 【2026-09-15 ヒデさん指定】案22 終点の並び順: 左から 連携実績 → 導入企業 → 連携アプリ数(主役の連携実績が画面中央から一番近い左の枠へ)。
      DOM(導入企業/連携実績/連携アプリ数)は動かさず order だけ(JS は DOM index で主役 i=1 を扱う) */
-  #results.rfx-22 .res2-stats .r2s:nth-child(1) { order: 1; }
-  #results.rfx-22 .res2-stats .r2s:nth-child(2) { order: 0; }
-  #results.rfx-22 .res2-stats .r2s:nth-child(3) { order: 2; }
-  #results.rfx-22 .res2-stats .r2s span { font-size: 70px; line-height: 1; }
-  #results.rfx-22 .res2-stats .r2s b { font-size: 16px; line-height: 24px; }
-  #results.rfx-22 .slot .fx:last-child { font-size: 40px; }
-  #results.rfx-22 .res2-hr { display: block; order: 2; width: auto; margin: 48px max(70px, calc((100% - 1300px) / 2)) 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
-  #results.rfx-22 .res2-vals { order: 3; }
-  html.mb #results.rfx-22 .res2-top { flex-direction: column; align-items: flex-start; gap: 12px; padding: 0 20px; }
-  html.mb #results.rfx-22 .res2-head { font-size: 24px; line-height: 1.5; flex-direction: column; align-items: flex-start; }
-  html.mb #results.rfx-22 .res2-stats { width: 100%; margin: 0; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
-  html.mb #results.rfx-22 .res2-stats .r2s span { font-size: 33px; }
-  html.mb #results.rfx-22 .res2-stats .r2s b { font-size: 10px; line-height: 16px; }
-  html.mb #results.rfx-22 .res2-hr { margin: 16px 20px 0; transform: none; }
   /* ===== 案24 for SaaS / for AI から入る(絵コンテ Figma 17271:23392・2026-09-14)。2列(SaaS | 仕切り線 | AI)+横罫線+下段(見出し2行 | 数値70px)。
      絵コンテの実測: 大見出し 70px→40px / ラベル 20 / 見出し 46・1.5 / 本文 14・1.8・幅530 / ピクト 386枠(=300)・主役 666枠(≒1.7倍) / 下段 見出し 40px・2行 / 数値 70px ===== */
   html:not(.mb) #results.rfx-24 .res2, html:not(.mb) #results.rfx-25 .res2 { width: min(1248px, 100% - 120px); display: grid; grid-template-columns: 1fr 1px 1fr; grid-template-rows: auto auto auto; column-gap: 48px; row-gap: 0; align-items: start; }   /* カンプの内容幅 96〜1343 = 1247 */
@@ -1574,19 +1556,19 @@
   html.mb #results.rfx-20 .r2v-p { font-size: 14px; line-height: 1.9; }
   html.mb #results.rfx-20 .r2v-big { font-size: 56px; }
   /* --- 案21〜23(SP): 帯は上(数値33)。面は図235×145 上/言葉 下。数値の拡大は 1.15倍(3列の帯が画面幅を超えないため・仮置き) --- */
-  html.mb #results.rfx-21 .res2, html.mb #results.rfx-22 .res2, html.mb #results.rfx-23 .res2 { width: 100%; padding: 22px 0 12px; }
-  html.mb #results.rfx-21 .res2-head, html.mb #results.rfx-22 .res2-head, html.mb #results.rfx-23 .res2-head { font-size: 24px; line-height: 1.5; padding: 0 20px; }
-  html.mb #results.rfx-21 .res2-stats, html.mb #results.rfx-22 .res2-stats, html.mb #results.rfx-23 .res2-stats { width: calc(100% - 40px); margin: 10px auto 0; padding: 10px 0 12px; gap: 14px; justify-content: space-between; }
-  html.mb #results.rfx-21 .res2-stats .r2s, html.mb #results.rfx-22 .res2-stats .r2s, html.mb #results.rfx-23 .res2-stats .r2s { flex-direction: column; align-items: flex-start; gap: 4px; }
-  html.mb #results.rfx-21 .res2-stats .r2s span, html.mb #results.rfx-22 .res2-stats .r2s span, html.mb #results.rfx-23 .res2-stats .r2s span { font-size: 33px; }
-  html.mb #results.rfx-21 .res2-stats .r2s b, html.mb #results.rfx-22 .res2-stats .r2s b, html.mb #results.rfx-23 .res2-stats .r2s b { font-size: 10px; }
-  html.mb #results.rfx-21 .r2v, html.mb #results.rfx-22 .r2v, html.mb #results.rfx-23 .r2v { padding: 0 20px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
-  html.mb #results.rfx-21 .r2v-fig, html.mb #results.rfx-22 .r2v-fig, html.mb #results.rfx-23 .r2v-fig { order: -1; align-self: center; width: 235px; }
-  html.mb #results.rfx-21 .r2v-fig::before, html.mb #results.rfx-22 .r2v-fig::before, html.mb #results.rfx-23 .r2v-fig::before { font-size: 16px; margin-bottom: 4px; }
-  html.mb #results.rfx-21 .r2v-graphic, html.mb #results.rfx-22 .r2v-graphic, html.mb #results.rfx-23 .r2v-graphic { width: 235px; height: 145px; }
-  html.mb #results.rfx-21 .r2v-text, html.mb #results.rfx-22 .r2v-text, html.mb #results.rfx-23 .r2v-text { max-width: none; width: 100%; gap: 10px; margin-top: 10px; }
-  html.mb #results.rfx-21 .r2v-h, html.mb #results.rfx-22 .r2v-h, html.mb #results.rfx-23 .r2v-h { font-size: 25px; line-height: 1.45; }
-  html.mb #results.rfx-21 .r2v-p, html.mb #results.rfx-22 .r2v-p, html.mb #results.rfx-23 .r2v-p { font-size: 14px; line-height: 1.8; }
+  html.mb #results.rfx-21 .res2, html.mb #results.rfx-23 .res2 { width: 100%; padding: 22px 0 12px; }
+  html.mb #results.rfx-21 .res2-head, html.mb #results.rfx-23 .res2-head { font-size: 24px; line-height: 1.5; padding: 0 20px; }
+  html.mb #results.rfx-21 .res2-stats, html.mb #results.rfx-23 .res2-stats { width: calc(100% - 40px); margin: 10px auto 0; padding: 10px 0 12px; gap: 14px; justify-content: space-between; }
+  html.mb #results.rfx-21 .res2-stats .r2s, html.mb #results.rfx-23 .res2-stats .r2s { flex-direction: column; align-items: flex-start; gap: 4px; }
+  html.mb #results.rfx-21 .res2-stats .r2s span, html.mb #results.rfx-23 .res2-stats .r2s span { font-size: 33px; }
+  html.mb #results.rfx-21 .res2-stats .r2s b, html.mb #results.rfx-23 .res2-stats .r2s b { font-size: 10px; }
+  html.mb #results.rfx-21 .r2v, html.mb #results.rfx-23 .r2v { padding: 0 20px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  html.mb #results.rfx-21 .r2v-fig, html.mb #results.rfx-23 .r2v-fig { order: -1; align-self: center; width: 235px; }
+  html.mb #results.rfx-21 .r2v-fig::before, html.mb #results.rfx-23 .r2v-fig::before { font-size: 16px; margin-bottom: 4px; }
+  html.mb #results.rfx-21 .r2v-graphic, html.mb #results.rfx-23 .r2v-graphic { width: 235px; height: 145px; }
+  html.mb #results.rfx-21 .r2v-text, html.mb #results.rfx-23 .r2v-text { max-width: none; width: 100%; gap: 10px; margin-top: 10px; }
+  html.mb #results.rfx-21 .r2v-h, html.mb #results.rfx-23 .r2v-h { font-size: 25px; line-height: 1.45; }
+  html.mb #results.rfx-21 .r2v-p, html.mb #results.rfx-23 .r2v-p { font-size: 14px; line-height: 1.8; }
   /* --- 案24(SP): 2列を縦積み(説明→ピクト300×220)。仕切り線なし。下段は見出し29px・2行と数値40px。大見出し 40px --- */
   html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: 28px; }
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track, html.mb #results.rfx-25 .res2-vals, html.mb #results.rfx-25 .r2v-track { display: contents; }
@@ -1649,8 +1631,6 @@
          現行SPの「1行 nowrap」は 22px の時だけ成立し、案の 28〜32px では本文幅 350px に収まらない
          (2026-09-14 実測: AI 側「コンテキスト取得から実行まで」= 案1 405px・案6 391・案4 447)。
          案5 は 25px で 350px ちょうどに収まるので現行どおり1行のまま。案1 は行ごとの窓(.r2v-hl)で2行にする(br は使わない)。 --- */
-  html.mb #results.rfx-on:not(.rfx-5):not(.rfx-1):not(.rfx-15):not(.rfx-21):not(.rfx-22):not(.rfx-23):not(.rfx-27):not(.rfx-28):not(.rfx-29):not(.rfx-31):not(.rfx-32):not(.rfx-34):not(.rfx-35):not(.rfx-36) .r2v-h { white-space: normal; }
-  html.mb #results.rfx-on:not(.rfx-5):not(.rfx-1):not(.rfx-15):not(.rfx-21):not(.rfx-22):not(.rfx-23):not(.rfx-27):not(.rfx-28):not(.rfx-29):not(.rfx-31):not(.rfx-32):not(.rfx-34):not(.rfx-35):not(.rfx-36) .r2v-h br { display: inline; }
   /* --- 縦が短い端末(≤600px): 固定案(1/5/6)を縦流れに。面の移動・場面切替は JS が止める --- */
   html.mb.rfx-short #results.rfx-1 .res2 { flex-direction: column; transform: none !important; }
   html.mb.rfx-short #results.rfx-1 .res2-top, html.mb.rfx-short #results.rfx-1 .r2v { flex: 0 0 auto; padding: 45px 20px; }
@@ -1681,11 +1661,11 @@
   html.mb.rfx-short #results.rfx-20 .res2-top, html.mb.rfx-short #results.rfx-20 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-20 .r2v-fig, html.mb.rfx-short #results.rfx-20 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; }
   html.mb.rfx-short #results.rfx-20 .r2v-big { display: none; }
-  html.mb.rfx-short #results.rfx-21 .res2, html.mb.rfx-short #results.rfx-22 .res2, html.mb.rfx-short #results.rfx-23 .res2 { height: auto; }
-  html.mb.rfx-short #results.rfx-21 .res2-vals, html.mb.rfx-short #results.rfx-22 .res2-vals, html.mb.rfx-short #results.rfx-23 .res2-vals { display: block; overflow: visible; }
-  html.mb.rfx-short #results.rfx-21 .r2v-track, html.mb.rfx-short #results.rfx-22 .r2v-track, html.mb.rfx-short #results.rfx-23 .r2v-track { display: block; transform: none !important; opacity: 1 !important; }
-  html.mb.rfx-short #results.rfx-21 .r2v, html.mb.rfx-short #results.rfx-22 .r2v, html.mb.rfx-short #results.rfx-23 .r2v { padding: 30px 20px; }
-  html.mb.rfx-short #results.rfx-21 .r2v-fig, html.mb.rfx-short #results.rfx-21 .r2v-text, html.mb.rfx-short #results.rfx-21 .res2-stats, html.mb.rfx-short #results.rfx-21 .res2-head, html.mb.rfx-short #results.rfx-22 .r2v-fig, html.mb.rfx-short #results.rfx-22 .r2v-text, html.mb.rfx-short #results.rfx-22 .res2-stats, html.mb.rfx-short #results.rfx-22 .res2-head, html.mb.rfx-short #results.rfx-23 .r2v-fig, html.mb.rfx-short #results.rfx-23 .r2v-text, html.mb.rfx-short #results.rfx-23 .res2-stats, html.mb.rfx-short #results.rfx-23 .res2-head { transform: none !important; opacity: 1 !important; }
+  html.mb.rfx-short #results.rfx-21 .res2, html.mb.rfx-short #results.rfx-23 .res2 { height: auto; }
+  html.mb.rfx-short #results.rfx-21 .res2-vals, html.mb.rfx-short #results.rfx-23 .res2-vals { display: block; overflow: visible; }
+  html.mb.rfx-short #results.rfx-21 .r2v-track, html.mb.rfx-short #results.rfx-23 .r2v-track { display: block; transform: none !important; opacity: 1 !important; }
+  html.mb.rfx-short #results.rfx-21 .r2v, html.mb.rfx-short #results.rfx-23 .r2v { padding: 30px 20px; }
+  html.mb.rfx-short #results.rfx-21 .r2v-fig, html.mb.rfx-short #results.rfx-21 .r2v-text, html.mb.rfx-short #results.rfx-21 .res2-stats, html.mb.rfx-short #results.rfx-21 .res2-head, html.mb.rfx-short #results.rfx-23 .r2v-fig, html.mb.rfx-short #results.rfx-23 .r2v-text, html.mb.rfx-short #results.rfx-23 .res2-stats, html.mb.rfx-short #results.rfx-23 .res2-head { transform: none !important; opacity: 1 !important; }
   html.mb.rfx-short #results.rfx-24 .res2-top, html.mb.rfx-short #results.rfx-24 .r2v, html.mb.rfx-short #results.rfx-24 .r2v-fig, html.mb.rfx-short #results.rfx-24 .r2v-text, html.mb.rfx-short #results.rfx-25 .res2-top, html.mb.rfx-short #results.rfx-25 .r2v, html.mb.rfx-short #results.rfx-25 .r2v-fig, html.mb.rfx-short #results.rfx-25 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-24 .res2-hr, html.mb.rfx-short #results.rfx-25 .res2-hr { transform: none !important; }
   html.mb.rfx-short #results.rfx-24 .r2v-big, html.mb.rfx-short #results.rfx-25 .r2v-big { display: none; }
@@ -1815,10 +1795,6 @@
   @keyframes dmLiquid { 0% { transform: translate(0, 0) rotate(-18deg); } 100% { transform: translate(18%, 10%) rotate(-10deg); } }
   #dev.dev-st-1 .dm-panel .dm-side { background: rgba(255,255,255,.08); border-right-color: rgba(255,255,255,.2); }
   #dev.dev-st-1 .dm-ghost .dm-panel { backdrop-filter: blur(var(--dm-blur)) saturate(1.6); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.6); }
-  /* 2 クリアガラス: 光沢なしの静かなガラス(白の縁と薄い透け) */
-  #dev.dev-st-2 .dm-panel { background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); backdrop-filter: blur(var(--dm-blur)); -webkit-backdrop-filter: blur(var(--dm-blur)); border: 1px solid rgba(255,255,255,.26); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.35 * var(--dm-in))), 0 24px 60px rgba(0,0,0,calc(.45 * var(--dm-sh))); }
-  /* 3 インナーシャドウ(深い): 板が奥にくぼんで見える */
-  #dev.dev-st-3 .dm-panel { box-shadow: inset 0 24px 48px rgba(0,0,0,calc(.55 * var(--dm-in))), inset 0 -8px 24px rgba(0,0,0,calc(.35 * var(--dm-in))), inset 0 0 0 1px rgba(255,255,255,.06), 0 10px 30px rgba(0,0,0,calc(.35 * var(--dm-sh))); border-color: rgba(0,0,0,.6); }
   /* 5 ロングシャドウ: 大きく落ちる影＋接地の濃い影 */
   #dev.dev-st-5 .dm-panel { box-shadow: 0 70px 120px -20px rgba(0,0,0,calc(.75 * var(--dm-sh))), 0 18px 30px -8px rgba(0,0,0,calc(.6 * var(--dm-sh))), inset 0 1px 0 rgba(255,255,255,calc(.14 * var(--dm-in))); }
   /* 8 ネオンの輪郭 */
@@ -1829,10 +1805,10 @@
   #dev.dev-tone-blue .dm-panel { background: linear-gradient(rgba(14,68,151,.35), rgba(14,187,255,.10)), linear-gradient(160deg, #0f1626, #131a2a); border-color: rgba(120,180,255,.22); }
   #dev.dev-tone-cyan .dm-panel { background: linear-gradient(rgba(14,187,255,.2), rgba(14,187,255,.05)), linear-gradient(160deg, #0b1b22, #101a1e); border-color: rgba(14,187,255,.28); }
   #dev.dev-tone-pink .dm-panel { background: linear-gradient(rgba(255,93,151,.22), rgba(255,93,151,.06)), linear-gradient(160deg, #241219, #1a1216); border-color: rgba(255,140,180,.22); }
-  #dev.dev-st-1.dev-tone-graphite .dm-panel, #dev.dev-st-2.dev-tone-graphite .dm-panel, #dev.dev-st-12.dev-tone-graphite .dm-panel { background: linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.08) 45%, rgba(255,255,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
-  #dev.dev-st-1.dev-tone-blue .dm-panel, #dev.dev-st-2.dev-tone-blue .dm-panel, #dev.dev-st-12.dev-tone-blue .dm-panel { background: linear-gradient(135deg, rgba(80,150,255,.30), rgba(14,187,255,.06) 45%, rgba(120,160,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
-  #dev.dev-st-1.dev-tone-cyan .dm-panel, #dev.dev-st-2.dev-tone-cyan .dm-panel, #dev.dev-st-12.dev-tone-cyan .dm-panel { background: linear-gradient(135deg, rgba(14,187,255,.30), rgba(14,187,255,.06) 45%, rgba(120,230,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
-  #dev.dev-st-1.dev-tone-pink .dm-panel, #dev.dev-st-2.dev-tone-pink .dm-panel, #dev.dev-st-12.dev-tone-pink .dm-panel { background: linear-gradient(135deg, rgba(255,93,151,.30), rgba(255,93,151,.06) 45%, rgba(255,160,200,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-graphite .dm-panel { background: linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.08) 45%, rgba(255,255,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-blue .dm-panel { background: linear-gradient(135deg, rgba(80,150,255,.30), rgba(14,187,255,.06) 45%, rgba(120,160,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-cyan .dm-panel { background: linear-gradient(135deg, rgba(14,187,255,.30), rgba(14,187,255,.06) 45%, rgba(120,230,255,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
+  #dev.dev-st-1.dev-tone-pink .dm-panel { background: linear-gradient(135deg, rgba(255,93,151,.30), rgba(255,93,151,.06) 45%, rgba(255,160,200,.16)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost))); }
 
   /* ===== 【2026-09-15 ヒデさん指定】AI らしい5案(11〜15)。正面のまま、光が走る/読み取る/粒/脈で「動いている・考えている」感を出す。
      つまみは案ごと(調整パネルで案を選ぶと、その案の項目に入れ替わる) ===== */
@@ -1851,19 +1827,6 @@
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
     animation: dmRunAng var(--dm-run-sec, 6s) linear infinite; animation-direction: var(--dm-run-dir, reverse); }
   @keyframes dmRunAng { to { --dm-ang: 1turn; } }
-  /* 12 オーロラの発光: 後ろでブランド色のオーロラがゆっくり動き、すりガラスの板で透かす */
-  #dev.dev-st-12 .dev-block { position: relative; }
-  #dev.dev-st-12 .dev-block::before { content: ''; position: absolute; left: 6%; right: 6%; top: 10%; bottom: 8%; z-index: 0; pointer-events: none;
-    background: radial-gradient(38% 46% at 24% 30%, rgba(14,187,255,var(--dm-aur-a, .6)), transparent 62%),
-                radial-gradient(42% 40% at 74% 62%, rgba(255,93,151,var(--dm-aur-a, .6)), transparent 62%),
-                radial-gradient(30% 34% at 52% 16%, rgba(255,255,255,calc(var(--dm-aur-a, .6) * .45)), transparent 60%);
-    filter: blur(var(--dm-aur-blur, 80px)); animation: dmAurora var(--dm-aur-sec, 14s) ease-in-out infinite alternate; }
-  @keyframes dmAurora { 0% { transform: translate3d(-4%, -2%, 0) scale(1); } 100% { transform: translate3d(5%, 3%, 0) scale(1.14); } }
-  #dev.dev-st-12 .dev1-mock, #dev.dev-st-12 .dev2-wrap, #dev.dev-st-12 .dev-center { position: relative; z-index: 1; }
-  #dev.dev-st-12 .dm-panel { background: linear-gradient(150deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 50%, rgba(255,255,255,.10)), linear-gradient(rgba(var(--dm-base), var(--dm-frost)), rgba(var(--dm-base), var(--dm-frost)));
-    backdrop-filter: blur(var(--dm-blur)) saturate(1.5); -webkit-backdrop-filter: blur(var(--dm-blur)) saturate(1.5);
-    border: 1px solid rgba(255,255,255,.26); box-shadow: inset 0 1px 0 rgba(255,255,255,calc(.4 * var(--dm-in))), 0 26px 64px rgba(0,0,0,calc(.5 * var(--dm-sh))); }
-
   /* ===== dev1/dev2 ブロック: 画面高さ100vhに中央寄せ。JS(updateDev)がブラー+フェードで出現→出っ放し ===== */
   .dev-block {
     position: relative;
@@ -1900,8 +1863,11 @@
   /* 【2026-08-29 ヒデさん指定】テキストスライド案の見出しの箱(CLI/SDK/API)。
      既定(list案・slide発火前)は width:0 で隠れ、「開発環境に柔軟に適応」と連続表示になる。 */
   .dc-one .ds-w { display: inline; }
+  /* 【2026-09-15 ヒデさん指定】スロットの箱(API/CLI/SDK)の上下位置と高さを調整パネルから変えられるように。
+     文字の並びの中に置く inline-flex なので、縦の微調整は translateY で行う(行の高さに影響させない) */
   .dc-one .ds-box { display: inline-flex; vertical-align: middle; align-items: center; justify-content: center;
-    overflow: hidden; height: 42px; border-radius: 0; background: rgba(255,255,255,.09); width: 0;
+    overflow: hidden; height: var(--ds-box-h, 42px); border-radius: 0; background: rgba(255,255,255,.09); width: 0;
+    transform: translateY(var(--ds-box-y, 0px));
     will-change: width; }  /* 2026-08-29 角丸なし / 2026-08-30 割れのカタつき低減(will-change) */
   .dc-one .ds-roll { position: relative; height: 34px; width: 100%; }
   .dc-one .ds-word { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -4651,7 +4617,8 @@ const DEFAULTS = {
                   splitDur=割れきるまでの時間(秒。大きいほどゆったり)。 */
                vpMode: 'center', splitDelay: 0.32, splitDur: 1.2,
                /* 【2026-09-15】モックのスタイル案のつまみ。stv = 案ごとの値(案を切り替えても各案の設定が残る) */
-               mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {} },   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
+               mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {},
+               slotBoxY: 0, slotBoxH: 42 },   /* 2026-09-15: ②のスロットの箱の上下位置・高さ */   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
     /* 【2026-08-25 刷新・カンプ 15800:24526/24258】導入事例 = 2×2グリッド。
        見出し(ブラー) → 水平線3本が左から(上→下でディレイ) → 中央の垂直線 → カード4枚がブラーで登場。 */
     cases:   { lenVh: 200, driveLen: 3.0, playSec: 2.0, inBlur: 20,
@@ -6010,19 +5977,16 @@ function cvStyleDef() { const k = cvStyleKey(); return CV_STYLES.find(s => s.key
 const DEV_STYLES = [
   { key: '0',  name: '現行（フラット）', fixed: true, tip: 'カンプどおりの平らな板(#161616 に白10%・薄い縁)。' },
   { key: '1',  name: 'リキッドグラス', tip: '後ろにブランド色の光を置き、すりガラスの板で透かす。上辺の光沢がゆっくり動く(ぼかし・内側の光はつまみ)。' },
-  { key: '2',  name: 'クリアガラス', tip: '光沢なしの静かなガラス。白の縁と薄い透け。' },
-  { key: '3',  name: 'インナーシャドウ（深い）', tip: '内側の上から落ちる影で、板が奥にくぼんで見える。' },
   { key: '5',  name: 'ロングシャドウ', tip: '大きく落ちる影と接地の濃い影で、高く浮いて見える。' },
   { key: '8',  name: 'ネオンの輪郭', tip: 'シアン→ピンクのグラデの縁取りと、外側ににじむ光。' },
   /* 【2026-09-15 ヒデさん指定】AI らしい5案。案を選ぶと調整パネルの項目がその案のものに入れ替わる */
   { key: '11', name: 'ネオンが一周する', tip: '縁に沿って光が走る(既定は反時計回り)。シアン→白→ピンクの尾を引く。速さ・向き・光の長さ・太さを調整できます。' },
-  { key: '12', name: 'オーロラの発光', tip: '板の後ろでブランド色のオーロラがゆっくり動き、すりガラス越しに透ける。強さ・速さ・にじみを調整できます。' },
 ];
 /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。パネルでは選んでいる案のまとまりだけ出す(syncDevDyn)。
    値は params.sections.dev.stv[まとまりのkey][項目のkey] に入る(案を切り替えても各案の値が残る)。
    css() が返した文字列を #dev の CSS 変数に入れる＝CSS 側は var() を読むだけ */
 const DEV_DYN_SPEC = {
-  glass: { title: 'この案の調整（ガラス）', on: ['1', '2', '12'], rows: [
+  glass: { title: 'この案の調整（ガラス）', on: ['1'], rows: [
     { k: 'frost', label: 'ガラスの濃さ（後ろの隠し具合）', min: 0, max: 1, step: 0.02, def: 0.62, v: '--dm-frost', css: v => String(v), fmt: v => Math.round(v * 100) + '%',
       hint: '0%で素通し(後ろのカードのコードが読めてしまう)、100%で完全に隠す。既定62%。' },
     { k: 'backBlur', label: '後ろのカードのぼかし', min: 0, max: 30, step: 1, def: 10, v: '--dm-backblur', css: v => v + 'px', fmt: v => Math.round(v) + 'px',
@@ -6034,14 +5998,9 @@ const DEV_DYN_SPEC = {
     { k: 'len', label: '光の長さ', min: 0.06, max: 0.7, step: 0.02, def: 0.28, v: '--dm-run-len', css: v => v + 'turn', fmt: v => Math.round(v * 100) + '%', hint: '縁1周のうち何割を光が占めるか。短いと点に近く、長いと帯になります。' },
     { k: 'w', label: '光の太さ', min: 1, max: 6, step: 0.5, def: 2, v: '--dm-run-w', css: v => v + 'px', fmt: v => v.toFixed(1) + 'px', hint: '縁取りの太さ。' },
   ] },
-  '12': { title: 'この案の調整（オーロラの発光）', on: ['12'], rows: [
-    { k: 'a', label: 'オーロラの強さ', min: 0, max: 1.2, step: 0.02, def: 0.6, v: '--dm-aur-a', css: v => String(v), fmt: v => Math.round(v * 100) + '%', hint: '後ろの光の濃さ。' },
-    { k: 'sec', label: '動く速さ', min: 4, max: 40, step: 1, def: 14, v: '--dm-aur-sec', css: v => v + 's', fmt: v => Math.round(v) + '秒', hint: '片道にかかる時間。長いほどゆったり。' },
-    { k: 'blur', label: 'にじみ', min: 20, max: 160, step: 5, def: 80, v: '--dm-aur-blur', css: v => v + 'px', fmt: v => Math.round(v) + 'px', hint: '光のぼかし量。小さいと形が見え、大きいと空気に溶けます。' },
-  ] },
 };
 /* ガラス(後ろが透ける)案 = 地色を敷いて後ろのカードをぼかす対象 */
-const DEV_GLASS_KEYS = ['1', '2', '12'];
+const DEV_GLASS_KEYS = ['1'];
 function devStv(g) { const d = (params.sections && params.sections.dev) || {}; d.stv = d.stv || {}; d.stv[g] = d.stv[g] || {}; return d.stv[g]; }
 function devDynGet(g, r) { const v = devStv(g)[r.k]; return v != null ? v : r.def; }
 const DEV_TONES = [
@@ -6693,7 +6652,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15"],"cvShape":["1","2","3","4","5"]};   /* 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"]};   /* 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
@@ -10883,7 +10842,6 @@ const RES_FX = {
   '20': { vh: 520 },             // 見出しが大きく登場(絵コンテ Figma 17271:23166): 大見出し→ピクト→説明→ブロックごと上へ
   /* 【2026-09-14 ヒデさん指定】数値が大きく→終点(上の帯)へ、for SaaS→for AI は横スクロール。横の動きが3通り */
   '21': { vh: 520 },             // 面ごとスライド
-  '22': { vh: 520 },             // 視差(ピクトは速く・文章は遅れて)
   '23': { vh: 520 },             // ピクト先行(面より先に着く)
   '24-2': { vh: 480, mobileFlow: true },   // 案24 の「場面を重ねて滑らかに繋ぐ」版(2026-09-15 ヒデさん指定。CSS は rfx-24 を共用)
   '24': { vh: 480, mobileFlow: true },   // for SaaS/for AI から入る(絵コンテ Figma 17271:23392)。SP は2列を縦に積むと1画面に収まらないので縦流れ
@@ -10907,7 +10865,7 @@ const RES_FX = {
   '40': { vh: 0, flow: true },           // モックNo.04 20,000を主役に(通常スクロール)
   '41': { vh: 0, flow: true },           // モックNo.05 図から言葉へ、焦点を渡す(通常スクロール・章ごと sticky)
 };
-const RES_FX_KEYS = ['1', '4', '5', '6', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '24-2', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41'];
+const RES_FX_KEYS = ['1', '4', '5', '6', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '23', '24', '24-2', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41'];
 function resFxKey() { const v = params.patterns && params.patterns.resFx; return (RES_FX[v] && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resFx', v))) ? v : 'default'; }   /* 恒久除外(VARIANT_REMOVED_EXTRA.resFx)した案は現行に落とす */
 function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
@@ -11179,7 +11137,7 @@ function resFxFrame(t) {
   /* 縦流れの案(4/25・PC): ステージは --sp 倍に縮めて表示するので、レイアウト上の高さとの差を margin-bottom で詰める */
   if (!isMobile && (k === '4' || k === '33' || k === '38' || k === '40')) { const st = rfxStage(); const sp = rfxSp(); if (st) setStyle(st, 'marginBottom', (-(st.offsetHeight * (1 - sp))).toFixed(1) + 'px'); }
   /* 縦が短い端末(SP・高さ600px以下)は固定案(1/5/6)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
-  if ((resFxShort() || (isMobile && RES_FX[k] && RES_FX[k].mobileFlow)) && ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '24-2', '25', '26', '27', '28', '29', '31', '32', '34', '35', '36', '37'].includes(k)) { valTOv.saas = null; valTOv.ai = null; return; }
+  if ((resFxShort() || (isMobile && RES_FX[k] && RES_FX[k].mobileFlow)) && ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '23', '24', '24-2', '25', '26', '27', '28', '29', '31', '32', '34', '35', '36', '37'].includes(k)) { valTOv.saas = null; valTOv.ai = null; return; }
 
   if (k === '1') {
     const p = resFxPin();
@@ -11491,7 +11449,7 @@ function resFxFrame(t) {
       tf(fig, `translateX(${dx.toFixed(2)}px) scale(${s.toFixed(4)})`);
       if (tx) { setStyle(tx, 'opacity', T.toFixed(3)); tf(tx, `translateY(${((1 - T) * 20).toFixed(2)}px)`); }
     });
-  } else if (k === '21' || k === '22' || k === '23') {
+  } else if (k === '21' || k === '23') {
     const p = resFxPin(), W = rfxVW(), vh = rfxVH();
     /* 【案21〜23 数値が大きく→終点へ、for SaaS→for AI は横スクロール】(2026-09-14 ヒデさん指定)
        A: 見出しと数値が画面中央に大きく(数値 numScale 倍) → 数値は上の帯(終点)へ小さく収まり、見出しは薄く上へ抜ける
@@ -11514,33 +11472,14 @@ function resFxFrame(t) {
       const main = i === 1;
       const Si = main ? S0 : subS;
       let tx0, ty0;
-      if (k === '22' && !isMobile) {
-        /* 【2026-09-15 ヒデさん指定・案22】下の2つは「20,000+」の横幅に両端揃え(導入企業の左端＝主数字の左端、連携アプリ数の右端＝主数字の右端) */
-        const half = el.offsetWidth * Si / 2;
-        tx0 = main ? W / 2 : (i === 0 ? W / 2 - mainW / 2 + half : W / 2 + mainW / 2 - half);
-        ty0 = main ? cyMain : cyMain + mainH / 2 + 34 + el.offsetHeight * Si / 2;
-      } else {
         tx0 = main ? W / 2 : (W / 2 + (i === 0 ? -offX : offX));
         ty0 = main ? vh / 2 - mainUp : vh / 2 + offY;
-      }
       const dx = (tx0 - cx) * (1 - shrink), dy = (ty0 - cy) * (1 - shrink);
       tf(el, `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${(Si - (Si - 1) * shrink).toFixed(4)})`);
     });
     /* 帯の下線は、数値が中央に大きい間は薄く(帯の位置に線だけ残らないように)。収まり切ったら CSS(暗転同期)に戻す */
     if (resEls.stats) setStyle(resEls.stats, 'borderBottomColor', shrink < 0.999 ? `rgba(172,172,172,${(0.6 * shrink).toFixed(3)})` : '');
-    if (hd && k === '22' && !isMobile) {
-      /* 【2026-09-15 ヒデさん指定・案22】見出しは最初「1行で数値の上(中央)」、終点は「上段の左に2行」(画像2)。1行→2行の切替は薄くなっている間に。
-         下線は移動している間は出さず、移動しきる直前に左からトリミングで伸びる */
-      /* 【2026-09-15 ヒデさん指定「レイアウトシフト」の根治】見出しは常に「上段の左に2行」のレイアウト(絶対配置=数値・線・下段の配置に影響しない)。
-         導入では transform だけで数値の上(中央)に置き、行ごとに短い行を寄せて中央揃えに見せる → 収まるにつれ左揃えへ連続的に戻る(薄くしない・切替の跳びなし) */
-      const cx = rfxCenterX(hd, 0), cy = rfxCenterY(hd);
-      const dx = (W / 2 - cx) * (1 - shrink), dy = ((cyMain - mainH / 2 - 60 - hd.offsetHeight / 2) - cy) * (1 - shrink);
-      tf(hd, `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px)`);
-      const l1 = resEls.hl1, l2 = resEls.hl2;
-      if (l1 && l2) { const wm = Math.max(l1.offsetWidth, l2.offsetWidth); tf(l1, `translateX(${((wm - l1.offsetWidth) / 2 * (1 - shrink)).toFixed(2)}px)`); tf(l2, `translateX(${((wm - l2.offsetWidth) / 2 * (1 - shrink)).toFixed(2)}px)`); }
-      setStyle(hd, 'opacity', '1'); setStyle(hd, 'pointerEvents', '');
-      E.res2.style.setProperty('--rfx-hr', rfxRange(shrink, 0.85, 1).toFixed(3));
-    } else if (hd) {
+    if (hd) {
       const cy = rfxCenterY(hd);
       const dy = ((vh / 2 - (isMobile ? 110 : 170)) - cy) * (1 - shrink) - 30 * rfxRange(p, 0.14, 0.26);
       tf(hd, `translateY(${dy.toFixed(2)}px)`);
@@ -11556,7 +11495,6 @@ function resFxFrame(t) {
     E.r2v.forEach((el, i) => {
       const fig = E.fig[i], tx = E.tx[i];
       let fx = 0, tx0 = 0;
-      if (k === '22') { fx = -Math.abs(pos - i) * W * 0.22; tx0 = Math.abs(pos - i) * W * 0.12; }   /* 視差: ピクトは面より速く、文章は遅れて */
       if (k === '23') { fx = -(lead - pos) * W; }                                                   /* ピクト先行: 面より先に着く／先に去る */
       if (fig) tf(fig, `translateX(${fx.toFixed(2)}px)`);
       if (tx) { tf(tx, `translateX(${tx0.toFixed(2)}px)`); setStyle(tx, 'opacity', '1'); }
@@ -13236,6 +13174,14 @@ function applyResSlotGap() {
 }
 applyResSlotGap();
 /* 【2026-09-15 ヒデさん指定】案24 系: 2つの価値のブロックと区切り線の間の余白(px) */
+/* 【2026-09-15 ヒデさん指定】開発者体験②のスロットの箱の位置・高さ */
+function applyDsBox() {
+  const d = (params.sections && params.sections.dev) || {};
+  const r = document.documentElement.style;
+  r.setProperty('--ds-box-y', (d.slotBoxY != null ? d.slotBoxY : 0) + 'px');
+  r.setProperty('--ds-box-h', (d.slotBoxH != null ? d.slotBoxH : 42) + 'px');
+}
+applyDsBox();
 function applyResHrGap() {
   const r = (params.sections && params.sections.results) || {};
   document.documentElement.style.setProperty('--rfx-hr-gap', (r.hrGap != null ? r.hrGap : 100) + 'px');
@@ -17478,7 +17424,6 @@ function buildPanel() {
       ['19 線でつながる', '19', '導入→ピクトが所定の位置(左)にブラーから現れ→ピクトの右端から文章へ線が伸び→線が届くと説明が浮かび上がる(固定・340vh)。'],
       ['20 見出しが大きく登場', '20', '絵コンテ(Figma 17271:23166): 「for SaaS」が130pxで中央に登場→上へ抜けながらピクトが中央に大きく→右へ収まり、左に説明(ラベル20px・見出し46px・本文14px)→ブロックごと上へ抜けて「for AI」へ(固定・520vh)。'],
       ['21 数値が大きく→横へ(面ごと)', '21', '見出しと数値が画面中央に大きく(3倍)→数値は上の帯(終点)へ小さく収まる→for SaaS の面が右から徐々に→横に面ごとスライドして for AI→縦に戻って開発者体験へ(固定・520vh)。'],
-      ['22 数値が大きく→横へ(視差)', '22', '『数値が大きく→横へ(面ごと)』と同じ流れで、横移動の時にピクトは面より速く・文章は遅れて動く(奥行きのある視差)(固定・520vh)。'],
       ['23 数値が大きく→横へ(ピクト先行)', '23', '『数値が大きく→横へ(面ごと)』と同じ流れで、横移動の時に AI のピクトが面より先に着き、SaaS のピクトが先に去る(ピクトが導く)(固定・520vh)。'],
       ['24-1 for SaaS/for AI から入る(段階)', '24', '絵コンテ(Figma 17271:23392): 「for SaaS」「for AI」(70px)が左右に並ぶ→文字は小さく上へ、各列の中央にピクトが大きく(モーションは動いたまま)→終点: 上に説明・下にピクト、その下に見出しと数値(固定・480vh)。'],
       ['24-2 for SaaS/for AI から入る(滑らか)', '24-2', '『for SaaS/for AI から入る(段階)』と同じ流れを、場面ごとに止めず「前の動きの途中から次が始まる」ように重ねて繋いだ版: 文字の縮小 0.04〜0.34・ピクトの登場 0.10〜0.40(1.4→1.7倍に育ちながら)・終点へ 0.30〜0.70・線 0.56〜0.72・下段 0.62〜0.82(固定・480vh)。'],
@@ -17510,7 +17455,7 @@ function buildPanel() {
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
       '固定して読む区間の長さ(固定のある案のみ。4・12・30・33・38〜41 は固定なし)。大きいほどゆっくり進みます。'));
     { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
-      rfxDyn(_vr, ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '24-2', '25', '26', '27', '28', '29', '31', '32', '34', '35', '36', '37']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
+      rfxDyn(_vr, ['1', '5', '6', '10', '11', '13', '14', '15', '16', '17', '18', '19', '20', '21', '23', '24', '24-2', '25', '26', '27', '28', '29', '31', '32', '34', '35', '36', '37']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
     /* 【2026-09-14 ヒデさん指定】主役ピクト系(案6・15〜19)の「数値の訴求 → ピクトのアニメーション」の移行を詰めるスライダー(値は params.sections.results.hero) */
     subT(catRes, () => '主役ピクト系（案' + rfxNos(['6', '14', '15', '16', '17', '18', '19', '20', '29', '31', '32', '34', '35', '36']) + '）：数値→ピクトの移行');
     const _heroGrp = catRes.lastElementChild;
@@ -17549,7 +17494,7 @@ function buildPanel() {
     s20('ピクトの主役の大きさ', 'heroScale', 1, 2.2, 0.05, v => '×' + v.toFixed(2), '中央に大きく出る時の倍率(終点の枠 340px に対して。1.55 ≒ 527px)。');
     rfxDyn(_g20, ['20']);
     /* 案21〜23: 数値の大きさと横移動(その案の時だけ出す) */
-    subT(catRes, () => '案' + rfxNos(['21', '22', '23']) + '：数値の大きさと横移動');
+    subT(catRes, () => '案' + rfxNos(['21', '23']) + '：数値の大きさと横移動');
     const _g21 = catRes.lastElementChild;
     const f21 = () => { const r = params.sections.results; r.fx21 = r.fx21 || {}; return r.fx21; };
     const F21 = { numScale: 3.0, settleAt: 0.06, settleLen: 0.20, panAt: 0.50, panLen: 0.22 };
@@ -17559,7 +17504,7 @@ function buildPanel() {
     s21('収まる長さ', 'settleLen', 0.05, 0.5, 0.01, pct, '帯に収まり切るまでにかける長さ。for SaaS はこの 8割時点から右から入ってくる。');
     s21('横に動き始める位置', 'panAt', 0.3, 0.8, 0.01, pct, 'for SaaS → for AI の横移動が始まる位置。');
     s21('横移動の長さ', 'panLen', 0.08, 0.5, 0.01, pct, '横移動にかける長さ。長いほどゆっくり。');
-    rfxDyn(_g21, ['21', '22', '23']);
+    rfxDyn(_g21, ['21', '23']);
     /* 案24: ピクトの大きさと文字の動き(その案の時だけ出す) */
     subT(catRes, () => '案' + rfxNos(['24', '24-2', '25']) + '：ピクトの大きさと文字の動き');
     const _g24 = catRes.lastElementChild;
@@ -17651,7 +17596,6 @@ function buildPanel() {
       { key: 'S1', name: 'S1 同期して回る',   tip: '2つの輪の中のマーカーが同じ角度で回ります。片方が遅れ、すっと追いつく＝同期。' },
       { key: 'S2', name: 'S2 双方向のやり取り', tip: '2つの箱の間を小さな四角が行き来し、届くと受け手の枠が太くなります。' },
       { key: 'S3', name: 'S3 重なって1つ',    tip: '2つの円が寄って重なり、中央に四角が生まれます＝統合。' },
-      { key: 'S4', name: 'S4 一斉にそろう',   tip: '3×3の升目がバラバラに光り、最後に全部が同じ状態へ揃います。' },
       { key: 'S5', name: 'S5 すれ違う2本',    tip: '上下の線を、円と四角が逆向きに流れます。交差で一瞬ふくらみます。' },
       /* 2026-08-28 追加: 合流・重なり・時系列・パスのトリミング */
       { key: 'S6', name: 'S6 描かれてつながる', tip: '左から右へ線が引かれ、届いた瞬間に受け手の枠が一周描かれます。引くのは速く、余韻はゆっくり。' },
@@ -17776,6 +17720,12 @@ function buildPanel() {
   sectionLenSlider('dev', 1600);
 
   /* 【2026-08-30 ヒデさん指定】② はテキストスライド固定(既定)。リスト/スライドの選択UIは廃止。 */
+  sub(catDev, '② の見出しのスロット（API / CLI / SDK の箱）', true, { fixed: true });
+  rows.push(slider('箱の上下の位置', -30, 30, 1, () => (sv().dev.slotBoxY != null ? sv().dev.slotBoxY : 0), v => { sv().dev.slotBoxY = v; applyDsBox(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+    'マイナスで上へ、プラスで下へ。文字の並びには影響しません(見た目だけ動かします)。', { signed: true, fixedMax: true }));
+  rows.push(slider('箱の高さ', 24, 64, 1, () => (sv().dev.slotBoxH != null ? sv().dev.slotBoxH : 42), v => { sv().dev.slotBoxH = v; applyDsBox(); }, v => Math.round(v) + 'px',
+    'グレーの箱の高さ。文字(34px)より少し大きいと収まりがよくなります。', { fixedMax: true }));
+
   sub(catDev, '② の出入り（スクロール位置）');
   note('② は dev1 と同じくスクロール位置で出入りします（時間再生ではないので上に戻っても急に消えません）。');
   const dsVpNote = noteLive(() => { const m = sv().dev.vpMode || 'center';
