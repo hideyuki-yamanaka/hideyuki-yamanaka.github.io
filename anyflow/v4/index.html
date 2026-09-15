@@ -2365,25 +2365,26 @@
   [data-hover="cardtrim"] .cg-img img { transition: transform .35s cubic-bezier(.25,.1,.25,1); }
   [data-hover="cardtrim"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
 
-  /* ===== 【2026-09-15 ヒデさん指定】採用案(罫線なし×カードの周りに線)のバリエーション5案。
-     線の引き方は同じで、影の付け方・グレーの濃さ・色みだけを変える ===== */
+  /* ===== 【2026-09-15 ヒデさん指定・作り直し】線のアニメーションを使わない5案。
+     カードの周りに線は引かず、【影の付け方】と【面のグレー／色み】だけで「触っている1枚」を示す。
+     ⚠️ セルの opacity / filter は登場アニメが毎フレーム書くので触らない(transform・box-shadow・background だけ)。 */
   [data-hover^="ct-"] .cg-cell { transition: transform .32s var(--e-soft), box-shadow .34s ease, background-color .34s ease; }
-  [data-hover^="ct-"] .cg-cell:hover .cg-cedge { transform: scale(1); transition-duration: .55s; }
   [data-hover^="ct-"] .cg-img img { transition: transform .35s cubic-bezier(.25,.1,.25,1); }
   [data-hover^="ct-"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
-  /* 1 やわらかく浮く: 大きく遠い影でふわっと持ち上がる */
-  [data-hover="ct-lift"] .cg-cell:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))); }
-  /* 2 近くに締まる: 小さく近い影。カチッとした手触り */
+  /* 1 影でふわっと浮く: 大きく遠い影。いちばん「持ち上がる」 */
+  [data-hover="ct-lift"] .cg-cell:hover { transform: translateY(-6px);
+    box-shadow: 0 22px 44px rgba(16,24,40,calc(.12 * var(--cg-sh, 1))); }
+  /* 2 影が近くに締まる: 小さく近い影。カチッとした手触り */
   [data-hover="ct-tight"] .cg-cell:hover { transform: translateY(-2px);
-    box-shadow: 0 1px 2px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))), 0 5px 12px rgba(16,24,40,calc(.09 * var(--cg-sh, 1))); }
-  /* 3 線が濃くなる: 影は出さず、線のグレーだけ濃く */
-  [data-hover="ct-dark"] .cg-cell:hover { --cg-edge: #6B7280; }
-  /* 4 面が白くなる＋やわらかい影: カードが紙のように地から浮く */
-  [data-hover="ct-panel"] .cg-cell:hover { --cg-edge: #D1D5DC; background: var(--surface-card, #fff);
-    box-shadow: 0 14px 32px rgba(16,24,40,calc(.09 * var(--cg-sh, 1))); }
-  /* 5 線に色がつく: ブランドのシアンで引かれ、うっすら色の影が落ちる */
-  [data-hover="ct-brand"] .cg-cell:hover { --cg-edge: var(--brand-cyan);
-    box-shadow: 0 10px 26px rgba(14,187,255,calc(.16 * var(--cg-sh, 1))); }
+    box-shadow: 0 2px 4px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))), 0 8px 16px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))); }
+  /* 3 面がうっすらグレーに沈む: 影も動きもなし。触った1枚だけ地より少し濃い面になる */
+  [data-hover="ct-gray"] .cg-cell:hover { background: rgba(16,24,40,calc(.045 * var(--cg-tone, 1))); }
+  /* 4 面が白く浮く: 面が白くなり、やわらかい影で紙のように地から離れる */
+  [data-hover="ct-panel"] .cg-cell:hover { background: var(--surface-card, #fff);
+    box-shadow: 0 16px 36px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))); }
+  /* 5 ブランド色の光が差す: 影と面にシアンをうっすら。いちばん目立つ */
+  [data-hover="ct-brand"] .cg-cell:hover { background: rgba(14,187,255,calc(.05 * var(--cg-tone, 1)));
+    box-shadow: 0 12px 30px rgba(14,187,255,calc(.22 * var(--cg-sh, 1))); }
 
   /* 触ったカードの縁の罫線を地色で覆って消す(2pxの帯で線をまたぐ) */
   .cg-cover { position: absolute; background: var(--surface); pointer-events: none; z-index: 2; opacity: 0;
@@ -13611,12 +13612,12 @@ const CASE_HOVERS = [
   { key: 'trim',      name: '現行（サムネイルに枠が引かれる）', fixed: true, tip: '写真の4辺が四隅から同時に伸びて枠を閉じる。写真は少しだけ寄る。' },
   { key: 'cardtrim',  name: 'カードの周りに線が引かれる', tip: '写真ではなく【カードの外周】を、4辺同時のトリミングで閉じる。サムネイルの枠は出ません。罫線なしの案と相性がよい。' },
   { key: 'nolines',   name: '触ったカードの周りの線が消える', tip: '触ったカードの縁にある罫線だけがスッと消えて、そのカードが切り離される。サムネイルの枠は出ません。罫線ありの案で。' },
-  /* 採用案(線が引かれる)のバリエーション: 影の付け方・グレーの濃さ違い */
-  { key: 'ct-lift',   name: '線＋やわらかく浮く', tip: '線が引かれるのに加えて、大きく遠い影でふわっと6px 持ち上がる。' },
-  { key: 'ct-tight',  name: '線＋近くに締まる影', tip: '小さく近い影で2px だけ持ち上がる。カチッとした手触り。' },
-  { key: 'ct-dark',   name: '線が濃いグレーになる', tip: '影は出さず、線のグレーだけ濃く(#6B7280)なる。いちばん静か。' },
-  { key: 'ct-panel',  name: '面が白くなる＋やわらかい影', tip: 'カードの面が白くなり、線は薄いグレーに。紙が地から浮いたように見える。' },
-  { key: 'ct-brand',  name: '線がブランド色になる', tip: '線がシアンで引かれ、うっすらシアンの影が落ちる。いちばん目立つ。' },
+  /* 線を引かない5案: 影の付け方と面のグレー／色みだけで見せる */
+  { key: 'ct-lift',   name: '影でふわっと浮く', tip: '線は引かず、大きく遠い影で6px 持ち上がる。いちばん「浮く」。' },
+  { key: 'ct-tight',  name: '影が近くに締まる', tip: '小さく近い影で2px だけ持ち上がる。カチッとした手触り。' },
+  { key: 'ct-gray',   name: '面がうっすらグレーに沈む', tip: '影も動きもなし。触った1枚だけ、地より少し濃いグレーの面になる。いちばん静か。' },
+  { key: 'ct-panel',  name: '面が白く浮く（＋やわらかい影）', tip: '面が白くなり、やわらかい影で紙のように地から離れる。' },
+  { key: 'ct-brand',  name: 'ブランド色の光が差す', tip: '面と影にシアンがうっすら差す。いちばん目立つ。' },
 ];
 function caseLayoutKey() { const v = String((params.patterns && params.patterns.caseLayout) || '0'); return (CASE_LAYOUTS.some(c => c.key === v) && !variantRemovedKey('caseLayout', v)) ? v : '0'; }
 function caseHoverKey() { const v = String((params.patterns && params.patterns.caseHover) || 'trim'); return (CASE_HOVERS.some(c => c.key === v) && !variantRemovedKey('caseHover', v)) ? v : 'trim'; }
