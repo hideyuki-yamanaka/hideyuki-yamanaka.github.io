@@ -2525,15 +2525,17 @@
        始まりも終わりも傾きを 0 に近づける。途中はやや速いが、線として認識されるのは端の段差なので馴染む。 */
     --cv-fade-mask: linear-gradient(180deg,
       rgba(0,0,0,0)    var(--cv-f0),
-      rgba(0,0,0,.005) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .10),
-      rgba(0,0,0,.03)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .20),
-      rgba(0,0,0,.10)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .32),
-      rgba(0,0,0,.24)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .43),
-      rgba(0,0,0,.50)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .55),
-      rgba(0,0,0,.76)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .67),
-      rgba(0,0,0,.90)  calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .78),
-      rgba(0,0,0,.975) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .88),
-      rgba(0,0,0,.996) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .95),
+      rgba(0,0,0,.010) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .0625),
+      rgba(0,0,0,.042) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .125),
+      rgba(0,0,0,.098) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .1875),
+      rgba(0,0,0,.167) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .25),
+      rgba(0,0,0,.333) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .375),
+      rgba(0,0,0,.500) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .50),
+      rgba(0,0,0,.667) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .625),
+      rgba(0,0,0,.833) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .75),
+      rgba(0,0,0,.902) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .8125),
+      rgba(0,0,0,.958) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .875),
+      rgba(0,0,0,.990) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .9375),
       #000 var(--cv-f1));
     -webkit-mask-image: var(--cv-fade-mask); mask-image: var(--cv-fade-mask); }
   /* 【2026-09-15 ヒデさん指摘】「赤枠の余白が詰まらない」。溶け込みの薄い帯が【お問い合わせの中】にあったので、
@@ -6193,7 +6195,7 @@ function cvApplyFade(sec) {
     /* 逃がせる量 = お問い合わせ上端 − 導入事例のカード下端 − 6px(カードに色がかからない余裕) */
     let _room = 0;
     const _gr = document.getElementById('caseGrid');
-    if (_gr) _room = Math.max(0, Math.round(sec.getBoundingClientRect().top - _gr.getBoundingClientRect().bottom - 6));
+    if (_gr) _room = Math.max(0, Math.round(sec.getBoundingClientRect().top - _gr.getBoundingClientRect().bottom - 2));
     /* 空きが足りない時は「お問い合わせの中に帯を残す」のではなく、ぼかし幅の方を詰める。
        こうすると、間隔をマイナスにして詰めても上に灰色の帯が戻ってこない(＝必ず上端から色が乗る) */
     cvRisePx = Math.min(_bl, _room);
