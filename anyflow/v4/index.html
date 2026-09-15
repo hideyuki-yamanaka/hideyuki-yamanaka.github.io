@@ -15766,7 +15766,19 @@ const cvGizmo = (function () {
     hA.style.left = A.x + 'px'; hA.style.top = A.y + 'px'; hB.style.left = B.x + 'px'; hB.style.top = B.y + 'px';
     nA.style.left = A.x + 'px'; nA.style.top = A.y + 'px'; nB.style.left = B.x + 'px'; nB.style.top = B.y + 'px';
   }
-  function placeFromParams() { fit(); const e = endpoints(); A = e.A; B = e.B; draw(); }
+  function placeFromParams() {
+    fit(); const { W, H } = dims(); const e = endpoints();
+    const inside = pt => pt.x >= -6 && pt.x <= W + 6 && pt.y >= -6 && pt.y <= H + 6;
+    if (inside(e.A) && inside(e.B)) { A = e.A; B = e.B; }
+    else {
+      /* 現在の明るい中心が画面の外(カンプ既定は右上の外)→ 届く位置に既定の棒を出す。
+         params はまだ触らない(開いた瞬間に見た目が変わらない)。ユーザーが棒を動かした時点で反映される。 */
+      const ang = (params.cv.gAng || 0) * Math.PI / 180, L = Math.min(W, H) * 0.62;
+      const cx = W / 2, cy = H / 2, dx = Math.cos(ang) * L / 2, dy = Math.sin(ang) * L / 2;
+      A = { x: cx - dx, y: cy - dy }; B = { x: cx + dx, y: cy + dy };
+    }
+    draw();
+  }
   /* 棒の両端 → params(中心・角度・広がり) */
   function paramsFromEnds() {
     const { W, H } = dims(); const c = params.cv;
