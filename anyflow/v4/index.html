@@ -2487,7 +2487,7 @@
   #conversion.cv-fi .cv-inner { position: static; width: auto; height: auto; overflow: visible; margin: 0;
     flex: 1 1 auto; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
     padding-top: var(--cv-add-t, 0px); padding-bottom: var(--cv-add-b, 0px); }
-  #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: 150px auto 120px; }
+  #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: var(--cv-head-top, 150px) auto 120px; }
   #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; position: relative; z-index: 2; padding: 28px max(120px, calc((100% - 1200px) / 2)) 36px; border-top: 1px solid rgba(0,0,0,.16); color: var(--ink-strong); }   /* 左右は本文と同じグリッド(1200px 中央) */
   .cv-foot-r { display: flex; align-items: center; gap: 28px; }
   /* 案11: ボタンをフッター帯に(見出し・本文は左) */
@@ -2527,7 +2527,8 @@
       rgba(0,0,0,.58) calc(var(--cv-f0) + (var(--cv-f1) - var(--cv-f0)) * .80),
       #000 var(--cv-f1));
     -webkit-mask-image: var(--cv-fade-mask); mask-image: var(--cv-fade-mask); }
-  #conversion.cvs-10 .cv-content { margin: 210px auto 120px; }
+  /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白(既定210px)を調整パネルから変えられるように */
+  #conversion.cvs-10 .cv-content { margin: var(--cv-head-top, 210px) auto 120px; }
 
   /* ================= フッター (カンプ 16083:23592 に差し替え・2026-09-09) =================
      1440×327: 上100 / 下40 / 左右120。上段=「ロゴ+住所」と「2列ナビ」を両端寄せ、その下 60 に © を中央。
@@ -6035,7 +6036,8 @@ function cvMoodAt(p, mode, wAmt) {
   return A.map((c, j) => [0, 1, 2].map(k => c[k] + (B[j][k] - c[k]) * e));
 }
 function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
-const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, warm: 0.5, warmCol: '#ffe0cc', warmSpan: 0.42, addT: 0, addB: 0 };
+const CV_HEAD_TOP_DEF = 120;   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
+const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, warm: 0.5, warmCol: '#ffe0cc', warmSpan: 0.42, headTop: CV_HEAD_TOP_DEF, addT: 0, addB: 0 };
 const CV_COLORS = [
   { key: 'C1',  name: 'カンプ（現行）', tip: 'カンプ実測の5色(淡ピンク白→淡ブルー→シアン→青紫→ピンク)・カンプの放射グラデ・Bayer 1px 3段。', cv: {} },
   { key: 'C2',  name: 'ブルー寄り', tip: 'ピンクを青紫に置き換え、シアン〜ブルーで統一。放射の中心は右上。', cv: { colors: ['#eef7ff', '#9ad9ff', '#0ebbff', '#1f5fd6', '#6a4bd8'], gMode: 1, gcx: 0.8, gcy: 0.1, gr: 0.95, gAspect: 1.25 } },
@@ -6147,7 +6149,7 @@ function cvInkLight() {
 let cvNatH = 0, cvNatKey = '';
 function cvNaturalH(sec) {
   if (!sec) return 0;
-  const key = (sec.className || '') + '|' + Math.round(window.innerWidth || 0);
+  const key = (sec.className || '') + '|' + Math.round(window.innerWidth || 0) + '|' + ((params.cv && params.cv.headTop != null) ? params.cv.headTop : CV_HEAD_TOP_DEF);
   if (key === cvNatKey && cvNatH > 20) return cvNatH;
   const st = sec.style, mh = st.minHeight, pt = st.paddingTop;
   st.minHeight = '0px'; st.paddingTop = '0px';                 /* 伸ばす指定を一時的に外して素の高さを測る */
@@ -6192,6 +6194,9 @@ function applyCvStyle(fromSwitch) {
   /* 【2026-09-15 ヒデさん指摘「縦幅を伸ばしても見た目が変わらない」】
      一体型は min-height が素の高さ(≒670px)より小さいと何も起きなかった。→「素の高さ＋追加の高さ」で持つ。
      枠の案は従来どおり「縦幅」そのもの(カンプ 416)。 */
+  /* 【2026-09-15 ヒデさん指摘】見出しの上の余白。素の高さに影響するので cvNaturalH より【先】に入れる */
+  { const _ht = (params.cv && params.cv.headTop != null) ? params.cv.headTop : CV_HEAD_TOP_DEF;
+    sec.style.setProperty('--cv-head-top', Math.round(_ht) + 'px'); }
   { const _fi = !!st.fi && !st.card, _nat = _fi ? cvNaturalH(sec) : 0;
     const _t = (params.cv && params.cv.addT) || 0, _b = (params.cv && params.cv.addB) || 0;
     sec.style.setProperty('--cv-add-t', Math.round(_t) + 'px');
@@ -18013,6 +18018,9 @@ function buildPanel() {
   rows.push(slider('暖かさの届く範囲', 0.1, 1, 0.05, () => (cvv().warmSpan != null ? cvv().warmSpan : 0.42), v => { cvv().warmSpan = v; applyCvStyle(); markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
     '上端からどこまで暖かさを効かせるか。セクションの高さに対する割合で、そこへ向かってなめらかに消えます。既定42%。', { fixedMax: true }));
   sub(catCv, '縦幅・間隔');
+  /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白はここで減らせる */
+  rows.push(slider('見出しの上の余白（一体型）', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px',
+    'お問い合わせの見出しの【上】の余白。減らすほど導入事例との間の空きが詰まり、セクション自体も短くなります。カンプ相当は210px。SP は変わりません。', { fixedMax: true }));
   rows.push(slider('上に足す高さ（一体型）', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
     '見出しの【上】に足す高さ。増やすほど、お問い合わせの見出しの上に色の面が増えます。0 でいままで。SP は変わりません。', { fixedMax: true }));
   rows.push(slider('下に足す高さ（一体型）', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
