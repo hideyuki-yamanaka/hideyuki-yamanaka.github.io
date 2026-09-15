@@ -20,7 +20,7 @@ const NAV: { label: string; href?: string; scene?: number }[] = [
   { label: "ホーム", scene: 0 },
   { label: "ぼーっとスポット", scene: 2 },
   { label: "グルメ", scene: 6 },
-  { label: "体験", href: "/experience" },
+  { label: "体験", scene: 7 },
 ];
 
 const MSG_TITLE = "網走は何もない。";
@@ -38,24 +38,28 @@ const MSG_BLOCKS: string[][] = [
 const SPOTS = [
   {
     no: "01",
+    slug: "notoro",
     title: "能取岬",
     img: "/img/spot-notoro.jpg",
     body: "オホーツク海に突き出た岬で、突端には灯台と管理事務所があるだけ。ここから西方は能取湖と常呂町の海岸、北方はすべてオホーツク海、東方は遠く知床連山が眺められます。",
   },
   {
     no: "02",
+    slug: "sango",
     title: "能取湖サンゴ草群落地",
     img: "/img/spot-sangoso.jpg",
     body: "能取湖の南岸、卯原内に位置する「能取湖サンゴ草群生地」は、別名アッケシソウと呼ばれるサンゴ草の日本一を誇る群落地です。",
   },
   {
     no: "03",
+    slug: "eki",
     title: "網走駅",
     img: "/img/spot-eki.jpg",
-    body: "石北本線と釧網本線が乗り入れる、オホーツクの玄関口。縦書きの駅名標には「人生を横道にそれず、まっすぐ歩んでほしい」という願いが込められていると伝わります。",
+    body: "石北本線と釧網本線、ふたつの路線がどちらもここを終点とする駅。乗り換えるための駅ではなく、たどり着く駅です。次の列車までの待ち時間さえ、ここではごちそうになります。",
   },
   {
     no: "04",
+    slug: "ryuhyo",
     title: "流氷クルーズ",
     img: "/img/spot-ryuhyo.jpg",
     body: "冬のオホーツク海を埋め尽くす流氷は、はるかアムール川から流れ着く自然の贈りもの。砕氷船に乗れば、白い海原を割って進む音と揺れを全身で感じられます。",
@@ -69,7 +73,17 @@ const GOURMET = [
   { no: "04", title: "酒縁酒場 屯々", img: "/img/gourmet-new-4.jpg" },
 ];
 
-const SCENE_COUNT = 7; // KV / メッセージ / スポット×4 / グルメ
+/* 体験セクション（PC版 EventSection と同じ4件・同じ詳細ページへつなぐ） */
+const EVENTS = [
+  { slug: "kangoku", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg" },
+  { slug: "ryuhyokan", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg" },
+  { slug: "canoe", title: "カヌー体験", img: "/img/spot/canoe-1.jpg" },
+  { slug: "washi", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg" },
+];
+
+/* KV / メッセージ / スポット×4 / グルメ / 体験 / フッター
+   （2026-09-16 ヒデさん指示で体験とフッターを追加。PCと同じ中身をスマホでも見せる） */
+const SCENE_COUNT = 9;
 const DUR = 800; // トランジション時間(ms)
 
 export default function MobileTop() {
@@ -137,7 +151,7 @@ export default function MobileTop() {
 
   /* その場でブラーのクロスフェード（動かさない） */
   /* グルメ（白背景）のときはヘッダーを黒に切り替える */
-  const headerDark = active === 6;
+  const headerDark = active === 6 || active === 7 || active === 8;
   useEffect(() => {
     document.documentElement.dataset.headerDark = headerDark ? "1" : "";
     return () => {
@@ -263,7 +277,12 @@ export default function MobileTop() {
             alt={spot.title}
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent px-6 pb-12 pt-28 text-white">
+          {/* 説明のかたまりごとタップで詳細ページへ（2026-09-16 ヒデさん指示） */}
+          <button
+            type="button"
+            onClick={() => router.push(`/spot/${spot.slug}`)}
+            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent px-6 pb-12 pt-28 text-left text-white"
+          >
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[13px] font-extralight">
@@ -281,7 +300,7 @@ export default function MobileTop() {
             <p className="mt-3 text-[13px] font-extralight leading-[1.9] tracking-[0.3px]">
               {spot.body}
             </p>
-          </div>
+          </button>
         </section>
       ))}
 
@@ -326,6 +345,82 @@ export default function MobileTop() {
         </div>
       </section>
 
+      {/* ── 7: 体験セクション ───────────────── */}
+      <section
+        className="absolute inset-0 flex flex-col justify-center bg-white px-6"
+        style={scene(7)}
+      >
+        <h2 className="text-[20px] font-thin leading-[1.7] text-ink">
+          意外とオモロい、網走。
+        </h2>
+        {/* 2列×2段。タップで詳細ページへ */}
+        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6">
+          {EVENTS.map((e) => (
+            <button
+              key={e.slug}
+              type="button"
+              onClick={() => router.push(`/spot/${e.slug}`)}
+              className="flex flex-col gap-2 text-left"
+            >
+              <div className="overflow-hidden rounded-2xl">
+                <img
+                  src={e.img}
+                  alt={e.title}
+                  className="h-[150px] w-full object-cover"
+                />
+              </div>
+              <p className="text-[12px] font-extralight leading-[1.4] text-ink/50">
+                体験・イベント
+              </p>
+              <p className="text-[14px] font-light leading-[1.5] text-ink">
+                {e.title}
+              </p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 8: フッター ───────────────────── */}
+      <section
+        className="absolute inset-0 flex flex-col items-center justify-center gap-10 bg-white px-6"
+        style={scene(8)}
+      >
+        <img
+          src="/img/hero-message-blue.svg"
+          alt="な〜んにもない たまらない"
+          className="h-[150px] w-auto"
+        />
+        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+          {NAV.map((n) => (
+            <button
+              key={n.label}
+              type="button"
+              onClick={() => (n.href ? router.push(n.href) : goTo(n.scene ?? 0))}
+              className="text-[13px] font-light leading-[1.2] text-ink/70"
+            >
+              {n.label}
+            </button>
+          ))}
+        </nav>
+        <div className="flex items-center gap-5">
+          {[
+            { icon: "/img/sns-ig-circle.svg", label: "Instagram" },
+            { icon: "/img/sns-x.svg", label: "X" },
+            { icon: "/img/sns-yt.svg", label: "YouTube" },
+          ].map((s) => (
+            <a
+              key={s.label}
+              href="#"
+              aria-label={s.label}
+              className="opacity-70"
+              onClick={(ev) => ev.preventDefault()}
+            >
+              <img src={s.icon} alt="" className="h-[18px] w-auto [filter:brightness(0)]" />
+            </a>
+          ))}
+        </div>
+      </section>
+
       {/* ── 進行ドット（右端・タップでも移動） ───── */}
       <div className="absolute right-3 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2">
         {Array.from({ length: SCENE_COUNT }).map((_, i) => (
@@ -336,8 +431,12 @@ export default function MobileTop() {
             onClick={() => goTo(i)}
             className={`block rounded-full transition-all duration-300 ${
               i === active
-                ? "h-4 w-[6px] bg-white"
-                : "size-[6px] bg-white/45"
+                ? headerDark
+                  ? "h-4 w-[6px] bg-ink/70"
+                  : "h-4 w-[6px] bg-white"
+                : headerDark
+                  ? "size-[6px] bg-ink/25"
+                  : "size-[6px] bg-white/45"
             } ${active === 6 ? "mix-blend-difference" : ""}`}
           />
         ))}
