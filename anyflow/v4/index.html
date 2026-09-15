@@ -4355,7 +4355,7 @@ const DEFAULTS = {
   /* 【2026-08-29 ヒデさん指定】コンバージョン背景(流れるグラデ+Bayerディザ)。
      既定はカンプのディザ設定(Bayer16×16 / Size1 / Levels3 / Brightness104% / Contrast1.38)に合わせる */
   cv: { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38,
-        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topTint: 0, gSpread: 1.5 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
+        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
   cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
@@ -5952,7 +5952,7 @@ function cvMoodAt(p, mode, wAmt) {
   return A.map((c, j) => [0, 1, 2].map(k => c[k] + (B[j][k] - c[k]) * e));
 }
 function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
-const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topTint: 0, gSpread: 1.5 };
+const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5 };
 const CV_COLORS = [
   { key: 'C1',  name: 'カンプ（現行）', tip: 'カンプ実測の5色(淡ピンク白→淡ブルー→シアン→青紫→ピンク)・カンプの放射グラデ・Bayer 1px 3段。', cv: {} },
   { key: 'C2',  name: 'ブルー寄り', tip: 'ピンクを青紫に置き換え、シアン〜ブルーで統一。放射の中心は右上。', cv: { colors: ['#eef7ff', '#9ad9ff', '#0ebbff', '#1f5fd6', '#6a4bd8'], gMode: 1, gcx: 0.8, gcy: 0.1, gr: 0.95, gAspect: 1.25 } },
@@ -6124,7 +6124,10 @@ precision mediump float;
 uniform vec2 uRes; uniform float uTime;
 uniform float uCell, uLevels, uSpread, uSpeed, uSwell, uFlowScale, uBright, uContrast;
 uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラー案・パネルで変更可) */
-uniform float uTop;   /* 【2026-09-15】いちばん明るい段(0%)に色みをどれだけ残すか。0=カンプのまま / 1=次の色(淡ブルー)まで寄せる */
+uniform vec3 uTopCol;   /* 【2026-09-15 ヒデさん指定】いちばん明るい所(カンプでは右上)の色。既定は薄い水色 */
+uniform float uWhite;   /* 同・そこに白をどれだけ残すか(かすかに=0.12 くらい) */
+uniform float uCeil;    /* 【2026-09-15】明るさの頭打ち。コントラスト(1.38)で淡い色が白に飛んで『欠けて見える』のを防ぐ */
+uniform vec2 uGOff;     /* 【2026-09-15】カンプの放射の中心ずらし(明るい中心が右上の端にあり、地色と同化するため動かせるように) */
 uniform float uGSpread;   /* 【2026-09-15】カンプの放射の広がり。1=カンプ / 大きいほど淡い中心が小さくなり、端まで色が届く */
 uniform float uGMode, uGAng, uDark; uniform vec2 uGC, uGR; uniform vec3 uDarkCol;   /* 形(0=カンプ/1=放射/2=線形)・中心・広がり・回転、暗さ(黒ベース) */
 uniform float uHue;   /* 【2026-09-15】色味の移ろい(色相の回転・ラジアン。JS が時間で回す) */
@@ -6142,7 +6145,8 @@ float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 3; i++) { v += a 
 vec3 stopCol(float t){
   /* 色は uniform(既定はカンプ実測: #fee0f8 / #b6e0ff / #0ebbff / #477ed1 / #ff5d97)。位置はカンプの 0 / .262 / .588 / .763 / 1 */
   t = clamp(t, 0.0, 1.0);
-  vec3 c0 = mix(uC0, uC1, clamp(uTop, 0.0, 1.0));   /* 明るい端に色を残す(地色と同化して欠けて見えるのを防ぐ) */
+  /* いちばん明るい所は「指定色＋ほんの少し白」。真っ白だと地色と同化して『グラデが欠けて見える』ため */
+  vec3 c0 = mix(uTopCol, vec3(1.0), clamp(uWhite, 0.0, 1.0));
   if (t < 0.262) return mix(c0, uC1, t / 0.262);
   if (t < 0.588) return mix(uC1, uC2, (t - 0.262) / 0.326);
   if (t < 0.763) return mix(uC2, uC3, (t - 0.588) / 0.175);
@@ -6161,7 +6165,7 @@ void main(){
   vec2 uvW = uv + (vec2(n1, n2) - 0.5) * uSwell;
   /* カンプの gradientTransform(実測) で radial の t を出す(係数は uGA/uGB: PC と SP で別) */
   float t;
-  if (uGMode < 0.5) { vec3 g = vec3(uvW, 1.0); float gx = dot(uGA, g); float gy = dot(uGB, g); t = length(vec2(gx, gy) - 0.5) * 2.0 * max(0.2, uGSpread); }
+  if (uGMode < 0.5) { vec3 g = vec3(uvW + uGOff, 1.0); float gx = dot(uGA, g); float gy = dot(uGB, g); t = length(vec2(gx, gy) - 0.5) * 2.0 * max(0.2, uGSpread); }
   else {
     /* パネルの形: 中心(uGC)・広がり(uGR)・回転(uGAng)。放射=楕円の距離 / 線形=回転した軸に沿った距離 */
     vec2 d = uvW - uGC; float ca = cos(uGAng), sa = sin(uGAng); d = vec2(d.x * ca - d.y * sa, d.x * sa + d.y * ca);
@@ -6171,6 +6175,7 @@ void main(){
   if (abs(uHue) > 0.001) col = clamp(hueRot(col, uHue), 0.0, 1.0);   /* 色味の移ろい: うねり全体が青になったりピンクになったり */
   col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
   col *= uBright;                          /* Brightness 104% */
+  col = min(col, vec3(uCeil));             /* 白飛びの頭打ち(1.0 で従来どおり) */
   col = mix(col, mix(uDarkCol, col, 0.42), uDark);   /* 暗さ: 黒ベースに寄せる(色は残り火のように残る) */
   float dith = bayer16(cellId);
   vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread) + 0.5) / uLevels, 0.0, 1.0);
@@ -6195,7 +6200,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(p, 'aP');
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTop', 'uGSpread'])
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGOff', 'uGSpread'])
       uni[k] = gl.getUniformLocation(p, k);
   }
   function visible() {
@@ -6241,7 +6246,10 @@ void main(){
        cvSyncStretch は「伸ばす前の高さ」の測り直し(＝溶け込みの px 更新)のために呼ぶ。 */
     if (typeof cvSyncStretch === 'function') cvSyncStretch();
     /* いちばん明るい所(カンプでは右上)が地色と同化して「グラデが欠けて見える」ので、淡ブルー側へ寄せて色を通す */
-    gl.uniform1f(uni.uTop, c.topTint != null ? c.topTint : 0);
+    { const tc = cvHex(c.topCol, '#7cc9e8'); gl.uniform3f(uni.uTopCol, tc[0], tc[1], tc[2]); }
+    gl.uniform1f(uni.uWhite, c.topWhite != null ? c.topWhite : 0.12);
+    gl.uniform1f(uni.uCeil, c.ceil != null ? c.ceil : 0.9);
+    gl.uniform2f(uni.uGOff, c.gOffX != null ? c.gOffX : 0.18, c.gOffY != null ? c.gOffY : 0.12);
     gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
        SP は M=[-31.225 24.205 -22.32 -26.671 300.25 32.955], r=10 を u,v∈[0,1] に正規化して
@@ -17829,8 +17837,16 @@ function buildPanel() {
   colorRow('暗い色', () => cvv().darkCol || '#0d0f14', v => { cvv().darkCol = v; }, '「暗さ」で寄せる先の色。');
   rows.push(slider('色の広がり（カンプの放射）', 0.6, 2.2, 0.05, () => (cvv().gSpread != null ? cvv().gSpread : 1.5), v => { cvv().gSpread = v; markDirty(); renderFrame(); }, v => '×' + v.toFixed(2),
     'カンプの放射グラデの広がり。1.00＝カンプのまま（右上の淡い中心が大きく、地色と同化して「グラデが欠けて見える」）。大きくするほど淡い中心が小さくなり、端まで色が届きます。', { fixedMax: true }));
-  rows.push(slider('明るい所の色み', 0, 1, 0.05, () => (cvv().topTint != null ? cvv().topTint : 0), v => { cvv().topTint = v; markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
-    'いちばん明るい段に色をどれだけ残すか。0%＝カンプのまま。', { fixedMax: true }));
+  colorRow('いちばん明るい所の色', () => cvv().topCol || '#7cc9e8', v => { cvv().topCol = v; markDirty(); renderFrame(); },
+    'カンプでは右上にあたる、いちばん明るい所の色。既定は薄い水色。ここを白にすると地色と同化して「グラデが欠けて見える」ので、うっすら色を入れておきます。');
+  rows.push(slider('白の残し具合', 0, 1, 0.02, () => (cvv().topWhite != null ? cvv().topWhite : 0.12), v => { cvv().topWhite = v; markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
+    'いちばん明るい所に白をどれだけ混ぜるか。0%＝上の色そのまま / 100%＝真っ白。既定12%＝白はかすかに。', { fixedMax: true }));
+  rows.push(slider('明るい中心をずらす（横）', -0.6, 0.6, 0.02, () => (cvv().gOffX != null ? cvv().gOffX : 0.18), v => { cvv().gOffX = v; markDirty(); renderFrame(); }, v => (v > 0 ? '+' : '') + v.toFixed(2),
+    'カンプの放射の「明るい中心」を横にずらす。プラスで左へ寄る(＝右上の淡い所が画面の外へ抜ける)。', { signed: true, fixedMax: true }));
+  rows.push(slider('明るい中心をずらす（縦）', -0.6, 0.6, 0.02, () => (cvv().gOffY != null ? cvv().gOffY : 0.12), v => { cvv().gOffY = v; markDirty(); renderFrame(); }, v => (v > 0 ? '+' : '') + v.toFixed(2),
+    '同・縦方向。プラスで上へ寄ります。', { signed: true, fixedMax: true }));
+  rows.push(slider('白飛びの頭打ち', 0.6, 1, 0.01, () => (cvv().ceil != null ? cvv().ceil : 0.9), v => { cvv().ceil = v; markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
+    'コントラスト(138%)で淡い色が真っ白に飛ぶのを止める上限。100%＝従来どおり(白く飛ぶ) / 下げるほど淡い所にも色が残ります。既定90%。', { fixedMax: true }));
   sub(catCv, '縦幅・間隔');
   rows.push(slider('縦幅（PC）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '枠の案は高さそのもの(カンプ 416)。一体型は「最小の高さ」。伸ばした分は【濃い色の面】が増えます(上の薄い部分は広がりません)。SP は変わりません。'));
   rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの間隔。一体型の案では、広げた分も【色(ディザ)の面】になります＝上に地色の帯ができません。枠の案は余白のまま。マイナスで詰まります(PC のみ)。', { signed: true }));
