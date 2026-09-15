@@ -1578,6 +1578,7 @@
   html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: 22px; line-height: 1.7; }   /* 【2026-09-16】V3.0: 22px・見出しは中央 */
   html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: nowrap; gap: 14px; justify-content: space-between; width: 100%; }   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
   html.mb #results.rfx-24 .res2-stats .r2s span, html.mb #results.rfx-25 .res2-stats .r2s span { font-size: 34px; }   /* 【2026-09-16】V3.0に合わせて 40→34 */
+  html.mb #results.rfx-24 .slot .fx:last-child, html.mb #results.rfx-25 .slot .fx:last-child { font-size: 20px; }   /* 【2026-09-16 ヒデさん依頼】+マークをPC同様に数字より小さく上側に(34pxに対し20px=PCの40/70比) */
   html.mb #results.rfx-24 .res2-stats .r2s b, html.mb #results.rfx-25 .res2-stats .r2s b { font-size: 12px; }
   html.mb #results.rfx-24 .r2v, html.mb #results.rfx-25 .r2v { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 18px; order: 0; padding: 0; }   /* 【2026-09-16】中央→左寄せ・基準の左右20pxを解除・DOM順(V3.0) */
   html.mb #results.rfx-24 .r2v-text, html.mb #results.rfx-25 .r2v-text { order: 0; max-width: none; width: 100%; gap: 10px; align-items: flex-start; text-align: left; }   /* 【2026-09-16】左寄せ(V3.0) */
@@ -2669,7 +2670,7 @@
     html.mb .pin-stage { top: 0; width: var(--sw); transform: scale(var(--s)); transform-origin: left top; }
     html.mb #results .pin-stage { align-items: flex-start; }   /* 中身は上から流す(縦中央寄せ解除) */
     #vision { margin-top: 0; }   /* PC用の 200px 余白を撤去(KV→ビジョンが空きすぎていた) */
-    .vis-label { left: 24px; top: 74px; font-size: var(--fs-base); font-weight: 300; }   /* カンプSP: SF Pro Text Light(300)/16px → y741 */
+    .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 300; text-align: center; }   /* カンプSP: SF Pro Text Light(300)/16px → y741。【2026-09-16】左右対称=中央に */
     .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--fs-display); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)/26px/1.7 */
     /* 【2026-09-09 ヒデさん指定】SP でも「つなぐ/強み」のギラギラのグラデ揺らぎを PC と同じく出す。
        (以前カンプが単色だったため SP で無効化したが、ヒデさんの意向で PC 同様に復活。base の
@@ -2783,7 +2784,7 @@
     .dl-head span { font-size: 14px; }
 
     /* --- 導入事例 (カンプ node16534:22646 準拠: 画像上・縦カード4枚を通常フローで縦積み) --- */
-    .case-eyebrow { position: static; left: auto; right: auto; top: auto; text-align: left; margin: 0 var(--space-24) 6px; font-size: var(--fs-base); }
+    .case-eyebrow { position: static; left: auto; right: auto; top: auto; text-align: center; margin: 0 var(--space-24) 6px; font-size: var(--fs-base); }   /* 【2026-09-16】左→中央(導入事例と揃える) */
     .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) 17px; font-weight: 300; font-size: var(--fs-heading); line-height: 64px; }   /* カンプSP node16534:22644: Noto Light 24px / 行間64px、カード群まで 17px(3515−3498) */
     .case-grid { position: static; left: auto; top: auto; width: 100%; height: auto;
                  display: flex; flex-direction: column; gap: 0; }   /* カンプSP node16534:22646: カードは隙間なく積む(余白はカード内 padding 40) */
@@ -2797,6 +2798,8 @@
                border-bottom: 1px solid var(--line-grid); }   /* --line-grid = #ACACAC(カンプの罫線色と同値) */
     /* 1枚目の上罫線: .case-grid の先頭には隠し罫線要素(#cgH0〜/.cg-vline)があり :first-child が効かないので、グリッド自体の上辺に引く */
     .case-grid { border-top: 1px solid var(--line-grid); }
+    html.mb #cases.cl-1 .case-grid { border-top: none; }   /* 【2026-09-16 ヒデさん依頼】罫線なしのスマホでは上の線を出さない */
+    html.mb #cases.cl-1 .cg-cell { border-bottom: none; }   /* 同・カード下の線も出さない */
     .cg-img { flex: none; width: 100%; height: 228px; border-radius: 0; overflow: hidden; }   /* カンプSP: サムネに角丸なし(2026-09-09 ヒデさん指定) */
     .cg-img img { width: 100%; height: 100%; object-fit: cover; }
     .cg-body { gap: var(--space-16); }                                        /* カンプSP node16534:22650: 引用→メタ 16 */
