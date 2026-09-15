@@ -29,7 +29,12 @@ import { DEFAULT_FACE, type FaceConfig } from "./faceConfig";
 import { DEFAULT_KV_EXIT, type KvExit } from "./kvExitConfig";
 import { DEFAULT_HERO_ENTER, type HeroEnter } from "./heroEnterConfig";
 import { DEFAULT_MSG, MSG_PATTERNS, type MsgTune } from "./msgConfig";
-import { EVENT_LAYOUT_EVENT, EVENT_LAYOUT_PATTERNS } from "./EventSection";
+import {
+  EVENT_LAYOUT_EVENT,
+  EVENT_LAYOUT_PATTERNS,
+  EVENT_TAIL_EVENT,
+  DEFAULT_EVENT_TAIL,
+} from "./EventSection";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -163,7 +168,7 @@ type Params = {
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
-  events: { pattern: number };
+  events: { pattern: number; tailPad: number };
   expIntro: IntroPace;
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
@@ -217,7 +222,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1 }, /* 体験セクションのレイアウト（案1が基準） */
+      events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -770,6 +775,15 @@ export default function TopTunePanel({
                   swatch: "#0070c9",
                   desc: p.note,
                 })),
+              },
+              {
+                slider: "下の余白（動き確認用）",
+                path: "events.tailPad",
+                min: 0,
+                max: 2000,
+                step: 50,
+                fmt: "px",
+                hint: "体験セクションがページの最後なので、下に余白が無いと写真が育ちきる前にスクロールが止まります。1画面ぶん（982px）あれば最後まで見られます。下に別のセクションが入ったら0でOK。",
               },
               { sub: "人物イラスト" },
               { sub: "登場のタイミング", deep: true },
@@ -1329,6 +1343,11 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_LAYOUT_EVENT, { detail: { v: params.events.pattern } })
             );
           }
+          if (info?.path === "events.tailPad") {
+            window.dispatchEvent(
+              new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
+            );
+          }
         },
         onSave: (p: Params, panelRef: { flash?: (m: string) => void }) => {
           /* ローカルで保存したら、デプロイ用ファイルにも自動で書き込む（自動焼き込み）。
@@ -1383,6 +1402,9 @@ export default function TopTunePanel({
       /* イベントセクションのホバー案も初回反映（保存値が焼き込みと違う時のため） */
       window.dispatchEvent(
         new CustomEvent(EVENT_LAYOUT_EVENT, { detail: { v: params.events.pattern } })
+      );
+      window.dispatchEvent(
+        new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの

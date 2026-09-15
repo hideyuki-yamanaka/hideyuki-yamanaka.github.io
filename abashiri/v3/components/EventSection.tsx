@@ -23,12 +23,18 @@
 import { useEffect, useRef, useState } from "react";
 import {
   motion,
-  useScroll,
+  useAnimationFrame,
+  useMotionValue,
   useTransform,
   type MotionValue,
 } from "framer-motion";
 
 export const EVENT_LAYOUT_EVENT = "abashiri:event-layout";
+/* 体験セクションの下に足す余白（動きを最後まで見るための逃げ）。
+   ⚠️ 暫定。ここが最後のセクションのままだと、スクロール進捗が 1 に届かず
+   スクロール連動の動きが completar しない（2026-09-15 ヒデさん指摘） */
+export const EVENT_TAIL_EVENT = "abashiri:event-tail";
+export const DEFAULT_EVENT_TAIL = 982; /* 1画面ぶん */
 
 export const EVENT_LAYOUT_PATTERNS: Record<
   number,
@@ -593,20 +599,31 @@ function SpeedCol({
 
 export default function EventSection() {
   const [pat, setPat] = useState(10); /* 気に入ってもらえた案10を既定に */
+  const [tail, setTail] = useState(DEFAULT_EVENT_TAIL);
   useEffect(() => {
     fetch("/tune-defaults.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const v = d?.events?.pattern;
         if (typeof v === "number" && EVENT_LAYOUT_PATTERNS[v]) setPat(v);
+        const t = d?.events?.tailPad;
+        if (typeof t === "number") setTail(t);
       })
       .catch(() => {});
     const onTune = (e: Event) => {
       const v = (e as CustomEvent<{ v: number }>).detail?.v;
       if (typeof v === "number" && EVENT_LAYOUT_PATTERNS[v]) setPat(v);
     };
+    const onTail = (e: Event) => {
+      const v = (e as CustomEvent<{ v: number }>).detail?.v;
+      if (typeof v === "number") setTail(v);
+    };
     window.addEventListener(EVENT_LAYOUT_EVENT, onTune);
-    return () => window.removeEventListener(EVENT_LAYOUT_EVENT, onTune);
+    window.addEventListener(EVENT_TAIL_EVENT, onTail);
+    return () => {
+      window.removeEventListener(EVENT_LAYOUT_EVENT, onTune);
+      window.removeEventListener(EVENT_TAIL_EVENT, onTail);
+    };
   }, []);
 
   /* スクロール連動は「トップの箱」を基準に取る。
@@ -621,8 +638,9 @@ export default function EventSection() {
   const zero = useConstZero();
 
   return (
-    /* ⚠️ relative z-10 は必須。前の兄弟（背景写真やKVの sticky＝positioned要素）が
-       描画順で上に来るため、無いと白背景と見出しが青背景の下に沈む（2026-09-14 実測） */
+    <>
+    {/* ⚠️ relative z-10 は必須。前の兄弟（背景写真やKVの sticky＝positioned要素）が
+        描画順で上に来るため、無いと白背景と見出しが青背景の下に沈む（2026-09-14 実測） */}
     <section
       id="events"
       className="relative z-10 w-full overflow-x-clip bg-white py-[180px]"
@@ -634,6 +652,14 @@ export default function EventSection() {
         <Pattern pat={10} p={zero} />
       )}
     </section>
+    {/* ⚠️ 暫定の余白。体験セクションがページ最後なので、これが無いと
+        「セクションが画面の上へ抜けきる」ところまでスクロールできず、
+        スクロール連動の動きが最後まで再生されない。
+        必ず section の“外”に置くこと（中に入れるとセクションの終点も一緒に
+        下がってしまい、逃げにならない＝2026-09-15 に実際やらかした）。
+        下に別のセクション（フッター等）が入ったら、この余白は外してよい */}
+    <div aria-hidden className="relative z-10 w-full bg-white" style={{ height: tail }} />
+    </>
   );
 }
 
@@ -654,15 +680,31 @@ function Scrolled({
   container: React.RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  /* このセクションが「下から入り始め → 上へ抜けきる」までを 0〜1 にする */
-  const { scrollYProgress } = useScroll({
-    container,
-    target: ref,
-    offset: ["start end", "end start"],
+  /* このセクションが「下から入り始め → 上へ抜けきる」までを 0〜1 にする。
+     ⚠️ framer の useScroll に container と target を一緒に渡す書き方は、
+     この環境では進捗が 0 のまま動かなかった（2026-09-15 実測）。
+     見た目の位置から自分で計算する方が確実なので、こちらで持つ */
+  const p = useMotionValue(0);
+  /* ⚠️ scroller の scroll イベントはこの構成では拾えなかった（実測で発火0回）。
+     毎フレーム位置を読んで進捗にする方式にする。
+     やることは矩形1回読み＋MotionValue更新だけなので軽い */
+  useAnimationFrame(() => {
+    const sc = container.current;
+    const el = ref.current;
+    if (!sc || !el) return;
+    const sr = sc.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const vh = sr.height || 1;
+    /* 上端が画面の下にある＝0、下端が画面の上へ抜けた＝1 */
+    const topInView = r.top - sr.top;
+    const total = vh + r.height || 1;
+    const v = (vh - topInView) / total;
+    const next = Math.max(0, Math.min(1, v));
+    if (Math.abs(next - p.get()) > 0.0005) p.set(next);
   });
   return (
     <div ref={ref} className="w-full">
-      <Pattern pat={pat} p={scrollYProgress} />
+      <Pattern pat={pat} p={p} />
     </div>
   );
 }

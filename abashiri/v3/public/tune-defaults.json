@@ -152,5 +152,9 @@
     "cycle": 8,
     "show": 2.6,
     "swayFirst": true
+  },
+  "events": {
+    "pattern": 10,
+    "tailPad": 982
   }
 }
