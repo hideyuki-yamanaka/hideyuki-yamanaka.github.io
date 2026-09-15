@@ -10,7 +10,8 @@ set -u
 ROOT="/Users/hideyuki/Developer/Claude Code/abashiri"
 LOG="$ROOT/.deploy-v3.log"
 DONE="$ROOT/.deploy-v3.done"
-PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+# cron から呼ばれると PATH がほぼ空なので、node/npx の場所を明示的に足す
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 say() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 

@@ -209,7 +209,9 @@ w("'SF Pro Text'");  // カンプの指定 → 一致すれば正しい
 - 修正したらローカルサーバーを立てて、**ローカルURLを案内する**
   （anyflow V3 = http://localhost:8776 / V2 = http://localhost:8775。`.claude/launch.json` 参照）
 - 配信するのは本番と同じファイルなので、見た目・挙動は本番と一致する
-- 上限に当たった時は `anyflow/deploy-v2-v3.sh` ＋ 定期タスクで、リセット後に自動で上がる
+- 上限に当たった時は `anyflow/deploy-v2-v3.sh` ／ `abashiri/deploy-v3.sh` ＋ 定期タスクで、
+  リセット後に自動で上がる（どちらも成功したら `.done` マーカーを置いて自分で止まる。
+  網走V3は crontab に毎時5分で登録済み。ログは `abashiri/.deploy-v3.log`）
 
 ## 🚨 本番反映チェックリスト（毎回必ず）
 
