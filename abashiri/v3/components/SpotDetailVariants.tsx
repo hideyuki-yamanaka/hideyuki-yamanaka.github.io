@@ -77,9 +77,10 @@ export function InfoTable({
   const value = light ? "text-white" : "text-ink";
   return (
     <dl className="w-full">
-      {spot.info.map((row) => (
+      {spot.info.map((row, i) => (
         <div
-          key={row.label}
+          /* 「関連サイト」のように同じ見出しが2行あるので index も混ぜる */
+          key={`${row.label}-${i}`}
           className={`flex gap-4 border-b py-4 first:border-t sm:gap-6 ${line}`}
         >
           <dt
@@ -87,8 +88,13 @@ export function InfoTable({
           >
             {row.label}
           </dt>
+          {/* ⚠️ min-w-0 と break-words はセットで必須。
+             flex の子は既定で「中身の最小幅より縮まない」ので、
+             長いURL（https://www.instagram.com/… など）が1語扱いになって
+             スマホ幅を突き破り、ページごと横スクロールしていた
+             （2026-09-16 実測：375px で31px はみ出し） */}
           <dd
-            className={`whitespace-pre-line text-body-14 font-extralight leading-[2] tracking-[0.7px] ${value}`}
+            className={`min-w-0 whitespace-pre-line break-words text-body-14 font-extralight leading-[2] tracking-[0.7px] ${value}`}
           >
             {row.value}
           </dd>
