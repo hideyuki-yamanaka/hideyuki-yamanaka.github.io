@@ -1572,14 +1572,14 @@
   /* --- 案24(SP): 2列を縦積み(説明→ピクト300×220)。仕切り線なし。下段は見出し29px・2行と数値40px。大見出し 40px --- */
   html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: 28px; width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-16】左右24px(V3.0)に統一 */
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track, html.mb #results.rfx-25 .res2-vals, html.mb #results.rfx-25 .r2v-track { display: contents; }
-  html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: none; }
-  html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: 3; margin: 6px 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
-  html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: 4; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 4px; }
+  html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: 12px 0; }   /* 【2026-09-16】V3.0: for SaaS と for AI の間の区切り線 */
+  html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: -1; margin: 4px 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
+  html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: -2; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 4px; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
   html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: 22px; line-height: 1.7; }   /* 【2026-09-16】V3.0: 22px・見出しは中央 */
-  html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; width: 100%; }
+  html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: nowrap; gap: 14px; justify-content: space-between; width: 100%; }   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
   html.mb #results.rfx-24 .res2-stats .r2s span, html.mb #results.rfx-25 .res2-stats .r2s span { font-size: 34px; }   /* 【2026-09-16】V3.0に合わせて 40→34 */
   html.mb #results.rfx-24 .res2-stats .r2s b, html.mb #results.rfx-25 .res2-stats .r2s b { font-size: 12px; }
-  html.mb #results.rfx-24 .r2v, html.mb #results.rfx-25 .r2v { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 18px; order: 1; }   /* 【2026-09-16】中央→左寄せ(V3.0) */
+  html.mb #results.rfx-24 .r2v, html.mb #results.rfx-25 .r2v { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 18px; order: 0; padding: 0; }   /* 【2026-09-16】中央→左寄せ・基準の左右20pxを解除・DOM順(V3.0) */
   html.mb #results.rfx-24 .r2v-text, html.mb #results.rfx-25 .r2v-text { order: 0; max-width: none; width: 100%; gap: 10px; align-items: flex-start; text-align: left; }   /* 【2026-09-16】左寄せ(V3.0) */
   html.mb #results.rfx-24 .r2v-tagh, html.mb #results.rfx-25 .r2v-tagh { align-items: flex-start; }   /* 【2026-09-16】タグ(for SaaS/AI)を左寄せ(V3.0) */
   html.mb #results.rfx-24 .r2v-tag, html.mb #results.rfx-25 .r2v-tag { font-size: 16px; }
