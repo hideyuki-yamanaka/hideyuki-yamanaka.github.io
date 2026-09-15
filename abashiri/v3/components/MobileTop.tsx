@@ -231,7 +231,7 @@ export default function MobileTop() {
             <button
               type="button"
               onClick={() => router.push("/experience")}
-              className="mt-6 flex items-center justify-center rounded-full bg-white/10 px-6 py-[13px] text-[14px] font-medium leading-none text-white ring-1 ring-inset ring-white/45 backdrop-blur-[12px] transition-transform active:scale-95"
+              className="mt-6 flex items-center justify-center rounded-full bg-white/10 px-6 py-[13px] text-[14px] font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
             >
               ぼーっとしてみる
             </button>
