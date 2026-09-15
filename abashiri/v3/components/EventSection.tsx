@@ -21,6 +21,7 @@
  * 🟡仮置き：寸法・拡大率はカンプが無いので、トップの既存値を基準に決めた
  */
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   motion,
   useAnimationFrame,
@@ -54,33 +55,45 @@ export const EVENT_LAYOUT_PATTERNS: Record<
   10: { name: "案10", note: "主役1枚＋脇3枚。中央の1枚が大きく育ち、脇は控えめに開く" },
 };
 
-type EventItem = { tag: string; title: string; body: string; img: string };
+type EventItem = {
+  tag: string;
+  title: string;
+  body: string;
+  img: string;
+  /** 詳細ページの slug（spotDetailData.ts のキー）。4件とも繋いである */
+  slug: string;
+};
 
-/* 1枚目のタグ・タイトルはカンプ実測（網走刑務所めし）。2〜4枚目は🟡仮置き */
+/* 4件とも網走市観光公式サイトの実在ページに対応させ、詳細ページへつないでいる
+   （2026-09-15 ヒデさん指示。以前の仮置き文言は廃止） */
 const ITEMS: EventItem[] = [
   {
     tag: "体験・イベント",
-    title: "網走刑務所めし",
-    body: "博物館 網走監獄では、実際の刑務所で出されている食事を再現した「監獄食」を味わえます。麦飯にホッケ、みそ汁。質素なのに、なぜかクセになるおいしさです。",
-    img: "/img/omoroi-1.jpg",
-  },
-  {
-    tag: "景色・どうぶつ",
-    title: "流氷とアザラシ",
-    body: "冬のオホーツク海にやってくるのは流氷だけではありません。氷の上でのんびり休むアザラシに出会えることも。防寒をしっかりして、双眼鏡を持って探してみてください。",
-    img: "/img/omoroi-2.jpg",
+    title: "博物館 網走監獄",
+    body: "実際に使われていた監獄の建物を移築・復原した野外博物館。重要文化財の舎房や、受刑者が食べている「監獄食」を味わえる食堂もあります。",
+    img: "/img/spot/kangoku-1.jpg",
+    slug: "kangoku",
   },
   {
     tag: "体験・イベント",
-    title: "網走湖カヌー体験",
-    body: "湖と川がつながる網走ならではの、水の上のさんぽ。ガイドと一緒にゆっくり漕ぎ出せば、鳥の声と水の音だけの静かな時間が待っています。初めてでも大丈夫。",
-    img: "/img/omoroi-3.jpg",
+    title: "オホーツク流氷館",
+    body: "天都山の頂上にある、流氷を一年中体感できる施設。マイナス15度の流氷体感テラスや、クリオネなど流氷の生きものに会えます。",
+    img: "/img/spot/ryuhyokan-1.jpg",
+    slug: "ryuhyokan",
   },
   {
-    tag: "景色・どうぶつ",
-    title: "オオワシに会う冬",
-    body: "翼を広げると2mを超えるオオワシ・オジロワシが、冬の網走に渡ってきます。流氷の上や河口の木々にとまる姿は迫力満点。カメラを持って出かけたくなります。",
-    img: "/img/omoroi-4.jpg",
+    tag: "体験・イベント",
+    title: "カヌー体験",
+    body: "網走川や網走湖を、ガイドと一緒にゆっくり漕ぎ出す水の上のさんぽ。鳥の声と水の音だけの静かな時間が待っています。",
+    img: "/img/spot/canoe-1.jpg",
+    slug: "canoe",
+  },
+  {
+    tag: "体験・イベント",
+    title: "オジロワシ・オオワシウォッチング",
+    body: "冬の網走に渡ってくる大型のワシを、ガイドと探しにいくツアー。流氷の上や河口の木々にとまる姿は迫力満点です。",
+    img: "/img/spot/washi-1.jpg",
+    slug: "washi",
   },
 ];
 
@@ -128,8 +141,12 @@ function Caption({
   size?: "sm" | "lg";
   className?: string;
 }) {
+  /* 説明ごと詳細ページへのリンクにする（2026-09-15 ヒデさん指示「全部つなぎ込む」） */
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <Link
+      href={`/spot/${it.slug}`}
+      className={`group flex flex-col gap-2 ${className}`}
+    >
       <p className="text-body-14 font-extralight leading-[1.2] tracking-[0.7px] text-ink/45">
         {it.tag}
       </p>
@@ -145,7 +162,11 @@ function Caption({
           {it.body}
         </p>
       )}
-    </div>
+      <span className="mt-1 flex items-center gap-1 text-body-14 font-extralight leading-[1.2] text-ink/60 transition-transform duration-300 ease-standard group-hover:translate-x-[6px]">
+        もっと見る
+        <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
+      </span>
+    </Link>
   );
 }
 

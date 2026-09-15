@@ -2413,7 +2413,7 @@
   }
 
   /* ================= コンバージョン (カンプ 15993:43965 実測) ================= */
-  #conversion { padding: 160px 0 200px; }   /* 前後の余白はカンプから取れず仮置き */
+  #conversion { padding: 160px 0 200px; position: relative; }   /* 前後の余白はカンプから取れず仮置き。position=グラデ編集ギズモの基準 */
   .cv-inner {
     position: relative;
     width: min(1200px, calc(100% - 80px));
@@ -2422,6 +2422,26 @@
     overflow: hidden;
   }
   #cvCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* 【2026-09-15 ヒデさん依頼】Figma風のグラデーション編集ギズモ(棒＋両端ハンドル)。
+     「グラデーションを棒で編集」ボタンで編集モードに入った時だけ出る(pointer-events は編集中のみ) */
+  .cv-gizmo { position: absolute; z-index: 6; pointer-events: none; }
+  .cv-gizmo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .cvg-line { stroke: #fff; stroke-width: 2; filter: drop-shadow(0 0 2px rgba(0,0,0,.55)); }
+  .cvg-hit { stroke: transparent; stroke-width: 22; cursor: move; pointer-events: stroke; }
+  .cv-gizmo .cvg-h { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; padding: 0;
+    border: 2px solid #fff; border-radius: 5px; background: rgba(40,120,255,.9);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 1px 4px rgba(0,0,0,.4); cursor: grab; pointer-events: auto; touch-action: none; }
+  .cv-gizmo .cvg-h:active { cursor: grabbing; }
+  .cv-gizmo .cvg-node { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); pointer-events: none; }
+  .cv-gizmo .cvg-bar { position: absolute; left: 50%; top: -46px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center;
+    padding: 6px 8px 6px 12px; background: rgba(20,22,28,.92); color: #fff; border-radius: 999px; font: 12px/1.4 system-ui, sans-serif;
+    white-space: nowrap; pointer-events: auto; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .cv-gizmo .cvg-done { border: 0; border-radius: 999px; background: #2878ff; color: #fff; font: 600 12px system-ui; padding: 5px 12px; cursor: pointer; }
+  .cv-gizmo .cvg-reset { border: 0; border-radius: 999px; background: rgba(255,255,255,.16); color: #fff; font: 600 12px system-ui; padding: 5px 10px; cursor: pointer; }
+  .cvg-editbtn { display: block; width: 100%; margin: 2px 0 6px; padding: 9px 12px; border: 1px solid rgba(40,120,255,.5); border-radius: 8px;
+    background: rgba(40,120,255,.12); color: inherit; font: 600 12px system-ui, sans-serif; cursor: pointer; text-align: center; }
+  .cvg-editbtn.on { background: #2878ff; color: #fff; border-color: #2878ff; }
   /* 惑星グラフィック(カンプの Group1119 の見えている部分を 2倍PNGで)。右上に配置 */
   .cv-planet { position: absolute; right: 0; top: 46px; width: 409.5px; height: 315px; pointer-events: none; }
   .cv-content {
@@ -15694,6 +15714,100 @@ function syncPanelRows() {
   for (const r of rows) { if (r && r._sync) r._sync(); }
   body.querySelectorAll('.row').forEach(r => { if (r._sync) r._sync(); });
 }
+
+/* ===== 【2026-09-15 ヒデさん依頼】グラデーション編集ギズモ(Figma風の棒＋両端ハンドル) =====
+   「グラデーションを棒で編集」で編集モードに入ると、お問い合わせのグラデの上に棒が出る。
+   両端(青い四角)をドラッグ=角度と広がり、棒の途中をドラッグ=位置(中心)を動かす。
+   内部は params.cv の gcx/gcy(中心 0..1・画面と同じ向き) / gAng(角度・度) / gr(広がり=棒の長さ) を書き換える。
+   実測(2026-09-15): gcx↑で右へ・gcy↑で下へ・角度は画面(y下向き)の atan2 と一致・gr=棒の長さ÷画面幅。 */
+const cvGizmo = (function () {
+  let wrap = null, svg = null, line = null, hit = null, hA = null, hB = null, nA = null, nB = null;
+  let editing = false;
+  const sec = () => document.getElementById('conversion');
+  const cvEl = () => document.getElementById('cvCanvas');
+  function build() {
+    if (wrap) return;
+    wrap = document.createElement('div'); wrap.className = 'cv-gizmo'; wrap.hidden = true;
+    wrap.innerHTML =
+      '<svg><line class="cvg-line"/><line class="cvg-hit"/></svg>' +
+      '<span class="cvg-node cvg-nodeA"></span><span class="cvg-node cvg-nodeB"></span>' +
+      '<button class="cvg-h cvg-a" type="button" aria-label="グラデの始点"></button>' +
+      '<button class="cvg-h cvg-b" type="button" aria-label="グラデの終点"></button>' +
+      '<div class="cvg-bar"><span>棒をドラッグして角度・位置・広がりを調整</span>' +
+      '<button class="cvg-reset" type="button">リセット</button>' +
+      '<button class="cvg-done" type="button">完了</button></div>';
+    sec().appendChild(wrap);
+    svg = wrap.querySelector('svg'); line = wrap.querySelector('.cvg-line'); hit = wrap.querySelector('.cvg-hit');
+    hA = wrap.querySelector('.cvg-a'); hB = wrap.querySelector('.cvg-b');
+    nA = wrap.querySelector('.cvg-nodeA'); nB = wrap.querySelector('.cvg-nodeB');
+    wrap.querySelector('.cvg-done').onclick = () => toggle(false);
+    wrap.querySelector('.cvg-reset').onclick = () => { const c = params.cv; c.gcx = 0.60; c.gcy = 0.00; c.gAng = 0; c.gr = 0.9; apply(); placeFromParams(); };
+    dragHandle(hA, 'a'); dragHandle(hB, 'b'); dragHandle(hit, 'line');
+  }
+  function fit() {   /* ギズモの箱を canvas にぴったり重ねる(#conversion 基準の px) */
+    const c = cvEl(), sr = sec(); if (!c || !sr) return;
+    const cr = c.getBoundingClientRect(), srr = sr.getBoundingClientRect();
+    wrap.style.left = (cr.left - srr.left) + 'px'; wrap.style.top = (cr.top - srr.top) + 'px';
+    wrap.style.width = cr.width + 'px'; wrap.style.height = cr.height + 'px';
+  }
+  function dims() { const c = cvEl().getBoundingClientRect(); return { W: c.width, H: c.height }; }
+  /* params → 棒の両端(px, ギズモ箱内・y下向き) */
+  function endpoints() {
+    const { W, H } = dims(); const c = params.cv;
+    const cx = (c.gcx != null ? c.gcx : 0.6) * W, cy = (c.gcy != null ? c.gcy : 0) * H;
+    const ang = (c.gAng || 0) * Math.PI / 180, L = Math.max(0.2, c.gr != null ? c.gr : 0.9) * W;
+    const dx = Math.cos(ang) * L / 2, dy = Math.sin(ang) * L / 2;
+    return { A: { x: cx - dx, y: cy - dy }, B: { x: cx + dx, y: cy + dy } };
+  }
+  let A = { x: 0, y: 0 }, B = { x: 0, y: 0 };
+  function draw() {
+    line.setAttribute('x1', A.x); line.setAttribute('y1', A.y); line.setAttribute('x2', B.x); line.setAttribute('y2', B.y);
+    hit.setAttribute('x1', A.x); hit.setAttribute('y1', A.y); hit.setAttribute('x2', B.x); hit.setAttribute('y2', B.y);
+    hA.style.left = A.x + 'px'; hA.style.top = A.y + 'px'; hB.style.left = B.x + 'px'; hB.style.top = B.y + 'px';
+    nA.style.left = A.x + 'px'; nA.style.top = A.y + 'px'; nB.style.left = B.x + 'px'; nB.style.top = B.y + 'px';
+  }
+  function placeFromParams() { fit(); const e = endpoints(); A = e.A; B = e.B; draw(); }
+  /* 棒の両端 → params(中心・角度・広がり) */
+  function paramsFromEnds() {
+    const { W, H } = dims(); const c = params.cv;
+    const cx = (A.x + B.x) / 2, cy = (A.y + B.y) / 2;
+    c.gcx = Math.max(0, Math.min(1, cx / W)); c.gcy = Math.max(0, Math.min(1, cy / H));
+    const vx = B.x - A.x, vy = B.y - A.y, L = Math.hypot(vx, vy);
+    c.gAng = ((Math.atan2(vy, vx) * 180 / Math.PI) % 360 + 360) % 360;
+    c.gr = Math.max(0.2, Math.min(2.5, L / W));
+  }
+  function apply(persist) { if (typeof applyCvStyle === 'function') applyCvStyle(); if (typeof renderFrame === 'function') renderFrame();
+    if (typeof syncPanelRows === 'function') syncPanelRows(); if (persist && typeof markDirty === 'function') markDirty(); }
+  function dragHandle(el, which) {
+    el.addEventListener('pointerdown', ev => {
+      ev.preventDefault(); el.setPointerCapture && el.setPointerCapture(ev.pointerId);
+      const r = wrap.getBoundingClientRect();
+      const start = { mx: ev.clientX, my: ev.clientY, A: { ...A }, B: { ...B } };
+      const move = e => {
+        const px = e.clientX - r.left, py = e.clientY - r.top;
+        if (which === 'a') A = { x: px, y: py };
+        else if (which === 'b') B = { x: px, y: py };
+        else { const dx = e.clientX - start.mx, dy = e.clientY - start.my;
+          A = { x: start.A.x + dx, y: start.A.y + dy }; B = { x: start.B.x + dx, y: start.B.y + dy }; }
+        draw(); paramsFromEnds(); apply(false);
+      };
+      const up = e => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); apply(true); };
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+    });
+  }
+  function toggle(on) {
+    build(); editing = (on == null) ? !editing : !!on;
+    wrap.hidden = !editing;
+    if (editing) { placeFromParams(); window.addEventListener('resize', placeFromParams); window.addEventListener('scroll', fit, true);
+      document.addEventListener('keydown', onKey); }
+    else { window.removeEventListener('resize', placeFromParams); window.removeEventListener('scroll', fit, true); document.removeEventListener('keydown', onKey); }
+    const btn = document.getElementById('cvGizmoBtn'); if (btn) { btn.textContent = editing ? '✓ 編集を終える' : '🎯 グラデーションを棒で編集'; btn.classList.toggle('on', editing); }
+    return editing;
+  }
+  function onKey(e) { if (e.key === 'Escape') toggle(false); }
+  return { toggle, isEditing: () => editing, refresh: () => { if (editing) placeFromParams(); } };
+})();
+
 let mount = null;   // slider() などの追加先 (現在の小カテゴリの親)
 let syncPresetPills = null;   // プリセットの点灯を今の値で塗り直す(fillPresetRow の中で差し替え)
 
@@ -18085,6 +18199,12 @@ function buildPanel() {
   ['中心（0%）', '26%', '主色（59%）', '76%', '外側（100%）'].forEach((lab, i) => colorRow(lab, () => (cvv().colors || CV_DEF_COLORS)[i], v => { const a = Array.isArray(cvv().colors) ? cvv().colors.slice() : CV_DEF_COLORS.slice(); a[i] = v; cvv().colors = a; applyCvStyle(); }, '5段グラデの' + (i + 1) + '番目。位置はカンプの 0 / 26 / 59 / 76 / 100%。'));
   sub(catCv, 'グラデーションの形'); CV_DYN.push(catCv.lastElementChild);
   segRow('形', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
+  /* 【2026-09-15 ヒデさん依頼】Figma風の棒でグラデを直感編集。ボタンを押すと編集モードに入り、お問い合わせのグラデの上に棒が出る */
+  { const gb = document.createElement('button'); gb.type = 'button'; gb.id = 'cvGizmoBtn'; gb.className = 'cvg-editbtn';
+    gb.textContent = '🎯 グラデーションを棒で編集';
+    gb.onclick = () => { const sec = document.getElementById('conversion'); if (sec) sec.scrollIntoView({ block: 'center', behavior: 'smooth' }); cvGizmo.toggle(); };
+    (mount || body).appendChild(gb); }
+  note('編集モードでは棒の【両端(青い四角)】で角度と広がり、【棒の途中】で位置(中心)を動かせます。下の「中心/広がり/回転」の数値とも連動します。');
   rows.push(slider('中心 横', 0, 1, 0.01, () => (cvv().gcx != null ? cvv().gcx : 0.60), v => { cvv().gcx = v; }, v => Math.round(v * 100) + '%', '明るい中心の横位置。0=左端 / 100%=右端。カンプの形でも効きます(既定60%＝右上の淡い所を画面の外へ逃がした位置)。'));
   rows.push(slider('中心 縦', 0, 1, 0.01, () => (cvv().gcy != null ? cvv().gcy : 0.00), v => { cvv().gcy = v; }, v => Math.round(v * 100) + '%', '明るい中心の縦位置。0=上端 / 100%=下端。カンプの形でも効きます(既定0%)。'));
   rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり(きつい)、大きいほどゆるやか。カンプの形でも効きます。'));
