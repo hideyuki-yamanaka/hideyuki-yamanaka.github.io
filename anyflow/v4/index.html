@@ -2397,23 +2397,9 @@
   html:not(.mb) #cases:not(.cl-0) .case-grid { display: grid; }
   html:not(.mb) #cases:not(.cl-0) .cg-cell { position: relative; left: auto; top: auto; width: auto; height: auto; }
 
-  /* --- 案1 浮かぶカード: 白いカードを2×2で並べる(いちばん一般的で読みやすい) --- */
-  html:not(.mb) #cases.cl-1 .case-grid {
-    grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 28px);
-    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2));
-    box-sizing: border-box; align-content: center;
-  }
-  html:not(.mb) #cases.cl-1 .cg-cell {
-    padding: var(--space-32); gap: var(--space-24);
-    background: var(--surface-card, #fff); border-radius: var(--radius-lg);
-    box-shadow: 0 2px 4px rgba(16,24,40,.04), 0 14px 34px rgba(16,24,40,calc(.06 * var(--cl-sh, 1)));
-  }
-  html:not(.mb) #cases.cl-1 .cg-img { flex: 0 0 216px; width: 216px; height: 144px; border-radius: var(--radius-sm, 6px); }
-  html:not(.mb) #cases.cl-1 .cg-body { gap: var(--space-16); }
-  html:not(.mb) #cases.cl-1 .cg-quote { font-size: 18px; line-height: 1.6; }
-
   /* --- 案2 写真タイル: セル全面が写真。文字は下に重ねる(いちばん目を引く) --- */
-  html:not(.mb) #cases.cl-2 .case-grid { grid-template-columns: 1fr 1fr; gap: 0; align-content: center; }
+  /* 【2026-09-15 ヒデさん指摘】横長すぎたので1枚あたりの縦幅を出す(枠 589→700・見出しに寄せて top も上げる) */
+  html:not(.mb) #cases.cl-2 .case-grid { grid-template-columns: 1fr 1fr; gap: 0; align-content: stretch; top: 196px; height: var(--cl-tileh, 700px); }
   html:not(.mb) #cases.cl-2 .cg-cell { padding: 0; display: block; overflow: hidden; }
   html:not(.mb) #cases.cl-2 .cg-img { position: absolute; inset: 0; width: auto; height: auto; flex: none; }
   html:not(.mb) #cases.cl-2 .cg-body {
@@ -2425,133 +2411,205 @@
   html:not(.mb) #cases.cl-2 .cg-tag { color: #fff; border-color: rgba(255,255,255,.7); }
   html:not(.mb) #cases.cl-2 .cg-quote { font-size: 18px; line-height: 1.6; }
 
-  /* --- 案3 写真が上・文字が下: 雑誌のような素直な縦積み --- */
-  html:not(.mb) #cases.cl-3 .case-grid {
-    grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 48px) var(--cl-gap, 48px);
-    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2));
-    box-sizing: border-box; align-content: center;
-  }
-  html:not(.mb) #cases.cl-3 .cg-cell { padding: 0; flex-direction: column; gap: var(--space-20); }
-  html:not(.mb) #cases.cl-3 .cg-img { flex: none; width: 100%; height: var(--cl-imgh, 200px); }
-  html:not(.mb) #cases.cl-3 .cg-body { gap: var(--space-12); }
-  html:not(.mb) #cases.cl-3 .cg-quote { font-size: 18px; line-height: 1.6; }
 
-  /* --- 案4 横1列(4枚並び): 一覧性が高く、スクロールなしで4件見せる --- */
-  html:not(.mb) #cases.cl-4 .case-grid {
-    grid-template-columns: repeat(4, 1fr); gap: var(--cl-gap, 24px);
-    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2));
-    box-sizing: border-box; align-content: center;
-  }
-  html:not(.mb) #cases.cl-4 .cg-cell { padding: 0; flex-direction: column; gap: var(--space-16); }
-  html:not(.mb) #cases.cl-4 .cg-img { flex: none; width: 100%; height: var(--cl-imgh, 176px); }
-  html:not(.mb) #cases.cl-4 .cg-body { gap: var(--space-10); }
-  html:not(.mb) #cases.cl-4 .cg-quote { font-size: 15px; line-height: 1.7; }
-  html:not(.mb) #cases.cl-4 .cg-company { font-size: 16px; }
+  /* ===== 【2026-09-15 ヒデさん指定・練り直し】テック感のある見せ方10案(cl-11〜20) =====
+     ディザ(市松/Bayer風)・ピクセル・粒(パーティクル)・横スクロール・3D を使う。4枚を同時に並べなくてよい(最終的に4件見られればよい)。 */
+  /* ディザの網点(4×4 Bayer 風)。重ねて使う共通パターン */
+  .cg-dither { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23000'/%3E%3Crect x='2' y='0' width='1' height='1' fill='%23000' opacity='.45'/%3E%3Crect x='0' y='2' width='1' height='1' fill='%23000' opacity='.45'/%3E%3C/svg%3E");
+    background-size: var(--cl-dot, 4px) var(--cl-dot, 4px); mix-blend-mode: multiply;
+    transition: opacity .35s ease; }
 
-  /* --- 案5 モザイク(1つ大きく): 1件を主役にして残り3件を右に積む --- */
-  html:not(.mb) #cases.cl-5 .case-grid {
-    grid-template-columns: 1.15fr 1fr; grid-template-rows: repeat(3, 1fr); gap: var(--cl-gap, 28px);
-    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2));
-    box-sizing: border-box; align-content: center;
-  }
-  html:not(.mb) #cases.cl-5 .cg-cell { padding: 0; gap: var(--space-20); align-items: center; }
-  html:not(.mb) #cases.cl-5 .cg-tl { grid-column: 1; grid-row: 1 / 4; flex-direction: column; align-items: stretch; }
-  html:not(.mb) #cases.cl-5 .cg-tl .cg-img { flex: none; width: 100%; height: var(--cl-imgh, 300px); }
-  html:not(.mb) #cases.cl-5 .cg-tl .cg-quote { font-size: 22px; line-height: 1.55; }
-  html:not(.mb) #cases.cl-5 .cg-tr { grid-column: 2; grid-row: 1; }
-  html:not(.mb) #cases.cl-5 .cg-bl { grid-column: 2; grid-row: 2; }
-  html:not(.mb) #cases.cl-5 .cg-br { grid-column: 2; grid-row: 3; }
-  html:not(.mb) #cases.cl-5 .cg-tr .cg-img, html:not(.mb) #cases.cl-5 .cg-bl .cg-img, html:not(.mb) #cases.cl-5 .cg-br .cg-img { flex: 0 0 168px; width: 168px; height: 112px; }
-  html:not(.mb) #cases.cl-5 .cg-tr .cg-quote, html:not(.mb) #cases.cl-5 .cg-bl .cg-quote, html:not(.mb) #cases.cl-5 .cg-br .cg-quote { font-size: 16px; line-height: 1.6; }
-  html:not(.mb) #cases.cl-5 .cg-body { gap: var(--space-12); }
+  /* --- 案11 横スクロール(ドラッグで流す): 4枚を横一列。掴んで流せる --- */
+  html:not(.mb) #cases.cl-11 .case-grid { display: flex; gap: var(--cl-gap, 24px); overflow-x: auto; overflow-y: hidden;
+    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2)); box-sizing: border-box;
+    align-items: center; scroll-snap-type: x mandatory; scrollbar-width: thin; cursor: grab; }
+  html:not(.mb) #cases.cl-11 .cg-cell { flex: 0 0 var(--cl-cardw, 520px); width: var(--cl-cardw, 520px); height: 460px;
+    padding: 0; flex-direction: column; gap: var(--space-20); scroll-snap-align: center; }
+  html:not(.mb) #cases.cl-11 .cg-img { flex: none; width: 100%; height: 290px; }
+  html:not(.mb) #cases.cl-11 .cg-quote { font-size: 17px; line-height: 1.6; }
 
-  /* --- 案6 淡い色で塗り分け: 線をやめて、4枚を上品な薄い色の面で分ける --- */
-  html:not(.mb) #cases.cl-6 .case-grid {
-    grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 20px);
-    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2));
-    box-sizing: border-box; align-content: center;
-  }
-  html:not(.mb) #cases.cl-6 .cg-cell { padding: var(--space-32); gap: var(--space-24); border-radius: var(--radius-lg); }
-  html:not(.mb) #cases.cl-6 .cg-tl { background: rgba(14,187,255,calc(.07 * var(--cl-tint, 1))); }
-  html:not(.mb) #cases.cl-6 .cg-tr { background: rgba(255,93,151,calc(.06 * var(--cl-tint, 1))); }
-  html:not(.mb) #cases.cl-6 .cg-bl { background: rgba(14,68,151,calc(.06 * var(--cl-tint, 1))); }
-  html:not(.mb) #cases.cl-6 .cg-br { background: rgba(16,24,40,calc(.05 * var(--cl-tint, 1))); }
-  html:not(.mb) #cases.cl-6 .cg-img { flex: 0 0 216px; width: 216px; height: 144px; border-radius: var(--radius-sm, 6px); }
-  html:not(.mb) #cases.cl-6 .cg-body { gap: var(--space-16); }
-  html:not(.mb) #cases.cl-6 .cg-quote { font-size: 18px; line-height: 1.6; }
+  /* --- 案12 自動で流れる(マーキー): ゆっくり左へ流れ、乗せると止まる --- */
+  html:not(.mb) #cases.cl-12 .case-grid { display: flex; gap: var(--cl-gap, 24px); overflow: hidden; align-items: center; padding: 0; }
+  html:not(.mb) #cases.cl-12 .cg-cell { flex: 0 0 var(--cl-cardw, 480px); width: var(--cl-cardw, 480px); height: 430px;
+    padding: 0; flex-direction: column; gap: var(--space-16);
+    animation: cgFlow var(--cl-flow, 26s) linear infinite; }
+  html:not(.mb) #cases.cl-12 .case-grid:hover .cg-cell { animation-play-state: paused; }
+  @keyframes cgFlow { to { transform: translateX(calc(-4 * (var(--cl-cardw, 480px) + var(--cl-gap, 24px)))); } }
+  html:not(.mb) #cases.cl-12 .cg-img { flex: none; width: 100%; height: 270px; }
+  html:not(.mb) #cases.cl-12 .cg-quote { font-size: 16px; line-height: 1.6; }
 
-  /* --- 案7 ガラスのタイル: すりガラスの面で4枚を分ける。後ろにブランド色の光を置いて「ガラス」を成立させる --- */
-  html:not(.mb) #cases.cl-7 .case-grid {
-    grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 20px);
-    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2));
-    box-sizing: border-box; align-content: center; position: absolute;
-  }
-  html:not(.mb) #cases.cl-7 .case-grid::before {
-    content: ''; position: absolute; left: 4%; right: 4%; top: -12%; bottom: -12%; z-index: 0; pointer-events: none;
-    background: radial-gradient(34% 44% at 22% 32%, rgba(14,187,255,calc(.5 * var(--cl-glow, 1))), transparent 62%),
-                radial-gradient(36% 40% at 78% 64%, rgba(255,93,151,calc(.42 * var(--cl-glow, 1))), transparent 62%),
-                radial-gradient(28% 30% at 54% 16%, rgba(255,255,255,calc(.5 * var(--cl-glow, 1))), transparent 60%);
-    filter: blur(70px);
-  }
-  html:not(.mb) #cases.cl-7 .cg-cell {
-    padding: var(--space-32); gap: var(--space-24); border-radius: var(--radius-lg); z-index: 1;
-    background: linear-gradient(150deg, rgba(255,255,255,.62), rgba(255,255,255,.38));
-    backdrop-filter: blur(var(--cl-blur, 18px)) saturate(1.4); -webkit-backdrop-filter: blur(var(--cl-blur, 18px)) saturate(1.4);
-    border: 1px solid rgba(255,255,255,.75);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 14px 34px rgba(16,24,40,.08);
-  }
-  html:not(.mb) #cases.cl-7 .cg-img { flex: 0 0 216px; width: 216px; height: 144px; border-radius: var(--radius-sm, 6px); }
-  html:not(.mb) #cases.cl-7 .cg-body { gap: var(--space-16); }
-  html:not(.mb) #cases.cl-7 .cg-quote { font-size: 18px; line-height: 1.6; }
+  /* --- 案13 3D カバーフロー: 中央が正面、両脇が奥へ回り込む --- */
+  html:not(.mb) #cases.cl-13 .case-grid { display: flex; justify-content: center; align-items: center; gap: var(--cl-gap, 0px);
+    perspective: var(--cl-persp, 1400px); padding: 0; }
+  html:not(.mb) #cases.cl-13 .cg-cell { flex: 0 0 calc(var(--cl-cardw, 520px) * .66); width: calc(var(--cl-cardw, 520px) * .66); height: 430px;
+    padding: 0; flex-direction: column; gap: var(--space-16); transform-style: preserve-3d;
+    transition: transform .5s var(--e-soft); }
+  html:not(.mb) #cases.cl-13 .cg-tl { transform: rotateY(40deg) translateZ(-90px) translateX(96px); }
+  html:not(.mb) #cases.cl-13 .cg-tr { transform: rotateY(15deg) translateZ(10px) translateX(28px); z-index: 2; }
+  html:not(.mb) #cases.cl-13 .cg-bl { transform: rotateY(-15deg) translateZ(10px) translateX(-28px); z-index: 2; }
+  html:not(.mb) #cases.cl-13 .cg-br { transform: rotateY(-40deg) translateZ(-90px) translateX(-96px); }
+  html:not(.mb) #cases.cl-13 .cg-cell:hover { transform: rotateY(0deg) translateZ(70px); z-index: 5; }
+  html:not(.mb) #cases.cl-13 .cg-img { flex: none; width: 100%; height: 280px; }
+  html:not(.mb) #cases.cl-13 .cg-quote { font-size: 16px; line-height: 1.6; }
 
-  /* ===== ホバー 5案(新規) ===== */
-  /* G 寄って持ち上がる: 写真がゆっくり寄り、文字がすこし上へ。タグがシアンに */
-  [data-hover="rise"] .cg-cell:hover .cg-img img { transform: scale(1.06); }
-  [data-hover="rise"] .cg-cell:hover .cg-body { transform: translateY(-6px); }
-  [data-hover="rise"] .cg-cell:hover .cg-tag { border-color: var(--brand-cyan); color: var(--brand-cyan); }
-  /* H 白い面が浮かぶ: 触った1枚の後ろに白い面と影がふわっと出る */
-  .cg-cell::before { content: ''; position: absolute; inset: -14px -18px; border-radius: var(--radius-lg);
-    background: var(--surface-card, #fff); box-shadow: 0 18px 40px rgba(16,24,40,.10);
-    opacity: 0; transform: scale(.985); transition: opacity .3s ease, transform .3s var(--e-soft); pointer-events: none; z-index: -1; }
-  [data-hover="card"] .cg-cell:hover::before { opacity: 1; transform: scale(1); }
-  [data-hover="card"] .cg-cell:hover { transform: translateY(-4px); }
-  /* I 写真に色が差す: 下からブランド色の帯が上がって写真が色づく */
-  .cg-img::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 100%;
-    background: linear-gradient(0deg, rgba(14,187,255,.55), rgba(255,93,151,.28) 55%, rgba(255,93,151,0));
-    opacity: 0; transform: translateY(24%); transition: opacity .34s ease, transform .44s var(--e-soft); pointer-events: none; z-index: 1; }
-  [data-hover="wash"] .cg-cell:hover .cg-img::after { opacity: 1; transform: translateY(0); }
-  [data-hover="wash"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
-  /* J 矢印が出る: 社名の左に → がスッと出て、社名が右へ寄る */
-  .cg-company { position: relative; }
-  .cg-company::before { content: '→'; position: absolute; left: -22px; top: 0; opacity: 0; transform: translateX(-6px);
-    color: var(--brand-cyan); transition: opacity .26s ease, transform .3s var(--e-soft); }
-  [data-hover="arrow"] .cg-cell:hover .cg-company::before { opacity: 1; transform: translateX(0); }
-  [data-hover="arrow"] .cg-cell:hover .cg-company { transform: translateX(8px); }
-  [data-hover="arrow"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
-  /* K 光が走る: 写真の上を斜めの光が1回通る */
-  .cg-img::before { content: ''; position: absolute; top: -20%; bottom: -20%; width: 42%; left: -60%;
-    background: linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0));
-    transform: skewX(-14deg); opacity: 0; pointer-events: none; z-index: 2;
-    transition: left .62s cubic-bezier(.25,.1,.25,1), opacity .2s ease; }
-  [data-hover="shine"] .cg-cell:hover .cg-img::before { left: 118%; opacity: 1; }
-  [data-hover="shine"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
-  /* L 立体的に浮く: カードが手前に起き上がる(奥行きのある傾き＋影) */
-  [data-hover="tilt"] .case-grid { perspective: 1100px; }
-  [data-hover="tilt"] .cg-cell { transform-style: preserve-3d; }
-  [data-hover="tilt"] .cg-cell:hover { transform: translateY(-10px) rotateX(6deg) scale(1.015); }
-  [data-hover="tilt"] .cg-cell::before { box-shadow: 0 26px 50px rgba(16,24,40,.16); }
-  [data-hover="tilt"] .cg-cell:hover::before { opacity: 1; transform: scale(1); }
-  [data-hover="tilt"] .cg-cell:hover .cg-img img { transform: scale(1.04); }
-  /* M 光が縁を回る: カードのふちをブランド色の光が1周する(開発者体験の「ネオンが一周する」と同じ手法) */
-  .cg-ring { position: absolute; inset: -10px -14px; border-radius: var(--radius-lg); padding: 1.5px; pointer-events: none; z-index: 3;
+  /* --- 案14 3D 傾いたグリッド: 面ごと少し傾けた2×2。乗せた1枚だけ正面を向く --- */
+  html:not(.mb) #cases.cl-14 .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 28px);
+    padding: 0 max(var(--cl-pad, 90px), calc((100% - var(--cl-max, 1240px)) / 2)); box-sizing: border-box;
+    align-content: center; perspective: var(--cl-persp, 1500px); }
+  html:not(.mb) #cases.cl-14 .cg-cell { padding: var(--space-28, 28px); gap: var(--space-24); border-radius: var(--radius-lg);
+    background: linear-gradient(150deg, rgba(255,255,255,.9), rgba(255,255,255,.72));
+    border: 1px solid rgba(255,255,255,.9); box-shadow: 0 18px 40px rgba(16,24,40,.10);
+    transform: rotateX(8deg) rotateY(calc(var(--cl-ry, 6deg) * var(--s-dir, 1))); transform-style: preserve-3d;
+    transition: transform .45s var(--e-soft), box-shadow .45s ease; }
+  html:not(.mb) #cases.cl-14 .cg-tl, html:not(.mb) #cases.cl-14 .cg-bl { --s-dir: 1; }
+  html:not(.mb) #cases.cl-14 .cg-tr, html:not(.mb) #cases.cl-14 .cg-br { --s-dir: -1; }
+  html:not(.mb) #cases.cl-14 .cg-cell:hover { transform: rotateX(0deg) rotateY(0deg) translateZ(40px); box-shadow: 0 32px 60px rgba(16,24,40,.18); }
+  html:not(.mb) #cases.cl-14 .cg-img { flex: 0 0 200px; width: 200px; height: 134px; }
+  html:not(.mb) #cases.cl-14 .cg-quote { font-size: 17px; line-height: 1.6; }
+
+  /* --- 案15 ディザのタイル: 写真をブランド2色のディザに置き換えた面 --- */
+  html:not(.mb) #cases.cl-15 .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 2px); align-content: stretch;
+    top: 196px; height: var(--cl-tileh, 700px); }
+  html:not(.mb) #cases.cl-15 .cg-cell { padding: 0; display: block; overflow: hidden; background: #0b0d12; }
+  html:not(.mb) #cases.cl-15 .cg-img { position: absolute; inset: 0; width: auto; height: auto; flex: none; }
+  html:not(.mb) #cases.cl-15 .cg-img img { filter: grayscale(1) contrast(calc(1.1 + .5 * var(--cl-dith, 1))) brightness(1.05); opacity: .9; }
+  html:not(.mb) #cases.cl-15 .cg-img::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 1;
+    background: linear-gradient(140deg, rgba(14,187,255,calc(.55 * var(--cl-dith, 1))), rgba(255,93,151,calc(.5 * var(--cl-dith, 1))));
+    mix-blend-mode: screen; transform: none; }
+  html:not(.mb) #cases.cl-15 .cg-dither { opacity: calc(.55 * var(--cl-dith, 1)); }
+  html:not(.mb) #cases.cl-15 .cg-body { position: relative; z-index: 3; height: 100%; justify-content: flex-end;
+    padding: var(--space-40); box-sizing: border-box; gap: var(--space-12);
+    background: linear-gradient(180deg, rgba(8,10,14,0) 40%, rgba(8,10,14,.78) 100%); }
+  html:not(.mb) #cases.cl-15 .cg-quote, html:not(.mb) #cases.cl-15 .cg-company { color: #fff; }
+  html:not(.mb) #cases.cl-15 .cg-tag { color: #fff; border-color: rgba(255,255,255,.7); }
+  html:not(.mb) #cases.cl-15 .cg-quote { font-size: 18px; line-height: 1.6; }
+
+  /* --- 案16 ピクセルのモザイク: 粗いピクセル格子ごしに見せる --- */
+  html:not(.mb) #cases.cl-16 .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 20px);
+    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2)); box-sizing: border-box; align-content: center; }
+  html:not(.mb) #cases.cl-16 .cg-cell { padding: var(--space-24); gap: var(--space-24); background: rgba(255,255,255,.7); border-radius: 4px; }
+  html:not(.mb) #cases.cl-16 .cg-img { flex: 0 0 232px; width: 232px; height: 155px; }
+  html:not(.mb) #cases.cl-16 .cg-img img { image-rendering: pixelated; filter: contrast(1.15) saturate(1.1); }
+  html:not(.mb) #cases.cl-16 .cg-img::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,calc(.5 * var(--cl-px, 1))) 0 1px, transparent 1px var(--cl-pxs, 7px)),
+                      repeating-linear-gradient(0deg, rgba(255,255,255,calc(.5 * var(--cl-px, 1))) 0 1px, transparent 1px var(--cl-pxs, 7px)); }
+  html:not(.mb) #cases.cl-16 .cg-quote { font-size: 17px; line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* --- 案17 粒が舞う(パーティクル): カードの後ろで細かい粒がゆっくり流れる --- */
+  html:not(.mb) #cases.cl-17 .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 24px);
+    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2)); box-sizing: border-box; align-content: center; position: absolute; }
+  html:not(.mb) #cases.cl-17 .case-grid::before { content: ''; position: absolute; inset: -6% -2%; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(14,187,255,calc(.5 * var(--cl-part, 1))) 1px, transparent 1.4px),
+                      radial-gradient(rgba(255,93,151,calc(.42 * var(--cl-part, 1))) 1px, transparent 1.4px),
+                      radial-gradient(rgba(16,24,40,calc(.22 * var(--cl-part, 1))) 1px, transparent 1.4px);
+    background-size: 46px 46px, 68px 68px, 34px 34px;
+    animation: cgDrift var(--cl-partsec, 24s) linear infinite; }
+  @keyframes cgDrift { to { background-position: 46px -92px, -68px -136px, 34px -68px; } }
+  html:not(.mb) #cases.cl-17 .cg-cell { padding: var(--space-28, 28px); gap: var(--space-24); border-radius: var(--radius-lg); z-index: 1;
+    background: rgba(255,255,255,.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.9); box-shadow: 0 12px 30px rgba(16,24,40,.07); }
+  html:not(.mb) #cases.cl-17 .cg-img { flex: 0 0 208px; width: 208px; height: 139px; border-radius: 4px; }
+  html:not(.mb) #cases.cl-17 .cg-quote { font-size: 17px; line-height: 1.6; }
+
+  /* --- 案18 ターミナル風: 等幅・枠線・走査線。開発者向けの顔つき --- */
+  html:not(.mb) #cases.cl-18 .case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cl-gap, 20px);
+    padding: 0 max(var(--cl-pad, 60px), calc((100% - var(--cl-max, 1320px)) / 2)); box-sizing: border-box; align-content: center; }
+  html:not(.mb) #cases.cl-18 .cg-cell { padding: var(--space-24); gap: var(--space-24); border-radius: 6px; overflow: hidden;
+    background: #0d1016; border: 1px solid rgba(14,187,255,.28); box-shadow: 0 0 0 1px rgba(255,255,255,.03), 0 16px 34px rgba(0,0,0,.35); }
+  html:not(.mb) #cases.cl-18 .cg-cell::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,calc(.04 * var(--cl-scan, 1))) 0 1px, transparent 1px 3px); }
+  html:not(.mb) #cases.cl-18 .cg-img { flex: 0 0 216px; width: 216px; height: 144px; border: 1px solid rgba(255,255,255,.14); }
+  html:not(.mb) #cases.cl-18 .cg-img img { filter: grayscale(.4) contrast(1.1); }
+  html:not(.mb) #cases.cl-18 .cg-quote { font-size: 15px; line-height: 1.75; color: #d7e3ef; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  html:not(.mb) #cases.cl-18 .cg-company { color: #fff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 16px; }
+  html:not(.mb) #cases.cl-18 .cg-tag { color: var(--brand-cyan); border-color: rgba(14,187,255,.5); }
+
+  /* --- 案19 重ねて覗かせる(スタック): 手前1枚＋後ろに3枚。乗せると扇のように開く --- */
+  html:not(.mb) #cases.cl-19 .case-grid { display: flex; justify-content: center; align-items: center; padding: 0; perspective: 1400px; }
+  html:not(.mb) #cases.cl-19 .cg-cell { position: absolute; width: var(--cl-cardw, 560px); height: 430px; padding: var(--space-28, 28px);
+    flex-direction: column; gap: var(--space-16); border-radius: var(--radius-lg); background: var(--surface-card, #fff);
+    box-shadow: 0 18px 44px rgba(16,24,40,.12); transition: transform .5s var(--e-soft), box-shadow .4s ease; }
+  html:not(.mb) #cases.cl-19 .cg-tl { transform: translate(-150px, 0) rotate(-6deg); z-index: 1; }
+  html:not(.mb) #cases.cl-19 .cg-tr { transform: translate(-50px, 10px) rotate(-2deg); z-index: 2; }
+  html:not(.mb) #cases.cl-19 .cg-bl { transform: translate(50px, 10px) rotate(2deg); z-index: 3; }
+  html:not(.mb) #cases.cl-19 .cg-br { transform: translate(150px, 0) rotate(6deg); z-index: 4; }
+  html:not(.mb) #cases.cl-19 .case-grid:hover .cg-tl { transform: translate(-480px, -8px) rotate(-8deg); }
+  html:not(.mb) #cases.cl-19 .case-grid:hover .cg-tr { transform: translate(-160px, 4px) rotate(-3deg); }
+  html:not(.mb) #cases.cl-19 .case-grid:hover .cg-bl { transform: translate(160px, 4px) rotate(3deg); }
+  html:not(.mb) #cases.cl-19 .case-grid:hover .cg-br { transform: translate(480px, -8px) rotate(8deg); }
+  html:not(.mb) #cases.cl-19 .cg-cell:hover { z-index: 9; box-shadow: 0 30px 60px rgba(16,24,40,.2); }
+  html:not(.mb) #cases.cl-19 .cg-img { flex: none; width: 100%; height: 240px; }
+  html:not(.mb) #cases.cl-19 .cg-quote { font-size: 16px; line-height: 1.6; }
+
+  /* --- 案20 開くパネル(アコーディオン): 4枚を縦帯で並べ、乗せた1枚が広がる --- */
+  html:not(.mb) #cases.cl-20 .case-grid { display: flex; gap: var(--cl-gap, 6px); align-items: stretch; padding: 0;
+    top: 196px; height: var(--cl-tileh, 700px); }
+  html:not(.mb) #cases.cl-20 .cg-cell { flex: 1 1 0; min-width: 0; padding: 0; display: block; overflow: hidden; position: relative;
+    transition: flex-grow .55s var(--e-soft); }
+  html:not(.mb) #cases.cl-20 .case-grid:hover .cg-cell { flex-grow: .6; }
+  html:not(.mb) #cases.cl-20 .cg-cell:hover { flex-grow: 2.6; }
+  html:not(.mb) #cases.cl-20 .cg-img { position: absolute; inset: 0; width: auto; height: auto; flex: none; }
+  html:not(.mb) #cases.cl-20 .cg-body { position: relative; z-index: 2; height: 100%; justify-content: flex-end;
+    padding: var(--space-32); box-sizing: border-box; gap: var(--space-10);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.72) 100%); }
+  html:not(.mb) #cases.cl-20 .cg-quote, html:not(.mb) #cases.cl-20 .cg-company { color: #fff; }
+  html:not(.mb) #cases.cl-20 .cg-tag { color: #fff; border-color: rgba(255,255,255,.7); }
+  html:not(.mb) #cases.cl-20 .cg-quote { font-size: 16px; line-height: 1.6; }
+
+  /* ===== 【2026-09-15】ホバー10案(テック寄り) ===== */
+  /* 1 ディザで溶ける */
+  [data-hover="dither"] .cg-cell:hover .cg-dither { opacity: .85; }
+  [data-hover="dither"] .cg-cell:hover .cg-img img { filter: grayscale(.7) contrast(1.25); transform: scale(1.03); }
+  /* 2 ピクセルがパラパラ */
+  [data-hover="pixel"] .cg-cell:hover .cg-dither { opacity: .9; animation: cgFlick .45s steps(2) infinite; }
+  @keyframes cgFlick { 0% { background-position: 0 0; opacity: .9; } 50% { background-position: 2px 2px; opacity: .55; } 100% { background-position: 0 0; opacity: .9; } }
+  [data-hover="pixel"] .cg-cell:hover .cg-img img { image-rendering: pixelated; transform: scale(1.06); filter: contrast(1.2); }
+  /* 3 粒が舞う */
+  .cg-parts { position: absolute; inset: -12%; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .3s ease;
+    background-image: radial-gradient(rgba(14,187,255,.9) 1px, transparent 1.4px), radial-gradient(rgba(255,93,151,.8) 1px, transparent 1.4px), radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.4px);
+    background-size: 28px 28px, 44px 44px, 19px 19px; }
+  [data-hover="particle"] .cg-cell:hover .cg-parts { opacity: 1; animation: cgUp 2.6s linear infinite; }
+  @keyframes cgUp { to { background-position: 0 -56px, 0 -88px, 0 -38px; } }
+  /* 4 走査線が走る */
+  .cg-scan { position: absolute; left: 0; right: 0; height: 26%; top: -30%; z-index: 3; pointer-events: none; opacity: 0;
+    background: linear-gradient(180deg, rgba(14,187,255,0), rgba(14,187,255,.26) 46%, rgba(255,255,255,.4) 62%, rgba(255,93,151,0)); }
+  [data-hover="scan"] .cg-cell:hover .cg-scan { opacity: 1; animation: cgScan 1.6s cubic-bezier(.45,0,.55,1) infinite; }
+  @keyframes cgScan { 0% { top: -30%; } 100% { top: 104%; } }
+  /* 5 グリッチ(色ズレ) */
+  [data-hover="glitch"] .cg-cell:hover .cg-img img { animation: cgGlitch .5s steps(3) 2; }
+  @keyframes cgGlitch {
+    0% { transform: translateX(0) scale(1.02); filter: none; }
+    33% { transform: translateX(-3px) scale(1.02); filter: drop-shadow(3px 0 rgba(255,93,151,.8)) drop-shadow(-3px 0 rgba(14,187,255,.8)); }
+    66% { transform: translateX(3px) scale(1.02); filter: drop-shadow(-4px 0 rgba(14,187,255,.8)) drop-shadow(4px 0 rgba(255,93,151,.7)); }
+    100% { transform: translateX(0) scale(1.02); filter: none; }
+  }
+  /* 6 ブランド2色に染まる(デュオトーン) */
+  .cg-duo { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .34s ease;
+    background: linear-gradient(140deg, rgba(14,187,255,.85), rgba(255,93,151,.8)); mix-blend-mode: color; }
+  [data-hover="duotone"] .cg-cell:hover .cg-duo { opacity: 1; }
+  [data-hover="duotone"] .cg-cell:hover .cg-img img { filter: grayscale(1) contrast(1.15); transform: scale(1.03); }
+  /* 7 光が縁を回る */
+  .cg-ring { position: absolute; inset: -10px -14px; border-radius: var(--radius-lg); padding: 1.5px; pointer-events: none; z-index: 5;
     opacity: 0; transition: opacity .25s ease;
-    background: conic-gradient(from var(--dm-ang, 0deg),
-      rgba(14,187,255,0) 0turn, rgba(14,187,255,0) .72turn,
-      rgba(14,187,255,.9) .88turn, #ffffff .95turn, #ff5d97 1turn);
+    background: conic-gradient(from var(--dm-ang, 0deg), rgba(14,187,255,0) 0turn, rgba(14,187,255,0) .72turn, rgba(14,187,255,.9) .88turn, #ffffff .95turn, #ff5d97 1turn);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
   [data-hover="ring"] .cg-cell:hover .cg-ring { opacity: 1; animation: dmRunAng var(--cl-ring-sec, 2.4s) linear infinite; animation-direction: reverse; }
   [data-hover="ring"] .cg-cell:hover { transform: translateY(-4px); }
+  /* 8 3Dで起き上がる */
+  [data-hover="tilt"] .case-grid { perspective: 1100px; }
+  [data-hover="tilt"] .cg-cell { transform-style: preserve-3d; }
+  [data-hover="tilt"] .cg-cell:hover { transform: translateY(-10px) rotateX(6deg) scale(1.015); }
+  [data-hover="tilt"] .cg-cell:hover .cg-img img { transform: scale(1.04); }
+  /* 9 社名がタイプされる(カーソルが点滅) */
+  [data-hover="type"] .cg-cell:hover .cg-company::after { content: '_'; color: var(--brand-cyan); animation: cgCaret .7s steps(1) infinite; margin-left: 2px; }
+  @keyframes cgCaret { 50% { opacity: 0; } }
+  [data-hover="type"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
+  /* 10 カーソルに寄る(磁石。JS が --mx/--my を入れる) */
+  [data-hover="magnet"] .cg-cell { transition: transform .18s ease-out; }
+  [data-hover="magnet"] .cg-cell:hover { transform: translate(calc(var(--mx, 0) * 12px), calc(var(--my, 0) * 12px)) scale(1.012); }
+  [data-hover="magnet"] .cg-cell:hover .cg-img img { transform: scale(1.04) translate(calc(var(--mx, 0) * -6px), calc(var(--my, 0) * -6px)); }
   .cg-tl { left: 0;   top: 0;     height: 295px; }
   .cg-tr { left: 50%; top: 0;     height: 295px; }
   .cg-bl { left: 0;   top: 295px; height: 294px; }
@@ -6281,31 +6339,49 @@ function applyVisGrad() {
 /* ===== 【2026-09-15 ヒデさん指定】導入事例「4枚の見せ方」5案＋ホバー5案 =====
    見せ方は #cases に cl-N を付けて CSS で切替(罫線は現行案だけ)。ホバーは #caseGrid の data-hover。 */
 const CASE_LAYOUTS = [
-  { key: '0', name: '現行（罫線の2×2）', fixed: true, tip: 'カンプどおり。画面いっぱいの罫線で4つに区切り、左に写真・右に文章。' },
-  { key: '1', name: '浮かぶカード', tip: '白いカードを2×2で並べる。1件ずつの区切りがはっきりして読みやすい。影の強さはつまみで。' },
-  { key: '2', name: '写真タイル（文字を重ねる）', tip: 'セル全面を写真にして、下に文字を重ねる。いちばん目を引くが、写真の明るさに左右される。文字を守る暗さはつまみで。' },
-  { key: '3', name: '写真が上・文字が下', tip: '雑誌のような素直な縦積み。写真が大きく見え、文章も読みやすい。写真の高さはつまみで。' },
-  { key: '4', name: '横1列（4枚並び）', tip: '4件を横に並べる。一覧性が高く「たくさんの事例がある」感じが出る。文字は少し小さめ。' },
-  { key: '5', name: 'モザイク（1つ大きく）', tip: '1件を主役にして、残り3件を右に積む。推したい事例がある時に。' },
-  { key: '6', name: '淡い色で塗り分け', tip: '線をやめて、4枚を上品な薄い色の面(シアン/ピンク/紺/グレー)で分ける。淡さはつまみで。' },
-  { key: '7', name: 'ガラスのタイル', tip: 'すりガラスの面で4枚を分ける。後ろにブランド色の光を置いて透け感を出す。ぼかしと光の強さはつまみで。' },
+  { key: '0',  name: '現行（罫線の2×2）', fixed: true, tip: 'カンプどおり。画面いっぱいの罫線で4つに区切り、左に写真・右に文章。' },
+  { key: '2',  name: '写真タイル（文字を重ねる）', tip: 'セル全面を写真にして、下に文字を重ねる。1枚あたりの縦幅を出して横長すぎないように(高さはつまみ)。' },
+  { key: '11', name: '横スクロール（掴んで流す）', tip: '4枚を横一列に。掴んで(ドラッグ)左右に流せる。1枚を大きく見せられる。' },
+  { key: '12', name: '横に流れる（自動・マーキー）', tip: 'ゆっくり左へ流れ続け、乗せると止まる。「事例がたくさんある」空気が出る。' },
+  { key: '13', name: '3D カバーフロー', tip: '中央が正面、両脇が奥へ回り込む立体的な並び。乗せた1枚が正面を向いて手前に出る。' },
+  { key: '14', name: '3D 傾いたグリッド', tip: '2×2の面を少し傾けて置き、乗せた1枚だけ正面を向いて浮く。' },
+  { key: '15', name: 'ディザのタイル', tip: '写真をブランド2色のディザ(網点)に置き換えた面。お問い合わせの背景と同じ言語。粒の細かさ・強さはつまみ。' },
+  { key: '16', name: 'ピクセルのモザイク', tip: '粗いピクセル格子ごしに見せる。文章も等幅にしてテック寄りに。格子の粗さはつまみ。' },
+  { key: '17', name: '粒が舞う（パーティクル）', tip: 'カードの後ろで細かい粒がゆっくり流れる。カードはすりガラス。粒の量・速さはつまみ。' },
+  { key: '18', name: 'ターミナル風', tip: '黒い枠・等幅・走査線。開発者向けの顔つきになる。' },
+  { key: '19', name: '重ねて覗かせる（扇に開く）', tip: '4枚を重ねて置き、乗せると扇のように開く。動きが主役。' },
+  { key: '20', name: '開くパネル（アコーディオン）', tip: '4枚を縦帯で並べ、乗せた1枚が横に広がる。1件ずつじっくり見せられる。' },
 ];
 const CASE_HOVERS = [
-  { key: 'trim', name: '現行（写真の枠が描かれる）', fixed: true, tip: '写真の4辺が四隅から同時に伸びて枠を閉じる。写真は少しだけ寄る。' },
-  { key: 'rise', name: '寄って持ち上がる', tip: '写真がゆっくり寄り、文字が少し上へ。タグがシアンに色づく。静かで上品。' },
-  { key: 'card', name: '白い面が浮かぶ', tip: '触った1枚の後ろに白い面と影がふわっと出て、少し持ち上がる。押せることが伝わりやすい。' },
-  { key: 'wash', name: '写真に色が差す', tip: '写真の下からブランド色(シアン→ピンク)の帯が上がって色づく。' },
-  { key: 'arrow', name: '矢印が出る', tip: '社名の左に → がスッと出て、社名が右へ寄る。リンクだと分かりやすい。' },
-  { key: 'shine', name: '光が走る', tip: '写真の上を斜めの光が1回通る。写真が主役の案(写真タイル)と相性がよい。' },
-  { key: 'tilt', name: '立体的に浮く', tip: 'カードが手前に起き上がるように傾いて浮く(奥行きのある3D)。カード系の案と相性がよい。' },
-  { key: 'ring', name: '光が縁を回る', tip: 'カードのふちをブランド色の光が1周する。速さはつまみで。' },
+  { key: 'trim',     name: '現行（写真の枠が描かれる）', fixed: true, tip: '写真の4辺が四隅から同時に伸びて枠を閉じる。' },
+  { key: 'dither',   name: 'ディザで溶ける', tip: '写真の上に網点(ディザ)が浮かび上がり、写真がモノクロに寄る。' },
+  { key: 'pixel',    name: 'ピクセルがパラパラ', tip: '網点が細かく点滅し、写真がピクセル化して寄る。' },
+  { key: 'particle', name: '粒が舞う', tip: 'ブランド色の粒が写真の上を下から上へ流れる。' },
+  { key: 'scan',     name: '走査線が走る', tip: 'シアン〜白の帯が上から下へ繰り返し走る。' },
+  { key: 'glitch',   name: 'グリッチ（色ズレ）', tip: 'シアンとピンクに一瞬ズレて戻る。強めのテック感。' },
+  { key: 'duotone',  name: 'ブランド2色に染まる', tip: '写真がシアン→ピンクのデュオトーンに変わる。' },
+  { key: 'ring',     name: '光が縁を回る', tip: 'カードのふちをブランド色の光が1周する。速さはつまみ。' },
+  { key: 'tilt',     name: '3Dで起き上がる', tip: 'カードが手前に起き上がるように傾いて浮く。' },
+  { key: 'type',     name: '社名にカーソルが点滅', tip: '社名の後ろにターミナルのカーソルが点滅する。' },
+  { key: 'magnet',   name: 'カーソルに寄る（磁石）', tip: 'カードがカーソルの方へ少しだけ吸い寄せられる。' },
 ];
 function caseLayoutKey() { const v = String((params.patterns && params.patterns.caseLayout) || '0'); return (CASE_LAYOUTS.some(c => c.key === v) && !variantRemovedKey('caseLayout', v)) ? v : '0'; }
 function caseHoverKey() { const v = String((params.patterns && params.patterns.caseHover) || 'trim'); return (CASE_HOVERS.some(c => c.key === v) && !variantRemovedKey('caseHover', v)) ? v : 'trim'; }
+/* 案11(横スクロール)を掴んで流せるようにする。1回だけ仕込む */
+function caseDragInit(grid) {
+  if (!grid || grid._drag) return; grid._drag = true;
+  let down = false, sx = 0, sl = 0;
+  grid.addEventListener('pointerdown', e => { if (!document.getElementById('cases').classList.contains('cl-11')) return;
+    down = true; sx = e.clientX; sl = grid.scrollLeft; grid.style.cursor = 'grabbing'; });
+  grid.addEventListener('pointermove', e => { if (!down) return; grid.scrollLeft = sl - (e.clientX - sx); });
+  const up = () => { down = false; grid.style.cursor = ''; };
+  grid.addEventListener('pointerup', up); grid.addEventListener('pointerleave', up);
+}
 function applyCaseLayout() {
   const sec = document.getElementById('cases'); if (!sec) return;
   const k = caseLayoutKey();
   CASE_LAYOUTS.forEach(c => sec.classList.toggle('cl-' + c.key, c.key === k));
+  caseDragInit(document.getElementById('caseGrid'));
   const r = sec.style;
   const v = (params.sections && params.sections.cases) || {};
   r.setProperty('--cl-gap', (v.clGap != null ? v.clGap : (k === '4' ? 24 : k === '3' ? 48 : 28)) + 'px');
@@ -6318,6 +6394,18 @@ function applyCaseLayout() {
   r.setProperty('--cl-blur', (v.clBlur != null ? v.clBlur : 18) + 'px');
   r.setProperty('--cl-glow', String(v.clGlow != null ? v.clGlow : 1));
   r.setProperty('--cl-ring-sec', (v.clRingSec != null ? v.clRingSec : 2.4) + 's');
+  r.setProperty('--cl-tileh', (v.clTileH != null ? v.clTileH : 700) + 'px');
+  r.setProperty('--cl-cardw', (v.clCardW != null ? v.clCardW : 520) + 'px');
+  r.setProperty('--cl-flow', (v.clFlow != null ? v.clFlow : 26) + 's');
+  r.setProperty('--cl-persp', (v.clPersp != null ? v.clPersp : 1400) + 'px');
+  r.setProperty('--cl-ry', (v.clRy != null ? v.clRy : 6) + 'deg');
+  r.setProperty('--cl-dot', (v.clDot != null ? v.clDot : 4) + 'px');
+  r.setProperty('--cl-dith', String(v.clDith != null ? v.clDith : 1));
+  r.setProperty('--cl-px', String(v.clPx != null ? v.clPx : 1));
+  r.setProperty('--cl-pxs', (v.clPxs != null ? v.clPxs : 7) + 'px');
+  r.setProperty('--cl-part', String(v.clPart != null ? v.clPart : 1));
+  r.setProperty('--cl-partsec', (v.clPartSec != null ? v.clPartSec : 24) + 's');
+  r.setProperty('--cl-scan', String(v.clScan != null ? v.clScan : 1));
 }
 function visApplyGrad(key) { const g = VIS_GRADS.find(x => x.key === key); if (!g) return; const v = params.sections.vision; v.gradVar = key; Object.assign(v, { gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v); }
 /* 文字色の自動判定: 色5段の中ほど(26/59/76%)の明るさ平均に「暗さ」を掛けて 0.42 未満なら白文字 */
@@ -13823,9 +13911,25 @@ function applyCaseHover() {
   const g = caseEls && caseEls.grid;
   if (!g) return;
   g.dataset.hover = (typeof caseHoverKey === 'function') ? caseHoverKey() : (params.patterns.caseHover || 'zoom');
-  /* ホバー「光が縁を回る」で使うリングを、まだ無ければ各カードに1つずつ入れる (2026-09-15) */
+  /* 【2026-09-15】ホバー10案で使う重ね物を、まだ無ければ各カードに1つずつ入れる
+     リングはカード直下、ディザ/粒/走査線/デュオトーンは写真の中(写真の形に沿わせるため) */
   (caseEls.cards || []).forEach(c => {
-    if (c && !c.querySelector('.cg-ring')) { const i = document.createElement('i'); i.className = 'cg-ring'; c.appendChild(i); }
+    if (!c) return;
+    if (!c.querySelector('.cg-ring')) { const i = document.createElement('i'); i.className = 'cg-ring'; c.appendChild(i); }
+    const img = c.querySelector('.cg-img');
+    if (img) ['cg-dither', 'cg-parts', 'cg-scan', 'cg-duo'].forEach(cl => {
+      if (!img.querySelector('.' + cl)) { const i = document.createElement('i'); i.className = cl; img.appendChild(i); }
+    });
+    /* 磁石ホバー: カーソルの位置(−1〜1)を CSS 変数へ。ホバー案が magnet の時だけ効く(CSS 側で参照) */
+    if (!c._magnet) {
+      c._magnet = true;
+      c.addEventListener('pointermove', e => {
+        const r = c.getBoundingClientRect();
+        c.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+        c.style.setProperty('--my', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+      });
+      c.addEventListener('pointerleave', () => { c.style.setProperty('--mx', 0); c.style.setProperty('--my', 0); });
+    }
   });
   /* C案「下線が伸びる」で使う線を、まだ無ければ各カードに1本ずつ入れる */
   (caseEls.cards || []).forEach(c => {
@@ -18062,6 +18166,17 @@ function buildPanel() {
   rows.push(slider('ガラスのぼかし', 0, 40, 1, () => (sv().cases.clBlur != null ? sv().cases.clBlur : 18), v => { sv().cases.clBlur = v; applyCaseLayout(); }, v => Math.round(v) + 'px', '「ガラスのタイル」の後ろのぼけ具合。', { fixedMax: true }));
   rows.push(slider('後ろの光', 0, 2, 0.05, () => (sv().cases.clGlow != null ? sv().cases.clGlow : 1), v => { sv().cases.clGlow = v; applyCaseLayout(); }, v => Math.round(v * 100) + '%', '「ガラスのタイル」の後ろに置くブランド色の光の強さ。', { fixedMax: true }));
   rows.push(slider('縁の光が1周する時間', 0.8, 8, 0.2, () => (sv().cases.clRingSec != null ? sv().cases.clRingSec : 2.4), v => { sv().cases.clRingSec = v; applyCaseLayout(); }, v => v.toFixed(1) + '秒', 'ホバー「光が縁を回る」の速さ。', { fixedMax: true }));
+  rows.push(slider('タイルの高さ', 400, 820, 10, () => (sv().cases.clTileH != null ? sv().cases.clTileH : 700), v => { sv().cases.clTileH = v; applyCaseLayout(); }, v => Math.round(v) + 'px', '「写真タイル」「ディザのタイル」「開くパネル」の枠の高さ。大きいほど1枚が縦長になります。', { fixedMax: true }));
+  rows.push(slider('カードの幅', 300, 780, 10, () => (sv().cases.clCardW != null ? sv().cases.clCardW : 520), v => { sv().cases.clCardW = v; applyCaseLayout(); }, v => Math.round(v) + 'px', '横スクロール系・カバーフロー・重ねる案の1枚の幅。', { fixedMax: true }));
+  rows.push(slider('流れる速さ', 8, 60, 1, () => (sv().cases.clFlow != null ? sv().cases.clFlow : 26), v => { sv().cases.clFlow = v; applyCaseLayout(); }, v => Math.round(v) + '秒', '「横に流れる」が1周するのにかける時間。長いほどゆっくり。', { fixedMax: true }));
+  rows.push(slider('3Dの奥行き', 700, 2600, 50, () => (sv().cases.clPersp != null ? sv().cases.clPersp : 1400), v => { sv().cases.clPersp = v; applyCaseLayout(); }, v => Math.round(v) + 'px', '小さいほど強いパース(奥行き)。カバーフロー・傾いたグリッドで効きます。', { fixedMax: true }));
+  rows.push(slider('傾きの角度', 0, 20, 1, () => (sv().cases.clRy != null ? sv().cases.clRy : 6), v => { sv().cases.clRy = v; applyCaseLayout(); }, v => Math.round(v) + '°', '「3D 傾いたグリッド」の左右の傾き。', { fixedMax: true }));
+  rows.push(slider('ディザの粒', 2, 12, 1, () => (sv().cases.clDot != null ? sv().cases.clDot : 4), v => { sv().cases.clDot = v; applyCaseLayout(); }, v => Math.round(v) + 'px', '網点(ディザ)の1粒の大きさ。大きいほど粗い。', { fixedMax: true }));
+  rows.push(slider('ディザの強さ', 0, 2, 0.05, () => (sv().cases.clDith != null ? sv().cases.clDith : 1), v => { sv().cases.clDith = v; applyCaseLayout(); }, v => Math.round(v * 100) + '%', '「ディザのタイル」の色と網点の強さ。', { fixedMax: true }));
+  rows.push(slider('ピクセルの粗さ', 3, 20, 1, () => (sv().cases.clPxs != null ? sv().cases.clPxs : 7), v => { sv().cases.clPxs = v; applyCaseLayout(); }, v => Math.round(v) + 'px', '「ピクセルのモザイク」の格子の間隔。', { fixedMax: true }));
+  rows.push(slider('粒の量', 0, 2.5, 0.05, () => (sv().cases.clPart != null ? sv().cases.clPart : 1), v => { sv().cases.clPart = v; applyCaseLayout(); }, v => Math.round(v * 100) + '%', '「粒が舞う」の粒の濃さ。', { fixedMax: true }));
+  rows.push(slider('粒が流れる時間', 8, 60, 1, () => (sv().cases.clPartSec != null ? sv().cases.clPartSec : 24), v => { sv().cases.clPartSec = v; applyCaseLayout(); }, v => Math.round(v) + '秒', '「粒が舞う」の速さ。長いほどゆっくり。', { fixedMax: true }));
+  rows.push(slider('走査線の強さ', 0, 3, 0.05, () => (sv().cases.clScan != null ? sv().cases.clScan : 1), v => { sv().cases.clScan = v; applyCaseLayout(); }, v => Math.round(v * 100) + '%', '「ターミナル風」の走査線の濃さ。', { fixedMax: true }));
   sub(catCase, 'ホバーの動き', true, { fixed: true });
   varRowX('caseHover', CASE_HOVERS, () => caseHoverKey(), v => { params.patterns.caseHover = String(v); },
     { after: () => { applyCaseHover(); renderFrame(); } });
@@ -18284,7 +18399,7 @@ function buildPanel() {
 buildPanel();
 applyMarquee();
 /* 【2026-09-15】導入事例: ?cl=0〜5(見せ方) / ?ch=trim|rise|card|wash|arrow|shine(ホバー) */
-try { const _cl = location.search.match(/[?&]cl=(\d)(?:&|$)/); if (_cl && CASE_LAYOUTS.some(c => c.key === _cl[1])) params.patterns.caseLayout = _cl[1];
+try { const _cl = location.search.match(/[?&]cl=(\d{1,2})(?:&|$)/); if (_cl && CASE_LAYOUTS.some(c => c.key === _cl[1])) params.patterns.caseLayout = _cl[1];
       const _ch = location.search.match(/[?&]ch=([a-z]+)(?:&|$)/); if (_ch && CASE_HOVERS.some(c => c.key === _ch[1])) params.patterns.caseHover = _ch[1]; } catch (e) {}
 applyCaseHover();   /* 導入事例のホバー案を初期反映 (2026-08-27) */
 applyCaseLayout();  /* 導入事例の見せ方案を初期反映 (2026-09-15) */
