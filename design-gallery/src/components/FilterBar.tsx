@@ -20,13 +20,15 @@ interface FilterBarProps {
   signalCounts?: Partial<Record<SiteSignal, number>>;
 }
 
+// 2026-09-15: ヒデさん指示で並び替え。日本のメディアを左にまとめ、
+// 唯一の海外ソースである Awwwards は一番右へ。
 const sources: SourceSite[] = [
   "sankou",
   "81web",
   "muuuuu",
   "webdesignclip",
-  "awwwards",
   "s5style",
+  "awwwards",
   // "pickup" はソースとしては存在するが、ピル（絞り込みボタン）は 2026-07-19 に
   // ヒデさん指示で非表示化。エントリ自体は「すべて」フィードに流れ続ける。
 ];
