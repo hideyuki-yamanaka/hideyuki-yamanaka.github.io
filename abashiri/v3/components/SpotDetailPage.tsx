@@ -12,14 +12,10 @@ import Link from "next/link";
 import { SPOT_DETAILS } from "./spotDetailData";
 import {
   V1Parallax,
-  V2Crossfade,
-  V3Gallery,
-  V4Minimal,
-  V5Window,
-  V6PhotoOnly,
-  V7Reveal,
+  V2Hero,
+  V3Editorial,
+  V4SkyGlass,
   V8SplitSticky,
-  V9Stack,
   V10BigQuiet,
 } from "./SpotDetailVariants";
 
@@ -32,42 +28,29 @@ export const SPOT_DETAIL_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
+  /* 2026-09-15 ヒデさん選定で 案1 / 案8 / 案10 を残し、
+     最初に作った3案（全画面ヒーロー・白エディトリアル・空グラデ没入）を
+     案2〜4 として復活。それ以外は削除。
+     ⚠️ 番号は選定時の呼び方に合わせて 1・8・10 をそのまま維持している */
   1: {
     name: "案1",
     note: "パララックス没入。写真がゆっくり奥へ引き、白い本文の面がせり上がる",
   },
   2: {
     name: "案2",
-    note: "背景クロスフェード。ずっと全画面写真の中。文章は右の列を流れる",
+    note: "全画面ヒーロー。写真に浸ってから白地で読む（初期案を復活）",
   },
   3: {
     name: "案3",
-    note: "横に流れるギャラリー。途中で縦スクロールが横の写真送りになる",
+    note: "白エディトリアル。縦書きの名前＋2カラム、基本情報が右に追従（初期案を復活）",
   },
   4: {
     name: "案4",
-    note: "余白ミニマル。白地に大きな写真を1枚ずつ。間をたっぷり取る",
-  },
-  5: {
-    name: "案5",
-    note: "窓がひらく。小さな窓が全画面へ広がり、景色の中に入っていく",
-  },
-  /* ここから下は「写真が主役・動きはその下支え」で作った5案（2026-09-15 追加） */
-  6: {
-    name: "案6",
-    note: "写真だけで語る。全画面の写真が続き、文字は短く挟まるだけ",
-  },
-  7: {
-    name: "案7",
-    note: "写真がひらく。細い帯から上下に開いて、写真が大きく現れる",
+    note: "空グラデ没入。体験ページと同じ青の世界＋白枠の窓（初期案を復活）",
   },
   8: {
     name: "案8",
-    note: "写真は貼り付いたまま。左に写真、右の文章だけが流れ、章ごとに写真が替わる",
-  },
-  9: {
-    name: "案9",
-    note: "重なって送られる。全画面の写真が次々に覆いかぶさる",
+    note: "ファーストビューがブラーで切り替わり、左に写真・右に文章の2カラムへ",
   },
   10: {
     name: "案10",
@@ -95,8 +78,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
         storageKey: "abashiri-spot-detail-tune",
         /* ⚠️ 案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 旧3案 → 5案に作り直し
-           v3: 写真主体の案6〜10を追加・案1の視差を弱めた（2026-09-15） */
-        version: 3,
+           v3: 写真主体の案6〜10を追加・案1の視差を弱めた
+           v4: 案1/8/10 を残して初期3案を復活、他は削除（2026-09-15） */
+        version: 4,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -107,7 +91,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             open: true,
             items: [
               {
-                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。案1〜5は最初に作った版（案1の視差は弱めました）、案6〜10は「写真が引き立ち、動きがそれを下支えする」方向で作り直した版です。",
+                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。選んだ案1・案8・案10 と、最初に作った3案（案2〜4）を残しています。番号は選定時の呼び方のままなので、5〜7・9 は欠番です。",
               },
               {
                 pills: "デザインと動きの案",
@@ -153,14 +137,10 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   /* 案ごとにスクロール容器そのものが変わるので、key で作り直す */
   const MAP: Record<number, (p: { spot: typeof spot }) => React.ReactElement> = {
     1: V1Parallax,
-    2: V2Crossfade,
-    3: V3Gallery,
-    4: V4Minimal,
-    5: V5Window,
-    6: V6PhotoOnly,
-    7: V7Reveal,
+    2: V2Hero,
+    3: V3Editorial,
+    4: V4SkyGlass,
     8: V8SplitSticky,
-    9: V9Stack,
     10: V10BigQuiet,
   };
   const V = MAP[pattern] ?? V1Parallax;
