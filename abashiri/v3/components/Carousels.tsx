@@ -54,9 +54,12 @@
  * ═══════════════════════════════════════════════════════════════════ */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-/* ── 表示する中身（プロジェクトのデータに差し替えてください）───────── */
-type Item = { no: string; tag: string; title: string; img: string; href: string };
-const ITEMS: Item[] = [
+/* ── 表示する中身 ─────────────────────────────
+   既定はこのファイルの中の4件。呼び出す側から items を渡せば差し替えられる
+   （本番の体験セクションは eventParts.tsx の ITEMS を渡している）*/
+export type CarouselItem = { no: string; tag: string; title: string; img: string; href: string };
+type Item = CarouselItem;
+const DEFAULT_ITEMS: Item[] = [
   { no: "01", tag: "体験", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg", href: "/spot/kangoku" },
   { no: "02", tag: "体験", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg", href: "/spot/ryuhyokan" },
   { no: "03", tag: "体験", title: "カヌー体験", img: "/img/spot/canoe-1.jpg", href: "/spot/canoe" },
@@ -86,7 +89,10 @@ const CONFIG = {
     perspectivePerCardW: 2.3,
     stageH: 760,
     /** 狭い画面での下限・上限（入れ物幅に対する割合） */
-    cardWMin: 0.62, // 幅390pxなら 242px。左右の隣も少し見える
+    /* 狭い画面での中央カードの幅（入れ物幅に対する割合）。
+       ⚠️ 0.62 だと幅390pxで ±45°の隣が画面外に出た（実測）。
+          0.44 なら隣が 47px ほど覗いて「横に動かせる」と分かる（実測） */
+    cardWMin: 0.44,
     cardWMax: 0.3, // 広い画面で大きくなりすぎないように（幅の30%）
     /** 何pxドラッグしたら1枚ぶん進むか（入れ物幅に対する割合） */
     dragPerCardRatio: 0.24, // 1512px なら約363px／1枚
@@ -226,6 +232,7 @@ function useCarouselInput({
     if (!node) return;
     let wheelTimer = 0;
     let activeId: number | null = null;
+    let captured = false;
 
     const pushHist = (x: number) => {
       const t = performance.now();
@@ -255,10 +262,11 @@ function useCarouselInput({
       movedPx.current = 0;
       velocity.current = 0; /* 押したら慣性を止める */
       hist.current = [];
+      captured = false;
       pushHist(e.clientX);
-      try {
-        node.setPointerCapture(e.pointerId);
-      } catch {}
+      /* ⚠️ ここで setPointerCapture してはいけない。捕捉すると click の対象が
+         捕捉した要素になり、カード内のリンクが【押しても反応しなくなる】
+         （2026-09-17 実測）。実際に動き出してから捕捉する */
     };
     const move = (e: PointerEvent) => {
       if (!dragging.current || e.pointerId !== activeId) return;
@@ -266,7 +274,14 @@ function useCarouselInput({
       const last = h[h.length - 1];
       const dx = e.clientX - (last ? last.x : e.clientX);
       movedPx.current += Math.abs(dx);
-      if (movedPx.current > 6) wasDrag.current = true;
+      if (movedPx.current > 6 && !wasDrag.current) {
+        wasDrag.current = true;
+        /* 動き出したと分かってから捕捉する。枠の外へ出ても追従できる */
+        try {
+          node.setPointerCapture(e.pointerId);
+          captured = true;
+        } catch {}
+      }
       target.current += -dx / pxRef.current;
       pushHist(e.clientX);
     };
@@ -280,9 +295,12 @@ function useCarouselInput({
       velocity.current = v;
       relRef.current?.(v);
       hist.current = [];
-      try {
-        node.releasePointerCapture(e.pointerId);
-      } catch {}
+      if (captured) {
+        try {
+          node.releasePointerCapture(e.pointerId);
+        } catch {}
+        captured = false;
+      }
       /* クリック抑止のフラグは次のクリックまで残す */
       if (wasDrag.current) window.setTimeout(() => (wasDrag.current = false), 0);
     };
@@ -312,18 +330,30 @@ function useCarouselInput({
       }
     };
 
+    /* ⚠️ これが無いと、カードのリンク（<a>）を掴んだ瞬間にブラウザの
+       ネイティブなドラッグ＆ドロップが始まり、pointercancel が飛んで
+       【2回動かしただけで操作が切れる】（2026-09-17 実測：move が2回で cancel 1回）。
+       画像の draggable=false だけでは足りない。リンク自体も止める */
+    const dragStart = (e: Event) => e.preventDefault();
+    node.addEventListener("dragstart", dragStart);
     node.addEventListener("pointerdown", down);
     node.addEventListener("pointermove", move);
-    node.addEventListener("pointerup", (e) => finish(e, false));
-    node.addEventListener("pointercancel", (e) => finish(e, true));
-    node.addEventListener("lostpointercapture", (e) => finish(e as PointerEvent, true));
+    const onUp = (e: PointerEvent) => finish(e, false);
+    const onCancel = (e: PointerEvent) => finish(e, true);
+    node.addEventListener("pointerup", onUp);
+    node.addEventListener("pointercancel", onCancel);
+    node.addEventListener("lostpointercapture", onCancel as EventListener);
     node.addEventListener("wheel", wheel, { passive: false });
     node.addEventListener("keydown", key);
     node.addEventListener("click", click, true);
     return () => {
       window.clearTimeout(wheelTimer);
+      node.removeEventListener("dragstart", dragStart);
       node.removeEventListener("pointerdown", down);
       node.removeEventListener("pointermove", move);
+      node.removeEventListener("pointerup", onUp);
+      node.removeEventListener("pointercancel", onCancel);
+      node.removeEventListener("lostpointercapture", onCancel as EventListener);
       node.removeEventListener("wheel", wheel);
       node.removeEventListener("keydown", key);
       node.removeEventListener("click", click, true);
@@ -360,8 +390,9 @@ function CardInfo({ it }: { it: Item }) {
    ・カードは表と裏を持つ（裏面の写真が鏡像になるのを防ぐ）
    ・preserve-3d の中なので z-index は使わない（実際の3D位置で前後が決まる）
    ═══════════════════════════════════════════════════ */
-export function Carousel3D() {
+export function Carousel3D({ items }: { items?: Item[] } = {}) {
   const C = CONFIG.css3d;
+  const ITEMS = items && items.length ? items : DEFAULT_ITEMS;
   const host = useRef<HTMLDivElement>(null);
   const cards = useRef<(HTMLDivElement | null)[]>([]);
   const dims = useRef<(HTMLDivElement | null)[]>([]);
@@ -446,7 +477,7 @@ export function Carousel3D() {
 
   return (
     <div className="flex w-full flex-col gap-10 bg-white">
-      <h2 className="px-6 text-[36px] font-thin leading-[1.8] text-black sm:px-[147px]">
+      <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
         意外とオモロい、網走。
       </h2>
       <div
@@ -490,6 +521,7 @@ export function Carousel3D() {
                 {/* 表 */}
                 <a
                   href={it.href}
+                  draggable={false}
                   aria-hidden={dup || undefined}
                   tabIndex={dup ? -1 : 0}
                   className="group absolute inset-0 block overflow-hidden bg-white shadow-[0_24px_60px_rgba(0,0,0,.22)]"
@@ -545,8 +577,9 @@ export function Carousel3D() {
      k≈0 では元の平面に戻す（ゼロ除算よけ）
    ・写真は object-fit: cover 相当の UV 補正を掛ける（縦伸びを防ぐ）
    ═══════════════════════════════════════════════════ */
-export function CarouselBend() {
+export function CarouselBend({ items }: { items?: Item[] } = {}) {
   const C = CONFIG.webgl;
+  const ITEMS = items && items.length ? items : DEFAULT_ITEMS;
   const host = useRef<HTMLDivElement>(null);
   const size = useSize(host);
   const onScreen = useOnScreen(host);
@@ -846,7 +879,7 @@ export function CarouselBend() {
 
   return (
     <div className="flex w-full flex-col gap-10 bg-white">
-      <h2 className="px-6 text-[36px] font-thin leading-[1.8] text-black sm:px-[147px]">
+      <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
         意外とオモロい、網走。
       </h2>
       <div
