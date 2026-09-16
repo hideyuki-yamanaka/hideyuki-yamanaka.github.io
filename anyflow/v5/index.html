@@ -2583,8 +2583,8 @@
      リキッドグラス系で背景グラデが生きる方向。送信先/つなぎ込みは無し=見た目だけ。 */
   .cv-form { display: none; }
   #conversion.cv-cta-form .cv-btn { display: none; }
-  #conversion.cv-cta-form .cv-form { display: flex; flex-direction: column; gap: 18px; width: min(560px, 92%); margin: 40px auto 0; text-align: left; }
-  #conversion.cv-cta-form.cv-fi .cv-content { width: min(600px, 92%); }
+  #conversion.cv-cta-form .cv-form { display: flex; flex-direction: column; gap: 18px; width: min(var(--cvf-w, 660px), 92%); margin: 40px auto 0; text-align: left; }
+  #conversion.cv-cta-form.cv-fi .cv-content { width: min(calc(var(--cvf-w, 660px) + 48px), 94%); }
   .cv-form .cvf-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .cv-form .cvf-field { display: flex; flex-direction: column; gap: 8px; }
   .cv-form .cvf-lab { font-weight: 400; font-size: 13px; line-height: 1.4; color: var(--ink-strong); }
@@ -4651,6 +4651,7 @@ const DEFAULTS = {
   cvCta: 'button',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
   cvPanelUi: 'obj',    // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの見せ方(UX検証)。obj=要素別/easy=かんたん優先/ctx=文脈で
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
+  formWidth: 660,      // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせフォームの横幅(px)。パネルで調整
   hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
@@ -6616,6 +6617,7 @@ function applyCvStyle(fromSwitch) {
     sec.style.setProperty('--cv-h', Math.round(_fi && _nat > 20 ? _nat + _t + _b : ((params.cv && params.cv.h) || 416)) + 'px'); }
   { const HV = { cyan: ['#0EBBFF', '#fff'], black: ['#090909', '#fff'], white: ['#ffffff', '#111'], pink: ['#FF5D97', '#fff'], navy: ['#0E4497', '#fff'] };
     const hv = HV[(params.cv && params.cv.btnHover) || 'cyan'] || HV.cyan; sec.style.setProperty('--cv-hov-bg', hv[0]); sec.style.setProperty('--cv-hov-fg', hv[1]); }
+  sec.style.setProperty('--cvf-w', Math.round(params.formWidth != null ? params.formWidth : 660) + 'px');   /* 【V5.0】フォームの横幅 */
   const _mb = document.documentElement.classList.contains('mb');
   /* ⚠️ 間隔は #cases(別のセクション)に効かせるので、変数はルート(html)に置く。#conversion に置くと届かない */
   { let _g = _mb ? 0 : (((params.cv && params.cv.gapTop) || 0) + _edgeComp);   /* 【2026-09-16】切れ目の高さ分だけ間隔も広げる(headTop 側で相殺し総高さ一定) */
@@ -18588,6 +18590,7 @@ function buildPanel() {
     formStyle() {
       varRowX('formStyle', CV_FORMSTYLES, () => String(params.formStyle || '1'), v => { params.formStyle = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
       note('リキッドグラス系5案。背景グラデが磨りガラスに透けます。');
+      rows.push(slider('フォームの横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { fixedMax: true }));
     },
     gradForm() {
       varRowX('cvForm', CV_FORMS, () => cvFormKey(), v => { cvApplyForm(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
