@@ -18233,15 +18233,7 @@ function buildPanel() {
   varRowX('cvStyle', CV_STYLES, () => cvStyleKey(), v => { params.cvStyle = String(v); }, { after: () => { applyCvStyle(true); fit(); renderFrame(); syncCvDyn(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('URL でも切替: ?cv=1 / 10 / 11 / 12 / 13。「フッター一体型」はロゴなしのフッター(ナビ・住所・©)を同じ面に置き、通常のフッターを隠します。ボタンに乗せると狙いが出ます。');
   /* 【2026-09-15 ヒデさん指定】カラー案(10案)。選ぶとその案の値が下のつまみに入る。つまみで細かく変えたら ⋯「いまの設定で上書き」でその案に保存 */
-  /* 【2026-09-15 ヒデさん指定・2回目】カラー案は「選んでいるデザイン案ごと」に持つ(cvColorBy)。現行(カンプ)ではこのまとまりを出さない */
-  sub(catCv, 'カラー案（選んでいるデザイン案ごと。ブランド色×グラデの形×ディザ。黒ベース入り）', true, { fixed: true });
-  CV_DYN.push(catCv.lastElementChild);
-  varRowX('cvColor', CV_COLORS, () => cvColorKey(), v => { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = String(v); cvApplyColor(String(v)); }, { snap: VAR_SNAP.cv, after: () => { applyCvStyle(); renderFrame(); } });
-  segRow('文字色', [['自動', 'auto'], ['黒', 'dark'], ['白', 'light']], () => (cvv().ink || 'auto'), v => { cvv().ink = v; applyCvStyle(); markDirty(); renderFrame(); });
-  segRow('ボタンのホバー色', [['シアン', 'cyan'], ['黒', 'black'], ['白', 'white'], ['ピンク', 'pink'], ['紺', 'navy']], () => (cvv().btnHover || 'cyan'), v => { cvv().btnHover = v; applyCvStyle(); markDirty(); });
-  note('URL: ?cvc=C1〜C10。選ぶと色・形・ディザ・暗さの値が下のつまみに入ります。細かく変えたら ⋯「いまの設定で上書き」でその案に保存できます。');
-  sub(catCv, 'グラデーションの色（5段・中心→外側）'); CV_DYN.push(catCv.lastElementChild);
-  ['中心（0%）', '26%', '主色（59%）', '76%', '外側（100%）'].forEach((lab, i) => colorRow(lab, () => (cvv().colors || CV_DEF_COLORS)[i], v => { const a = Array.isArray(cvv().colors) ? cvv().colors.slice() : CV_DEF_COLORS.slice(); a[i] = v; cvv().colors = a; applyCvStyle(); }, '5段グラデの' + (i + 1) + '番目。位置はカンプの 0 / 26 / 59 / 76 / 100%。'));
+  /* 【2026-09-16 ヒデさん依頼】カラー案・グラデの色・暗さ・明るさコントラストのセクションは削除(デザインカンプで確定)。値は焼き込み(cvColorBy CK / ramp comp)に残るので見た目は不変 */
   sub(catCv, 'グラデーションの形'); CV_DYN.push(catCv.lastElementChild);
   segRow('形', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
   /* 【2026-09-15 ヒデさん依頼】Figma風の棒でグラデを直感編集。ボタンを押すと編集モードに入り、お問い合わせのグラデの上に棒が出る */
@@ -18260,17 +18252,6 @@ function buildPanel() {
   rows.push(slider('1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '往復は「行って戻る」まで、巡るは「ひとまわり」する時間。長いほどゆっくり移ろいます。', { fixedMax: true }));
   rows.push(slider('白の入り具合', 0, 1, 0.05, () => (cvv().moodWhite != null ? cvv().moodWhite : 0.85), v => { cvv().moodWhite = v; }, v => Math.round(v * 100) + '%', '色が入れ替わる間に白をどれだけ通すか。100%でいったん白く抜けてから次の色へ(にごらない)。0%にすると白を通らず直接つなぐので中間色が出ます。', { fixedMax: true }));
   note('色味はブランドの青(シアン〜紺)・ピンク・白だけを行き来します(色相を回すやり方はやめました。途中で緑や黄など、ブランドにない色が出るため)。');
-  sub(catCv, '暗さ（黒ベース）'); CV_DYN.push(catCv.lastElementChild);
-  rows.push(slider('暗さ', 0, 1, 0.02, () => (cvv().dark || 0), v => { cvv().dark = v; applyCvStyle(); }, v => Math.round(v * 100) + '%', '黒ベースに寄せる強さ。色は残り火のように残ります。0で元の色。'));
-  colorRow('暗い色', () => cvv().darkCol || '#0d0f14', v => { cvv().darkCol = v; }, '「暗さ」で寄せる先の色。');
-  rows.push(slider('色の広がり（カンプの放射）', 0.6, 2.2, 0.05, () => (cvv().gSpread != null ? cvv().gSpread : 1.5), v => { cvv().gSpread = v; markDirty(); renderFrame(); }, v => '×' + v.toFixed(2),
-    'カンプの放射グラデの広がり。1.00＝カンプのまま（右上の淡い中心が大きく、地色と同化して「グラデが欠けて見える」）。大きくするほど淡い中心が小さくなり、端まで色が届きます。', { fixedMax: true }));
-  colorRow('いちばん明るい所の色', () => cvv().topCol || '#7cc9e8', v => { cvv().topCol = v; markDirty(); renderFrame(); },
-    'カンプでは右上にあたる、いちばん明るい所の色。既定は薄い水色。ここを白にすると地色と同化して「グラデが欠けて見える」ので、うっすら色を入れておきます。');
-  rows.push(slider('白の残し具合', 0, 1, 0.02, () => (cvv().topWhite != null ? cvv().topWhite : 0.12), v => { cvv().topWhite = v; markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
-    'いちばん明るい所に白をどれだけ混ぜるか。0%＝上の色そのまま / 100%＝真っ白。既定12%＝白はかすかに。', { fixedMax: true }));
-  rows.push(slider('白飛びの頭打ち', 0.6, 1, 0.01, () => (cvv().ceil != null ? cvv().ceil : 0.9), v => { cvv().ceil = v; markDirty(); renderFrame(); }, v => Math.round(v * 100) + '%',
-    'コントラスト(138%)で淡い色が真っ白に飛ぶのを止める上限。100%＝従来どおり(白く飛ぶ) / 下げるほど淡い所にも色が残ります。既定90%。', { fixedMax: true }));
   sub(catCv, '縦幅・間隔');
   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白はここで減らせる */
   rows.push(slider('見出しの上の余白（一体型）', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px',
@@ -18318,11 +18299,6 @@ function buildPanel() {
     'グラデ全体がゆっくり左右に傾いて、ゆらゆら揺れます(わずかな伸縮も連動)。0で止まります。既定5°。', { fixedMax: true }));
   rows.push(slider('ゆらゆらの周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; }, v => Math.round(v) + '秒',
     'ゆらゆらが1往復する時間。長いほどゆったりします。既定26秒。', { fixedMax: true }));
-  sub(catCv, '明るさ・コントラスト');
-  rows.push(slider('明るさ', 0.7, 1.4, 0.01, () => cvv().bright, v => { cvv().bright = v; }, v => Math.round(v * 100) + '%',
-    'カンプは104%。'));
-  rows.push(slider('コントラスト', 0.8, 2, 0.02, () => cvv().contrast, v => { cvv().contrast = v; }, v => '×' + v.toFixed(2),
-    'カンプは 1.38。'));
 
   /* ボタン。
      ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。
