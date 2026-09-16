@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>網走V3｜詳細ページの写真えらび</title>
+<style>
+  :root{
+    --ink:#0b0b0c; --sub:#7a7a80; --line:#e6e6ea; --bg:#fbfbfc;
+    --ok:#0EBBFF; --ng:#FF5D97;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.7 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+    -webkit-font-smoothing:antialiased;padding-bottom:96px}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(251,251,252,.88);
+    backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 20px}
+  h1{margin:0 0 4px;font-size:16px;font-weight:600;letter-spacing:.02em}
+  .lede{margin:0;color:var(--sub);font-size:12.5px}
+
+  .tabs{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:999px;
+    padding:6px 14px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--sub)}
+  .tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .tools{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  .tools label{font-size:12.5px;color:var(--sub);display:flex;align-items:center;gap:5px}
+
+  main{padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:16px 16px 12px;margin-bottom:14px}
+  .card.pick{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+  .card.hide{display:none}
+  .chead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .ctitle{font-size:15px;font-weight:600;margin:0;flex:1 1 auto;min-width:0}
+  .meta{color:var(--sub);font-size:12px;white-space:nowrap}
+  .lead{color:var(--sub);font-size:12px;margin:6px 0 0;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .btn:hover{background:#f2f2f4}
+  .btn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .now{display:inline-block;vertical-align:2px;margin-left:8px;background:var(--ok);color:#fff;
+    font-size:10.5px;font-weight:400;padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+  a.src{color:var(--sub);font-size:12px;text-decoration:none;border-bottom:1px solid var(--line)}
+  a.src:hover{color:var(--ink)}
+
+  .shots{display:grid;gap:8px;margin-top:12px;
+    grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .shot{position:relative;border-radius:8px;overflow:hidden;background:#eee;
+    aspect-ratio:3/2;cursor:pointer;border:1px solid var(--line)}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block;
+    transition:filter .2s,opacity .2s}
+  .shot .tag{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.6);
+    color:#fff;font-size:10.5px;padding:2px 6px;border-radius:5px;letter-spacing:.02em}
+  .shot .mark{position:absolute;right:6px;top:6px;width:22px;height:22px;
+    border-radius:50%;display:none;align-items:center;justify-content:center;
+    font-size:12px;background:var(--ng);color:#fff}
+  .shot.ng img{filter:grayscale(1);opacity:.35}
+  .shot.ng .mark{display:flex}
+  .shot.ng{border-color:var(--ng)}
+  /* 「はみ出しなし」表示：写真の全体を見たい時 */
+  body.fit .shot{aspect-ratio:auto;height:150px}
+  body.fit .shot img{object-fit:contain;background:#f0f0f2}
+
+  footer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;
+    border-top:1px solid var(--line);padding:12px 20px;display:flex;gap:10px;
+    align-items:center;flex-wrap:wrap}
+  .count{font-size:12.5px;color:var(--sub);margin-right:auto}
+  .count b{color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:8px 16px;border-radius:999px;
+    font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+  .toast.on{opacity:1}
+  @media(max-width:520px){
+    .shots{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+    main{padding:14px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>網走 V3｜詳細ページの写真えらび</h1>
+  <p class="lede">
+    本家 visit-abashiri.jp の詳細ページのうち、<b>写真が3枚以上ある124件</b>を並べています。<br>
+    ・<b>写真をクリック</b> → 「トリミングされてる／これはアウト」の印（グレーになります）<br>
+    ・<b>「採用」を押す</b> → V3 に載せたいページ。決まったら下の「コピー」でClaudeに貼ってください
+  </p>
+  <div class="tabs" id="tabs"></div>
+  <div class="tools">
+    <label><input type="checkbox" id="fit"> 写真の全体を見る（切り抜かずに表示）</label>
+    <label><input type="checkbox" id="onlyPick"> 採用したものだけ表示</label>
+    <label><input type="checkbox" id="onlyNow"> いま使っているページだけ表示</label>
+    <label>並び順
+      <select id="sort" style="font:inherit;font-size:12.5px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff">
+        <option value="n">写真が多い順</option>
+        <option value="body">本文が長い順</option>
+        <option value="title">名前順</option>
+      </select>
+    </label>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<footer>
+  <span class="count" id="count"></span>
+  <button class="btn" id="clear">選択をぜんぶ消す</button>
+  <button class="btn on" id="copy">📋 選んだ結果をコピー（Claude用）</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'abashiri-photo-check-v1';
+let DATA = [];
+let state = { pick: {}, ng: {}, sec: 'ぼーっとスポット' };
+
+try { Object.assign(state, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+const toast = (t) => {
+  const el = document.getElementById('toast');
+  el.textContent = t; el.classList.add('on');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 1800);
+};
+
+const ratio = (w, h) => {
+  if (!w || !h) return '';
+  const r = w / h;
+  const near = [[1.5,'3:2'],[1.3333,'4:3'],[1.7778,'16:9'],[1,'1:1'],[0.75,'3:4'],[0.6667,'2:3'],[1.25,'5:4']];
+  for (const [v, n] of near) if (Math.abs(r - v) < 0.035) return n;
+  return r.toFixed(2);
+};
+
+function render() {
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  let rows = DATA.filter(r => r.sec === state.sec);
+  if (document.getElementById('onlyNow').checked) rows = rows.filter(r => r.now);
+  const by = document.getElementById('sort').value;
+  rows = rows.slice().sort((a, b) =>
+    by === 'title' ? a.title.localeCompare(b.title, 'ja')
+    : by === 'body' ? b.body - a.body
+    : b.n - a.n);
+  rows.forEach((r, i) => {
+    const id = r.url;
+    const picked = !!state.pick[id];
+    const card = document.createElement('div');
+    card.className = 'card' + (picked ? ' pick' : '');
+    if (document.getElementById('onlyPick').checked && !picked) card.classList.add('hide');
+
+    const head = document.createElement('div');
+    head.className = 'chead';
+    head.innerHTML =
+      '<h2 class="ctitle">' + (i + 1) + '. ' + r.title +
+      (r.now ? ' <span class="now">いま使ってる（' + r.now + '）</span>' : '') + '</h2>' +
+      '<span class="meta">写真 ' + r.n + '枚 ／ 本文 ' + r.body + '字 ／ 見出し ' + r.heads + '</span>';
+
+    const pick = document.createElement('button');
+    pick.className = 'btn' + (picked ? ' on' : '');
+    pick.textContent = picked ? '✓ 採用' : '採用';
+    pick.onclick = () => {
+      if (state.pick[id]) delete state.pick[id]; else state.pick[id] = r.title;
+      save(); render();
+    };
+    head.appendChild(pick);
+
+    const a = document.createElement('a');
+    a.className = 'src'; a.href = r.url; a.target = '_blank'; a.rel = 'noreferrer';
+    a.textContent = '本家で見る ↗';
+    head.appendChild(a);
+
+    card.appendChild(head);
+    if (r.lead) {
+      const p = document.createElement('p');
+      p.className = 'lead'; p.textContent = r.lead;
+      card.appendChild(p);
+    }
+
+    const shots = document.createElement('div');
+    shots.className = 'shots';
+    r.photos.forEach((ph, k) => {
+      const box = document.createElement('div');
+      const ngKey = ph.s;
+      box.className = 'shot' + (state.ng[ngKey] ? ' ng' : '');
+      box.title = 'クリックで「アウト」の印';
+      const im = new Image();
+      im.loading = 'lazy';
+      im.referrerPolicy = 'no-referrer';
+      im.src = ph.s;
+      box.appendChild(im);
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = (k + 1) + ' ／ ' + ph.w + '×' + ph.h + (ratio(ph.w, ph.h) ? '（' + ratio(ph.w, ph.h) + '）' : '');
+      box.appendChild(tag);
+      const mk = document.createElement('span');
+      mk.className = 'mark'; mk.textContent = '✕';
+      box.appendChild(mk);
+      box.onclick = () => {
+        if (state.ng[ngKey]) delete state.ng[ngKey]; else state.ng[ngKey] = r.title;
+        save(); box.classList.toggle('ng'); updateCount();
+      };
+      shots.appendChild(box);
+    });
+    card.appendChild(shots);
+    list.appendChild(card);
+  });
+  updateCount();
+}
+
+function updateCount() {
+  const nPick = Object.keys(state.pick).length;
+  const nNg = Object.keys(state.ng).length;
+  const bySec = {};
+  DATA.forEach(r => { if (state.pick[r.url]) bySec[r.sec] = (bySec[r.sec] || 0) + 1; });
+  const parts = Object.entries(bySec).map(([s, n]) => s + ' ' + n);
+  document.getElementById('count').innerHTML =
+    '採用 <b>' + nPick + '</b> 件' + (parts.length ? '（' + parts.join(' ／ ') + '）' : '') +
+    ' ／ アウトにした写真 <b>' + nNg + '</b> 枚';
+}
+
+function buildTabs() {
+  const secs = [...new Set(DATA.map(r => r.sec))];
+  const box = document.getElementById('tabs');
+  box.innerHTML = '';
+  secs.forEach(s => {
+    const n = DATA.filter(r => r.sec === s).length;
+    const b = document.createElement('button');
+    b.className = 'tab' + (s === state.sec ? ' on' : '');
+    b.textContent = s + '（' + n + '）';
+    b.onclick = () => { state.sec = s; save(); buildTabs(); render(); };
+    box.appendChild(b);
+  });
+}
+
+document.getElementById('fit').onchange = e =>
+  document.body.classList.toggle('fit', e.target.checked);
+document.getElementById('onlyPick').onchange = render;
+document.getElementById('onlyNow').onchange = render;
+document.getElementById('sort').onchange = render;
+document.getElementById('clear').onclick = () => {
+  if (!confirm('採用とアウトの印を全部消します。よろしいですか？')) return;
+  state.pick = {}; state.ng = {}; save(); render();
+};
+document.getElementById('copy').onclick = () => {
+  const picks = DATA.filter(r => state.pick[r.url]).map(r => ({
+    セクション: r.sec, 名前: r.title, url: r.url, 写真枚数: r.n,
+    使わない写真: r.photos.map(p => p.s).filter(s => state.ng[s]),
+  }));
+  const ngOnly = Object.keys(state.ng).filter(s => !picks.some(p => p.使わない写真.includes(s)));
+  const text =
+    '【網走V3 詳細ページのコンテンツ選定】\n' +
+    '採用 ' + picks.length + '件 ／ アウトにした写真 ' + Object.keys(state.ng).length + '枚\n\n' +
+    JSON.stringify({ 採用: picks, 採用外でアウトにした写真: ngOnly }, null, 1);
+  navigator.clipboard.writeText(text).then(
+    () => toast('コピーしました。Claudeに貼ってください'),
+    () => { prompt('コピーできませんでした。手で選んでコピーしてください', text); }
+  );
+};
+
+fetch('photo-check.json')
+  .then(r => r.json())
+  .then(d => { DATA = d; buildTabs(); render(); })
+  .catch(() => { document.getElementById('list').textContent = 'データが読めませんでした'; });
+</script>
+</body>
+</html>
