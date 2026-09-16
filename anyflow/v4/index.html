@@ -6295,11 +6295,14 @@ function cvApplyFade(sec) {
   /* 【2026-09-15 ヒデさん指摘】PC は「上の溶け込み(px)」を導入事例の下の空きへ逃がす方式。
      SP はレイアウトが別物なので従来どおり(素の高さに対する %)。 */
   const _mbF = document.documentElement.classList.contains('mb');
+  const _cvCanvasEl = document.getElementById('cvCanvas');
   if (_mbF) {
     cvRisePx = 0;
     sec.style.setProperty('--cv-rise', '0px');
     sec.style.setProperty('--cv-fade0', Math.round(base * f0 / 100) + 'px');
     sec.style.setProperty('--cv-fade1', Math.round(base * f1 / 100) + 'px');
+    /* SP は従来の CSS 変数マスクへ戻す(PC で付けたインラインマスクを解除) */
+    if (_cvCanvasEl) { ['maskImage','webkitMaskImage','maskSize','webkitMaskSize','maskRepeat','webkitMaskRepeat','maskPosition','webkitMaskPosition','maskComposite','webkitMaskComposite'].forEach(k => _cvCanvasEl.style[k] = ''); }
   } else {
     const _bl = Math.max(0, (params.cv && params.cv.blend != null) ? params.cv.blend : CV_BLEND_DEF);
     /* 逃がせる量 = お問い合わせ上端 − 導入事例のカード下端 − 6px(カードに色がかからない余裕) */
@@ -6312,6 +6315,8 @@ function cvApplyFade(sec) {
     sec.style.setProperty('--cv-rise', cvRisePx + 'px');
     sec.style.setProperty('--cv-fade0', '0px');
     sec.style.setProperty('--cv-fade1', cvRisePx + 'px');
+    /* 【2026-09-16】切れ目の形(直線/弧/斜め/波/もや/二段)を #cvCanvas に直接適用 */
+    if (_cvCanvasEl && typeof cvEdgeMask === 'function') cvEdgeMask(_cvCanvasEl, (typeof cvEdgeDef === 'function' ? cvEdgeDef().shape : 'linear'), cvRisePx);
   }
 }
 /* 画面幅が変わったら素の高さも変わる(文字の折返し)ので測り直す */
@@ -6336,8 +6341,10 @@ function applyCvStyle(fromSwitch) {
      一体型は min-height が素の高さ(≒670px)より小さいと何も起きなかった。→「素の高さ＋追加の高さ」で持つ。
      枠の案は従来どおり「縦幅」そのもの(カンプ 416)。 */
   /* 【2026-09-15 ヒデさん指摘】見出しの上の余白。素の高さに影響するので cvNaturalH より【先】に入れる */
-  { const _ht = (params.cv && params.cv.headTop != null) ? params.cv.headTop : CV_HEAD_TOP_DEF;
-    sec.style.setProperty('--cv-head-top', Math.round(_ht) + 'px'); }
+  /* 【2026-09-16】切れ目(溶け込み)が基準の空きより高い時、はみ出す分だけ見出しの上の余白を削る＝見た目の総高さを一定に保つ */
+  const _edgeComp = Math.max(0, Math.round(((params.cv && params.cv.blend != null) ? params.cv.blend : CV_BLEND_DEF) - CV_EDGE_BASE_ROOM));
+  { const _ht = ((params.cv && params.cv.headTop != null) ? params.cv.headTop : CV_HEAD_TOP_DEF) - _edgeComp;
+    sec.style.setProperty('--cv-head-top', Math.max(16, Math.round(_ht)) + 'px'); }
   { const _fi = !!st.fi && !st.card, _nat = _fi ? cvNaturalH(sec) : 0;
     const _t = (params.cv && params.cv.addT) || 0, _b = (params.cv && params.cv.addB) || 0;
     sec.style.setProperty('--cv-add-t', Math.round(_t) + 'px');
@@ -6347,7 +6354,7 @@ function applyCvStyle(fromSwitch) {
     const hv = HV[(params.cv && params.cv.btnHover) || 'cyan'] || HV.cyan; sec.style.setProperty('--cv-hov-bg', hv[0]); sec.style.setProperty('--cv-hov-fg', hv[1]); }
   const _mb = document.documentElement.classList.contains('mb');
   /* ⚠️ 間隔は #cases(別のセクション)に効かせるので、変数はルート(html)に置く。#conversion に置くと届かない */
-  { let _g = _mb ? 0 : ((params.cv && params.cv.gapTop) || 0);
+  { let _g = _mb ? 0 : (((params.cv && params.cv.gapTop) || 0) + _edgeComp);   /* 【2026-09-16】切れ目の高さ分だけ間隔も広げる(headTop 側で相殺し総高さ一定) */
     /* 詰める(マイナス)は「導入事例の下に空いている分」までに制限する。これ以上詰めるとカードが切れるため */
     if (_g < 0) {
       const _cs = document.getElementById('cases'), _gr = document.getElementById('caseGrid');
