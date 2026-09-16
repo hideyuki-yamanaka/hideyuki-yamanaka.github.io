@@ -595,16 +595,82 @@ export default function TopPage({
     };
     sc.addEventListener("scroll", onScroll, { passive: true });
 
-    /* ナビ（ホーム・スポット・グルメ）のジャンプ先を受け取る。
-       ここで targetY を差し替えれば、いつもの慣性でなめらかに移動する
-       （2026-08-23 ヒデさん指摘：自前ループとの取り合いでナビが効かないことがあった） */
+    /* ナビ（ホーム・スポット・グルメ・体験）のジャンプ先を受け取る。
+       【2026-09-16 ヒデさん指示】「急に移動する感じになるので、ゆったりと
+         なんかブラーで移動みたいな感じが望ましい」
+       これまでは targetY を差し替えて慣性まかせだった（＝距離が長いほど
+       最初がガクッと速い）。ここだけ【時間で動かす】方式に切り替え、
+       同時にステージへブラーを掛けて「すーっと移った」ように見せる。
+
+       ⚠️ ブラーは 1512x982 のステージ1枚に掛ける。この箱は既に transform で
+          合成レイヤーになっているので、重なり順は変わらない。
+          移動が終わったら filter を空に戻す（掛けっぱなしにしない） */
+    let navRaf = 0;
+    const stage = () =>
+      document.querySelector<HTMLElement>("[data-abashiri-stage]");
+    const setBlur = (px: number) => {
+      const el = stage();
+      if (!el) return;
+      el.style.filter = px > 0.05 ? `blur(${px.toFixed(2)}px)` : "";
+    };
     const onJump = (e: Event) => {
-      const y = (e as CustomEvent<{ y: number }>).detail?.y;
+      const d = (e as CustomEvent<{ y: number; instant?: boolean }>).detail;
+      const y = d?.y;
       if (typeof y !== "number") return;
       lock = null; /* カルーセルの横送りロックも解除してから飛ぶ */
-      targetY = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, y));
-      kick();
+      const to = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, y));
+      const from = sc.scrollTop;
+      const dist = Math.abs(to - from);
+
+      /* ごく短い移動と「instant 指定」は今まで通り慣性で（演出はいらない） */
+      /* 速さとブラーの強さは CSS 変数から読む（調整パネルが書き込む）。
+         値の住み家：①globals.css の :root ②パネルの DEFAULTS ③焼き込み ④ブラウザ保存 */
+      const cs = getComputedStyle(document.documentElement);
+      const num = (k: string, d: number) => {
+        const v = parseFloat(cs.getPropertyValue(k));
+        return Number.isFinite(v) ? v : d;
+      };
+      const nv = { dur: num("--nav-dur", 1100), blur: num("--nav-blur", 7) };
+      if (d?.instant || dist < 200 || nv.dur <= 0) {
+        targetY = to;
+        kick();
+        return;
+      }
+
+      if (navRaf) cancelAnimationFrame(navRaf);
+      /* 距離が長いほど少しだけ長く。ただし上限は付ける */
+      const dur = Math.min(nv.dur * 1.6, nv.dur + dist * 0.06);
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / dur);
+        /* ease-in-out（三次）。始まりも終わりもふわっと */
+        const e2 = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        posY = from + (to - from) * e2;
+        targetY = posY;
+        sc.scrollTop = Math.round(posY);
+        /* ブラーは真ん中がいちばん強い山なりに */
+        setBlur(nv.blur * Math.sin(Math.PI * t));
+        if (t < 1) navRaf = requestAnimationFrame(step);
+        else {
+          navRaf = 0;
+          setBlur(0);
+          targetY = to;
+          posY = to;
+        }
+      };
+      navRaf = requestAnimationFrame(step);
     };
+    /* 指で触られたら、演出の途中でも即やめて操作を返す */
+    const stopNav = () => {
+      if (!navRaf) return;
+      cancelAnimationFrame(navRaf);
+      navRaf = 0;
+      setBlur(0);
+      targetY = sc.scrollTop;
+      posY = sc.scrollTop;
+    };
+    sc.addEventListener("wheel", stopNav, { passive: true });
+    sc.addEventListener("pointerdown", stopNav, { passive: true });
     window.addEventListener("abashiri:scroll-to", onJump);
 
     const onWheel = (e: WheelEvent) => {
@@ -705,7 +771,11 @@ export default function TopPage({
       sc.removeEventListener("wheel", onWheel);
       sc.removeEventListener("scroll", onScroll);
       window.removeEventListener("abashiri:scroll-to", onJump);
+      sc.removeEventListener("wheel", stopNav);
+      sc.removeEventListener("pointerdown", stopNav);
       if (raf) cancelAnimationFrame(raf);
+      if (navRaf) cancelAnimationFrame(navRaf);
+      setBlur(0);
     };
   }, []);
 

@@ -464,6 +464,11 @@ export default function Stage({
   return (
     <div className="fixed inset-0 overflow-hidden">
       <div
+        /* data-abashiri-stage: ヘッダーのアンカーで飛ぶ時、TopPage がこの箱に
+           一時的に filter: blur を掛けて「ゆったり移動している」感じを出す
+           （2026-09-16 ヒデさん指示）。既に transform が掛かっていて合成レイヤーに
+           なっているので、filter を足しても重なり順は変わらない */
+        data-abashiri-stage=""
         className="absolute left-0 overflow-hidden bg-gradient-to-b from-sky-top to-sky-bottom transition-opacity duration-300"
         style={{
           width: fit?.stageW ?? 1512,

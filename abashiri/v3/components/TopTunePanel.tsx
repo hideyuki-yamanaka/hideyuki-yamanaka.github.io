@@ -78,6 +78,8 @@ export type TopTuneValues = {
   expPick: { pattern: number };
   /** KV→メッセージ区間のスクロール速度（%）。100=標準（2026-08-23 ヒデさん依頼） */
   scrollSpd: { kvToMsg: number };
+  /** ヘッダーのアンカーで飛ぶ時の演出（2026-09-16 ヒデさん依頼） */
+  nav: { dur: number; blur: number };
   /** ぼーっとTips（動画再生ページのモーダル）のタイミング（2026-08-23 ヒデさん依頼） */
   tips: { delay: number; fade: number; pattern: number };
   /** 動画の音量：徐々に大きくするか（2026-08-23 ヒデさん依頼） */
@@ -202,6 +204,7 @@ type Params = {
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
   scrollSpd: { kvToMsg: number };
+  nav: { dur: number; blur: number };
   tips: { delay: number; fade: number; pattern: number };
   videoVol: { fadeIn: boolean; fadeSec: number; uiHideSec: number };
   /** 「この場所にする」→動画再生画面への遷移（enterPatterns.ts の EnterTune） */
@@ -275,6 +278,7 @@ export default function TopTunePanel({
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
+      nav: { dur: 1100, blur: 7 },
       tips: { delay: 5, fade: 1.2, pattern: 5 }, /* 出現は案5「下からゆっくり」で確定 */
       videoVol: { fadeIn: true, fadeSec: 3, uiHideSec: 2 },
       expEnter: { ...DEFAULT_ENTER_TUNE },
@@ -314,6 +318,9 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
       root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
+      /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms / px として読む） */
+      root.style.setProperty("--nav-dur", String(params.nav.dur));
+      root.style.setProperty("--nav-blur", String(params.nav.blur));
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -343,6 +350,7 @@ export default function TopTunePanel({
         expIntro: { ...params.expIntro },
         expPick: { ...params.expPick },
         scrollSpd: { ...params.scrollSpd },
+        nav: { ...params.nav },
         tips: { ...params.tips },
         videoVol: { ...params.videoVol },
         expEnter: { ...params.expEnter },
@@ -442,7 +450,7 @@ export default function TopTunePanel({
            v33: 古いブラウザ保存値を一斉破棄。自動焼き込み（tune-defaults.json）導入前に
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
-        version: 34,
+        version: 35,
         /* ⚠️ autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
@@ -470,6 +478,28 @@ export default function TopTunePanel({
               },
               {
                 note: "その場で反映されます。",
+              },
+              { sub: "ヘッダーのアンカー移動" },
+              {
+                note: "ヘッダーの「ぼーっとスポット」「グルメ」「体験」を押した時の移り方。時間をかけてゆっくり動かし、途中がいちばんブラーになります（ホイールや画面を触ると途中でも止まって操作が返ります）。ブラーを0にすると演出なしで今まで通りです。",
+              },
+              {
+                slider: "移動にかける時間",
+                path: "nav.dur",
+                min: 0,
+                max: 2600,
+                step: 50,
+                unit: "ms",
+                immediate: true,
+              },
+              {
+                slider: "移動中のブラー",
+                path: "nav.blur",
+                min: 0,
+                max: 20,
+                step: 0.5,
+                unit: "px",
+                immediate: true,
               },
               { sub: "ページ遷移の演出" },
               {

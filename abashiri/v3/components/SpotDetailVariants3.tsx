@@ -228,11 +228,9 @@ function QuietBlocks({
     "text-[length:var(--dt-head)] font-thin leading-[1.6] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]";
   return (
     <>
-      <motion.section
-        data-sec={from}
-        className="flex flex-col gap-7 border-t border-ink/12 pt-10"
-        {...V}
-      >
+      {/* 【2026-09-16 ヒデさん指示】「担当者からのおすすめポイント、この見出しの
+          上の罫線は要りません」→ ここだけ罫線なし。下の2つの区切りは残す */}
+      <motion.section data-sec={from} className="flex flex-col gap-7" {...V}>
         <h2 className={head}>担当者からのおすすめポイント</h2>
         <Points spot={spot} />
       </motion.section>
@@ -421,16 +419,31 @@ function Toc({
   onJump: (i: number) => void;
   kind: TocKind;
 }) {
+  const box = useRef<HTMLElement>(null);
+  const rows = useRef<(HTMLButtonElement | null)[]>([]);
+  /* 印を置く位置＝選んでいる行の「まんなか」。行の高さは文字の折り返しで
+     変わるので、決め打ちではなく毎回そこから測る */
+  const [dotY, setDotY] = useState(8);
+  useEffect(() => {
+    const el = rows.current[active];
+    if (!el) return;
+    setDotY(el.offsetTop + el.offsetHeight / 2 - 2.5);
+  }, [active, items.length, kind]);
+
   return (
-    <nav className="relative flex flex-col gap-[18px]">
-      {/* 案35（dot）だけ、目次の左に1本レールを引いて印が滑る */}
+    <nav ref={box} className="relative flex flex-col gap-[18px]">
+      {/* 案35（dot）だけ、目次の左に1本レールを引いて印が滑る。
+          【2026-09-16 ヒデさん指示】「レールの線と文字がちょっとずれている」
+          → 決め打ちの行送り（38px）で位置を出していたのが原因。
+            文字が折り返すと行の高さが変わるので合わなくなる。
+            いまは各行の実測位置（offsetTop＋高さの半分）へ合わせている */}
       {kind === "dot" && (
         <span className="absolute inset-y-[6px] left-0 w-px bg-ink/12" />
       )}
       {kind === "dot" && (
         <motion.span
           className="absolute left-[-2px] size-[5px] rounded-full bg-ink"
-          animate={{ top: 8 + active * 38 }}
+          animate={{ top: dotY }}
           transition={{ duration: 0.55, ease: EASE }}
         />
       )}
@@ -440,6 +453,9 @@ function Toc({
           <button
             key={t.id}
             type="button"
+            ref={(el) => {
+              rows.current[i] = el;
+            }}
             onClick={() => onJump(i)}
             className="group flex items-center gap-3 text-left"
           >
@@ -465,12 +481,14 @@ function Toc({
               </motion.span>
             )}
             <motion.span
-              className={`block text-body-14 font-light leading-[1.7] text-ink ${
+              className={`block origin-left text-body-14 font-light leading-[1.7] text-ink ${
                 kind === "dot" ? "pl-4" : ""
               }`}
               animate={{
                 /* 案32：10px 右へずれる（ヒデさんの例そのまま） */
                 x: kind === "slide" && on ? 10 : 0,
+                /* 案35：印が来た行の文字も少し大きくする（2026-09-16 ヒデさん指示） */
+                scale: kind === "dot" && on ? 1.12 : 1,
                 /* 案34：文字が濃くなる（字間もわずかに開く） */
                 opacity: on ? 1 : kind === "ink" ? 0.3 : 0.45,
                 letterSpacing: kind === "ink" && on ? "0.12em" : "0.04em",
@@ -747,7 +765,7 @@ export function V38Grid({ spot }: VProps) {
 
 /* ── 案39 見出しをうんと離す ────────────────────
    変えたところ：見出しと本文の【間】
-   見出しだけを先に大きく置いて、画面の半分ぶん空けてから本文が来る。
+   見出しだけを先に大きく置いて、ひと呼吸ぶん空けてから本文が来る。
    間そのものが「息を吸う場所」になる。案11 の余白をもっと極端にした形 */
 export function V39FarHead({ spot }: VProps) {
   const ref = useRef<HTMLElement>(null);
@@ -771,8 +789,9 @@ export function V39FarHead({ spot }: VProps) {
               <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] tracking-[0.04em] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                 {s.heading}
               </h3>
-              {/* ここが「間」。画面の半分ぶん空けてから本文へ */}
-              <div className="h-[24dvh] sm:h-[42dvh]" />
+              {/* ここが「間」。【2026-09-16 ヒデさん指示】「離しすぎなので、
+                  もう少し近づけて」→ 42dvh→16dvh（スマホは 24→10dvh）に詰めた */}
+              <div className="h-[10dvh] sm:h-[16dvh]" />
               <p className="max-w-[520px] whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 sm:ml-auto sm:mr-[60px]">
                 {s.text}
               </p>

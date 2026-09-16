@@ -176,5 +176,9 @@
   "cycle": 8,
   "show": 2.6,
   "swayFirst": true
+ },
+ "nav": {
+  "dur": 1100,
+  "blur": 7
  }
 }

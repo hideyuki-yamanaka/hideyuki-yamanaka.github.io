@@ -40,6 +40,7 @@ export default function Home() {
     expIntro: DEFAULT_INTRO_PACE,
     expPick: { pattern: 1 },
     scrollSpd: { kvToMsg: 100 },
+    nav: { dur: 1100, blur: 7 },
     tips: { delay: 5, fade: 1.2, pattern: 5 },
     videoVol: { fadeIn: true, fadeSec: 3, uiHideSec: 2 },
     expEnter: { ...DEFAULT_ENTER_TUNE },

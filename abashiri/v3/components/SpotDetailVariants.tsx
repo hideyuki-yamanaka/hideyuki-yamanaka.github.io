@@ -20,7 +20,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   motion,
+  useAnimationFrame,
   useMotionTemplate,
+  useMotionValue,
   useScroll,
   useTransform,
   type MotionValue,
@@ -310,8 +312,8 @@ export function V1Parallax({ spot }: VProps) {
      7%/1.04倍まで落とした（2026-09-15 ヒデさん指示） */
   const heroY = useTransform(scrollYProgress, [0, 0.35], ["0%", "7%"]);
   const heroScale = useTransform(scrollYProgress, [0, 0.35], [1, 1.04]);
-  const titleOp = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
-  const titleY = useTransform(scrollYProgress, [0, 0.12], [0, -60]);
+  /* 【2026-09-16 ヒデさん指示】「案1はスクロールしてもヘッダーのタイトルは
+     消えなくて大丈夫」→ 消えるフェードをやめ、写真と一緒にそのまま送る */
 
   return (
     <main
@@ -330,12 +332,9 @@ export function V1Parallax({ spot }: VProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
         {/* 左下の見出し。小さめ＋下のセクションから離す
             （2026-09-15 ヒデさん指示：文字が大きく、下にくっつきすぎていた） */}
-        <motion.div
-          className="absolute inset-x-0 bottom-0 px-6 sm:px-[120px] pb-[90px] sm:pb-[180px]"
-          style={{ opacity: titleOp, y: titleY }}
-        >
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[90px] sm:px-[120px] sm:pb-[180px]">
           <HeroTitle spot={spot} size="sm" />
-        </motion.div>
+        </div>
       </div>
       {/* 白い面が写真の上にせり上がる（角丸で「紙が乗る」感じ） */}
       <div className="relative z-10 -mt-[80px] rounded-t-[48px] bg-white">
@@ -370,12 +369,85 @@ export function V1Parallax({ spot }: VProps) {
    ═══════════════════════════════════════════════════════════ */
 
 /* ═══════════ 案3 白エディトリアル ═══════════
-   縦書きの名前＋2カラム。右の基本情報がスクロールに追従する */
+   縦書きの名前＋2カラム。右の基本情報がスクロールに追従する。
+
+   【2026-09-16 ヒデさん指示】
+     「現状のデザインは終点として扱い、最初は全画面で表示されていた写真が
+       スクロールすると現状のような切り取られた画像になって下にスクロールできる形に。
+       最初の全画面の時はテキスト情報は一切なし。スクロールした先でタイトルが見えてくる」
+   → 導入（全画面の写真だけ）→ 終点（いまのエディトリアル）へ、スクロールで移す。
+     写真の切り取りを【いまの写真の置き場所とだいたい同じ枠】まで狭めながら、
+     入れ替わりに白いエディトリアルの面をかぶせる。
+     こうすると「全画面だった写真が、そのまま記事の写真になった」ように見える */
 export function V3Editorial({ spot }: VProps) {
   const ref = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  /** 記事側の写真。導入の切り取り枠をここへ合わせる */
+  const shot = useRef<HTMLDivElement>(null);
+
+  /* ⚠️ framer の useScroll に container と target を一緒に渡す書き方は、
+     このサイトでは進捗が正しく出ない（2026-09-15 に体験セクションでも同じ目に遭った）。
+     導入は必ずページの先頭にあるので、スクロール量から直接出す */
+  const sp = useMotionValue(0);
+  /* 切り取り枠は【記事の写真の、いま画面のどこにあるか】を毎フレーム測って合わせる。
+     ⚠️ %の決め打ちにしていたら、記事はまだスクロール中で下にいるため
+        入れ替わりの瞬間に写真が二重に見えた（2026-09-16 実測）。
+        実測に変えると、画面幅が変わってもズレない */
+  const clip = useMotionValue("inset(0px 0px 0px 0px)");
+  const zoom = useMotionValue(1);
+  useAnimationFrame(() => {
+    const sc = ref.current;
+    const st = stage.current;
+    const el = shot.current;
+    if (!sc || !st || !el) return;
+    const travel = Math.max(1, st.offsetHeight - sc.clientHeight);
+    const v = Math.max(0, Math.min(1, sc.scrollTop / travel));
+    if (Math.abs(v - sp.get()) > 0.0005) sp.set(v);
+
+    /* 0→0.75 で全画面から記事の写真の枠まで寄せきる */
+    const k = Math.min(1, v / 0.75);
+    const r = el.getBoundingClientRect();
+    const px = (n: number) => Math.max(0, n * k).toFixed(1);
+    clip.set(
+      `inset(${px(r.top)}px ${px(sc.clientWidth - r.right)}px ` +
+        `${px(sc.clientHeight - r.bottom)}px ${px(r.left)}px)`
+    );
+    zoom.set(1 + 0.07 * k);
+  });
+
+  /* 枠が合ってから、導入の写真と記事を同時に入れ替える（同じ場所どうしの溶暗） */
+  const heroOp = useTransform(sp, [0.8, 0.95], [1, 0]);
+  const bodyOp = useTransform(sp, [0.8, 0.95], [0, 1]);
+
   return (
     <main ref={ref} className="h-dvh overflow-y-auto overscroll-contain bg-white">
       <BackPill dark />
+
+      {/* ── 導入：全画面の写真だけ。文字はひとつも置かない ── */}
+      <div ref={stage} className="relative h-[200dvh]">
+        <div className="sticky top-0 h-dvh w-full overflow-hidden bg-white">
+          {/* ⚠️ 切り取り（clip-path）と寄り（scale）は【別の要素】に掛ける。
+              同じ要素に両方掛けると、切り取った絵ごと 7% 拡大されて
+              枠のまわりに薄い縁が出る（2026-09-16 実測） */}
+          <motion.div
+            className="size-full overflow-hidden"
+            style={{ clipPath: clip, opacity: heroOp, willChange: "clip-path, opacity" }}
+          >
+            <motion.img
+              src={spot.hero}
+              alt=""
+              className="size-full object-cover"
+              style={{ scale: zoom, willChange: "transform" }}
+            />
+          </motion.div>
+        </div>
+      </div>
+
+      {/* ── 終点：いまのデザイン。導入の写真と入れ替わりで現れる ── */}
+      <motion.div
+        className="relative z-10 -mt-[100dvh] bg-white"
+        style={{ opacity: bodyOp }}
+      >
       <div className="mx-auto w-[1200px] max-w-full px-6 pb-[120px] pt-[120px]">
         <div className="flex items-start gap-7 sm:p-[56px]">
           <div className="flex w-full items-start gap-6 pt-2 sm:w-auto sm:shrink-0">
@@ -390,7 +462,10 @@ export function V3Editorial({ spot }: VProps) {
               {spot.category} {spot.no}｜{spot.kana}
             </p>
           </div>
-          <div className="relative h-[300px] w-full min-w-0 overflow-hidden sm:h-[560px] sm:flex-1">
+          <div
+            ref={shot}
+            className="relative h-[300px] w-full min-w-0 overflow-hidden sm:h-[560px] sm:flex-1"
+          >
             <img src={spot.hero} alt={spot.name} className="absolute inset-0 size-full object-cover" />
           </div>
         </div>
@@ -422,6 +497,7 @@ export function V3Editorial({ spot }: VProps) {
           </aside>
         </div>
       </div>
+      </motion.div>
       <SiteFooter />
     </main>
   );
