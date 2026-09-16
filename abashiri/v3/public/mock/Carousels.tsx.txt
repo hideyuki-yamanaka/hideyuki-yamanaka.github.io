@@ -57,13 +57,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 /* ── 表示する中身 ─────────────────────────────
    既定はこのファイルの中の4件。呼び出す側から items を渡せば差し替えられる
    （本番の体験セクションは eventParts.tsx の ITEMS を渡している）*/
-export type CarouselItem = { no: string; tag: string; title: string; img: string; href: string };
+export type CarouselItem = {
+  no: string;
+  tag: string;
+  title: string;
+  /** ホバーで出す説明。体験セクションのカードと同じ中身 */
+  body?: string;
+  img: string;
+  href: string;
+};
 type Item = CarouselItem;
 const DEFAULT_ITEMS: Item[] = [
-  { no: "01", tag: "体験", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg", href: "/spot/kangoku" },
-  { no: "02", tag: "体験", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg", href: "/spot/ryuhyokan" },
-  { no: "03", tag: "体験", title: "カヌー体験", img: "/img/spot/canoe-1.jpg", href: "/spot/canoe" },
-  { no: "04", tag: "体験", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg", href: "/spot/washi" },
+  { no: "01", tag: "体験", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg", href: "/spot/kangoku",
+    body: "実際に使われていた監獄の建物を移築・復原した野外博物館。重要文化財の舎房や、受刑者が食べている「監獄食」を味わえる食堂もあります。" },
+  { no: "02", tag: "体験", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg", href: "/spot/ryuhyokan",
+    body: "天都山の頂上にある、流氷を一年中体感できる施設。マイナス15度の流氷体感テラスや、クリオネなど流氷の生きものに会えます。" },
+  { no: "03", tag: "体験", title: "カヌー体験", img: "/img/spot/canoe-1.jpg", href: "/spot/canoe",
+    body: "網走川や網走湖を、ガイドと一緒にゆっくり漕ぎ出す水の上のさんぽ。鳥の声と水の音だけの静かな時間が待っています。" },
+  { no: "04", tag: "体験", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg", href: "/spot/washi",
+    body: "冬の網走に渡ってくる大型のワシを、ガイドと探しにいくツアー。流氷の上や河口の木々にとまる姿は迫力満点です。" },
 ];
 
 /* ═══════════════════════════════════════════════════
@@ -130,6 +142,8 @@ const CONFIG = {
 };
 
 /* ── 小道具 ─────────────────────────────── */
+/** 入力を付けたくない時に渡す、中身が無い ref */
+const nullRef = { current: null } as React.RefObject<HTMLElement | null>;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 /** dt（秒）に依らず同じ手触りになる寄せ方。60Hzでも120Hzでも同じ速さ */
 const damp = (cur: number, to: number, stiffness: number, dt: number) =>
@@ -366,12 +380,18 @@ function useCarouselInput({
 /** カードに乗せる情報（既存のグルメカードと同じ言葉遣い） */
 function CardInfo({ it }: { it: Item }) {
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-black/0 via-black/0 to-black/75 px-6 py-6 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
-      <div className="flex translate-y-[14px] flex-col gap-2 opacity-0 transition-all delay-75 duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100">
+    /* 体験セクションのカードと同じ言葉遣い（黒グラデがかかって、下から文字が上がる） */
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-black/10 to-black/80 px-6 py-6 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
+      <div className="flex translate-y-[16px] flex-col gap-2 opacity-0 transition-all delay-75 duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100">
         <p className="text-[13px] font-extralight leading-[1.2] text-white/80">
           {it.tag} {it.no}
         </p>
-        <p className="text-[24px] font-thin leading-[1.3] text-white">{it.title}</p>
+        <p className="text-[24px] font-thin leading-[1.35] text-white">{it.title}</p>
+        {it.body && (
+          <p className="mt-1 line-clamp-4 text-[13px] font-extralight leading-[1.9] tracking-[0.5px] text-white/85">
+            {it.body}
+          </p>
+        )}
         <span className="mt-1 flex items-center gap-1 text-[13px] font-extralight leading-[1.2] text-white">
           もっと見る
           <img src="/img/icon-view-more.svg" alt="" className="size-[15px]" />
@@ -390,9 +410,27 @@ function CardInfo({ it }: { it: Item }) {
    ・カードは表と裏を持つ（裏面の写真が鏡像になるのを防ぐ）
    ・preserve-3d の中なので z-index は使わない（実際の3D位置で前後が決まる）
    ═══════════════════════════════════════════════════ */
-export function Carousel3D({ items }: { items?: Item[] } = {}) {
+export function Carousel3D({
+  items,
+  /** スクロールで送る時に渡す「0〜1 の進み具合」。
+      渡すと 1枚目→最後の1枚 までをスクロールが直接動かし、
+      ドラッグ・ホイール・キーでの操作は切る（スクロールと取り合わないため）。
+      渡さなければ、これまで通り自分で回すカルーセル */
+  progress,
+  /** 見出しを出すか（セクション側で別に出す時は false） */
+  heading = true,
+  /** カードの縦横比（幅÷高さ）。既定は 420/610 ≒ 0.69（2:3 の縦長）。
+      0.75=3:4 ／ 1=1:1 ／ 1.333=4:3 ／ 1.778=16:9 */
+  ratio,
+}: {
+  items?: Item[];
+  progress?: React.RefObject<number>;
+  heading?: boolean;
+  ratio?: number;
+} = {}) {
   const C = CONFIG.css3d;
   const ITEMS = items && items.length ? items : DEFAULT_ITEMS;
+  const scrollDriven = !!progress;
   const host = useRef<HTMLDivElement>(null);
   const cards = useRef<(HTMLDivElement | null)[]>([]);
   const dims = useRef<(HTMLDivElement | null)[]>([]);
@@ -407,12 +445,14 @@ export function Carousel3D({ items }: { items?: Item[] } = {}) {
     const k = w / C.baseW;
     /* 狭い画面では「幅の62%」を下限にして、左右の隣が必ず少し見えるようにする */
     const cardW = clamp(C.cardW * k, Math.min(w * C.cardWMin, 320), w * C.cardWMax + 260);
-    const cardH = cardW * (C.cardH / C.cardW);
+    /* 縦横比は外から変えられる。高さは幅から出す（幅の基準は変えない） */
+    const ar = ratio && ratio > 0.2 ? ratio : C.cardW / C.cardH;
+    const cardH = cardW / ar;
     const radius = cardW * C.radiusPerCardW;
     const perspective = cardW * C.perspectivePerCardW;
     const stageH = Math.max(cardH * 1.18, 360);
     return { w, cardW, cardH, radius, perspective, stageH };
-  }, [size.w, C]);
+  }, [size.w, C, ratio]);
 
   const step = 360 / C.slots;
   const snap = useCallback(
@@ -426,7 +466,7 @@ export function Carousel3D({ items }: { items?: Item[] } = {}) {
     [C.flickLookahead]
   );
   const input = useCarouselInput({
-    el: host,
+    el: scrollDriven ? nullRef : host,
     pxPerCard: M.w * C.dragPerCardRatio,
     wheelPerCard: C.wheelPerCard,
     onRelease: (v) => snap(v),
@@ -442,6 +482,11 @@ export function Carousel3D({ items }: { items?: Item[] } = {}) {
       /* 長時間バックグラウンドだった後の巨大な dt を切る */
       const dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000));
       prev = now;
+      /* スクロールで送る場合は、進み具合（0〜1）を「何枚目か」に直す。
+         1枚目＝0、最後の1枚＝ITEMS.length-1 */
+      if (scrollDriven && progress) {
+        input.target.current = clamp(progress.current ?? 0, 0, 1) * (ITEMS.length - 1);
+      }
       const to = input.target.current;
       pos.current = reduce ? to : damp(pos.current, to, C.stiffness, dt);
       const moving = Math.abs(to - pos.current) > 0.0004 || input.dragging.current;
@@ -473,19 +518,27 @@ export function Carousel3D({ items }: { items?: Item[] } = {}) {
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [C, M, step, onScreen, reduce, input]);
+  }, [C, M, step, onScreen, reduce, input, scrollDriven, progress, ITEMS.length]);
 
   return (
     <div className="flex w-full flex-col gap-10 bg-white">
-      <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
-        意外とオモロい、網走。
-      </h2>
+      {heading && (
+        <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
+          意外とオモロい、網走。
+        </h2>
+      )}
       <div
         ref={host}
         role="group"
-        aria-label="体験のカルーセル。左右キーで移動できます"
-        tabIndex={0}
-        className="relative w-full cursor-grab select-none outline-none active:cursor-grabbing"
+        aria-label={
+          scrollDriven
+            ? "体験のカルーセル。スクロールで1枚ずつ切り替わります"
+            : "体験のカルーセル。左右キーで移動できます"
+        }
+        tabIndex={scrollDriven ? -1 : 0}
+        className={`relative w-full select-none outline-none ${
+          scrollDriven ? "" : "cursor-grab active:cursor-grabbing"
+        }`}
         style={{
           height: M.stageH,
           perspective: `${M.perspective}px`,
@@ -559,7 +612,9 @@ export function Carousel3D({ items }: { items?: Item[] } = {}) {
         </div>
       </div>
       <p className="px-6 text-[13px] font-extralight leading-[1.4] text-black/40 sm:px-[147px]">
-        ← 横にドラッグ／スワイプ、または ← → キーで回ります
+        {scrollDriven
+          ? "↓ スクロールすると写真が右から左へ切り替わります"
+          : "← 横にドラッグ／スワイプ、または ← → キーで回ります"}
       </p>
     </div>
   );
@@ -577,7 +632,13 @@ export function Carousel3D({ items }: { items?: Item[] } = {}) {
      k≈0 では元の平面に戻す（ゼロ除算よけ）
    ・写真は object-fit: cover 相当の UV 補正を掛ける（縦伸びを防ぐ）
    ═══════════════════════════════════════════════════ */
-export function CarouselBend({ items }: { items?: Item[] } = {}) {
+export function CarouselBend({
+  items,
+  heading = true,
+}: {
+  items?: Item[];
+  heading?: boolean;
+} = {}) {
   const C = CONFIG.webgl;
   const ITEMS = items && items.length ? items : DEFAULT_ITEMS;
   const host = useRef<HTMLDivElement>(null);
@@ -879,9 +940,11 @@ export function CarouselBend({ items }: { items?: Item[] } = {}) {
 
   return (
     <div className="flex w-full flex-col gap-10 bg-white">
-      <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
-        意外とオモロい、網走。
-      </h2>
+      {heading && (
+        <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
+          意外とオモロい、網走。
+        </h2>
+      )}
       <div
         ref={host}
         role="group"

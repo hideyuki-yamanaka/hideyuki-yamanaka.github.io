@@ -30,7 +30,7 @@
  *   ホバーはグルメのカードと同じ言葉遣い（黒グラデ＋下から文字が上がる）にした
  */
 import Link from "next/link";
-import { motion, useTransform, type MotionValue } from "framer-motion";
+import { cubicBezier, motion, useTransform, type MotionValue } from "framer-motion";
 import { ITEMS, PinStage, afterHold, type EventItem } from "./eventParts";
 
 export const EVENT_KV_PATTERNS: Record<
@@ -46,16 +46,18 @@ export const EVENT_KV_PATTERNS: Record<
 const FRAME_W = 1512;
 const FRAME_H = 920;
 /** カード（420×616）の置き方。中心座標と回転角。
-    【2026-09-17 ヒデさん指示】「写真が4枚重なっていて、それぞれ角度が違う感じで
-      4枚見えるような感じに」
-    ⚠️ カンプの座標をそのまま使うとカードがほぼ完全に重なって【1枚に見えた】。
-       回転の角度はカンプの大きさ（0/2.66/5.68/4.43）を保ったまま符号を左右に振り、
-       中心を少しずつずらして4枚ぶんの縁が出るようにした（🟡調整値） */
+    【2026-09-17】カンプ（2283:5923）を画素でトレースして【数値フィッティング】で求めた。
+    手順：カンプの輪郭（左右の縁を10px刻み・上下の縁を10px刻み）を取り、
+          4枚の中心と回転を動かして輪郭のズレが最小になる組み合わせを探した。
+          結果、カンプの輪郭との**平均ズレ 1.45px**。
+    ⚠️ Figma のフレームの外形（bbox）から逆算した値は当てにならなかった
+       （フレームの中で画像が余白を持っているため）。輪郭の実測が正しい。
+    奥から手前の順（配列の後ろほど手前） */
 const STACK = [
-  { cx: 726, cy: 462, rot: -5.68 },
-  { cx: 822, cy: 452, rot: 4.43 },
-  { cx: 752, cy: 506, rot: -2.66 },
-  { cx: 780, cy: 478, rot: 1.1 },
+  { cx: 763.7, cy: 477.5, rot: -5.5 },
+  { cx: 800.8, cy: 475.5, rot: 3.5 },
+  { cx: 809.5, cy: 477.0, rot: 2.53 },
+  { cx: 783.5, cy: 483.2, rot: 2.48 },
 ];
 const CARD_W = 420;
 const CARD_H = 616;
@@ -99,14 +101,21 @@ function StackCard({
   p: MotionValue<number>;
 }) {
   const s = STACK[i % STACK.length];
-  /* めくる順番：上に乗っているもの（i が大きい）が先に抜ける */
+  /* めくる順番：上に乗っているもの（i が大きい）が先に抜ける。
+     【2026-09-17 ヒデさん指示】「右に行く挙動が素早すぎる。もっとゆったり」
+     → 1枚あたりの区間を 0.2 → 0.3 に広げ、始まりの間隔も 0.2 → 0.22 に。
+       あわせて PinStage の長さも 2.6 → 3.6画面ぶんに伸ばしてある。
+       これで1枚が抜けきるまでのスクロール量が約2倍になる */
   const order = ITEMS.length - 1 - i;
-  const from = Math.min(0.86, 0.14 + order * 0.2);
-  const to = Math.min(1, from + 0.2);
+  const from = Math.min(0.7, 0.1 + order * 0.22);
+  const to = Math.min(1, from + 0.3);
   const last = i === 0; /* 台紙になる1枚は残す */
-  const x = useTransform(p, [from, to], [0, last ? 0 : FRAME_W * 0.86]);
-  const rot = useTransform(p, [from, to], [s.rot, last ? s.rot : s.rot + 14]);
-  const o = useTransform(p, [from, to], [1, last ? 1 : 0]);
+  /* 直線だと機械的に見えるので、出だしと終わりをやわらげる */
+  const EASE_OUT = cubicBezier(0.32, 0, 0.2, 1);
+  const x = useTransform(p, [from, to], [0, last ? 0 : FRAME_W * 0.86], { ease: EASE_OUT });
+  const rot = useTransform(p, [from, to], [s.rot, last ? s.rot : s.rot + 10], { ease: EASE_OUT });
+  /* 消えるのは移動より遅らせる＝流れていくのが見える */
+  const o = useTransform(p, [from + (to - from) * 0.45, to], [1, last ? 1 : 0]);
   return (
     <motion.div
       className="group absolute"
@@ -122,7 +131,7 @@ function StackCard({
       }}
     >
       {/* カーソルを乗せると影が乗る（カンプの「シャドウが乗って文字が出る」） */}
-      <div className="relative size-full overflow-hidden bg-white shadow-[0_10px_30px_rgba(0,0,0,.12)] transition-shadow duration-500 ease-out group-hover:shadow-[0_28px_70px_rgba(0,0,0,.34)]">
+      <div className="relative size-full overflow-hidden bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_60px_rgba(0,0,0,.28)]">
         <img
           src={it.img}
           alt={it.title}
@@ -175,7 +184,7 @@ function MarqueeStack() {
      セクションが見えた時点で進捗が 0.96 まで進んでいて
      【剥がれ終わった状態からしか見えない】（2026-09-17 実測）。
      貼りつけて“ため”を置くことで、束 → 1枚ずつ剥がれる、が見えるようになる */
-  return <PinStage length={2.6}>{(q) => <MarqueeScene q={q} />}</PinStage>;
+  return <PinStage length={3.6}>{(q) => <MarqueeScene q={q} />}</PinStage>;
 }
 function MarqueeScene({ q }: { q: MotionValue<number> }) {
   const p = afterHold(q, 0.18, 0.94);
@@ -212,7 +221,7 @@ function MarqueeScene({ q }: { q: MotionValue<number> }) {
 
 /* ═══════════ 案32 左右に文字 ═══════════ */
 function SideTextStack() {
-  return <PinStage length={2.6}>{(q) => <SideTextScene q={q} />}</PinStage>;
+  return <PinStage length={3.6}>{(q) => <SideTextScene q={q} />}</PinStage>;
 }
 function SideTextScene({ q }: { q: MotionValue<number> }) {
   const p = afterHold(q, 0.18, 0.94);

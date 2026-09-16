@@ -36,6 +36,11 @@ import {
   DEFAULT_EVENT_TAIL,
 } from "./EventSection";
 import {
+  CARD_RATIOS,
+  DEFAULT_CARD_RATIO,
+  EVENT_RATIO_EVENT,
+} from "./EventVariants5";
+import {
   PAGE_TRANSITION_EVENT,
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
@@ -178,7 +183,7 @@ type Params = {
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
-  events: { pattern: number; tailPad: number };
+  events: { pattern: number; tailPad: number; cardRatio: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
@@ -253,7 +258,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL }, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO }, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
@@ -311,6 +316,9 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-head-gap", `${f.headGap}px`);
       root.style.setProperty("--ft-item-gap", `${f.itemGap}px`);
       root.style.setProperty("--ft-logo-h", `${f.logoH}px`);
+      /* 作字ブロックの倍率（KVの 415x379 を何倍にするか）。
+         CSS では長さどうしを割れないので、ここで数にして渡す */
+      root.style.setProperty("--ft-logo-scale", String(f.logoH / 379));
       root.style.setProperty("--ft-map-offset-y", `${f.mapOffsetY}px`);
       root.style.setProperty("--ft-stage-h", String(f.stageH));
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
@@ -450,7 +458,7 @@ export default function TopTunePanel({
            v33: 古いブラウザ保存値を一斉破棄。自動焼き込み（tune-defaults.json）導入前に
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
-        version: 37,
+        version: 38,
         /* ⚠️ autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
@@ -1315,6 +1323,13 @@ export default function TopTunePanel({
                 })),
               },
               {
+                seg: "カードの縦横比（3Dカルーセルの案）",
+                path: "events.cardRatio",
+                immediate: true,
+                options: CARD_RATIOS.map((r, i) => ({ name: r.name, value: i })),
+                hint: "案「奥行きの3Dカルーセル」「湾曲するカルーセル」で使うカードの形。写真は object-fit: cover で収まるので、比率を変えても伸びません。",
+              },
+              {
                 slider: "セクションの下の余白",
                 path: "events.tailPad",
                 min: 0,
@@ -1601,6 +1616,11 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_LAYOUT_EVENT, { detail: { v: params.events.pattern } })
             );
           }
+          if (info?.path === "events.cardRatio") {
+            window.dispatchEvent(
+              new CustomEvent(EVENT_RATIO_EVENT, { detail: { v: params.events.cardRatio } })
+            );
+          }
           if (info?.path === "events.tailPad") {
             window.dispatchEvent(
               new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
@@ -1673,6 +1693,9 @@ export default function TopTunePanel({
       );
       window.dispatchEvent(
         new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
+      );
+      window.dispatchEvent(
+        new CustomEvent(EVENT_RATIO_EVENT, { detail: { v: params.events.cardRatio } })
       );
       window.dispatchEvent(
         new CustomEvent(PAGE_TRANSITION_EVENT, { detail: { v: params.pageTrans.pattern } })

@@ -101,17 +101,50 @@ function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
     ⚠️ 元アセットは「白い吹き出し＋青文字／白のたまらない」で濃い背景用。
     白地では消えてしまうので、白⇄青を入れ替えた反転版
     hero-message-blue.svg を使う（light=濃い背景のときだけ元のまま） */
-function Logo({ cls, light = false }: { cls: string; light?: boolean }) {
+/** サイトロゴ＝キービジュアルの作字ブロックそのもの。
+    【2026-09-17 ヒデさん指示】「網走市観光サイトという文字が抜けている。
+      キービジュアルの作字と全く同じ位置関係で、吹き出しの右上に入れて」
+    → KV（TopPage）の実測値をそのまま持ってくる：
+        作字ブロック        415 x 379
+        網走市観光サイト     (215.7, 8.3) 188.2 x 36.3   ← 吹き出しの右上
+        作字（471x390のSVG） (-28, 13.1)                 ← SVGの余白ぶん左上へずらす
+      ブロックごと拡大縮小するので、位置関係は崩れない */
+const LOGO_W = 415;
+const LOGO_H = 379;
+function Logo({ light = false }: { light?: boolean }) {
   return (
-    <img
-      src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
-      alt="な〜んにもない たまらない"
-      /* 高さはクラスで指定（スマホでは小さく。style だと切り替えられない）。
-         ⚠️ object-contain は保険。縦並び(flex-col)の中に置くと、img は
-            枠の幅いっぱいに引き伸ばされて作字が歪む（2026-09-16 実測：
-            471×390 が 1272×120 になっていた）。置き場所側でも self-start を付ける */
-      className={`w-auto object-contain ${cls}`}
-    />
+    <div
+      className="relative shrink-0 self-start"
+      style={{
+        /* 高さはつまみ（--ft-logo-h）。幅は比率から出す */
+        height: "var(--ft-logo-h)",
+        width: `calc(var(--ft-logo-h) * ${LOGO_W / LOGO_H})`,
+      }}
+    >
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: LOGO_W,
+          height: LOGO_H,
+          transformOrigin: "top left",
+          /* 倍率は単位なしの CSS 変数で受け取る（長さどうしの割り算はCSSでできない） */
+          transform: "scale(var(--ft-logo-scale, 0.686))",
+        }}
+      >
+        <img
+          src="/img/text-kanko-site.svg"
+          alt="網走市観光サイト"
+          className="absolute"
+          style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }}
+        />
+        <img
+          src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
+          alt="な〜んにもない たまらない"
+          className="absolute max-w-none"
+          style={{ left: -28, top: 13.1, width: 471, height: 390 }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -337,7 +370,7 @@ function Body() {
       <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
         {/* 左の作字。サイトの顔なので大きく出す。SNS アイコンは無し */}
         <div className="flex shrink-0 flex-col items-start">
-          <Logo cls="h-[150px] self-start sm:h-[var(--ft-logo-h)]" light />
+          <Logo light />
         </div>
         <div
           className="min-w-0 flex-1"
