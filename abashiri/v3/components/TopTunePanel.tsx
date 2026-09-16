@@ -233,7 +233,7 @@ export default function TopTunePanel({
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
-      footer: { pattern: 1 }, /* フッター（案1「白地・横並び」＝いまのトンマナが既定） */
+      footer: { pattern: 6 }, /* フッター（案6「溶けて現れる」＝2026-09-16 からの既定） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },

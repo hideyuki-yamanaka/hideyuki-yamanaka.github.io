@@ -56,12 +56,32 @@ export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
     note: "白いコンテンツがグラデーションで薄れ、後ろにいた写真が顔を出す。作字は写真の中央、リンクはその下。いちばん素直な形",
   },
   7: {
-    name: "案7 写真の上に札が浮かぶ",
-    note: "同じく写真が顔を出したあと、リンクとSNSをすりガラスの札にまとめて写真の上に浮かべる。トップページのスポットのカードと同じ質感",
-  },
-  8: {
-    name: "案8 引きながら現れる",
+    name: "案7 引きながら現れる",
     note: "写真が顔を出しながら、少し引いて（ズームアウトして）全景になる。作字は左下に大きく、情報は右下に小さく",
+  },
+  /* 2026-09-16 ヒデさん依頼：「フッター感がない。サイトマップのように
+     大カテゴリの下にコンテンツが並ぶメガフッターで、サイトの要素を全出し」
+     → 中身は SITEMAP（スポット5・グルメ4・体験4・ぼーっと体験3）で共通。
+        違うのは【地の作り】と【組み方】 */
+  8: {
+    name: "案8 写真の上にサイトマップ",
+    note: "案6の写真の上に、4つの大カテゴリを横に並べてサイトの中身を全部見せる。写真の余韻を残したままフッターらしくする",
+  },
+  9: {
+    name: "案9 白地のメガフッター",
+    note: "写真を使わず白地。大カテゴリ4列＋左に作字。いちばん普通のフッターで、情報がいちばん読みやすい",
+  },
+  10: {
+    name: "案10 大見出しでぶら下げる",
+    note: "大カテゴリを大きな見出しにして、その下に中身をぶら下げる。縦に長く、余白をたっぷり取って読ませる",
+  },
+  11: {
+    name: "案11 索引（番号つき）",
+    note: "01・02… と番号を振った索引の形。細い罫線で区切って、資料の目次のように整理する",
+  },
+  12: {
+    name: "案12 写真＋2段組",
+    note: "写真の上に、作字を大きく置いてからサイトマップを2段に。上が世界観、下が案内、と役割を分ける",
   },
 };
 
@@ -71,6 +91,61 @@ const LINKS: { label: string; href?: string; jump?: "spotAt" | "gourmetAt" | "ev
   { label: "ぼーっとスポット", jump: "spotAt" },
   { label: "グルメ", jump: "gourmetAt" },
   { label: "体験", jump: "eventsAt" },
+];
+
+/* ───────── サイトマップ（メガフッター用・2026-09-16 ヒデさん依頼）─────────
+   「ぼーっとスポットという大カテゴリがあって、その下に中のコンテンツが並んでいる」
+   形にするための一覧。**サイトにある要素を全部出す**のが狙い。
+   ⚠️ ここは各セクションの一覧と同じ中身を手で写している（データ源が
+      TopPage / SpotShowcase / EventSection に散っているため）。
+      向こうを増やしたらここも足すこと。 */
+export type SiteNode = {
+  label: string;
+  /** 下層ページがあるものはリンク先。無ければトップの該当セクションへ飛ぶ */
+  href?: string;
+  jump?: "spotAt" | "gourmetAt" | "eventsAt";
+};
+export const SITEMAP: { title: string; jump?: "spotAt" | "gourmetAt" | "eventsAt"; href?: string; items: SiteNode[] }[] = [
+  {
+    title: "ぼーっとスポット",
+    jump: "spotAt",
+    items: [
+      { label: "能取岬", href: "/spot/notoro" },
+      { label: "能取湖サンゴ草群落地", href: "/spot/sango" },
+      { label: "網走駅", href: "/spot/eki" },
+      { label: "流氷クルーズ", href: "/spot/ryuhyo" },
+      { label: "大曲湖畔園地ひまわり畑", href: "/spot/himawari" },
+    ],
+  },
+  {
+    title: "素朴なグルメ",
+    jump: "gourmetAt",
+    items: [
+      { label: "わかさぎの唐揚げ", jump: "gourmetAt" },
+      { label: "浜の海鮮焼き", jump: "gourmetAt" },
+      { label: "地魚の御膳", jump: "gourmetAt" },
+      { label: "浜のちゃんこ鍋", jump: "gourmetAt" },
+    ],
+  },
+  {
+    title: "意外とオモロい体験",
+    jump: "eventsAt",
+    items: [
+      { label: "博物館 網走監獄", href: "/spot/kangoku" },
+      { label: "オホーツク流氷館", href: "/spot/ryuhyokan" },
+      { label: "カヌー体験", href: "/spot/canoe" },
+      { label: "オジロワシ・オオワシウォッチング", href: "/spot/washi" },
+    ],
+  },
+  {
+    title: "ぼーっと体験",
+    href: "/experience",
+    items: [
+      { label: "ぼーっとしてみる", href: "/experience" },
+      { label: "場所をえらぶ", href: "/experience" },
+      { label: "ぼーっとタイマー", href: "/experience" },
+    ],
+  },
 ];
 
 /* 🟡仮置き：公式アカウントが確定したら差し替える */
@@ -112,8 +187,11 @@ function Logo({ cls, light = false }: { cls: string; light?: boolean }) {
     <img
       src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
       alt="な〜んにもない たまらない"
-      /* 高さはクラスで指定（スマホでは小さく。style だと切り替えられない） */
-      className={`w-auto ${cls}`}
+      /* 高さはクラスで指定（スマホでは小さく。style だと切り替えられない）。
+         ⚠️ object-contain は保険。縦並び(flex-col)の中に置くと、img は
+            枠の幅いっぱいに引き伸ばされて作字が歪む（2026-09-16 実測：
+            471×390 が 1272×120 になっていた）。置き場所側でも self-start を付ける */
+      className={`w-auto object-contain ${cls}`}
     />
   );
 }
@@ -294,6 +372,107 @@ function PhotoStage({
   );
 }
 
+/** サイトマップの1カテゴリぶん（大見出し＋ぶら下がる中身）。
+    light=写真や濃い地の上に置く時（白文字） */
+function MapColumn({
+  col,
+  light = false,
+  size = "md",
+}: {
+  col: (typeof SITEMAP)[number];
+  light?: boolean;
+  /** md=既定 / lg=大見出しを大きく */
+  size?: "md" | "lg";
+}) {
+  const head = light ? "text-white" : "text-ink";
+  const item = light
+    ? "text-white/70 hover:text-white"
+    : "text-ink/60 hover:text-ink";
+  const go = (n: { href?: string; jump?: SiteNode["jump"] }) => () =>
+    n.jump ? jumpTo(n.jump) : undefined;
+  return (
+    <div className="flex min-w-0 flex-col gap-4">
+      {/* 大カテゴリ。押すとトップのそのセクションへ飛ぶ */}
+      {col.href ? (
+        <Link
+          href={col.href}
+          className={`${head} ${size === "lg" ? "text-title-24" : "text-body-16"} font-thin leading-[1.6] tracking-[0.08em]`}
+        >
+          {col.title}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => col.jump && jumpTo(col.jump)}
+          className={`cursor-pointer text-left ${head} ${size === "lg" ? "text-title-24" : "text-body-16"} font-thin leading-[1.6] tracking-[0.08em]`}
+        >
+          {col.title}
+        </button>
+      )}
+      {/* ぶら下がる中身 */}
+      <ul className="flex flex-col gap-2.5">
+        {col.items.map((n) => (
+          <li key={n.label}>
+            {n.href ? (
+              <Link
+                href={n.href}
+                className={`block text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+              >
+                {n.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={go(n)}
+                className={`block cursor-pointer text-left text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+              >
+                {n.label}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** サイトマップ4列（PCは横並び・スマホは2列） */
+function SiteMapGrid({
+  light = false,
+  size = "md",
+  cols = 4,
+}: {
+  light?: boolean;
+  size?: "md" | "lg";
+  cols?: 2 | 4;
+}) {
+  return (
+    <div
+      className={`grid w-full gap-x-8 gap-y-12 ${
+        cols === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"
+      }`}
+    >
+      {SITEMAP.map((c) => (
+        <MapColumn key={c.title} col={c} light={light} size={size} />
+      ))}
+    </div>
+  );
+}
+
+/** メガフッターの下段（ホーム・SNS・作字）。どの案でも共通で置く */
+function MapFoot({ light = false }: { light?: boolean }) {
+  return (
+    <div
+      className={`flex w-full flex-col items-start gap-6 border-t pt-8 sm:flex-row sm:items-center sm:justify-between ${
+        light ? "border-white/25" : "border-ink/10"
+      }`}
+    >
+      <NavLinks light={light} className="justify-start" />
+      <SnsRow light={light} size={18} />
+    </div>
+  );
+}
+
 /* ── 案ごとの中身 ─────────────────────────── */
 
 function Body({ pat }: { pat: number }) {
@@ -377,22 +556,8 @@ function Body({ pat }: { pat: number }) {
         </PhotoStage>
       );
 
-    /* 案7 写真の上に札が浮かぶ：情報はすりガラスの札にまとめる */
+    /* 案7 引きながら現れる：写真がズームアウトして全景に。作字は左下 */
     case 7:
-      return (
-        <PhotoStage>
-          <div className="flex w-full flex-col items-center gap-12 sm:gap-16">
-            <Logo cls="h-[130px] sm:h-[200px]" light />
-            <div className="flex w-full max-w-[720px] flex-col items-center gap-7 bg-white/10 px-7 py-8 ring-1 ring-inset ring-white/25 backdrop-blur-65 sm:flex-row sm:justify-between sm:px-12 sm:py-9">
-              <NavLinks light className="justify-center sm:justify-start" />
-              <SnsRow light size={18} />
-            </div>
-          </div>
-        </PhotoStage>
-      );
-
-    /* 案8 引きながら現れる：写真がズームアウトして全景に。作字は左下 */
-    case 8:
       return (
         <PhotoStage zoom align="end">
           <div className="flex w-full flex-col items-start gap-10 sm:flex-row sm:items-end sm:justify-between sm:gap-16">
@@ -403,6 +568,150 @@ function Body({ pat }: { pat: number }) {
             </div>
           </div>
         </PhotoStage>
+      );
+
+    /* ═══ ここから メガフッター（サイトマップ型）5案 ═══
+       中身はどれも SITEMAP（スポット5／グルメ4／体験4／ぼーっと体験3）で同じ。
+       違うのは地の作りと組み方だけ */
+
+    /* 案8 写真の上にサイトマップ：案6の写真を残したままフッターらしくする */
+    case 8:
+      return (
+        <PhotoStage align="end">
+          <div className="flex w-full flex-col gap-12">
+            <Logo cls="h-[90px] self-start sm:h-[120px]" light />
+            <SiteMapGrid light />
+            <MapFoot light />
+          </div>
+        </PhotoStage>
+      );
+
+    /* 案9 白地のメガフッター：写真を使わず、情報のいちばん読みやすい形 */
+    case 9:
+      return (
+        <div className="flex w-full flex-col gap-14 px-6 py-[80px] sm:px-[120px] sm:py-[110px]">
+          <div className="flex flex-col gap-12 sm:flex-row sm:gap-[80px]">
+            <div className="shrink-0">
+              <Logo cls="h-[110px] sm:h-[150px]" />
+            </div>
+            <SiteMapGrid />
+          </div>
+          <MapFoot />
+        </div>
+      );
+
+    /* 案10 大見出しでぶら下げる：縦に長く、余白をたっぷり */
+    case 10:
+      return (
+        <div className="flex w-full flex-col gap-[72px] px-6 py-[90px] sm:px-[120px] sm:py-[130px]">
+          <Logo cls="h-[110px] self-start sm:h-[160px]" />
+          <div className="flex flex-col gap-[56px]">
+            {SITEMAP.map((c) => (
+              <div
+                key={c.title}
+                className="flex flex-col gap-5 border-t border-ink/10 pt-8 sm:flex-row sm:gap-[80px]"
+              >
+                <div className="shrink-0 sm:w-[280px]">
+                  <MapColumn col={{ ...c, items: [] }} size="lg" />
+                </div>
+                <ul className="flex flex-wrap gap-x-8 gap-y-3">
+                  {c.items.map((n) => (
+                    <li key={n.label}>
+                      {n.href ? (
+                        <Link
+                          href={n.href}
+                          className="text-body-14 font-extralight leading-[2] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
+                        >
+                          {n.label}
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => n.jump && jumpTo(n.jump)}
+                          className="cursor-pointer text-body-14 font-extralight leading-[2] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
+                        >
+                          {n.label}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <MapFoot />
+        </div>
+      );
+
+    /* 案11 索引（番号つき）：資料の目次のように、細い罫線で整理する */
+    case 11:
+      return (
+        <div className="flex w-full flex-col gap-12 px-6 py-[80px] sm:px-[120px] sm:py-[110px]">
+          <div className="flex flex-col items-start gap-10 sm:flex-row sm:items-end sm:justify-between">
+            <Logo cls="h-[100px] sm:h-[140px]" />
+            <p className="text-body-12 font-light tracking-[0.3em] text-ink/40">
+              SITE INDEX
+            </p>
+          </div>
+          <div className="flex flex-col">
+            {SITEMAP.map((c, ci) => (
+              <div
+                key={c.title}
+                className="flex flex-col gap-3 border-t border-ink/10 py-7 sm:flex-row sm:gap-[64px]"
+              >
+                <div className="flex shrink-0 items-baseline gap-4 sm:w-[260px]">
+                  <span className="text-body-12 font-light tracking-[0.2em] text-ink/35">
+                    {String(ci + 1).padStart(2, "0")}
+                  </span>
+                  <MapColumn col={{ ...c, items: [] }} />
+                </div>
+                <ul className="flex flex-col gap-2">
+                  {c.items.map((n, i) => (
+                    <li key={n.label} className="flex items-baseline gap-4">
+                      <span className="text-body-12 font-light tracking-[0.15em] text-ink/30">
+                        {String(ci + 1)}-{i + 1}
+                      </span>
+                      {n.href ? (
+                        <Link
+                          href={n.href}
+                          className="text-body-13 font-extralight leading-[1.9] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
+                        >
+                          {n.label}
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => n.jump && jumpTo(n.jump)}
+                          className="cursor-pointer text-body-13 font-extralight leading-[1.9] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
+                        >
+                          {n.label}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <MapFoot />
+        </div>
+      );
+
+    /* 案12 写真＋2段組：上が世界観（作字）、下が案内（サイトマップ） */
+    case 12:
+      return (
+        <>
+          <PhotoStage>
+            <div className="flex w-full flex-col items-center gap-8">
+              <Logo cls="h-[140px] sm:h-[210px]" light />
+            </div>
+          </PhotoStage>
+          {/* 写真の下に、白地でサイトマップを2段に置く */}
+          <div className="flex w-full flex-col gap-12 bg-white px-6 py-[70px] sm:px-[120px] sm:py-[90px]">
+            <SiteMapGrid cols={2} />
+            <MapFoot />
+          </div>
+        </>
       );
 
     /* 案1（既定）中央に大きく：作字を真ん中に、上下にたっぷり余白 */
@@ -420,7 +729,8 @@ function Body({ pat }: { pat: number }) {
 }
 
 export default function SiteFooter() {
-  const [pat, setPat] = useState(1);
+  /* 既定は案6（写真が溶けて現れる）。2026-09-16 ヒデさん指示 */
+  const [pat, setPat] = useState(6);
   useEffect(() => {
     fetch("/tune-defaults.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
