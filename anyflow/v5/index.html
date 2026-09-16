@@ -16678,6 +16678,11 @@ function buildPanel() {
   segRow('くり返し', [['する', 1], ['しない', 0]], () => params.replay ? 1 : 0, v => { params.replay = !!v; markDirty(); });
   note('一度見たセクションも、戻ってくるともう一度流れます。');
 
+  /* 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーはサイト全体の要素なので「🌊 全体」に置く */
+  sub(catAll, 'ヘッダー（追従・スクロールで変形）', null, { fixed: true });
+  varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  note('ヘッダーを追従(固定)にして、スクロール時の見た目を選びます。少し下にスクロールすると違いが出ます。URL ?hdr=N。');
+
   /* ========== 🖼 キービジュアル ========== */
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
   const catKv = category('🖼 キービジュアル（いちばん上の画面）', true);
@@ -18500,9 +18505,6 @@ function buildPanel() {
      帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい。
      【2026-09-16】1項目だけの見出しをやめ、上の「余白・高さ・境目」に含めた */
   /* 【2026-09-16 改訂】溶け込みは“形”でなく“深さ”の違いだけ(波/弧/斜め/二段/もやは撤去)。本体の中まで長い距離で溶かすので境目の線は出ない */
-  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = '追従ヘッダー（5案）'; (mount || body).appendChild(_t); }
-  varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('ヘッダーを追従(固定)にした上で、スクロール時の見た目を5案から選べます。少し下にスクロールすると違いが出ます。URL ?hdr=1〜5。');
   { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = 'お問い合わせのCTA（ボタン / フォーム直置き）'; (mount || body).appendChild(_t); }
   varRowX('cvCta', CV_CTAS, () => String(params.cvCta || 'button'), v => { params.cvCta = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('現行はボタン遷移。「フォーム（直置き）」にすると、見出し・本文の下に自作フォームを置きます(送信先は無し=見た目のみ)。');
