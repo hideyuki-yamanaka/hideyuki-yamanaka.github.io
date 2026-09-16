@@ -1,0 +1,3 @@
+[2026-09-17 01:15:01] === v5 自動デプロイ開始 ===
+[2026-09-17 01:15:01] プロジェクト = anyflow-embed-v5
+[2026-09-17 01:15:01] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v5.sh: line 30: npx: command not found 
