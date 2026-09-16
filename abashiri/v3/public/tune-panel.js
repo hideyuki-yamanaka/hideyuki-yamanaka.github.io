@@ -112,22 +112,28 @@
        外寸は固定して中身だけスクロールさせる：開閉のたびに外寸が変わると
        パネルごと動いて、触っている場所がズレるため */
     '  width:450px;height:520px;min-width:240px;min-height:44px;max-width:92vw;max-height:92vh;',
-    '  resize:both;background:rgba(255,255,255,.93);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
-    '  border:1px solid #e2e2e2;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.10);',
+    /* 地・枠・角丸・文字サイズは anyflow の調整パネルの実測値に合わせている
+       （2026-09-16 実測：地 rgba(255,255,255,.92) / 枠 #ececec / 角丸 8px / 文字 11px） */
+    '  resize:both;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
+    '  border:1px solid #ececec;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.10);',
     '  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;',
-    '  font-size:12px;line-height:1.5;color:#101828;font-weight:400;}',
+    '  font-size:11px;color:#101828;font-weight:400;}',
     '.tp *{box-sizing:border-box;}',
-    '.tp-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;',
+    /* 掴める幅が狭いと動かしづらいので、ヘッダーは上下を厚めに（anyflow 実測 14px 12px） */
+    '.tp-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 12px;',
     '  cursor:grab;user-select:none;flex:0 0 auto;}',
     '.tp-head:active{cursor:grabbing;}',
-    '.tp-title{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.tp-title{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    /* たたんでいる時だけ「押せば開く」と分かるように添える（anyflow 準拠） */
+    '.tp-head-sub{font-size:10px;color:#999;margin-left:8px;font-weight:300;}',
+    '.tp:not(.closed) .tp-head-sub{display:none;}',
     '.tp-chev{font-size:10px;color:#888;transition:transform .25s;padding:2px 4px;cursor:pointer;}',
     '.tp.closed .tp-chev{transform:rotate(180deg);}',
     '.tp.closed{height:auto !important;resize:none;}',
     '.tp.closed .tp-body,.tp.closed .tp-foot{display:none;}',
-    '.tp-body{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:0 12px 12px;}',
-    '.tp-foot{flex:0 0 auto;padding:8px 12px 10px;border-top:1px solid #ececec;background:rgba(255,255,255,.6);}',
-    '.tp-search{width:100%;padding:6px 9px;margin:8px 0 2px;border:1px solid #e2e2e2;border-radius:6px;',
+    '.tp-body{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:0 10px 10px;}',
+    '.tp-foot{flex:0 0 auto;padding:8px 10px 10px;border-top:1px solid #ececec;background:rgba(255,255,255,.6);}',
+    '.tp-search{width:100%;padding:5px 9px;margin:8px 0 2px;border:1px solid #e2e2e2;border-radius:6px;',
     '  font:inherit;color:inherit;background:#fff;}',
     '.tp-search::placeholder{color:#bbb;}',
     /* 大カテゴリ */
@@ -140,29 +146,50 @@
     '.tp-cat-body{padding:0 12px 12px;}',
     '.tp-cat.closed .tp-cat-body{display:none;}',
     '.tp-hidden{display:none !important;}',
-    /* タブ（ページ切替。cfg.tabs:true で cat がタブになる） */
-    '.tp-tabs{display:flex;gap:4px;margin:10px 0 2px;flex-wrap:wrap;}',
-    '.tp-tab{flex:1 1 auto;padding:6px 8px;border:1px solid #e2e2e2;border-radius:8px;background:#fff;',
-    '  cursor:pointer;font-family:inherit;font-size:11px;color:#555;white-space:nowrap;}',
-    '.tp-tab.on{background:#090909;color:#fff;border-color:#090909;}',
-    /* セクション（タブの中の折りたたみ。フォルダのインデックス風） */
-    '.tp-sec{border:1px solid #e8e8e8;border-radius:8px;margin-top:10px;overflow:hidden;background:#fff;}',
-    '.tp-sec-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;',
-    '  font-weight:500;font-size:11.5px;background:#fafafa;cursor:pointer;user-select:none;}',
-    '.tp-sec-head:hover{background:#f2f2f2;}',
+    /* タブ（ページ切替。cfg.tabs:true で cat がタブになる）
+       anyflow 実測に合わせた：高さ26px・角丸13px の丸いピル・文字11.5px／行送り24px・
+       幅は内容ぶんだけ（均等割りにしない）・上に貼り付いてスクロールしても見える */
+    '.tp-tabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;flex-wrap:wrap;',
+    '  margin:0 -10px;padding:8px 10px 7px;background:rgba(255,255,255,.96);',
+    '  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px solid #ececec;}',
+    '.tp-tab{flex:0 1 auto;height:26px;padding:0 9px;border:1px solid #e2e2e2;border-radius:13px;background:#fff;',
+    '  cursor:pointer;font-family:inherit;font-size:11.5px;line-height:24px;color:#555;white-space:nowrap;',
+    '  transition:background .15s,color .15s,border-color .15s;}',
+    '.tp-tab:hover{background:#f3f3f3;color:#111;}',
+    '.tp-tab.on{background:#111;color:#fff;border-color:#111;}',
+    /* セクション（タブの中の折りたたみ）
+       2026-09-16：anyflow と同じ「箱で囲まない・区切り線だけ」の見せ方に変更。
+       白い箱が入れ子になると、中の小見出しとの階層が読み取りづらかったため */
+    '.tp-sec{margin-top:9px;padding-top:8px;border-top:1px solid #e8e8e8;background:transparent;}',
+    '.tp-cat-body>.tp-sec:first-child{border-top:none;margin-top:8px;padding-top:0;}',
+    '.tp-sec-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0;',
+    '  font-weight:600;font-size:12.5px;color:#1a1a1a;margin-bottom:7px;min-height:22px;',
+    '  background:transparent;cursor:pointer;user-select:none;}',
+    '.tp-sec-head:hover{color:#000;}',
     '.tp-sec-chev{font-size:10px;color:#888;transition:transform .2s;}',
     '.tp-sec.closed .tp-sec-chev{transform:rotate(-90deg);}',
-    '.tp-sec-body{padding:0 12px 12px;}',
+    '.tp-sec-body{padding:0;}',
     '.tp-sec.closed .tp-sec-body{display:none;}',
     /* 隠しスイッチ（画面右上の透明ボックス）。見た目は何もないが、クリックでパネルが出る */
     '.tp-secret-hot{position:fixed;top:0;right:0;width:64px;height:64px;z-index:2147483001;background:transparent;}',
     /* 小見出し */
-    '.tp-grp{margin-top:10px;padding-top:10px;border-top:1px solid #ececec;}',
-    '.tp-cat-body>.tp-grp:first-child{border-top:none;margin-top:6px;}',
-    '.tp-grp-title{font-weight:400;margin-bottom:6px;display:flex;align-items:center;gap:6px;}',
-    '.tp-grp.deep{margin-top:8px;padding-top:8px;border-top:1px dashed #eee;padding-left:10px;border-left:2px solid #ececec;}',
-    '.tp-grp.deep .tp-grp-title{font-size:11px;color:#666;}',
-    '.tp-note{font-size:10px;line-height:1.6;color:#999;margin:-2px 0 6px;}',
+    /* 小見出し（anyflow の .grp / .grp.sub2 の実測に合わせた） */
+    '.tp-grp{margin-top:9px;padding-top:8px;border-top:1px solid #e8e8e8;}',
+    /* 先頭の小見出しは上の区切り線がいらない。ただし入れ子(deep)は、ぶら下がりを示す
+       破線と左線を残したいので対象外にする */
+    '.tp-cat-body>.tp-grp:first-child:not(.deep),.tp-sec-body>.tp-grp:first-child:not(.deep)',
+    '  {border-top:none;margin-top:8px;padding-top:0;}',
+    '.tp-grp-title{font-weight:500;font-size:11.5px;color:#666;margin-bottom:4px;',
+    '  display:flex;align-items:center;gap:6px;min-height:22px;}',
+    /* 入れ子は「破線の上罫線＋左の縦線」でぶら下がりを示す */
+    '.tp-grp.deep{margin-top:7px;padding-top:6px;border-top:1px dashed #ededed;padding-left:8px;border-left:2px solid #ededed;}',
+    '.tp-grp.deep .tp-grp-title{font-size:11.5px;font-weight:500;color:#666;}',
+    '.tp-grp.deep .tp-grp.deep{border-left-color:#f2f2f2;}',
+    /* グレーの補足文は既定で出さない（anyflow と同じ）。
+       文面は消していないので、見出しにマウスを乗せれば吹き出しで読める。
+       どうしても出したい所は item.keep:true を付ける */
+    '.tp-note{display:none;font-size:10px;line-height:1.6;color:#999;margin:-2px 0 6px;}',
+    '.tp-note.keep{display:block;}',
     /* 小見出しもたためる（2026-09-16 anyflow 準拠）。
        見出し全体が押せるので、行が多いカテゴリでも目的の所まで一気に畳める */
     '.tp-grp-title{cursor:pointer;}',
@@ -181,7 +208,7 @@
     '.tp-item-rst:hover{opacity:1;}',
     /* プリセット（いまの値に名前を付けて保存し、あとで呼び戻す） */
     '.tp-pset{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px;}',
-    '.tp-pset-lab{flex:0 0 auto;font-size:10px;color:#999;}',
+    '.tp-pset-lab{flex:0 0 auto;font-size:11px;line-height:22px;color:#999;}',
     '.tp-pset-chip{display:inline-flex;align-items:stretch;border:1px solid #e2e2e2;border-radius:999px;',
     '  overflow:hidden;background:#fff;}',
     '.tp-pset-name{border:0;background:transparent;padding:3px 4px 3px 11px;font:inherit;font-size:11px;',
@@ -217,10 +244,20 @@
     '  .tp-secret-hot.shown{top:0;bottom:auto;}',
     '}',
     /* 項目ツール（🗑削除・⠿並び替え）と削除確認モーダル（2026-08-23） */
-    '.tp-item{position:relative;}',
-    '.tp-item-tools{position:absolute;right:0;top:-3px;display:none;gap:0;align-items:center;z-index:6;',
-    '  background:rgba(255,255,255,.95);border:1px solid #e4e4e4;border-radius:6px;padding:0 3px;box-shadow:0 1px 4px rgba(0,0,0,.08);}',
-    '.tp-item:hover>.tp-item-tools{display:flex;}',
+    /* 2026-09-16 anyflow 準拠：↺（この項目だけ元に戻す）は常に見えている。
+       ⠿（並び替え）と🗑（パネルから消す）は、行にマウスを乗せた時だけ出す。
+       ↺のぶんだけ右に場所を空けておく（値の文字と重ならないように） */
+    '.tp-item{position:relative;padding-right:18px;}',
+    '.tp-item-tools{position:absolute;right:-2px;top:1px;display:flex;gap:0;align-items:center;z-index:6;',
+    '  background:transparent;border:1px solid transparent;border-radius:6px;padding:0 1px;}',
+    '.tp-item:hover>.tp-item-tools{background:rgba(255,255,255,.95);border-color:#e4e4e4;',
+    '  padding:0 3px;box-shadow:0 1px 4px rgba(0,0,0,.08);}',
+    '.tp-gbtn{flex:0 0 auto;border:1px solid #e2e2e2;border-radius:6px;background:#fff;color:#888;',
+    '  font:inherit;font-size:10px;line-height:1.4;padding:2px 6px;cursor:pointer;}',
+    '.tp-gbtn:hover{background:#f3f3f3;color:#111;}',
+    '.tp.dark .tp-gbtn{background:#1b1b1e;border-color:#3a3a3f;color:#bbb;}',
+    '.tp-item-grab,.tp-item-del{display:none;}',
+    '.tp-item:hover>.tp-item-tools>.tp-item-grab,.tp-item:hover>.tp-item-tools>.tp-item-del{display:inline-block;}',
     '.tp-item-grab{cursor:grab;opacity:.5;font-size:11px;padding:2px 3px;user-select:none;touch-action:none;}',
     '.tp-item-del{border:none;background:none;cursor:pointer;font-size:10px;opacity:.5;padding:2px 3px;line-height:1;}',
     '.tp-item-grab:hover,.tp-item-del:hover{opacity:1;}',
@@ -230,13 +267,16 @@
     '.tp-modal-msg{font-size:11px;line-height:1.7;white-space:pre-line;margin-bottom:12px;color:#333;}',
     '.tp-btns button.danger{background:#e5485f;border-color:#e5485f;color:#fff;}',
     '.tp-btns button.danger:hover{background:#d63a52;}',
-    '.tp-hint{font-size:10px;line-height:1.55;color:#999;margin:-1px 0 6px 100px;}',
+    /* 行の補足文も既定では出さない（anyflow と同じ）。項目名の吹き出しで読める */
+    '.tp-hint{display:none;font-size:10px;line-height:1.55;color:#999;margin:-1px 0 6px 106px;}',
+    '.tp-hint.keep{display:block;}',
     /* 行 */
-    '.tp-row{display:flex;align-items:center;gap:8px;margin:4px 0;}',
-    '.tp-row>label{flex:0 0 92px;color:#555;font-weight:300;}',
+    '.tp-row{display:flex;align-items:center;gap:6px;margin:2px 0;}',
+    '.tp-row>label{flex:0 0 100px;color:#555;font-weight:300;}',
     '.tp-row input[type=range]{flex:1;accent-color:#090909;min-width:0;}',
-    '.tp-val{flex:0 0 46px;text-align:right;font-variant-numeric:tabular-nums;color:#333;}',
-    '.tp-val-edit{cursor:pointer;border-bottom:1px dashed #bbb;}',
+    '.tp-val{flex:0 0 48px;text-align:right;font-variant-numeric:tabular-nums;color:#333;}',
+    '.tp-val-edit{cursor:pointer;border-bottom:1px dashed transparent;}',
+    '.tp-item:hover .tp-val-edit{border-bottom-color:#bbb;}',
     '.tp-val-edit:hover{color:#000;border-bottom-color:#666;}',
     '.tp-row .tp-val-input{flex:0 0 64px;min-width:0;padding:3px 5px;border:1px solid #0070c9;border-radius:5px;',
     '  font:inherit;text-align:right;background:#fff;color:inherit;}',
@@ -270,7 +310,7 @@
     '.tp-switch.on::after{transform:translateX(16px);}',
     /* ボタン */
     '.tp-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}',
-    '.tp-btns button{flex:1 1 auto;white-space:nowrap;font-family:inherit;font-size:11px;padding:7px 10px;',
+    '.tp-btns button{flex:1 1 auto;white-space:nowrap;font-family:inherit;font-size:11px;padding:0 10px;height:28px;',
     '  border-radius:6px;border:1px solid #d8d8d8;background:#fff;cursor:pointer;transition:background .2s;color:#101828;}',
     '.tp-btns button:hover{background:#f2f2f2;}',
     '.tp-btns button.primary{background:#090909;color:#fff;border-color:#090909;}',
@@ -327,6 +367,7 @@
     this._dirty = false;
     this.autoCenter = cfg.autoCenter !== false;
     this.rows = [];
+    this._itemByKey = {};
     this.catOpen = {};
     this.secOpen = {};
     this.activeTab = null;
@@ -455,6 +496,10 @@
     var title = document.createElement('span');
     title.className = 'tp-title';
     title.textContent = this.cfg.title || '⚙️ 調整パネル';
+    var sub = document.createElement('span');
+    sub.className = 'tp-head-sub';
+    sub.textContent = 'クリックで開く';
+    title.appendChild(sub);
     var chev = document.createElement('span');
     chev.className = 'tp-chev';
     chev.textContent = '▲';
@@ -491,14 +536,23 @@
     head.addEventListener('pointerdown', function (e) {
       if (e.target === chev) return;
       var r = el.getBoundingClientRect();
-      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false };
       head.setPointerCapture(e.pointerId);
     });
     head.addEventListener('pointermove', function (e) {
       if (!drag) return;
+      /* 3px 以上動いたら「移動」とみなす。指やマウスの微妙なブレで
+         開閉が誤爆しないようにするための遊び */
+      if (Math.abs(e.clientX - drag.x0) > 3 || Math.abs(e.clientY - drag.y0) > 3) drag.moved = true;
       self._place(e.clientX - drag.dx, e.clientY - drag.dy);
     });
-    head.addEventListener('pointerup', function () { if (drag) { drag = null; self._saveUI(); } });
+    head.addEventListener('pointerup', function () {
+      if (!drag) return;
+      var moved = drag.moved;
+      drag = null;
+      if (moved) self._saveUI();
+      else self.toggle();   /* 動かさず押しただけなら開閉（anyflow と同じ） */
+    });
 
     /* リサイズ（CSS resize:both）を保存 */
     if (window.ResizeObserver) {
@@ -661,6 +715,7 @@
     this.body.innerHTML = '';
     this.foot.innerHTML = '';
     this.rows = [];
+    this._itemByKey = {};
 
     /* 検索ボックス */
     if (this.cfg.search !== false) {
@@ -731,9 +786,13 @@
         head.className = 'tp-sec-head';
         head.innerHTML = '<span></span><span class="tp-sec-chev">▾</span>';
         head.firstChild.textContent = title;
+        head.firstChild.style.flex = '1 1 auto';
+        head.firstChild.style.minWidth = '0';
         var secBody = document.createElement('div');
         secBody.className = 'tp-sec-body';
         secBody.dataset.okey = key;
+        /* このまとまりの項目を、ひとまとめに既定値へ戻す（anyflow 準拠） */
+        head.insertBefore(self._groupResetBtn(secBody, title), head.lastChild);
         head.addEventListener('click', function () {
           self.secOpen[key] = !sec.classList.toggle('closed');
           self._saveUI();
@@ -802,9 +861,9 @@
       var gchev = document.createElement('span');
       gchev.className = 'tp-grp-chev';
       gchev.textContent = '▾';
-      t.append(tLabel, gchev);
       var gbody = document.createElement('div');
       gbody.className = 'tp-grp-body';
+      t.append(tLabel, this._groupResetBtn(gbody, String(item.sub).replace(/<[^>]*>/g, '')), gchev);
       g.append(t, gbody);
       /* 既定は開いた状態。閉じたものだけ覚える */
       if (this.secOpen[gkey] === false) g.classList.add('closed');
@@ -821,9 +880,17 @@
 
     if (item.note !== undefined) {
       var n = document.createElement('div');
-      n.className = 'tp-note';
+      /* 既定では出さない（anyflow と同じ）。item.keep:true の時だけ常時表示。
+         出していない時は、直前の見出しの吹き出しから読める */
+      n.className = 'tp-note' + (item.keep ? ' keep' : '');
       n.textContent = item.note;
       mount.appendChild(n);
+      if (!item.keep) {
+        var near = mount.parentElement &&
+          (mount.parentElement.querySelector('.tp-grp-title > span:first-child') ||
+           mount.parentElement.querySelector('.tp-sec-head > span:first-child'));
+        if (near) near.title = (near.title ? near.title + '\n' : '') + item.note;
+      }
       return;
     }
     if (item.custom) { item.custom(mount, this); return; }
@@ -836,6 +903,8 @@
     var host = mount;
     var wrapItem = null;
     if (ikey) {
+      if (!this._itemByKey) this._itemByKey = {};
+      this._itemByKey[ikey] = item;   /* まとめて戻す時に引くための索引 */
       wrapItem = document.createElement('div');
       wrapItem.className = 'tp-item';
       wrapItem.dataset.key = ikey;
@@ -856,14 +925,50 @@
 
     if (row && item.hint) {
       var h = document.createElement('div');
-      h.className = 'tp-hint';
+      /* 既定では出さない（anyflow と同じ）。item.keep:true の時だけ常時表示 */
+      h.className = 'tp-hint' + (item.keep ? ' keep' : '');
       h.textContent = item.hint;
       host.appendChild(h);
       row._hint = h;
+      /* 出していない時でも読めるように、項目名の吹き出しに入れておく */
+      if (!item.keep) {
+        var lb = row.querySelector ? row.querySelector('label, .tp-grp-title, .tp-pills-title') : null;
+        if (lb && !lb.title) lb.title = item.hint;
+        else if (!lb && row.title === '') row.title = item.hint;
+      }
     }
     if (row) this.rows.push(row);
     if (row && wrapItem) this._itemTools(wrapItem, item, row);
     else if (wrapItem && !row) { wrapItem.remove(); }
+  };
+
+  /* --- まとまりごとの「↺ まとめて戻す」。2026-09-16 anyflow 準拠 ---
+     中に入っている行を数え、その項目だけを既定値へ戻す。
+     見出しの開閉と取り合わないよう、クリックは止めてから処理する */
+  Panel.prototype._groupResetBtn = function (hostEl, label) {
+    var self = this;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tp-gbtn';
+    b.textContent = '↺';
+    b.title = '「' + label + '」の中を、まとめて最初の値に戻す';
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var keys = [].slice.call(hostEl.querySelectorAll('.tp-item[data-key]'))
+        .map(function (w) { return w.dataset.key; });
+      var n = 0;
+      keys.forEach(function (k) {
+        var it = self._itemByKey[k];
+        if (!it || it.path === undefined) return;
+        self._set(it, clone(self._default(it)));
+        n++;
+      });
+      if (!n) { self.flash('戻せる項目がありませんでした'); return; }
+      self.sync();
+      self._changed({});
+      self.flash('「' + label + '」の' + n + '項目を最初の値に戻しました');
+    });
+    return b;
   };
 
   /* --- 項目ごとのツール（🗑削除・⠿並び替え）。2026-08-23 ヒデさん依頼 --- */
