@@ -6299,8 +6299,11 @@ function cvApplyFade(sec) {
     let _room = 0;
     const _gr = document.getElementById('caseGrid');
     if (_gr) _room = Math.max(0, Math.round(sec.getBoundingClientRect().top - _gr.getBoundingClientRect().bottom - 2));
-    cvRisePx = Math.min(_deep, _room);
-    const _span = cvRisePx + _deep;   /* 溶け込みの総距離: rise(隙間) ＋ deep(本体の中)。サンプル同様、長い距離で徐々に */
+    /* 【2026-09-16 ヒデさん案】お問い合わせを z-index で導入事例の“下”に潜らせ、グラデでカードを淡く染める。
+       cases は z-index:1 で上・pin-vp 透明なので、canvas を余分に上げるとカードの裏でグラデが淡く透ける。 */
+    const _under = Math.max(0, (params.cv && params.cv.underCards != null) ? params.cv.underCards : 0);   /* カードの裏へ潜り込ませる量(px)。0=従来(カード直下で止める) */
+    cvRisePx = Math.min(_deep, _room) + _under;   /* 隙間ぶん＋カードの裏へ潜る分 */
+    const _span = cvRisePx + _deep;   /* 溶け込みの総距離: rise(隙間＋カード裏) ＋ deep(本体の中)。上端ほど淡いので裏はうっすら色味 */
     sec.style.setProperty('--cv-rise', cvRisePx + 'px');
     sec.style.setProperty('--cv-fade0', '0px');
     sec.style.setProperty('--cv-fade1', _span + 'px');
