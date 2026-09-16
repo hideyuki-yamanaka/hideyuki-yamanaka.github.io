@@ -98,12 +98,13 @@
      既定でヘッダーを固定(追従)にする。スクロール状態(.hdr-stuck)で各案の見た目に。
      リビール(rv)がインラインで transform/opacity/filter を触るので、スクロール演出は transform を使わず
      top/padding/背景/margin で作って競合させない。PCのみ(mbは従来)。 */
-  :root { --hdr-radius: 8px; --hdr-top: 14px; --hdr-side: 16px; --hdr-dur: .5s; --hdr-ease: cubic-bezier(.22,.68,.16,1); }
+  /* 【2026-09-17 ヒデさん依頼】スクロール変形を「ゆったり滑らか」に。尺 .5s→.72s、イージングは滑らかな in-out に。 */
+  :root { --hdr-radius: 8px; --hdr-top: 14px; --hdr-side: 16px; --hdr-dur: .72s; --hdr-ease: cubic-bezier(.4,0,.2,1); }
   html:not(.mb).hdr-follow .header {
     position: fixed; top: 0; left: 0; right: 0; padding: 24px 50px; box-sizing: border-box; z-index: 60;
     transition: background var(--hdr-dur) var(--hdr-ease), -webkit-backdrop-filter var(--hdr-dur), backdrop-filter var(--hdr-dur), box-shadow var(--hdr-dur), padding var(--hdr-dur) var(--hdr-ease), top var(--hdr-dur) var(--hdr-ease), left var(--hdr-dur) var(--hdr-ease), right var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), border-radius var(--hdr-dur) var(--hdr-ease);
   }
-  html:not(.mb).hdr-follow .header .logo img { transition: width .28s var(--e-out), height .28s var(--e-out); }
+  html:not(.mb).hdr-follow .header .logo img { transition: width var(--hdr-dur) var(--hdr-ease), height var(--hdr-dur) var(--hdr-ease); }   /* ロゴの縮小も本体と同じ尺で(バラつかず一緒に滑らかに動く) */
   /* 追従で stuck の時は、KVイントロ(rv)がインラインで触る opacity/blur/transform を打ち消して必ず可視に
      (ヒーロー内スクロールでイントロが再生リセットしてもヘッダーが消えないように) */
   html:not(.mb).hdr-follow .header.hdr-stuck { opacity: 1 !important; filter: none !important; transform: none !important; }
@@ -147,7 +148,10 @@
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger { display: block; position: absolute; right: 50px; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; }
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav { overflow: hidden; max-width: 900px; transition: max-width var(--hdr-dur) var(--hdr-ease), opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), filter var(--hdr-dur) var(--hdr-ease); }
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .nav { max-width: 0; opacity: 0; margin: 0; pointer-events: none; }
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { position: static; transform: none; opacity: 1; pointer-events: auto; }
+  /* 【2026-09-17 バグ修正】stuck時は position:relative(static ではなく)。static だとバーガーが位置基準でなくなり、
+     中の position:absolute なバー(span, left:11px/right:11px)がヘッダー(fixed)基準に化けて“全幅の黒い線”に破綻する。
+     relative ならフロー内に残って右寄せは保ちつつ、span の基準がバーガー(44px)に戻る。 */
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { position: relative; transform: none; opacity: 1; pointer-events: auto; }
   /* 6: 全幅ガラスバー(左ロゴ/右バーガー) */
   html:not(.mb).hm-6 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   /* 7: 全幅ソリッド白(左ロゴ/右バーガー) */
@@ -6431,7 +6435,10 @@ function bindHdrScroll() {
   const upd = () => {
     ticking = false;
     const y = window.scrollY || window.pageYOffset || 0;
-    hdr.classList.toggle('hdr-stuck', y > 40);
+    /* 【2026-09-17】ヒステリシス: 発火は 72px、解除は 40px(境目でのちらつき＝連続オンオフを防ぐ)。
+       変形自体は CSS の --hdr-dur(.72s)でゆったり進むので、切替は一度きりで急変しない。 */
+    const wasStuck = hdr.classList.contains('hdr-stuck');
+    hdr.classList.toggle('hdr-stuck', wasStuck ? (y > 40) : (y > 72));
     if (document.documentElement.classList.contains('hm-3') || document.documentElement.classList.contains('hm-15')) {
       if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
       else if (y < lastY - 4 || y <= 160) hdr.classList.remove('hdr-hidden');
