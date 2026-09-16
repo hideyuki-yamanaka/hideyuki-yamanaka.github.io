@@ -60,7 +60,6 @@ export const EVENT_LAYOUT_PATTERNS: Record<
   2: { name: "案2", note: "育つ一列（縦書き見出し）。案1と同じ育ち方で、見出しを縦書きに" },
   3: { name: "案3", note: "中央から開く一列。内側に寄っていた4枚が、外へ広がりながら育つ" },
   4: { name: "案4", note: "縦に伸びる一列。低い帯から上下に開いて、背の高い写真になる" },
-  9: { name: "案9", note: "上下にほどける。重なりが上下にずれて開く（扇の縦版）" },
   /* 【2026-09-16 ヒデさん依頼】「デザインを改めて考えてほしい。見飽きない
      ユニークなインタラクションと、写真を魅力的に見せるもの。10案」→ 案11〜20。
      中身は EventVariants2.tsx */
@@ -188,9 +187,6 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
     case 4:
       return <TallGrowRow p={p} />;
 
-    /* 案9 上下にほどける：重なりが上下にずれて開く */
-    case 9:
-      return <FanVertical p={p} />;
 
     /* 案11・16=Variants2 ／ 21〜30=Variants3 ／ 31〜33=Variants4 ／ 34・35=Variants5 */
     default:
@@ -199,45 +195,6 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
       if (pat >= 21) return <ExtraPattern3 pat={pat} p={p} />;
       return <ExtraPattern pat={pat} p={p} />;
   }
-}
-
-/* 案9 上下にほどける */
-function FanVertical({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full items-start gap-8 sm:gap-[69px] px-6 sm:px-[120px]">
-      <VTitle className="mt-[40px]" />
-      <div className="relative h-[620px] min-w-0 flex-1">
-        {ITEMS.map((it, i) => (
-          <VFanCard key={it.title} it={it} i={i} open={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
-function VFanCard({
-  it,
-  i,
-  open,
-}: {
-  it: EventItem;
-  i: number;
-  open: MotionValue<number>;
-}) {
-  const xs = [-480, -160, 160, 480];
-  const ys = [40, -40, 40, -40];
-  const x = useTransform(open, [0, 1], [0, xs[i]]);
-  const y = useTransform(open, [0, 1], [0, ys[i]]);
-  const s = useTransform(open, [0, 1], [0.78, 1]);
-  return (
-    <motion.div
-      className="absolute left-1/2 top-[40px] h-[460px] w-[300px]"
-      style={{ x, y, scale: s, marginLeft: -150, zIndex: 10 - i }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
 }
 
 /* 案3 中央から左右へ開く一列 */

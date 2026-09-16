@@ -1210,6 +1210,30 @@
     if (!v.hidden[k]) v.hidden[k] = [];
     if (!v.fav[k]) v.fav[k] = [];
     if (!v.ov[k]) v.ov[k] = {};
+
+    /* 【2026-09-17 ヒデさん指摘】「消した案を戻す (22)」の数が、
+       コードから恒久削除しても減らずに溜まりっぱなしになる。
+       原因：消した控え（hidden）に値だけを残していて、その案がコードから
+       無くなっても控えが残り続けていた。
+       → ここで「いま存在しない案」を控えから捨てる。
+         ピン留め（fav）と上書きの控え（ov）も同じ理由で掃除する。
+         恒久削除したぶんは、次にパネルを開いた時点で自動的に 0 に戻る */
+    if (item && item.options) {
+      var known = {};
+      item.options.forEach(function (o) { known[String(o.value)] = 1; });
+      var dirty = false;
+      ['hidden', 'fav'].forEach(function (kk) {
+        var a = v[kk][k];
+        for (var i = a.length - 1; i >= 0; i--) {
+          if (!known[a[i]]) { a.splice(i, 1); dirty = true; }
+        }
+      });
+      Object.keys(v.ov[k]).forEach(function (kk) {
+        if (!known[kk]) { delete v.ov[k][kk]; dirty = true; }
+      });
+      if (dirty) this._saveVars();
+    }
+
     return { key: k, hidden: v.hidden[k], fav: v.fav[k], ov: v.ov[k] };
   };
 

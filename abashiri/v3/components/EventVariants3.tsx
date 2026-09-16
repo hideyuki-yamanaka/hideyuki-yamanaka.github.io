@@ -3,19 +3,14 @@
 /* eslint-disable @next/next/no-img-element */
 /*
  * 体験セクション｜さらに追加した案（もとは案21〜30 の10案。
- * 2026-09-16 ヒデさんの選定で 26・27・28 は完全削除し、7案が残っている）
+ * 2026-09-16〜17 のヒデさんの選定で 21・23〜28・30 は完全削除し、22 と 29 が残っている）
  * 2026-09-16 ヒデさん依頼。ご指定のアイデアと、没入・3Dの案を混ぜてある。
  *
- *   21 机の上           真っ白な画面に、写真が机にパンパンと置かれたように散っている。
  *                       スクロールするごとに1枚ずつ右へはけて、次の場面が出てくる【ご指定】
  *   22 四方に散る       中央に「意外とオモロい、網走。」をジャンプ率高めで置き、その後ろから
  *                       スケール0の写真がランダムな方向へゆったり散る。画面外へは出ない。
  *                       ブロークングリッドの位置でホバーカードとして選べる【ご指定】
- *   23 曲がる帯         写真が1枚の帯になってゆるく湾曲。奥行きのある3Dで手前に迫ってくる
- *   24 めくれる紙       4枚がカードのように奥から起き上がって正面を向く（rotateX）
- *   25 回る柱           4枚が円柱の面に貼られていて、スクロールで柱がゆっくり回る
  *   29 のぞき穴         白い面に丸い穴が開いていて、穴が広がると写真が全部見える
- *   30 重ねて配る       中央で重なっていた4枚が、トランプを配るように順に置かれる
  *
  * 全案の約束（EventSection.tsx から引き継ぎ）
  *   ・動かすのは transform / opacity / clip-path だけ。width・height は毎フレーム変えない
@@ -41,13 +36,8 @@ export const EVENT_EXTRA3_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  21: { name: "案21 机の上", note: "真っ白な画面に、写真が机にパンパンと置かれたように少しずつ傾いて散っている。スクロールするごとに1枚ずつ右へはけて、次の写真が出てくる" },
   22: { name: "案22 四方に散る", note: "中央に大きく「意外とオモロい、網走。」。その後ろからスケール0の写真がゆったり四方へ散り、ばらけた位置（ブロークングリッド）で止まる。触ると持ち上がって選べる" },
-  23: { name: "案23 曲がる帯", note: "4枚が1本の帯につながって、ゆるく湾曲しながら手前に迫ってくる。3Dの奥行きで真ん中がいちばん近い" },
-  24: { name: "案24 めくれる紙", note: "奥に倒れていた4枚が、紙が起き上がるように正面を向く（横軸の回転）。立ち上がりきった時がいちばん良く見える" },
-  25: { name: "案25 回る柱", note: "4枚が見えない円柱の面に貼られていて、スクロールに合わせて柱がゆっくり回る。奥の写真は小さく暗く見える" },
   29: { name: "案29 のぞき穴", note: "白い面に小さな丸い穴が開いていて、そこから写真が見えている。スクロールで穴が広がり、全部が見える" },
-  30: { name: "案30 重ねて配る", note: "中央で重なっていた4枚が、トランプを配るように1枚ずつ定位置へ置かれる。置かれるたび少し傾く" },
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -55,67 +45,6 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 /** 大見出し（白い面の案で共通）。中央に置く形も用意する */
 function Head({ center = false }: { center?: boolean }) {
   return <HTitle className={center ? "text-center" : "px-6 sm:px-[147px]"} />;
-}
-
-/* ═══════════ 案21 机の上 ═══════════
-   【ヒデさん指定】「真っ白な画面で、カードが積み重なった形。写真が机の上に
-     パンパンパンってランダムに置いてあるような形。スクロールするごとに
-     写真が右にはけて、次の場面が出てくる」
-   → 4枚を少しずつずらして重ね置き。スクロールが進むごとに、上の1枚が
-     右へすーっとはけて、下の1枚が主役になる */
-function OnTheDesk({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 bg-white sm:gap-[90px]">
-      <Head />
-      <div className="relative mx-auto h-[620px] w-[1100px] max-w-[92%]">
-        {ITEMS.map((it, i) => (
-          <DeskCard key={it.title} it={it} i={i} p={p} />
-        ))}
-      </div>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function DeskCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  /* 机に置いた時の、ちょっとずつ違う置き方 */
-  const spot = [
-    { x: -24, y: -14, r: -3.4 },
-    { x: 18, y: 6, r: 2.2 },
-    { x: -10, y: 18, r: -1.4 },
-    { x: 26, y: -6, r: 3.1 },
-  ][i];
-  /* はける順番：上に乗っている（＝i が大きい）ものから右へ消えていく */
-  const order = ITEMS.length - 1 - i;
-  const from = Math.min(0.9, 0.16 + order * 0.2);
-  const to = Math.min(1, from + 0.18);
-  /* いちばん下の1枚は最後まで残す */
-  const last = i === 0;
-  const x = useTransform(p, [from, to], [spot.x, last ? spot.x : 1180]);
-  const rot = useTransform(p, [from, to], [spot.r, last ? spot.r : 9]);
-  const o = useTransform(p, [from, to], [1, last ? 1 : 0]);
-  return (
-    <motion.div
-      className="absolute left-1/2 top-1/2 h-[560px] w-[400px]"
-      style={{
-        x,
-        y: spot.y,
-        rotate: rot,
-        opacity: o,
-        marginLeft: -200,
-        marginTop: -280,
-        zIndex: i + 1,
-        boxShadow: "0 18px 50px rgba(0,0,0,.14)",
-      }}
-    >
-      <CardLink it={it} className="size-full bg-white">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
 }
 
 /* ═══════════ 案22 四方に散る ═══════════
@@ -205,171 +134,6 @@ function ScatterCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<nu
   );
 }
 
-/* ── 3D の土台 ──────────────────────────────
-   ⚠️ 3D の箱に overflow-hidden を掛けると奥行きが潰れる。
-      はみ出しは【外側の枠】で切る（section 側に overflow-x-clip がある） */
-function Deep({
-  children,
-  perspective = 1400,
-  className = "",
-}: {
-  children: React.ReactNode;
-  perspective?: number;
-  className?: string;
-}) {
-  return (
-    <div
-      className={className}
-      style={{ perspective: `${perspective}px`, transformStyle: "preserve-3d" }}
-    >
-      {children}
-    </div>
-  );
-}
-
-/* ═══════════ 案23 曲がる帯 ═══════════
-   4枚が1本の帯につながって、ゆるく湾曲しながら手前に迫ってくる。
-   真ん中の2枚がいちばん近く、両端が奥へ逃げる */
-function BentStrip({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <Head />
-      <Deep className="flex w-full justify-center" perspective={1100}>
-        <div className="flex" style={{ transformStyle: "preserve-3d" }}>
-          {ITEMS.map((it, i) => (
-            <BendCard key={it.title} it={it} i={i} p={p} />
-          ))}
-        </div>
-      </Deep>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function BendCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  /* 帯を曲げる：内側ほど手前（Zが大きい）、外側ほど内向きに回る */
-  const rotY = [26, 9, -9, -26][i];
-  const z = [-150, 0, 0, -150][i];
-  const ry = useTransform(p, [0, 0.7], [0, rotY]);
-  const tz = useTransform(p, [0, 0.7], [-420, z]);
-  const o = useTransform(p, [0, 0.35], [0.25, 1]);
-  return (
-    <motion.div
-      className="h-[520px] w-[330px] shrink-0"
-      style={{
-        rotateY: ry,
-        z: tz,
-        opacity: o,
-        transformStyle: "preserve-3d",
-        boxShadow: "0 24px 60px rgba(0,0,0,.18)",
-      }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
-/* ═══════════ 案24 めくれる紙 ═══════════
-   奥に倒れていた4枚が、紙が起き上がるように正面を向く（横軸の回転） */
-function PaperFlip({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <Head />
-      <Deep className="flex w-full justify-center gap-[10px] px-4 sm:px-[40px]" perspective={1500}>
-        {ITEMS.map((it, i) => (
-          <FlipCard key={it.title} it={it} i={i} p={p} />
-        ))}
-      </Deep>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function FlipCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  const from = Math.min(0.5, i * 0.07);
-  const rx = useTransform(p, [from, 0.72], [-72, 0]);
-  const ty = useTransform(p, [from, 0.72], [90, 0]);
-  const o = useTransform(p, [from, from + 0.2], [0, 1]);
-  return (
-    <motion.div
-      className="h-[560px] min-w-0 flex-1"
-      style={{
-        rotateX: rx,
-        y: ty,
-        opacity: o,
-        transformOrigin: "bottom center",
-        transformStyle: "preserve-3d",
-        boxShadow: "0 22px 56px rgba(0,0,0,.16)",
-      }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
-/* ═══════════ 案25 回る柱 ═══════════
-   4枚が見えない円柱の面に貼られていて、スクロールで柱がゆっくり回る */
-function TurnColumn({ p }: { p: MotionValue<number> }) {
-  const rot = useTransform(p, [0, 1], [-46, 46]);
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <Head />
-      <Deep className="flex h-[600px] w-full items-center justify-center" perspective={1600}>
-        <motion.div
-          className="relative size-0"
-          style={{ rotateY: rot, transformStyle: "preserve-3d" }}
-        >
-          {ITEMS.map((it, i) => (
-            <ColumnFace key={it.title} it={it} i={i} p={p} />
-          ))}
-        </motion.div>
-      </Deep>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function ColumnFace({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  /* 円柱のまわりに4面。半径 620px */
-  const angle = -33 + i * 22;
-  const s = useTransform(p, [0, 0.4], [0.8, 1]);
-  return (
-    <motion.div
-      className="absolute left-0 top-0 h-[520px] w-[330px]"
-      style={{
-        scale: s,
-        marginLeft: -165,
-        marginTop: -260,
-        transform: `rotateY(${angle}deg) translateZ(620px)`,
-        transformStyle: "preserve-3d",
-        boxShadow: "0 24px 60px rgba(0,0,0,.2)",
-      }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-      {/* 奥へ回った面は暗くなる（円柱らしさ） */}
-      <span
-        className="pointer-events-none absolute inset-0 bg-ink"
-        style={{ opacity: Math.abs(angle) / 140 }}
-      />
-    </motion.div>
-  );
-}
-
 /* ═══════════ 案29 のぞき穴 ═══════════
    白い面に小さな丸い穴が開いていて、そこから写真が見えている。
    スクロールで穴が広がって全部が見える */
@@ -414,70 +178,13 @@ function HoleCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<numbe
   );
 }
 
-/* ═══════════ 案30 重ねて配る ═══════════
-   中央で重なっていた4枚が、トランプを配るように1枚ずつ定位置へ置かれる */
-function DealOut({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 bg-white sm:gap-[90px]">
-      <Head />
-      <div className="relative mx-auto h-[600px] w-[1360px] max-w-[94%]">
-        {ITEMS.map((it, i) => (
-          <DealCard key={it.title} it={it} i={i} p={p} />
-        ))}
-      </div>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function DealCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  const slot = [-510, -170, 170, 510][i];
-  const tilt = [-2.6, 1.6, -1.2, 2.4][i];
-  const from = Math.min(0.55, 0.05 + i * 0.13);
-  const to = Math.min(1, from + 0.26);
-  const x = useTransform(p, [from, to], [0, slot]);
-  const rot = useTransform(p, [from, to], [0, tilt]);
-  const o = useTransform(p, [from, from + 0.08], [0, 1]);
-  return (
-    <motion.div
-      className="absolute left-1/2 top-1/2 h-[540px] w-[320px]"
-      style={{
-        x,
-        rotate: rot,
-        opacity: o,
-        marginLeft: -160,
-        marginTop: -270,
-        zIndex: 10 - i,
-        boxShadow: "0 18px 50px rgba(0,0,0,.16)",
-      }}
-    >
-      <CardLink it={it} className="size-full bg-white">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
-/** 案21〜30 の入口。EventSection から番号で呼ばれる */
+/** 案22・29 の入口。EventSection から番号で呼ばれる */
 export function ExtraPattern3({ pat, p }: { pat: number; p: MotionValue<number> }) {
   switch (pat) {
-    case 21:
-      return <OnTheDesk p={p} />;
     case 22:
       return <ScatterOut p={p} />;
-    case 23:
-      return <BentStrip p={p} />;
-    case 24:
-      return <PaperFlip p={p} />;
-    case 25:
-      return <TurnColumn p={p} />;
     case 29:
       return <Keyhole p={p} />;
-    case 30:
-      return <DealOut p={p} />;
     default:
       return null;
   }
