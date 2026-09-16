@@ -177,7 +177,19 @@ type Params = {
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
-  footer: { pattern: number; layout: number };
+  footer: {
+    pattern: number;
+    layout: number;
+    padX: number;
+    padBottom: number;
+    colGap: number;
+    mapGapX: number;
+    mapGapY: number;
+    headGap: number;
+    itemGap: number;
+    logoGap: number;
+    logoH: number;
+  };
   expIntro: IntroPace;
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
@@ -233,7 +245,21 @@ export default function TopTunePanel({
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
-      footer: { pattern: 1, layout: 1 }, /* フッター（階層＝A罫線／組み＝Aゆったり2カラム） */
+      /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
+         余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
+      footer: {
+        pattern: 1,
+        layout: 1,
+        padX: 160,
+        padBottom: 110,
+        colGap: 140,
+        mapGapX: 40,
+        mapGapY: 48,
+        headGap: 16,
+        itemGap: 10,
+        logoGap: 36,
+        logoH: 260,
+      },
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -260,6 +286,18 @@ export default function TopTunePanel({
       root.style.setProperty("--bird-opacity", String(params.bird.opacity / 100));
       root.style.setProperty("--bird-color", params.bird.color);
       root.style.setProperty("--bird-stroke", String(params.bird.stroke / 100));
+      /* フッターの余白・間隔（2026-09-16 ヒデさん依頼）。
+         React を通さず CSS 変数を直接書き換えるので、つまみを動かすとその場で動く */
+      const f = params.footer;
+      root.style.setProperty("--ft-pad-x", `${f.padX}px`);
+      root.style.setProperty("--ft-pad-bottom", `${f.padBottom}px`);
+      root.style.setProperty("--ft-col-gap", `${f.colGap}px`);
+      root.style.setProperty("--ft-map-gap-x", `${f.mapGapX}px`);
+      root.style.setProperty("--ft-map-gap-y", `${f.mapGapY}px`);
+      root.style.setProperty("--ft-head-gap", `${f.headGap}px`);
+      root.style.setProperty("--ft-item-gap", `${f.itemGap}px`);
+      root.style.setProperty("--ft-logo-gap", `${f.logoGap}px`);
+      root.style.setProperty("--ft-logo-h", `${f.logoH}px`);
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -484,6 +522,91 @@ export default function TopTunePanel({
                   swatch: "#0070c9",
                   desc: p.note,
                 })),
+              },
+              { sub: "余白と間隔", deep: true },
+              {
+                note: "つまみを動かすとその場で動きます（PC幅のときの値。スマホは詰めた固定値です）。",
+              },
+              {
+                slider: "左右の余白",
+                path: "footer.padX",
+                min: 24,
+                max: 280,
+                step: 4,
+                fmt: "px",
+                hint: "フッター全体の左右の余白。広いほどゆったり",
+              },
+              {
+                slider: "下の余白",
+                path: "footer.padBottom",
+                min: 24,
+                max: 240,
+                step: 4,
+                fmt: "px",
+                hint: "中身と画面の下端の間",
+              },
+              {
+                slider: "左右カラムの間",
+                path: "footer.colGap",
+                min: 24,
+                max: 360,
+                step: 4,
+                fmt: "px",
+                hint: "作字（左）とサイトマップ（右）の間。組みBでは上下の間隔になります",
+              },
+              {
+                slider: "親どうしの左右の間",
+                path: "footer.mapGapX",
+                min: 8,
+                max: 160,
+                step: 2,
+                fmt: "px",
+                hint: "「ぼーっとスポット」「素朴なグルメ」…の列どうしの間",
+              },
+              {
+                slider: "親どうしの上下の間",
+                path: "footer.mapGapY",
+                min: 8,
+                max: 160,
+                step: 2,
+                fmt: "px",
+                hint: "列が2段になった時（組みC・スマホ）の上下の間",
+              },
+              {
+                slider: "親と子の間",
+                path: "footer.headGap",
+                min: 0,
+                max: 64,
+                step: 2,
+                fmt: "px",
+                hint: "大カテゴリの見出しと、その下の一覧の間",
+              },
+              {
+                slider: "子どうしの間",
+                path: "footer.itemGap",
+                min: 0,
+                max: 40,
+                step: 1,
+                fmt: "px",
+                hint: "一覧の行と行の間",
+              },
+              {
+                slider: "作字ロゴの大きさ",
+                path: "footer.logoH",
+                min: 80,
+                max: 420,
+                step: 5,
+                fmt: "px",
+                hint: "左カラムの作字ロゴの高さ（PC幅のとき）。スマホは150px固定",
+              },
+              {
+                slider: "作字とSNSの間",
+                path: "footer.logoGap",
+                min: 0,
+                max: 120,
+                step: 2,
+                fmt: "px",
+                hint: "左カラムの作字ロゴと、その下のSNSアイコンの間",
               },
             ],
           },

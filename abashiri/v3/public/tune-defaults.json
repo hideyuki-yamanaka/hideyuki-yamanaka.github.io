@@ -119,6 +119,26 @@
   "speed": 40,
   "pauseOnHover": true
  },
+ "events": {
+  "pattern": 1,
+  "tailPad": 0
+ },
+ "pageTrans": {
+  "pattern": 1
+ },
+ "footer": {
+  "pattern": 1,
+  "layout": 1,
+  "padX": 160,
+  "padBottom": 110,
+  "colGap": 140,
+  "mapGapX": 40,
+  "mapGapY": 48,
+  "headGap": 16,
+  "itemGap": 10,
+  "logoGap": 36,
+  "logoH": 260
+ },
  "expIntro": {
   "startDelay": 0.8,
   "stagger": 0.35,
@@ -152,16 +172,5 @@
   "cycle": 8,
   "show": 2.6,
   "swayFirst": true
- },
- "events": {
-  "pattern": 1,
-  "tailPad": 0
- },
- "pageTrans": {
-  "pattern": 1
- },
- "footer": {
-  "pattern": 1,
-  "layout": 1
  }
 }

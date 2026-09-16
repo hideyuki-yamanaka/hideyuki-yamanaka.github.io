@@ -298,8 +298,10 @@ function PhotoStage({
       {/* ③ フッターの中身は写真の上 */}
       <div
         className={`absolute inset-x-0 bottom-0 flex flex-col ${
-          pad === "wide" ? "px-6 sm:px-[100px] lg:px-[160px]" : "px-6 sm:px-[120px]"
-        } ${align === "end" ? "justify-end pb-[72px] sm:pb-[110px]" : "justify-center"}`}
+          pad === "wide"
+            ? "px-6 sm:px-[var(--ft-pad-x)]"
+            : "px-6 sm:px-[120px]"
+        } ${align === "end" ? "justify-end pb-[72px] sm:pb-[var(--ft-pad-bottom)]" : "justify-center"}`}
         style={{ height: H }}
       >
         {children}
@@ -339,16 +341,16 @@ function MapColumn({
   /* 子のまとまりの飾り */
   const listCls =
     level === 1
-      ? "mt-4 flex flex-col gap-2.5 pl-4"
+      ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-4"
       : level === 2
-        ? `mt-4 flex flex-col gap-2.5 border-l pl-4 ${line}`
+        ? `mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] border-l pl-4 ${line}`
         : level === 3
-          ? "mt-3 flex flex-col gap-2"
+          ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]"
           : level === 4
-            ? "mt-4 flex flex-col gap-2.5"
+            ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]"
             : level === 5
-              ? "mt-5 flex flex-col gap-2.5 pl-1"
-              : "mt-4 flex flex-col gap-2.5 pl-5";
+              ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-1"
+              : "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-5";
   const headCls = level === 1 ? `border-b pb-3 ${line}` : "";
 
   const HeadInner = col.href ? (
@@ -442,10 +444,10 @@ function SiteMapGrid({
 }) {
   return (
     <div
-      className={`grid w-full gap-y-12 ${
+      className={`grid w-full gap-y-[var(--ft-map-gap-y)] ${
         cols === 4
-          ? "grid-cols-2 gap-x-8 sm:grid-cols-4 sm:gap-x-10"
-          : "grid-cols-2 gap-x-12 sm:gap-x-[72px]"
+          ? "grid-cols-2 gap-x-8 sm:grid-cols-4 sm:gap-x-[var(--ft-map-gap-x)]"
+          : "grid-cols-2 gap-x-8 sm:gap-x-[var(--ft-map-gap-x)]"
       }`}
     >
       {SITEMAP.map((c) => (
@@ -460,7 +462,7 @@ function SiteMapGrid({
 function Body({ pat, layout }: { pat: number; layout: number }) {
   /* 左の作字。サイトの顔なので大きく出す（2026-09-16 ヒデさん指示） */
   const logo = (cls: string) => (
-    <div className="flex shrink-0 flex-col items-start gap-9">
+    <div className="flex shrink-0 flex-col items-start gap-[var(--ft-logo-gap)]">
       <Logo cls={`${cls} self-start`} light />
       <SnsRow light size={18} />
     </div>
@@ -470,8 +472,8 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
   if (layout === 2) {
     return (
       <PhotoStage align="end" pad="wide">
-        <div className="flex w-full flex-col gap-[72px]">
-          {logo("h-[140px] sm:h-[240px]")}
+        <div className="flex w-full flex-col gap-[var(--ft-col-gap)]">
+          {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
           <SiteMapGrid light level={pat} />
         </div>
       </PhotoStage>
@@ -483,8 +485,8 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
   if (layout === 3) {
     return (
       <PhotoStage align="end" pad="wide">
-        <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[120px]">
-          {logo("h-[150px] sm:h-[270px]")}
+        <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
+          {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
           <div className="min-w-0 flex-1">
             <SiteMapGrid light level={pat} cols={2} />
           </div>
@@ -497,8 +499,8 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
      作字〜サイトマップの間隔を広げて窮屈さを取る */
   return (
     <PhotoStage align="end" pad="wide">
-      <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[140px]">
-        {logo("h-[150px] sm:h-[260px]")}
+      <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
+        {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
         <div className="min-w-0 flex-1">
           <SiteMapGrid light level={pat} />
         </div>
