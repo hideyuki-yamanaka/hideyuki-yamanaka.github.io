@@ -211,6 +211,8 @@
     '.tp-pset{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px;}',
     '.tp-pset-lab{flex:0 0 auto;font-size:11px;line-height:22px;color:#999;}',
     '.tp-pset-chip{display:inline-flex;align-items:stretch;border:1px solid #e2e2e2;border-radius:999px;',
+    '.tp-pset-chip.on{border-color:#0EBBFF;box-shadow:0 0 0 1px #0EBBFF inset;}',
+    '.tp-pset-chip.on .tp-pset-name{color:#0a86b8;font-weight:600;}',
     '  overflow:hidden;background:#fff;}',
     '.tp-pset-name{border:0;background:transparent;padding:3px 4px 3px 11px;font:inherit;font-size:11px;',
     '  color:#333;cursor:pointer;max-width:128px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
@@ -302,6 +304,41 @@
     '.tp-pill.on{background:#090909;color:#fff;border-color:#090909;}',
     '.tp-swatch{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.08);}',
     '.tp-desc{margin:4px 0 6px;color:#777;font-weight:300;font-size:11px;}',
+    /* ★ピン留めの別セクション（anyflow 準拠） */
+    '.tp-favhead{font-size:10.5px;color:#999;margin:6px 0 0;}',
+    '.tp-favrow{margin-top:3px;}',
+    '.tp-pill.fav{border-color:#0EBBFF;}',
+    '.tp-pill.fav.on{border-color:#090909;}',
+    /* 案ごとの「⋯」。ピルの右端に小さく。触れた時だけはっきり出す */
+    '.tp-var-x{border:0;background:transparent;color:#bbb;font:inherit;font-size:12px;line-height:1;',
+    '  padding:0 0 0 4px;margin-left:2px;cursor:pointer;opacity:.45;border-radius:4px;}',
+    '.tp-pill:hover .tp-var-x{opacity:1;}',
+    '.tp-pill.on .tp-var-x{color:rgba(255,255,255,.75);opacity:.8;}',
+    '.tp-var-x:hover{color:#d94141;background:rgba(0,0,0,.06);}',
+    '.tp-pill.on .tp-var-x:hover{color:#fff;background:rgba(255,255,255,.22);}',
+    '.tp-pill.tp-var-back{border-style:dashed;color:#888;}',
+    '.tp-pill.tp-var-back:hover{color:#111;border-color:#999;}',
+    /* 確認・選択ダイアログ */
+    '.tp-mdl-bg{position:fixed;inset:0;z-index:2147483003;background:rgba(20,22,30,.38);',
+    '  display:flex;align-items:center;justify-content:center;padding:20px;}',
+    '.tp-mdl{width:320px;max-width:100%;background:#fff;border-radius:12px;padding:18px 18px 14px;',
+    '  box-shadow:0 18px 50px rgba(0,0,0,.28);',
+    '  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;color:#101828;}',
+    '.tp-mdl h4{margin:0 0 6px;font-size:13px;font-weight:600;}',
+    '.tp-mdl p{margin:0 0 12px;font-size:11px;line-height:1.7;color:#666;}',
+    '.tp-mdl-list{max-height:240px;overflow-y:auto;margin:0 0 12px;border:1px solid #ececec;border-radius:8px;}',
+    '.tp-mdl-li{display:flex;align-items:center;justify-content:space-between;gap:8px;',
+    '  padding:7px 10px;border-bottom:1px solid #f2f2f2;font-size:11px;}',
+    '.tp-mdl-li:last-child{border-bottom:none;}',
+    '.tp-mdl-li button{border:1px solid #e2e2e2;border-radius:6px;background:#fff;font:inherit;font-size:10.5px;',
+    '  padding:3px 10px;cursor:pointer;color:#444;}',
+    '.tp-mdl-li button:hover{background:#f3f3f3;color:#111;}',
+    '.tp-mdl-btns{display:flex;gap:8px;justify-content:flex-end;}',
+    '.tp-mdl-btns button{border:1px solid #e2e2e2;border-radius:7px;background:#fff;font:inherit;font-size:11px;',
+    '  height:30px;padding:0 14px;cursor:pointer;color:#444;}',
+    '.tp-mdl-btns button:hover{background:#f3f3f3;color:#111;}',
+    '.tp-mdl-btns button.danger{background:#d94141;border-color:#d94141;color:#fff;}',
+    '.tp-mdl-btns button.danger:hover{background:#c23636;}',
     /* スイッチ */
     '.tp-switch{position:relative;width:36px;height:20px;flex:0 0 36px;border-radius:999px;background:#d8d8d8;',
     '  border:none;cursor:pointer;transition:background .2s;padding:0;}',
@@ -392,12 +429,16 @@
 
   Panel.prototype._loadParams = function () {
     if (!this.storageKey) return;
-    /* 古いバージョンの保存値は掃除する（＝バージョンを上げれば必ず新しい初期値で出る） */
+    /* 古いバージョンの保存値は掃除する（＝バージョンを上げれば必ず新しい初期値で出る）
+       ⚠️ 2026-09-16 の不具合：'tp:<キー>:v' で前方一致させていたため、
+          案の隠し／ピン留めを入れている 'tp:<キー>:variants' まで毎回消えていた
+          （保存はされるのにリロードで戻る、という症状）。
+          数字つきのバージョン鍵だけを対象にする */
     try {
-      var prefix = 'tp:' + this.storageKey + ':v';
+      var vRe = new RegExp('^tp:' + this.storageKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':v\\d+$');
       for (var i = localStorage.length - 1; i >= 0; i--) {
         var k = localStorage.key(i);
-        if (k && k.indexOf(prefix) === 0 && k !== this._pKey()) localStorage.removeItem(k);
+        if (k && vRe.test(k) && k !== this._pKey()) localStorage.removeItem(k);
       }
       var raw = localStorage.getItem(this._pKey());
       if (raw) assignDeep(this.params, mergeSaved(this.defaults, JSON.parse(raw)));
@@ -644,7 +685,7 @@
 
   Panel.prototype._markDirty = function (on) {
     this._dirty = !!on;
-    if (this._saveBtn) this._saveBtn.classList.toggle('dirty', this._dirty);
+    this._syncSaveBtn();
   };
 
   Panel.prototype._changed = function (info) {
@@ -1255,46 +1296,199 @@
   };
 
   /* --- ピル（案の切替） --- */
+  /* ============================================================
+     案（バリエーション）のピル。2026-09-16 に anyflow の
+     バリエーション行と同じ仕様へ作り替えた。
+       ・★ ピン留め ……… よく使う案を上の別セクションへ出す
+       ・⤓ 上書き ……… その案を選んだ時に、いまのつまみの値ごと再現する
+       ・🗑 削除 ………… 一覧から隠す（確認モーダル。あとで戻せる）
+       ・↺ 消した案を戻す … 隠した案を1つずつ選んで戻す
+     隠し／ピン／上書きの控えは params とは別の保存場所に置く
+     （つまみの値そのものではなく「見せ方」なので、混ぜると焼き込みが濁る）
+     ============================================================ */
+
+  Panel.prototype._vKey = function () { return 'tp:' + this.storageKey + ':variants'; };
+
+  Panel.prototype._vars = function () {
+    if (this._varCache) return this._varCache;
+    var v = null;
+    if (this.storageKey) {
+      try { v = JSON.parse(localStorage.getItem(this._vKey())); } catch (e) {}
+    }
+    if (!v || typeof v !== 'object') v = {};
+    if (!v.hidden) v.hidden = {};
+    if (!v.fav) v.fav = {};
+    if (!v.ov) v.ov = {};
+    this._varCache = v;
+    return v;
+  };
+
+  Panel.prototype._saveVars = function () {
+    if (!this.storageKey) return;
+    try { localStorage.setItem(this._vKey(), JSON.stringify(this._vars())); } catch (e) {}
+  };
+
+  /* その項目の「隠している案 / ピン留め / 上書きの控え」を取り出す小道具 */
+  Panel.prototype._vBucket = function (item) {
+    var v = this._vars();
+    var k = item.path || ('k:' + (item.pills || ''));
+    if (!v.hidden[k]) v.hidden[k] = [];
+    if (!v.fav[k]) v.fav[k] = [];
+    if (!v.ov[k]) v.ov[k] = {};
+    return { key: k, hidden: v.hidden[k], fav: v.fav[k], ov: v.ov[k] };
+  };
+
   Panel.prototype._pills = function (item, mount) {
     var self = this;
     this._validateEnum(item);
+    var B = this._vBucket(item);
     var wrap = document.createElement('div');
     if (item.pills) {
       var t = document.createElement('div');
-      t.className = 'tp-grp-title';
+      t.className = 'tp-grp-title tp-pills-title';
       t.style.marginBottom = '2px';
       t.textContent = item.pills;
       wrap.appendChild(t);
     }
+    /* ★ピン留めは上の別セクションへ（anyflow と同じ。通常の案に紛れさせない） */
+    var favHead = document.createElement('div');
+    favHead.className = 'tp-favhead';
+    favHead.textContent = '★ ピン留め';
+    var favRow = document.createElement('div');
+    favRow.className = 'tp-pills tp-favrow';
     var rowEl = document.createElement('div');
     rowEl.className = 'tp-pills';
     var desc = document.createElement('div');
     desc.className = 'tp-desc';
 
-    (item.options || []).forEach(function (o) {
+    var K = function (v) { return String(v); };
+    var alive = function () {
+      return (item.options || []).filter(function (o) { return B.hidden.indexOf(K(o.value)) < 0; });
+    };
+    var isFav = function (o) { return B.fav.indexOf(K(o.value)) >= 0; };
+
+    var choose = function (o) {
+      self._set(item, o.value);
+      /* 上書きの控えがある案なら、その時のつまみの値ごと戻す */
+      var ov = B.ov[K(o.value)];
+      if (ov) assignDeep(self.params, clone(ov));
+      self._changed({ item: item, path: item.path, value: o.value, immediate: true });
+      if (ov) { self.sync(); self._markDirty(true); }
+      fill();
+      if (item.rebuild !== false && (typeof self.cfg.schema === 'function' || item.rebuild)) self.rebuild();
+    };
+
+    var menuFor = function (anchor, o) {
+      var label = o.name;
+      var items = [];
+      var fav = isFav(o);
+      items.push([fav ? '★ ピン留めを解除（元の位置に戻す）' : '★ お気に入りにピン留め', function () {
+        if (fav) B.fav.splice(B.fav.indexOf(K(o.value)), 1);
+        else B.fav.push(K(o.value));
+        self._saveVars(); fill();
+      }]);
+      items.push(['⤓ いまの設定で上書き', function () {
+        B.ov[K(o.value)] = clone(self.params);
+        self._saveVars(); fill();
+        self.flash('「' + label + '」に、いまの設定を覚えさせました');
+      }]);
+      if (B.ov[K(o.value)]) {
+        items.push(['↺ 上書きを解除（元の設定に戻す）', function () {
+          delete B.ov[K(o.value)];
+          self._saveVars();
+          /* 選んでいる案なら、その場で元の状態へ戻す */
+          if (K(self._get(item)) === K(o.value)) {
+            assignDeep(self.params, clone(self.defaults));
+            self._set(item, o.value);
+            self.sync(); self._changed({ item: item, path: item.path, value: o.value });
+          }
+          fill();
+        }]);
+      }
+      items.push(['🗑 削除', function () {
+        self._ask('削除しますか？', '「' + label + '」を一覧から消します。あとで「↺ 消した案を戻す」で戻せます。',
+          '削除する', function () {
+            B.hidden.push(K(o.value));
+            var fi = B.fav.indexOf(K(o.value));
+            if (fi >= 0) B.fav.splice(fi, 1);
+            /* 選んでいた案を消したら、残っている先頭の案へ移る */
+            if (K(self._get(item)) === K(o.value)) {
+              var a = alive()[0];
+              if (a) { self._set(item, a.value); self._changed({ item: item, path: item.path, value: a.value }); }
+            }
+            self._saveVars(); fill();
+          });
+      }, 'danger']);
+      self._menu(anchor, items);
+    };
+
+    var pill = function (o, label, target) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'tp-pill';
+      b.className = 'tp-pill' + (isFav(o) ? ' fav' : '');
       b.dataset.value = o.value;
+      b.title = o.name + (o.desc ? ' — ' + o.desc : '') +
+        (B.ov[K(o.value)] ? '（⤓ 上書き済み・⋯から解除できます）' : '');
       if (o.swatch) {
         var sw = document.createElement('span');
         sw.className = 'tp-swatch';
         sw.style.background = o.swatch;
         b.appendChild(sw);
       }
-      b.append(document.createTextNode(o.name));
-      b.addEventListener('click', function () {
-        self._set(item, o.value);
-        sync();
-        self._changed({ item: item, path: item.path, value: o.value, immediate: true });
-        if (item.rebuild !== false && (typeof self.cfg.schema === 'function' || item.rebuild)) self.rebuild();
+      b.append(document.createTextNode(label));
+      b.addEventListener('click', function () { choose(o); });
+      /* item.fixedOptions:true の項目は消したりピン留めしたりできない（ON/OFF など） */
+      if (!item.fixedOptions) {
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'tp-var-x';
+        x.textContent = '⋯';
+        x.title = 'ピン留め / この設定で上書き / 削除';
+        x.addEventListener('click', function (ev) { ev.stopPropagation(); menuFor(x, o); });
+        b.appendChild(x);
+      }
+      (target || rowEl).appendChild(b);
+    };
+
+    function fill() {
+      rowEl.innerHTML = '';
+      favRow.innerHTML = '';
+      var list = alive();
+      var pinned = B.fav.map(function (k) {
+        return list.filter(function (o) { return K(o.value) === k; })[0];
+      }).filter(Boolean);
+      favHead.style.display = favRow.style.display = pinned.length ? '' : 'none';
+      pinned.forEach(function (o, i) { pill(o, '★' + (i + 1) + ' ' + o.name, favRow); });
+      list.forEach(function (o) {
+        if (pinned.indexOf(o) >= 0) return;
+        pill(o, o.name, rowEl);
       });
-      rowEl.appendChild(b);
-    });
+      /* 消した案を戻す */
+      if (B.hidden.length) {
+        var back = document.createElement('button');
+        back.type = 'button';
+        back.className = 'tp-pill tp-var-back';
+        back.textContent = '↺ 消した案を戻す (' + B.hidden.length + ')';
+        back.addEventListener('click', function () {
+          var names = B.hidden.map(function (k) {
+            var o = (item.options || []).filter(function (q) { return K(q.value) === k; })[0];
+            return o ? o.name : k;
+          });
+          self._pick('消した案を戻す', '戻したい案の「戻す」を押してください。', names, function (nm, idx) {
+            B.hidden.splice(idx, 1);
+            self._saveVars(); fill();
+          });
+        });
+        rowEl.appendChild(back);
+      }
+      sync();
+    }
+
     function sync() {
       var cur = self._get(item);
       var found = null;
-      rowEl.querySelectorAll('.tp-pill').forEach(function (b) {
+      wrap.querySelectorAll('.tp-pill').forEach(function (b) {
+        if (b.classList.contains('tp-var-back')) return;
         var on = b.dataset.value === String(cur);
         b.classList.toggle('on', on);
         if (on) found = b;
@@ -1303,12 +1497,102 @@
       desc.textContent = (opt && opt.desc) || '';
       desc.style.display = desc.textContent ? '' : 'none';
     }
-    wrap.append(rowEl, desc);
+
+    wrap.append(favHead, favRow, rowEl, desc);
     mount.appendChild(wrap);
-    sync();
+    fill();
     wrap._label = (item.pills || '') + ' ' + (item.options || []).map(function (o) { return o.name; }).join(' ');
-    wrap._sync = sync;
+    wrap._sync = fill;
     return wrap;
+  };
+
+  /* --- 小さなメニュー（⋯ を押すと出る）--- */
+  Panel.prototype._menu = function (anchor, entries) {
+    var old = document.querySelector('.tp-pmenu');
+    if (old) old.remove();
+    var m = document.createElement('div');
+    m.className = 'tp-pmenu';
+    entries.forEach(function (e) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = e[0];
+      if (e[2]) b.className = e[2];
+      b.addEventListener('click', function () { m.remove(); e[1](); });
+      m.appendChild(b);
+    });
+    document.body.appendChild(m);
+    var r = anchor.getBoundingClientRect();
+    m.style.left = Math.min(r.left, window.innerWidth - m.offsetWidth - 8) + 'px';
+    m.style.top = Math.min(r.bottom + 4, window.innerHeight - m.offsetHeight - 8) + 'px';
+    setTimeout(function () {
+      var off = function (ev) {
+        if (m.contains(ev.target)) return;
+        m.remove();
+        document.removeEventListener('pointerdown', off);
+      };
+      document.addEventListener('pointerdown', off);
+    }, 0);
+  };
+
+  /* --- 確認ダイアログ（消す前に一度止める）--- */
+  Panel.prototype._ask = function (title, body, okLabel, onOk) {
+    var bg = document.createElement('div');
+    bg.className = 'tp-mdl-bg';
+    var m = document.createElement('div');
+    m.className = 'tp-mdl';
+    var h = document.createElement('h4'); h.textContent = title;
+    var p = document.createElement('p'); p.textContent = body;
+    var row = document.createElement('div'); row.className = 'tp-mdl-btns';
+    var no = document.createElement('button'); no.type = 'button'; no.textContent = 'やめる';
+    var yes = document.createElement('button'); yes.type = 'button'; yes.className = 'danger';
+    yes.textContent = okLabel || '削除する';
+    var onKey = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    function close() { bg.remove(); document.removeEventListener('keydown', onKey, true); }
+    no.addEventListener('click', close);
+    yes.addEventListener('click', function () { close(); onOk(); });
+    bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
+    document.addEventListener('keydown', onKey, true);
+    row.append(no, yes); m.append(h, p, row); bg.appendChild(m);
+    document.body.appendChild(bg);
+    yes.focus();
+  };
+
+  /* --- 一覧から1つずつ選ぶダイアログ（消した案を戻す用）--- */
+  Panel.prototype._pick = function (title, body, names, onPick) {
+    var bg = document.createElement('div');
+    bg.className = 'tp-mdl-bg';
+    var m = document.createElement('div');
+    m.className = 'tp-mdl';
+    var h = document.createElement('h4'); h.textContent = title;
+    var p = document.createElement('p'); p.textContent = body;
+    var list = document.createElement('div'); list.className = 'tp-mdl-list';
+    var row = document.createElement('div'); row.className = 'tp-mdl-btns';
+    var onKey = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    function close() { bg.remove(); document.removeEventListener('keydown', onKey, true); }
+    var cur = names.slice();
+    function draw() {
+      list.innerHTML = '';
+      if (!cur.length) { close(); return; }
+      cur.forEach(function (nm, i) {
+        var li = document.createElement('div'); li.className = 'tp-mdl-li';
+        var t = document.createElement('span'); t.textContent = nm;
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = '戻す';
+        b.addEventListener('click', function () {
+          onPick(nm, cur.indexOf(nm));
+          cur.splice(i, 1);
+          draw();
+        });
+        li.append(t, b); list.appendChild(li);
+      });
+    }
+    var done = document.createElement('button'); done.type = 'button'; done.textContent = '閉じる';
+    done.addEventListener('click', close);
+    row.appendChild(done);
+    bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
+    document.addEventListener('keydown', onKey, true);
+    draw();
+    m.append(h, p, list, row); bg.appendChild(m);
+    document.body.appendChild(bg);
   };
 
   /* --- ON/OFF --- */
@@ -1464,7 +1748,8 @@
 
     list.forEach(function (p, i) {
       var chip = document.createElement('span');
-      chip.className = 'tp-pset-chip';
+      /* いま呼び出しているプリセットは青くしておく（anyflow 準拠） */
+      chip.className = 'tp-pset-chip' + (self._psetOn === p.name ? ' on' : '');
       var name = document.createElement('button');
       name.type = 'button';
       name.className = 'tp-pset-name';
@@ -1472,10 +1757,11 @@
       name.title = '押すとこの状態に戻す';
       name.addEventListener('click', function () {
         assignDeep(self.params, clone(p.params));
+        self._psetOn = p.name;
         self._markDirty(true);
         self.rebuild();
         self._changed({});
-        self.flash('「' + p.name + '」を呼び出しました（保存はまだです）');
+        self.flash('「' + p.name + '」を呼び出しました（デフォルトにするなら下のボタンを押す）');
       });
       var menu = document.createElement('button');
       menu.type = 'button';
@@ -1499,6 +1785,7 @@
       if (!n) return;
       list.push({ name: n, params: clone(self.params) });
       self._savePresets(list);
+      self._psetOn = n;
       self._renderFoot();
       self.flash('「' + n + '」として保存しました');
     });
@@ -1564,51 +1851,147 @@
     box.className = 'tp-btns';
     box.style.marginTop = '0';
 
-    /* 既定ボタンは「↺ リセット」だけ（＋saveMode:'button' なら先頭に「💾 保存」）。
-       「📥 読み込み」は 2026-08-21、「📋 設定をコピー」は 2026-08-23 ヒデさん指示で撤去。
-       copy() / importPrompt() 自体は残してあるので、必要なら footer で足せる */
-    var defs = [
-      { label: '↺ リセット', onClick: function () { self.reset(); } }
-    ];
-    /* 🗑で削除した項目がある時だけ「戻す」を出す */
-    if (this.hiddenItems.length) {
+    /* 下のボタンは anyflow と同じ3つ（2026-09-16 ヒデさん指示で全面的に合わせた）。
+         ① これをデフォルトに設定 …… いまの状態を「最初に出る形」として確定する
+         ② ⬇ 設定を書き出す ………… このブラウザの設定をファイルに落とす（本番へ焼き込む用）
+         ③ 📋 完全削除リストをコピー … 隠している案の一覧をコピー（コードから恒久的に消す用）
+       「↺ 全部リセット」は anyflow にならって廃止。戻すのは各行と各まとまりの ↺ で行う */
+    var defs = [];
+
+    /* ① これをデフォルトに設定 */
+    if (this.storageKey) {
       defs.push({
-        label: '🗑 削除した項目を戻す(' + this.hiddenItems.length + ')',
-        onClick: function () {
-          self.hiddenItems = [];
-          self._saveUI();
-          self.rebuild();
-          self.flash('削除した項目をすべて戻しました');
-        }
-      });
-    }
-    /* 保存ボタン方式（既定）：先頭に「💾 保存」。未保存の変更があるとピンクになる */
-    if (this.saveMode === 'button' && this.storageKey) {
-      defs.unshift({
-        label: '💾 保存', primary: true, isSave: true,
-        onClick: function () {
+        label: this._dirty ? 'これをデフォルトに設定（未保存あり）' : 'これをデフォルトに設定',
+        primary: true, isSave: true,
+        onClick: function (pnl, el) {
           self.save();
+          self._saveVars();
           self._markDirty(false);
-          /* cfg.onSave: 保存後のフック（ローカルの「デプロイ用ファイルへの自動書き込み」等に使う） */
           if (self.cfg.onSave) {
             try { self.cfg.onSave(self.params, self); } catch (e) {}
-          } else {
-            self.flash('保存しました（リロードしてもこの設定で出ます）');
           }
+          el.textContent = '✅ デフォルトにしました';
+          setTimeout(function () { self._syncSaveBtn(); }, 1600);
         }
       });
     }
+
+    /* ② ⬇ 設定を書き出す（本番反映用）
+       ローカルで触った値はこのブラウザにしか残らない。本番へ載せるには
+       書き出して Claude に渡し、tune-defaults.json へ焼き込む必要がある */
+    defs.push({
+      label: '⬇ 設定を書き出す（本番反映用）',
+      title: 'いまのブラウザの設定ぜんぶをファイルに落とします。これを Claude に渡すと、同じ見た目を本番に焼き込めます。',
+      onClick: function (pnl, el) {
+        try { self.save(); self._saveVars(); } catch (e) {}
+        var dump = {};
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('tp:') === 0) dump[k] = localStorage.getItem(k);
+          }
+        } catch (e) {}
+        /* 焼き込みでそのまま使えるよう、いまのつまみの値も素の形で入れておく */
+        dump['__params'] = JSON.stringify(self.params);
+        var name = (self.storageKey || 'tune') + '-settings.json';
+        try {
+          var blob = new Blob([JSON.stringify(dump, null, 1)], { type: 'application/json' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = name;
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+          el.textContent = '✅ 書き出しました（Claudeに渡してください）';
+        } catch (e) {
+          el.textContent = '書き出せませんでした';
+        }
+        setTimeout(function () { el.textContent = '⬇ 設定を書き出す（本番反映用）'; }, 2200);
+      }
+    });
+
+    /* ③ 📋 完全削除リストをコピー（Claude用）
+       パネルの「🗑 削除」は隠しているだけ（戻せる）。コードから恒久的に消すには
+       Claude に焼き込んでもらう必要があるので、いま隠しているものを一括でコピーする */
+    defs.push({
+      label: '📋 完全削除リストをコピー（Claude用）',
+      title: 'いま「削除」で隠している案と項目の一覧をコピーします。Claude に貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。',
+      onClick: function (pnl, el) {
+        try { self.save(); self._saveVars(); } catch (e) {}
+        var v = self._vars();
+        var hidden = {};
+        Object.keys(v.hidden || {}).forEach(function (k) {
+          if ((v.hidden[k] || []).length) hidden[k] = v.hidden[k].slice();
+        });
+        var nVar = Object.keys(hidden).reduce(function (a, k) { return a + hidden[k].length; }, 0);
+        var nItem = self.hiddenItems.length;
+        var payload = { panel: self.storageKey, hiddenVariants: hidden, hiddenItems: self.hiddenItems.slice() };
+        var text = (nVar || nItem
+          ? '【完全削除の依頼】以下の案・項目をコードから恒久的に消してください。\n'
+          : '【完全削除の依頼】新しく消したものはありません。\n') + JSON.stringify(payload, null, 1);
+        self._copy(text, function (ok) {
+          el.textContent = ok ? '✅ コピーしました（Claudeに貼ってください）' : 'コピーできませんでした';
+          setTimeout(function () { el.textContent = '📋 完全削除リストをコピー（Claude用）'; }, 2600);
+        });
+      }
+    });
+
+    /* 🗑で削除した「項目」がある時だけ、戻すボタンを足す（案の復元はピルの横の ↺） */
+    if (this.hiddenItems.length) {
+      defs.push({
+        label: '🗑 消した項目を戻す(' + this.hiddenItems.length + ')',
+        onClick: function () {
+          var names = self.hiddenItems.slice();
+          self._pick('消した項目を戻す', '戻したい項目の「戻す」を押してください。', names, function (nm) {
+            var i = self.hiddenItems.indexOf(nm);
+            if (i >= 0) self.hiddenItems.splice(i, 1);
+            self._saveUI();
+            self.rebuild();
+          });
+        }
+      });
+    }
+
     var list = (this.cfg.footer || []).concat(this.cfg.footerDefaults === false ? [] : defs);
     list.forEach(function (b) {
       var el = document.createElement('button');
       el.type = 'button';
       el.textContent = b.label;
+      if (b.title) el.title = b.title;
       if (b.primary) el.className = 'primary';
       if (b.isSave) { self._saveBtn = el; el.classList.toggle('dirty', self._dirty); }
-      el.addEventListener('click', function () { b.onClick && b.onClick(self); });
+      el.addEventListener('click', function () { b.onClick && b.onClick(self, el); });
       box.appendChild(el);
     });
     this.foot.appendChild(box);
+  };
+
+  /* 「これをデフォルトに設定」の文字を、未保存かどうかに合わせて書き換える */
+  Panel.prototype._syncSaveBtn = function () {
+    if (!this._saveBtn) return;
+    this._saveBtn.textContent = this._dirty
+      ? 'これをデフォルトに設定（未保存あり）'
+      : 'これをデフォルトに設定';
+    this._saveBtn.classList.toggle('dirty', this._dirty);
+  };
+
+  /* クリップボードへコピー（古いブラウザ向けの逃げ道つき） */
+  Panel.prototype._copy = function (text, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); })
+        .catch(function () { done(fallback()); });
+      return;
+    }
+    done(fallback());
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        ta.remove();
+        return ok;
+      } catch (e) { return false; }
+    }
   };
 
   /* ---------- 公開API ---------- */
@@ -1748,7 +2131,14 @@
      ============================================================ */
 
   return {
-    create: function (cfg) { return new Panel(cfg); },
+    /* 作ったパネルを控えておく。動作確認の時に中の値を外から読むために使う
+       （画面には何も出ない。TunePanel.instances[0].params で今の値が見られる） */
+    instances: [],
+    create: function (cfg) {
+      var p = new Panel(cfg);
+      try { this.instances.push(p); } catch (e) {}
+      return p;
+    },
     Panel: Panel,
     /* 便利物（利用側でも使えるように） */
     utils: { getPath: getPath, setPath: setPath, mergeSaved: mergeSaved, assignDeep: assignDeep, clone: clone },
