@@ -144,10 +144,10 @@
   /* ===== 【V5.0】スクロールで「ロゴ＋ハンバーガー」に変形する10案(hm-6〜15) ===== */
   /* 共通: stuck でナビ(nav)を格納しハンバーガーを出す。ロゴは残す。 */
   /* morph: バーガーは常設で透明→stuckでフェードイン。ナビは max-width＋opacity で滑らかに畳む(display:none は使わない=瞬間切替を避ける) */
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger { display: block; opacity: 0; pointer-events: none; }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger { display: block; position: absolute; right: 50px; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; }
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav { overflow: hidden; max-width: 900px; transition: max-width var(--hdr-dur) var(--hdr-ease), opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), filter var(--hdr-dur) var(--hdr-ease); }
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .nav { max-width: 0; opacity: 0; margin: 0; pointer-events: none; }
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { opacity: 1; pointer-events: auto; }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { position: static; transform: none; opacity: 1; pointer-events: auto; }
   /* 6: 全幅ガラスバー(左ロゴ/右バーガー) */
   html:not(.mb).hm-6 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   /* 7: 全幅ソリッド白(左ロゴ/右バーガー) */
