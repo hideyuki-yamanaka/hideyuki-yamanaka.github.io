@@ -132,7 +132,8 @@ export default function GourmetSection() {
           },
         }}
       >
-        <p className="whitespace-nowrap text-title-36 font-thin leading-[1.8] text-ink">
+        {/* 大見出し。大きさは --sec-head（体験セクションと共通・調整パネルのつまみ） */}
+        <p className="whitespace-nowrap text-[length:var(--sec-head)] font-thin leading-[1.8] text-ink">
           なーんにもない、道東の土地、網走。
           <br />
           そこの味が沁みちゃうんです。

@@ -19,65 +19,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-export const FOOTER_EVENT = "abashiri:footer";
-
-export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
-  /* フッターのデザインは【写真の上にサイトマップ】で確定（2026-09-16）。
-     ここで選ぶのは「サイトマップの親子の階層をどう見せるか」。
-     A〜C は最初の3案、D〜F は 2026-09-16 に足した3案 */
-  1: {
-    name: "階層A 罫線で分ける",
-    note: "大カテゴリの下に細い線を引き、子は少し下げて並べる。区切りがはっきりしていちばん読みやすい",
-  },
-  2: {
-    name: "階層B 左の縦線でぶら下げる",
-    note: "子のグループの左に縦の細い線を通して、親からぶら下がっているのを見せる。目次らしい形",
-  },
-  3: {
-    name: "階層C 大きさと濃さで分ける",
-    note: "線を使わず、親を大きく・明るく、子を小さく・薄くして差をつける。いちばん静かでミニマル",
-  },
-  4: {
-    name: "階層D 番号でぶら下げる",
-    note: "子の先頭に 01・02… の小さい番号を振る。数があることが分かり、目で追いやすい",
-  },
-  5: {
-    name: "階層E 親をタグにする",
-    note: "親をすりガラスの小さなタグで囲み、子は素の文字で下に。親が「見出し」だとひと目で分かる",
-  },
-  6: {
-    name: "階層F 親に引き出し線",
-    note: "親の前に短い横線を置いて始まりを示し、子は字下げだけで続ける。線が細く上品",
-  },
-};
+/* 【2026-09-16 ヒデさん指示】「共通フッターのバリエーション案は今のをデフォルトにして全削除」
+   → 階層の見せ方6案（FOOTER_PATTERNS）と組み方3案（FOOTER_LAYOUTS）は撤去し、
+     使っていた「階層A 罫線で分ける」＋「組みA ゆったり2カラム」を固定にした。
+     余白・間隔・作字の大きさは CSS 変数（--ft-*）のつまみで引き続き調整できる */
 
 /* 【2026-09-16 ヒデさん指示】「ぼーっと体験」の別扱い5案（FOOTER_SPECIALS）は撤去した。
    「区切り線などもなしで普通に入れちゃう感じで大丈夫」「ぼーっと疑似体験というタイトルに」
    → ぼーっとスポットの一覧のいちばん下に、ほかの項目と同じ見た目で並べる */
 
-/** フッターの組み方（左右の余白・カラムの幅）。2026-09-16 ヒデさん依頼で追加。
-    きっかけ：「メガフッターがきつい。作字とサイトマップが近い」 */
-export const FOOTER_LAYOUTS: Record<number, { name: string; note: string }> = {
-  1: {
-    name: "組みA ゆったり2カラム",
-    note: "いまの2カラムのまま、左右の余白と作字〜サイトマップの間隔を大きく広げる。窮屈さだけを取る",
-  },
-  2: {
-    name: "組みB 上下に分ける",
-    note: "作字を上に置き、その下に全幅でサイトマップを4列。左右の取り合いが無くなるので一番ゆったり",
-  },
-  3: {
-    name: "組みC 2列×2段でひろびろ",
-    note: "サイトマップを2列×2段にして1列の幅を広く取る。長い項目名（オジロワシ…）が折り返さない",
-  },
-};
-
-/* ───────── サイトマップ（メガフッター用・2026-09-16 ヒデさん依頼）─────────
-   「ぼーっとスポットという大カテゴリがあって、その下に中のコンテンツが並んでいる」
-   形にするための一覧。**サイトにある要素を全部出す**のが狙い。
-   ⚠️ ここは各セクションの一覧と同じ中身を手で写している（データ源が
-      TopPage / SpotShowcase / EventSection に散っているため）。
-      向こうを増やしたらここも足すこと。 */
 export type SiteNode = {
   label: string;
   /** 下層ページがあるものはリンク先。無ければトップの該当セクションへ飛ぶ */
@@ -309,50 +259,21 @@ function PhotoStage({
 }
 
 /** サイトマップの1カテゴリぶん（大見出し＋ぶら下がる中身）。
-    level で「親子の階層をどう見せるか」を切り替える
-      1 罫線で分ける     2 左の縦線     3 大きさと濃さ
-      4 番号でぶら下げる  5 親をタグに   6 親に引き出し線 */
+    見せ方は「階層A 罫線で分ける」で確定（2026-09-16 ヒデさん指示で他の5案は削除）。
+    大カテゴリの下に細い線を引き、子は少し下げて並べる */
 function MapColumn({
   col,
   light = false,
-  level = 1,
 }: {
   col: (typeof SITEMAP)[number];
   light?: boolean;
-  level?: number;
-  /** 「ぼーっと体験」の見せ方（5案） */
 }) {
   const white = light ? "text-white" : "text-ink";
-  /* 親の文字。案3だけ大きく */
-  const head =
-    level === 3
-      ? `${white} text-title-24 font-thin leading-[1.5] tracking-[0.06em]`
-      : `${white} text-body-16 font-light leading-[1.6] tracking-[0.1em]`;
-  /* 子の文字 */
-  const item = light
-    ? level === 3
-      ? "text-white/55 hover:text-white"
-      : "text-white/75 hover:text-white"
-    : "text-ink/60 hover:text-ink";
-  const itemSize = level === 3 ? "text-body-12" : "text-body-13";
+  const head = `${white} text-body-16 font-light leading-[1.6] tracking-[0.1em]`;
+  const item = light ? "text-white/75 hover:text-white" : "text-ink/60 hover:text-ink";
   const line = light ? "border-white/30" : "border-ink/15";
 
-  /* 子のまとまりの飾り */
-  const listCls =
-    level === 1
-      ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-4"
-      : level === 2
-        ? `mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] border-l pl-4 ${line}`
-        : level === 3
-          ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]"
-          : level === 4
-            ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]"
-            : level === 5
-              ? "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-1"
-              : "mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-5";
-  const headCls = level === 1 ? `border-b pb-3 ${line}` : "";
-
-  const HeadInner = col.href ? (
+  const Head = col.href ? (
     <Link href={col.href} className={head}>
       {col.title}
     </Link>
@@ -366,159 +287,65 @@ function MapColumn({
     </button>
   );
 
-  /* 親の見せ方。案5＝すりガラスのタグ／案6＝前に短い横線 */
-  const Head =
-    level === 5 ? (
-      <span
-        className={`inline-flex items-center px-4 py-2 ${
-          light
-            ? "bg-white/15 ring-1 ring-inset ring-white/25 backdrop-blur-65"
-            : "bg-ink/5"
-        }`}
-      >
-        {HeadInner}
-      </span>
-    ) : level === 6 ? (
-      <span className="flex items-center gap-3">
-        <span
-          className={`h-px w-6 shrink-0 ${light ? "bg-white/50" : "bg-ink/30"}`}
-        />
-        {HeadInner}
-      </span>
-    ) : (
-      HeadInner
-    );
-
   return (
     <div className="flex min-w-0 flex-col">
-      <div className={headCls}>{Head}</div>
-      <ul className={listCls}>
-        {col.items.map((n, i) => {
-          const label = n.href ? (
-            <Link
-              href={n.href}
-              className={`block ${itemSize} font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
-            >
-              {n.label}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => n.jump && jumpTo(n.jump)}
-              className={`block cursor-pointer text-left ${itemSize} font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
-            >
-              {n.label}
-            </button>
-          );
-          /* 案4だけ、子の前に小さい番号を置く */
-          return (
-            <li key={n.label} className={level === 4 ? "flex gap-3" : ""}>
-              {level === 4 && (
-                <span
-                  className={`shrink-0 pt-px text-body-12 font-light tracking-[0.1em] ${
-                    light ? "text-white/40" : "text-ink/30"
-                  }`}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-              )}
-              {label}
-            </li>
-          );
-        })}
+      <div className={`border-b pb-3 ${line}`}>{Head}</div>
+      <ul className="mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-4">
+        {col.items.map((n) => (
+          <li key={n.label}>
+            {n.href ? (
+              <Link
+                href={n.href}
+                className={`block text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+              >
+                {n.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => n.jump && jumpTo(n.jump)}
+                className={`block cursor-pointer text-left text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+              >
+                {n.label}
+              </button>
+            )}
+          </li>
+        ))}
       </ul>
     </div>
   );
 }
 
-
-/** サイトマップ。cols で1行に並べる数を変える（組みの案で使う） */
-function SiteMapGrid({
-  light = false,
-  level = 1,
-  cols = 4,
-}: {
-  light?: boolean;
-  level?: number;
-  cols?: 2 | 4;
-}) {
+/** サイトマップ（3カテゴリを横に並べる） */
+function SiteMapGrid({ light = false }: { light?: boolean }) {
   return (
-    <div
-      className={`grid w-full gap-y-[var(--ft-map-gap-y)] ${
-        cols === 4
-          ? "grid-cols-1 gap-x-8 sm:grid-cols-3 sm:gap-x-[var(--ft-map-gap-x)]"
-          : "grid-cols-2 gap-x-8 sm:gap-x-[var(--ft-map-gap-x)]"
-      }`}
-    >
+    <div className="grid w-full grid-cols-1 gap-x-8 gap-y-[var(--ft-map-gap-y)] sm:grid-cols-3 sm:gap-x-[var(--ft-map-gap-x)]">
       {SITEMAP.map((c) => (
-        <MapColumn key={c.title} col={c} light={light} level={level} />
+        <MapColumn key={c.title} col={c} light={light} />
       ))}
     </div>
   );
 }
 
-/* ── 案ごとの中身 ─────────────────────────── */
-
-function Body({
-  pat,
-  layout,
-}: {
-  pat: number;
-  layout: number;
-}) {
-  /* 左の作字。サイトの顔なので大きく出す（2026-09-16 ヒデさん指示） */
-  const logo = (cls: string) => (
-    /* 2026-09-16 ヒデさん指示で SNS アイコンは削除。左カラムは作字だけ */
-    <div className="flex shrink-0 flex-col items-start">
-      <Logo cls={`${cls} self-start`} light />
-    </div>
-  );
-
-  /* 組みB：作字を上、サイトマップを下に全幅で。左右の取り合いが無いのでいちばん広い */
-  if (layout === 2) {
-    return (
-      <PhotoStage align="end" pad="wide">
-        <div className="flex w-full flex-col gap-[var(--ft-col-gap)]">
-          {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
-          <div style={{ transform: "translateY(var(--ft-map-offset-y))" }}>
-            <SiteMapGrid light level={pat} />
-          </div>
-        </div>
-      </PhotoStage>
-    );
-  }
-
-  /* 組みC：サイトマップを2列×2段にして、1列の幅を広く取る
-     （「オジロワシ・オオワシウォッチング」のような長い名前が折り返さない） */
-  if (layout === 3) {
-    return (
-      <PhotoStage align="end" pad="wide">
-        <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
-          {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
-          <div
-            className="min-w-0 flex-1"
-            /* 右カラムだけ上下にずらせる（作字との高さを合わせるため）。
-               transform なので周りのレイアウトは動かない */
-            style={{ transform: "translateY(var(--ft-map-offset-y))" }}
-          >
-            <SiteMapGrid light level={pat} cols={2} />
-          </div>
-        </div>
-      </PhotoStage>
-    );
-  }
-
-  /* 組みA（既定）：いまの2カラムのまま、左右の余白と
-     作字〜サイトマップの間隔を広げて窮屈さを取る */
+/* ── フッターの中身 ───────────────────────────
+   組み方は「組みA ゆったり2カラム」で確定（2026-09-16 ヒデさん指示で他の2案は削除）。
+   左に大きい作字ロゴ、右にサイトマップ。余白・間隔・作字の大きさは
+   CSS 変数（--ft-*）＝調整パネルのつまみで動かせる */
+function Body() {
   return (
     <PhotoStage align="end" pad="wide">
       <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
-        {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
+        {/* 左の作字。サイトの顔なので大きく出す。SNS アイコンは無し */}
+        <div className="flex shrink-0 flex-col items-start">
+          <Logo cls="h-[150px] self-start sm:h-[var(--ft-logo-h)]" light />
+        </div>
         <div
           className="min-w-0 flex-1"
+          /* 右カラムだけ上下にずらせる（作字との高さを合わせるため）。
+             transform なので周りのレイアウトは動かない */
           style={{ transform: "translateY(var(--ft-map-offset-y))" }}
         >
-          <SiteMapGrid light level={pat} />
+          <SiteMapGrid light />
         </div>
       </div>
     </PhotoStage>
@@ -526,29 +353,8 @@ function Body({
 }
 
 export default function SiteFooter() {
-  /* 選ぶのは「組み（レイアウト）」3案 と「階層の見せ方」6案。既定は 組みA／階層A */
-  const [pat, setPat] = useState(1);
-  const [layout, setLayout] = useState(1);
-  useEffect(() => {
-    fetch("/tune-defaults.json", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        const v = d?.footer?.pattern;
-        if (typeof v === "number" && FOOTER_PATTERNS[v]) setPat(v);
-        const l = d?.footer?.layout;
-        if (typeof l === "number" && FOOTER_LAYOUTS[l]) setLayout(l);
-      })
-      .catch(() => {});
-    const onTune = (e: Event) => {
-      const d = (e as CustomEvent<{ v?: number; layout?: number }>)
-        .detail;
-      if (typeof d?.v === "number" && FOOTER_PATTERNS[d.v]) setPat(d.v);
-      if (typeof d?.layout === "number" && FOOTER_LAYOUTS[d.layout]) setLayout(d.layout);
-    };
-    window.addEventListener(FOOTER_EVENT, onTune);
-    return () => window.removeEventListener(FOOTER_EVENT, onTune);
-  }, []);
-
+  /* デザインはひとつに確定（2026-09-16）。案の切り替えは無いので状態も持たない。
+     余白・間隔・作字の大きさは CSS 変数（--ft-*）で、調整パネルから直接変わる */
   return (
     /* ⚠️ フッターは登場アニメを付けない。理由は2つ:
        ①filter/opacity を動かすと要素が合成レイヤーになり、アニメ完了後も
@@ -565,7 +371,7 @@ export default function SiteFooter() {
          写真はこの白の上に載るので、白地でも見た目は変わらない */
       className="relative z-10 -mt-[2px] w-full bg-white"
     >
-      <Body pat={pat} layout={layout} />
+      <Body />
     </footer>
   );
 }

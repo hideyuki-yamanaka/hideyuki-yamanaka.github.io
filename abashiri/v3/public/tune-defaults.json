@@ -127,8 +127,6 @@
   "pattern": 1
  },
  "footer": {
-  "pattern": 1,
-  "layout": 1,
   "padX": 60,
   "padBottom": 110,
   "colGap": 248,
@@ -178,7 +176,8 @@
   "swayFirst": true
  },
  "nav": {
-  "dur": 1100,
-  "blur": 7
- }
+  "inMs": 420,
+  "outMs": 620
+ },
+ "secHead": 36
 }

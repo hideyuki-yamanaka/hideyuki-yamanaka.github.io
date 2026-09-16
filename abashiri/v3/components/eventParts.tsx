@@ -71,10 +71,12 @@ export const VIEW = { once: true, amount: 0.25 } as const;
 
 /* ── 文字の部品（カンプの書式） ───────────────── */
 
-export function VTitle({ className = "" }: { className?: string }) {
+export /* 大見出し。大きさは --sec-head（グルメと共通・調整パネルのつまみ）。
+   行間だけ縦組み/横組みで変えている */
+function VTitle({ className = "" }: { className?: string }) {
   return (
     <h2
-      className={`shrink-0 whitespace-nowrap text-title-36 font-thin leading-[1.3] text-ink ${className}`}
+      className={`shrink-0 whitespace-nowrap text-[length:var(--sec-head)] font-thin leading-[1.3] text-ink ${className}`}
       style={{ writingMode: "vertical-rl" }}
     >
       意外とオモロい、網走。
@@ -85,7 +87,7 @@ export function VTitle({ className = "" }: { className?: string }) {
 export function HTitle({ className = "" }: { className?: string }) {
   return (
     <h2
-      className={`whitespace-nowrap text-title-36 font-thin leading-[1.8] text-ink ${className}`}
+      className={`whitespace-nowrap text-[length:var(--sec-head)] font-thin leading-[1.8] text-ink ${className}`}
     >
       意外とオモロい、網走。
     </h2>

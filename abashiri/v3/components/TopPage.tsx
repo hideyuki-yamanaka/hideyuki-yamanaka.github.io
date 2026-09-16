@@ -596,22 +596,30 @@ export default function TopPage({
     sc.addEventListener("scroll", onScroll, { passive: true });
 
     /* ナビ（ホーム・スポット・グルメ・体験）のジャンプ先を受け取る。
-       【2026-09-16 ヒデさん指示】「急に移動する感じになるので、ゆったりと
-         なんかブラーで移動みたいな感じが望ましい」
-       これまでは targetY を差し替えて慣性まかせだった（＝距離が長いほど
-       最初がガクッと速い）。ここだけ【時間で動かす】方式に切り替え、
-       同時にステージへブラーを掛けて「すーっと移った」ように見せる。
-
-       ⚠️ ブラーは 1512x982 のステージ1枚に掛ける。この箱は既に transform で
-          合成レイヤーになっているので、重なり順は変わらない。
-          移動が終わったら filter を空に戻す（掛けっぱなしにしない） */
+       【2026-09-16 ヒデさん指示（2回目）】
+         「移動してブラー、が気持ち悪い。上下してる感はなしに、
+           場面が切り替わるみたいなインタラクションが望ましい」
+       → スクロールしている“途中”を見せない。
+         ①幕（ブラー＋白）がふわっとかぶって画面を覆う
+         ②見えなくなった瞬間に位置だけ入れ替える（一瞬・動きは見えない）
+         ③幕が引いて、着いた先の場面が現れる
+       幕は 1512x982 のステージ1枚に掛ける。この箱は transform で既に
+       合成レイヤーなので、重なり順は変わらない */
     let navRaf = 0;
     const stage = () =>
       document.querySelector<HTMLElement>("[data-abashiri-stage]");
-    const setBlur = (px: number) => {
+    /* v=0 で素通し、v=1 で完全に覆い隠す */
+    const setVeil = (v: number) => {
       const el = stage();
       if (!el) return;
-      el.style.filter = px > 0.05 ? `blur(${px.toFixed(2)}px)` : "";
+      if (v <= 0.002) {
+        el.style.filter = "";
+        el.style.opacity = "";
+        return;
+      }
+      el.style.filter = `blur(${(v * 26).toFixed(1)}px)`;
+      /* 白へ飛ばしきらず、少し残して「場面が入れ替わった」感じにする */
+      el.style.opacity = String(1 - v * 0.88);
     };
     const onJump = (e: Event) => {
       const d = (e as CustomEvent<{ y: number; instant?: boolean }>).detail;
@@ -619,43 +627,51 @@ export default function TopPage({
       if (typeof y !== "number") return;
       lock = null; /* カルーセルの横送りロックも解除してから飛ぶ */
       const to = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, y));
-      const from = sc.scrollTop;
-      const dist = Math.abs(to - from);
+      const dist = Math.abs(to - sc.scrollTop);
 
-      /* ごく短い移動と「instant 指定」は今まで通り慣性で（演出はいらない） */
-      /* 速さとブラーの強さは CSS 変数から読む（調整パネルが書き込む）。
-         値の住み家：①globals.css の :root ②パネルの DEFAULTS ③焼き込み ④ブラウザ保存 */
+      /* ごく近い場所と「instant 指定」は、幕を出さずそのまま */
       const cs = getComputedStyle(document.documentElement);
-      const num = (k: string, d: number) => {
+      const num = (k: string, dv: number) => {
         const v = parseFloat(cs.getPropertyValue(k));
-        return Number.isFinite(v) ? v : d;
+        return Number.isFinite(v) ? v : dv;
       };
-      const nv = { dur: num("--nav-dur", 1100), blur: num("--nav-blur", 7) };
-      if (d?.instant || dist < 200 || nv.dur <= 0) {
+      const inMs = num("--nav-in", 420);
+      const outMs = num("--nav-out", 620);
+      if (d?.instant || dist < 200 || inMs + outMs <= 0) {
         targetY = to;
+        posY = to;
+        sc.scrollTop = Math.round(to);
         kick();
         return;
       }
 
       if (navRaf) cancelAnimationFrame(navRaf);
-      /* 距離が長いほど少しだけ長く。ただし上限は付ける */
-      const dur = Math.min(nv.dur * 1.6, nv.dur + dist * 0.06);
       const t0 = performance.now();
+      let swapped = false;
       const step = (now: number) => {
-        const t = Math.min(1, (now - t0) / dur);
-        /* ease-in-out（三次）。始まりも終わりもふわっと */
-        const e2 = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        posY = from + (to - from) * e2;
-        targetY = posY;
-        sc.scrollTop = Math.round(posY);
-        /* ブラーは真ん中がいちばん強い山なりに */
-        setBlur(nv.blur * Math.sin(Math.PI * t));
+        const el = now - t0;
+        if (el < inMs) {
+          /* ① かぶせる（ゆっくり入る） */
+          const t = el / inMs;
+          setVeil(t * t * (3 - 2 * t));
+          navRaf = requestAnimationFrame(step);
+          return;
+        }
+        if (!swapped) {
+          /* ② 覆われている間に位置だけ入れ替える。動きは見えない */
+          swapped = true;
+          setVeil(1);
+          targetY = to;
+          posY = to;
+          sc.scrollTop = Math.round(to);
+        }
+        const t = Math.min(1, (el - inMs) / outMs);
+        /* ③ 幕が引く */
+        setVeil(1 - t * t * (3 - 2 * t));
         if (t < 1) navRaf = requestAnimationFrame(step);
         else {
           navRaf = 0;
-          setBlur(0);
-          targetY = to;
-          posY = to;
+          setVeil(0);
         }
       };
       navRaf = requestAnimationFrame(step);
@@ -665,7 +681,7 @@ export default function TopPage({
       if (!navRaf) return;
       cancelAnimationFrame(navRaf);
       navRaf = 0;
-      setBlur(0);
+      setVeil(0);
       targetY = sc.scrollTop;
       posY = sc.scrollTop;
     };
@@ -775,7 +791,7 @@ export default function TopPage({
       sc.removeEventListener("pointerdown", stopNav);
       if (raf) cancelAnimationFrame(raf);
       if (navRaf) cancelAnimationFrame(navRaf);
-      setBlur(0);
+      setVeil(0);
     };
   }, []);
 

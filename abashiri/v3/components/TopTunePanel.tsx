@@ -40,9 +40,6 @@ import {
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
 import {
-  FOOTER_EVENT,
-  FOOTER_PATTERNS,
-  FOOTER_LAYOUTS,
 } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
@@ -79,7 +76,9 @@ export type TopTuneValues = {
   /** KV→メッセージ区間のスクロール速度（%）。100=標準（2026-08-23 ヒデさん依頼） */
   scrollSpd: { kvToMsg: number };
   /** ヘッダーのアンカーで飛ぶ時の演出（2026-09-16 ヒデさん依頼） */
-  nav: { dur: number; blur: number };
+  nav: { inMs: number; outMs: number };
+  /** 各セクションの大見出しの大きさ（2026-09-16 ヒデさん「基本的に共通に」） */
+  secHead: number;
   /** ぼーっとTips（動画再生ページのモーダル）のタイミング（2026-08-23 ヒデさん依頼） */
   tips: { delay: number; fade: number; pattern: number };
   /** 動画の音量：徐々に大きくするか（2026-08-23 ヒデさん依頼） */
@@ -184,8 +183,6 @@ type Params = {
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
   footer: {
-    pattern: number;
-    layout: number;
     padX: number;
     padBottom: number;
     colGap: number;
@@ -204,7 +201,9 @@ type Params = {
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
   scrollSpd: { kvToMsg: number };
-  nav: { dur: number; blur: number };
+  nav: { inMs: number; outMs: number };
+  /** 各セクションの大見出しの大きさ（2026-09-16） */
+  secHead: number;
   tips: { delay: number; fade: number; pattern: number };
   videoVol: { fadeIn: boolean; fadeSec: number; uiHideSec: number };
   /** 「この場所にする」→動画再生画面への遷移（enterPatterns.ts の EnterTune） */
@@ -254,13 +253,11 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL }, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
-        pattern: 1,
-        layout: 1,
         padX: 160,
         padBottom: 110,
         colGap: 140,
@@ -278,7 +275,8 @@ export default function TopTunePanel({
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
-      nav: { dur: 1100, blur: 7 },
+      nav: { inMs: 420, outMs: 620 },
+      secHead: 36,
       tips: { delay: 5, fade: 1.2, pattern: 5 }, /* 出現は案5「下からゆっくり」で確定 */
       videoVol: { fadeIn: true, fadeSec: 3, uiHideSec: 2 },
       expEnter: { ...DEFAULT_ENTER_TUNE },
@@ -318,9 +316,10 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
       root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
-      /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms / px として読む） */
-      root.style.setProperty("--nav-dur", String(params.nav.dur));
-      root.style.setProperty("--nav-blur", String(params.nav.blur));
+      /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
+      root.style.setProperty("--nav-in", String(params.nav.inMs));
+      root.style.setProperty("--nav-out", String(params.nav.outMs));
+      root.style.setProperty("--sec-head", `${params.secHead}px`);
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -351,6 +350,7 @@ export default function TopTunePanel({
         expPick: { ...params.expPick },
         scrollSpd: { ...params.scrollSpd },
         nav: { ...params.nav },
+        secHead: params.secHead,
         tips: { ...params.tips },
         videoVol: { ...params.videoVol },
         expEnter: { ...params.expEnter },
@@ -450,7 +450,7 @@ export default function TopTunePanel({
            v33: 古いブラウザ保存値を一斉破棄。自動焼き込み（tune-defaults.json）導入前に
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
-        version: 35,
+        version: 37,
         /* ⚠️ autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
@@ -481,24 +481,24 @@ export default function TopTunePanel({
               },
               { sub: "ヘッダーのアンカー移動" },
               {
-                note: "ヘッダーの「ぼーっとスポット」「グルメ」「体験」を押した時の移り方。時間をかけてゆっくり動かし、途中がいちばんブラーになります（ホイールや画面を触ると途中でも止まって操作が返ります）。ブラーを0にすると演出なしで今まで通りです。",
+                note: "ヘッダーの「ぼーっとスポット」「グルメ」「体験」を押した時の移り方。上下にスクロールしている途中は見せず、幕がふわっとかぶって、見えない間に場面が入れ替わります（ホイールや画面を触ると途中でも止まって操作が返ります）。",
               },
               {
-                slider: "移動にかける時間",
-                path: "nav.dur",
+                slider: "幕がかぶるまで",
+                path: "nav.inMs",
                 min: 0,
-                max: 2600,
-                step: 50,
+                max: 1500,
+                step: 20,
                 unit: "ms",
                 immediate: true,
               },
               {
-                slider: "移動中のブラー",
-                path: "nav.blur",
+                slider: "幕が引くまで",
+                path: "nav.outMs",
                 min: 0,
-                max: 20,
-                step: 0.5,
-                unit: "px",
+                max: 2000,
+                step: 20,
+                unit: "ms",
                 immediate: true,
               },
               { sub: "ページ遷移の演出" },
@@ -547,30 +547,6 @@ export default function TopTunePanel({
               { sub: "フッター（全ページ共通）" },
               {
                 note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここでは「組み（左右の余白とカラムの幅）」と「親子の階層の見せ方」を選べます。トップと各詳細ページの一番下で確認できます。",
-              },
-              {
-                pills: "組み（余白とカラム幅）",
-                path: "footer.layout",
-                autoNum: { prefix: "組み", style: "alpha" },
-                immediate: true,
-                options: Object.entries(FOOTER_LAYOUTS).map(([v, p]) => ({
-                  name: p.name,
-                  value: Number(v),
-                  swatch: "#0070c9",
-                  desc: p.note,
-                })),
-              },
-              {
-                pills: "階層の見せ方",
-                path: "footer.pattern",
-                autoNum: { prefix: "階層", style: "alpha" },
-                immediate: true,
-                options: Object.entries(FOOTER_PATTERNS).map(([v, p]) => ({
-                  name: p.name,
-                  value: Number(v),
-                  swatch: "#0070c9",
-                  desc: p.note,
-                })),
               },
               {
                 note: "つまみを動かすとその場で動きます（PC幅のときの値。スマホは詰めた固定値です）。",
@@ -703,6 +679,19 @@ export default function TopTunePanel({
           {
             cat: "🏠 トップページ",
             items: [
+              { sub: "セクションの大見出し（全セクション共通）" },
+              {
+                note: "グルメ「なーんにもない、道東の土地、網走。」と体験「意外とオモロい、網走。」の大きさ。ひとつの値を共有しているので、ここを変えると両方そろって変わります。",
+              },
+              {
+                slider: "大見出しの大きさ",
+                path: "secHead",
+                min: 20,
+                max: 64,
+                step: 1,
+                unit: "px",
+                immediate: true,
+              },
               { sub: "人物イラスト" },
               { sub: "登場のタイミング", deep: true },
               {
@@ -1326,13 +1315,14 @@ export default function TopTunePanel({
                 })),
               },
               {
-                slider: "下の余白（動き確認用）",
+                slider: "セクションの下の余白",
                 path: "events.tailPad",
                 min: 0,
                 max: 2000,
                 step: 50,
-                fmt: "px",
-                hint: "体験セクションがページの最後なので、下に余白が無いと写真が育ちきる前にスクロールが止まります。1画面ぶん（982px）あれば最後まで見られます。下に別のセクションが入ったら0でOK。",
+                unit: "px",
+                immediate: true,
+                hint: "体験セクションとフッターのあいだの余白。もとは「体験がページ最後だったので動きを最後まで見るための逃げ」でしたが、フッターが入ったので既定は0です。動きをゆっくり最後まで見たい時だけ足してください。",
               },
             ],
           },
@@ -1616,16 +1606,8 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
             );
           }
-          if (String(info?.path || "").startsWith("footer.")) {
-            window.dispatchEvent(
-              new CustomEvent(FOOTER_EVENT, {
-                detail: {
-                  v: params.footer.pattern,
-                  layout: params.footer.layout,
-                },
-              })
-            );
-          }
+          /* 【2026-09-16】フッターの案は撤去したので、切り替えを知らせる必要が無くなった。
+             余白などの数値は CSS 変数（--ft-*）で直接効くので、イベントは不要 */
           if (info?.path === "pageTrans.pattern") {
             /* preview:true で、その場で一度幕を見せる */
             window.dispatchEvent(
@@ -1694,14 +1676,6 @@ export default function TopTunePanel({
       );
       window.dispatchEvent(
         new CustomEvent(PAGE_TRANSITION_EVENT, { detail: { v: params.pageTrans.pattern } })
-      );
-      window.dispatchEvent(
-        new CustomEvent(FOOTER_EVENT, {
-                detail: {
-                  v: params.footer.pattern,
-                  layout: params.footer.layout,
-                },
-              })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの
