@@ -6504,6 +6504,36 @@ const CV_HDRS = [
   { key: '15', name: '⑮ 中央ミニピル',                 tip: 'スクロールでロゴ＋ハンバーガーの小さめピルが中央に。常に表示(消えません)。' },
 ];
 function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); return (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) ? v : '1'; }
+/* 【V5.0 2026-09-17】ハンバーガーのアイコン・押した時の変化・浮くピルの質感 を varRowX(ピル＋⋯削除)で出す用の案リスト */
+const CV_BURGER_ICONS = [
+  { key: '1', name: 'クラシック', tip: '3本の水平線(定番)。' },
+  { key: '2', name: '2本線', tip: '2本の線でミニマルに。' },
+  { key: '3', name: '中央短', tip: '中央の線だけ短いテーパー。' },
+  { key: '4', name: 'ドット', tip: '縦3点(ケバブ)。' },
+  { key: '5', name: '太丸', tip: '太めの丸いバー。' },
+];
+const CV_BURGER_ANIMS = [
+  { key: '1', name: 'クロス', tip: '上下が回って×に(定番)。' },
+  { key: '2', name: '半回転X', tip: '半回転しながら×に。' },
+  { key: '3', name: '90°X', tip: '90°回りながら×に。' },
+  { key: '4', name: '一本線', tip: '上下が中央へ集まって1本線に。' },
+  { key: '5', name: 'シザー', tip: '左端を軸に×へ(すくい上げ)。' },
+];
+const CV_FLOATS = [
+  { key: '1', name: '標準', tip: '標準のすりガラス。' },
+  { key: '2', name: '濃フロスト', tip: '白強めのフロスト＋柔らかい影。' },
+  { key: '3', name: '深い影', tip: 'くっきり深い影。' },
+  { key: '4', name: '軽い', tip: '薄い地色・影控えめ。' },
+  { key: '5', name: 'リキッド', tip: '斜めの光沢＋内側ハイライト。' },
+  { key: '6', name: '白', tip: 'ソリッド白・シャープ。' },
+  { key: '7', name: '発光縁', tip: 'ブランド色のリングが光る。' },
+  { key: '8', name: '強ブラー', tip: 'すりガラス最大。' },
+  { key: '9', name: '長い影', tip: '低い角度の長い影で浮遊感。' },
+  { key: '10', name: 'リキッド2', tip: '色づいた艶・強め。' },
+];
+function burgerIconKey() { const v = String((params && params.burgerIcon) || '1'); return (CV_BURGER_ICONS.some(i => i.key === v) && !variantRemovedKey('burgerIcon', v)) ? v : (CV_BURGER_ICONS.find(i => !variantRemovedKey('burgerIcon', i.key)) || { key: '1' }).key; }
+function burgerAnimKey() { const v = String((params && params.burgerAnim) || '1'); return (CV_BURGER_ANIMS.some(i => i.key === v) && !variantRemovedKey('burgerAnim', v)) ? v : (CV_BURGER_ANIMS.find(i => !variantRemovedKey('burgerAnim', i.key)) || { key: '1' }).key; }
+function floatStyleKey() { const v = String((params && params.floatStyle) || '1'); return (CV_FLOATS.some(i => i.key === v) && !variantRemovedKey('floatStyle', v)) ? v : (CV_FLOATS.find(i => !variantRemovedKey('floatStyle', i.key)) || { key: '1' }).key; }
 function applyHdrMode(key) {
   params.hdrMode = String(key);
   const h = document.documentElement;
@@ -6524,13 +6554,13 @@ function applyHdrMode(key) {
 /* 【V5.0 2026-09-17】ハンバーガーのアイコン案(bi-)と押した時の変化(ba-)を html に反映 */
 function applyBurgerStyle() {
   const h = document.documentElement;
-  const bi = String(params.burgerIcon || '1'), ba = String(params.burgerAnim || '1');
+  const bi = burgerIconKey(), ba = burgerAnimKey();   /* 削除済みは既定へ落とす */
   for (let i = 1; i <= 5; i++) { h.classList.toggle('bi-' + i, bi === String(i)); h.classList.toggle('ba-' + i, ba === String(i)); }
 }
 /* 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案(fs-)を html に反映 */
 function applyFloatStyle() {
   const h = document.documentElement;
-  const fs = String(params.floatStyle || '1');
+  const fs = floatStyleKey();
   for (let i = 1; i <= 10; i++) h.classList.toggle('fs-' + i, fs === String(i));
 }
 /* 【V5.0】追従ヘッダーのスクロール監視(1回だけ設置)。lenis でも window.scrollY は追従する。 */
@@ -7437,7 +7467,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13"]};   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13"],"burgerIcon":["3","4","5"]};   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
@@ -16957,15 +16987,15 @@ function buildPanel() {
   sub(catAll, 'ヘッダー（追従・スクロールで変形）', null, { fixed: true });
   varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('ヘッダーを追従(固定)にして、スクロール時の見た目を選びます。少し下にスクロールすると違いが出ます。URL ?hdr=N。');
-  /* 【V5.0 2026-09-17】ハンバーガーのアイコン・押した時の変化・フローティングの質感 */
-  segRow('ハンバーガーの形', [['クラシック', '1'], ['2本線', '2'], ['中央短', '3'], ['ドット', '4'], ['太丸', '5']],
-    () => String(params.burgerIcon || '1'), v => { params.burgerIcon = String(v); applyBurgerStyle(); });
-  segRow('押した時の変化', [['クロス', '1'], ['半回転X', '2'], ['90°X', '3'], ['一本線', '4'], ['シザー', '5']],
-    () => String(params.burgerAnim || '1'), v => { params.burgerAnim = String(v); applyBurgerStyle(); });
-  note('ハンバーガーの見た目と、クリックで開いた時のアイコンの変化です（変形するヘッダー案で出ます）。');
-  segRow('浮くピルの質感', [['標準', '1'], ['濃フロスト', '2'], ['深い影', '3'], ['軽い', '4'], ['リキッド', '5'], ['白', '6'], ['発光縁', '7'], ['強ブラー', '8'], ['長い影', '9'], ['リキッド2', '10']],
-    () => String(params.floatStyle || '1'), v => { params.floatStyle = String(v); applyFloatStyle(); });
-  note('フローティングピルの案（⑤⑧⑨⑩⑮）の地・影・ブラー・リキッドグラスの質感を10種から選べます。');
+  /* 【V5.0 2026-09-17 ヒデさん指定】ハンバーガー/変化/質感 も、すりガラス等と同じピル型＋⋯削除メニュー(varRowX)に */
+  sub(catAll, 'ハンバーガーの形', null, { fixed: true });
+  varRowX('burgerIcon', CV_BURGER_ICONS, () => burgerIconKey(), v => { params.burgerIcon = String(v); applyBurgerStyle(); });
+  sub(catAll, 'ハンバーガーを押した時の変化', null, { fixed: true });
+  varRowX('burgerAnim', CV_BURGER_ANIMS, () => burgerAnimKey(), v => { params.burgerAnim = String(v); applyBurgerStyle(); });
+  note('ハンバーガーの見た目と、クリックで開いた時のアイコンの変化です（変形するヘッダー案・狭幅で出ます）。⋯から不要な案を削除できます。');
+  sub(catAll, '浮くピルの質感', null, { fixed: true });
+  varRowX('floatStyle', CV_FLOATS, () => floatStyleKey(), v => { params.floatStyle = String(v); applyFloatStyle(); });
+  note('フローティングピルの案（⑤⑧⑨⑩⑮）の地・影・ブラー・リキッドグラスの質感。⋯から不要な案を削除できます。');
 
   /* ========== 🖼 キービジュアル ========== */
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
