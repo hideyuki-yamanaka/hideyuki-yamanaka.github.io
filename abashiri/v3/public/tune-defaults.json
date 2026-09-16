@@ -161,6 +161,7 @@
   "pattern": 1
  },
  "footer": {
-  "pattern": 1
+  "pattern": 1,
+  "layout": 1
  }
 }

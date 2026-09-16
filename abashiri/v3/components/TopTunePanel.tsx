@@ -39,7 +39,7 @@ import {
   PAGE_TRANSITION_EVENT,
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
-import { FOOTER_EVENT, FOOTER_PATTERNS } from "./SiteFooter";
+import { FOOTER_EVENT, FOOTER_PATTERNS, FOOTER_LAYOUTS } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -177,7 +177,7 @@ type Params = {
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
-  footer: { pattern: number };
+  footer: { pattern: number; layout: number };
   expIntro: IntroPace;
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
@@ -233,7 +233,7 @@ export default function TopTunePanel({
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
-      footer: { pattern: 1 }, /* フッターのサイトマップの階層スタイル（既定＝階層A 罫線） */
+      footer: { pattern: 1, layout: 1 }, /* フッター（階層＝A罫線／組み＝Aゆったり2カラム） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -461,7 +461,18 @@ export default function TopTunePanel({
               },
               { sub: "フッター（全ページ共通）" },
               {
-                note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここで選ぶのは、サイトマップの親子の階層をどう見せるかの3案です。トップと各詳細ページの一番下で確認できます。",
+                note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここでは「組み（左右の余白とカラムの幅）」と「親子の階層の見せ方」を選べます。トップと各詳細ページの一番下で確認できます。",
+              },
+              {
+                pills: "組み（余白とカラム幅）",
+                path: "footer.layout",
+                immediate: true,
+                options: Object.entries(FOOTER_LAYOUTS).map(([v, p]) => ({
+                  name: p.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: p.note,
+                })),
               },
               {
                 pills: "階層の見せ方",
@@ -1389,9 +1400,11 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
             );
           }
-          if (info?.path === "footer.pattern") {
+          if (info?.path === "footer.pattern" || info?.path === "footer.layout") {
             window.dispatchEvent(
-              new CustomEvent(FOOTER_EVENT, { detail: { v: params.footer.pattern } })
+              new CustomEvent(FOOTER_EVENT, {
+                detail: { v: params.footer.pattern, layout: params.footer.layout },
+              })
             );
           }
           if (info?.path === "pageTrans.pattern") {
@@ -1464,7 +1477,9 @@ export default function TopTunePanel({
         new CustomEvent(PAGE_TRANSITION_EVENT, { detail: { v: params.pageTrans.pattern } })
       );
       window.dispatchEvent(
-        new CustomEvent(FOOTER_EVENT, { detail: { v: params.footer.pattern } })
+        new CustomEvent(FOOTER_EVENT, {
+                detail: { v: params.footer.pattern, layout: params.footer.layout },
+              })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの
