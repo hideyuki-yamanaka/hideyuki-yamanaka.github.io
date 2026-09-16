@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>軌道の疑似3D プロト</title>
+<style>
+  :root{ --bg:#e9e9ea; --ink:#222; --line:#ddd; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);font-family:-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;color:var(--ink);overflow:hidden;}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  svg{width:min(96vw,1100px);height:auto;touch-action:none;}
+  #panel{position:fixed;top:16px;right:16px;width:240px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.12);padding:14px;font-size:13px;z-index:10;}
+  #panel h1{font-size:13px;margin:0 0 4px;font-weight:700;}
+  #panel .sub{color:#888;font-size:11px;margin:0 0 12px;line-height:1.5;}
+  .row{display:flex;align-items:center;gap:8px;margin:9px 0;}
+  .row label{width:70px;color:#555;font-weight:600;flex:0 0 auto;}
+  .row input[type=range]{flex:1;min-width:0;accent-color:#2ea6ff;}
+  .row .v{width:42px;text-align:right;color:#333;font-variant-numeric:tabular-nums;}
+  .btns{display:flex;gap:8px;margin-top:12px;}
+  .btns button{flex:1;padding:7px 0;border:1px solid var(--line);background:#fafafa;border-radius:8px;cursor:pointer;font-size:12px;}
+  .btns button:hover{background:#f0f0f0;}
+  .hint{position:fixed;left:16px;bottom:14px;color:#999;font-size:12px;z-index:10;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <svg id="kv" viewBox="0 0 915.483 630" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="gOut" x1="457.741" y1="160.5" x2="457.741" y2="452.6" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FF5D97"/><stop offset="0.404" stop-color="#fff"/><stop offset="1" stop-color="#00ABEB"/>
+      </linearGradient>
+      <linearGradient id="gIn" x1="475.283" y1="217.4" x2="475.283" y2="483.6" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#00ABEB"/><stop offset="0.49" stop-color="#fff"/><stop offset="1" stop-color="#FF5D97"/>
+      </linearGradient>
+    </defs>
+    <g id="back"></g>
+    <image id="planet" href="proto-planet.png" x="328.4" y="159.6" width="257.4" height="257.4"/>
+    <g id="front"></g>
+    <g id="dots"></g>
+  </svg>
+</div>
+<div id="panel">
+  <h1>軌道の疑似3D（惑星は固定）</h1>
+  <p class="sub">惑星は動かさず、軌道だけ立体的に倒します。ドラッグ＝上下でX（奥に倒す）／左右でY。</p>
+  <div class="row"><label>X 奥に倒す</label><input id="rx" type="range" min="-80" max="80" value="0"><span class="v" id="rxv">0°</span></div>
+  <div class="row"><label>Y 左右</label><input id="ry" type="range" min="-80" max="80" value="0"><span class="v" id="ryv">0°</span></div>
+  <div class="row"><label>Z 回転</label><input id="rz" type="range" min="-180" max="180" value="0"><span class="v" id="rzv">0°</span></div>
+  <div class="btns"><button id="reset">正面に戻す</button></div>
+</div>
+<div class="hint">疑似3D（SVG）— 軌道を3Dの円として捉え、傾けた形を計算して描画。惑星はそのまま。</div>
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+// カンプ実測の軌道 = 3Dの円として復元
+const D2R=Math.PI/180;
+// ===== アトム型: 複数リングを画面内で等間隔に回した3Dの円 =====
+const CX=457, CY=288;                 // 惑星の中心
+const RINGN=4;                        // リング本数
+const ATOM_R=405, ATOM_PHI=62*D2R;    // 半径・傾き(小さいほど開く)
+const ORBITS=[];
+for(let i=0;i<RINGN;i++){
+  ORBITS.push({cx:CX, cy:CY, R:ATOM_R, phi:ATOM_PHI, rho:(i*180/RINGN)*D2R, grad:i%2?'gIn':'gOut', flipZ:1});
+}
+// 各リングに1個ずつドットを乗せる
+const DCOL=['#0EBBFF','#FF5D97','#4E4E4E','#0EBBFF','#FF5D97','#0EBBFF'];
+const DOTS=ORBITS.map((o,i)=>({o:i,ang:40+i*70,c:DCOL[i%DCOL.length]}));
+const state={rx:0,ry:0,rz:0};
+// 基準3D点(カンプ姿勢)を作る: 円 → rotateX(phi) → rotateZ(rho)
+function base(o,th){
+  let x=o.R*Math.cos(th), y=o.R*Math.sin(th), z=0;
+  // tilt about X by phi (下半分が手前=z>0 になるよう flipZ)
+  let y2=y*Math.cos(o.phi), z2=o.flipZ*(-y*Math.sin(o.phi));
+  // rotate about Z by rho
+  let x3=x*Math.cos(o.rho)-y2*Math.sin(o.rho), y3=x*Math.sin(o.rho)+y2*Math.cos(o.rho);
+  return [x3,y3,z2];
+}
+// ユーザー回転(奥に倒す等)を中心まわりに適用
+function userRot(p){
+  let [x,y,z]=p;
+  const ax=state.rx*D2R, ay=state.ry*D2R, az=state.rz*D2R;
+  // rotateX
+  let y1=y*Math.cos(ax)-z*Math.sin(ax), z1=y*Math.sin(ax)+z*Math.cos(ax);
+  // rotateY
+  let x2=x*Math.cos(ay)+z1*Math.sin(ay), z2=-x*Math.sin(ay)+z1*Math.cos(ay);
+  // rotateZ
+  let x3=x2*Math.cos(az)-y1*Math.sin(az), y3=x2*Math.sin(az)+y1*Math.cos(az);
+  return [x3,y3,z2];
+}
+function project(o,th){
+  const p=userRot(base(o,th));
+  return [o.cx+p[0], o.cy+p[1], p[2]];  // z=depth(手前が+)
+}
+// パスを front(z>=0)/back(z<0) に分けて生成
+function buildPaths(o){
+  const N=140, segs={front:[],back:[]};
+  let pts=[];
+  for(let i=0;i<=N;i++){ const th=i/N*2*Math.PI; const [x,y,z]=project(o,th); pts.push([x,y,z]); }
+  // 連続する同符号のランに分割
+  let cur=null,curSign=null;
+  for(let i=0;i<pts.length;i++){
+    const s=pts[i][2]>=0?'front':'back';
+    if(s!==curSign){ if(cur&&cur.length>1)segs[curSign].push(cur); cur=[pts[i]]; curSign=s; }
+    else cur.push(pts[i]);
+  }
+  if(cur&&cur.length>1)segs[curSign].push(cur);
+  const toPath=run=>'M'+run.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L');
+  return {front:segs.front.map(toPath), back:segs.back.map(toPath)};
+}
+const backG=document.getElementById('back'), frontG=document.getElementById('front'), dotsG=document.getElementById('dots');
+function draw(){
+  backG.innerHTML=''; frontG.innerHTML=''; dotsG.innerHTML='';
+  for(const o of ORBITS){
+    const {front,back}=buildPaths(o);
+    for(const d of back){ const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','none');p.setAttribute('stroke','url(#'+o.grad+')');p.setAttribute('stroke-width','3');p.setAttribute('stroke-linecap','round');backG.appendChild(p);}
+    for(const d of front){ const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','none');p.setAttribute('stroke','url(#'+o.grad+')');p.setAttribute('stroke-width','3');p.setAttribute('stroke-linecap','round');frontG.appendChild(p);}
+  }
+  for(const dt of DOTS){
+    const o=ORBITS[dt.o]; const [x,y,z]=project(o,dt.ang*D2R);
+    const c=document.createElementNS(NS,'circle');c.setAttribute('cx',x.toFixed(1));c.setAttribute('cy',y.toFixed(1));
+    c.setAttribute('r','5.6');c.setAttribute('fill',dt.c);
+    (z>=0?dotsG:backG).appendChild(c);   // 奥のドットは惑星の後ろ(back)へ
+  }
+}
+const rx=document.getElementById('rx'),ry=document.getElementById('ry'),rz=document.getElementById('rz');
+const rxv=document.getElementById('rxv'),ryv=document.getElementById('ryv'),rzv=document.getElementById('rzv');
+function sync(){rx.value=state.rx;ry.value=state.ry;rz.value=state.rz;rxv.textContent=Math.round(state.rx)+'°';ryv.textContent=Math.round(state.ry)+'°';rzv.textContent=Math.round(state.rz)+'°';}
+rx.oninput=()=>{state.rx=+rx.value;draw();sync();};
+ry.oninput=()=>{state.ry=+ry.value;draw();sync();};
+rz.oninput=()=>{state.rz=+rz.value;draw();sync();};
+document.getElementById('reset').onclick=()=>{state.rx=state.ry=state.rz=0;draw();sync();};
+// drag
+let drag=false,lx=0,ly=0;const svg=document.getElementById('kv');
+svg.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
+  if(e.shiftKey){state.rz=Math.max(-180,Math.min(180,state.rz+dx*0.5));}
+  else{state.ry=Math.max(-80,Math.min(80,state.ry+dx*0.4));state.rx=Math.max(-80,Math.min(80,state.rx-dy*0.4));}
+  draw();sync();});
+addEventListener('pointerup',()=>drag=false);
+// URLハッシュ初期値(検証用)
+(function(){const h=new URLSearchParams(location.hash.slice(1));if(h.has('rx'))state.rx=+h.get('rx');if(h.has('ry'))state.ry=+h.get('ry');if(h.has('rz'))state.rz=+h.get('rz');})();
+draw();sync();
+window.__draw=draw;window.__state=state;
+</script>
+</body>
+</html>

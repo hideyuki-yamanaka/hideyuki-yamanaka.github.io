@@ -1,0 +1,27 @@
+/* Comparison shell only: compact density follows the current gallery preference.
+   Original proposal CSS lives unchanged in study.css. */
+.archive-gallery{margin:0;background:#e7e7e7;color:#15181d;font:300 14px/1.7 var(--font-jp);scroll-padding-top:0}
+.archive-main{max-width:1440px;margin:auto;padding:25px 32px 30px}
+.archive-heading{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.archive-heading h1{font:300 29px/1.5 var(--font-jp);letter-spacing:.015em}
+.archive-heading p{font-size:11px;color:#525d6b;margin-top:5px}
+.archive-heading>a{font-size:12px;color:#234e7d;white-space:nowrap}
+.archive-tools{display:flex;justify-content:flex-end;gap:5px;margin:12px 0 20px}
+.archive-tools button{font:400 12px/1.5 var(--font-jp);padding:7px 11px;background:transparent;border:1px solid transparent;border-radius:4px;color:#4c5561}
+.archive-tools button[aria-pressed="true"]{color:#122f56;border-color:#9da8b6;background:#f6f6f6}
+.archive-grid{display:grid;grid-template-columns:repeat(var(--columns,5),minmax(0,1fr));gap:20px 16px}
+.archive-card{position:relative;min-width:0}
+.archive-card header{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px;margin-bottom:7px}
+.archive-card h2{font:400 16px/1.5 var(--font-en);white-space:nowrap}
+.archive-card h3{font:400 11px/1.5 var(--font-jp);text-align:right;text-wrap:balance}
+.archive-preview{display:block;position:relative;aspect-ratio:1280/740;background:#e7e7e7;border:1px solid #aeb6c0;overflow:hidden}
+.archive-preview:hover{border-color:#174984}
+.archive-preview iframe{position:absolute;left:0;top:0;width:1280px;height:740px;transform:scale(var(--preview-scale,.18));transform-origin:top left;border:0;pointer-events:none}
+.archive-actions{position:absolute;right:5px;bottom:5px;display:flex;gap:3px}
+.archive-actions button{display:grid;place-items:center;width:28px;height:28px;padding:0;background:#f8f8f8ef;color:#384754;border:1px solid #aeb6c0;border-radius:4px;font:20px/1 var(--font-en)}
+.archive-actions button[aria-pressed="true"]{color:#0e4497;background:#fff;border-color:#0e4497}
+.archive-gallery :is(button,a):focus-visible{outline:2px solid #174984;outline-offset:3px}
+.archive-caption,.archive-empty{font-size:11px;color:#525d6b;margin-top:20px}
+.archive-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:900px){.archive-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.archive-main{padding-inline:24px}.archive-card header{align-items:flex-start;gap:8px}}
+@media(max-width:600px){.archive-main{padding:20px}.archive-heading{align-items:flex-start;gap:14px}.archive-heading h1{font-size:24px}.archive-heading>a{font-size:11px;margin-top:9px}.archive-heading p{max-width:230px}.archive-tools{justify-content:flex-start;flex-wrap:wrap;margin-top:18px}.archive-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px}.archive-card header{flex-direction:column;gap:3px;min-height:55px}.archive-card h2{font-size:14px}.archive-card h3{text-align:left;font-size:11px}.archive-actions{right:3px;bottom:3px}.archive-actions button{width:25px;height:25px;font-size:18px}}

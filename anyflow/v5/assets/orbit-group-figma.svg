@@ -1,0 +1,26 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="915.483" height="630" viewBox="0 0 915.483 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1075">
+<foreignObject x="-4.68996" y="39.8207" width="959.946" height="621.368"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(55px);clip-path:url(#bgblur_0_0_4_clip_path);height:100%;width:100%"></div></foreignObject><ellipse id="Ellipse 77" data-figma-bg-blur-radius="110" cx="475.283" cy="350.505" rx="397.09" ry="133.142" transform="rotate(-23.3266 475.283 350.505)" stroke="url(#paint0_linear_0_4)" stroke-width="3"/>
+<circle id="Ellipse 78" cx="338.226" cy="200.881" r="5.60597" fill="#0E4497"/>
+<circle id="Ellipse 79" cx="353.175" cy="529.766" r="5.60597" fill="#0EBBFF"/>
+<circle id="Ellipse 80" cx="106.511" cy="479.311" r="5.60597" fill="#FF5D97"/>
+<circle id="Ellipse 81" cx="660.573" cy="362.519" r="5.60597" fill="#4E4E4E"/>
+<circle id="Ellipse 82" cx="808.195" cy="287.773" r="5.60597" fill="#FF5D97"/>
+<circle id="Ellipse 83" cx="763.346" cy="152.296" r="5.60597" fill="#0EBBFF"/>
+<foreignObject x="-57.8896" y="-23.4163" width="1031.26" height="659.919"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(55px);clip-path:url(#bgblur_1_0_4_clip_path);height:100%;width:100%"></div></foreignObject><ellipse id="Ellipse 84" data-figma-bg-blur-radius="110" cx="457.741" cy="306.543" rx="435.517" ry="146.026" transform="rotate(-23.3266 457.741 306.543)" stroke="url(#paint1_linear_0_4)" stroke-width="3"/>
+</g>
+<defs>
+<clipPath id="bgblur_0_0_4_clip_path" transform="translate(4.68996 -39.8207)"><ellipse cx="475.283" cy="350.505" rx="397.09" ry="133.142" transform="rotate(-23.3266 475.283 350.505)"/>
+</clipPath><clipPath id="bgblur_1_0_4_clip_path" transform="translate(57.8896 23.4163)"><ellipse cx="457.741" cy="306.543" rx="435.517" ry="146.026" transform="rotate(-23.3266 457.741 306.543)"/>
+</clipPath><linearGradient id="paint0_linear_0_4" x1="475.283" y1="217.363" x2="475.283" y2="483.647" gradientUnits="userSpaceOnUse">
+<stop stop-color="#00ABEB"/>
+<stop offset="0.490385" stop-color="white"/>
+<stop offset="1" stop-color="#FF5D97"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_4" x1="457.741" y1="160.517" x2="457.741" y2="452.569" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF5D97"/>
+<stop offset="0.403846" stop-color="white"/>
+<stop offset="1" stop-color="#00ABEB"/>
+</linearGradient>
+</defs>
+</svg>

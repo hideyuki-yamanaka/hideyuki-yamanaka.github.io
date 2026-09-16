@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>液体オーブ — KV別案</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    /* 参考画像の地: 明るいグレー + 中央がわずかに明るいビネット */
+    background:
+      radial-gradient(90% 70% at 50% 42%, #f4f4f4 0%, #e9e9e9 55%, #dfdfdf 100%);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    font-family: "Noto Sans JP", -apple-system, sans-serif;
+  }
+  .stage { position: relative; display: grid; place-items: center; }
+  /* 参考画像の足元のうっすら影 */
+  .stage::after {
+    content: ""; position: absolute; left: 50%; bottom: 4%;
+    width: 46%; height: 7%; transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba(60, 70, 90, .14), rgba(60, 70, 90, 0) 72%);
+    filter: blur(6px);
+  }
+  canvas { display: block; position: relative; z-index: 1; }
+  #nogl { display: none; color: #666; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <canvas id="orb"></canvas>
+  <p id="nogl">このブラウザは WebGL が使えないため表示できません。</p>
+</div>
+
+<script src="tune-panel.js"></script>
+<script>
+  /* 数値は全部ここ。tune-panel がこの ORB を直接書き換え、orb.js が毎フレーム読む */
+  const DEFAULTS = {
+    body:  { size: 0.66, timeScale: 1.0, wobAmp: 0.020, wobSpd: 0.16 },
+    flow:  { speed: 0.20, warpAmp: 1.6, warpScl: 1.2, blobSpd: 0.14 },
+    silk:  { freq: 22, amp: 0.50, sharp: 7 },
+    color: { c1: '#4D7BFF', c2: '#FF2EBB', c3: '#7E63FF', soft: 0.22, hiKey: 0.28 },
+    light: { fresAmp: 0.40, fresPow: 3.4, cresAmp: 1.05, cresAng: 38, cresWidth: 0.18,
+             glowW: 0.08, glowAmp: 0.50, shade: 0.35 },
+  };
+  window.ORB = structuredClone(DEFAULTS);
+
+  TunePanel.create({
+    title: '🫧 液体オーブ調整',
+    storageKey: 'anyflow-orb',
+    version: 5,
+    params: window.ORB, defaults: DEFAULTS,
+    schema: [
+      { cat: '🫧 かたち', open: true, items: [
+        { slider: '大きさ', path: 'body.size', min: 0.35, max: 0.92, step: 0.01, fmt: 'n2',
+          hint: '球の半径。画面に対する割合です。' },
+        { slider: '再生速度', path: 'body.timeScale', min: 0.1, max: 3, step: 0.05, fmt: 'x',
+          hint: '全部の動き（揺らぎ・流れ）が同じ倍率で速くなります。' },
+        { sub: '輪郭の揺らぎ' },
+        { slider: '揺れ幅', path: 'body.wobAmp', min: 0, max: 0.08, step: 0.002, fmt: 'n2',
+          hint: '0で完全な正円。上げると水風船のように輪郭が波打ちます。' },
+        { slider: '揺れの速さ', path: 'body.wobSpd', min: 0, max: 0.8, step: 0.02, fmt: 'n2',
+          hint: '輪郭の波打ちの速さ。' },
+      ]},
+      { cat: '🌊 中の流れ', items: [
+        { slider: '流れの速さ', path: 'flow.speed', min: 0, max: 0.8, step: 0.02, fmt: 'n2',
+          hint: '絹糸模様が形を変えていく速さ。' },
+        { slider: '流れの複雑さ', path: 'flow.warpAmp', min: 0, max: 6, step: 0.1, fmt: 'n1',
+          hint: '上げるほど模様がぐにゃぐにゃ渦巻きます。0で素直な縞。' },
+        { slider: '模様の大きさ', path: 'flow.warpScl', min: 0.5, max: 4, step: 0.1, fmt: 'n1',
+          hint: '小さいと大きくうねる、大きいと細かくちりめん状に。' },
+        { slider: '色の泳ぐ速さ', path: 'flow.blobSpd', min: 0, max: 0.6, step: 0.02, fmt: 'n2',
+          hint: '青・ピンク・紫の色のかたまりが球の中を移動する速さ。' },
+      ]},
+      { cat: '🧵 絹糸', items: [
+        { slider: '糸の細かさ', path: 'silk.freq', min: 3, max: 40, step: 1, fmt: 'int',
+          hint: '本数。上げるほど細い糸がたくさん走ります。' },
+        { slider: '糸の強さ', path: 'silk.amp', min: 0, max: 1, step: 0.02, fmt: '%',
+          hint: '糸の白さ。0で糸なし（色のグラデだけ）。' },
+        { slider: '糸の鋭さ', path: 'silk.sharp', min: 1, max: 16, step: 0.5, fmt: 'n1',
+          hint: '上げるほど糸が細くシャープに。下げるとぼんやり帯状に。' },
+      ]},
+      { cat: '🎨 色', items: [
+        { color: '色1（青）', path: 'color.c1' },
+        { color: '色2（ピンク）', path: 'color.c2' },
+        { color: '色3（紫）', path: 'color.c3' },
+        { slider: 'にじみ具合', path: 'color.soft', min: 0.15, max: 1.5, step: 0.05, fmt: 'n2',
+          hint: '色同士の境目のぼけ幅。上げるほど混ざり合います。' },
+        { slider: 'パステル寄せ', path: 'color.hiKey', min: 0, max: 1, step: 0.05, fmt: '%',
+          hint: '全体を白っぽく淡くします。' },
+      ]},
+      { cat: '✨ 光', items: [
+        { sub: '白い折り目（三日月）' },
+        { slider: '強さ', path: 'light.cresAmp', min: 0, max: 1.5, step: 0.05, fmt: 'n2',
+          hint: '参考画像の右上にある白い帯。0で消えます。' },
+        { slider: '角度', path: 'light.cresAng', min: 0, max: 360, step: 1, fmt: 'deg', autoCenter: false,
+          hint: '白い帯が出る方角。38°=右上。' },
+        { slider: '幅', path: 'light.cresWidth', min: 0.05, max: 0.8, step: 0.01, fmt: 'n2',
+          hint: '小さいほど白い領域が広がります。' },
+        { sub: 'ふちの光' },
+        { slider: 'ふち光の強さ', path: 'light.fresAmp', min: 0, max: 1.2, step: 0.05, fmt: 'n2',
+          hint: '球のふち全周にまわる白い光。' },
+        { slider: 'ふち光の鋭さ', path: 'light.fresPow', min: 1, max: 8, step: 0.1, fmt: 'n1',
+          hint: '上げるほど光がふちギリギリに寄ります。' },
+        { sub: '外へのにじみ' },
+        { slider: 'にじみの幅', path: 'light.glowW', min: 0.01, max: 0.35, step: 0.01, fmt: 'n2',
+          hint: '球の外へ色が溶け出す距離。' },
+        { slider: 'にじみの強さ', path: 'light.glowAmp', min: 0, max: 1.2, step: 0.05, fmt: 'n2',
+          hint: '外へのにじみの濃さ。' },
+        { sub: '立体感' },
+        { slider: '陰影', path: 'light.shade', min: 0, max: 1, step: 0.05, fmt: '%',
+          hint: '0でフラット、上げるほど左下が沈んで球らしくなります。' },
+      ]},
+    ],
+  });
+</script>
+<script src="orb.js"></script>
+</body>
+</html>

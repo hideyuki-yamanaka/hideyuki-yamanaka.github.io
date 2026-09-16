@@ -1,0 +1,18 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 1000007312">
+<foreignObject x="-100.5" y="59.5" width="422" height="245"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(55px);clip-path:url(#bgblur_0_0_10_clip_path);height:100%;width:100%"></div></foreignObject><ellipse id="Ellipse 64" data-figma-bg-blur-radius="110" cx="110.5" cy="182" rx="100.5" ry="12" stroke="url(#paint0_linear_0_10)"/>
+<path id="Vector" d="M191.5 177C193.433 177 195 176.105 195 175C195 173.895 193.433 173 191.5 173C189.567 173 188 173.895 188 175C188 176.105 189.567 177 191.5 177Z" fill="#00ABEB"/>
+<path id="Vector_2" d="M26 190C28.2091 190 30 189.328 30 188.5C30 187.672 28.2091 187 26 187C23.7909 187 22 187.672 22 188.5C22 189.328 23.7909 190 26 190Z" fill="#FF5D97"/>
+<rect id="Rectangle 1015" x="77.5" y="27.5" width="66" height="154" fill="#E7E7E7" stroke="black"/>
+</g>
+<defs>
+<clipPath id="bgblur_0_0_10_clip_path" transform="translate(100.5 -59.5)"><ellipse cx="110.5" cy="182" rx="100.5" ry="12"/>
+</clipPath><linearGradient id="paint0_linear_0_10" x1="54.7872" y1="170.835" x2="133.869" y2="250.959" gradientUnits="userSpaceOnUse">
+<stop stop-color="#00ABEB"/>
+<stop offset="0.399038" stop-color="#A2E6FF"/>
+<stop offset="0.509615" stop-color="white"/>
+<stop offset="0.629808" stop-color="#FFCFE0"/>
+<stop offset="1" stop-color="#FF5D97"/>
+</linearGradient>
+</defs>
+</svg>

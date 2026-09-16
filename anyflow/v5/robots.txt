@@ -1,0 +1,5 @@
+# たたき台のサイトのため、全クローラーを拒否しています。
+# 公開する時は、このファイルと index.html の noindex メタタグ、
+# vercel.json の X-Robots-Tag を一緒に外してください。
+User-agent: *
+Disallow: /

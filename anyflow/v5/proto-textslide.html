@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>開発者体験2 テキストスライド プロト (Figma 15975-43453)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;250;300&display=swap" rel="stylesheet">
+<style>
+  :root{ --en:-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif; --jp:"Noto Sans JP",-apple-system,sans-serif; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:#161616;color:#fff;font-family:var(--jp);overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .label{ font-family:var(--en); font-weight:100; font-size:20px; letter-spacing:-0.5px; color:#0EBBFF; margin-bottom:12px; }
+  .line{ display:flex; align-items:center; justify-content:center; font-family:var(--jp); font-weight:250; font-size:40px; line-height:58px; white-space:nowrap; color:#fff; }
+  .w{ display:inline-block; }
+  .box{ display:inline-flex; align-items:center; justify-content:center; overflow:hidden;
+    height:42px; border-radius:8px; background:rgba(255,255,255,.09); margin:0 12px; width:0; }
+  /* 語スロット: 2枚(out/in)を重ねてモーションで入れ替える */
+  .roll{ position:relative; width:100%; height:34px; }
+  .word{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--en); font-weight:200; font-size:34px; letter-spacing:1.7px; color:#fff;
+    will-change:transform,opacity,filter; backface-visibility:hidden; }
+  .hint{position:fixed;left:16px;top:16px;color:#888;font-size:12px;line-height:1.6;}
+  #ctl{position:fixed;left:0;right:0;bottom:0;padding:12px 20px;background:rgba(0,0,0,.55);display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #ctl label{color:#aaa;font-size:12px;font-family:var(--en);}
+  #prog{flex:1;min-width:180px;accent-color:#0EBBFF;}
+  #play{padding:6px 14px;border:1px solid #444;background:#222;color:#fff;border-radius:8px;cursor:pointer;font-size:12px;}
+  #screen{color:#0EBBFF;font-family:var(--en);font-size:12px;width:96px;}
+  .motions{display:flex;gap:0;border:1px solid #444;border-radius:8px;overflow:hidden;}
+  .motions button{padding:6px 12px;border:0;background:#222;color:#aaa;cursor:pointer;font-size:12px;}
+  .motions button.on{background:#0EBBFF;color:#062a3a;font-weight:700;}
+  .mrow{display:flex;align-items:center;gap:8px;}
+  .mrow input{accent-color:#0EBBFF;width:110px;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div style="text-align:center">
+    <div class="label">Strength 02</div>
+    <div class="line">
+      <span class="w">開発環境</span>
+      <span class="box" id="box"><span class="roll" id="roll">
+        <span class="word" id="wOut">CLI</span>
+        <span class="word" id="wIn">SDK</span>
+      </span></span>
+      <span class="w">に柔軟に適応</span>
+    </div>
+  </div>
+</div>
+<div class="hint">スクロールで発火する想定。下のスライダーで「スクロール進行」を再現。<br>
+  語が左右に開く→箱がマスクで登場→CLI→SDK→API と切替(モックも同期)。<br>
+  切替はホールド→素早く。モーションは3種(スナップ/フリップ/ブラー)。</div>
+<div id="ctl">
+  <button id="play">▶ 自動</button>
+  <div class="motions" id="motions">
+    <button data-m="snap" class="on">スナップ</button>
+    <button data-m="flip">フリップ</button>
+    <button data-m="blur">ブラー</button>
+  </div>
+  <div class="mrow"><label>ホールド</label><input id="hold" type="range" min="0.3" max="0.9" step="0.02" value="0.62"><span id="holdv" style="color:#888;font-size:11px;width:28px">.62</span></div>
+  <div class="mrow"><label>キレ</label><input id="snapK" type="range" min="1" max="6" step="0.2" value="3.4"><span id="snapKv" style="color:#888;font-size:11px;width:28px">3.4</span></div>
+  <label>進行</label>
+  <input id="prog" type="range" min="0" max="1000" value="0">
+  <span id="screen">画面: —</span>
+</div>
+
+<script>
+const box=document.getElementById('box'), roll=document.getElementById('roll'),
+      wOut=document.getElementById('wOut'), wIn=document.getElementById('wIn'), scr=document.getElementById('screen');
+const BOX_W=107, WORDS=['CLI','SDK','API'], H=34;
+const state={ motion:'snap', hold:0.62, snapK:3.4 };
+// キレのあるイージング(後半で一気に): snapKが大きいほどメリハリ
+function snapEase(t,k){ return Math.pow(t,k); }         // 立ち上がりゆっくり→終盤に一気に
+function easeOutBack(t){ const c1=1.70158,c3=c1+1; return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2); }
+function apply(p){
+  // 0.00–0.18: 箱が 0→107 に開く(語が左右にスライド)
+  const open=Math.min(1,p/0.18), oe=1-Math.pow(1-open,3);
+  box.style.width=(BOX_W*oe).toFixed(1)+'px';
+  // 0.18–1.0 を CLI→SDK→API の3語に。各語をホールドしてから素早く切替(メリハリ)
+  const q=Math.max(0,(p-0.18)/(1-0.18));      // 0→1
+  const N=WORDS.length, seg=1/N;
+  const raw=Math.min(N-1e-6, q/seg);          // 0→N
+  let idx=Math.floor(raw), within=raw-idx;    // 現在語 / 区間内(0→1)
+  const hold=state.hold;
+  let tr = within<hold ? 0 : (within-hold)/(1-hold);   // ホールド中0→切替中0..1
+  const nextIdx=Math.min(N-1, idx+1);
+  wOut.textContent=WORDS[idx]; wIn.textContent=WORDS[nextIdx];
+  // モーション適用
+  const e = state.motion==='snap' ? snapEase(tr,state.snapK) : tr;
+  if(state.motion==='snap'){
+    // 縦ロール: out が上へ抜け、in が下から上がる
+    wOut.style.transform=`translateY(${(-e*H).toFixed(1)}px)`; wOut.style.opacity=1; wOut.style.filter='';
+    wIn.style.transform=`translateY(${((1-e)*H).toFixed(1)}px)`; wIn.style.opacity=1; wIn.style.filter='';
+  } else if(state.motion==='flip'){
+    // 3Dフリップ: out が上へ倒れ、in が下から立つ
+    roll.style.perspective='300px';
+    wOut.style.transform=`rotateX(${(e*90).toFixed(1)}deg)`; wOut.style.opacity=(1-Math.min(1,e*1.6)).toFixed(2); wOut.style.filter='';
+    wIn.style.transform=`rotateX(${(-(1-e)*90).toFixed(1)}deg)`; wIn.style.opacity=Math.min(1,e*1.6).toFixed(2); wIn.style.filter='';
+  } else { // blur
+    wOut.style.transform='none'; wOut.style.opacity=(1-e).toFixed(2); wOut.style.filter=`blur(${(e*7).toFixed(1)}px)`;
+    wIn.style.transform='none'; wIn.style.opacity=e.toFixed(2); wIn.style.filter=`blur(${((1-e)*7).toFixed(1)}px)`;
+  }
+  const shown = tr>=0.5 ? nextIdx : idx;
+  scr.textContent='画面: '+(oe<0.5?'—':WORDS[shown]);
+}
+const prog=document.getElementById('prog');
+prog.oninput=()=>apply(+prog.value/1000);
+document.querySelectorAll('#motions button').forEach(b=>b.onclick=()=>{ state.motion=b.dataset.m; document.querySelectorAll('#motions button').forEach(x=>x.classList.toggle('on',x===b)); apply(+prog.value/1000); });
+const hold=document.getElementById('hold'), holdv=document.getElementById('holdv');
+hold.oninput=()=>{ state.hold=+hold.value; holdv.textContent=(+hold.value).toFixed(2).slice(1); apply(+prog.value/1000); };
+const snapK=document.getElementById('snapK'), snapKv=document.getElementById('snapKv');
+snapK.oninput=()=>{ state.snapK=+snapK.value; snapKv.textContent=(+snapK.value).toFixed(1); apply(+prog.value/1000); };
+apply(0);
+let auto=false,t0=null;
+function loop(ts){ if(!auto)return; if(t0==null)t0=ts; const p=Math.min(1,(ts-t0)/5000); prog.value=p*1000; apply(p); if(p<1)requestAnimationFrame(loop); else{auto=false;document.getElementById('play').textContent='▶ 自動';} }
+document.getElementById('play').onclick=()=>{ auto=!auto; t0=null; document.getElementById('play').textContent=auto?'⏸ 停止':'▶ 自動'; if(auto)requestAnimationFrame(loop); };
+</script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>キービジュアル V2 — カンプ忠実版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kv.css?v=12">
+<link rel="stylesheet" href="patterns.css?v=29">
+</head>
+<body>
+
+<header class="kv-header">
+  <img class="logo" src="assets/header-logo.svg" alt="Anyflow Embed">
+  <nav>
+    <div class="links"><span>ビジョン</span><span>提供できること</span><span>使用イメージ</span><span>導入事例</span></div>
+    <div class="cta">お問い合わせ</div>
+  </nav>
+</header>
+
+<div class="kv-copy">
+  <div class="eyebrow">APIでデータを繋ぐプラットフォーム</div>
+  <h1>AIと事業を<br>強くする</h1>
+</div>
+
+<div id="kv"></div>
+<div id="kvp"></div>
+<div id="kvBlender" class="hidden"><img src="assets/kv-hero-3d.png?v=1" alt="Blender 3D キービジュアル"></div>
+
+<div class="kv-ticker">
+  <div class="track">
+    <div class="set">
+      <img src="../assets/logo-1.png" alt=""><img src="../assets/logo-2.png" alt=""><img src="../assets/logo-3.png" alt="">
+      <img src="../assets/logo-4.png" alt=""><img src="../assets/logo-5.png" alt=""><img src="../assets/logo-6.png" alt="">
+      <img src="../assets/logo-7.png" alt="">
+    </div>
+    <div class="set">
+      <img src="../assets/logo-1.png" alt=""><img src="../assets/logo-2.png" alt=""><img src="../assets/logo-3.png" alt="">
+      <img src="../assets/logo-4.png" alt=""><img src="../assets/logo-5.png" alt=""><img src="../assets/logo-6.png" alt="">
+      <img src="../assets/logo-7.png" alt="">
+    </div>
+  </div>
+</div>
+
+<div class="kv-secret" id="kvSecret" title="調整パネル"></div>
+<div class="kv-bar">
+  <div class="row0">
+    <b>案:</b>
+    <button data-design="agent" class="on" title="エージェント版">A</button>
+    <button data-design="p1" title="フラット×回路線×白箱">B</button>
+    <button data-design="p2" title="フラット×同心円×ガラス">C</button>
+    <button data-design="p3" title="アイソメ×回路線×ガラス">D</button>
+    <button data-design="p4" title="アイソメ×軌道×白箱">E</button>
+    <button data-design="p5" title="同心円+周回ドット+アニメmock(CSS)">F</button>
+    <button data-design="blender" title="Blender 3D">G</button>
+    <button data-design="p6" title="Figma SVG忠実版">H</button>
+  </div>
+  <div class="row1">
+    ビュー:
+    <button data-gview="flat" class="on">普通</button>
+    <button data-gview="iso">アイソメ（厚み）</button>
+  </div>
+  <div class="rowE">
+    浮遊(E):
+    <button data-float="on" class="on">オン</button>
+    <button data-float="off">オフ</button>
+    <span class="sep"></span>
+    パララックス(E):
+    <button data-parallax="off" class="on">オフ</button>
+    <button data-parallax="on">オン</button>
+  </div>
+  <div class="row2">
+    角度
+    X <input type="range" id="rx" min="-30" max="72" step="1" value="0"><span id="rxv">0°</span>
+    Y <input type="range" id="ry" min="-45" max="45" step="1" value="0"><span id="ryv">0°</span>
+    Z <input type="range" id="rz" min="-90" max="90" step="1" value="0"><span id="rzv">0°</span>
+    大きさ <input type="range" id="rs" min="0.8" max="1.5" step="0.02" value="1"><span id="rsv">×1.00</span>
+  </div>
+</div>
+
+<script src="engine.js?v=12"></script>
+<script src="patterns.js?v=28"></script>
+<script>
+  KV.start({ mount: 'kv' });
+  KVP.start({ mount: 'kvp' });
+
+  const kvHost = document.getElementById('kv');
+  const kvBlender = document.getElementById('kvBlender');
+  const row1 = document.querySelector('.kv-bar .row1');
+  const rowE = document.querySelector('.kv-bar .rowE');
+  let curDesign = 'agent';
+
+  const labels = { x: rxv, y: ryv, z: rzv, s: rsv };
+  function syncLabels(v) {
+    labels.x.textContent = v.x + '°'; labels.y.textContent = v.y + '°';
+    labels.z.textContent = v.z + '°'; labels.s.textContent = '×' + (+v.s).toFixed(2);
+  }
+  function readSliders() { return { x: +rx.value, y: +ry.value, z: +rz.value, s: +rs.value }; }
+  /* 角度XYZ・大きさ: エージェント=KV.setView / パターン=KVP.setTransform */
+  [rx, ry, rz, rs].forEach(sl => sl.addEventListener('input', () => {
+    const v = readSliders(); syncLabels(v);
+    if (curDesign === 'agent') KV.setView(v);
+    else if (curDesign !== 'blender') KVP.setTransform(v);
+  }));
+
+  /* ビュー: 普通 / アイソメ（全案共通） */
+  const ISO_AGENT = { x: 54, y: 0, z: -42, s: 1.26 };
+  function syncViewUI(mode) {
+    document.querySelectorAll('.kv-bar [data-gview]').forEach(x => x.classList.toggle('on', x.dataset.gview === mode));
+    const t = (curDesign === 'agent') ? (mode === 'iso' ? ISO_AGENT : { x: 0, y: 0, z: 0, s: 1 }) : KVP.getTransform();
+    rx.value = t.x; ry.value = t.y; rz.value = t.z; rs.value = t.s; syncLabels(t);
+  }
+  document.querySelectorAll('.kv-bar [data-gview]').forEach(b => b.onclick = () => {
+    const mode = b.dataset.gview;
+    if (curDesign === 'agent') KV.setView(mode === 'iso' ? ISO_AGENT : { x: 0, y: 0, z: 0, s: 1 });
+    else if (curDesign !== 'blender') KVP.setView(mode);
+    syncViewUI(mode);
+  });
+
+  /* 浮遊 / パララックス（F=E案専用） */
+  document.querySelectorAll('.kv-bar [data-float]').forEach(b => b.onclick = () => {
+    KVP.setFloat(b.dataset.float === 'on');
+    document.querySelectorAll('.kv-bar [data-float]').forEach(x => x.classList.toggle('on', x === b));
+  });
+  document.querySelectorAll('.kv-bar [data-parallax]').forEach(b => b.onclick = () => {
+    KVP.setParallax(b.dataset.parallax === 'on');
+    document.querySelectorAll('.kv-bar [data-parallax]').forEach(x => x.classList.toggle('on', x === b));
+  });
+
+  /* デザイン切替（A〜H） */
+  document.querySelectorAll('.kv-bar [data-design]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.kv-bar [data-design]').forEach(x => x.classList.toggle('on', x === b));
+    const d = b.dataset.design; curDesign = d;
+    const isAgent = d === 'agent', isBlender = d === 'blender';
+    kvHost.style.display = isAgent ? '' : 'none';
+    kvBlender.classList.toggle('hidden', !isBlender);
+    row1.style.display = isBlender ? 'none' : '';         /* ビューはBlender以外で有効 */
+    rowE.style.display = (d === 'p5' || d === 'p6') ? '' : 'none';   /* 浮遊/パララックスは F・H で */
+    if (isAgent) { KVP.hide(); syncViewUI('flat'); }
+    else if (isBlender) { KVP.hide(); }
+    else { KVP.show(); KVP.setPattern(d); syncViewUI(KVP.PATTERNS[d] && KVP.PATTERNS[d].iso ? 'iso' : 'flat'); }
+  });
+  rowE.style.display = 'none';
+
+  /* 隠しモード: 右上の透明ボックスでパネルを出し入れ（網走と同じ仕様） */
+  document.getElementById('kvSecret').onclick = () => document.querySelector('.kv-bar').classList.toggle('show');
+</script>
+</body>
+</html>

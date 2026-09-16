@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>お問い合わせ｜Anyflow Embed</title>
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="description" content="Anyflow Embed へのお問い合わせフォームです。API連携にまつわるご相談はこちらから。">
+  <!-- 【2026-09-15 ヒデさん指摘】フォーム(HubSpot)の読み込みが遅く、出た瞬間に下が動く(レイアウトシフト)対策 ①
+       先に接続だけ済ませておく(DNS/TLS)。フォーム本体は forms.hsforms.com から来る -->
+  <link rel="preconnect" href="https://js.hsforms.net" crossorigin>
+  <link rel="preconnect" href="https://forms.hsforms.com" crossorigin>
+  <link rel="dns-prefetch" href="https://forms-na1.hsforms.com">
+  <!-- ② ライブラリは head で async 取得(HTML を読みながら並行で落とす)。https を明示(http 経由の余計な転送を避ける) -->
+  <script async src="https://js.hsforms.net/forms/embed/v2.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400&display=swap" rel="stylesheet">
+  <style>
+    /* 【V4.0 2026-09-09】お問い合わせページ
+       ヘッダー・フッターはトップページ(index.html)と共通のデザイン・構造。
+       レスポンシブ: mobile(<600)/tablet(601-1100)/desktop(1101+) の3段。
+       トップページは fixed-canvas をJSで scale してるが、このページは通常の流動レイアウト。 */
+    :root {
+      --ink: #101828;
+      --ink-strong: #000;
+      --ink-on-dark: #fff;
+      --ink-muted: #555;
+      --surface-body: #F2F2F2;
+      --surface-card: #fff;
+      --surface-cta: #090909;
+      --surface-dark-top: #161616;
+      --surface-footer-bottom: #363636;
+      --brand-pink: #FF5D97;
+      --brand-cyan: #0EBBFF;
+      --brand-blue-deep: #0E4497;
+      --line-grid: #ACACAC;
+      --radius-xs: 4px;
+      --radius-md: 8px;
+      --radius-lg: 14px;
+      --t-fast: .18s;
+      --e-fast: cubic-bezier(.2,.7,.1,1);
+      --e-out: cubic-bezier(.2,.7,.1,1);
+
+      --font-en: 'SF Pro Text', -apple-system, 'system-ui', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+
+      --space-8: 8px;   --space-10: 10px; --space-12: 12px;
+      --space-16: 16px; --space-20: 20px; --space-24: 24px;
+      --space-32: 32px; --space-40: 40px; --space-44: 44px;
+      --space-60: 60px;
+
+      --fs-caption: 12px;
+      --fs-body: 14px;
+      --fs-base: 16px;
+      --lh-loose: 1.7;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans JP', -apple-system, 'system-ui', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 300;
+      color: var(--ink);
+      background: var(--surface-body);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ============ ヘッダー（トップと同じ構造・デザイン） ============
+       トップは transform:scale(--s) の中にあるが、ここは通常の絶対配置。
+       PC: 左50px / 右50px / 上26px、ロゴ + ナビリンク + 黒CTA */
+    .site-header {
+      position: absolute;
+      left: 50px; right: 50px; top: 26px;
+      display: flex; align-items: center; justify-content: space-between;
+      z-index: 10;
+    }
+    .site-header .logo img { width: 255px; height: 47px; display: block; }
+    .site-header .logo { display: inline-block; }
+    .nav { display: flex; align-items: center; gap: var(--space-32); }
+    .nav-links { display: flex; gap: 32px; align-items: center; margin: 0; padding: 0; list-style: none; }
+    .nav-links a {
+      font-weight: 300;
+      font-size: 16px;
+      color: var(--ink);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: opacity var(--t-fast) var(--e-fast);
+    }
+    .nav-links a:hover { opacity: .5; }
+    /* 【V4.0 2026-09-13】notds風マーキーCTA (通常=黒／ホバー=シアン) */
+    .cta {
+      background: var(--surface-cta);
+      color: var(--ink-on-dark);
+      font-family: inherit;
+      font-weight: 300;
+      font-size: 14px;
+      letter-spacing: .06em;
+      width: 200px; height: 44px;
+      padding: 10px 16px 10px 20px;
+      border-radius: 6px;
+      border: none;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      box-sizing: border-box;
+      position: relative; overflow: hidden;
+      transition: background-color .3s, color .3s;
+    }
+    .cta:hover { background: var(--brand-cyan); color: #fff; }
+    .cta .cta-label { white-space: nowrap; flex: 1 1 0%; align-items: center; min-width: 0; display: flex; }
+    .cta .cta-window {
+      width: 100%; min-width: 0; display: block; overflow: hidden; height: 1.4em;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+              mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+    }
+    .cta .cta-reel { transition: transform .4s cubic-bezier(.22,1,.36,1); display: block; }
+    .cta .cta-row { height: 1.4em; display: block; }
+    .cta .cta-track { width: max-content; animation: cta-marquee 9s linear infinite; display: flex; }
+    .cta .cta-group { flex: 0 0 auto; display: flex; }
+    .cta .cta-copy { flex: 0 0 auto; padding-right: .9em; display: block; }
+    .cta:is(:hover,:focus-visible) .cta-reel { transform: translateY(-50%); }
+    .cta .cta-arrow { flex: 0 0 auto; place-items: center; width: 23px; height: 23px; display: grid; }
+    .cta .cta-arrow svg { width: 18px; height: 14px; display: block; transition: translate .3s; }
+    .cta:hover .cta-arrow svg { translate: 3px 0; }
+    @keyframes cta-marquee { 0% { transform: translateX(0);} 100% { transform: translateX(-50%);} }
+    @media (prefers-reduced-motion: reduce) {
+      .hs-skeleton .sk { animation: none; }
+      .cta, .cta .cta-arrow svg, .cta .cta-reel { transition: none; }
+      .cta .cta-track { animation: none; }
+      .cta .cta-window { -webkit-mask-image: none; mask-image: none; }
+      .cta .cta-group:nth-child(2), .cta .cta-copy:nth-child(2) { display: none; }
+      .cta .cta-copy { padding: 0; }
+    }
+
+    /* ============ メイン ============ */
+    main {
+      flex: 1 0 auto;
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 180px 50px 120px;   /* 上=ヘッダーの下＋余白、左右50px（ヘッダー左右と合わせる） */
+    }
+    .contact-head { margin: 0 0 var(--space-40); }
+    .contact-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 300; letter-spacing: .06em; color: var(--ink);
+    }
+    .contact-eyebrow::before { content: ''; width: 10px; height: 1px; background: var(--ink); }
+    .contact-title {
+      margin: 12px 0 0;
+      font-weight: 300;
+      font-size: 40px;
+      line-height: 1.4;
+      color: var(--ink-strong);
+      letter-spacing: .02em;
+    }
+    .contact-lead {
+      margin: 16px 0 0;
+      font-size: 15px;
+      line-height: 1.9;
+      color: var(--ink);
+    }
+
+    /* ============ フォームカード ============ */
+    .form-card {
+      background: var(--surface-card);
+      border: 1px solid var(--line-grid);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      position: relative;   /* スケルトンを重ねる基準 */
+    }
+    /* 【2026-09-15 ヒデさん指摘・レイアウトシフト対策 ③】
+       HubSpot のフォームは iframe で後から入るので、それまで #hs-form は高さ0。
+       そのぶん下(フッター)が上に詰まっていて、フォームが出た瞬間にガクッと下がっていた(実測 CLS 0.287)。
+       → 出来上がりの高さを先に確保しておき、フォームが準備できたら解除する。実測値: 892px(通常) / 1013px(細い画面は姓・名が2段になる) */
+    #hs-form { min-height: 892px; opacity: 0; transition: opacity .3s ease; }
+    .form-card:not(.is-hs-loading) #hs-form { min-height: 0; opacity: 1; }
+    /* 細い画面ほど姓・名や選択肢が段組みされて縦に伸びる。実測値をそのまま段にしてある(360/375=1033・390〜430=1013・450〜489=998) */
+    @media (max-width: 489px) { #hs-form { min-height: 998px; } }
+    @media (max-width: 440px) { #hs-form { min-height: 1013px; } }
+    @media (max-width: 380px) { #hs-form { min-height: 1033px; } }
+    /* 待っている間の骨組み(入力欄の形)。場所取りは #hs-form がやるので、これは重ねるだけ＝レイアウトに影響しない */
+    .hs-skeleton {
+      position: absolute; left: 40px; right: 40px; top: 40px; bottom: 40px;
+      display: flex; flex-direction: column; gap: 16px; pointer-events: none;
+      opacity: 1; transition: opacity .25s ease;
+    }
+    .form-card:not(.is-hs-loading) .hs-skeleton { opacity: 0; visibility: hidden; }
+    .hs-skeleton .sk { display: block; border-radius: 6px;
+      background: linear-gradient(90deg, #eef0f3 25%, #f7f8fa 37%, #eef0f3 63%); background-size: 400% 100%;
+      animation: skShine 1.4s ease-in-out infinite; }
+    .hs-skeleton .sk-lab { width: 96px; height: 11px; border-radius: 3px; margin-bottom: 8px; }
+    .hs-skeleton .sk-in { height: 44px; }
+    .hs-skeleton .sk-area { height: 104px; }
+    .hs-skeleton .sk-btn { width: 200px; height: 44px; margin-top: 4px; }
+    .hs-skeleton .sk-2 { display: flex; gap: 16px; }
+    .hs-skeleton .sk-2 > div { flex: 1 1 0; min-width: 0; }
+    @keyframes skShine { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+    .hs-form-frame { font-family: inherit !important; }
+    .form-card .hs-form fieldset { max-width: none !important; }
+    .form-card label,
+    .form-card .hs-form-field > label { font-weight: 300 !important; font-size: 13px !important; color: var(--ink) !important; }
+    .form-card input[type="text"],
+    .form-card input[type="email"],
+    .form-card input[type="tel"],
+    .form-card input[type="number"],
+    .form-card textarea,
+    .form-card select {
+      font-family: inherit !important;
+      font-size: 15px !important;
+      color: var(--ink) !important;
+      background: #fff !important;
+      border: 1px solid var(--line-grid) !important;
+      border-radius: var(--radius-md) !important;
+      padding: 10px 12px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      transition: border-color var(--t-fast) var(--e-out);
+    }
+    .form-card input:focus, .form-card textarea:focus, .form-card select:focus {
+      outline: none !important; border-color: var(--ink) !important;
+    }
+    .form-card .hs-form-required, .form-card .hs-error-msg { color: var(--brand-pink) !important; font-size: 12px !important; }
+    .form-card .hs-form-field { margin-bottom: 16px !important; }
+    .form-card .hs-button {
+      background: var(--surface-cta) !important;
+      color: var(--ink-on-dark) !important;
+      border: none !important;
+      border-radius: var(--radius-xs) !important;
+      padding: 12px 32px !important;
+      font-size: 14px !important;
+      font-weight: 300 !important;
+      font-family: inherit !important;
+      cursor: pointer !important;
+      transition: opacity var(--t-fast) var(--e-out) !important;
+    }
+    .form-card .hs-button:hover { opacity: .82 !important; }
+
+    /* ============ フッター（トップと同じ構造・デザイン） ============
+       グラデ180° #161616→#363636、白文字、Anyflow Embed ロゴ・住所・2列ナビ・© */
+    #footer {
+      background: linear-gradient(180deg, var(--surface-dark-top) 0%, var(--surface-footer-bottom) 100%);
+      color: var(--ink-on-dark);
+      flex: 0 0 auto;
+    }
+    .ft-inner {
+      width: min(1200px, calc(100% - 240px));
+      margin: 0 auto;
+      padding: 100px 0 var(--space-40);
+      display: flex; flex-direction: column; align-items: center; gap: var(--space-60);
+    }
+    .ft-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+    .ft-left { display: flex; flex-direction: column; gap: var(--space-24); }
+    .ft-logo { width: 334px; height: 62px; display: block; }
+    .ft-addr {
+      font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose);
+      color: var(--ink-on-dark); white-space: nowrap;
+    }
+    .ft-nav { display: flex; gap: var(--space-44); opacity: .5; }
+    .ft-col { display: flex; flex-direction: column; gap: var(--space-24); }
+    .ft-nav a {
+      color: var(--ink-on-dark); text-decoration: none; white-space: nowrap;
+      font-weight: 300; font-size: var(--fs-body); line-height: normal;
+      transition: opacity var(--t-fast) ease;
+    }
+    .ft-nav a:hover { opacity: .6; }
+    .ft-copy {
+      font-family: var(--font-en); font-weight: 300; font-size: var(--fs-base);
+      line-height: normal; color: var(--ink-on-dark); opacity: .4;
+    }
+
+    /* ============ タブレット (601〜1100px) ============ */
+    @media (min-width: 601px) and (max-width: 1100px) {
+      .site-header { left: 32px; right: 32px; }
+      .site-header .logo img { width: 220px; height: auto; }
+      .nav-links { gap: var(--space-20); }
+      .nav-links a { font-size: 15px; }
+      .cta { font-size: 14px; }   /* タブレット：マーキー化に伴い基本サイズは維持 */
+      main { padding: 160px 32px 100px; }
+      .contact-title { font-size: 36px; }
+
+      .ft-inner { width: calc(100% - 96px); padding: 80px 0 var(--space-40); }
+      .ft-logo { width: 260px; }
+    }
+
+    /* ============ モバイル (〜600px) ============
+       トップの SP と同じ: ロゴ+CTAのみ表示、ナビリンクは隠す。フッターは縦積み。 */
+    @media (max-width: 600px) {
+      .site-header { left: 17px; right: 17px; top: 18px; }
+      .site-header .logo img { width: 180px; height: 33px; }
+      .nav { gap: var(--space-16); }
+      .nav-links { display: none; }
+      .cta { width: 150px; height: 36px; font-size: 12px; padding: 6px 12px 6px 14px; gap: 10px; border-radius: 5px; }
+      .cta .cta-arrow { width: 18px; height: 18px; }
+      .cta .cta-arrow svg { width: 15px; height: 12px; }
+
+      main { padding: 110px 24px 80px; }
+      .contact-title { font-size: 28px; }
+      .contact-lead { font-size: 14px; }
+      .form-card { padding: 24px 20px; border-radius: 12px; }
+
+      .ft-inner { width: calc(100% - 48px); padding: 56px 0 var(--space-32); gap: var(--space-40); }
+      .ft-top { flex-direction: column; align-items: flex-start; gap: var(--space-32); }
+      .ft-logo { width: 200px; height: auto; }
+      .ft-addr { white-space: normal; }
+      .ft-nav { gap: var(--space-32); }
+    }
+  </style>
+</head>
+<body>
+  <!-- ============ ヘッダー（トップと同じ） ============ -->
+  <header class="site-header">
+    <a class="logo" href="/" aria-label="Anyflow Embed トップへ">
+      <img src="assets/header-logo.svg" alt="Anyflow Embed">
+    </a>
+    <nav class="nav">
+      <div class="nav-links">
+        <a href="/#vision">ビジョン</a>
+        <a href="/#results">提供できること</a>
+        <a href="/#dev">使用イメージ</a>
+        <a href="/#cases">導入事例</a>
+      </div>
+      <a class="cta" href="#hs-form" aria-label="お問い合わせ">
+        <span class="cta-label" aria-hidden="true">
+          <span class="cta-window">
+            <span class="cta-reel">
+              <span class="cta-row"><span class="cta-track">
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+              </span></span>
+              <span class="cta-row"><span class="cta-track">
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+              </span></span>
+            </span>
+          </span>
+        </span>
+        <span class="cta-arrow" aria-hidden="true">
+          <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+        </span>
+      </a>
+    </nav>
+  </header>
+
+  <!-- ============ メイン ============ -->
+  <main>
+    <div class="contact-head">
+      <span class="contact-eyebrow">Contact</span>
+      <h1 class="contact-title">お問い合わせ</h1>
+      <p class="contact-lead">API連携にまつわるお悩み、その他ご相談はAnyflowにお任せください。<br>下記フォームよりお問い合わせください。</p>
+    </div>
+
+    <section class="form-card is-hs-loading" aria-label="お問い合わせフォーム">
+      <!-- フォームが来るまでの骨組み(見た目だけ。読み上げ対象外) -->
+      <div class="hs-skeleton" aria-hidden="true">
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div class="sk-2">
+          <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+          <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        </div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-in"></span></div>
+        <div><span class="sk sk-lab"></span><span class="sk sk-area"></span></div>
+        <span class="sk sk-btn"></span>
+      </div>
+      <div id="hs-form"></div>
+    </section>
+  </main>
+
+  <!-- ============ フッター（トップと同じ構造） ============ -->
+  <footer id="footer">
+    <div class="ft-inner">
+      <div class="ft-top">
+        <div class="ft-left">
+          <img class="ft-logo" src="assets/footer-logo.svg" alt="Anyflow Embed">
+          <div class="ft-addr">〒105-0001　東京都港区虎ノ門1-3-1 東京虎ノ門グローバルスクエア6階</div>
+        </div>
+        <nav class="ft-nav">
+          <div class="ft-col">
+            <a href="/#vision">ビジョン</a>
+            <a href="/#results">提供できること</a>
+            <a href="/#dev">使用イメージ</a>
+          </div>
+          <div class="ft-col">
+            <a href="/#cases">導入事例</a>
+            <a href="/#conversion">お問い合わせ</a>
+          </div>
+        </nav>
+      </div>
+      <div class="ft-copy">© Anyflow Inc.</div>
+    </div>
+  </footer>
+
+  <!-- HubSpot フォーム埋め込み(ライブラリは head で async 取得済み) -->
+  <script>
+    (function () {
+      var card = document.querySelector('.form-card');
+      var done = false;
+      /* フォームが入ったら: 確保していた高さを解除し、骨組みを消してフォームを出す */
+      function ready() {
+        if (done || !card) return; done = true;
+        card.classList.remove('is-hs-loading');
+      }
+      /* 保険1: onFormReady が来なくても、iframe が入ったら解除 */
+      var target = document.getElementById('hs-form');
+      if (target && window.MutationObserver) {
+        var mo = new MutationObserver(function () {
+          if (target.querySelector('iframe')) { mo.disconnect(); setTimeout(ready, 120); }
+        });
+        mo.observe(target, { childList: true, subtree: true });
+      }
+      /* 保険2: 10秒たっても来なければ骨組みを畳む(空の箱を見せ続けない) */
+      setTimeout(ready, 10000);
+      function boot() {
+        if (typeof hbspt === 'undefined' || !hbspt.forms) { setTimeout(boot, 60); return; }
+        hbspt.forms.create({
+          portalId: "47236172",
+          formId: "6db15437-1dd9-4e3b-b562-6f6f323e42a8",
+          region: "na1",
+          target: "#hs-form",
+          onFormReady: ready
+        });
+      }
+      boot();
+    })();
+  </script>
+</body>
+</html>

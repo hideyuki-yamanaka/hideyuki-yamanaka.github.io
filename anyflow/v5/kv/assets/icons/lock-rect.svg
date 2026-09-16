@@ -1,0 +1,28 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="65.3472" height="47.8211" viewBox="0 0 65.3472 47.8211" fill="none" xmlns="http://www.w3.org/2000/svg">
+<foreignObject x="-11" y="-11" width="87.3472" height="69.8211"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(5.5px);clip-path:url(#bgblur_0_0_10_clip_path);height:100%;width:100%"></div></foreignObject><g id="Rectangle 25" filter="url(#filter0_i_0_10)" data-figma-bg-blur-radius="11">
+<path d="M0 11.543C0 5.16799 5.91903 0 13.2205 0H52.1266C59.4281 0 65.3472 5.16799 65.3472 11.543V36.2781C65.3472 42.6532 59.4281 47.8211 52.1266 47.8211H13.2205C5.91903 47.8211 0 42.6532 0 36.2781V11.543Z" fill="#F1F1F1" fill-opacity="0.1"/>
+<path d="M0 11.543C0 5.16799 5.91903 0 13.2205 0H52.1266C59.4281 0 65.3472 5.16799 65.3472 11.543V36.2781C65.3472 42.6532 59.4281 47.8211 52.1266 47.8211H13.2205C5.91903 47.8211 0 42.6532 0 36.2781V11.543Z" fill="url(#paint0_linear_0_10)" fill-opacity="0.2"/>
+<path d="M13.2207 0.25H52.127C59.3231 0.250146 65.0976 5.3369 65.0977 11.543V36.2783C65.0975 42.4843 59.3231 47.5711 52.127 47.5713H13.2207C6.02442 47.5713 0.250129 42.4844 0.25 36.2783V11.543C0.250042 5.33681 6.02437 0.25 13.2207 0.25Z" stroke="url(#paint1_linear_0_10)" stroke-opacity="0.1" stroke-width="0.5"/>
+</g>
+<defs>
+<filter id="filter0_i_0_10" x="-11" y="-11" width="87.3472" height="69.8211" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="3"/>
+<feGaussianBlur stdDeviation="5"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.4 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_0_10"/>
+</filter>
+<clipPath id="bgblur_0_0_10_clip_path" transform="translate(11 11)"><path d="M0 11.543C0 5.16799 5.91903 0 13.2205 0H52.1266C59.4281 0 65.3472 5.16799 65.3472 11.543V36.2781C65.3472 42.6532 59.4281 47.8211 52.1266 47.8211H13.2205C5.91903 47.8211 0 42.6532 0 36.2781V11.543Z"/>
+</clipPath><linearGradient id="paint0_linear_0_10" x1="0" y1="0" x2="73.1351" y2="25.3762" gradientUnits="userSpaceOnUse">
+<stop stop-color="#82E8FF"/>
+<stop offset="1" stop-color="#379FFF"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_10" x1="2.0421" y1="2.17369" x2="65.3472" y2="2.17369" gradientUnits="userSpaceOnUse">
+<stop stop-color="#7EE5FF"/>
+<stop offset="1" stop-color="#41A9FF"/>
+</linearGradient>
+</defs>
+</svg>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>KV embed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kv.css?v=12">
+<link rel="stylesheet" href="patterns.css?v=32">
+<style>
+  /* 埋め込み用: ヘッダー/コピー/ティッカーは持たない。背景は本体サイトと同色にして
+     すりガラスが本体の地色をボカしているように見せる（iframe内のbackdrop-filterは
+     iframe内の背景しかボカせないため、地色を本体に合わせるのが必須）。 */
+  html, body { margin: 0; background: #E7E7E7; overflow: hidden; }  /* Figmaキャンバス色。白フロストが#EEEに浮き出る */
+  /* 秘密ボックスは本体ヘッダー(上部)と被らない位置へ下げる。網走同様“透明な空ボックス”・アイコン無し（2026-08-25） */
+  .kv-secret { top: 80px !important; right: 0 !important; width: 120px !important; height: 90px !important; }
+  /* 調整パネル: ドラッグで移動・リサイズ可能に。既定位置はティッカーに被らない高さへ */
+  .kv-bar { align-items: stretch; resize: both; overflow: auto; bottom: 170px;
+            min-width: 240px; min-height: 90px; max-width: 96vw; max-height: 88vh; }
+  .kv-bar-title { display: flex; align-items: center; justify-content: space-between;
+                  font-weight: 600; font-size: 12px; color: #101828;
+                  cursor: move; user-select: none; padding-bottom: 2px;
+                  border-bottom: 1px solid #ececec; margin-bottom: 2px; }
+  .kv-bar-title .hint { font-weight: 400; font-size: 10px; color: #9ca3af; }
+  .kv-bar .rowThk, .kv-bar .rowKV { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #555; flex-wrap: wrap; }
+  .kv-bar .rowThk input[type=range], .kv-bar .rowKV input[type=range] { width: 66px; accent-color: #090909; }
+  .kv-bar .rowThk > span:not(.sep), .kv-bar .rowKV > span:not(.sep) { min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+  .kv-bar .rowCap { font-size: 10.5px; color: #9ca3af; line-height: 1.5; padding: 1px 2px 3px; max-width: 460px; }
+  /* 案の並び: A案/B案/その他 と、その他ドロワー */
+  .kv-bar .row0 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .kv-bar .rowOther { display: flex; flex-wrap: wrap; gap: 5px; padding: 5px 0 2px; margin-top: 3px; border-top: 1px dashed #e5e5e5; }
+  .kv-bar .rowOther[hidden] { display: none; }
+  .kv-bar #btnOther.ghost { color: #6b7280; font-weight: 500; }
+  .kv-bar #btnOther.open { background: #eef2ff; border-color: #c7d2fe; }
+</style>
+</head>
+<body>
+
+<div id="kv"></div>
+<div id="kvp"></div>
+<div id="kvBlender" class="hidden"><img src="assets/kv-hero-3d.png?v=1" alt="Blender 3D キービジュアル"></div>
+
+<div class="kv-secret" id="kvSecret" title="調整パネル"></div>
+<div class="kv-bar">
+  <div class="kv-bar-title" id="kvBarTitle">調整パネル<span class="hint">ドラッグで移動／右下で拡縮</span></div>
+  <div class="row0">
+    <b>案:</b>
+    <button data-design="p7" class="on" title="PNG画像ベタ貼り（frost焼込み＋CSS影）">A案</button>
+    <button data-design="p9" title="2Dだけど立体的（モックだけ3D傾き）">B案</button>
+    <button type="button" id="btnOther" class="ghost" title="その他の実験案を開く">その他 ▾</button>
+  </div>
+  <div class="rowOther" id="rowOther" hidden>
+    <button data-design="agent" title="開発者体験アニメ版">アニメ</button>
+    <button data-design="p6" title="単純なすりガラス">H・単純ガラス</button>
+    <button data-design="p8" title="背景色を拾ったすりガラス">I・背景拾い</button>
+    <button data-design="p1" title="フラット×回路線×白箱">回路線</button>
+    <button data-design="p2" title="フラット×同心円×ガラス">同心円ガラス</button>
+    <button data-design="p3" title="アイソメ×回路線×ガラス">アイソメ回路</button>
+    <button data-design="p4" title="アイソメ×軌道×白箱">アイソメ軌道</button>
+    <button data-design="p5" title="同心円+周回ドット+アニメmock(CSS)">同心円ドット</button>
+    <button data-design="blender" title="Blender 3D">Blender</button>
+  </div>
+  <div class="rowCap" id="kvCap"></div>
+  <div class="row1">
+    ビュー:
+    <button data-gview="flat" class="on">普通</button>
+    <button data-gview="iso">アイソメ（厚み）</button>
+  </div>
+  <div class="rowE">
+    浮遊(E):
+    <button data-float="on" class="on">オン</button>
+    <button data-float="off">オフ</button>
+    <span class="sep"></span>
+    パララックス(E):
+    <button data-parallax="off" class="on">オフ</button>
+    <button data-parallax="on">オン</button>
+  </div>
+  <div class="rowKV">
+    モックアニメ:
+    <button data-mockanim="on" class="on">オン</button>
+    <button data-mockanim="off">オフ</button>
+    <span class="sep"></span>
+    軌道ドット速度 <input type="range" id="dotSpeed" min="0.3" max="3" step="0.1" value="3"><span id="dotSpeedv">×3.0</span>
+    <span class="sep"></span>
+    ドットの緩急:
+    <button data-dotease="linear" class="on">一定</button>
+    <button data-dotease="pulse" title="ゆっくり→急に加速→またゆっくり">緩急</button>
+  </div>
+  <div class="rowThk">
+    厚み方式(アイソメ):
+    <button data-thk="1" class="on" title="積層スラブ＝なめらか3D">①積層</button>
+    <button data-thk="2" title="明示的な面＝軽い3D">②面</button>
+    <button data-thk="3" title="多重box-shadow＝回転なし2.5D">③影</button>
+    <span class="sep"></span>
+    厚み <input type="range" id="tThk" min="4" max="60" step="1" value="26"><span id="tThkv">26</span>
+    光源 <input type="range" id="tLang" min="0" max="360" step="5" value="145"><span id="tLangv">145°</span>
+    強さ <input type="range" id="tLint" min="0" max="0.5" step="0.02" value="0.16"><span id="tLintv">.16</span>
+  </div>
+  <div class="row2">
+    角度
+    X <input type="range" id="rx" min="-30" max="72" step="1" value="0"><span id="rxv">0°</span>
+    Y <input type="range" id="ry" min="-45" max="45" step="1" value="0"><span id="ryv">0°</span>
+    Z <input type="range" id="rz" min="-90" max="90" step="1" value="0"><span id="rzv">0°</span>
+    大きさ <input type="range" id="rs" min="0.8" max="1.5" step="0.02" value="1"><span id="rsv">×1.00</span>
+  </div>
+</div>
+
+<script src="engine.js?v=12"></script>
+<script src="patterns.js?v=35"></script>
+<script>
+  KV.start({ mount: 'kv' });
+  KVP.start({ mount: 'kvp' });
+
+  /* 本体(index.html)に iframe で埋め込まれているか。埋め込み時は入場アニメを
+     親の「見出しタイピング完了」の合図(kvIntroStart)まで待つ（単体/パネル操作は即再生）。 */
+  const EMBEDDED = window.parent !== window;
+
+  const kvHost = document.getElementById('kv');
+  const kvBlender = document.getElementById('kvBlender');
+  const row1 = document.querySelector('.kv-bar .row1');
+  const rowE = document.querySelector('.kv-bar .rowE');
+  const rowKV = document.querySelector('.kv-bar .rowKV');   /* モックアニメ/軌道ドット速度・緩急 */
+  let curDesign = 'p7';   /* 既定=J（PNGベタ貼り） */
+
+  const labels = { x: rxv, y: ryv, z: rzv, s: rsv };
+  function syncLabels(v) {
+    labels.x.textContent = v.x + '°'; labels.y.textContent = v.y + '°';
+    labels.z.textContent = v.z + '°'; labels.s.textContent = '×' + (+v.s).toFixed(2);
+  }
+  function readSliders() { return { x: +rx.value, y: +ry.value, z: +rz.value, s: +rs.value }; }
+  [rx, ry, rz, rs].forEach(sl => sl.addEventListener('input', () => {
+    const v = readSliders(); syncLabels(v);
+    if (curDesign === 'agent') KV.setView(v);
+    else if (curDesign !== 'blender') KVP.setTransform(v);
+  }));
+
+  const ISO_AGENT = { x: 54, y: 0, z: -42, s: 1.26 };
+  function syncViewUI(mode) {
+    document.querySelectorAll('.kv-bar [data-gview]').forEach(x => x.classList.toggle('on', x.dataset.gview === mode));
+    const t = (curDesign === 'agent') ? (mode === 'iso' ? ISO_AGENT : { x: 0, y: 0, z: 0, s: 1 }) : KVP.getTransform();
+    rx.value = t.x; ry.value = t.y; rz.value = t.z; rs.value = t.s; syncLabels(t);
+  }
+  document.querySelectorAll('.kv-bar [data-gview]').forEach(b => b.onclick = () => {
+    const mode = b.dataset.gview;
+    if (curDesign === 'agent') KV.setView(mode === 'iso' ? ISO_AGENT : { x: 0, y: 0, z: 0, s: 1 });
+    else if (curDesign !== 'blender') KVP.setView(mode);
+    syncViewUI(mode);
+  });
+
+  document.querySelectorAll('.kv-bar [data-float]').forEach(b => b.onclick = () => {
+    KVP.setFloat(b.dataset.float === 'on');
+    document.querySelectorAll('.kv-bar [data-float]').forEach(x => x.classList.toggle('on', x === b));
+  });
+  document.querySelectorAll('.kv-bar [data-parallax]').forEach(b => b.onclick = () => {
+    KVP.setParallax(b.dataset.parallax === 'on');
+    document.querySelectorAll('.kv-bar [data-parallax]').forEach(x => x.classList.toggle('on', x === b));
+  });
+  /* モックアニメ オン/オフ */
+  document.querySelectorAll('.kv-bar [data-mockanim]').forEach(b => b.onclick = () => {
+    KVP.setMockAnim(b.dataset.mockanim === 'on');
+    document.querySelectorAll('.kv-bar [data-mockanim]').forEach(x => x.classList.toggle('on', x === b));
+  });
+  /* 軌道ドット 速度 */
+  const dotSpeed = document.getElementById('dotSpeed'), dotSpeedv = document.getElementById('dotSpeedv');
+  dotSpeed.addEventListener('input', () => { KVP.setDotSpeed(+dotSpeed.value); dotSpeedv.textContent = '×' + (+dotSpeed.value).toFixed(1); });
+  /* 軌道ドット 緩急 */
+  document.querySelectorAll('.kv-bar [data-dotease]').forEach(b => b.onclick = () => {
+    KVP.setDotEase(b.dataset.dotease);
+    document.querySelectorAll('.kv-bar [data-dotease]').forEach(x => x.classList.toggle('on', x === b));
+  });
+
+  /* 案の補足文（グレー）: 何の案か分かるように */
+  const kvCap = document.getElementById('kvCap');
+  const CAPTIONS = {
+    agent: '開発者体験アニメ版：正面モックがタイプ→コード生成→AI返答をループ',
+    p1: 'フラット×白い立体箱×回路線ネットワーク',
+    p2: 'フラット×すりガラス×同心円グロー',
+    p3: 'アイソメ×すりガラス×回路線',
+    p4: 'アイソメ×白い箱×単一軌道',
+    p5: '同心円＋周回ドット＋アニメmock（CSS）',
+    blender: 'Blenderで3Dレンダーした画像版',
+    p6: '【その他/H・単純】カンプ忠実・すりガラスをライブ描画。無地だとブラーが見えにくいのが弱点',
+    p8: '【その他/I・背景色を拾った】すりガラス＋地色を強めに。無地でも“効いてない錯覚”を解消',
+    p7: '【A案・PNGベタ貼り】書き出しPNG（frost焼込み）＋影はCSS。地色#E7E7E7で確実にフロスト（既定）',
+    p9: '【B案・参考画像の角度】アイコンは正面向きの平面（厚みなし）、モックだけ3Dで傾ける（表を向いた角度を再現）',
+  };
+  function updateCap(d) { kvCap.textContent = CAPTIONS[d] || ''; }
+
+  /* 厚み（アイソメ）: 方式①②③ ＋ 厚み/光源角度/光の強さ */
+  const rowThk = document.querySelector('.kv-bar .rowThk');
+  document.querySelectorAll('.kv-bar [data-thk]').forEach(b => b.onclick = () => {
+    KVP.setThick(b.dataset.thk);
+    document.querySelectorAll('.kv-bar [data-thk]').forEach(x => x.classList.toggle('on', x === b));
+  });
+  tThk.addEventListener('input', () => { KVP.setThickVar('thk', tThk.value + 'px'); tThkv.textContent = tThk.value; });
+  tLang.addEventListener('input', () => { KVP.setThickVar('lang', tLang.value + 'deg'); tLangv.textContent = tLang.value + '°'; });
+  tLint.addEventListener('input', () => { KVP.setThickVar('lint', tLint.value); tLintv.textContent = tLint.value; });
+
+  /* 「その他 ▾」ドロワーの開閉。中の案を選ぶと「その他」ボタン自体も on 表示にする */
+  const btnOther = document.getElementById('btnOther');
+  const rowOther = document.getElementById('rowOther');
+  const OTHER_SET = new Set(['agent', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p8', 'blender']);
+  btnOther.onclick = () => {
+    const willOpen = rowOther.hidden;
+    rowOther.hidden = !willOpen;
+    btnOther.textContent = willOpen ? 'その他 ▴' : 'その他 ▾';
+    btnOther.classList.toggle('open', willOpen);
+  };
+
+  document.querySelectorAll('.kv-bar [data-design]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.kv-bar [data-design]').forEach(x => x.classList.toggle('on', x === b));
+    const d = b.dataset.design; curDesign = d;
+    btnOther.classList.toggle('on', OTHER_SET.has(d));   /* 中の案が選ばれていれば「その他」も点灯 */
+    const isAgent = d === 'agent', isBlender = d === 'blender';
+    kvHost.style.display = isAgent ? '' : 'none';
+    kvBlender.classList.toggle('hidden', !isBlender);
+    row1.style.display = isBlender ? 'none' : '';
+    rowE.style.display = (d === 'p5' || d === 'p6' || d === 'p7' || d === 'p8' || d === 'p9') ? '' : 'none';
+    rowKV.style.display = (d === 'p6' || d === 'p7' || d === 'p8' || d === 'p9') ? '' : 'none';   /* モック＋軌道を持つ案で */
+    rowThk.style.display = (d === 'p6' || d === 'p8') ? '' : 'none';   /* 厚み(アイソメ)はCSS版H/Iで */
+    updateCap(d);
+    if (isAgent) { KVP.hide(); syncViewUI('flat'); }
+    else if (isBlender) { KVP.hide(); }
+    else { KVP.show(); KVP.setPattern(d); syncViewUI(KVP.PATTERNS[d] && KVP.PATTERNS[d].iso ? 'iso' : 'flat'); }
+  });
+
+  /* 起動時に既定J（PNGベタ貼り）を反映（agentエンジンは隠す）。
+     埋め込み時は defer=true でシーンを隠したまま置き、親の合図で入場する。 */
+  kvHost.style.display = 'none';
+  KVP.show(); KVP.setPattern('p7', { defer: EMBEDDED }); syncViewUI('flat');
+  rowE.style.display = '';
+  rowKV.style.display = '';        /* J(PNG)もモック＋軌道あり */
+  rowThk.style.display = 'none';   /* J(PNG)はアイソメ厚み非対応 */
+  updateCap('p7');
+
+  /* 隠しモード: 透明ボックスでパネルを出し入れ */
+  document.getElementById('kvSecret').onclick = () => document.querySelector('.kv-bar').classList.toggle('show');
+
+  /* 調整パネルをタイトルバーでドラッグ移動（リサイズは CSS resize:both の右下ハンドル） */
+  (function () {
+    const bar = document.querySelector('.kv-bar');
+    const title = document.getElementById('kvBarTitle');
+    let dragging = false, sx = 0, sy = 0, bx = 0, by = 0;
+    title.addEventListener('pointerdown', e => {
+      dragging = true; const r = bar.getBoundingClientRect();
+      bar.style.left = r.left + 'px'; bar.style.top = r.top + 'px';
+      bar.style.right = 'auto'; bar.style.bottom = 'auto'; bar.style.transform = 'none';
+      sx = e.clientX; sy = e.clientY; bx = r.left; by = r.top;
+      title.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    title.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      bar.style.left = (bx + e.clientX - sx) + 'px';
+      bar.style.top = (by + e.clientY - sy) + 'px';
+    });
+    title.addEventListener('pointerup', e => { dragging = false; try { title.releasePointerCapture(e.pointerId); } catch (_) {} });
+  })();
+
+  /* 本体に埋め込まれている時: 入場は親(見出しタイピング完了)の合図で始める。
+     ・親から kvIntroStart が来たら保留中の入場(モック→アイコン→軌道)を実行
+     ・読み込み完了を親へ通知(kvReady)。親は typing 完了後に kvIntroStart を返す */
+  if (EMBEDDED) {
+    window.addEventListener('message', (e) => {
+      const d = e && e.data;
+      if (!d) return;
+      /* 合図: タイミングが同梱されていれば反映してから入場開始 */
+      if (d.type === 'kvIntroStart') { if (d.timing) KVP.setIntroTiming(d.timing); KVP.runDeferredIntro(); }
+      /* 本体パネルの「右のグラフィックの案を選ぶ」から: 内部の同じボタンを押して切替（即再生） */
+      if (d.type === 'kvSetDesign' && d.design) {
+        const btn = document.querySelector('.kv-bar [data-design="' + d.design + '"]');
+        if (btn) btn.click();
+      }
+      /* 本体パネルの「KVの出始めタイミング」から: 反映のみ / 反映して再生 */
+      if (d.type === 'kvIntroTiming') KVP.setIntroTiming(d.timing);
+      if (d.type === 'kvIntroReplay') { KVP.setIntroTiming(d.timing); KVP.replayIntro(); }
+    });
+    try { window.parent.postMessage({ type: 'kvReady' }, '*'); } catch (_) {}
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+/* ============================================================
+   キービジュアル V2 — 右側グラフィック 4案 v2
+   ・アイコン＝本物の3D箱（前面グリフ＋厚みスラブ）。ビルボードやめ、自前3D
+   ・①③=白い回線ネットワーク＋青データ光 / ②=同心円グロー / ④=単一軌道
+   ============================================================ */
+
+/* 背景色（Figma実測 #E7E7E7）*/
+body { background: #E7E7E7; }
+
+/* ---- ステージ（1440×920）。拡大は zoom（transformだと子のbackdrop-filterが無効化されるため）---- */
+.kvp-root { position: fixed; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.kvp-root.hidden { display: none; }
+.kvp-stage { position: relative; width: 1440px; height: 920px; flex: 0 0 auto; }
+.kvp-world { position: absolute; inset: 0; }
+/* 3Dは各アイコン内で完結（stage/worldにpreserve-3dを置くとbackdrop-filterが死ぬため付けない） */
+
+/* ============ 中央ダッシュボード ============ */
+.kvp-dash-wrap { position: absolute; transform-style: preserve-3d; }
+.kvp-dash-shadow { position: absolute; left: 6%; top: 66%; width: 88%; height: 40%;
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(16,24,40,.20), rgba(16,24,40,0) 70%);
+  filter: blur(16px); }
+.is-iso .kvp-dash-shadow { top: 78%; left: 2%; width: 96%; }
+.kvp-dash {
+  position: absolute; inset: 0; border-radius: 16px; overflow: hidden; display: flex;
+  background: linear-gradient(157deg, #ffffff 0%, #f5f7fa 100%);
+  box-shadow: 0 30px 60px rgba(16,24,40,.14), 0 2px 6px rgba(16,24,40,.06);
+  border: 1px solid rgba(255,255,255,.9); transform-origin: 50% 50%;
+  transition: transform .5s cubic-bezier(.22,1,.36,1);
+}
+/* アイソメ時：タブレットを寝かせる（画面を上に向けて奥へ傾ける） */
+.is-iso .kvp-dash { transform: rotateX(46deg) rotateZ(-11deg); }
+.kvp-dash .dash-code { flex: 1 1 58%; padding: 28px 24px; display: flex; flex-direction: column; gap: 12px; }
+.kvp-dash .cbar { height: 7px; border-radius: 4px; }
+.kvp-dash .dash-side { flex: 0 0 42%; padding: 26px 22px; border-left: 1px solid #eef1f5;
+  background: linear-gradient(180deg, #fbfcfe 0%, #f4f6f9 100%);
+  display: flex; flex-direction: column; gap: 17px; }
+.kvp-dash .dash-logo { display: flex; align-items: center; margin-bottom: 4px; }
+.kvp-dash .dash-logo img { height: 17px; width: auto; display: block; }
+.kvp-dash .srow { display: flex; align-items: center; gap: 11px; }
+.kvp-dash .sdot { width: 25px; height: 25px; border-radius: 50%; flex: 0 0 auto;
+  box-shadow: 0 3px 8px rgba(14,187,255,.28); }
+.kvp-dash .slines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 7px; }
+.kvp-dash .slines i { display: block; height: 6px; border-radius: 4px; background: #e4e8ee; }
+.kvp-dash .slines i.short { width: 55%; }
+
+/* ============ アイコン＝3D箱 ============ */
+.kvp-ico { position: absolute; width: 112px; height: 112px; transform-style: preserve-3d; }
+.kvp-ico-box { position: absolute; inset: 0; transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.22,1,.36,1); }
+.kvp-slab { position: absolute; inset: 0; border-radius: var(--ico-r, 26px); backface-visibility: hidden; }
+.kvp-ico-face { position: absolute; inset: 0; border-radius: var(--ico-r, 26px); overflow: hidden;
+  transform: translateZ(1px); }
+.kvp-ico-glyph { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.kvp-ico-glyph > span { position: absolute; }
+.kvp-ico-glyph svg { display: block; width: 100%; height: 100%; }
+/* 上からのソフトライトのツヤ */
+.kvp-ico-face::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 2;
+  background: linear-gradient(158deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.06) 36%, rgba(255,255,255,0) 62%);
+  pointer-events: none; }
+/* 接地影（アイソメ時のみ薄く。フラットはFigmaのドロップシャドウ--dropで表現） */
+.kvp-ico-shadow { display: none; position: absolute; left: 50%; bottom: -14px; width: 84%; height: 22px;
+  transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(16,24,40,.26), rgba(16,24,40,0) 72%); filter: blur(6px); }
+.is-iso .kvp-ico-shadow { display: block; }
+
+/* 材質：白い立体チップ（Figma: border1px白 / ドロップシャドウ--drop / 内側ハイライト） */
+.kvp-ico--white .kvp-ico-face { background: linear-gradient(155deg, #ffffff 0%, #eef1f6 100%);
+  border: 1px solid #fff;
+  box-shadow: var(--drop, 0 14px 30px rgba(16,24,40,.16)), inset 0 2px 3px rgba(255,255,255,.95); }
+/* 材質：すりガラス（Figma実測: bg白30% / border1px白 / backdrop-blur可変 / ドロップシャドウ+内側ハイライト） */
+.kvp-ico--glass .kvp-ico-face { border: 1px solid #fff;
+  box-shadow: var(--drop, 0 14px 30px rgba(16,24,40,.12)), inset 1px 1px 2px rgba(255,255,255,.4); }
+/* 箱のすりガラスは「面」ではなく別レイヤー(frost)に。こうしないとグリフがbackdrop-filter要素の
+   入れ子になり子のブラーが描画されない(Chromium #993644)。frostはグリフの兄弟(背面)。 */
+.kvp-ico--glass .kvp-ico-frost { position: absolute; inset: 0; z-index: 0;
+  background: rgba(255,255,255,.3);
+  backdrop-filter: blur(var(--blur, 26px)) saturate(1.2); -webkit-backdrop-filter: blur(var(--blur, 26px)) saturate(1.2); }
+/* rebuilt(H)の平面ガラスは faceのtranslateZ を切る＝グリフの祖先に変形を残さない(グリフのbackdrop-filterを生かす) */
+.kvp-ico--rebuilt .kvp-ico-face { transform: none; }
+.kvp-ico--rebuilt .kvp-ico-box { transform-style: flat; }
+
+/* 箱の向き：フラット①②＝浅い立体 / アイソメ③④＝上面・側面が見える */
+.is-flat .kvp-ico-box { transform: rotateX(10deg) rotateY(-7deg); }
+.is-iso  .kvp-ico-box { transform: rotateX(20deg) rotateY(-18deg); }
+/* ⚠️ ガラス箱は回転させない：transformが子の backdrop-filter(すりガラス)を無効化して透けるため。
+   白箱(不透明)は backdrop不使用なので回転して3Dのままでよい */
+.kvp-ico--glass .kvp-ico-box { transform: none; }
+/* H(SVG差し替え)のCSS再現アイコンは「平面すりガラス」＝厚みスラブを出さない（平面だと
+   シアンのスラブが白30%の面を透けて青被りするため）。面だけの純ガラスにする。 */
+.kvp-ico--rebuilt .kvp-slab { display: none; }
+.kvp-ico--rebuilt .kvp-ico-box { transform: none; }
+
+/* ============ 回線ネットワーク（①③）＋青データ光 ============ */
+.kvp-net { position: absolute; inset: 0; }
+.kvp-lines { position: absolute; left: 0; top: 0; overflow: visible; }
+.kvp-line { fill: none; stroke: rgba(255,255,255,.96); stroke-width: 2.5;
+  stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 1px 2px rgba(16,24,40,.08)); }
+.is-iso .kvp-line { stroke: rgba(255,255,255,.9); }
+.kvp-node { fill: #ffffff; stroke: rgba(53,196,255,.9); stroke-width: 2; }
+/* 青データ光（線に沿って走る） */
+.kvp-data-layer { position: absolute; inset: 0; }
+.kvp-data { position: absolute; left: 0; top: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; background: radial-gradient(circle at 50% 38%, #d6f4ff, #16B4F5 72%);
+  box-shadow: 0 0 12px 3px rgba(22,180,245,.85), 0 0 4px #7fdcff;
+  offset-rotate: 0deg; animation: kvpData 2.6s linear infinite; }
+@keyframes kvpData { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+
+/* ============ 同心円グロー（②） ============ */
+.kvp-rings { position: absolute; inset: 0; }
+.kvp-ring { position: absolute; border-radius: 50%; border: 1.6px solid rgba(150,230,255,.95);
+  box-shadow: 0 0 22px 1px rgba(60,196,255,.5), inset 0 0 26px rgba(60,196,255,.28);
+  will-change: transform, opacity; }
+.kvp-ring.soft { border-color: rgba(255,255,255,.9); box-shadow: 0 0 18px 1px rgba(255,255,255,.6); }
+@keyframes kvpBreath { 0%,100% { opacity: .55; } 50% { opacity: .95; } }
+
+/* ============ 単一軌道（④） ============ */
+.kvp-orbit { position: absolute; border-radius: 50%; border: 1.6px solid rgba(148,163,184,.5); }
+
+/* ============ E案（Figma 15699）: 前向きmock＋同心円＋周回ドット＋大小ガラス ============ */
+.kvp-e-back { position: absolute; inset: 0; transition: left .15s ease-out, top .15s ease-out; }
+.kvp-e-icons { position: absolute; inset: 0; transition: left .15s ease-out, top .15s ease-out; }
+.kvp-eorbits { position: absolute; inset: 0; }
+.kvp-eorbit { position: absolute; border-radius: 50%; border: 1px solid rgba(140,150,170,.3); }
+.kvp-espin { position: absolute; width: 0; height: 0; animation: kvpSpin linear infinite; }
+@keyframes kvpSpin { to { transform: rotate(360deg); } }
+/* 緩急パターン: ゆっくり→急に加速→またゆっくり（1周ごとに脈打つ。timingはlinearのまま角度で緩急を作る） */
+@keyframes kvpSpinPulse {
+  0%   { transform: rotate(0deg); }
+  46%  { transform: rotate(42deg); }    /* じっくりゆっくり */
+  62%  { transform: rotate(318deg); }   /* 急に加速（バースト） */
+  100% { transform: rotate(360deg); }   /* またゆっくり */
+}
+.kvp-edot { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; }
+/* SVG忠実版（Figma書き出しをそのまま配置） */
+.kvp-svgscene { position: absolute; inset: 0; }
+.kvp-svgel { position: absolute; display: block; }
+/* SVGに焼けない backdrop-blur をライブで補うレイヤー（後ろをぼかす＝すりガラス） */
+.kvp-frost { position: absolute; }
+/* H: アイコンwrapper（浮遊対象）*/
+.kvp-ico-svg { position: absolute; }
+.pat-p6.float-on .kvp-e-icons .kvp-ico-svg,
+.pat-p7.float-on .kvp-e-icons .kvp-ico-svg,
+.pat-p8.float-on .kvp-e-icons .kvp-ico-svg { animation: kvpFloat 4.6s ease-in-out infinite; animation-delay: var(--fd, 0s); }
+/* 画像ベタ貼り(p7)のPNGアイコン（影はJSでdrop-shadow付与） */
+.kvp-png-ico { position: absolute; left: 0; top: 0; display: block; }
+/* J=背景色を拾った(p8): すりガラスに地色を強めに持たせ、無地でも"フロスト"に見せる（効いてない錯覚を解消） */
+.pat-p8 .kvp-ico--glass .kvp-ico-frost { background: rgba(255,255,255,.62); }
+/* p8/p9 のモック地色は基準(白0.3)を継承。地色#E7E7E7で#EEEEEEに出る */
+/* B案（元K・2Dだけど立体的）: シーン全体を穏やかに3D傾斜（前の版に戻す）。
+   ⚠️ モック単体の rotateY(-20) は"変な傾き"で不評だったため撤去。シーン全体を rotateX で軽く寝かせる。
+   影はアイコンを少し強めにして立体感を出す。モック地色は基準(白0.3)を継承。 */
+.pat-p9 .kvp-svgscene { transform: perspective(1700px) rotateX(15deg) rotateZ(-1.5deg); transform-origin: center 58%; }
+.pat-p9 .kvp-png-ico { filter: drop-shadow(0 16px 24px rgba(16,24,40,.22)) !important; }
+/* 浮遊アニメ（Eのみ・トグル）*/
+/* 浮遊は margin で動かす（transformだと子のbackdrop-filterが無効化されるため） */
+@keyframes kvpFloat { 0%,100% { margin-top: 0; } 50% { margin-top: -10px; } }
+.pat-p5.float-on .kvp-e-icons .kvp-ico { animation: kvpFloat 4.6s ease-in-out infinite; animation-delay: var(--fd, 0s); }
+
+/* === KV入場アニメ（H）：mock→アイコンがバラバラ出現→軌道/ドット/発光。
+   scene に .kvp-intro が付いてる間だけ初期非表示。JSが順に .in を付けて出す。
+   演出後は .kvp-intro を外す＝アイコンにtransformを残さない（グリフのbackdrop-filterを生かす）。 */
+/* 上品なフェードインのみ（散らばり・跳ね・緩急なし）。transformを使わない＝グリフのbackdrop-filterも維持 */
+.kvp-intro .kvp-eorbits, .kvp-intro .kvp-svgel, .kvp-intro .kvp-espin,
+.kvp-intro .kvp-emock-slot, .kvp-intro .kvp-ico-svg {
+  opacity: 0; transition: opacity .6s ease-out; }
+.kvp-intro .kvp-eorbits.in, .kvp-intro .kvp-svgel.in, .kvp-intro .kvp-espin.in,
+.kvp-intro .kvp-emock-slot.in, .kvp-intro .kvp-ico-svg.in {
+  opacity: 1; }
+
+/* ============ アイソメの厚み（H・不透明白の立体）: 3方式を比較 ============
+   普通ビュー=すりガラス／アイソメ=不透明な白い立体（3Dとbackdrop-filterは両立しないため切替）。
+   調整: --thk 厚み / --lang 光源角度 / --lint 光の強さ。 */
+.kvp-root { --thk: 26px; --lang: 145deg; --lint: .16; }
+/* iso時 rebuilt: ガラス(frost)を切って不透明白の面に。グリフは最前面 */
+.is-iso .kvp-ico--rebuilt .kvp-ico-frost { display: none; }
+.is-iso .kvp-ico--rebuilt .kvp-ico-face { border: none;
+  background: linear-gradient(var(--lang), #ffffff, hsl(220 22% calc(100% - var(--lint) * 42%)));
+  box-shadow: var(--drop), inset 0 2px 3px rgba(255,255,255,.9); }
+.is-iso .kvp-ico--rebuilt .kvp-ico-glyph { z-index: 3; }
+/* ① 積層スラブ: 箱を回転＋薄い白層を奥行きに積む＝なめらかな押し出し（サンプルに近い） */
+.thk-1.is-iso .kvp-ico--rebuilt .kvp-ico-box { transform: rotateX(54deg) rotateZ(-40deg); transform-style: preserve-3d; }
+.thk-1.is-iso .kvp-ico--rebuilt .kvp-slab { display: block; }
+/* ② 明示的な面: 箱を回転＋底面を1枚（軽い・面がフラット） */
+.thk-2.is-iso .kvp-ico--rebuilt .kvp-ico-box { transform: rotateX(54deg) rotateZ(-40deg); transform-style: preserve-3d; }
+.thk-2.is-iso .kvp-ico--rebuilt .kvp-slab { display: none; }
+.thk-2.is-iso .kvp-ico--rebuilt .kvp-ico-face::before { content: ""; position: absolute; inset: 0;
+  border-radius: var(--ico-r); background: hsl(220 20% calc(96% - var(--lint) * 34%));
+  transform: translateZ(calc(var(--thk) * -1)); z-index: -1; }
+/* ③ 多重box-shadow: 回転なしの2.5D（sticker風の厚み・3Dなし） */
+.thk-3.is-iso .kvp-ico--rebuilt .kvp-ico-box { transform: none; transform-style: flat; }
+.thk-3.is-iso .kvp-ico--rebuilt .kvp-slab { display: none; }
+.thk-3.is-iso .kvp-ico--rebuilt .kvp-ico-face {
+  box-shadow: 0 2px 0 hsl(220 16% calc(98% - var(--lint)*20%)),
+    0 4px 0 hsl(220 16% calc(95% - var(--lint)*23%)),
+    0 7px 0 hsl(220 16% calc(91% - var(--lint)*26%)),
+    0 10px 0 hsl(220 16% calc(87% - var(--lint)*29%)),
+    0 14px 20px rgba(16,24,40,.22), inset 0 2px 3px rgba(255,255,255,.9); }
+
+/* --- E: アニメするmock（frosted glass・Figma実測の質感） --- */
+/* ⚠️ すりガラスは「縮小されない枠(slot)」に載せる。中身(.kvp-emock)は transform:scale で
+   縮小するが、それは“ガラス要素自身”ではないので backdrop-filter が生きる（Safari等でも安全）。
+   Figma実測: mock bg白30% / backdrop-blur 75px / 角丸20 / ドロップ45,52,48 rgba(0,0,0,.2) / 内側1,1,2白 */
+.kvp-emock-slot { position: absolute; overflow: hidden; border-radius: 20px;
+  background: rgba(255,255,255,.3);   /* Figma実測=白30%。地色#E7E7E7の上で#EEEEEEに浮き出る（カラーピッカー確認済） */
+  backdrop-filter: blur(75px) saturate(1.15); -webkit-backdrop-filter: blur(75px) saturate(1.15);
+  border: 1px solid rgba(255,255,255,.6);
+  box-shadow: 45px 52px 48px rgba(0,0,0,.2), inset 1px 1px 2px rgba(255,255,255,.5); }
+/* モックのアイソメ厚み: 下方向にbox-shadowで2.5Dの厚み（回転せずガラス維持） */
+.is-iso .kvp-emock-slot {
+  box-shadow: 0 6px 0 hsl(220 16% calc(97% - var(--lint,.16)*16%)),
+    0 12px 0 hsl(220 16% calc(93% - var(--lint,.16)*20%)),
+    0 19px 0 hsl(220 16% calc(88% - var(--lint,.16)*24%)),
+    0 30px 36px rgba(16,24,40,.22), inset 1px 1px 2px rgba(255,255,255,.5); }
+.kvp-emock { position: absolute; left: 0; top: 0; transform-origin: 0 0; display: flex; background: transparent; }
+.em-editor { flex: 1 1 0; min-width: 0; display: flex; }
+/* 左サイドバー: Figma(15711-26540)準拠。ロゴ=小ドット3つ／区切り線／ナビ=ドット5枠(1つ目は非表示=4つ見える) */
+.em-side { width: 53px; flex: 0 0 auto; background: rgba(255,255,255,.4); border-right: 1px solid rgba(255,255,255,.5);
+  display: flex; flex-direction: column; align-items: center; padding: 24px 0; }
+.em-slogo { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.em-slogo i { width: 8px; height: 8px; border-radius: 50%; background: rgba(96,110,134,.5); }
+.em-divider { width: 24px; height: 1px; background: rgba(120,130,150,.28); margin: 20px 0; }
+.em-snav { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.em-snav i { width: 10px; height: 10px; border-radius: 50%; background: rgba(96,110,134,.34); }
+.em-snav i.hidden-dot { visibility: hidden; }
+.em-code { flex: 1 1 0; min-width: 0; padding: 36px 40px; display: flex; flex-direction: column; gap: 14px; position: relative; }
+/* コードは左→右に“拭くように”出す（開発者体験1と同じ clip-path トリミング＝実際に書かれてる感） */
+.em-crow { display: flex; align-items: center; gap: 7px; height: 8px;
+  clip-path: inset(0 100% 0 0); transition: clip-path .34s cubic-bezier(.22,.7,.3,1); }
+.em-crow.on { clip-path: inset(0 0 0 0); }
+/* スケルトンローディング（コード生成前の“溜め”。シマーで光が横切る） */
+.em-skel { position: absolute; inset: 36px 40px auto; display: flex; flex-direction: column; gap: 16px;
+  opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+.em-skel.on { opacity: 1; }
+.em-skel-bar { height: 8px; border-radius: 4px;
+  background: linear-gradient(100deg, rgba(150,162,180,.16) 30%, rgba(150,162,180,.42) 50%, rgba(150,162,180,.16) 70%);
+  background-size: 220% 100%; animation: emShimmer 1.15s linear infinite; }
+@keyframes emShimmer { 0% { background-position: 180% 0; } 100% { background-position: -80% 0; } }
+.em-ind { flex: 0 0 auto; height: 8px; }
+.em-bar { height: 8px; border-radius: 4px; flex: 0 0 auto; }
+.em-chat { flex: 0 0 360px; display: flex; flex-direction: column; border-left: 1px solid rgba(255,255,255,.5); }
+.em-chead { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.5); }
+.em-ctitle { display: flex; align-items: center; gap: 9px; font: 600 15px/1 "Noto Sans JP", sans-serif; color: rgba(70,90,120,.85); }
+.em-ctitle img { width: 18px; height: 18px; opacity: .55; }
+.em-ell { width: 18px; height: 18px; opacity: .35; }
+.em-hist { flex: 1 1 0; min-height: 0; padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.em-msg { display: flex; gap: 13px; align-items: flex-start; opacity: 0; transform: translateY(6px);
+  transition: opacity .35s ease, transform .35s ease; }
+.em-msg.on { opacity: 1; transform: none; }
+.em-av { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+.em-av img { width: 16px; height: 16px; }
+.em-av-bot { background: #0EBBFF; } .em-av-user { background: #FF5D97; }
+.em-bub { flex: 1 1 0; min-width: 0; background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.6);
+  border-radius: 13px; padding: 13px; display: flex; flex-direction: column; gap: 9px; }
+.em-line { height: 7px; border-radius: 4px; background: #96a2b4; }
+.em-input { display: flex; align-items: center; gap: 8px; padding: 20px 22px; border-top: 1px solid rgba(255,255,255,.7); position: relative; }
+.em-typed { font: 400 15px/1 "Noto Sans JP", sans-serif; color: rgba(70,90,120,.9); white-space: nowrap; }
+/* カーソル: 既定は非表示。タイプ中(.typing)だけ typed の直後に出す＝プレースホルダーと重ならない */
+.em-caret { display: none; width: 2px; height: 16px; background: #0EBBFF; margin-left: 1px; animation: emCaret 1s step-end infinite; }
+.em-input.typing .em-caret { display: inline-block; }
+@keyframes emCaret { 50% { opacity: 0; } }
+.em-ph { font: 400 15px/1 "Noto Sans JP", sans-serif; color: rgba(120,140,170,.5); position: absolute; left: 22px; transition: opacity .15s; }
+.em-input.typing .em-ph { opacity: 0; }
+.em-send { margin-left: auto; width: 30px; height: 30px; border-radius: 15px; background: rgba(255,255,255,.6);
+  display: flex; align-items: center; justify-content: center; transition: transform .12s ease, background .12s ease; }
+.em-send img { width: 13px; height: 13px; opacity: .55; }
+.em-send.is-hit { transform: scale(.86); background: rgba(14,187,255,.28); }
+/* 思考中ドット（送信後の“考え中”。回答が来たら入れ替え。開発者体験1と同じ） */
+.em-bub-think .em-bub.em-think { flex: 0 0 auto; width: auto; flex-direction: row; align-items: center; gap: 6px; padding: 14px 16px; }
+.em-think i { width: 6px; height: 6px; border-radius: 50%; background: #96a2b4; animation: emThink 1.25s ease-in-out infinite; }
+.em-think i:nth-child(2) { animation-delay: .16s; }
+.em-think i:nth-child(3) { animation-delay: .32s; }
+@keyframes emThink { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+/* 考え終わったら思考ボックスを畳む＝ピンクと青の間に空きが出るのを防ぐ */
+.em-bub-think:not(.on) { display: none; }
+/* ループ末: パス・トリミングで巻き戻さず、全要素をフェードアウトで消す */
+.kvp-emock-slot.em-out .em-crow,
+.kvp-emock-slot.em-out .em-msg { opacity: 0; transition: opacity .5s ease; }
+/* リセットは一瞬で（フェードや巻き戻しを見せない） */
+.kvp-emock-slot.em-snap .em-crow,
+.kvp-emock-slot.em-snap .em-msg { transition: none !important; }
+
+/* ============ パネル行・Blender版 ============ */
+/* 隠しモード（網走と同じ）: 既定は非表示、右上の透明ボックスで出し入れ */
+.kv-bar { display: none; }
+.kv-bar.show { display: flex; }
+.kv-secret { position: fixed; top: 0; right: 0; width: 60px; height: 60px; z-index: 60; cursor: pointer; }
+.kv-bar .row0 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kv-bar .rowE { display: flex; align-items: center; gap: 8px; }
+#kvBlender { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+#kvBlender.hidden { display: none; }
+#kvBlender img { position: absolute; right: 0.5%; top: 51%; transform: translateY(-50%);
+  width: 63%; max-width: 1120px; height: auto; display: block; }
+@media (max-width: 1280px) { #kvBlender img { width: 70%; right: 0; } }

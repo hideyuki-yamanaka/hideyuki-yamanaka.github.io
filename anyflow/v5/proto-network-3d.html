@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ネットワーク周回 2D/3D プロト (Figma 15970-42735)</title>
+<style>
+  :root{ --bg:#e9e9ea; --ink:#222; --line:#e2e2e2; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);font-family:-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;color:var(--ink);overflow:hidden;}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  svg{width:min(94vw,980px);height:auto;}
+  #panel{position:fixed;top:14px;right:14px;width:270px;max-height:94vh;overflow:auto;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.12);padding:14px;font-size:12px;z-index:10;}
+  #panel h1{font-size:13px;margin:0 0 2px;font-weight:700;}
+  #panel .sub{color:#888;font-size:11px;margin:0 0 10px;line-height:1.5;}
+  #panel h2{font-size:11px;margin:12px 0 4px;color:#0a8;font-weight:700;border-top:1px solid #eee;padding-top:8px;}
+  .row{display:flex;align-items:center;gap:8px;margin:6px 0;}
+  .row label{width:92px;color:#555;font-weight:600;flex:0 0 auto;font-size:11px;}
+  .row input[type=range]{flex:1;min-width:0;accent-color:#2ea6ff;}
+  .row .v{width:40px;text-align:right;color:#333;font-variant-numeric:tabular-nums;}
+  .seg{display:flex;gap:0;margin:8px 0;border:1px solid #ddd;border-radius:8px;overflow:hidden;}
+  .seg button{flex:1;padding:8px 0;border:0;background:#fafafa;cursor:pointer;font-size:12px;font-weight:600;color:#666;}
+  .seg button.on{background:#111;color:#fff;}
+  .hint{position:fixed;left:16px;bottom:14px;color:#999;font-size:12px;z-index:10;max-width:44vw;line-height:1.5;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <svg id="kv" viewBox="0 0 850 521" xmlns="http://www.w3.org/2000/svg">
+    <defs id="defs"></defs>
+    <image id="ref" href="fig15970-ref.png" x="0" y="0" width="850" height="521" opacity="0.35" style="display:none"/>
+    <g id="back"></g>
+    <image id="planet" href="proto-planet.png" x="379.67" y="186.64" width="138" height="138"/>
+    <g id="front"></g>
+  </svg>
+</div>
+<div id="panel">
+  <h1>ネットワーク周回 2D / 3D</h1>
+  <p class="sub">Figma 15970-42735 の再現。3D=手前太く奥細く＋物理(手前速い/奥ゆっくり)。惑星は固定。</p>
+  <div class="seg" id="modeSeg">
+    <button data-m="2d">2D（フラット）</button>
+    <button data-m="3d" class="on">3D（奥行き）</button>
+  </div>
+  <div class="seg" id="refSeg" style="margin-top:6px">
+    <button data-r="0" class="on">下絵オフ</button>
+    <button data-r="1">Figma下絵を重ねる</button>
+  </div>
+  <h2>3Dの効き</h2>
+  <div class="row"><label>手前の太さ</label><input id="frontW" type="range" min="1" max="10" step="0.2" value="5"><span class="v" id="frontWv">5.0</span></div>
+  <div class="row"><label>奥の太さ</label><input id="backW" type="range" min="0.3" max="4" step="0.1" value="1"><span class="v" id="backWv">1.0</span></div>
+  <div class="row"><label>物理の強さ</label><input id="phys" type="range" min="0" max="0.95" step="0.05" value="0.7"><span class="v" id="physv">0.70</span></div>
+  <div class="row"><label>2Dの太さ</label><input id="flatW" type="range" min="0.5" max="5" step="0.1" value="2"><span class="v" id="flatWv">2.0</span></div>
+  <div class="row"><label>周回速度</label><input id="spd" type="range" min="0" max="2" step="0.05" value="0.7"><span class="v" id="spdv">0.70</span></div>
+  <h2>軌道の姿勢（微調整）</h2>
+  <div id="orbitCtl"></div>
+  <div class="hint">Figma と並べて姿勢を合わせる用の試作。数値が決まったら本体(周回のみの新案)へ移植します。</div>
+</div>
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+const D2R=Math.PI/180;
+const CX=448.67, CY=255.64;   // 惑星の中心(Figma実測)
+const R_PLANET=69;
+
+// ===== 3軌道 = 3Dの円 (Figma 15970-42735 の実測から復元) =====
+// cx,cy=中心, R=半径(semi-major), phi=傾き(90に近いほど真横=エッジオン),
+// rho=画面内回転(度), grad=グラデid, dots=[{ang:初期角, c:色}], flipZ=手前/奥の向き
+// 実測(frame 850x521): 楕円77=中心425,260 / 883x137.5 / rot26.79
+//                     楕円78/79=中心437,264 / 348x56.6 / rot152.66
+//                     Vector(水平)=中心425,284 / 753x123 / rot0
+const ORBITS=[
+  { key:'big',   cx:425.1, cy:260.4, R:441.5, phi:81, rho:-26.79, grad:'gA', flipZ:1,
+    dots:[{ang:210, c:'#0EBBFF'}] },
+  { key:'horiz', cx:425.1, cy:284.1, R:376.5, phi:80.6, rho:0,    grad:'gB', flipZ:1,
+    dots:[{ang:205, c:'#0E4497'}] },        // 手前の紺ドット (Vector=水平軌道)
+  { key:'cross', cx:437.5, cy:263.7, R:174,  phi:80.6, rho:27.34, grad:'gC', flipZ:1,
+    dots:[{ang:150, c:'#FF5D97'}] },        // 楕円78/79 (右下がり)
+];
+// 各ドットの見かけ角度(物理積分用)
+ORBITS.forEach(o=>o.dots.forEach(d=>{ d.theta=d.ang*D2R; }));
+
+const state={ mode:'3d', frontW:5, backW:1, phys:0.7, flatW:2, spd:0.7 };
+
+// ---- グラデ定義 (青→白→ピンク, userSpaceOnUse=絶対座標なので全セグメントで正しい色) ----
+function buildDefs(){
+  const defs=document.getElementById('defs');
+  defs.innerHTML='';
+  ORBITS.forEach(o=>{
+    // グラデはその軌道の major 軸(rho方向)に沿わせる。中心は軌道ごと
+    const a=o.rho*D2R;
+    const L=o.R;
+    const cx=o.cx!=null?o.cx:CX, cy=o.cy!=null?o.cy:CY;
+    const x1=cx-Math.cos(a)*L, y1=cy-Math.sin(a)*L;
+    const x2=cx+Math.cos(a)*L, y2=cy+Math.sin(a)*L;
+    const lg=document.createElementNS(NS,'linearGradient');
+    lg.id=o.grad; lg.setAttribute('gradientUnits','userSpaceOnUse');
+    lg.setAttribute('x1',x1.toFixed(1)); lg.setAttribute('y1',y1.toFixed(1));
+    lg.setAttribute('x2',x2.toFixed(1)); lg.setAttribute('y2',y2.toFixed(1));
+    [['0','#00ABEB'],['0.49','#ffffff'],['1','#FF5D97']].forEach(s=>{
+      const st=document.createElementNS(NS,'stop');
+      st.setAttribute('offset',s[0]); st.setAttribute('stop-color',s[1]); lg.appendChild(st);
+    });
+    defs.appendChild(lg);
+  });
+}
+
+// 3D点: 円 → tilt(phi)about X → rotate(rho)about Z。中心は軌道ごと(o.cx,o.cy)
+function pt3(o,th){
+  const cx=o.cx!=null?o.cx:CX, cy=o.cy!=null?o.cy:CY;
+  const x=o.R*Math.cos(th), y=o.R*Math.sin(th);
+  const ph=o.phi*D2R, rh=o.rho*D2R;
+  const y2=y*Math.cos(ph), z2=o.flipZ*(-y*Math.sin(ph));
+  const x3=x*Math.cos(rh)-y2*Math.sin(rh), y3=x*Math.sin(rh)+y2*Math.cos(rh);
+  return [cx+x3, cy+y3, z2];
+}
+
+const backG=document.getElementById('back'), frontG=document.getElementById('front');
+
+function widthAt(z,R){
+  if(state.mode==='2d') return state.flatW;
+  const t=(z/R+1)/2;                 // 0(奥)‥1(手前)
+  return state.backW+(state.frontW-state.backW)*t;
+}
+
+function draw(){
+  backG.innerHTML=''; frontG.innerHTML='';
+  const N=150;
+  ORBITS.forEach(o=>{
+    // 全周の点
+    const pts=[];
+    for(let i=0;i<=N;i++){ const th=i/N*2*Math.PI; pts.push(pt3(o,th)); }
+    // セグメントごとに太さを変えて描く(テーパー)。奥(z<0)はback、手前(z>=0)はfront
+    for(let i=0;i<N;i++){
+      const a=pts[i], b=pts[i+1];
+      const zAvg=(a[2]+b[2])/2;
+      const w=widthAt(zAvg,o.R);
+      const p=document.createElementNS(NS,'path');
+      p.setAttribute('d',`M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`);
+      p.setAttribute('fill','none');
+      p.setAttribute('stroke',`url(#${o.grad})`);
+      p.setAttribute('stroke-width',w.toFixed(2));
+      p.setAttribute('stroke-linecap','round');
+      (zAvg>=0?frontG:backG).appendChild(p);
+    }
+    // ドット
+    o.dots.forEach(d=>{
+      const [x,y,z]=pt3(o,d.theta);
+      const c=document.createElementNS(NS,'circle');
+      const r = state.mode==='3d' ? (5+ (z/o.R)*2.2) : 6;  // 手前で少し大きく
+      c.setAttribute('cx',x.toFixed(1)); c.setAttribute('cy',y.toFixed(1));
+      c.setAttribute('r',Math.max(3,r).toFixed(1)); c.setAttribute('fill',d.c);
+      (z>=0?frontG:backG).appendChild(c);
+    });
+  });
+}
+
+// ===== アニメ: ドットの物理 (手前速い/奥ゆっくり) =====
+let last=null;
+function tick(ts){
+  if(last==null) last=ts;
+  const dt=Math.min(0.05,(ts-last)/1000); last=ts;
+  ORBITS.forEach(o=>o.dots.forEach(d=>{
+    const [,,z]=pt3(o,d.theta);
+    const zN=z/o.R;                       // -1(奥)‥+1(手前)
+    // 3D: 手前(zN>0)ほど速く、奥ほどゆっくり。2D: 一定
+    const factor = state.mode==='3d' ? (1+state.phys*zN) : 1;
+    d.theta += state.spd*1.1*Math.max(0.08,factor)*dt;
+  }));
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ---- パネル ----
+function bindRange(id,key,fmt){
+  const el=document.getElementById(id), out=document.getElementById(id+'v');
+  el.value=state[key];
+  const upd=()=>{ state[key]=+el.value; out.textContent=(fmt||(v=>v.toFixed(1)))(+el.value); };
+  el.oninput=upd; upd();
+}
+bindRange('frontW','frontW'); bindRange('backW','backW');
+bindRange('phys','phys',v=>v.toFixed(2)); bindRange('flatW','flatW');
+bindRange('spd','spd',v=>v.toFixed(2));
+document.querySelectorAll('#modeSeg button').forEach(b=>{
+  b.onclick=()=>{ state.mode=b.dataset.m; document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===b)); };
+});
+document.querySelectorAll('#refSeg button').forEach(b=>{
+  b.onclick=()=>{ document.getElementById('ref').style.display=b.dataset.r==='1'?'':'none'; document.querySelectorAll('#refSeg button').forEach(x=>x.classList.toggle('on',x===b)); };
+});
+// 軌道の姿勢スライダー(微調整用)
+const octl=document.getElementById('orbitCtl');
+ORBITS.forEach((o,i)=>{
+  const mk=(lbl,key,min,max,step)=>{
+    const row=document.createElement('div'); row.className='row';
+    row.innerHTML=`<label>${o.key} ${lbl}</label>`;
+    const inp=document.createElement('input'); inp.type='range'; inp.min=min; inp.max=max; inp.step=step; inp.value=o[key];
+    const v=document.createElement('span'); v.className='v'; v.textContent=o[key];
+    inp.oninput=()=>{ o[key]=+inp.value; v.textContent=o[key]; buildDefs(); };
+    row.appendChild(inp); row.appendChild(v); octl.appendChild(row);
+  };
+  mk('R', 'R', 200, 460, 2);
+  mk('傾き', 'phi', 45, 88, 1);
+  mk('回転', 'rho', -180, 180, 1);
+});
+
+buildDefs();
+requestAnimationFrame(tick);
+window.__st=state; window.__orbits=ORBITS;
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "version": "initial-delivery-restored",
+  "originalCreatedAt": "2026-09-13T21:49:11+09:00",
+  "originalDeliveredAt": "2026-09-13T22:13:21+09:00",
+  "restoredAt": "2026-09-15T00:11:41+09:00",
+  "source": "Initial creation and fixes through the first delivery in this chat; frozen anyflow-v4-samples/baseline assets.",
+  "originalCoreSha256": {
+    "study.css": "0386db1d876a9b84398f9058deb0e095695536be8dda684a79bdb23b0ce80c32",
+    "index.html": "1140294971387f40968ae580a1a226c83b79e099131ed4410cf74035d03306d4",
+    "catalog.js": "486ca8097aa33ba3dfe0c014dc8a7666fc048f91f67ce52566f6c8640f4374c9",
+    "gallery.css": "585ccbc6e6d4f4126927e6e31e8a34e6c2e99ab89c57d6f702e72c331cd62a60",
+    "pictograms.js": "e8595c8b81ffe63cd33d1af1789205b75d943fae001df2babe2c41f91bb7d864",
+    "gallery.js": "62c1e147fce015264d430f295cd9d6c8dd6f0b733cded2ae2055f08a90ea0ae9",
+    "study.js": "bb2004f9f84ace2d6da1397d841b427a1a207199d9f11eb91bd36fbaec7b259d"
+  },
+  "restoredFilesSha256": {
+    "study.css": "0386db1d876a9b84398f9058deb0e095695536be8dda684a79bdb23b0ce80c32",
+    "index.html": "19172f8d032ef3b482b94df84329da4af079e2fb8c8f7c33e7bd2180b157ec68",
+    "catalog.js": "486ca8097aa33ba3dfe0c014dc8a7666fc048f91f67ce52566f6c8640f4374c9",
+    "archive.css": "c3183092f7f93015ff1aa0d125e9f6be4eb2ad0b606922a8df95bfab686d4a98",
+    "pictograms.js": "e8595c8b81ffe63cd33d1af1789205b75d943fae001df2babe2c41f91bb7d864",
+    "gallery.js": "7b1584649064de0e0f49287f5ce9ca135ca393296229dd37a760efbaa8e52b70",
+    "study.js": "23f75255477d26f923ed671de9ef421837aadc10e4f3a360a77a5a759ad0082d",
+    "03/index.html": "af46b30095e1ec22b4574eaffe165584cdb542e7bac549542c8e9502a1baf773",
+    "04/index.html": "9eb3233020702a9fa1c3d2937c2a6d667a418a138c60bd39d4da4c86531c9b02",
+    "05/index.html": "7c0e9aad0a13e231ae3a354482382b08512e64c48417e42917992bb659ddbc65",
+    "02/index.html": "7d644d73f08370bafb4188356699147d4e9dedde6191e91bd8edd608a1d857f2",
+    "10/index.html": "08a962f86212d4a30876c80fc17b8d3918aad9b460947d250b2e34f461f42705",
+    "07/index.html": "2b3f2346ad1b6117715f174f16985664200179e96c2e75147c7c356a16d54b4d",
+    "09/index.html": "efe66528f59c9cc20e1802ac6c9984ad0f67c9f4daedc19af9f4d162c8a085bf",
+    "08/index.html": "77e5a1ae7c2eb7da76451b32b5da9bd353db3ac90750ec475f5db2dc444d1fd0",
+    "01/index.html": "657fbf51b319e4e1d032f63531b6db65b2e45f69be42797ad4553e3883a2886b",
+    "06/index.html": "63ff1baac5c4744e2f628da1a12cdf8b4ffbdfb33ec57e5549fdc47fea40cf56",
+    "assets/dev-mock.png": "70d3621a9f2aa7b981610e27e80eff7ed3c457dccffa2ec05bb18b5e1f8cf918",
+    "assets/header-logo.svg": "33d8a792b05ad946e4e9b67273e7b722fe7386d316234f401fd474583b864e73"
+  },
+  "adaptations": [
+    "New isolated URL paths and asset directory",
+    "No.01–No.10 and archive identity in titles/navigation",
+    "Compact gallery with separately stored bookmarks and recoverable removal"
+  ],
+  "unchangedOriginalFiles": [
+    "catalog.js",
+    "study.css",
+    "pictograms.js"
+  ]
+}

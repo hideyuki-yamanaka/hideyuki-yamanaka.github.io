@@ -1,0 +1,189 @@
+/* ============================================================
+   キービジュアル V2 — カンプ忠実版スタイル（figma 15294-31034）
+   箱スタイル: .bs-flat（カンプ＝普通） / .bs-solid（3D） / .bs-iso（アイソメ）
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: "Noto Sans JP", -apple-system, "Hiragino Kaku Gothic ProN", sans-serif;
+  background: #f3f3f3;              /* カンプの地色 */
+  color: #101828;
+  overflow: hidden;
+}
+
+/* ---- ヘッダー（カンプ: 中央1340px・上26px） ---- */
+.kv-header {
+  position: fixed; left: 50%; top: 26px; transform: translateX(-50%);
+  width: min(1340px, 94vw); padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 10;
+}
+.kv-header img.logo { width: 255px; height: 47px; display: block; }
+.kv-header nav { display: flex; align-items: center; gap: 32px; }
+.kv-header .links { display: flex; gap: 20px; font-size: 16px; font-weight: 300; }
+.kv-header .links span { white-space: nowrap; }
+.kv-header .cta {
+  background: #090909; color: #fff; border-radius: 4px;
+  width: 140px; padding: 10px 16px; text-align: center;
+  font-size: 14px; font-weight: 300; white-space: nowrap;
+}
+
+/* ---- コピー（カンプ: x120 / y316.95・70px Thin） ---- */
+.kv-copy { position: fixed; left: calc(50vw - 600px); top: 34.4vh; z-index: 5; pointer-events: none; }
+@media (max-width: 1280px) { .kv-copy { left: 6vw; } }
+.kv-copy .eyebrow { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 400; color: #000; }
+.kv-copy .eyebrow::before { content: ""; width: 26px; height: 1px; background: #000; }
+.kv-copy h1 { margin-top: 9px; font-size: clamp(40px, 4.86vw, 70px); font-weight: 100; letter-spacing: 0; line-height: 1.4; color: #101828; }
+
+/* ---- ロゴティッカー（カンプ下端 y823 帯） ---- */
+.kv-ticker { position: fixed; left: 0; right: 0; bottom: 24px; overflow: hidden; z-index: 4; }
+.kv-ticker .track { display: flex; width: max-content; animation: kvmq 30s linear infinite; }
+.kv-ticker .set { display: flex; align-items: center; gap: 72px; padding-right: 72px; }
+.kv-ticker img { height: 34px; width: auto; display: block; }
+@keyframes kvmq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ---- ステージ ---- */
+.kv-root { position: fixed; inset: 0; perspective: none; }
+.kv-stage { position: absolute; left: 0; top: 0; width: 1440px; height: 920px; transform-origin: 0 0; transform-style: preserve-3d; }
+.kv-world { position: absolute; inset: 0; transform-origin: 1026px 440px; transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.22,1,.36,1); }
+
+/* ---- 線・ドット（カンプ実測: 白60% / 2px） ---- */
+.kv-lines { position: absolute; left: 0; top: 0; overflow: visible; }
+.kv-line { stroke: rgba(255,255,255,.6); stroke-width: 2; }
+/* 球体ドット（div）。アイソメでもカメラを向く */
+.kv-dot3 {
+  position: absolute; left: 0; top: 0;
+  width: 13.173px; height: 13.173px; border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(16,24,40,.28);
+  will-change: transform;
+}
+
+/* ---- 箱 ---- */
+.kv-box { position: absolute; border-radius: 10px; transform-style: preserve-3d; }
+.kv-face { position: absolute; inset: 0; border-radius: 10px; transform: translateZ(2.5px); }
+.kv-box--css  .kv-face {
+  background: rgba(255,255,255,.7);
+  border: 1px solid #fff;
+  backdrop-filter: blur(52px);
+  -webkit-backdrop-filter: blur(52px);
+}
+.kv-box--empty .kv-face {
+  background: linear-gradient(to top, rgba(255,255,255,.8), rgba(255,255,255,0));
+  backdrop-filter: blur(52px);
+  -webkit-backdrop-filter: blur(52px);
+}
+.kv-box--empty .kv-face.is-flip { transform: translateZ(2.5px) rotate(180deg); }
+.kv-box--asset svg { display: block; }
+.kv-box-ico { position: absolute; }
+
+/* カンプの Light-Blue-24 インスタンス（カレンダー） */
+.kv-lb24 { position: absolute; left: 11.18px; top: 11.18px; width: 87.411px; height: 87.411px; overflow: hidden; }
+.kv-lb24-bar {
+  position: absolute; left: 7.28px; top: 69.2px; width: 76.485px; height: 10.926px;
+  border-radius: 7.054px;
+  background: linear-gradient(150.637deg, #82E8FF 0%, #379FFF 100%);
+}
+.kv-lb24-glass { position: absolute; left: 5.64px; top: 5.64px; width: 69.2px; height: 65.558px; }
+
+/* ---- エージェント ---- */
+.kv-agent { position: absolute; transform-style: preserve-3d; }
+/* カンプ実測のドロップシャドウ: X0 / Y8 / Blur14 / #000 25%（普通ビューで適用。
+   3D・アイソメでは接地影(kv-slab-shadow)が受け持つので二重にしない） */
+.mode-flat .kv-agent { box-shadow: 0 8px 14px rgba(0, 0, 0, .25); }
+/* ⚠️ 面の高さ(translateZ)はドット(z=1px)より上に。ここが低いとドットが上を通る */
+.kv-agent-cv { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit;
+  transform: translateZ(2.5px); image-rendering: pixelated; }
+
+/* ===== 白キューブのスラブ（Blender風・上からのソフトライト） =====
+   普通(カンプ)ビューでは消す。3D/アイソメで厚みと接地影が現れる */
+.kv-slab-layer {
+  position: absolute; inset: 0; border-radius: 10px; display: none;
+}
+.kv-agent .kv-slab-layer { border-radius: 13px; }
+.kv-slab-shadow {
+  position: absolute; inset: -14px; border-radius: 50%; display: none;
+  background: radial-gradient(closest-side, rgba(30,41,59,.30), rgba(30,41,59,0) 72%);
+  filter: blur(6px);
+}
+.mode-3d .kv-slab-layer, .mode-3d .kv-slab-shadow { display: block; }
+/* 3D時: 天面は白いキューブの上面（光が当たる面）。既存アイコンはそのまま上に載る */
+.mode-3d .kv-box--css .kv-face,
+.mode-3d .kv-box--empty .kv-face {
+  background: linear-gradient(135deg, #ffffff 0%, #f2f5fa 78%, #e9edf5 100%);
+  border: 1px solid #fff;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.mode-3d .kv-box--asset .kv-face { background: linear-gradient(135deg, #ffffff 0%, #f2f5fa 100%); border-radius: 10px; }
+/* 3D時は線を床にうっすら（白線は白キューブと同化するので少し濃く） */
+.mode-3d .kv-line { stroke: rgba(148,163,184,.5); }
+
+/* ============ 切替バー（mock 用 UI） ============ */
+.kv-bar {
+  position: fixed; left: 50%; bottom: 78px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(10px);
+  border: 1px solid #ececec; border-radius: 10px; padding: 8px 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  font-size: 12px; color: #101828; z-index: 50; white-space: nowrap;
+}
+.kv-bar b { font-weight: 500; }
+.kv-bar .sep { width: 1px; height: 18px; background: #e3e3e3; }
+.kv-bar button {
+  font: inherit; border: 1px solid #d8d8d8; background: #fff; color: #555;
+  border-radius: 7px; padding: 4px 10px; cursor: pointer;
+}
+.kv-bar button.on { background: #090909; border-color: #090909; color: #fff; }
+.kv-bar { flex-direction: column; align-items: stretch; gap: 6px; }
+.kv-bar .row1, .kv-bar .row2 { display: flex; align-items: center; gap: 8px; }
+.kv-bar .row2 { font-size: 11px; color: #555; }
+.kv-bar .row2 input[type=range] { width: 86px; accent-color: #090909; }
+.kv-bar .row2 span { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ドット: 全ビューで「カンプどおりの平らな円」。
+   傾いたビューではビルボード(常にカメラ向き)なので楕円に潰れない。
+   3D時だけ細い白フチと極薄い影で床から浮いて見えるようにする（2Dのままの工夫） */
+.kv-dot3 { background: var(--dc); }
+.mode-flat .kv-dot3 { box-shadow: none; }
+.mode-3d .kv-dot3 {
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,.85), 0 2px 4px rgba(16,24,40,.18);
+}
+.kv-bar .row3 { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #555; }
+.kv-bar .row3 label { display: inline-flex; align-items: center; gap: 3px; }
+.kv-bar .row3 input[type=color] { width: 24px; height: 22px; padding: 0; border: 1px solid #d8d8d8; border-radius: 5px; background: #fff; cursor: pointer; }
+.kv-bar .row3 input[type=text] { width: 62px; font: inherit; font-size: 10.5px; padding: 3px 4px; border: 1px solid #d8d8d8; border-radius: 5px; text-transform: uppercase; }
+.kv-bar .row3 button { font-size: 10.5px; padding: 3px 8px; }
+.kv-bar .row4 { display: flex; align-items: center; gap: 12px; font-size: 11px; color: #555; flex-wrap: wrap; }
+.kv-bar .row4 .fl { display: inline-flex; align-items: center; gap: 5px; }
+.kv-bar .row4 input[type=range] { width: 84px; accent-color: #090909; }
+.kv-bar .row4 em { font-style: normal; min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ===== 線の見せ方 5案（2026-08-20 ヒデさん依頼・比較mock） =====
+   ファイル末尾に置くこと（.mode-3d .kv-line より後＝3Dビューでも案の色が勝つ） */
+.kv-line-track, .kv-line-glow { display: none; }
+/* ① 濃いめ: 白60%→ブルーグレーで地味に強く */
+.line-bold .kv-line { stroke: rgba(100, 116, 139, .6); }
+/* ② 流れる破線: エージェントへ向かってゆっくり流れる（データの流れの隠喩）
+   【2026-08-20 第2弾】色は持たない＝「色味」の選択(line-c-*)がそのまま乗る */
+.line-dash .kv-line { stroke-dasharray: 7 7; animation: kvdash .9s linear infinite; }
+@keyframes kvdash { from { stroke-dashoffset: 14; } to { stroke-dashoffset: 0; } }
+/* ③ ブランドグラデ: 線ごとに 箱=シアン→エージェント=ピンク（stroke はJSが書く） */
+.line-grad .kv-line { stroke-width: 2.5; }
+/* ④ パイプ: 淡い受け皿の上に白線＝ドットが管の中を通って見える */
+.line-pipe .kv-line-track { display: block; stroke: rgba(203, 213, 229, .55); stroke-width: 7; stroke-linecap: round; }
+.line-pipe .kv-line { stroke: rgba(255, 255, 255, .95); }
+/* ⑤ 通過で光る: 本線は淡く、ドットの後ろの軌道がドット色で発光 */
+.line-glow .kv-line { stroke: rgba(148, 163, 184, .5); }
+.line-glow .kv-line-glow { display: block; stroke-width: 3.5; stroke-linecap: round; filter: drop-shadow(0 0 4px currentColor); }
+.kv-bar .rowL { display: flex; align-items: center; gap: 8px; }
+
+/* ===== 線の色味 5案（2026-08-20 第2弾: 形は実線/破線のまま色とライトだけ変える） =====
+   ⚠️ 必ずファイル末尾（.line-dash .kv-line より後）。色味が形の色を上書きする設計 */
+.line-c-w95 .kv-line { stroke: rgba(255, 255, 255, .95); }                       /* 白くっきり: 光なし */
+.line-c-glow1 .kv-line { stroke: rgba(255, 255, 255, .9);                         /* 白 発光弱: ほんのり */
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, .75)); }
+.line-c-glow2 .kv-line { stroke: #fff;                                            /* 白 発光強: ライト管 */
+  filter: drop-shadow(0 0 2.5px rgba(255, 255, 255, .9)) drop-shadow(0 0 7px rgba(255, 255, 255, .85)); }
+.line-c-cyan .kv-line { stroke: rgba(150, 225, 255, .85);                         /* 水色ライト: 冷たい光 */
+  filter: drop-shadow(0 0 4px rgba(130, 232, 255, .55)); }
+.line-c-navy .kv-line { stroke: rgba(14, 68, 151, .34); }                         /* 淡ネイビー: 光なしの対案 */
