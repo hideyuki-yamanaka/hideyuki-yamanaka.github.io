@@ -233,7 +233,7 @@ export default function TopTunePanel({
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 10, tailPad: DEFAULT_EVENT_TAIL }, /* 案10が採用候補。tailPadは動き確認用の下余白 */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
-      footer: { pattern: 6 }, /* フッター（案6「溶けて現れる」＝2026-09-16 からの既定） */
+      footer: { pattern: 1 }, /* フッターのサイトマップの階層スタイル（既定＝階層A 罫線） */
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
       scrollSpd: { kvToMsg: 100 },
@@ -461,10 +461,10 @@ export default function TopTunePanel({
               },
               { sub: "フッター（全ページ共通）" },
               {
-                note: "ページ下部のフッターのデザイン8案。既定の案1は、いまのサイトのトンマナ（白地・細い書体・余白多め）をそのまま踏襲したものです。案6〜8 はキービジュアルの写真を生かした案（2026-09-16 追加）。トップと各詳細ページの一番下で確認できます。",
+                note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここで選ぶのは、サイトマップの親子の階層をどう見せるかの3案です。トップと各詳細ページの一番下で確認できます。",
               },
               {
-                pills: "フッターの案",
+                pills: "階層の見せ方",
                 path: "footer.pattern",
                 immediate: true,
                 options: Object.entries(FOOTER_PATTERNS).map(([v, p]) => ({

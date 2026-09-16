@@ -22,76 +22,22 @@ import Link from "next/link";
 export const FOOTER_EVENT = "abashiri:footer";
 
 export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
-  /* どの案も「作字（な〜んにもない／たまらない）をいちばん見せる」ための組み方。
-     2026-09-16 ヒデさん指示で、縦ロゴ前提の旧レイアウトから全面的に作り直した */
+  /* 2026-09-16 ヒデさん確定：フッターのデザインは【案8（写真の上にサイトマップ）】
+     ひとつに決定。ほかの案（作字ベース1〜5・写真だけ6/7・他のメガフッター9〜12）は削除した。
+     ここで選ぶのは「サイトマップの親子の階層をどう見せるか」の3案。 */
   1: {
-    name: "案1",
-    note: "中央に大きく（既定）。作字を真ん中に大きく置き、上下にたっぷり余白。リンクは下に小さく",
+    name: "階層A 罫線で分ける",
+    note: "大カテゴリの下に細い線を引き、子は少し下げて並べる。区切りがはっきりしていちばん読みやすい",
   },
   2: {
-    name: "案2",
-    note: "空に還る。下へ向かって青くなる空の中に、白い作字を大きく。KVの世界で終わる",
+    name: "階層B 左の縦線でぶら下げる",
+    note: "子のグループの左に縦の細い線を通して、親からぶら下がっているのを見せる。目次らしい形",
   },
   3: {
-    name: "案3",
-    note: "左に大きく。作字を左に寄せて大きく置き、リンクとSNSは右端にそろえる",
-  },
-  4: {
-    name: "案4",
-    note: "ポスター。作字をうんと大きく、下端にリンクを一行。いちばん潔い",
-  },
-  5: {
-    name: "案5",
-    note: "作字が中心。リンクを作字の左右に振り分けて、作字が真ん中の軸になる",
-  },
-  /* 2026-09-16 ヒデさん依頼（カンプ 17420:23293）で作り直した3案。
-     考え方はどれも同じ：
-       ・背景の写真はページの後ろにずっと居て、スクロールしてもついてくる
-       ・上に乗っている白いコンテンツが【グラデーションで薄れて】いくと、
-         その下から写真が顔を出す（境目をパッツリ切らない）
-       ・フッターの中身はその写真の上に載る
-     違うのは「現れ方」と「情報の置き方」だけ */
-  6: {
-    name: "案6 溶けて現れる",
-    note: "白いコンテンツがグラデーションで薄れ、後ろにいた写真が顔を出す。作字は写真の中央、リンクはその下。いちばん素直な形",
-  },
-  7: {
-    name: "案7 引きながら現れる",
-    note: "写真が顔を出しながら、少し引いて（ズームアウトして）全景になる。作字は左下に大きく、情報は右下に小さく",
-  },
-  /* 2026-09-16 ヒデさん依頼：「フッター感がない。サイトマップのように
-     大カテゴリの下にコンテンツが並ぶメガフッターで、サイトの要素を全出し」
-     → 中身は SITEMAP（スポット5・グルメ4・体験4・ぼーっと体験3）で共通。
-        違うのは【地の作り】と【組み方】 */
-  8: {
-    name: "案8 写真の上にサイトマップ",
-    note: "案6の写真の上に、4つの大カテゴリを横に並べてサイトの中身を全部見せる。写真の余韻を残したままフッターらしくする",
-  },
-  9: {
-    name: "案9 白地のメガフッター",
-    note: "写真を使わず白地。大カテゴリ4列＋左に作字。いちばん普通のフッターで、情報がいちばん読みやすい",
-  },
-  10: {
-    name: "案10 大見出しでぶら下げる",
-    note: "大カテゴリを大きな見出しにして、その下に中身をぶら下げる。縦に長く、余白をたっぷり取って読ませる",
-  },
-  11: {
-    name: "案11 索引（番号つき）",
-    note: "01・02… と番号を振った索引の形。細い罫線で区切って、資料の目次のように整理する",
-  },
-  12: {
-    name: "案12 写真＋2段組",
-    note: "写真の上に、作字を大きく置いてからサイトマップを2段に。上が世界観、下が案内、と役割を分ける",
+    name: "階層C 大きさと濃さで分ける",
+    note: "線を使わず、親を大きく・明るく、子を小さく・薄くして差をつける。いちばん静かでミニマル",
   },
 };
-
-/* フッターのリンク。トップ内のセクションは GlobalNav と同じ飛び方をさせる */
-const LINKS: { label: string; href?: string; jump?: "spotAt" | "gourmetAt" | "eventsAt" }[] = [
-  { label: "ホーム", href: "/" },
-  { label: "ぼーっとスポット", jump: "spotAt" },
-  { label: "グルメ", jump: "gourmetAt" },
-  { label: "体験", jump: "eventsAt" },
-];
 
 /* ───────── サイトマップ（メガフッター用・2026-09-16 ヒデさん依頼）─────────
    「ぼーっとスポットという大カテゴリがあって、その下に中のコンテンツが並んでいる」
@@ -193,48 +139,6 @@ function Logo({ cls, light = false }: { cls: string; light?: boolean }) {
             471×390 が 1272×120 になっていた）。置き場所側でも self-start を付ける */
       className={`w-auto object-contain ${cls}`}
     />
-  );
-}
-
-function NavLinks({
-  light = false,
-  className = "",
-  only,
-}: {
-  light?: boolean;
-  className?: string;
-  /** 案5用：作字の左右に振り分けるとき、前半／後半だけを出す */
-  only?: "left" | "right";
-}) {
-  const c = light
-    ? "text-white/85 hover:text-white"
-    : "text-ink/70 hover:text-ink";
-  const half = Math.ceil(LINKS.length / 2);
-  const items =
-    only === "left" ? LINKS.slice(0, half) : only === "right" ? LINKS.slice(half) : LINKS;
-  return (
-    <nav className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:gap-x-8 ${className}`}>
-      {items.map((l) =>
-        l.href ? (
-          <Link
-            key={l.label}
-            href={l.href}
-            className={`whitespace-nowrap text-body-14 font-light leading-[1.2] transition-colors duration-300 ease-standard ${c}`}
-          >
-            {l.label}
-          </Link>
-        ) : (
-          <button
-            key={l.label}
-            type="button"
-            onClick={() => l.jump && jumpTo(l.jump)}
-            className={`cursor-pointer whitespace-nowrap text-body-14 font-light leading-[1.2] transition-colors duration-300 ease-standard ${c}`}
-          >
-            {l.label}
-          </button>
-        )
-      )}
-    </nav>
   );
 }
 
@@ -373,58 +277,74 @@ function PhotoStage({
 }
 
 /** サイトマップの1カテゴリぶん（大見出し＋ぶら下がる中身）。
-    light=写真や濃い地の上に置く時（白文字） */
+    level で「親子の階層をどう見せるか」を切り替える（2026-09-16 ヒデさん依頼）
+      1 罫線で分ける     … 親の下に細い線、子は少し下げる
+      2 左の縦線でぶら下げる … 子のまとまりの左に縦線
+      3 大きさと濃さで分ける … 線なし。親を大きく明るく、子を小さく薄く */
 function MapColumn({
   col,
   light = false,
-  size = "md",
+  level = 1,
 }: {
   col: (typeof SITEMAP)[number];
   light?: boolean;
-  /** md=既定 / lg=大見出しを大きく */
-  size?: "md" | "lg";
+  level?: number;
 }) {
-  const head = light ? "text-white" : "text-ink";
+  const head =
+    level === 3
+      ? `${light ? "text-white" : "text-ink"} text-title-24 font-thin leading-[1.5] tracking-[0.06em]`
+      : `${light ? "text-white" : "text-ink"} text-body-16 font-light leading-[1.6] tracking-[0.1em]`;
   const item = light
-    ? "text-white/70 hover:text-white"
+    ? level === 3
+      ? "text-white/55 hover:text-white"
+      : "text-white/75 hover:text-white"
     : "text-ink/60 hover:text-ink";
-  const go = (n: { href?: string; jump?: SiteNode["jump"] }) => () =>
-    n.jump ? jumpTo(n.jump) : undefined;
+  const itemSize =
+    level === 3 ? "text-body-12" : "text-body-13";
+  /* 子のまとまりの飾り。案ごとに変える */
+  const listCls =
+    level === 1
+      ? "mt-4 flex flex-col gap-2.5 pl-4"
+      : level === 2
+        ? `mt-4 flex flex-col gap-2.5 border-l pl-4 ${light ? "border-white/30" : "border-ink/15"}`
+        : "mt-3 flex flex-col gap-2";
+  const headCls =
+    level === 1
+      ? `border-b pb-3 ${light ? "border-white/30" : "border-ink/15"}`
+      : "";
+
+  const Head = col.href ? (
+    <Link href={col.href} className={head}>
+      {col.title}
+    </Link>
+  ) : (
+    <button
+      type="button"
+      onClick={() => col.jump && jumpTo(col.jump)}
+      className={`cursor-pointer text-left ${head}`}
+    >
+      {col.title}
+    </button>
+  );
+
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      {/* 大カテゴリ。押すとトップのそのセクションへ飛ぶ */}
-      {col.href ? (
-        <Link
-          href={col.href}
-          className={`${head} ${size === "lg" ? "text-title-24" : "text-body-16"} font-thin leading-[1.6] tracking-[0.08em]`}
-        >
-          {col.title}
-        </Link>
-      ) : (
-        <button
-          type="button"
-          onClick={() => col.jump && jumpTo(col.jump)}
-          className={`cursor-pointer text-left ${head} ${size === "lg" ? "text-title-24" : "text-body-16"} font-thin leading-[1.6] tracking-[0.08em]`}
-        >
-          {col.title}
-        </button>
-      )}
-      {/* ぶら下がる中身 */}
-      <ul className="flex flex-col gap-2.5">
+    <div className="flex min-w-0 flex-col">
+      <div className={headCls}>{Head}</div>
+      <ul className={listCls}>
         {col.items.map((n) => (
           <li key={n.label}>
             {n.href ? (
               <Link
                 href={n.href}
-                className={`block text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+                className={`block ${itemSize} font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </Link>
             ) : (
               <button
                 type="button"
-                onClick={go(n)}
-                className={`block cursor-pointer text-left text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+                onClick={() => n.jump && jumpTo(n.jump)}
+                className={`block cursor-pointer text-left ${itemSize} font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </button>
@@ -439,36 +359,16 @@ function MapColumn({
 /** サイトマップ4列（PCは横並び・スマホは2列） */
 function SiteMapGrid({
   light = false,
-  size = "md",
-  cols = 4,
+  level = 1,
 }: {
   light?: boolean;
-  size?: "md" | "lg";
-  cols?: 2 | 4;
+  level?: number;
 }) {
   return (
-    <div
-      className={`grid w-full gap-x-8 gap-y-12 ${
-        cols === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"
-      }`}
-    >
+    <div className="grid w-full grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-4">
       {SITEMAP.map((c) => (
-        <MapColumn key={c.title} col={c} light={light} size={size} />
+        <MapColumn key={c.title} col={c} light={light} level={level} />
       ))}
-    </div>
-  );
-}
-
-/** メガフッターの下段（ホーム・SNS・作字）。どの案でも共通で置く */
-function MapFoot({ light = false }: { light?: boolean }) {
-  return (
-    <div
-      className={`flex w-full flex-col items-start gap-6 border-t pt-8 sm:flex-row sm:items-center sm:justify-between ${
-        light ? "border-white/25" : "border-ink/10"
-      }`}
-    >
-      <NavLinks light={light} className="justify-start" />
-      <SnsRow light={light} size={18} />
     </div>
   );
 }
@@ -476,261 +376,31 @@ function MapFoot({ light = false }: { light?: boolean }) {
 /* ── 案ごとの中身 ─────────────────────────── */
 
 function Body({ pat }: { pat: number }) {
-  switch (pat) {
-    /* 案2 空に還る：青い空の中に白の作字。KVと同じ世界で終わらせる */
-    case 2:
-      return (
-        <div className="flex w-full flex-col items-center gap-10 px-6 py-[80px] sm:gap-[64px] sm:py-[130px]">
-          <Logo cls="h-[150px] sm:h-[230px]" light />
-          <div className="flex flex-col items-center gap-8">
-            <NavLinks light className="justify-center" />
-            <SnsRow light />
-          </div>
+  return (
+    /* フッターのデザインは1つに確定（写真の上にサイトマップ）。
+       ・後ろの写真がグラデーションで顔を出す（PhotoStage）
+       ・その上に 左＝作字ロゴ＋SNS ／ 右＝サイトマップ の2カラム
+       ⚠️ 以前あった下段の「ホーム／ぼーっとスポット／グルメ／体験」の行は、
+          右のサイトマップと中身がかぶるので削除した（2026-09-16 ヒデさん指示） */
+    <PhotoStage align="end">
+      <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[72px]">
+        {/* 左：作字ロゴ。サイトの顔なので大きく出す（2026-09-16 ヒデさん指示） */}
+        <div className="flex shrink-0 flex-col items-start gap-9">
+          <Logo cls="h-[150px] self-start sm:h-[260px]" light />
+          <SnsRow light size={18} />
         </div>
-      );
-
-    /* 案3 左に大きく：作字を左へ寄せ、情報は右端にそろえる（非対称の余白が効く） */
-    case 3:
-      return (
-        <div className="flex w-full flex-col items-center gap-10 px-6 py-[80px] sm:flex-row sm:items-center sm:justify-between sm:gap-[80px] sm:px-[120px] sm:py-[120px]">
-          <Logo cls="h-[150px] sm:h-[220px]" />
-          <div className="flex flex-col items-center gap-8 sm:items-end">
-            <NavLinks className="justify-center sm:justify-end" />
-            <SnsRow />
-          </div>
+        {/* 右：サイトマップ。親子の見せ方はパネルで3案から選ぶ */}
+        <div className="min-w-0 flex-1">
+          <SiteMapGrid light level={pat} />
         </div>
-      );
-
-    /* 案4 ポスター：作字をうんと大きく、下端にリンクを一行だけ */
-    case 4:
-      return (
-        <div className="flex w-full flex-col items-center gap-12 px-6 pb-10 pt-[80px] sm:gap-[100px] sm:px-[120px] sm:pb-[64px] sm:pt-[140px]">
-          <Logo cls="h-[170px] sm:h-[300px]" />
-          <div className="flex w-full flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
-            <NavLinks className="justify-center sm:justify-start" />
-            <SnsRow size={18} />
-          </div>
-        </div>
-      );
-
-    /* 案5 作字が中心：リンクを左右に振り分けて、作字を真ん中の軸にする */
-    case 5:
-      return (
-        <div className="flex w-full flex-col items-center gap-10 px-6 py-[80px] sm:gap-[56px] sm:px-[120px] sm:py-[120px]">
-          {/* スマホでは左右振り分けをやめて、ロゴの下に一列で置く */}
-          <Logo cls="h-[150px] sm:hidden" />
-          <NavLinks className="justify-center sm:hidden" />
-          <div className="hidden w-full items-center justify-center gap-[72px] sm:flex">
-            <NavLinks className="flex-1 justify-end" only="left" />
-            <Logo cls="h-[210px]" />
-            <NavLinks className="flex-1 justify-start" only="right" />
-          </div>
-          <SnsRow />
-        </div>
-      );
-
-    /* ═══════════════════════════════════════════════════════
-       案6〜8 共通の考え方（カンプ 17420:23293・2026-09-16）
-         ・写真＝ページの後ろにずっと居るレイヤー。スクロールしてもついてくる
-         ・白いコンテンツ＝その手前のレイヤー。下端が透明のグラデーションなので、
-           スクロールで上へ抜けるにつれ、後ろの写真がじわっと顔を出す
-         ・フッターの中身は写真の上に載る
-       ⚠️ 写真を position:fixed にはできない。このサイトは html/body ではなく
-          自前の箱でスクロールしているので、fixed だとページの最初から
-          画面に貼りついてしまう。sticky で「画面に止まる」を作るのが正解
-       ⚠️ 白い覆いは【グラデーションの面】であって、白い箱ではない。
-          箱にすると境目が線になる（ヒデさん指摘の「パッツリ切らない」）
-       ═══════════════════════════════════════════════════════ */
-
-    /* 案6 溶けて現れる：作字は写真の中央、リンクはその下 */
-    case 6:
-      return (
-        <PhotoStage>
-          <div className="flex flex-col items-center gap-10 sm:gap-14">
-            <Logo cls="h-[140px] sm:h-[220px]" light />
-            <div className="flex flex-col items-center gap-7">
-              <NavLinks light className="justify-center" />
-              <SnsRow light />
-            </div>
-          </div>
-        </PhotoStage>
-      );
-
-    /* 案7 引きながら現れる：写真がズームアウトして全景に。作字は左下 */
-    case 7:
-      return (
-        <PhotoStage zoom align="end">
-          <div className="flex w-full flex-col items-start gap-10 sm:flex-row sm:items-end sm:justify-between sm:gap-16">
-            <Logo cls="h-[140px] sm:h-[230px]" light />
-            <div className="flex flex-col items-start gap-6 sm:items-end">
-              <NavLinks light className="justify-start sm:justify-end" />
-              <SnsRow light />
-            </div>
-          </div>
-        </PhotoStage>
-      );
-
-    /* ═══ ここから メガフッター（サイトマップ型）5案 ═══
-       中身はどれも SITEMAP（スポット5／グルメ4／体験4／ぼーっと体験3）で同じ。
-       違うのは地の作りと組み方だけ */
-
-    /* 案8 写真の上にサイトマップ：案6の写真を残したままフッターらしくする */
-    case 8:
-      return (
-        <PhotoStage align="end">
-          <div className="flex w-full flex-col gap-12">
-            <Logo cls="h-[90px] self-start sm:h-[120px]" light />
-            <SiteMapGrid light />
-            <MapFoot light />
-          </div>
-        </PhotoStage>
-      );
-
-    /* 案9 白地のメガフッター：写真を使わず、情報のいちばん読みやすい形 */
-    case 9:
-      return (
-        <div className="flex w-full flex-col gap-14 px-6 py-[80px] sm:px-[120px] sm:py-[110px]">
-          <div className="flex flex-col gap-12 sm:flex-row sm:gap-[80px]">
-            <div className="shrink-0">
-              <Logo cls="h-[110px] sm:h-[150px]" />
-            </div>
-            <SiteMapGrid />
-          </div>
-          <MapFoot />
-        </div>
-      );
-
-    /* 案10 大見出しでぶら下げる：縦に長く、余白をたっぷり */
-    case 10:
-      return (
-        <div className="flex w-full flex-col gap-[72px] px-6 py-[90px] sm:px-[120px] sm:py-[130px]">
-          <Logo cls="h-[110px] self-start sm:h-[160px]" />
-          <div className="flex flex-col gap-[56px]">
-            {SITEMAP.map((c) => (
-              <div
-                key={c.title}
-                className="flex flex-col gap-5 border-t border-ink/10 pt-8 sm:flex-row sm:gap-[80px]"
-              >
-                <div className="shrink-0 sm:w-[280px]">
-                  <MapColumn col={{ ...c, items: [] }} size="lg" />
-                </div>
-                <ul className="flex flex-wrap gap-x-8 gap-y-3">
-                  {c.items.map((n) => (
-                    <li key={n.label}>
-                      {n.href ? (
-                        <Link
-                          href={n.href}
-                          className="text-body-14 font-extralight leading-[2] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
-                        >
-                          {n.label}
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => n.jump && jumpTo(n.jump)}
-                          className="cursor-pointer text-body-14 font-extralight leading-[2] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
-                        >
-                          {n.label}
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <MapFoot />
-        </div>
-      );
-
-    /* 案11 索引（番号つき）：資料の目次のように、細い罫線で整理する */
-    case 11:
-      return (
-        <div className="flex w-full flex-col gap-12 px-6 py-[80px] sm:px-[120px] sm:py-[110px]">
-          <div className="flex flex-col items-start gap-10 sm:flex-row sm:items-end sm:justify-between">
-            <Logo cls="h-[100px] sm:h-[140px]" />
-            <p className="text-body-12 font-light tracking-[0.3em] text-ink/40">
-              SITE INDEX
-            </p>
-          </div>
-          <div className="flex flex-col">
-            {SITEMAP.map((c, ci) => (
-              <div
-                key={c.title}
-                className="flex flex-col gap-3 border-t border-ink/10 py-7 sm:flex-row sm:gap-[64px]"
-              >
-                <div className="flex shrink-0 items-baseline gap-4 sm:w-[260px]">
-                  <span className="text-body-12 font-light tracking-[0.2em] text-ink/35">
-                    {String(ci + 1).padStart(2, "0")}
-                  </span>
-                  <MapColumn col={{ ...c, items: [] }} />
-                </div>
-                <ul className="flex flex-col gap-2">
-                  {c.items.map((n, i) => (
-                    <li key={n.label} className="flex items-baseline gap-4">
-                      <span className="text-body-12 font-light tracking-[0.15em] text-ink/30">
-                        {String(ci + 1)}-{i + 1}
-                      </span>
-                      {n.href ? (
-                        <Link
-                          href={n.href}
-                          className="text-body-13 font-extralight leading-[1.9] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
-                        >
-                          {n.label}
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => n.jump && jumpTo(n.jump)}
-                          className="cursor-pointer text-body-13 font-extralight leading-[1.9] text-ink/60 transition-colors duration-300 ease-standard hover:text-ink"
-                        >
-                          {n.label}
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <MapFoot />
-        </div>
-      );
-
-    /* 案12 写真＋2段組：上が世界観（作字）、下が案内（サイトマップ） */
-    case 12:
-      return (
-        <>
-          <PhotoStage>
-            <div className="flex w-full flex-col items-center gap-8">
-              <Logo cls="h-[140px] sm:h-[210px]" light />
-            </div>
-          </PhotoStage>
-          {/* 写真の下に、白地でサイトマップを2段に置く */}
-          <div className="flex w-full flex-col gap-12 bg-white px-6 py-[70px] sm:px-[120px] sm:py-[90px]">
-            <SiteMapGrid cols={2} />
-            <MapFoot />
-          </div>
-        </>
-      );
-
-    /* 案1（既定）中央に大きく：作字を真ん中に、上下にたっぷり余白 */
-    default:
-      return (
-        <div className="flex w-full flex-col items-center gap-12 px-6 py-[80px] sm:gap-[72px] sm:py-[140px]">
-          <Logo cls="h-[160px] sm:h-[240px]" />
-          <div className="flex flex-col items-center gap-8">
-            <NavLinks className="justify-center" />
-            <SnsRow />
-          </div>
-        </div>
-      );
-  }
+      </div>
+    </PhotoStage>
+  );
 }
 
 export default function SiteFooter() {
-  /* 既定は案6（写真が溶けて現れる）。2026-09-16 ヒデさん指示 */
-  const [pat, setPat] = useState(6);
+  /* 選ぶのは「サイトマップの階層の見せ方」3案。既定は階層A */
+  const [pat, setPat] = useState(1);
   useEffect(() => {
     fetch("/tune-defaults.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -747,12 +417,6 @@ export default function SiteFooter() {
     return () => window.removeEventListener(FOOTER_EVENT, onTune);
   }, []);
 
-  /* 案2は空グラデ＋白文字。ほかは白地。
-     ⚠️ 案6〜8（写真の案）も【白地のまま】にする。背景を透明にすると、
-        上のセクションと2px重ねている所からページの地（うすい水色）が
-        すじになって見える（2026-09-16 実測。以前の案1・案5と同じ症状）。
-        写真はこの白の上に載るので、白地でも見た目は変わらない */
-  const sky = pat === 2;
   return (
     /* ⚠️ フッターは登場アニメを付けない。理由は2つ:
        ①filter/opacity を動かすと要素が合成レイヤーになり、アニメ完了後も
@@ -764,11 +428,10 @@ export default function SiteFooter() {
     /* relative z-10：前の兄弟に sticky があると描画順で上に来て地が沈むため必須。
        -mt-[2px]：上のセクションと2px重ねて継ぎ目を出さない */
     <footer
-      className={`relative z-10 -mt-[2px] w-full ${
-        sky
-          ? "bg-gradient-to-b from-sky-bottom via-brand/80 to-brand"
-          : "bg-white"
-      }`}
+      /* ⚠️ 地は白のまま。透明にすると、上のセクションと2px重ねている所から
+         ページの地（うすい水色）がすじになって見える（2026-09-16 実測）。
+         写真はこの白の上に載るので、白地でも見た目は変わらない */
+      className="relative z-10 -mt-[2px] w-full bg-white"
     >
       <Body pat={pat} />
     </footer>
