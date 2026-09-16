@@ -1932,6 +1932,20 @@
     color: var(--ink-on-dark);
     will-change: opacity, filter, transform;
   }
+  /* 【2026-09-16 ヒデさん指定】開発者体験①②を「中央に来たら一旦止まって(固定)、スクロールで進む」。
+     ハードなスクロールロックはせず sticky で保持する（過去の“ガタガタ・戻れない”を避ける安全策）。
+     各ブロックは独立した sticky コンテナなので重ならず順番に切り替わる。#dev.dev-pin の時だけ・PC のみ。
+     .dev-blk-in は既定 display:contents ＝透明で、非pin時は従来どおり .dev-block が中央寄せする。 */
+  .dev-blk-in { display: contents; }
+  html:not(.mb) #dev.dev-pin .dev-block {
+    display: block; min-height: 0; padding: 0;
+    height: calc(100vh + var(--dev-dwell, 90vh));   /* 100vh(中央保持) + dwell(止まっている長さ) */
+  }
+  html:not(.mb) #dev.dev-pin .dev-blk-in {
+    display: flex; position: sticky; top: 0; height: 100vh;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--space-56); padding: 90px 120px; box-sizing: border-box;
+  }
   /* 見出し(中央): ラベル SF Pro Thin 20px var(--brand-cyan) / 本文 Noto Sans JP Thin 40px 白 (カンプ 24778) */
   .dev-center { text-align: center; color: var(--ink-on-dark); }
   .dev-center .dc-label {
@@ -3830,16 +3844,20 @@
 
   <!-- dev1: Strength 01 -->
   <div class="dev-block" id="devBlock1">
+    <!-- 【2026-09-16】.dev-blk-in = 固定(sticky)で中央に留めて「一旦止まる」ための内側ラッパ。非pin時は display:contents で透明 -->
+    <div class="dev-blk-in">
     <div class="dev-center" id="devH1">
       <span class="dc-label">Strength 01</span>
       <span class="dc-one">自動生成で開発スピードを加速</span>
     </div>
     <!-- dev1 は単体パネル(エディタ+チャット)。中身は JS が #dmPanel を複製して静止完成状態で入れる -->
     <div class="dev1-mock" id="devMock1"></div>
+    </div>
   </div>
 
   <!-- dev2: Strength 02 -->
   <div class="dev-block" id="devBlock2">
+    <div class="dev-blk-in">
     <div class="dev-center" id="devH2">
       <span class="dc-label">Strength 02</span>
       <!-- 【2026-08-29 ヒデさん指定】テキストスライド案: 「開発環境 [CLI/SDK/API] に柔軟に適応」。
@@ -3945,6 +3963,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </section>
@@ -4930,7 +4949,8 @@ const DEFAULTS = {
                vpMode: 'center', splitDelay: 0.32, splitDur: 1.2,
                /* 【2026-09-15】モックのスタイル案のつまみ。stv = 案ごとの値(案を切り替えても各案の設定が残る) */
                mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {},
-               slotBoxY: 0, slotBoxH: 42 },   /* 2026-09-15: ②のスロットの箱の上下位置・高さ */   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
+               slotBoxY: 0, slotBoxH: 42,   /* 2026-09-15: ②のスロットの箱の上下位置・高さ */
+               pinStops: 'on', devDwell: 90 },   /* 2026-09-16 ヒデさん指定: ①②で中央に固定して一旦止まる(sticky保持)。devDwell=止まっている長さ(vh)。'off'で従来の通常スクロール */   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
     /* 【2026-08-25 刷新・カンプ 15800:24526/24258】導入事例 = 2×2グリッド。
        見出し(ブラー) → 水平線3本が左から(上→下でディレイ) → 中央の垂直線 → カード4枚がブラーで登場。 */
     cases:   { lenVh: 200, driveLen: 3.0, playSec: 2.0, inBlur: 20,
@@ -11487,7 +11507,7 @@ const RES_FX = {
   /* 【2026-09-14 ヒデさん指定】数値が大きく→終点(上の帯)へ、for SaaS→for AI は横スクロール。横の動きが3通り */
   '21': { vh: 520 },             // 面ごとスライド
   '23': { vh: 520 },             // ピクト先行(面より先に着く)
-  '24-2': { vh: 480, mobileFlow: true },   // 案24 の「場面を重ねて滑らかに繋ぐ」版(2026-09-15 ヒデさん指定。CSS は rfx-24 を共用)
+  '24-2': { vh: 220, mobileFlow: true },   // 案24 の「場面を重ねて滑らかに繋ぐ」版(2026-09-15 ヒデさん指定。CSS は rfx-24 を共用)。2026-09-16: 480→220 スクロールを短縮(4.8→2.2画面)。「ワンスクロールで終点まで・くどくない」。尺はパネル「固定の長さ」で可変
   '24': { vh: 480, mobileFlow: true },   // for SaaS/for AI から入る(絵コンテ Figma 17271:23392)。SP は2列を縦に積むと1画面に収まらないので縦流れ
   '25': { vh: 240, mobileFlow: true },   // 案24 の短い版: 大見出しが画面の中央に来た所で固定が始まり、短いスクロールで一気に終点へ(2026-09-15)
   '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
@@ -12674,6 +12694,8 @@ const devEls = {
   h2: document.getElementById('devH2'),
   block1: document.getElementById('devBlock1'),   // dev1 (Strength01)
   block2: document.getElementById('devBlock2'),   // dev2 (Strength02)
+  in1: document.querySelector('#devBlock1 .dev-blk-in'),   // 固定(sticky)される内側。pin時はこの位置で出現/保持を測る
+  in2: document.querySelector('#devBlock2 .dev-blk-in'),
   mock1: document.getElementById('devMock1'),     // dev1 の単体パネル枠(JSが #dmPanel を複製)
   mock: document.getElementById('devMock'),        // dev2 の手前パネル枠
   panel: document.getElementById('dmPanel'),
@@ -13413,14 +13435,15 @@ function dsResetBox() { if (dsEls.box) { dsEls.box.style.width = '0'; dsEls.box.
 
 function updateDev2Reveal() {
   const b2 = devEls.block2; if (!b2) return;
+  const b2m = devPinOn() ? devEls.in2 : b2;   /* pin時は固定される内側で測る(保持中は出しきりで張り付く) */
   if (!dev2StackEl) dev2StackEl = b2.querySelector('.dev2-stack');
   const d = params.sections.dev;
   /* 【2026-08-29】テキストスライド案の切替: #dev に .ds2-slide を付け、箱アニメを駆動、モックは静止。 */
   const slide = d.ds2 === 'slide';
   if (devEls.sec) devEls.sec.classList.toggle('ds2-slide', slide);
   const vh = innerHeight || 1;
-  const r = rectOf(b2);
-  const refY = r.top + r.height / 2;   // ブロック中心
+  const r = rectOf(b2m);
+  const refY = r.top + r.height / 2;   // ブロック中心(pin時は内側=画面中央付近で張り付く)
   /* 【2026-08-29 ヒデさん指定・重要修正】dev2 の出入りを dev1 と同じ【スクロール位置駆動】に統一。
      以前は kBlock を越えた瞬間に時計(dev2SeqT0)で見出し→モック→右を再生していたため、上に戻ると
      時計が -1 にリセットされて【パッと消える／変なスクロールリプレイ】になっていた。
@@ -13461,6 +13484,9 @@ function updateDev2Reveal() {
   }
 }
 
+/* 【2026-09-16 ヒデさん指定】開発者体験①②の「中央で一旦止まる(sticky保持)」が有効か。PC のみ・パネルで on/off。
+   pin時は出現/保持の判定を .dev-blk-in(=固定される内側)の位置で測る＝固定中は rect.top≈0 で「出しきった状態」に張り付く=止まって見える。 */
+function devPinOn() { return !isMobile && devEls.in1 && devEls.in2 && (params.sections.dev.pinStops !== 'off'); }
 function updateDev(pRaw) {
   /* 【2026-08-26 リデザイン】固定追従なし・縦スクロール。ブロックが画面に入ったら
      ブラー+フェードで上品に出現。モックは表示中ずっとループ再生(V1.0踏襲)。 */
@@ -13487,7 +13513,7 @@ function updateDev(pRaw) {
      下からのせり上がりは黒(resGrow)の裏に隠す（黒がフェードするのと入れ替わりで“その場”に出る）。 */
   /* 【2026-08-29 ヒデさん指定】開発者体験①(開発スピード加速)は「もっと早めにブラーで出す」。
      下から上がってくる間に出しはじめ、中下部〜中央(center が vh*0.58 付近)でブラー0=一番くっきり。 */
-  const b1r = rectOf(devEls.block1);
+  const b1r = rectOf(devPinOn() ? devEls.in1 : devEls.block1);
   const b1c = b1r.top + b1r.height / 2;
   const posK = easeOutQ(clamp01((vh - b1c) / (vh * 0.42)));   // center が vh*0.58 でくっきり(=1)
   /* 固定追従なし(smooth)は黒がゆったり時間追従なので、dev1 も“黒が覆う瞬間(resBlackK)”に合わせて出す
@@ -15365,7 +15391,10 @@ function fit() {
   SECS.vision.style.height = VIS_NOPIN ? nopinSecVh : H('vision');
   /* 【2026-08-25 リデザイン】開発者体験は非pin・2ブロック(各min-height:100vh)なので、
      中身なりの高さ(auto=約200vh)にする。pin用の H('dev')(=600vh)は使わない。 */
-  SECS.dev.style.height = 'auto';
+  SECS.dev.style.height = 'auto';   /* pin時は .dev-block が各(100vh+dwell)なので auto でも自動で伸びる */
+  /* 【2026-09-16 ヒデさん指定】開発者体験①②の「中央で一旦止まる(sticky)」。PC のみ。dwell=止まっている長さ(vh) */
+  SECS.dev.classList.toggle('dev-pin', !isMobile && (params.sections.dev.pinStops !== 'off'));
+  SECS.dev.style.setProperty('--dev-dwell', (params.sections.dev.devDwell != null ? params.sections.dev.devDwell : 90) + 'vh');
   /* 【2026-08-29 ヒデさん指定】スムーズフェード時は実績に被せない＝#dev の -100vh 重なりを外して普通に下へ置く。 */
   SECS.dev.style.marginTop = resSmooth() ? '0' : '';
   /* 【2026-08-29】導入事例も固定追従なし＝1画面(100vh)。長いピン尺(最大600vh)の余分スクロールを解消。 */
@@ -18501,6 +18530,15 @@ function buildPanel() {
 
   sub(catDev, '基本（長さ）');
   sectionLenSlider('dev', 1600);
+
+  /* 【2026-09-16 ヒデさん指定】①②で中央に来たら一旦止まる(固定スクロール) */
+  sub(catDev, '①②で一旦止まる（固定スクロール）');
+  note('①「開発スピードを加速」と②「開発環境に柔軟に適応」が、中央に来たら固定されて一旦止まり、スクロールすると次へ進みます（PC のみ）。');
+  pillRow([{ key: 'on', name: '止まる' }, { key: 'off', name: '止まらない（通常）' }],
+    it => ((sv().dev.pinStops !== 'off') ? 'on' : 'off') === it.key,
+    it => { sv().dev.pinStops = it.key; fit(); renderFrame(); }, null, { noRebuild: true });
+  rows.push(slider('止まっている長さ', 30, 160, 5, () => (sv().dev.devDwell != null ? sv().dev.devDwell : 90), v => { sv().dev.devDwell = v; fit(); }, v => Math.round(v) + 'vh',
+    '各章が中央で止まっている距離。長いほど、しっかり止まって見えます。', { fixedMax: true }));
 
   /* 【2026-08-30 ヒデさん指定】② はテキストスライド固定(既定)。リスト/スライドの選択UIは廃止。 */
   sub(catDev, '② の見出しのスロット（API / CLI / SDK の箱）', true, { fixed: true });
