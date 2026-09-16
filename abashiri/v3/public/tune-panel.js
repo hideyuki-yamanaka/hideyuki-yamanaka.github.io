@@ -172,7 +172,13 @@
     '.tp-sec-body{padding:0;}',
     '.tp-sec.closed .tp-sec-body{display:none;}',
     /* 隠しスイッチ（画面右上の透明ボックス）。見た目は何もないが、クリックでパネルが出る */
-    '.tp-secret-hot{position:fixed;top:0;right:0;width:64px;height:64px;z-index:2147483001;background:transparent;}',
+    /* 調整パネルを出す透明の四角（見た目は何もない）。
+       2026-09-16 ヒデさん指示で、PC・スマホとも【右下】に統一した（anyflow のスマホと同じ置き方）。
+       ⚠️ パネル自体も右下に出るので、表示中はこの四角を右上へ逃がす。
+          そうしないと、パネル右下の「書き出す」ボタンやサイズ変更のつまみの上に
+          透明な四角がかぶさって、押したつもりがパネルが閉じてしまう */
+    '.tp-secret-hot{position:fixed;bottom:0;right:0;width:72px;height:72px;z-index:2147483001;background:transparent;}',
+    '.tp-secret-hot.shown{top:0;bottom:auto;}',
     /* 小見出し */
     /* 小見出し（anyflow の .grp / .grp.sub2 の実測に合わせた） */
     '.tp-grp{margin-top:9px;padding-top:8px;border-top:1px solid #e8e8e8;}',
@@ -242,9 +248,6 @@
     '  .tp.closed{height:auto !important;}',
     '  .tp-head{cursor:default;padding:12px 14px;}',
     '  .tp-z{display:none;}',
-    '  .tp-secret-hot{top:auto;bottom:0;width:72px;height:72px;}',
-    /* パネルが出ている間は、シートの下端（保存・リセット）と重ならないよう上へ逃がす */
-    '  .tp-secret-hot.shown{top:0;bottom:auto;}',
     '}',
     /* 項目ツール（🗑削除・⠿並び替え）と削除確認モーダル（2026-08-23） */
     /* 2026-09-16 anyflow 準拠：↺（この項目だけ元に戻す）は常に見えている。
