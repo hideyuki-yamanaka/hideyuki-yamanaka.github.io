@@ -127,11 +127,42 @@
   /* ===== 【V5.0 2026-09-16】ハンバーガー＋ドロワー(共通) ===== */
   .hdr-burger { display: none; width: 44px; height: 44px; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex: 0 0 auto; -webkit-appearance: none; appearance: none; z-index: 2; }
   .hdr-burger { transition: opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), height var(--hdr-dur) var(--hdr-ease), background var(--hdr-dur), box-shadow var(--hdr-dur); }
-  .hdr-burger span { position: absolute; left: 11px; right: 11px; height: 1.6px; background: var(--ink); border-radius: 2px; transition: transform .28s var(--e-out), opacity .2s; }
-  .hdr-burger span:nth-child(1) { top: 16px; } .hdr-burger span:nth-child(2) { top: 21.2px; } .hdr-burger span:nth-child(3) { top: 26.4px; }
-  .hdr-burger.is-open span:nth-child(1) { transform: translateY(5.2px) rotate(45deg); }
+  /* 【2026-09-17 作り直し】バーは「中央基準(left/top:50%)＋margin で位置決め」。transform は回転専用にして、
+     どんな配置でも横に伸びて破綻しない(旧: left/right 指定が親基準に化けて全幅の黒線になっていた)。
+     既定つまみ: --bg-w=バー長 / --bg-h=太さ / --bg-gap=間隔。アイコン案(bi-)がこれを差し替える。 */
+  .hdr-burger span { position: absolute; left: 50%; top: 50%; width: var(--bg-w, 20px); height: var(--bg-h, 2px);
+    margin-left: calc(var(--bg-w, 20px) / -2); background: var(--ink); border-radius: 3px; transform-origin: center center;
+    transition: transform .34s var(--hdr-ease), opacity .24s var(--hdr-ease), width .34s var(--hdr-ease), height .34s var(--hdr-ease), margin .34s var(--hdr-ease), background .2s; }
+  .hdr-burger span:nth-child(1) { margin-top: calc(var(--bg-h, 2px) / -2 - var(--bg-gap, 6px)); }
+  .hdr-burger span:nth-child(2) { margin-top: calc(var(--bg-h, 2px) / -2); }
+  .hdr-burger span:nth-child(3) { margin-top: calc(var(--bg-h, 2px) / -2 + var(--bg-gap, 6px)); }
+  /* ===== 開いた時 = 既定 ba-1(クロス X)。ba-* が上書き ===== */
+  .hdr-burger.is-open span:nth-child(1) { margin-top: calc(var(--bg-h, 2px) / -2); transform: rotate(45deg); }
   .hdr-burger.is-open span:nth-child(2) { opacity: 0; }
-  .hdr-burger.is-open span:nth-child(3) { transform: translateY(-5.2px) rotate(-45deg); }
+  .hdr-burger.is-open span:nth-child(3) { margin-top: calc(var(--bg-h, 2px) / -2); transform: rotate(-45deg); }
+
+  /* ===== 【V5.0 2026-09-17】ハンバーガーのアイコン案 5つ(bi-1〜5)。閉じている時の見た目 ===== */
+  /* bi-1 クラシック3本(既定) */
+  html.bi-2 .hdr-burger { --bg-gap: 4.5px; }                                              /* 2本線 */
+  html.bi-2 .hdr-burger span:nth-child(2) { opacity: 0; }
+  html.bi-3 .hdr-burger span:nth-child(2) { width: 12px; margin-left: -6px; }             /* 中央だけ短い(テーパー) */
+  html.bi-4 .hdr-burger { --bg-gap: 6px; }                                                /* 縦3点(ケバブ) */
+  html.bi-4 .hdr-burger span { --bg-w: 3.4px; width: 3.4px; height: 3.4px; margin-left: -1.7px; border-radius: 50%; }
+  html.bi-5 .hdr-burger { --bg-w: 18px; --bg-h: 3px; --bg-gap: 6.5px; }                   /* 太めの丸バー */
+
+  /* ===== 【V5.0 2026-09-17】クリック後の変化(ba-1〜5)。開いた時のモーション ===== */
+  /* ba-1 クロス(X) = 既定(上で定義) */
+  html.ba-2 .hdr-burger.is-open { transform: rotate(180deg); }                            /* 回転(半回転)しながらX */
+  html.ba-3 .hdr-burger.is-open { transform: rotate(90deg); }                             /* 90°スピンしながらX */
+  /* ba-4 一本線(マイナス): 上下が中央へ集まって1本に */
+  html.ba-4 .hdr-burger.is-open span:nth-child(1) { margin-top: calc(var(--bg-h, 2px) / -2); transform: none; }
+  html.ba-4 .hdr-burger.is-open span:nth-child(2) { opacity: 1; }
+  html.ba-4 .hdr-burger.is-open span:nth-child(3) { margin-top: calc(var(--bg-h, 2px) / -2); transform: none; opacity: 0; }
+  /* ba-5 シザー(左端を軸にX)。開き方が左からすくい上がる */
+  html.ba-5 .hdr-burger span { transform-origin: left center; }
+  html.ba-5 .hdr-burger.is-open span:nth-child(1) { margin-top: calc(var(--bg-h, 2px) / -2); transform: rotate(40deg); }
+  html.ba-5 .hdr-burger.is-open span:nth-child(2) { opacity: 0; }
+  html.ba-5 .hdr-burger.is-open span:nth-child(3) { margin-top: calc(var(--bg-h, 2px) / -2); transform: rotate(-40deg); }
   .hdr-drawer { position: fixed; inset: 0; z-index: 59; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; background: rgba(245,246,248,.62); -webkit-backdrop-filter: blur(26px) saturate(1.3); backdrop-filter: blur(26px) saturate(1.3); transition: opacity .34s var(--e-out); }
   .hdr-drawer.is-open { opacity: 1; pointer-events: auto; }
   .hdr-drawer-nav { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
@@ -186,6 +217,31 @@
   /* 15: 隠れて → 上スクロールでロゴ＋バーガーのミニピルが降臨(中央) */
   html:not(.mb).hm-15 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 8px 12px 8px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
   html:not(.mb).hm-15 .header.hdr-stuck .logo img { height: 26px; width: auto; }
+
+  /* ===== 【V5.0 2026-09-17 ヒデさん依頼】フローティング(ピル)のスタイリング案 10個(fs-1〜10)。
+     対象＝浮くピルの案(hm-5/8/9/10/15)。影の濃さ・ブラー量・地の描き方・リキッドグラスの違い。配置やサイズは各案のまま。
+     :is() で1案=1ルールにまとめ、fs+hm の2クラス指定なので各hm-Nの既定より詳細度が高く必ず勝つ。 ===== */
+  html:not(.mb):is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { border: 1px solid rgba(255,255,255,.5); }
+  /* 1 標準ガラス */
+  html:not(.mb).fs-1:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); border-color: rgba(255,255,255,.5); }
+  /* 2 濃いフロスト(白強め・柔らかい影) */
+  html:not(.mb).fs-2:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.78); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 18px 44px rgba(20,30,60,.12); border-color: rgba(255,255,255,.7); }
+  /* 3 くっきり深い影 */
+  html:not(.mb).fs-3:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); box-shadow: 0 22px 50px -12px rgba(20,30,60,.34), 0 6px 14px rgba(20,30,60,.14); border-color: rgba(255,255,255,.5); }
+  /* 4 軽やか(薄い・影控えめ) */
+  html:not(.mb).fs-4:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.46); -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5); box-shadow: 0 8px 20px rgba(20,30,60,.1); border-color: rgba(255,255,255,.55); }
+  /* 5 リキッドグラス(斜めの光沢＋内側ハイライト) */
+  html:not(.mb).fs-5:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.14) 46%, rgba(255,255,255,.4)), rgba(255,255,255,.5); -webkit-backdrop-filter: blur(22px) saturate(1.7); backdrop-filter: blur(22px) saturate(1.7); box-shadow: 0 16px 40px rgba(20,30,60,.18), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(255,255,255,.35); border-color: rgba(255,255,255,.6); }
+  /* 6 ソリッド白(ガラスなし・シャープ) */
+  html:not(.mb).fs-6:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 10px 30px rgba(20,30,60,.14); border-color: rgba(20,30,60,.06); }
+  /* 7 発光する縁(ブランド色のリング) */
+  html:not(.mb).fs-7:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 0 0 1px rgba(14,187,255,.4), 0 0 22px rgba(14,187,255,.28), 0 14px 34px rgba(20,30,60,.16); border-color: rgba(14,187,255,.32); }
+  /* 8 強ブラー(すりガラス最大) */
+  html:not(.mb).fs-8:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.5); -webkit-backdrop-filter: blur(34px) saturate(1.8); backdrop-filter: blur(34px) saturate(1.8); box-shadow: 0 14px 40px rgba(20,30,60,.14); border-color: rgba(255,255,255,.6); }
+  /* 9 長い影・低い角度(浮遊感) */
+  html:not(.mb).fs-9:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 34px 60px -22px rgba(20,30,60,.4); border-color: rgba(255,255,255,.55); }
+  /* 10 リキッドグラス2(色づいた艶・強め) */
+  html:not(.mb).fs-10:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: linear-gradient(135deg, rgba(120,200,255,.28), rgba(255,255,255,.1) 44%, rgba(255,150,200,.22)), rgba(255,255,255,.5); -webkit-backdrop-filter: blur(26px) saturate(1.9); backdrop-filter: blur(26px) saturate(1.9); box-shadow: 0 18px 44px rgba(20,30,60,.2), inset 0 1px 0 rgba(255,255,255,.8); border-color: rgba(255,255,255,.6); }
   html:not(.mb).hm-15 .header.hdr-hidden { top: -130px; }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
@@ -4695,6 +4751,9 @@ const DEFAULTS = {
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
   formWidth: 660,      // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせフォームの横幅(px)。パネルで調整
   hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
+  burgerIcon: '1',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
+  burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
+  floatStyle: '1',     // 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案 1〜10(影/ブラー/リキッドグラス等)
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
   cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
@@ -6411,7 +6470,7 @@ const CV_HDRS = [
   { key: '12', name: '⑫ 分離: 丸ロゴ＋丸バーガー',     tip: '左に丸いロゴマーク、右に丸いハンバーガー。2つの浮遊要素。' },
   { key: '13', name: '⑬ ロゴマークのみ＋バーガー',     tip: 'スクロールでロゴがマークだけに(テキスト省略)、右にハンバーガー。全幅ガラス。' },
   { key: '14', name: '⑭ 縮む＋バーガー',               tip: 'スクロールでロゴ・余白が縮み、右にハンバーガー。全幅ガラス。' },
-  { key: '15', name: '⑮ 隠れて→ミニピル降臨',         tip: '下で隠れ、上スクロールでロゴ＋ハンバーガーのミニピルが中央に降りてくる。' },
+  { key: '15', name: '⑮ 中央ミニピル',                 tip: 'スクロールでロゴ＋ハンバーガーの小さめピルが中央に。常に表示(消えません)。' },
 ];
 function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); return (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) ? v : '1'; }
 function applyHdrMode(key) {
@@ -6428,6 +6487,20 @@ function applyHdrMode(key) {
     if (dr && dr.parentElement !== document.body) document.body.appendChild(dr);
   }
   for (let i = 1; i <= 15; i++) h.classList.toggle('hm-' + i, String(key) === String(i));
+  applyBurgerStyle();
+  applyFloatStyle();
+}
+/* 【V5.0 2026-09-17】ハンバーガーのアイコン案(bi-)と押した時の変化(ba-)を html に反映 */
+function applyBurgerStyle() {
+  const h = document.documentElement;
+  const bi = String(params.burgerIcon || '1'), ba = String(params.burgerAnim || '1');
+  for (let i = 1; i <= 5; i++) { h.classList.toggle('bi-' + i, bi === String(i)); h.classList.toggle('ba-' + i, ba === String(i)); }
+}
+/* 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案(fs-)を html に反映 */
+function applyFloatStyle() {
+  const h = document.documentElement;
+  const fs = String(params.floatStyle || '1');
+  for (let i = 1; i <= 10; i++) h.classList.toggle('fs-' + i, fs === String(i));
 }
 /* 【V5.0】追従ヘッダーのスクロール監視(1回だけ設置)。lenis でも window.scrollY は追従する。 */
 let _hdrScrollBound = false;
@@ -6442,7 +6515,9 @@ function bindHdrScroll() {
        変形自体は CSS の --hdr-dur(.72s)でゆったり進むので、切替は一度きりで急変しない。 */
     const wasStuck = hdr.classList.contains('hdr-stuck');
     hdr.classList.toggle('hdr-stuck', wasStuck ? (y > 40) : (y > 72));
-    if (document.documentElement.classList.contains('hm-3') || document.documentElement.classList.contains('hm-15')) {
+    /* 【2026-09-17 ヒデさん指摘】hm-15(ミニピル)が「スクロールで消えてどこかへ行く」→ 隠さない。常に残る中央ミニピルにする。
+       (hm-3 の下スクロール隠しは残すが hm-3 は現在削除済みなので実質どのモードも隠れない) */
+    if (document.documentElement.classList.contains('hm-3')) {
       if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
       else if (y < lastY - 4 || y <= 160) hdr.classList.remove('hdr-hidden');
     } else { hdr.classList.remove('hdr-hidden'); }
@@ -16846,6 +16921,15 @@ function buildPanel() {
   sub(catAll, 'ヘッダー（追従・スクロールで変形）', null, { fixed: true });
   varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('ヘッダーを追従(固定)にして、スクロール時の見た目を選びます。少し下にスクロールすると違いが出ます。URL ?hdr=N。');
+  /* 【V5.0 2026-09-17】ハンバーガーのアイコン・押した時の変化・フローティングの質感 */
+  segRow('ハンバーガーの形', [['クラシック', '1'], ['2本線', '2'], ['中央短', '3'], ['ドット', '4'], ['太丸', '5']],
+    () => String(params.burgerIcon || '1'), v => { params.burgerIcon = String(v); applyBurgerStyle(); });
+  segRow('押した時の変化', [['クロス', '1'], ['半回転X', '2'], ['90°X', '3'], ['一本線', '4'], ['シザー', '5']],
+    () => String(params.burgerAnim || '1'), v => { params.burgerAnim = String(v); applyBurgerStyle(); });
+  note('ハンバーガーの見た目と、クリックで開いた時のアイコンの変化です（変形するヘッダー案で出ます）。');
+  segRow('浮くピルの質感', [['標準', '1'], ['濃フロスト', '2'], ['深い影', '3'], ['軽い', '4'], ['リキッド', '5'], ['白', '6'], ['発光縁', '7'], ['強ブラー', '8'], ['長い影', '9'], ['リキッド2', '10']],
+    () => String(params.floatStyle || '1'), v => { params.floatStyle = String(v); applyFloatStyle(); });
+  note('フローティングピルの案（⑤⑧⑨⑩⑮）の地・影・ブラー・リキッドグラスの質感を10種から選べます。');
 
   /* ========== 🖼 キービジュアル ========== */
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
