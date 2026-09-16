@@ -37,6 +37,7 @@ import {
   type EventItem,
 } from "./eventParts";
 import { EVENT_EXTRA_PATTERNS, ExtraPattern } from "./EventVariants2";
+import { EVENT_EXTRA3_PATTERNS, ExtraPattern3 } from "./EventVariants3";
 
 export const EVENT_LAYOUT_EVENT = "abashiri:event-layout";
 /* 体験セクションの下に足す余白。もともとは「動きを最後まで見るための逃げ」だったが、
@@ -62,6 +63,9 @@ export const EVENT_LAYOUT_PATTERNS: Record<
      ユニークなインタラクションと、写真を魅力的に見せるもの。10案」→ 案11〜20。
      中身は EventVariants2.tsx */
   ...EVENT_EXTRA_PATTERNS,
+  /* 【2026-09-16 ヒデさん依頼】さらに10案。机の上／四方に散る はご指定のアイデア、
+     残りは没入と3Dトランスフォームで。中身は EventVariants3.tsx */
+  ...EVENT_EXTRA3_PATTERNS,
 };
 
 /* ── 動きの土台 ─────────────────────────────
@@ -182,9 +186,13 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
     case 9:
       return <FanVertical p={p} />;
 
-    /* 案11・案16（2026-09-16 追加分）は別ファイル */
+    /* 案11・16 は EventVariants2、案21〜30 は EventVariants3 */
     default:
-      return <ExtraPattern pat={pat} p={p} />;
+      return pat >= 21 ? (
+        <ExtraPattern3 pat={pat} p={p} />
+      ) : (
+        <ExtraPattern pat={pat} p={p} />
+      );
   }
 }
 
