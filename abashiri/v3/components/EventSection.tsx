@@ -38,6 +38,8 @@ import {
 } from "./eventParts";
 import { EVENT_EXTRA_PATTERNS, ExtraPattern } from "./EventVariants2";
 import { EVENT_EXTRA3_PATTERNS, ExtraPattern3 } from "./EventVariants3";
+import { EVENT_KV_PATTERNS, ExtraPattern4 } from "./EventVariants4";
+import { EVENT_3D_PATTERNS, ExtraPattern5 } from "./EventVariants5";
 
 export const EVENT_LAYOUT_EVENT = "abashiri:event-layout";
 /* 体験セクションの下に足す余白。もともとは「動きを最後まで見るための逃げ」だったが、
@@ -66,6 +68,10 @@ export const EVENT_LAYOUT_PATTERNS: Record<
   /* 【2026-09-16 ヒデさん依頼】さらに10案。机の上／四方に散る はご指定のアイデア、
      残りは没入と3Dトランスフォームで。中身は EventVariants3.tsx */
   ...EVENT_EXTRA3_PATTERNS,
+  /* 【2026-09-17】ヒデさんのラフ（Figmaカンプ）からの3案。中身は EventVariants4.tsx */
+  ...EVENT_KV_PATTERNS,
+  /* 【2026-09-17】奥行きの3Dカルーセル2案。中身は EventVariants5.tsx */
+  ...EVENT_3D_PATTERNS,
 };
 
 /* ── 動きの土台 ─────────────────────────────
@@ -186,13 +192,12 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
     case 9:
       return <FanVertical p={p} />;
 
-    /* 案11・16 は EventVariants2、案21〜30 は EventVariants3 */
+    /* 案11・16=Variants2 ／ 21〜30=Variants3 ／ 31〜33=Variants4 ／ 34・35=Variants5 */
     default:
-      return pat >= 21 ? (
-        <ExtraPattern3 pat={pat} p={p} />
-      ) : (
-        <ExtraPattern pat={pat} p={p} />
-      );
+      if (pat >= 34) return <ExtraPattern5 pat={pat} p={p} />;
+      if (pat >= 31) return <ExtraPattern4 pat={pat} p={p} />;
+      if (pat >= 21) return <ExtraPattern3 pat={pat} p={p} />;
+      return <ExtraPattern pat={pat} p={p} />;
   }
 }
 

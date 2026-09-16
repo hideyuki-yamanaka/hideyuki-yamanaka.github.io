@@ -161,6 +161,9 @@
      グルメ「なーんにもない、道東の土地、網走。」／体験「意外とオモロい、網走。」が
      同じ値を見るので、ここを変えれば両方そろって動く */
   --sec-head: 36px;
+
+  /* 体験セクション 案31：後ろを流れ続ける文字の1周にかける秒数 */
+  --kv-marquee: 34s;
 }
 
 :root {
@@ -400,4 +403,20 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
 @keyframes botto-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+
+/* 体験セクション 案31・32 の「右から左へ流れ続ける文字」。
+   同じ文字列を2つ並べて、1つぶん（-50%）動かしたら先頭へ戻す＝継ぎ目なく回る。
+   ⚠️ 動かすのは transform だけ（left を動かすと毎フレーム再レイアウトになる） */
+.tp-marquee {
+  animation: tp-marquee var(--kv-marquee) linear infinite;
+  will-change: transform;
+}
+@keyframes tp-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-marquee { animation: none; }
 }

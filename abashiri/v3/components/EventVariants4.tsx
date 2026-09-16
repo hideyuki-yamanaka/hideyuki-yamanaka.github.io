@@ -1,0 +1,277 @@
+"use client";
+
+/* eslint-disable @next/next/no-img-element */
+/*
+ * 体験セクション｜ヒデさんのラフ（Figmaカンプ）からの3案（案31〜33）
+ * 2026-09-17。カンプ: U07rJcREH0yxxL25PzKhbA
+ *   案31 = 2289:5977（流れる文字＋重なった写真）
+ *   案32 = 2289:5978（左右に文字。動きは案31と同じ）
+ *   案33 = 2289:5994（中央コピー → 写真が四方へ飛び出す）
+ *
+ * ── カンプから取った値（スペック表）──────────────────
+ *  フレーム 1512×920
+ *  案31 流れる文字 : Noto Sans JP Thin(100) / 80px / leading-none / 黒 / 不透明度.8 / nowrap
+ *                    位置 x=-398 y=398（幅2640＝3回くり返し）
+ *  案32 左の文字   : Noto Sans JP ExtraLight(200) / 70px / 行間1.6 / 不透明度.8
+ *                    「意外と／オモロい、」 x=133 y=333（350×224）
+ *  案32 右の文字   : Noto Sans JP Thin(100) / 90px / leading-none / 不透明度.8
+ *                    「網走」 x=1135 y=394（180×90）
+ *  案33 コピー     : Noto Sans JP ExtraLight(200) / 60px / 行間1.6 / 中央 / 不透明度.8
+ *                    x=426 y=412（660×96）
+ *  カード（案31・32 共通）: 420×616。カンプの外形から回転角を逆算した
+ *    1枚目 中心(773,478) 0°     2枚目 中心(836,478) 2.66°
+ *    3枚目 中心(765,519) 5.68°  4枚目 中心(844,478) 4.43°
+ *  案33 写真: 始点は4枚とも x≈680 y=395（166×115）＝コピーの裏
+ *    終点A x=-66  y=593（326×228）   終点B x=943  y=-72（396×274）
+ *    終点C x=1200 y=558（370×257）   終点D x=97   y=65 （338×234）
+ *    ※カンプでは画面の外へ少しはみ出す位置に置かれている（そのまま再現）
+ *
+ * 🟡仮置き：カンプに無いもの＝はける時の移動量・速さ・ホバーの中身。
+ *   ホバーはグルメのカードと同じ言葉遣い（黒グラデ＋下から文字が上がる）にした
+ */
+import Link from "next/link";
+import { motion, useTransform, type MotionValue } from "framer-motion";
+import { ITEMS, type EventItem } from "./eventParts";
+
+export const EVENT_KV_PATTERNS: Record<
+  number,
+  { name: string; note: string }
+> = {
+  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。スクロールすると上の1枚ずつ右へめくれて剥がれていく。中央のカードにカーソルを乗せると影が乗って情報が出る" },
+  32: { name: "案32 左右に文字", note: "【ラフ再現】動きは案31と同じ。文字組みだけ違い、左に「意外と／オモロい、」右に「網走」を置いて、その間に写真の束がある" },
+  33: { name: "案33 コピーから飛び出す", note: "【ラフ再現】中央に「意外とオモロい、網走。」。スクロールすると、その裏に隠れていた写真が大きくなりながら四方へ飛び出して散る" },
+};
+
+/* ── カンプの実測値 ───────────────────────── */
+const FRAME_W = 1512;
+const FRAME_H = 920;
+/** カード（420×616）の置き方。中心座標と回転角 */
+const STACK = [
+  { cx: 773, cy: 478, rot: 0 },
+  { cx: 836, cy: 478, rot: 2.66 },
+  { cx: 765, cy: 519, rot: 5.68 },
+  { cx: 844, cy: 478, rot: 4.43 },
+];
+const CARD_W = 420;
+const CARD_H = 616;
+
+/* ── ホバーの中身（グルメのカードと同じ言葉遣い）───────── */
+function HoverInfo({ it }: { it: EventItem }) {
+  return (
+    <Link
+      href={`/spot/${it.slug}`}
+      className="group/hover absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-black/10 to-black/80 px-8 py-7 opacity-0 transition-opacity duration-500 ease-standard hover:opacity-100"
+    >
+      <div className="flex w-full translate-y-[18px] flex-col gap-3 opacity-0 transition-all delay-75 duration-500 ease-standard group-hover/hover:translate-y-0 group-hover/hover:opacity-100">
+        <p className="whitespace-nowrap text-body-14 font-extralight leading-[1.2] text-white/80 [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
+          {it.tag} {it.no}
+        </p>
+        <p className="text-title-28 font-thin leading-[1.3] text-white">
+          {it.title}
+        </p>
+        <p className="text-body-14 font-extralight leading-[1.9] tracking-[0.7px] text-white/85">
+          {it.body}
+        </p>
+        <span className="mt-1 flex items-center gap-1 text-body-14 font-extralight leading-[1.2] text-white transition-transform duration-300 ease-standard group-hover/hover:translate-x-[6px]">
+          もっと見る
+          <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+/* ═══════════ 案31・32 共通：重なった写真が1枚ずつ右へめくれる ═══════════
+   いちばん上（配列の最後）から順に、右へ回りながら抜けていく。
+   最後の1枚は残す＝束が空にならない */
+function StackCard({
+  it,
+  i,
+  p,
+}: {
+  it: EventItem;
+  i: number;
+  p: MotionValue<number>;
+}) {
+  const s = STACK[i % STACK.length];
+  /* めくる順番：上に乗っているもの（i が大きい）が先に抜ける */
+  const order = ITEMS.length - 1 - i;
+  const from = Math.min(0.86, 0.14 + order * 0.2);
+  const to = Math.min(1, from + 0.2);
+  const last = i === 0; /* 台紙になる1枚は残す */
+  const x = useTransform(p, [from, to], [0, last ? 0 : FRAME_W * 0.86]);
+  const rot = useTransform(p, [from, to], [s.rot, last ? s.rot : s.rot + 14]);
+  const o = useTransform(p, [from, to], [1, last ? 1 : 0]);
+  return (
+    <motion.div
+      className="group absolute"
+      style={{
+        left: s.cx - CARD_W / 2,
+        top: s.cy - CARD_H / 2,
+        width: CARD_W,
+        height: CARD_H,
+        x,
+        rotate: rot,
+        opacity: o,
+        zIndex: i + 1,
+      }}
+    >
+      {/* カーソルを乗せると影が乗る（カンプの「シャドウが乗って文字が出る」） */}
+      <div className="relative size-full overflow-hidden bg-white shadow-[0_10px_30px_rgba(0,0,0,.12)] transition-shadow duration-500 ease-out group-hover:shadow-[0_28px_70px_rgba(0,0,0,.34)]">
+        <img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+        />
+        <HoverInfo it={it} />
+      </div>
+    </motion.div>
+  );
+}
+
+/** カンプの 1512×920 をそのまま置くための枠。
+    ⚠️ カンプは「1画面まるごと」なので、体験セクションの上パディング(180px)を
+       打ち消して画面いっぱい（1512×982）に広げ、その中央にカンプの面を置く。
+       これをやらないと 180+920+80=1180px になり、1画面に収まらない
+       （2026-09-17 実測：カードが画面の下に切れて見えた） */
+const CANVAS_H = 982;
+function Frame({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="relative -mt-[180px] w-full overflow-hidden bg-white"
+      style={{ height: CANVAS_H }}
+    >
+      <div
+        className="absolute left-1/2 top-1/2"
+        style={{
+          width: FRAME_W,
+          height: FRAME_H,
+          marginLeft: -FRAME_W / 2,
+          marginTop: -FRAME_H / 2,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ 案31 流れる文字と重ね写真 ═══════════ */
+function MarqueeStack({ p }: { p: MotionValue<number> }) {
+  return (
+    <Frame>
+      {/* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係に回り続ける） */}
+      <div
+        className="pointer-events-none absolute inset-x-0 overflow-hidden"
+        style={{ top: 398, height: 80 }}
+      >
+        <div className="tp-marquee flex whitespace-nowrap">
+          {[0, 1].map((k) => (
+            <span
+              key={k}
+              className="shrink-0 pr-[0.4em] text-[80px] font-thin leading-none text-black/80"
+            >
+              意外とオモロい、網走。意外とオモロい、網走。意外とオモロい、網走。
+            </span>
+          ))}
+        </div>
+      </div>
+      {ITEMS.map((it, i) => (
+        <StackCard key={it.title} it={it} i={i} p={p} />
+      ))}
+    </Frame>
+  );
+}
+
+/* ═══════════ 案32 左右に文字 ═══════════ */
+function SideTextStack({ p }: { p: MotionValue<number> }) {
+  return (
+    <Frame>
+      <p
+        className="pointer-events-none absolute whitespace-nowrap text-[70px] font-extralight leading-[1.6] text-black/80"
+        style={{ left: 133, top: 333, width: 350 }}
+      >
+        意外と
+        <br />
+        オモロい、
+      </p>
+      <p
+        className="pointer-events-none absolute whitespace-nowrap text-[90px] font-thin leading-none text-black/80"
+        style={{ left: 1135, top: 394, width: 180 }}
+      >
+        網走
+      </p>
+      {ITEMS.map((it, i) => (
+        <StackCard key={it.title} it={it} i={i} p={p} />
+      ))}
+    </Frame>
+  );
+}
+
+/* ═══════════ 案33 コピーから飛び出す ═══════════
+   コピーの裏に小さく隠れていた写真が、大きくなりながら四方へ散る。
+   終点はカンプの座標そのまま（画面の外へ少しはみ出す） */
+const BURST = [
+  { x: -66, y: 593, w: 326, h: 228 },
+  { x: 943, y: -72, w: 396, h: 274 },
+  { x: 1200, y: 558, w: 370, h: 257 },
+  { x: 97, y: 65, w: 338, h: 234 },
+];
+const BURST_FROM = { x: 680, y: 395, w: 166, h: 115 };
+
+function BurstCopy({ p }: { p: MotionValue<number> }) {
+  return (
+    <Frame>
+      {ITEMS.map((it, i) => (
+        <BurstCard key={it.title} it={it} i={i} p={p} />
+      ))}
+      {/* コピーは写真より前。ジャンプ率はカンプ通り 60px */}
+      <p
+        className="pointer-events-none absolute z-20 whitespace-nowrap text-center text-[60px] font-extralight leading-[1.6] text-black/80"
+        style={{ left: 426, top: 412, width: 660 }}
+      >
+        意外とオモロい、網走。
+      </p>
+    </Frame>
+  );
+}
+function BurstCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
+  const b = BURST[i % BURST.length];
+  /* ゆったり順に飛び出す */
+  const from = 0.06 + i * 0.08;
+  const to = Math.min(1, from + 0.46);
+  const x = useTransform(p, [from, to], [BURST_FROM.x, b.x]);
+  const y = useTransform(p, [from, to], [BURST_FROM.y, b.y]);
+  const w = useTransform(p, [from, to], [BURST_FROM.w, b.w]);
+  const h = useTransform(p, [from, to], [BURST_FROM.h, b.h]);
+  const o = useTransform(p, [from, from + 0.06], [0, 1]);
+  return (
+    <motion.div
+      className="group absolute z-10"
+      style={{ left: x, top: y, width: w, height: h, opacity: o }}
+    >
+      <div className="relative size-full overflow-hidden bg-white shadow-[0_8px_24px_rgba(0,0,0,.12)] transition-shadow duration-500 ease-out group-hover:shadow-[0_26px_64px_rgba(0,0,0,.3)]">
+        <img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+        />
+        <HoverInfo it={it} />
+      </div>
+    </motion.div>
+  );
+}
+
+/** 案31〜33 の入口。EventSection から番号で呼ばれる */
+export function ExtraPattern4({ pat, p }: { pat: number; p: MotionValue<number> }) {
+  switch (pat) {
+    case 31:
+      return <MarqueeStack p={p} />;
+    case 32:
+      return <SideTextStack p={p} />;
+    case 33:
+      return <BurstCopy p={p} />;
+    default:
+      return null;
+  }
+}
