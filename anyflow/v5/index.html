@@ -100,12 +100,16 @@
      既定でヘッダーを固定(追従)にする。スクロール状態(.hdr-stuck)で各案の見た目に。
      リビール(rv)がインラインで transform/opacity/filter を触るので、スクロール演出は transform を使わず
      top/padding/背景/margin で作って競合させない。PCのみ(mbは従来)。 */
-  /* 【2026-09-17 ヒデさん依頼】スクロール変形を「ゆったり滑らか」に。尺 .5s→.72s、イージングは滑らかな in-out に。 */
-  :root { --hdr-radius: 8px; --hdr-top: 14px; --hdr-side: 16px; --hdr-dur: .72s; --hdr-ease: cubic-bezier(.4,0,.2,1); }
+  /* 【2026-09-17 ヒデさん依頼】スクロール変形は「スクロール量/速さに依存せず、一定速度でゆったり滑らかに」。
+     → --hdr-t を @property で数値登録し、JS はしきい値で 0/1 を切り替えるだけ。CSS が --hdr-t を一定尺で補間するので、
+       どれだけ速くスクロールしても常に同じ速度・同じ滑らかさで変形する。 */
+  @property --hdr-t { syntax: '<number>'; inherits: true; initial-value: 0; }
+  :root { --hdr-radius: 8px; --hdr-top: 14px; --hdr-side: 16px; --hdr-dur: 1s; --hdr-ease: cubic-bezier(.4,0,.2,1); }
   /* ===== 【2026-09-17 作り直し】連続変形の土台。すべて --hdr-t(0=全幅/1=コンパクト)で補間 ===== */
   html:not(.mb).hdr-follow .header {
     position: fixed; z-index: 60; box-sizing: border-box;
     left: 0; right: 0; margin-left: auto; margin-right: auto;   /* max-width を絞ると中央へ寄る(既定) */
+    transition: --hdr-t var(--hdr-dur) var(--hdr-ease);   /* --hdr-t を一定尺で補間＝スクロール速度に依存しない一定速度の変形 */
     top: calc(var(--hdr-top) * var(--hdr-t, 0));
     max-width: calc(100% - (100% - var(--hdr-cw, 100%)) * var(--hdr-t, 0));
     padding: calc(24px - (24px - var(--hdr-py, 24px)) * var(--hdr-t, 0)) calc(50px - (50px - var(--hdr-px, 50px)) * var(--hdr-t, 0));
@@ -208,8 +212,8 @@
   }
   /* 6: 全幅ガラスバー(既定 skin) / 7: 全幅ソリッド白。幅は不変、ナビ→バーガーだけ */
   html:not(.mb).hm-7 .header { --hdr-skin-bg: #fff; --hdr-skin-filter: none; --hdr-skin-shadow: 0 6px 24px rgba(20,30,60,.1); }
-  /* 8: 左寄せピル */
-  html:not(.mb).hm-8 .header { --hdr-cw: 250px; --hdr-py: 9px; --hdr-px: 16px; --hdr-logo-h: 28px;
+  /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴは大きく変えない=40px) */
+  html:not(.mb).hm-8 .header { --hdr-cw: 300px; --hdr-py: 10px; --hdr-px: 18px; --hdr-logo-h: 40px;
     margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: auto;
     --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
   /* 9: 右寄せピル */
@@ -6503,7 +6507,7 @@ const CV_HDRS = [
   { key: '14', name: '⑭ 縮む＋バーガー',               tip: 'スクロールでロゴ・余白が縮み、右にハンバーガー。全幅ガラス。' },
   { key: '15', name: '⑮ 中央ミニピル',                 tip: 'スクロールでロゴ＋ハンバーガーの小さめピルが中央に。常に表示(消えません)。' },
 ];
-function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); return (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) ? v : '1'; }
+function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); if (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) return v; const first = CV_HDRS.find(h => !variantRemovedKey('hdrMode', h.key)); return first ? first.key : '5'; }   /* 削除済みなら生存案の先頭へ(既定が消えても壊れない) */
 /* 【V5.0 2026-09-17】ハンバーガーのアイコン・押した時の変化・浮くピルの質感 を varRowX(ピル＋⋯削除)で出す用の案リスト */
 const CV_BURGER_ICONS = [
   { key: '1', name: 'クラシック', tip: '3本の水平線(定番)。' },
@@ -6573,15 +6577,16 @@ function bindHdrScroll() {
      幅・位置・余白・ロゴ・ナビ・バーガー・地色を CSS の calc(var(--hdr-t)) で“ひとつの動き”として補間する。
      クラス一気切替＋トランジションだと width:fit-content(アニメ不可)や position 切替で瞬間移動・重なりが出るのが原因だった。
      連続変数なので低速スクロール・途中反転でも 1:1 で追従し、跳ね/ちらつきが出ない。 */
-  const HDR_T_START = 20, HDR_T_END = 180;   // このスクロール量(px)で 0→1 に変形
-  const _smoothstep = x => x * x * (3 - 2 * x);
   const upd = () => {
     ticking = false;
     const y = window.scrollY || window.pageYOffset || 0;
-    const raw = Math.min(1, Math.max(0, (y - HDR_T_START) / (HDR_T_END - HDR_T_START)));
-    const t = _smoothstep(raw);
-    hdr.style.setProperty('--hdr-t', t.toFixed(4));
-    hdr.classList.toggle('hdr-stuck', t > 0.001);   /* KVイントロの opacity 打ち消し等のフラグ用(見た目は --hdr-t が作る) */
+    /* 【2026-09-17 ヒデさん指定】スクロール量/速さに依存させない。しきい値で --hdr-t を 0/1 に切り替えるだけにし、
+       変形の“動き”は CSS の transition(--hdr-t を --hdr-dur で補間)に任せる＝どれだけ速くスクロールしても一定速度でゆったり。
+       ヒステリシス(発火70px/解除30px)で境目のちらつきを防ぐ。 */
+    const wasOn = hdr.classList.contains('hdr-stuck');
+    const on = wasOn ? (y > 30) : (y > 70);
+    hdr.style.setProperty('--hdr-t', on ? 1 : 0);
+    hdr.classList.toggle('hdr-stuck', on);
     /* 【2026-09-17 ヒデさん指摘】hm-15(ミニピル)は「消える」をやめ常に表示。hm-3 のみ下スクロール隠し(現在削除済み) */
     if (document.documentElement.classList.contains('hm-3')) {
       if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
@@ -7467,7 +7472,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13"],"burgerIcon":["3","4","5"]};   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22","33","30"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13","14","10","15","1"],"burgerIcon":["3","4","5"]};   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
