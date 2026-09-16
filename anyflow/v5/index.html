@@ -193,6 +193,22 @@
   .hdr-drawer-cta { margin-top: 24px; font-size: 22px !important; color: #fff !important; background: #111; padding: 14px 34px; border-radius: 999px; gap: 12px !important; align-items: center !important; }
   .hdr-drawer-cta em { font-style: normal; }
   .hdr-drawer-cta:hover { background: var(--brand-cyan); }
+  /* ===== 【V5.0 2026-09-17 ヒデさん依頼】ハンバーガーを押した先の画面 3案(drw-1/2/3) ===== */
+  /* 1: フルスクリーン中央・すりガラス(既定) — base のまま */
+  /* 2: 右からスライドインするパネル */
+  .hdr-drawer.drw-2 { justify-content: flex-end; background: rgba(18,22,30,.34); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .hdr-drawer.drw-2 .hdr-drawer-nav { height: 100vh; width: min(440px, 84vw); box-sizing: border-box; padding: 120px 56px; justify-content: center;
+    background: rgba(255,255,255,.94); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+    box-shadow: -30px 0 80px rgba(20,30,60,.22); transform: translateX(48px); transition: transform .42s var(--e-out); }
+  .hdr-drawer.drw-2.is-open .hdr-drawer-nav { transform: none; }
+  .hdr-drawer.drw-2 .hdr-drawer-nav a { font-size: 30px; }
+  /* 3: フルスクリーン・左寄せの大きな見出し(ダーク) */
+  .hdr-drawer.drw-3 { justify-content: flex-start; align-items: center; background: rgba(14,16,22,.9); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); }
+  .hdr-drawer.drw-3 .hdr-drawer-nav { padding-left: 9vw; gap: 10px; }
+  .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: 56px; color: #fff; }
+  .hdr-drawer.drw-3 .hdr-drawer-nav a span { color: var(--brand-cyan); }
+  .hdr-drawer.drw-3 .hdr-drawer-cta { background: #fff; color: #111 !important; }
+  .hdr-drawer.drw-3 .hdr-drawer-cta:hover { background: var(--brand-cyan); color: #fff !important; }
 
   /* ===== 【V5.0】スクロールで「ロゴ＋ハンバーガー」に変形する10案(hm-6〜15) ===== */
   /* 共通: stuck でナビ(nav)を格納しハンバーガーを出す。ロゴは残す。 */
@@ -4792,6 +4808,7 @@ const DEFAULTS = {
   burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
   floatStyle: '1',     // 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案 1〜10(影/ブラー/リキッドグラス等)
   hdrTune: { '8': { logoH: 40, cw: 300 } },   // 【V5.0 2026-09-17】案ごとのスクロール後サイズ微調整(その案を選んだ時だけパネルに出す)
+  drawerStyle: '1',    // 【V5.0 2026-09-17】ハンバーガーを押した先の画面 1中央/2右スライド/3左寄せ大(ダーク)
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
   cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
@@ -6558,6 +6575,13 @@ function applyHdrMode(key) {
   applyBurgerStyle();
   applyFloatStyle();
   applyHdrTune();
+  applyDrawerStyle();
+}
+/* 【V5.0 2026-09-17】ハンバーガーを押した先の画面(ドロワー)の案を反映 */
+function applyDrawerStyle() {
+  const dr = document.getElementById('hdrDrawer'); if (!dr) return;
+  const s = String(params.drawerStyle || '1');
+  for (let i = 1; i <= 3; i++) dr.classList.toggle('drw-' + i, s === String(i));
 }
 /* 【V5.0 2026-09-17 ヒデさん指定】選んだヘッダー案ごとの「スクロール後サイズ」微調整を header にインライン適用(その案の時だけ)。
    常時ではなく、パネルはその案を選んだ時だけ出す(buildPanel が hdrModeKey で出し分け)。 */
@@ -17019,6 +17043,11 @@ function buildPanel() {
   sub(catAll, '浮くピルの質感', null, { fixed: true });
   varRowX('floatStyle', CV_FLOATS, () => floatStyleKey(), v => { params.floatStyle = String(v); applyFloatStyle(); });
   note('フローティングピルの案（⑤⑧⑨⑩⑮）の地・影・ブラー・リキッドグラスの質感。⋯から不要な案を削除できます。');
+  /* 【V5.0 2026-09-17 ヒデさん依頼】ハンバーガーを押した先の画面 3案 */
+  sub(catAll, 'ハンバーガーの中身（押した先の画面）', null, { fixed: true });
+  segRow('画面のタイプ', [['中央フル', '1'], ['右スライド', '2'], ['左寄せ大', '3']],
+    () => String(params.drawerStyle || '1'), v => { params.drawerStyle = String(v); applyDrawerStyle(); });
+  note('ハンバーガーを押すと開くメニュー。1=中央フルスクリーン(すりガラス) / 2=右からスライドインするパネル / 3=左寄せの大きな見出し(ダーク)。暫定の中身です。');
 
   /* ========== 🖼 キービジュアル ========== */
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
