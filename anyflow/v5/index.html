@@ -196,9 +196,10 @@
   /* ナビ: --hdr-t で畳む(opacity は前半で消え、幅は t≒0.75 で 0)。バーガー: 常にフロー内で t に応じて開く(後半で出現)。
      位置切替(absolute↔relative)をしない＝重ならない・瞬間移動しない。 */
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav {
-    overflow: hidden;
-    max-width: calc(var(--nav-w, 640px) * (1 - min(1, var(--hdr-t, 0) * 1.35)));
-    opacity: calc(1.15 - var(--hdr-t, 0) * 2.1);
+    overflow: hidden; margin-left: auto;   /* 【2026-09-17】右寄せ。space-between だと幅0のバーガーが右端を取りナビが中央に寄る不具合の対策 */
+    /* 幅は t=0 で実寸(820px余裕)＝切れない。t 0.32 まで全幅を保ち(=お問い合わせが切れない)そこから畳む。opacity は前半で消す */
+    max-width: calc(var(--nav-w, 820px) * (1 - clamp(0, (var(--hdr-t, 0) - 0.32) * 3.2, 1)));
+    opacity: calc(1 - var(--hdr-t, 0) * 2.5);
   }
   html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger {
     display: block; position: relative; overflow: hidden; flex: 0 0 auto; pointer-events: auto;
@@ -225,11 +226,8 @@
     box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
   /* 12: 分離(左に丸ロゴマーク／右に丸バーガー) */
   html:not(.mb).hm-12 .header { --hdr-py: 18px; --hdr-px: 22px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
-  html:not(.mb).hm-12 .header .logo { overflow: hidden; border-radius: var(--hdr-radius);
-    width: calc(255px - 205px * var(--hdr-t, 0)); height: calc(47px + 3px * var(--hdr-t, 0)); box-sizing: border-box;
-    background: rgba(255,255,255, calc(.66 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
-    box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
-  html:not(.mb).hm-12 .header { --hdr-logo-h: 50px; }   /* マークが箱を満たす高さ。幅auto＝比率保持でロゴ左端(三角)を .logo の overflow で切り出す */
+  /* 【2026-09-17 ヒデさん指定】分離案は「左ロゴは無加工(箱・影・マーク化なし)、右のバーガーだけプクッと浮くガラス箱」。
+     ロゴは素のまま＝切断も断片も出ない。ロゴには何も足さない(基準の縦横比固定のみ)。 */
   html:not(.mb).hm-12 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
     background: rgba(255,255,255, calc(.64 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
     box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
