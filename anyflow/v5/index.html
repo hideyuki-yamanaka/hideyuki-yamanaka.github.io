@@ -93,6 +93,32 @@
   /* 5: 色が変わる(シアン) */
   .header[data-navhover="cyan"] .nav-links a { transition: color .26s; }
   .header[data-navhover="cyan"] .nav-links a:hover { color: var(--brand-cyan); }
+
+  /* ================= 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダー 5案 (hdrMode / html.hm-1〜5) =================
+     既定でヘッダーを固定(追従)にする。スクロール状態(.hdr-stuck)で各案の見た目に。
+     リビール(rv)がインラインで transform/opacity/filter を触るので、スクロール演出は transform を使わず
+     top/padding/背景/margin で作って競合させない。PCのみ(mbは従来)。 */
+  html:not(.mb).hdr-follow .header {
+    position: fixed; top: 0; left: 0; right: 0; padding: 26px 50px; box-sizing: border-box; z-index: 60;
+    transition: background .32s var(--e-out), -webkit-backdrop-filter .32s, backdrop-filter .32s, box-shadow .32s, padding .28s var(--e-out), top .38s var(--e-out), left .34s var(--e-out), right .34s var(--e-out), border-radius .34s var(--e-out);
+  }
+  html:not(.mb).hdr-follow .header .logo img { transition: width .28s var(--e-out), height .28s var(--e-out); }
+  /* 追従で stuck の時は、KVイントロ(rv)がインラインで触る opacity/blur/transform を打ち消して必ず可視に
+     (ヒーロー内スクロールでイントロが再生リセットしてもヘッダーが消えないように) */
+  html:not(.mb).hdr-follow .header.hdr-stuck { opacity: 1 !important; filter: none !important; transform: none !important; }
+  /* 1: すりガラス(スクロールでガラス背景＋うっすら下線) */
+  html:not(.mb).hm-1 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  /* 2: ソリッド白＋影 */
+  html:not(.mb).hm-2 .header.hdr-stuck { background: #fff; box-shadow: 0 6px 24px rgba(20,30,60,.1); }
+  /* 3: 下スクロールで隠す/上で戻す(ガラス) */
+  html:not(.mb).hm-3 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  html:not(.mb).hm-3 .header.hdr-hidden { top: -104px; }
+  /* 4: 縮む(ロゴ小・余白小・ガラス) */
+  html:not(.mb).hm-4 .header.hdr-stuck { padding: 13px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  html:not(.mb).hm-4 .header.hdr-stuck .logo img { width: 200px; height: 37px; }
+  /* 5: フローティングピル(スクロールで縁から浮くカプセル) */
+  html:not(.mb).hm-5 .header.hdr-stuck { top: 14px; left: 16px; right: 16px; padding: 13px 28px; border-radius: 999px; background: rgba(255,255,255,.58); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
+  html:not(.mb).hm-5 .header.hdr-stuck .logo img { width: 210px; height: 39px; }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
      通常=黒(#090909) / ホバー=シアン(#0EBBFF)
@@ -4551,6 +4577,7 @@ const DEFAULTS = {
   cvForm: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの形。0=放射(現行)/1=縦グラデ/2=放射柔らか/3=斜め。URL ?form=N
   cvCta: 'button',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
+  hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
   cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
@@ -5161,6 +5188,8 @@ try {
   if (_cta) params.cvCta = _cta[1];   /* 【V5.0】CTA=ボタン/フォーム */
   const _fs = location.search.match(/[?&]fstyle=([1-5])(?:&|$)/);
   if (_fs) params.formStyle = _fs[1];   /* 【V5.0】フォームのスタイル案 */
+  const _hd = location.search.match(/[?&]hdr=([1-5])(?:&|$)/);
+  if (_hd) params.hdrMode = _hd[1];   /* 【V5.0】追従ヘッダーの案 */
 } catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
    世代ガードは『保存世代 < 焼き込み世代』でしか発火しないため、いったん現行世代のまま
@@ -6249,6 +6278,45 @@ const CV_FORMSTYLES = [
   { key: '4', name: '白カード（クリア）',   tip: 'はっきり白。可読性重視(グラデは縁に効く)。' },
   { key: '5', name: 'グラス＋発光縁',       tip: '磨りガラス＋ブランド色(シアン/ピンク/紫)のにじむ縁。' },
 ];
+const CV_HDRS = [
+  { key: '1', name: 'すりガラス',           tip: 'スクロールで磨りガラスの背景＋うっすら下線。背景が透ける追従バー。' },
+  { key: '2', name: 'ソリッド白＋影',       tip: 'スクロールで白背景＋やわらかい影。はっきりした追従バー。' },
+  { key: '3', name: '隠す/戻す',            tip: '下スクロールで隠れ、上スクロールで戻る。ガラス背景。' },
+  { key: '4', name: '縮む',                tip: 'スクロールでロゴと余白が縮んでコンパクトに(ガラス背景)。' },
+  { key: '5', name: 'フローティングピル',   tip: 'スクロールで画面の縁から浮くカプセル型に。ガラス＋影。' },
+];
+function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); return (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) ? v : '1'; }
+function applyHdrMode(key) {
+  params.hdrMode = String(key);
+  const h = document.documentElement;
+  h.classList.add('hdr-follow');
+  /* 【V5.0】親 .stage に transform があると position:fixed がそれ基準になり追従しない。
+     PC はヘッダーを body 直下へ出して viewport 基準の fixed にする(mb はスケール維持のため動かさない)。 */
+  if (!h.classList.contains('mb')) {
+    const hdr = document.querySelector('.header');
+    if (hdr && hdr.parentElement !== document.body) document.body.appendChild(hdr);
+  }
+  ['1','2','3','4','5'].forEach(k => h.classList.toggle('hm-' + k, String(key) === k));
+}
+/* 【V5.0】追従ヘッダーのスクロール監視(1回だけ設置)。lenis でも window.scrollY は追従する。 */
+let _hdrScrollBound = false;
+function bindHdrScroll() {
+  if (_hdrScrollBound) return; _hdrScrollBound = true;
+  const hdr = document.querySelector('.header'); if (!hdr) return;
+  let lastY = window.scrollY || 0, ticking = false;
+  const upd = () => {
+    ticking = false;
+    const y = window.scrollY || window.pageYOffset || 0;
+    hdr.classList.toggle('hdr-stuck', y > 40);
+    if (document.documentElement.classList.contains('hm-3')) {
+      if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
+      else if (y < lastY - 4 || y <= 160) hdr.classList.remove('hdr-hidden');
+    } else { hdr.classList.remove('hdr-hidden'); }
+    lastY = y;
+  };
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
+  upd();
+}
 
 const CV_COLORS = [
   /* 【2026-09-16 ヒデさん依頼】デザインカンプ(node 17383:21430)の色味に忠実な案。13ストップのランプ(ramp:'comp')で、
@@ -18432,6 +18500,9 @@ function buildPanel() {
      帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい。
      【2026-09-16】1項目だけの見出しをやめ、上の「余白・高さ・境目」に含めた */
   /* 【2026-09-16 改訂】溶け込みは“形”でなく“深さ”の違いだけ(波/弧/斜め/二段/もやは撤去)。本体の中まで長い距離で溶かすので境目の線は出ない */
+  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = '追従ヘッダー（5案）'; (mount || body).appendChild(_t); }
+  varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  note('ヘッダーを追従(固定)にした上で、スクロール時の見た目を5案から選べます。少し下にスクロールすると違いが出ます。URL ?hdr=1〜5。');
   { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = 'お問い合わせのCTA（ボタン / フォーム直置き）'; (mount || body).appendChild(_t); }
   varRowX('cvCta', CV_CTAS, () => String(params.cvCta || 'button'), v => { params.cvCta = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('現行はボタン遷移。「フォーム（直置き）」にすると、見出し・本文の下に自作フォームを置きます(送信先は無し=見た目のみ)。');
@@ -18603,6 +18674,8 @@ try { const _cvc = location.search.match(/[?&]cvc=(C\d{1,2})(?:&|$)/); if (_cvc 
 if (window.__swayFromUrl) cvApplySway(cvSwayKey());   /* 【2026-09-15】?sway=N で来た時だけ案の値を入れ直す */
 cvApplyForm(cvFormKey());   /* 【2026-09-16】グラデの形を初期反映(放射/縦/斜め) */
 applyCvEdge(cvEdgeKey());   /* 【2026-09-16】溶け込みの深さを初期反映(blend も案の値に) */
+applyHdrMode(hdrModeKey());  /* 【V5.0】追従ヘッダーの案を初期反映＋固定化 */
+bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール監視を設置 */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
 applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */
 applyDevStyle();    /* 開発者体験モックのスタイル案を初期反映 (2026-09-15) */
