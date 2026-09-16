@@ -4791,6 +4791,7 @@ const DEFAULTS = {
   burgerIcon: '1',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
   burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
   floatStyle: '1',     // 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案 1〜10(影/ブラー/リキッドグラス等)
+  hdrTune: { '8': { logoH: 40, cw: 300 } },   // 【V5.0 2026-09-17】案ごとのスクロール後サイズ微調整(その案を選んだ時だけパネルに出す)
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
   cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
@@ -6556,6 +6557,15 @@ function applyHdrMode(key) {
   for (let i = 1; i <= 15; i++) h.classList.toggle('hm-' + i, String(key) === String(i));
   applyBurgerStyle();
   applyFloatStyle();
+  applyHdrTune();
+}
+/* 【V5.0 2026-09-17 ヒデさん指定】選んだヘッダー案ごとの「スクロール後サイズ」微調整を header にインライン適用(その案の時だけ)。
+   常時ではなく、パネルはその案を選んだ時だけ出す(buildPanel が hdrModeKey で出し分け)。 */
+function applyHdrTune() {
+  const hdr = document.querySelector('.header'); if (!hdr) return;
+  const t = (params.hdrTune && params.hdrTune[hdrModeKey()]) || null;
+  if (t && t.logoH != null) hdr.style.setProperty('--hdr-logo-h', t.logoH + 'px'); else hdr.style.removeProperty('--hdr-logo-h');
+  if (t && t.cw != null) hdr.style.setProperty('--hdr-cw', t.cw + 'px'); else hdr.style.removeProperty('--hdr-cw');
 }
 /* 【V5.0 2026-09-17】ハンバーガーのアイコン案(bi-)と押した時の変化(ba-)を html に反映 */
 function applyBurgerStyle() {
@@ -16992,8 +17002,15 @@ function buildPanel() {
 
   /* 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーはサイト全体の要素なので「🌊 全体」に置く */
   sub(catAll, 'ヘッダー（追従・スクロールで変形）', null, { fixed: true });
-  varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof buildPanel === 'function') buildPanel(); else if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('ヘッダーを追従(固定)にして、スクロール時の見た目を選びます。少し下にスクロールすると違いが出ます。URL ?hdr=N。');
+  /* 【V5.0 2026-09-17 ヒデさん指定】左寄せピル(hm-8)を選んだ時だけ「スクロール後サイズ」を動的に出す(常時表示しない) */
+  if (hdrModeKey() === '8') {
+    params.hdrTune = params.hdrTune || {}; params.hdrTune['8'] = params.hdrTune['8'] || { logoH: 40, cw: 300 };
+    const T = params.hdrTune['8'];
+    rows.push(slider('左寄せピル: ロゴの高さ（スクロール後）', 24, 47, 1, () => T.logoH, v => { T.logoH = v; applyHdrTune(); }, v => Math.round(v) + 'px', 'スクロール後のロゴの高さ。47で元のサイズのまま。', { fixedMax: true }));
+    rows.push(slider('左寄せピル: ピルの幅（スクロール後）', 200, 520, 5, () => T.cw, v => { T.cw = v; applyHdrTune(); }, v => Math.round(v) + 'px', 'スクロール後の左寄せピルの横幅。', { fixedMax: true }));
+  }
   /* 【V5.0 2026-09-17 ヒデさん指定】ハンバーガー/変化/質感 も、すりガラス等と同じピル型＋⋯削除メニュー(varRowX)に */
   sub(catAll, 'ハンバーガーの形', null, { fixed: true });
   varRowX('burgerIcon', CV_BURGER_ICONS, () => burgerIconKey(), v => { params.burgerIcon = String(v); applyBurgerStyle(); });
