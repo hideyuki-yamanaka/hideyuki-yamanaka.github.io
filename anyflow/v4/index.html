@@ -4469,6 +4469,7 @@ const DEFAULTS = {
         colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, ramp: 0, addT: 0, addB: 0 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
   cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
   cvSway: '0',         // 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。0=現行 / 1〜5。URL ?sway=N
+  cvEdge: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせ上部の切れ目(溶け込み)の形。0=直線標準 / 1〜9。URL ?edge=N
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
   cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
@@ -5071,6 +5072,8 @@ try {
   if (_cv) params.cvStyle = _cv[1];   /* お問い合わせのデザイン案(2026-09-15) */
   const _sw = location.search.match(/[?&]sway=(\d)(?:&|$)/);
   if (_sw) { params.cvSway = _sw[1]; window.__swayFromUrl = true; }   /* 揺らぎの案(2026-09-15)。値の反映は init で(ここでは CV_SWAYS がまだ未初期化) */
+  const _eg = location.search.match(/[?&]edge=(\d)(?:&|$)/);
+  if (_eg) { params.cvEdge = _eg[1]; window.__edgeFromUrl = true; }   /* 切れ目の形(2026-09-16)。反映は init で */
 } catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
    世代ガードは『保存世代 < 焼き込み世代』でしか発火しないため、いったん現行世代のまま
@@ -18339,8 +18342,12 @@ function buildPanel() {
   /* 【2026-09-15 ヒデさん指摘】溶け込みの薄い帯がお問い合わせの【中】にあったので上の余白が詰まらなかった。
      帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい。
      【2026-09-16】1項目だけの見出しをやめ、上の「余白・高さ・境目」に含めた */
-  rows.push(slider('導入事例との境目のぼかし', 0, 300, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px',
-    '導入事例との境目をぼかす幅。この帯は【導入事例の下の空きへ逃がす】ので、お問い合わせは必ず上端から色が乗ります(余白が増えません)。空きが足りない時は自動でぼかし幅の方が縮みます。0px でくっきり。SP は従来どおり(%指定)。', { fixedMax: true }));
+  /* 【2026-09-16 ヒデさん依頼】境界の切れ方10案(直線/弧/斜め/波/もや/二段)。案ごとにぼかしの高さも変わる。高い案は導入事例の下の空きへ逃がし、見出しの上の余白を削って総高さを一定に保つ */
+  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = '境界の切れ方（10案）'; (mount || body).appendChild(_t); }
+  varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  note('URL: ?edge=0〜9。案を選ぶと下の「境目のぼかし」も案の値に入ります。高さを出す案(太く/もや)は導入事例の下の空きへ逃がすので、お問い合わせの総高さは変わりません。');
+  rows.push(slider('導入事例との境目のぼかし（微調整）', 0, 300, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px',
+    '選んだ案の溶け込みの高さを微調整。この帯は【導入事例の下の空きへ逃がす】ので、お問い合わせは必ず上端から色が乗ります。空きが足りない分は見出しの上の余白を削って総高さを一定に保ちます。0px でくっきり。SP は従来どおり。', { fixedMax: true }));
   sub(catCv, 'ディザリング（粗さ・階調）');
   rows.push(slider('粗さ（ドットの大きさ）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px',
     '大きいほど粗い(ドットが大きい)ディザに。1でカンプ(Size1)。'));
@@ -18496,6 +18503,7 @@ try { const _dv = location.search.match(/[?&]dev=(\d{1,2})(?:&|$)/); if (_dv && 
       const _dt = location.search.match(/[?&]devt=([a-z]+)(?:&|$)/); if (_dt && DEV_TONES.some(d => d.key === _dt[1])) params.devTone = _dt[1]; } catch (e) {}
 try { const _cvc = location.search.match(/[?&]cvc=(C\d{1,2})(?:&|$)/); if (_cvc && CV_COLORS.some(s => s.key === _cvc[1])) { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = _cvc[1]; cvApplyColorFull(_cvc[1]); } } catch (e) {}
 if (window.__swayFromUrl) cvApplySway(cvSwayKey());   /* 【2026-09-15】?sway=N で来た時だけ案の値を入れ直す */
+applyCvEdge(cvEdgeKey());   /* 【2026-09-16】切れ目の形を初期反映(blend も案の値に) */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
 applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */
 applyDevStyle();    /* 開発者体験モックのスタイル案を初期反映 (2026-09-15) */
