@@ -2722,7 +2722,7 @@
   .cv-form .cvf-lab em { color: var(--brand-pink); font-style: normal; margin-left: 3px; }
   .cv-form .cvf-note { font-size: 11px; line-height: 1.5; opacity: .68; margin: -3px 0 1px; }
   .cv-form .cvf-in { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 15px; font-weight: 300; color: var(--ink-strong); padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,.14); background: rgba(255,255,255,.72); outline: none; transition: border-color .18s, background .18s, box-shadow .18s; }
-  .cv-form .cvf-in::placeholder { color: rgba(0,0,0,.32); }
+  .cv-form .cvf-in::placeholder { color: rgba(0,0,0, var(--cvf-ph-a, .32)); }
   .cv-form .cvf-in:focus { border-color: var(--brand-cyan); box-shadow: 0 0 0 3px rgba(14,187,255,.18); background: rgba(255,255,255,.92); }
   .cv-form .cvf-area { resize: vertical; min-height: 96px; }
   .cv-form .cvf-sel { position: relative; display: block; }
@@ -2741,7 +2741,7 @@
   /* 【2026-09-17 ヒデさん依頼】フォームカードの地色の白さ・ぼかし・彩度をパネルから調整可能に(--cvf-bg-a/--cvf-blur/--cvf-sat)。
      背景に白が来た時の白飛び対策として、白さを下げたり彩度を上げたりできる。 */
   #conversion.fst-1 .cv-form { padding: 34px 32px; border-radius: 22px; background: rgba(255,255,255, var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); border: 1px solid rgba(255,255,255,.66); box-shadow: 0 20px 60px rgba(20,30,60,.14), inset 0 1px 0 rgba(255,255,255,.6); }
-  #conversion.fst-1 .cvf-in { background: rgba(255,255,255,.56); border-color: rgba(255,255,255,.72); }
+  #conversion.fst-1 .cvf-in { background: rgba(255,255,255, var(--cvf-in-a, .56)); border-color: rgba(255,255,255,.72); }
   /* --- fst-2 リキッドグラス(濃): スモークガラス。文字は白 --- */
   #conversion.fst-2 .cv-form { padding: 34px 32px; border-radius: 22px; background: rgba(18,22,34,.34); -webkit-backdrop-filter: blur(20px) saturate(1.3); backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 24px 60px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.22); }
   #conversion.fst-2 .cvf-lab, #conversion.fst-2 .cvf-consent, #conversion.fst-2 .cvf-fine, #conversion.fst-2 .cvf-note { color: #fff; }
@@ -4806,6 +4806,7 @@ const DEFAULTS = {
   cvHier: '1',         // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの“情報の階層”の見せ方。1インデント/2余白区分/3左アクセント/4背景ブロック/5見出し強弱
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
   formWidth: 660,      // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせフォームの横幅(px)。パネルで調整
+  cvfGlass: { bgA: 0.5, blur: 22, sat: 1.5, inA: 0.56, phA: 0.32 },   // 【V5.0 2026-09-17】フォームカードの地色の白さ/ぼかし/彩度/入力欄の白さ/プレースホルダーの濃さ(白飛び対策で調整可)
   hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
   burgerIcon: '1',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
   burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
@@ -5074,7 +5075,7 @@ const DEFAULTS = {
                /* 【2026-09-15】モックのスタイル案のつまみ。stv = 案ごとの値(案を切り替えても各案の設定が残る) */
                mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {},
                slotBoxY: 0, slotBoxH: 42,   /* 2026-09-15: ②のスロットの箱の上下位置・高さ */
-               pinStops: 'on', devDwell: 90 },   /* 2026-09-16 ヒデさん指定: ①②で中央に固定して一旦止まる(sticky保持)。devDwell=止まっている長さ(vh)。'off'で従来の通常スクロール */   /* 2026-08-30: splitDelay 0.45→0.32 前倒し(splitDur=尺は不変) */
+               pinStops: 'on', devDwell: 40 },   /* 2026-09-16 ①②で中央に固定して一旦止まる。devDwell=止まっている長さ(vh)。2026-09-17: 90→40 で“優しく”短めに(急に止めすぎない)。'off'で通常スクロール */
     /* 【2026-08-25 刷新・カンプ 15800:24526/24258】導入事例 = 2×2グリッド。
        見出し(ブラー) → 水平線3本が左から(上→下でディレイ) → 中央の垂直線 → カード4枚がブラーで登場。 */
     cases:   { lenVh: 200, driveLen: 3.0, playSec: 2.0, inBlur: 20,
@@ -6586,6 +6587,17 @@ function applyDrawerStyle() {
   const s = String(params.drawerStyle || '1');
   for (let i = 1; i <= 3; i++) dr.classList.toggle('drw-' + i, s === String(i));
 }
+/* 【V5.0 2026-09-17 ヒデさん依頼】お問い合わせフォームの地色の白さ/ぼかし/彩度/入力欄の白さ/プレースホルダーの濃さを反映(白飛び対策) */
+function applyCvfGlass() {
+  const sec = document.getElementById('conversion'); if (!sec) return;
+  const g = params.cvfGlass || {};
+  const set = (k, v, u) => sec.style.setProperty(k, (v != null ? v : '') + (u || ''));
+  set('--cvf-bg-a', g.bgA != null ? g.bgA : 0.5, '');
+  set('--cvf-blur', g.blur != null ? g.blur : 22, 'px');
+  set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
+  set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
+  set('--cvf-ph-a', g.phA != null ? g.phA : 0.32, '');
+}
 /* 【V5.0 2026-09-17 ヒデさん指定】選んだヘッダー案ごとの「スクロール後サイズ」微調整を header にインライン適用(その案の時だけ)。
    常時ではなく、パネルはその案を選んだ時だけ出す(buildPanel が hdrModeKey で出し分け)。 */
 function applyHdrTune() {
@@ -6822,6 +6834,7 @@ function cvSyncStretch() {
 }
 function applyCvStyle(fromSwitch) {
   const sec = document.getElementById('conversion'); if (!sec) return;
+  if (typeof applyCvfGlass === 'function') applyCvfGlass();   /* フォームの地色/ぼかし/彩度/入力欄/プレースホルダー */
   const st = cvStyleDef();
   /* デザイン案を切り替えた時は、その案に紐づくカラー案の値を入れ直す(初回読み込みは保存値を尊重して触らない) */
   if (fromSwitch && applyCvStyle._last !== st.key) cvApplyColorFull(cvColorKey());
@@ -18860,6 +18873,14 @@ function buildPanel() {
       varRowX('formStyle', CV_FORMSTYLES, () => String(params.formStyle || '1'), v => { params.formStyle = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
       note('リキッドグラス系5案。背景グラデが磨りガラスに透けます。');
       rows.push(slider('フォームの横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { fixedMax: true }));
+      /* 【2026-09-17 ヒデさん依頼】背景・バックドロップフィルター・プレースホルダーの色味を後から個別調整できるように(白飛び対策) */
+      const _g = () => (params.cvfGlass = params.cvfGlass || {});
+      rows.push(slider('カードの白さ（白飛び対策）', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの地色の白さ。背景に白が来て白飛びする時は下げる。', { fixedMax: true }));
+      rows.push(slider('カードのぼかし（バックドロップ）', 0, 40, 1, () => (_g().blur != null ? _g().blur : 22), v => { _g().blur = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '磨りガラスのぼかし量(backdrop-filter)。', { fixedMax: true }));
+      rows.push(slider('カードの彩度', 1, 2.2, 0.05, () => (_g().sat != null ? _g().sat : 1.5), v => { _g().sat = v; applyCvfGlass(); }, v => v.toFixed(2), '磨りガラスの彩度。上げると背景の色が残って白飛びしにくい。', { fixedMax: true }));
+      rows.push(slider('入力欄の白さ', 0, 0.9, 0.02, () => (_g().inA != null ? _g().inA : 0.56), v => { _g().inA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の地色の白さ。', { fixedMax: true }));
+      rows.push(slider('プレースホルダーの濃さ', 0.1, 0.6, 0.02, () => (_g().phA != null ? _g().phA : 0.32), v => { _g().phA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '「Anyflow株式会社」等の見本文字の濃さ。白飛びで見えにくい時は上げる。', { fixedMax: true }));
+      note('セクション自体の色味・グラデーションは、下の「背景グラデーション」「色の移ろい」「粒（ディザ）」で調整できます。');
     },
     gradForm() {
       varRowX('cvForm', CV_FORMS, () => cvFormKey(), v => { cvApplyForm(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
