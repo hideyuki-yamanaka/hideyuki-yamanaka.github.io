@@ -15,12 +15,7 @@ import {
   V3Editorial,
 } from "./SpotDetailVariants";
 import {
-  V12Vertical,
-} from "./SpotDetailVariants2";
-import {
-  V26Dissolve,
   V32TocSlide,
-  V33TocRule,
   V35TocDot,
   V36TocNum,
   V37PinnedBlur,
@@ -52,10 +47,6 @@ export const SPOT_DETAIL_PATTERNS: Record<
   /* 2026-09-16 ヒデさん依頼で追加した10案（案11〜20）。
      「写真が6〜7割・ミニマル・余白を効かせる・写真がさきに目に入る」が共通の狙い。
      名前は【何を変えたか】が分かる言い方にしてある */
-  12: {
-    name: "案12 縦書きの見出し",
-    note: "文字組みを変更。名前と小見出しを縦書きにして写真の脇に立てる。本文は横書きのまま細い柱に",
-  },
   /* 2026-09-16 追加の5案。「左に小さく見出し・右に本文」のように、
      余白の取り方そのものをデザインにした案 */
   /* ═══ 2026-09-16 ヒデさん依頼の追加12案（案26〜37）═══
@@ -63,17 +54,9 @@ export const SPOT_DETAIL_PATTERNS: Record<
      27〜31    見出しを付けて「左に見出し・右に本文」。色は使わず罫線と余白だけ
      32〜36    左カラムの目次がスクロール位置に反応する
      37        全画面サムネ → 裏がぼけて白いコンテンツへ */
-  26: {
-    name: "案26 グラデで白へ",
-    note: "サムネイルと本文の境目を変更。写真の下側がそのまま白へ溶けて、どこからが解説か分からないくらいなだらかに本文へ入る（フッターのグラデ案と同じ考え方）",
-  },
   32: {
     name: "案32 目次が右へずれる",
     note: "左カラムに目次を追加。いま読んでいる項目が10px右へ動く",
-  },
-  33: {
-    name: "案33 目次の罫線が伸びる",
-    note: "左カラムに目次を追加。いま読んでいる項目の短い罫線が12px→48pxに伸びる",
   },
   35: {
     name: "案35 印がレールを滑る",
@@ -166,8 +149,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v10: 本文・見出しの大きさのつまみを追加（2026-09-16）
            v11: 案11 の系統をもう3案（案38〜40）追加（2026-09-16）
            v12: ヒデさんの選定で 案11・16・18・20・22・23・31・34・40 を完全削除（2026-09-16）
-           v13: 文字の大きさを案ごとに別々に持つようにした（2026-09-16） */
-        version: 13,
+           v13: 文字の大きさを案ごとに別々に持つようにした（2026-09-16）
+           v14: ヒデさんの選定で 案12・26・33 を完全削除（2026-09-17） */
+        version: 14,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -269,10 +253,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   const MAP: Record<number, (p: { spot: typeof spot }) => React.ReactElement> = {
     1: V1Parallax,
     3: V3Editorial,
-    12: V12Vertical,
-    26: V26Dissolve,
     32: V32TocSlide,
-    33: V33TocRule,
     35: V35TocDot,
     36: V36TocNum,
     37: V37PinnedBlur,

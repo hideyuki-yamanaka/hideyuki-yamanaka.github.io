@@ -5,7 +5,6 @@
  * ぼーっとスポット詳細ページ｜追加の12案（案26〜37）
  * 2026-09-16 ヒデさん依頼を4グループに分けて作った：
  *
- *   A. 案26      サムネイルが「パツッ」と切れず、グラデで白い解説の面に移る
  *   B. 案31      見出しを付けて「左に見出し・右に本文」。余白を生かした案。
  *                ⚠️ 色は付けない。区切りは【罫線と余白だけ】で表す
  *                （同じ組で出した案27〜30 は 2026-09-16 に完全削除）
@@ -255,79 +254,6 @@ function QuietBlocks({
 }
 
 /* ═══════════════════════════════════════════════════
-   A. 案26  グラデで白へ移る
-   変えたところ：サムネイルと本文の境目
-   写真の下側をそのまま白へ溶かして、どこからが解説か分からないくらい
-   なだらかに本文の面へ入る。フッターのグラデ案と同じ考え方
-   ═══════════════════════════════════════════════════ */
-export function V26Dissolve({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      {/* 写真は 155dvh。白へ溶けはじめるのを **画面の折り返しより下**（93dvh）
-          にしてあるので、最初の1画面は写真だけがきれいに出る。
-          スクロールしてはじめて白がにじみ出てくる（2026-09-16 実測で調整）*/}
-      <div className="relative h-[155dvh] w-full overflow-hidden">
-        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
-        {/* 文字を置くための薄い暗幕。グラデの掛かる下側までは伸ばさない */}
-        <div className="absolute inset-x-0 top-0 h-[33%] bg-gradient-to-b from-black/35 to-transparent" />
-        <div className="absolute inset-x-0 top-[16dvh] px-6 sm:px-[120px]">
-          <HeroTitle spot={spot} size="sm" />
-        </div>
-        {/* ── 白へ溶ける本体 ──
-            ⚠️ bottom を -2px にしてあるのは、拡大率によっては写真の
-               最下1pxがグラデの下に覗くため（フッターで実測した現象と同じ） */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-[-2px] h-[40%]"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 34%, rgba(255,255,255,0.62) 62%, rgba(255,255,255,0.92) 84%, #fff 100%)",
-          }}
-        />
-      </div>
-
-      {/* 白い解説の面。グラデの続きなので上に余白は置かない */}
-      <div className="-mt-px bg-white px-6 pb-[120px] sm:px-[120px]">
-        <div className="mx-auto flex max-w-[980px] flex-col gap-[88px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="flex flex-col gap-4 sm:flex-row sm:gap-[80px]"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
-            >
-              <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:w-[200px]">
-                {s.heading}
-              </h3>
-              <p className="w-full whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-
-          {/* 途中の写真も同じ「溶ける」扱いにして、面の変わり目を作らない */}
-          {spot.photos.map((p, i) => (
-            <Photo
-              key={i}
-              src={p}
-              root={ref}
-              className="h-[62dvh] w-full rounded-16"
-            />
-          ))}
-
-          <QuietBlocks spot={spot} root={ref} from={heads.length} />
-        </div>
-      </div>
-    </Shell>
-  );
-}
-
-/* ═══════════════════════════════════════════════════
    B. 案31  左に見出し・右に本文（余白を生かす案）
    ⚠️ **色は一切足さない**。区切りは罫線と余白だけ
    【2026-09-16 ヒデさん依頼】この組の案27・28・29・30 は完全削除した
@@ -521,9 +447,6 @@ export function V32TocSlide({ spot }: VProps) {
   return <TocLayout spot={spot} kind="slide" />;
 }
 /** 案33 目次の罫線が伸びる */
-export function V33TocRule({ spot }: VProps) {
-  return <TocLayout spot={spot} kind="rule" />;
-}
 /** 案34 目次の文字が濃くなる */
 /** 案35 印がレールを滑る */
 export function V35TocDot({ spot }: VProps) {
