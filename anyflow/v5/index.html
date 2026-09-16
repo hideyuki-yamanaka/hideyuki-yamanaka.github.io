@@ -4649,6 +4649,7 @@ const DEFAULTS = {
   cvEdge: '0',         // 【2026-09-16 改訂】お問い合わせ上部の溶け込みの深さ。0=標準/1さらに深く/2浅め。URL ?edge=N
   cvForm: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの形。0=放射(現行)/1=縦グラデ/2=放射柔らか/3=斜め。URL ?form=N
   cvCta: 'button',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
+  cvPanelUi: 'obj',    // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの見せ方(UX検証)。obj=要素別/easy=かんたん優先/ctx=文脈で
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
   hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
@@ -18576,86 +18577,86 @@ function buildPanel() {
         比べ直したくなったら URL ?cv=0 などで一時的に切り替えられる。 */
   /* 【2026-09-15 ヒデさん指定】カラー案(10案)。選ぶとその案の値が下のつまみに入る。つまみで細かく変えたら ⋯「いまの設定で上書き」でその案に保存 */
   /* 【2026-09-16 ヒデさん依頼】カラー案・グラデの色・暗さ・明るさコントラストのセクションは削除(デザインカンプで確定)。値は焼き込み(cvColorBy CK / ramp comp)に残るので見た目は不変 */
-  sub(catCv, 'グラデーションの形');
-  segRow('形', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
-  /* 【2026-09-15 ヒデさん依頼】Figma風の棒でグラデを直感編集。ボタンを押すと編集モードに入り、お問い合わせのグラデの上に棒が出る */
-  { const gb = document.createElement('button'); gb.type = 'button'; gb.id = 'cvGizmoBtn'; gb.className = 'cvg-editbtn';
-    gb.textContent = '🎯 グラデーションを棒で編集';
-    gb.onclick = () => { const sec = document.getElementById('conversion'); if (sec) sec.scrollIntoView({ block: 'center', behavior: 'smooth' }); cvGizmo.toggle(); };
-    (mount || body).appendChild(gb); }
-  note('編集モードでは棒の【両端(青い四角)】で角度と広がり、【棒の途中】で位置(中心)を動かせます。下の「中心/広がり/回転」の数値とも連動します。');
-  rows.push(slider('中心 横', 0, 1, 0.01, () => (cvv().gcx != null ? cvv().gcx : 0.60), v => { cvv().gcx = v; }, v => Math.round(v * 100) + '%', '明るい中心の横位置。0=左端 / 100%=右端。カンプの形でも効きます(既定60%＝右上の淡い所を画面の外へ逃がした位置)。'));
-  rows.push(slider('中心 縦', 0, 1, 0.01, () => (cvv().gcy != null ? cvv().gcy : 0.00), v => { cvv().gcy = v; }, v => Math.round(v * 100) + '%', '明るい中心の縦位置。0=上端 / 100%=下端。カンプの形でも効きます(既定0%)。'));
-  rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり(きつい)、大きいほどゆるやか。カンプの形でも効きます。'));
-  rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。カンプの形でも効きます。'));
-  rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。カンプの形でも効きます。'));
-  sub(catCv, '色味の移ろい（時間で色が変わる）');
-  segRow('動き', [['なし', 'off'], ['往復（青⇄白⇄ピンク）', 'swing'], ['巡る（紺→シアン→白→ピンク）', 'cycle']], () => (cvv().hueMode || 'off'), v => { cvv().hueMode = v; markDirty(); renderFrame(); });
-  rows.push(slider('1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '往復は「行って戻る」まで、巡るは「ひとまわり」する時間。長いほどゆっくり移ろいます。', { fixedMax: true }));
-  rows.push(slider('白の入り具合', 0, 1, 0.05, () => (cvv().moodWhite != null ? cvv().moodWhite : 0.85), v => { cvv().moodWhite = v; }, v => Math.round(v * 100) + '%', '色が入れ替わる間に白をどれだけ通すか。100%でいったん白く抜けてから次の色へ(にごらない)。0%にすると白を通らず直接つなぐので中間色が出ます。', { fixedMax: true }));
-  note('色味はブランドの青(シアン〜紺)・ピンク・白だけを行き来します(色相を回すやり方はやめました。途中で緑や黄など、ブランドにない色が出るため)。');
-  /* 【2026-09-16 ヒデさん指示】まとまりが細かく分かれすぎていたので整理。
-     「縦幅・間隔」と、1項目しかなかった「溶け込みの境界」をここに統合した。
-     一体型で確定したので、各項目の「（一体型）」という但し書きも外している */
-  sub(catCv, '余白・高さ・境目');
-  /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白はここで減らせる */
-  rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px',
-    'お問い合わせの見出しの【上】の余白。減らすほど導入事例との間の空きが詰まり、セクション自体も短くなります。カンプ相当は210px。SP は変わりません。', { fixedMax: true }));
-  rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-    '見出しの【上】に足す高さ。増やすほど、お問い合わせの見出しの上に色の面が増えます。0 でいままで。SP は変わりません。', { fixedMax: true }));
-  rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-    'ボタンの【下】(フッターとの間)に足す高さ。0 でいままで。', { fixedMax: true }));
-  /* 【2026-09-16】「縦幅（枠の案）」は枠で見せる案(現行)専用のつまみ。一体型で確定したので削除した */
-  rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの【あいだの余白】(地色)。プラスで隙間が空きます。マイナスは導入事例の“下の空き”を詰めます(カードが切れないところまでで自動的に止まります)。見出しの上の【色の面】を増やしたい時は下の「上に足す高さ」を使ってください(PC のみ)。', { signed: true }));
-  /* 【2026-09-15 ヒデさん指摘】溶け込みの薄い帯がお問い合わせの【中】にあったので上の余白が詰まらなかった。
-     帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい。
-     【2026-09-16】1項目だけの見出しをやめ、上の「余白・高さ・境目」に含めた */
-  /* 【2026-09-16 改訂】溶け込みは“形”でなく“深さ”の違いだけ(波/弧/斜め/二段/もやは撤去)。本体の中まで長い距離で溶かすので境目の線は出ない */
-  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = 'お問い合わせのCTA（ボタン / フォーム直置き）'; (mount || body).appendChild(_t); }
-  varRowX('cvCta', CV_CTAS, () => String(params.cvCta || 'button'), v => { params.cvCta = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('現行はボタン遷移。「フォーム（直置き）」にすると、見出し・本文の下に自作フォームを置きます(送信先は無し=見た目のみ)。');
-  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = 'フォームのスタイル（5案・CTA=フォーム時）'; (mount || body).appendChild(_t); }
-  varRowX('formStyle', CV_FORMSTYLES, () => String(params.formStyle || '1'), v => { params.formStyle = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('リキッドグラス系5案。背景グラデが生きる方向。CTAを「フォーム」にすると反映されます。');
-  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = 'グラデの形（溶け込み）'; (mount || body).appendChild(_t); }
-  varRowX('cvForm', CV_FORMS, () => cvFormKey(), v => { cvApplyForm(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('お問い合わせのグラデの“形”。放射(現行)／縦グラデ(サンプル寄り)／放射を大きく柔らかく／斜め、から選べます。色は現行のまま・上の境界はどれも長く馴染みます。最終形はこれで見比べて決めてください。');
-  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = '境界の溶け込み（馴染ませ方）'; (mount || body).appendChild(_t); }
-  varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('サンプル(Figma 17400:22955)に合わせ、上端から本体の中まで長い距離で徐々に色が乗ります(境目の線・波・形は無し)。案は溶け込みの“深さ”違い。下のスライダーで微調整できます。');
-  rows.push(slider('溶け込みの深さ（微調整）', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px',
-    '色が満色になるまでの距離。大きいほど上から長い距離をかけて徐々に溶け、境目の線が出ません。本体の高さを超えない範囲で効きます(下端は必ず満色)。SP は従来どおり。', { fixedMax: true }));
-  sub(catCv, 'ディザリング（粗さ・階調）');
-  rows.push(slider('粗さ（ドットの大きさ）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px',
-    '大きいほど粗い(ドットが大きい)ディザに。1でカンプ(Size1)。'));
-  rows.push(slider('階調（レベル）', 2, 12, 1, () => cvv().levels, v => { cvv().levels = v; }, v => Math.round(v) + '段',
-    '色を何段に量子化するか。少ないほどディザが強く出ます。カンプは3段。'));
-  rows.push(slider('ディザの散り', 0, 2, 0.05, () => cvv().spread, v => { cvv().spread = v; }, v => '×' + v.toFixed(2),
-    '大きいほど点のばらつきが強く、粒感が増します。'));
-  sub(catCv, '流れる雰囲気');
-  /* 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。選ぶと下のつまみにその案の値が入る */
-  varRowX('cvSway', CV_SWAYS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); },
-    { snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('URL でも切替: ?sway=0〜5。選ぶと下の「流れる速さ」〜「ゆらゆらの周期」にその案の値が入ります。細かく変えたら ⋯「いまの設定で上書き」でその案に保存できます。');
-  rows.push(slider('流れる速さ', 0, 1, 0.02, () => cvv().speed, v => { cvv().speed = v; }, v => '×' + v.toFixed(2),
-    'グラデが流れる速さ。0で止まります。'));
-  rows.push(slider('うねりの強さ', 0, 0.6, 0.02, () => cvv().swell, v => { cvv().swell = v; }, v => '×' + v.toFixed(2),
-    '流れのゆらぎ(うねり)の大きさ。大きいほど大きくうねります。'));
-  rows.push(slider('流れの細かさ', 0.3, 8, 0.1, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1),
-    '大きいほど細かい流れ、小さいほど大きな流れになります。1より小さくすると1画面に1つ分の大きなゆらぎになります。'));
-  /* 【2026-09-15 ヒデさん指摘】上の「うねり」は細かいノイズ由来なので、強くしても小刻みにしかならない。
-     大きな波は別レイヤー(なめらかな正弦波の合成)として持つ */
-  rows.push(slider('大きなうねりの強さ', 0, 0.35, 0.005, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; }, v => '×' + v.toFixed(3),
-    'ゆっくり大きく揺らぐ波の強さ。上の「うねりの強さ」が細かいノイズなのに対し、こちらはなめらかな大波なので、上げても粒っぽくなりません。0で止まります。', { fixedMax: true }));
-  rows.push(slider('波の大きさ', 0.15, 2, 0.05, () => (cvv().waveLen != null ? cvv().waveLen : 0.85), v => { cvv().waveLen = v; }, v => '×' + v.toFixed(2),
-    '小さいほど【大きな波】(1画面に1つ分)、大きいほど波の数が増えます。既定0.85＝画面に1つ分くらいの大きな波。', { fixedMax: true }));
-  rows.push(slider('波のゆっくりさ', 0.02, 0.6, 0.01, () => (cvv().waveSpd != null ? cvv().waveSpd : 0.11), v => { cvv().waveSpd = v; }, v => '×' + v.toFixed(2),
-    '大きな波が動く速さ。小さいほどゆっくり優雅に揺れます。既定0.11＝1往復およそ57秒。', { fixedMax: true }));
-  /* 【2026-09-15 ヒデさん指摘】「もっとゆらゆらしている感じ」。波は流れて見えるので、全体がゆっくり左右に傾く動きを足す */
-  rows.push(slider('ゆらゆら（全体の傾き）', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; }, v => v.toFixed(1) + '°',
-    'グラデ全体がゆっくり左右に傾いて、ゆらゆら揺れます(わずかな伸縮も連動)。0で止まります。既定5°。', { fixedMax: true }));
-  rows.push(slider('ゆらゆらの周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; }, v => Math.round(v) + '秒',
-    'ゆらゆらが1往復する時間。長いほどゆったりします。既定26秒。', { fixedMax: true }));
+  /* 【V5.0 2026-09-16 ヒデさん依頼】UX再設計: 部品化して「見せ方3案」で組み替える。似た項目(グラデの形が2箇所 等)を1つの“もの”にまとめ、必要な時だけ出す。 */
+  const isForm = () => String(params.cvCta || 'button') === 'form';
+  const gizmoBtn = () => { const gb = document.createElement('button'); gb.type = 'button'; gb.id = 'cvGizmoBtn'; gb.className = 'cvg-editbtn'; gb.textContent = '🎯 グラデーションを棒で編集'; gb.onclick = () => { const sec = document.getElementById('conversion'); if (sec) sec.scrollIntoView({ block: 'center', behavior: 'smooth' }); cvGizmo.toggle(); }; (mount || body).appendChild(gb); };
+  const B = {
+    cta() {
+      varRowX('cvCta', CV_CTAS, () => String(params.cvCta || 'button'), v => { params.cvCta = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof buildPanel === 'function') buildPanel(); } });
+      note('現行はボタン遷移。「フォーム（直置き）」にすると、見出し・本文の下に自作フォームを置きます(送信先は無し=見た目のみ)。切り替えると下に必要な項目だけ出ます。');
+    },
+    formStyle() {
+      varRowX('formStyle', CV_FORMSTYLES, () => String(params.formStyle || '1'), v => { params.formStyle = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      note('リキッドグラス系5案。背景グラデが磨りガラスに透けます。');
+    },
+    gradForm() {
+      varRowX('cvForm', CV_FORMS, () => cvFormKey(), v => { cvApplyForm(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      note('グラデの“形”。放射(現行)／縦グラデ／放射やわらか／斜め。色は現行のまま。');
+    },
+    gradGeom() {
+      segRow('形（詳細）', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
+      gizmoBtn();
+      note('棒編集: 両端で角度・広がり、途中で中心。下の数値と連動します。');
+      rows.push(slider('中心 横', 0, 1, 0.01, () => (cvv().gcx != null ? cvv().gcx : 0.60), v => { cvv().gcx = v; }, v => Math.round(v * 100) + '%', '明るい中心の横位置。0=左端 / 100%=右端。'));
+      rows.push(slider('中心 縦', 0, 1, 0.01, () => (cvv().gcy != null ? cvv().gcy : 0.00), v => { cvv().gcy = v; }, v => Math.round(v * 100) + '%', '明るい中心の縦位置。0=上端 / 100%=下端。'));
+      rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり、大きいほどゆるやか。'));
+      rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。'));
+      rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。'));
+    },
+    color() {
+      segRow('色の移ろい', [['なし', 'off'], ['往復', 'swing'], ['巡る', 'cycle']], () => (cvv().hueMode || 'off'), v => { cvv().hueMode = v; markDirty(); renderFrame(); });
+      rows.push(slider('1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '長いほどゆっくり移ろいます。', { fixedMax: true }));
+      rows.push(slider('白の入り具合', 0, 1, 0.05, () => (cvv().moodWhite != null ? cvv().moodWhite : 0.85), v => { cvv().moodWhite = v; }, v => Math.round(v * 100) + '%', '色替わりに白をどれだけ通すか。100%でにごりません。', { fixedMax: true }));
+    },
+    dither() {
+      rows.push(slider('粗さ（ドット）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px', '大きいほど粗い。1でカンプ。'));
+      rows.push(slider('階調（レベル）', 2, 12, 1, () => cvv().levels, v => { cvv().levels = v; }, v => Math.round(v) + '段', '少ないほどディザが強く。カンプは3段。'));
+      rows.push(slider('ディザの散り', 0, 2, 0.05, () => cvv().spread, v => { cvv().spread = v; }, v => '×' + v.toFixed(2), '大きいほど粒感。'));
+    },
+    flow() {
+      varRowX('cvSway', CV_SWAYS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      rows.push(slider('流れる速さ', 0, 1, 0.02, () => cvv().speed, v => { cvv().speed = v; }, v => '×' + v.toFixed(2), 'グラデが流れる速さ。0で停止。'));
+      rows.push(slider('うねりの強さ', 0, 0.6, 0.02, () => cvv().swell, v => { cvv().swell = v; }, v => '×' + v.toFixed(2), '流れのゆらぎ。'));
+      rows.push(slider('流れの細かさ', 0.3, 8, 0.1, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1), '大きいほど細かい流れ。'));
+      rows.push(slider('大きなうねり', 0, 0.35, 0.005, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; }, v => '×' + v.toFixed(3), 'なめらかな大波。粒っぽくなりません。', { fixedMax: true }));
+      rows.push(slider('ゆらゆら（傾き）', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; }, v => v.toFixed(1) + '°', '全体がゆっくり左右に傾く。0で停止。', { fixedMax: true }));
+      rows.push(slider('ゆらゆらの周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。', { fixedMax: true }));
+    },
+    edge() {
+      varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      rows.push(slider('溶け込みの深さ', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', '色が満色になるまでの距離。大きいほど徐々に溶け、境目の線が出ません。', { fixedMax: true }));
+    },
+    spacing() {
+      rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px', '減らすほど導入事例との間が詰まります。', { fixedMax: true }));
+      rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '見出しの上に色の面を足す。', { fixedMax: true }));
+      rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ボタンの下(フッターとの間)に足す。', { fixedMax: true }));
+      rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'あいだの余白。マイナスは導入事例の下の空きを詰めます(カードが切れない所で自動停止)。', { signed: true }));
+    },
+  };
+  /* --- 見せ方3案(UX検証)。切り替えるとパネルを組み直す --- */
+  sub(catCv, '🧪 パネルの見せ方（UX検証・3案）', null, { fixed: true });
+  segRow('見せ方', [['要素別', 'obj'], ['かんたん優先', 'easy'], ['文脈で', 'ctx']], () => (params.cvPanelUi || 'obj'), v => { params.cvPanelUi = v; markDirty(); if (typeof buildPanel === 'function') buildPanel(); });
+  note('要素別=編集する“もの”ごとに全部／かんたん優先=よく使う3つ＋詳細はたたむ／文脈で=いま必要なものだけ出す(CTAでフォーム項目が出入り)。');
+  const _cvui = params.cvPanelUi || 'obj';
+  if (_cvui === 'obj') {
+    sub(catCv, '① CTA（ボタン / フォーム）'); B.cta();
+    if (isForm()) { sub(catCv, '② フォームのスタイル'); B.formStyle(); }
+    sub(catCv, '③ 背景グラデーション'); B.gradForm(); B.gradGeom(); B.color();
+    sub(catCv, '④ 粒（ディザ）と流れ'); B.dither(); B.flow();
+    sub(catCv, '⑤ 境界（溶け込み）'); B.edge();
+    sub(catCv, '⑥ 余白・高さ'); B.spacing();
+  } else if (_cvui === 'easy') {
+    sub(catCv, 'よく使う'); B.cta(); if (isForm()) B.formStyle(); B.gradForm(); B.edge();
+    sub(catCv, '詳細：グラデの中心・色', true); B.gradGeom(); B.color();
+    sub(catCv, '詳細：粒・流れ', true); B.dither(); B.flow();
+    sub(catCv, '詳細：余白・高さ', true); B.spacing();
+  } else {
+    sub(catCv, 'いま編集中'); B.cta();
+    if (isForm()) { sub(catCv, 'フォーム'); B.formStyle(); }
+    sub(catCv, '背景グラデ'); B.gradForm(); B.gradGeom();
+    sub(catCv, '境界（溶け込み）'); B.edge();
+    sub(catCv, 'その他（色・粒・流れ・余白）', true); B.color(); B.dither(); B.flow(); B.spacing();
+  }
 
   /* ボタン。
      ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。
