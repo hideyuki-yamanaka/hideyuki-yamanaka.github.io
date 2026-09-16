@@ -224,12 +224,14 @@
   html:not(.mb).hm-10 .header { --hdr-cw: 250px; --hdr-py: 9px; --hdr-px: 18px; --hdr-logo-h: 28px;
     --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
   /* 11: 分離(ロゴ素／右に丸バーガー)。地色なし・バーガーだけ丸ガラス(t でフェード) */
-  html:not(.mb).hm-11 .header { --hdr-py: 22px; --hdr-px: 26px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
+  /* 11/12(分離): 【2026-09-17 ヒデさん指定】スクロールしてもレイアウトシフトさせない＝余白(24/50)もロゴ(47)も幅(100%)も変えず、
+     右のナビ(お問い合わせ含む)が右端で収縮して丸バーガーへ変わるだけ。地色は付けない。 */
+  html:not(.mb).hm-11 .header { --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
   html:not(.mb).hm-11 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
     background: rgba(255,255,255, calc(.62 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
     box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
   /* 12: 分離(左に丸ロゴマーク／右に丸バーガー) */
-  html:not(.mb).hm-12 .header { --hdr-py: 18px; --hdr-px: 22px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
+  html:not(.mb).hm-12 .header { --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
   /* 【2026-09-17 ヒデさん指定】分離案は「左ロゴは無加工(箱・影・マーク化なし)、右のバーガーだけプクッと浮くガラス箱」。
      ロゴは素のまま＝切断も断片も出ない。ロゴには何も足さない(基準の縦横比固定のみ)。 */
   html:not(.mb).hm-12 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
