@@ -134,8 +134,8 @@
   --ft-map-gap-y: 48px; /* 親階層どうしの【上下】の間隔 */
   --ft-head-gap: 16px;  /* 親の見出しと、その下の子リストの間 */
   --ft-item-gap: 10px;  /* 子どうしの間 */
-  --ft-logo-gap: 36px;  /* 作字と SNS の間 */
   --ft-logo-h: 260px;   /* 作字ロゴの高さ（PC） */
+  --ft-map-offset-y: 0px; /* 右カラム（サイトマップ）の上下のずらし */
 }
 
 :root {

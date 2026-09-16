@@ -187,8 +187,8 @@ type Params = {
     mapGapY: number;
     headGap: number;
     itemGap: number;
-    logoGap: number;
     logoH: number;
+    mapOffsetY: number;
   };
   expIntro: IntroPace;
   expPick: { pattern: number };
@@ -257,8 +257,8 @@ export default function TopTunePanel({
         mapGapY: 48,
         headGap: 16,
         itemGap: 10,
-        logoGap: 36,
         logoH: 260,
+        mapOffsetY: 0,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
@@ -296,8 +296,8 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-map-gap-y", `${f.mapGapY}px`);
       root.style.setProperty("--ft-head-gap", `${f.headGap}px`);
       root.style.setProperty("--ft-item-gap", `${f.itemGap}px`);
-      root.style.setProperty("--ft-logo-gap", `${f.logoGap}px`);
       root.style.setProperty("--ft-logo-h", `${f.logoH}px`);
+      root.style.setProperty("--ft-map-offset-y", `${f.mapOffsetY}px`);
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -600,13 +600,14 @@ export default function TopTunePanel({
                 hint: "左カラムの作字ロゴの高さ（PC幅のとき）。スマホは150px固定",
               },
               {
-                slider: "作字とSNSの間",
-                path: "footer.logoGap",
-                min: 0,
-                max: 120,
-                step: 2,
+                slider: "右カラムの上下位置",
+                path: "footer.mapOffsetY",
+                min: -240,
+                max: 240,
+                step: 4,
                 fmt: "px",
-                hint: "左カラムの作字ロゴと、その下のSNSアイコンの間",
+                signed: true,
+                hint: "サイトマップだけを上下にずらす（作字との高さを合わせる用）。マイナスで上へ",
               },
             ],
           },

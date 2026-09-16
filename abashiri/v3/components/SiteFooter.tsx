@@ -123,13 +123,6 @@ export const SITEMAP: { title: string; jump?: "spotAt" | "gourmetAt" | "eventsAt
   },
 ];
 
-/* 🟡仮置き：公式アカウントが確定したら差し替える */
-const SNS = [
-  { icon: "/img/sns-ig-circle.svg", label: "Instagram", href: "https://www.instagram.com/" },
-  { icon: "/img/sns-x.svg", label: "X", href: "https://x.com/" },
-  { icon: "/img/sns-yt.svg", label: "YouTube", href: "https://www.youtube.com/" },
-];
-
 /** トップ内のセクションへ飛ぶ（GlobalNav と同じ仕掛け） */
 function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
   const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
@@ -168,30 +161,6 @@ function Logo({ cls, light = false }: { cls: string; light?: boolean }) {
             471×390 が 1272×120 になっていた）。置き場所側でも self-start を付ける */
       className={`w-auto object-contain ${cls}`}
     />
-  );
-}
-
-function SnsRow({ light = false, size = 20 }: { light?: boolean; size?: number }) {
-  return (
-    <div className="flex items-center gap-5">
-      {SNS.map((s) => (
-        <a
-          key={s.label}
-          href={s.href}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={s.label}
-          className="transition-opacity duration-300 ease-standard hover:opacity-60"
-        >
-          <img
-            src={s.icon}
-            alt=""
-            style={{ height: size }}
-            className={`w-auto ${light ? "" : "[filter:brightness(0)] opacity-70"}`}
-          />
-        </a>
-      ))}
-    </div>
   );
 }
 
@@ -462,9 +431,9 @@ function SiteMapGrid({
 function Body({ pat, layout }: { pat: number; layout: number }) {
   /* 左の作字。サイトの顔なので大きく出す（2026-09-16 ヒデさん指示） */
   const logo = (cls: string) => (
-    <div className="flex shrink-0 flex-col items-start gap-[var(--ft-logo-gap)]">
+    /* 2026-09-16 ヒデさん指示で SNS アイコンは削除。左カラムは作字だけ */
+    <div className="flex shrink-0 flex-col items-start">
       <Logo cls={`${cls} self-start`} light />
-      <SnsRow light size={18} />
     </div>
   );
 
@@ -474,7 +443,9 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
       <PhotoStage align="end" pad="wide">
         <div className="flex w-full flex-col gap-[var(--ft-col-gap)]">
           {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
-          <SiteMapGrid light level={pat} />
+          <div style={{ transform: "translateY(var(--ft-map-offset-y))" }}>
+            <SiteMapGrid light level={pat} />
+          </div>
         </div>
       </PhotoStage>
     );
@@ -487,7 +458,12 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
       <PhotoStage align="end" pad="wide">
         <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
           {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
-          <div className="min-w-0 flex-1">
+          <div
+            className="min-w-0 flex-1"
+            /* 右カラムだけ上下にずらせる（作字との高さを合わせるため）。
+               transform なので周りのレイアウトは動かない */
+            style={{ transform: "translateY(var(--ft-map-offset-y))" }}
+          >
             <SiteMapGrid light level={pat} cols={2} />
           </div>
         </div>
@@ -501,7 +477,10 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
     <PhotoStage align="end" pad="wide">
       <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
         {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
-        <div className="min-w-0 flex-1">
+        <div
+          className="min-w-0 flex-1"
+          style={{ transform: "translateY(var(--ft-map-offset-y))" }}
+        >
           <SiteMapGrid light level={pat} />
         </div>
       </div>
