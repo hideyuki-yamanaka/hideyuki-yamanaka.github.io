@@ -122,7 +122,8 @@
  "events": {
   "pattern": 1,
   "tailPad": 0,
-  "cardRatio": 0
+  "cardRatio": 0,
+  "peelSpeed": 22
  },
  "pageTrans": {
   "pattern": 1

@@ -1,7 +1,7 @@
 "use client";
 
 /*
- * 体験セクション｜奥行きのある3Dカルーセル 2案（案34・35 ＝ パネル表示では案12・13）
+ * 体験セクション｜奥行きのある3Dカルーセル（案34）
  *
  * 2026-09-17 大改修。カルーセルの中身は components/Carousels.tsx に一本化した。
  * ここは「本番のデータを渡し、スクロール連動にする」ための入口。
@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMotionValueEvent } from "framer-motion";
 import type { MotionValue } from "framer-motion";
-import { Carousel3D, CarouselBend, type CarouselItem } from "./Carousels";
+import { Carousel3D, type CarouselItem } from "./Carousels";
 import { ITEMS, PinStage, afterHold } from "./eventParts";
 
 export const EVENT_RATIO_EVENT = "abashiri:event-card-ratio";
@@ -41,10 +41,6 @@ export const EVENT_3D_PATTERNS: Record<
   34: {
     name: "案34 奥行きの3Dカルーセル",
     note: "閉じた円環にカードが並び、中央が正面・左右は中央寄りの辺を手前にして奥へ回り込む。画面が固定され、スクロールすると写真が右から左へ1枚ずつ切り替わり、4枚目まで見ると下へ進めます。カードの縦横比は下のつまみで変えられます",
-  },
-  35: {
-    name: "案35 湾曲するカルーセル",
-    note: "斜めから見た円筒に、面そのものが湾曲したカードが並ぶ。ドラッグやホイールで流れ、離すと慣性で自然に減速する（Three.js／WebGL。頂点を実際に曲げていて、写真の比率は崩れない）",
   },
 };
 
@@ -145,14 +141,6 @@ export function ExtraPattern5({ pat }: { pat: number; p: MotionValue<number> }) 
     return (
       /* 4枚ぶん送るのに必要な長さ。送り終わると固定が外れて下へ進める */
       <PinStage length={3.4}>{(q) => <Pinned3D q={q} ratio={ratio} />}</PinStage>
-    );
-  }
-  if (pat === 35) {
-    return (
-      <div className="flex w-full flex-col gap-10">
-        <CenterTitle />
-        <CarouselBend items={CARDS} heading={false} />
-      </div>
     );
   }
   return null;

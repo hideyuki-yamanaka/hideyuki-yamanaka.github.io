@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 /*
- * 体験セクションの共通部品（EventSection.tsx と EventVariants2.tsx が使う）
+ * 体験セクションの共通部品（EventSection.tsx と EventVariants4/5.tsx が使う）
  * 2026-09-16 に EventSection.tsx から切り出した。
  * 案が増えてファイルが太ってきたので、データ・文字組み・カードの枠だけをここに置く。
  */
@@ -231,4 +231,34 @@ export function afterHold(
   end = 0.92
 ): MotionValue<number> {
   return useTransform(q, [hold, end], [0, 1], { clamp: true });
+}
+
+/** 「一定の速さ」で追いかける進み具合を返す。
+    【2026-09-17 ヒデさん指示】
+      「スクロールの強さによってスピードを変えるのではなく、一定の速度に。
+        どんだけ強くスクロールしても、どうしても一定の速度で流れる」
+    → スクロールは【行き先】を決めるだけ。実際の位置は毎フレーム
+      「決められた速さ × 経った時間」ぶんしか進まない。
+      速く長くスクロールしても、流れる速さは変わらない。
+    速さは CSS 変数 --ev-peel-speed（1秒あたり全体の何割進むか）で変えられる。 */
+export function useConstantSpeed(
+  src: MotionValue<number>,
+  fallbackSpeed = 0.22
+) {
+  const out = useMotionValue(0);
+  useAnimationFrame((_t, deltaMs) => {
+    /* 長時間バックグラウンドだった後の巨大な delta は切る */
+    const dt = Math.min(0.05, Math.max(0.001, deltaMs / 1000));
+    const raw = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--ev-peel-speed")
+    );
+    const speed = Number.isFinite(raw) && raw > 0 ? raw : fallbackSpeed;
+    const target = src.get();
+    const cur = out.get();
+    const d = target - cur;
+    if (d === 0) return;
+    const step = speed * dt;
+    out.set(Math.abs(d) <= step ? target : cur + Math.sign(d) * step);
+  });
+  return out;
 }

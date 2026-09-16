@@ -33,11 +33,8 @@ import {
   CardLink,
   HTitle,
   ITEMS,
-  VTitle,
   type EventItem,
 } from "./eventParts";
-import { EVENT_EXTRA_PATTERNS, ExtraPattern } from "./EventVariants2";
-import { EVENT_EXTRA3_PATTERNS, ExtraPattern3 } from "./EventVariants3";
 import { EVENT_KV_PATTERNS, ExtraPattern4 } from "./EventVariants4";
 import { EVENT_3D_PATTERNS, ExtraPattern5 } from "./EventVariants5";
 
@@ -54,22 +51,10 @@ export const EVENT_LAYOUT_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  /* 全案とも「画面の真ん中に来た時がいちばん良く見える」設計。
-     案1・案6 が採用候補で、他はその2つから広げたバリエーション */
-  1: { name: "案1", note: "【候補】育つ一列。小さな4枚が、中央に来るまでに実寸まで伸びる" },
-  2: { name: "案2", note: "育つ一列（縦書き見出し）。案1と同じ育ち方で、見出しを縦書きに" },
-  3: { name: "案3", note: "中央から開く一列。内側に寄っていた4枚が、外へ広がりながら育つ" },
-  4: { name: "案4", note: "縦に伸びる一列。低い帯から上下に開いて、背の高い写真になる" },
-  /* 【2026-09-16 ヒデさん依頼】「デザインを改めて考えてほしい。見飽きない
-     ユニークなインタラクションと、写真を魅力的に見せるもの。10案」→ 案11〜20。
-     中身は EventVariants2.tsx */
-  ...EVENT_EXTRA_PATTERNS,
-  /* 【2026-09-16 ヒデさん依頼】さらに10案。机の上／四方に散る はご指定のアイデア、
-     残りは没入と3Dトランスフォームで。中身は EventVariants3.tsx */
-  ...EVENT_EXTRA3_PATTERNS,
+  1: { name: "案1", note: "育つ一列。小さな4枚が、中央に来るまでに実寸まで伸びる" },
   /* 【2026-09-17】ヒデさんのラフ（Figmaカンプ）からの3案。中身は EventVariants4.tsx */
   ...EVENT_KV_PATTERNS,
-  /* 【2026-09-17】奥行きの3Dカルーセル2案。中身は EventVariants5.tsx */
+  /* 【2026-09-17】奥行きの3Dカルーセル。中身は EventVariants5.tsx */
   ...EVENT_3D_PATTERNS,
 };
 
@@ -112,14 +97,6 @@ function GrowShot({
   );
 }
 
-/* 0〜1 に収めた区間を作る小道具（負や1超えを絶対に作らない） */
-const seg = (i: number, n: number, pad = 0.12) => {
-  const w = 1 / n;
-  const from = Math.max(0, Math.min(1, i * w));
-  const to = Math.max(from + 0.0001, Math.min(1, (i + 1) * w + pad));
-  return [from, to] as const;
-};
-
 /* 【2026-09-16 ヒデさん指示】「3・4枚目も1・2枚目と同じ大きさで100%になってほしい」
    これまでは1枚ずつ順番に終わる区間（seg）だったので、4枚目はセクションが
    ぴったり中央に来るまで小さいままだった。
@@ -135,204 +112,31 @@ const segTogether = (i: number, end = 0.62, stagger = 0.07) => {
 /* ── 案の中身 ─────────────────────────────
    ⚠️ ここに来る p は「画面中央で 1 になる進捗」。
    セクションが画面の真ん中に来た時がいちばん良く見える状態で、
-   そこから先は 1 のまま保たれる（通り過ぎてから育つ挙動を 2026-09-15 に是正） */
+   そこから先は 1 のまま保たれる */
 
 function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
-  switch (pat) {
-    /* 案1【採用候補】育つ一列：小さな4枚が、中央に来るまでに実寸へ伸びる */
-    case 1:
-      return (
-        <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-          <HTitle className="px-6 sm:px-[147px]" />
-          <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
-            {ITEMS.map((it, i) => {
-              const [a, b] = segTogether(i);
-              return (
-                <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
-                  <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[560px] w-full" />
-                  <Caption it={it} />
-                </div>
-              );
-            })}
-          </div>
+  /* 案1 育つ一列：小さな4枚が、中央に来るまでに実寸へ伸びる */
+  if (pat === 1) {
+    return (
+      <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
+        <HTitle className="px-6 sm:px-[147px]" />
+        <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
+          {ITEMS.map((it, i) => {
+            const [a, b] = segTogether(i);
+            return (
+              <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
+                <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[560px] w-full" />
+                <Caption it={it} />
+              </div>
+            );
+          })}
         </div>
-      );
-
-    /* ── ここから下は 案1 の系統から広げたバリエーション ── */
-
-    /* 案2 育つ一列（縦書き見出し）：案1と同じ育ち方で、見出しだけ縦書き＋右付け */
-    case 2:
-      return (
-        <div className="flex w-full items-start gap-8 sm:gap-[69px] pl-6 sm:pl-[147px]">
-          <VTitle className="mt-[40px]" />
-          <div className="flex min-w-0 flex-1 gap-[5px]">
-            {ITEMS.map((it, i) => {
-              const [a, b] = segTogether(i);
-              return (
-                <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
-                  <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[600px] w-full" />
-                  <Caption it={it} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-
-    /* 案3 中央から左右へ開く一列：真ん中にかたまった4枚が、外へ広がりながら育つ */
-    case 3:
-      return <SpreadRow p={p} />;
-
-    /* 案4 縦に伸びる一列：低い帯だった4枚が、中央で背の高い写真になる */
-    case 4:
-      return <TallGrowRow p={p} />;
-
-
-    /* 案11・16=Variants2 ／ 21〜30=Variants3 ／ 31〜33=Variants4 ／ 34・35=Variants5 */
-    default:
-      if (pat >= 34) return <ExtraPattern5 pat={pat} p={p} />;
-      if (pat >= 31) return <ExtraPattern4 pat={pat} p={p} />;
-      if (pat >= 21) return <ExtraPattern3 pat={pat} p={p} />;
-      return <ExtraPattern pat={pat} p={p} />;
+      </div>
+    );
   }
-}
-
-/* 案3 中央から左右へ開く一列 */
-function SpreadRow({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <HTitle className="px-6 sm:px-[147px]" />
-      <div className="flex w-full justify-center gap-[5px] px-4 sm:px-[40px]">
-        {ITEMS.map((it, i) => (
-          <SpreadCell key={it.title} it={it} i={i} p={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
-function SpreadCell({
-  it,
-  i,
-  p,
-}: {
-  it: EventItem;
-  i: number;
-  p: MotionValue<number>;
-}) {
-  /* 内側へ寄っていた状態から、定位置へ戻りながら育つ */
-  const pulls = [180, 60, -60, -180];
-  const x = useTransform(p, [0, 1], [pulls[i], 0]);
-  const s = useTransform(p, [0, 1], [0.6, 1]);
-  const o = useTransform(p, [0, 0.5], [0.4, 1]);
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-5">
-      <CardLink it={it} className="h-[540px] w-full">
-        <motion.img
-          src={it.img}
-          alt={it.title}
-          className="size-full object-cover"
-          style={{ x, scale: s, opacity: o }}
-        />
-      </CardLink>
-      <Caption it={it} />
-    </div>
-  );
-}
-
-/* 案4 縦に伸びる一列（低い帯 → 背の高い写真） */
-function TallGrowRow({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <HTitle className="px-6 sm:px-[147px]" />
-      <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
-        {ITEMS.map((it, i) => (
-          <TallCell key={it.title} it={it} i={i} p={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
-function TallCell({
-  it,
-  i,
-  p,
-}: {
-  it: EventItem;
-  i: number;
-  p: MotionValue<number>;
-}) {
-  const [a, b] = seg(i, 4, 0.35);
-  /* 上下だけを開く（clip-path なのでレイアウトは動かない） */
-  const clip = useTransform(p, [a, b], ["inset(35% 0% 35% 0%)", "inset(0% 0% 0% 0%)"]);
-  const s = useTransform(p, [a, b], [1.14, 1]);
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-5">
-      <motion.div className="h-[620px] w-full overflow-hidden" style={{ clipPath: clip }}>
-        <motion.img
-          src={it.img}
-          alt={it.title}
-          className="size-full object-cover"
-          style={{ scale: s }}
-        />
-      </motion.div>
-      <Caption it={it} />
-    </div>
-  );
-}
-
-function GridCell({
-  it,
-  i,
-  p,
-}: {
-  it: EventItem;
-  i: number;
-  p: MotionValue<number>;
-}) {
-  /* 中央に重なった状態 → 2×2 の定位置へ */
-  const col = i % 2;
-  const row = Math.floor(i / 2);
-  const x = useTransform(p, [0, 1], [0, col === 0 ? -230 : 230]);
-  const y = useTransform(p, [0, 1], [0, row === 0 ? -210 : 210]);
-  const s = useTransform(p, [0, 1], [0.72, 1]);
-  return (
-    <motion.div
-      className="absolute left-1/2 top-1/2 h-[380px] w-[440px]"
-      style={{ x, y, scale: s, marginLeft: -220, marginTop: -190, zIndex: 10 - i }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
-function DepthCell({
-  it,
-  i,
-  p,
-}: {
-  it: EventItem;
-  i: number;
-  p: MotionValue<number>;
-}) {
-  /* 中央寄りの2枚は大きく、外側の2枚は少し小さく落ち着く */
-  const near = i === 1 || i === 2;
-  const s = useTransform(p, [0, 1], [0.66, near ? 1.04 : 0.92]);
-  const o = useTransform(p, [0, 0.6], [0.35, near ? 1 : 0.8]);
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-5">
-      <CardLink it={it} className="h-[560px] w-full">
-        <motion.img
-          src={it.img}
-          alt={it.title}
-          className="size-full object-cover"
-          style={{ scale: s, opacity: o }}
-        />
-      </CardLink>
-      <Caption it={it} />
-    </div>
-  );
+  /* 案31〜33＝EventVariants4 ／ 案34＝EventVariants5 */
+  if (pat >= 34) return <ExtraPattern5 pat={pat} p={p} />;
+  return <ExtraPattern4 pat={pat} p={p} />;
 }
 
 export default function EventSection() {

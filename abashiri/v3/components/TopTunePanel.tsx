@@ -183,7 +183,7 @@ type Params = {
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
-  events: { pattern: number; tailPad: number; cardRatio: number };
+  events: { pattern: number; tailPad: number; cardRatio: number; peelSpeed: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
@@ -258,7 +258,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO }, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 22 }, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
@@ -324,6 +324,8 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
       root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
+      /* 重ね写真が流れる速さ（1秒あたり全体の何割進むか）。単位なしの数 */
+      root.style.setProperty("--ev-peel-speed", String(params.events.peelSpeed / 100));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
@@ -458,7 +460,7 @@ export default function TopTunePanel({
            v33: 古いブラウザ保存値を一斉破棄。自動焼き込み（tune-defaults.json）導入前に
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
-        version: 38,
+        version: 39,
         /* ⚠️ autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
@@ -1314,6 +1316,8 @@ export default function TopTunePanel({
                 pills: "レイアウトの案",
                 path: "events.pattern",
                 immediate: true,
+                /* 案によって出す項目が変わるので、選んだら組み直す */
+                rebuild: true,
                 autoNum: "案",
                 options: Object.entries(EVENT_LAYOUT_PATTERNS).map(([v, p]) => ({
                   name: p.name,
@@ -1323,11 +1327,25 @@ export default function TopTunePanel({
                 })),
               },
               {
-                seg: "カードの縦横比（3Dカルーセルの案）",
+                slider: "写真が流れる速さ",
+                path: "events.peelSpeed",
+                min: 5,
+                max: 80,
+                step: 1,
+                unit: "%/秒",
+                immediate: true,
+                /* 重ね写真の案だけ */
+                when: (p: Params) => p.events.pattern === 31 || p.events.pattern === 32,
+                hint: "重なった写真が右へ流れていく速さ。1秒あたり全体の何％進むか。スクロールの強さや長さに関わらず、いつもこの速さで流れます。",
+              },
+              {
+                seg: "カードの縦横比",
                 path: "events.cardRatio",
                 immediate: true,
+                /* 3Dカルーセルの案を選んだ時だけ出す（他の案には関係が無い） */
+                when: (p: Params) => p.events.pattern >= 34,
                 options: CARD_RATIOS.map((r, i) => ({ name: r.name, value: i })),
-                hint: "案「奥行きの3Dカルーセル」「湾曲するカルーセル」で使うカードの形。写真は object-fit: cover で収まるので、比率を変えても伸びません。",
+                hint: "3Dカルーセルのカードの形。写真は cover で収まるので、比率を変えても伸びません。",
               },
               {
                 slider: "セクションの下の余白",

@@ -31,7 +31,13 @@
  */
 import Link from "next/link";
 import { cubicBezier, motion, useTransform, type MotionValue } from "framer-motion";
-import { ITEMS, PinStage, afterHold, type EventItem } from "./eventParts";
+import {
+  ITEMS,
+  PinStage,
+  afterHold,
+  useConstantSpeed,
+  type EventItem,
+} from "./eventParts";
 
 export const EVENT_KV_PATTERNS: Record<
   number,
@@ -107,8 +113,8 @@ function StackCard({
        あわせて PinStage の長さも 2.6 → 3.6画面ぶんに伸ばしてある。
        これで1枚が抜けきるまでのスクロール量が約2倍になる */
   const order = ITEMS.length - 1 - i;
-  const from = Math.min(0.7, 0.1 + order * 0.22);
-  const to = Math.min(1, from + 0.3);
+  const from = Math.min(0.7, 0.08 + order * 0.24);
+  const to = Math.min(1, from + 0.32);
   const last = i === 0; /* 台紙になる1枚は残す */
   /* 直線だと機械的に見えるので、出だしと終わりをやわらげる */
   const EASE_OUT = cubicBezier(0.32, 0, 0.2, 1);
@@ -187,7 +193,9 @@ function MarqueeStack() {
   return <PinStage length={3.6}>{(q) => <MarqueeScene q={q} />}</PinStage>;
 }
 function MarqueeScene({ q }: { q: MotionValue<number> }) {
-  const p = afterHold(q, 0.18, 0.94);
+  /* スクロールは「どこまで進んでよいか」を決めるだけ。
+     実際の流れは一定の速さ（--ev-peel-speed）で追いかける */
+  const p = useConstantSpeed(afterHold(q, 0.18, 0.99));
   return (
     <Frame
       full={
@@ -224,7 +232,7 @@ function SideTextStack() {
   return <PinStage length={3.6}>{(q) => <SideTextScene q={q} />}</PinStage>;
 }
 function SideTextScene({ q }: { q: MotionValue<number> }) {
-  const p = afterHold(q, 0.18, 0.94);
+  const p = useConstantSpeed(afterHold(q, 0.18, 0.99));
   return (
     <Frame>
       <p
