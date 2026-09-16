@@ -133,9 +133,6 @@
     '.tp.closed .tp-body,.tp.closed .tp-foot{display:none;}',
     '.tp-body{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:0 10px 10px;}',
     '.tp-foot{flex:0 0 auto;padding:8px 10px 10px;border-top:1px solid #ececec;background:rgba(255,255,255,.6);}',
-    '.tp-search{width:100%;padding:5px 9px;margin:8px 0 2px;border:1px solid #e2e2e2;border-radius:6px;',
-    '  font:inherit;color:inherit;background:#fff;}',
-    '.tp-search::placeholder{color:#bbb;}',
     /* 大カテゴリ */
     /* 枠・地・余白は anyflow の .cat の実測に合わせた */
     '.tp-cat{border:1px solid #ececec;border-radius:8px;margin-top:10px;overflow:hidden;background:#fff;}',
@@ -249,9 +246,9 @@
     '  .tp-head{cursor:default;padding:12px 14px;}',
     '  .tp-z{display:none;}',
     '}',
-    /* 項目ツール（🗑削除・⠿並び替え）と削除確認モーダル（2026-08-23） */
-    /* 2026-09-16 anyflow 準拠：↺（この項目だけ元に戻す）は常に見えている。
-       ⠿（並び替え）と🗑（パネルから消す）は、行にマウスを乗せた時だけ出す。
+    /* 項目ツール：anyflow 準拠で ↺（この項目だけ元の値に戻す）だけ。
+       2026-09-16 に 🗑（項目を消す）・⠿（並び替え）は撤去した。
+       消せるのは「デザイン案」だけ＝ピルの ⋯ メニュー。
        ↺のぶんだけ右に場所を空けておく（値の文字と重ならないように） */
     '.tp-item{position:relative;padding-right:18px;}',
     '.tp-item-tools{position:absolute;right:-2px;top:1px;display:flex;gap:0;align-items:center;z-index:6;',
@@ -262,12 +259,6 @@
     '  font:inherit;font-size:10px;line-height:1.4;padding:2px 6px;cursor:pointer;}',
     '.tp-gbtn:hover{background:#f3f3f3;color:#111;}',
     '.tp.dark .tp-gbtn{background:#1b1b1e;border-color:#3a3a3f;color:#bbb;}',
-    '.tp-item-grab,.tp-item-del{display:none;}',
-    '.tp-item:hover>.tp-item-tools>.tp-item-grab,.tp-item:hover>.tp-item-tools>.tp-item-del{display:inline-block;}',
-    '.tp-item-grab{cursor:grab;opacity:.5;font-size:11px;padding:2px 3px;user-select:none;touch-action:none;}',
-    '.tp-item-del{border:none;background:none;cursor:pointer;font-size:10px;opacity:.5;padding:2px 3px;line-height:1;}',
-    '.tp-item-grab:hover,.tp-item-del:hover{opacity:1;}',
-    '.tp-item.tp-dragging{opacity:.45;outline:1.5px dashed #FF5D97;border-radius:6px;}',
     '.tp-modal{position:absolute;inset:0;background:rgba(20,22,30,.35);display:flex;align-items:center;justify-content:center;z-index:60;border-radius:14px;}',
     '.tp-modal-box{background:#fff;border:1px solid #e4e4e4;border-radius:10px;padding:14px;max-width:86%;box-shadow:0 10px 34px rgba(0,0,0,.22);}',
     '.tp-modal-msg{font-size:11px;line-height:1.7;white-space:pre-line;margin-bottom:12px;color:#333;}',
@@ -370,7 +361,7 @@
     '.tp.dark .tp-row>label{color:#aaa;}',
     '.tp.dark .tp-val{color:#ddd;}',
     '.tp.dark .tp-grp{border-top-color:#2e2e32;}',
-    '.tp.dark .tp-seg,.tp.dark .tp-pill,.tp.dark .tp-btns button,.tp.dark .tp-search,',
+    '.tp.dark .tp-seg,.tp.dark .tp-pill,.tp.dark .tp-btns button,',
     '.tp.dark .tp-row select,.tp.dark .tp-row input[type=text],.tp.dark .tp-row input[type=number],.tp.dark .tp-row textarea',
     '  {background:#1b1b1e;border-color:#3a3a3f;color:#eee;}',
     '.tp.dark .tp-seg button{background:#1b1b1e;color:#bbb;}',
@@ -412,9 +403,6 @@
     this.catOpen = {};
     this.secOpen = {};
     this.activeTab = null;
-    /* 項目のカスタマイズ（🗑削除・⠿並び替え。2026-08-23 ヒデさん依頼） */
-    this.hiddenItems = [];
-    this.itemOrder = {};
     this._settleTimer = 0;
     this._muted = false;
 
@@ -469,8 +457,6 @@
         closed: this.el.classList.contains('closed'),
         cats: this.catOpen,
         scroll: this.body.scrollTop,
-        hidden: this.hiddenItems,
-        order: this.itemOrder,
         /* 幅の既定を 360→450 に上げる一度きりの移行を済ませた印。
            これが付いていれば、自分で 360px に狭めても勝手に広げ直さない */
         w450: true
@@ -509,8 +495,6 @@
     if (ui && ui.cats) this.catOpen = ui.cats;
     if (ui && ui.secs) this.secOpen = ui.secs;
     if (ui && ui.tab) this.activeTab = ui.tab;
-    if (ui && ui.hidden) this.hiddenItems = ui.hidden;
-    if (ui && ui.order) this.itemOrder = ui.order;
     var startClosed = ui ? ui.closed : !!this.cfg.startClosed;
     this.el.classList.toggle('closed', !!startClosed);
     this._restoreScroll = (ui && ui.scroll) || 0;
@@ -763,16 +747,7 @@
     this._itemByKey = {};
 
     /* 検索ボックス */
-    if (this.cfg.search !== false) {
-      var s = document.createElement('input');
-      s.className = 'tp-search';
-      s.type = 'search';
-      s.placeholder = '項目を検索…';
-      s.value = this._query || '';
-      s.addEventListener('input', function () { self._filter(s.value); });
-      this.body.appendChild(s);
-    }
-
+    /* 【2026-09-16 ヒデさん指示】項目の検索バーは調整パネルに入れない */
     var schema = typeof this.cfg.schema === 'function' ? this.cfg.schema(this.params) : (this.cfg.schema || []);
     var cats = schema.filter(function (cat) { return !(cat.when && !cat.when(self.params)); });
 
@@ -806,7 +781,6 @@
     this._renderFoot();
     this.body.scrollTop = keepScroll;
     this._restoreScroll = 0;
-    if (this._query) this._filter(this._query);
     return this;
   };
 
@@ -854,7 +828,6 @@
         if (item.sub === undefined) return;
       }
     });
-    this._applyOrder();
   };
 
   Panel.prototype._renderCat = function (cat) {
@@ -881,7 +854,6 @@
     content.dataset.okey = title;
     this._mount = content;
     (cat.items || []).forEach(function (item) { self._renderItem(item, content); });
-    this._applyOrder();
   };
 
   Panel.prototype._renderItem = function (item, catBody) {
@@ -940,11 +912,10 @@
     }
     if (item.custom) { item.custom(mount, this); return; }
 
-    /* 値を持つ行は .tp-item で包む：🗑削除＋⠿並び替えの単位になる（2026-08-23） */
+    /* 値を持つ行は .tp-item で包む：↺（この項目だけ戻す）を置く単位 */
     var label = item.slider || item.pills || item.toggle || item.select ||
       item.color || item.text || item.seg || item.button || '';
     var ikey = item.path || (label ? 'k:' + label : '');
-    if (ikey && this.hiddenItems.indexOf(ikey) >= 0) return; /* 削除済みは出さない */
     var host = mount;
     var wrapItem = null;
     if (ikey) {
@@ -1016,137 +987,38 @@
     return b;
   };
 
-  /* --- 項目ごとのツール（🗑削除・⠿並び替え）。2026-08-23 ヒデさん依頼 --- */
+  /* --- 項目ごとのツール（↺ 元に戻す だけ） --- */
+  /* 【2026-09-16 ヒデさん指示・anyflow に合わせた】
+     anyflow では「デザイン案（バリエーション）」だけが ⋯ メニューから
+     削除・上書きでき、スライダーなどの【indicator 的な行】は ↺ で戻すだけ。
+     網走はどの行でも 🗑 で消せてしまっていたので、🗑 と ⠿ を撤去した。
+     ・案 1粒ずつ → ピルの ⋯（★ピン留め／⤓上書き／↺解除／🗑削除）
+     ・行（スライダー・ON/OFF・選択・文字）→ ↺ だけ */
   Panel.prototype._itemTools = function (wrap, item, row) {
     var self = this;
+    if (!item || item.path === undefined) return;
     var tools = document.createElement('div');
     tools.className = 'tp-item-tools';
-    /* ↺ この項目だけ既定値に戻す（2026-09-16 anyflow 準拠）。
-       全体リセットだと他の調整まで巻き添えになるため、行ごとに戻せるようにした */
-    if (item && item.path !== undefined) {
-      var rst = document.createElement('button');
-      rst.type = 'button';
-      rst.className = 'tp-item-rst';
-      rst.textContent = '↺';
-      rst.title = 'この項目だけ最初の値に戻す';
-      rst.addEventListener('click', function (e) {
-        e.stopPropagation();
-        self._set(item, clone(self._default(item)));
-        if (row && row._sync) row._sync();
-        self._changed({ path: item.path });
-        self.flash('「' + String(item.slider || item.pills || item.toggle || item.select ||
-          item.color || item.text || item.seg || 'この項目') + '」を最初の値に戻しました');
-      });
-      tools.appendChild(rst);
-    }
-    var grab = document.createElement('span');
-    grab.className = 'tp-item-grab';
-    grab.textContent = '⠿';
-    grab.title = 'ドラッグで並び替え';
-    grab.addEventListener('pointerdown', function (e) { self._dragItem(wrap, e); });
-    var del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'tp-item-del';
-    del.textContent = '🗑';
-    del.title = 'この項目をパネルから削除（あとで戻せます）';
-    del.addEventListener('click', function (e) { e.stopPropagation(); self._confirmDelete(wrap); });
-    tools.append(grab, del);
+    var rst = document.createElement('button');
+    rst.type = 'button';
+    rst.className = 'tp-item-rst';
+    rst.textContent = '↺';
+    rst.title = 'この項目だけ最初の値に戻す';
+    rst.addEventListener('click', function (e) {
+      e.stopPropagation();
+      self._set(item, clone(self._default(item)));
+      if (row && row._sync) row._sync();
+      self._changed({ path: item.path });
+      self.flash('「' + String(item.slider || item.pills || item.toggle || item.select ||
+        item.color || item.text || item.seg || 'この項目') + '」を最初の値に戻しました');
+    });
+    tools.appendChild(rst);
     wrap.appendChild(tools);
   };
 
-  /* 削除の確認モーダル（パネル内に重ねる） */
-  Panel.prototype._confirmDelete = function (wrap) {
-    var self = this;
-    var old = this.el.querySelector('.tp-modal');
-    if (old) old.remove();
-    var m = document.createElement('div');
-    m.className = 'tp-modal';
-    var box = document.createElement('div');
-    box.className = 'tp-modal-box';
-    var msg = document.createElement('div');
-    msg.className = 'tp-modal-msg';
-    msg.textContent = '「' + (wrap._label || wrap.dataset.key) + '」をパネルから削除しますか？\n\nサイトの動きは今の値のまま変わりません。フッターの「削除した項目を戻す」でいつでも復活できます。';
-    var btns = document.createElement('div');
-    btns.className = 'tp-btns';
-    var no = document.createElement('button');
-    no.type = 'button';
-    no.textContent = 'やめる';
-    no.addEventListener('click', function () { m.remove(); });
-    var ok = document.createElement('button');
-    ok.type = 'button';
-    ok.textContent = '削除する';
-    ok.className = 'danger';
-    ok.addEventListener('click', function () {
-      self.hiddenItems.push(wrap.dataset.key);
-      self._saveUI();
-      m.remove();
-      self.rebuild(); /* フッターの「戻す」件数も更新 */
-      self.flash('削除しました（フッターから戻せます）');
-    });
-    btns.append(no, ok);
-    box.append(msg, btns);
-    m.appendChild(box);
-    m.addEventListener('click', function (e) { if (e.target === m) m.remove(); });
-    this.el.appendChild(m);
-  };
+  /* 【2026-09-16】項目の削除・並び替え（_confirmDelete / _dragItem / _applyOrder）は
+     anyflow に合わせて撤去した。消せるのは「案」だけ（ピルの ⋯ メニュー） */
 
-  /* ⠿ドラッグで同じセクション内の並び替え */
-  Panel.prototype._dragItem = function (wrap, e) {
-    var self = this;
-    e.preventDefault();
-    e.stopPropagation();
-    var parent = wrap.parentNode;
-    wrap.classList.add('tp-dragging');
-    var move = function (ev) {
-      var els = document.elementsFromPoint(ev.clientX, ev.clientY);
-      for (var i = 0; i < els.length; i++) {
-        var t = els[i].closest ? els[i].closest('.tp-item') : null;
-        if (t && t !== wrap && t.parentNode === parent) {
-          var r = t.getBoundingClientRect();
-          parent.insertBefore(wrap, ev.clientY < r.top + r.height / 2 ? t : t.nextSibling);
-          break;
-        }
-      }
-    };
-    var up = function () {
-      removeEventListener('pointermove', move);
-      removeEventListener('pointerup', up);
-      wrap.classList.remove('tp-dragging');
-      var okey = parent.dataset.okey || '';
-      var keys = [];
-      for (var c = parent.firstChild; c; c = c.nextSibling) {
-        if (c.classList && c.classList.contains('tp-item')) keys.push(c.dataset.key);
-      }
-      self.itemOrder[okey] = keys;
-      self._saveUI();
-      self.flash('並び順を保存しました（このブラウザに記憶されます）');
-    };
-    addEventListener('pointermove', move);
-    addEventListener('pointerup', up);
-  };
-
-  /* 保存済みの並び順を各セクションへ適用 */
-  Panel.prototype._applyOrder = function () {
-    var self = this;
-    this.body.querySelectorAll('[data-okey]').forEach(function (cont) {
-      var saved = self.itemOrder[cont.dataset.okey];
-      if (!saved || !saved.length) return;
-      var items = [];
-      for (var c = cont.firstChild; c; c = c.nextSibling) {
-        if (c.classList && c.classList.contains('tp-item')) items.push(c);
-      }
-      if (items.length < 2) return;
-      var anchor = items[items.length - 1].nextSibling;
-      items.slice().sort(function (a, b) {
-        var ia = saved.indexOf(a.dataset.key), ib = saved.indexOf(b.dataset.key);
-        if (ia < 0) ia = 999 + items.indexOf(a);
-        if (ib < 0) ib = 999 + items.indexOf(b);
-        return ia - ib;
-      }).forEach(function (el) { cont.insertBefore(el, anchor); });
-    });
-  };
-
-  /* --- スライダー --- */
   Panel.prototype._slider = function (item, mount) {
     var self = this;
     var min = item.min === undefined ? 0 : item.min;
@@ -1926,9 +1798,8 @@
           if ((v.hidden[k] || []).length) hidden[k] = v.hidden[k].slice();
         });
         var nVar = Object.keys(hidden).reduce(function (a, k) { return a + hidden[k].length; }, 0);
-        var nItem = self.hiddenItems.length;
-        var payload = { panel: self.storageKey, hiddenVariants: hidden, hiddenItems: self.hiddenItems.slice() };
-        var text = (nVar || nItem
+        var payload = { panel: self.storageKey, hiddenVariants: hidden };
+        var text = (nVar
           ? '【完全削除の依頼】以下の案・項目をコードから恒久的に消してください。\n'
           : '【完全削除の依頼】新しく消したものはありません。\n') + JSON.stringify(payload, null, 1);
         self._copy(text, function (ok) {
@@ -1938,21 +1809,6 @@
       }
     });
 
-    /* 🗑で削除した「項目」がある時だけ、戻すボタンを足す（案の復元はピルの横の ↺） */
-    if (this.hiddenItems.length) {
-      defs.push({
-        label: '🗑 消した項目を戻す(' + this.hiddenItems.length + ')',
-        onClick: function () {
-          var names = self.hiddenItems.slice();
-          self._pick('消した項目を戻す', '戻したい項目の「戻す」を押してください。', names, function (nm) {
-            var i = self.hiddenItems.indexOf(nm);
-            if (i >= 0) self.hiddenItems.splice(i, 1);
-            self._saveUI();
-            self.rebuild();
-          });
-        }
-      });
-    }
 
     var list = (this.cfg.footer || []).concat(this.cfg.footerDefaults === false ? [] : defs);
     list.forEach(function (b) {
@@ -2066,62 +1922,7 @@
     return this;
   };
 
-  /* 検索で行を絞る（74本あっても目的の項目にすぐ着く） */
-  Panel.prototype._filter = function (q) {
-    this._query = q;
-    var key = (q || '').trim().toLowerCase();
-    var self = this;
-    /* タブモードではセクション（.tp-sec）を対象にする */
-    var secs = this.body.querySelectorAll('.tp-sec');
-    if (secs.length) {
-      secs.forEach(function (sec) {
-        var hit = 0;
-        sec.querySelectorAll('.tp-row, .tp-pills, .tp-btns').forEach(function (row) {
-          var host = row.classList.contains('tp-pills') ? row.parentNode : row;
-          var text = (host.textContent || '') + ' ' + (host._label || '');
-          var on = !key || text.toLowerCase().indexOf(key) >= 0;
-          host.classList.toggle('tp-hidden', !on);
-          var hint = host.nextSibling;
-          if (hint && hint.classList && hint.classList.contains('tp-hint')) hint.classList.toggle('tp-hidden', !on);
-          if (on) hit++;
-        });
-        if (key) {
-          sec.classList.toggle('tp-hidden', hit === 0);
-          sec.classList.remove('closed');
-        } else {
-          sec.classList.remove('tp-hidden');
-          var title = sec.querySelector('.tp-sec-head span').textContent;
-          var k2 = (self.activeTab || '') + '|' + title;
-          sec.classList.toggle('closed', self.secOpen[k2] !== true);
-        }
-      });
-      return this;
-    }
-    var cats = this.body.querySelectorAll('.tp-cat');
-    cats.forEach(function (cat) {
-      var hit = 0;
-      cat.querySelectorAll('.tp-row, .tp-pills, .tp-btns').forEach(function (row) {
-        var host = row.classList.contains('tp-pills') ? row.parentNode : row;
-        var text = (host.textContent || '') + ' ' + (host._label || '');
-        var on = !key || text.toLowerCase().indexOf(key) >= 0;
-        host.classList.toggle('tp-hidden', !on);
-        var hint = host.nextSibling;
-        if (hint && hint.classList && hint.classList.contains('tp-hint')) hint.classList.toggle('tp-hidden', !on);
-        if (on) hit++;
-      });
-      if (key) {
-        cat.classList.toggle('tp-hidden', hit === 0);
-        cat.classList.remove('closed');
-        cat.querySelectorAll('.tp-grp').forEach(function (g) { g.classList.remove('tp-hidden'); });
-      } else {
-        cat.classList.remove('tp-hidden');
-        var title = cat.querySelector('.tp-cat-head span').textContent;
-        cat.classList.toggle('closed', this.catOpen[title] === false);
-      }
-    }, this);
-    return this;
-  };
-
+  /* 【2026-09-16】項目の検索（_filter）は検索バーごと撤去した */
   Panel.prototype.destroy = function () {
     if (this._onKey) window.removeEventListener('keydown', this._onKey);
     if (this._hot) this._hot.remove();
