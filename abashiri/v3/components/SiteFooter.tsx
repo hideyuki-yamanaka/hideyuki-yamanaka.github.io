@@ -16,7 +16,7 @@
  *   ・SNSのリンク先URL（公式アカウントが確定したら差し替え）
  *   ・問い合わせ先は網走市観光協会の公開情報（0152-44-5849）を使用
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 export const FOOTER_EVENT = "abashiri:footer";
@@ -44,18 +44,24 @@ export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
     name: "案5",
     note: "作字が中心。リンクを作字の左右に振り分けて、作字が真ん中の軸になる",
   },
-  /* 2026-09-16 ヒデさん依頼：キービジュアルの写真を生かす3案 */
+  /* 2026-09-16 ヒデさん依頼（カンプ 17420:23293）で作り直した3案。
+     考え方はどれも同じ：
+       ・背景の写真はページの後ろにずっと居て、スクロールしてもついてくる
+       ・上に乗っている白いコンテンツが【グラデーションで薄れて】いくと、
+         その下から写真が顔を出す（境目をパッツリ切らない）
+       ・フッターの中身はその写真の上に載る
+     違うのは「現れ方」と「情報の置き方」だけ */
   6: {
-    name: "案6 写真が透けて出てくる",
-    note: "キービジュアルの写真が後ろに貼りついていて、白いセクションがグラデーションで薄れながら上へ抜けると、その下から写真が自然に現れる。フッターの中身は写真の上に載る",
+    name: "案6 溶けて現れる",
+    note: "白いコンテンツがグラデーションで薄れ、後ろにいた写真が顔を出す。作字は写真の中央、リンクはその下。いちばん素直な形",
   },
   7: {
-    name: "案7 写真の窓",
-    note: "白い余白の中に、キービジュアルの写真を大きな窓のように開ける。作字は窓の中に白抜きで置く",
+    name: "案7 写真の上に札が浮かぶ",
+    note: "同じく写真が顔を出したあと、リンクとSNSをすりガラスの札にまとめて写真の上に浮かべる。トップページのスポットのカードと同じ質感",
   },
   8: {
-    name: "案8 写真とすりガラスの帯",
-    note: "写真を全面に敷き、下端にすりガラスの帯を渡してリンクとSNSを載せる。作字は写真の上に大きく",
+    name: "案8 引きながら現れる",
+    note: "写真が顔を出しながら、少し引いて（ズームアウトして）全景になる。作字は左下に大きく、情報は右下に小さく",
   },
 };
 
@@ -178,6 +184,75 @@ function SnsRow({ light = false, size = 20 }: { light?: boolean; size?: number }
   );
 }
 
+/** 案6〜8 の土台。
+    後ろに居る写真（sticky＝画面に止まる）／その手前の白いグラデーション／
+    写真の上に載るフッターの中身、の3枚を重ねる。
+    zoom: スクロールに合わせて写真が少し引く（案8）
+    align: 中身を中央に置くか、下寄せにするか */
+function PhotoStage({
+  children,
+  zoom = false,
+  align = "center",
+}: {
+  children: React.ReactNode;
+  zoom?: boolean;
+  align?: "center" | "end";
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [t, setT] = useState(0); /* 0=まだ出ていない 〜 1=出きった */
+
+  /* 「どれくらい顔を出したか」を自前で測る。
+     framer の useScroll はこのページ構成（自前のスクロール箱）だと 0 のままになる
+     ことがあったので、rAF で素直に測る（2026-09-15 の実測メモと同じやり方） */
+  useEffect(() => {
+    let id = 0;
+    const tick = () => {
+      const el = ref.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const vh = window.innerHeight || 1;
+        /* 上端が画面下に来た時 0、上端が画面上端まで上がった時 1 */
+        const v = 1 - r.top / vh;
+        const next = Math.max(0, Math.min(1, v));
+        setT((p) => (Math.abs(p - next) > 0.004 ? next : p));
+      }
+      id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative h-[118dvh] w-full">
+      {/* ① 後ろの写真。画面に止まったまま、コンテンツだけが流れていく */}
+      <div className="sticky top-0 h-dvh w-full overflow-hidden">
+        <img
+          src="/img/bg-hero.jpg"
+          alt=""
+          className="size-full object-cover"
+          /* 案8：顔を出しながら少し引く。動かすのは transform だけ */
+          style={zoom ? { transform: `scale(${1.14 - 0.14 * t})` } : undefined}
+        />
+        {/* 文字が読めるよう、下側だけわずかに沈ませる */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+      </div>
+
+      {/* ② 手前の白。箱ではなく「下が透明になるグラデーションの面」なので、
+         上へ抜けるにつれ写真がじわっと出てくる（境目が線にならない） */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[42dvh] bg-gradient-to-b from-white via-white/85 to-transparent" />
+
+      {/* ③ フッターの中身は写真の上 */}
+      <div
+        className={`absolute inset-x-0 bottom-0 flex h-dvh flex-col px-6 pb-[80px] sm:px-[120px] sm:pb-[100px] ${
+          align === "end" ? "justify-end" : "justify-center pb-0 sm:pb-0"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /* ── 案ごとの中身 ─────────────────────────── */
 
 function Body({ pat }: { pat: number }) {
@@ -234,83 +309,59 @@ function Body({ pat }: { pat: number }) {
         </div>
       );
 
-    /* ═══ 案6 写真が透けて出てくる（2026-09-16 ヒデさんのアイデア）═══
-       キービジュアルの写真を sticky で貼りつけたまま、その上に重なっている
-       白い面（下へ向かって透明になるグラデーション）がスクロールで上へ抜ける。
-       境目をパッツリ切らずに、写真がじわっと現れる。
-       ⚠️ 写真を position:fixed にすると、このサイトは自前のスクロール容器なので
-          ページの最初から画面に貼りついてしまう。sticky ＋ -mt で重ねるのが正解 */
+    /* ═══════════════════════════════════════════════════════
+       案6〜8 共通の考え方（カンプ 17420:23293・2026-09-16）
+         ・写真＝ページの後ろにずっと居るレイヤー。スクロールしてもついてくる
+         ・白いコンテンツ＝その手前のレイヤー。下端が透明のグラデーションなので、
+           スクロールで上へ抜けるにつれ、後ろの写真がじわっと顔を出す
+         ・フッターの中身は写真の上に載る
+       ⚠️ 写真を position:fixed にはできない。このサイトは html/body ではなく
+          自前の箱でスクロールしているので、fixed だとページの最初から
+          画面に貼りついてしまう。sticky で「画面に止まる」を作るのが正解
+       ⚠️ 白い覆いは【グラデーションの面】であって、白い箱ではない。
+          箱にすると境目が線になる（ヒデさん指摘の「パッツリ切らない」）
+       ═══════════════════════════════════════════════════════ */
+
+    /* 案6 溶けて現れる：作字は写真の中央、リンクはその下 */
     case 6:
       return (
-        <div className="relative h-[165dvh] w-full">
-          {/* ① 貼りつく写真。親が 165dvh・自分が 1画面ぶんなので、
-             その差（65dvh）のあいだ画面に止まったままになる */}
-          <div className="sticky top-0 h-dvh w-full overflow-hidden">
-            <img
-              src="/img/bg-hero.jpg"
-              alt=""
-              className="size-full object-cover"
-            />
-            {/* 写真の下側を少し沈ませて、白い文字を読めるように */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-          </div>
-          {/* ② 上に重なる白い面。写真と違って一緒にスクロールするので、
-             上へ抜けるにつれて写真が出てくる。
-             下端を透明にしてあるので、境目が線にならない */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[78dvh] bg-gradient-to-b from-white via-white to-transparent" />
-          {/* ③ フッターの中身は写真の上。いちばん下に置く */}
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-9 px-6 pb-[72px] sm:gap-12 sm:pb-[100px]">
-            <Logo cls="h-[130px] sm:h-[200px]" light />
+        <PhotoStage>
+          <div className="flex flex-col items-center gap-10 sm:gap-14">
+            <Logo cls="h-[140px] sm:h-[220px]" light />
             <div className="flex flex-col items-center gap-7">
               <NavLinks light className="justify-center" />
               <SnsRow light />
             </div>
           </div>
-        </div>
+        </PhotoStage>
       );
 
-    /* ═══ 案7 写真の窓 ═══
-       白い余白の中に、写真を大きな窓のように開ける。
-       写真の面積は画面の6割ほど。作字は窓の中に白抜きで置く */
+    /* 案7 写真の上に札が浮かぶ：情報はすりガラスの札にまとめる */
     case 7:
       return (
-        <div className="flex w-full flex-col items-center gap-12 px-6 py-[80px] sm:gap-[72px] sm:px-[120px] sm:py-[120px]">
-          <div className="relative h-[54dvh] w-full overflow-hidden sm:h-[62dvh]">
-            <img
-              src="/img/bg-hero.jpg"
-              alt=""
-              className="size-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/15" />
-            <div className="absolute inset-0 flex items-center justify-center px-6">
-              <Logo cls="h-[120px] sm:h-[200px]" light />
-            </div>
-          </div>
-          <div className="flex flex-col items-center gap-8">
-            <NavLinks className="justify-center" />
-            <SnsRow />
-          </div>
-        </div>
-      );
-
-    /* ═══ 案8 写真とすりガラスの帯 ═══
-       写真を全面に敷き、下端にすりガラスの帯を渡してリンクとSNSを載せる。
-       トップページのガラス（bg-white/10＋ring＋blur65）と同じ作り */
-    case 8:
-      return (
-        <div className="relative h-[92dvh] w-full overflow-hidden">
-          <img src="/img/bg-hero.jpg" alt="" className="size-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-          <div className="absolute inset-0 flex items-center justify-center px-6 pb-[18dvh]">
-            <Logo cls="h-[140px] sm:h-[230px]" light />
-          </div>
-          <div className="absolute inset-x-0 bottom-0">
-            <div className="flex flex-col items-center gap-6 bg-white/10 px-6 py-8 ring-1 ring-inset ring-white/25 backdrop-blur-65 sm:flex-row sm:justify-between sm:px-[120px] sm:py-10">
+        <PhotoStage>
+          <div className="flex w-full flex-col items-center gap-12 sm:gap-16">
+            <Logo cls="h-[130px] sm:h-[200px]" light />
+            <div className="flex w-full max-w-[720px] flex-col items-center gap-7 bg-white/10 px-7 py-8 ring-1 ring-inset ring-white/25 backdrop-blur-65 sm:flex-row sm:justify-between sm:px-12 sm:py-9">
               <NavLinks light className="justify-center sm:justify-start" />
               <SnsRow light size={18} />
             </div>
           </div>
-        </div>
+        </PhotoStage>
+      );
+
+    /* 案8 引きながら現れる：写真がズームアウトして全景に。作字は左下 */
+    case 8:
+      return (
+        <PhotoStage zoom align="end">
+          <div className="flex w-full flex-col items-start gap-10 sm:flex-row sm:items-end sm:justify-between sm:gap-16">
+            <Logo cls="h-[140px] sm:h-[230px]" light />
+            <div className="flex flex-col items-start gap-6 sm:items-end">
+              <NavLinks light className="justify-start sm:justify-end" />
+              <SnsRow light />
+            </div>
+          </div>
+        </PhotoStage>
       );
 
     /* 案1（既定）中央に大きく：作字を真ん中に、上下にたっぷり余白 */
@@ -345,9 +396,9 @@ export default function SiteFooter() {
     return () => window.removeEventListener(FOOTER_EVENT, onTune);
   }, []);
 
-  /* 案2だけ空グラデ＋白文字。案6・案8 は写真が地なので白を敷かない。ほかは白地 */
+  /* 案2は空グラデ＋白文字。案6〜8 は写真が地（背景は透明のまま）。ほかは白地 */
   const sky = pat === 2;
-  const photo = pat === 6 || pat === 8;
+  const photo = pat >= 6 && pat <= 8;
   return (
     /* ⚠️ フッターは登場アニメを付けない。理由は2つ:
        ①filter/opacity を動かすと要素が合成レイヤーになり、アニメ完了後も
@@ -363,7 +414,7 @@ export default function SiteFooter() {
         sky
           ? "bg-gradient-to-b from-sky-bottom via-brand/80 to-brand"
           : photo
-            ? "bg-white"
+            ? "bg-transparent"
             : "bg-white"
       }`}
     >
