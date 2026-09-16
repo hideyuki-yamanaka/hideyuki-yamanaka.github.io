@@ -229,7 +229,8 @@
   /* 6: 全幅ガラスバー(既定 skin) / 7: 全幅ソリッド白。幅は不変、ナビ→バーガーだけ */
   html:not(.mb).hm-7 .header { --hdr-skin-bg: #fff; --hdr-skin-filter: none; --hdr-skin-shadow: 0 6px 24px rgba(20,30,60,.1); }
   /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴは大きく変えない=40px) */
-  html:not(.mb).hm-8 .header { --hdr-cw: 300px; --hdr-py: 10px; --hdr-px: 18px; --hdr-logo-h: 40px;
+  /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴのサイズは変えない=47。ロゴが原寸ぶんピル幅は広め) */
+  html:not(.mb).hm-8 .header { --hdr-cw: 345px; --hdr-py: 14px; --hdr-px: 20px; --hdr-logo-h: 47px;
     margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: auto;
     --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
   /* 9: 右寄せピル */
@@ -242,12 +243,12 @@
   /* 11: 分離(ロゴ素／右に丸バーガー)。地色なし・バーガーだけ丸ガラス(t でフェード) */
   /* 11/12(分離): 【2026-09-17 ヒデさん指定】スクロールしてもレイアウトシフトさせない＝余白(24/50)もロゴ(47)も幅(100%)も変えず、
      右のナビ(お問い合わせ含む)が右端で収縮して丸バーガーへ変わるだけ。地色は付けない。 */
-  html:not(.mb).hm-11 .header { --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
+  html:not(.mb).hm-11 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
   html:not(.mb).hm-11 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
     background: rgba(255,255,255, calc(.62 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
     box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
   /* 12: 分離(左に丸ロゴマーク／右に丸バーガー) */
-  html:not(.mb).hm-12 .header { --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
+  html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
   /* 【2026-09-17 ヒデさん指定】分離案は「左ロゴは無加工(箱・影・マーク化なし)、右のバーガーだけプクッと浮くガラス箱」。
      ロゴは素のまま＝切断も断片も出ない。ロゴには何も足さない(基準の縦横比固定のみ)。 */
   html:not(.mb).hm-12 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
@@ -4807,7 +4808,7 @@ const DEFAULTS = {
   burgerIcon: '1',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
   burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
   floatStyle: '1',     // 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案 1〜10(影/ブラー/リキッドグラス等)
-  hdrTune: { '8': { logoH: 40, cw: 300 } },   // 【V5.0 2026-09-17】案ごとのスクロール後サイズ微調整(その案を選んだ時だけパネルに出す)
+  hdrTune: { '8': { logoH: 47, cw: 345 } },   // 【V5.0 2026-09-17】案ごとのスクロール後サイズ微調整(その案を選んだ時だけパネルに出す)。hm-8: ロゴ縮小なし(47)
   drawerStyle: '1',    // 【V5.0 2026-09-17】ハンバーガーを押した先の画面 1中央/2右スライド/3左寄せ大(ダーク)
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
