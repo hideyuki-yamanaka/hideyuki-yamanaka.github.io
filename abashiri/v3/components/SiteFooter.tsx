@@ -44,6 +44,19 @@ export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
     name: "案5",
     note: "作字が中心。リンクを作字の左右に振り分けて、作字が真ん中の軸になる",
   },
+  /* 2026-09-16 ヒデさん依頼：キービジュアルの写真を生かす3案 */
+  6: {
+    name: "案6 写真が透けて出てくる",
+    note: "キービジュアルの写真が後ろに貼りついていて、白いセクションがグラデーションで薄れながら上へ抜けると、その下から写真が自然に現れる。フッターの中身は写真の上に載る",
+  },
+  7: {
+    name: "案7 写真の窓",
+    note: "白い余白の中に、キービジュアルの写真を大きな窓のように開ける。作字は窓の中に白抜きで置く",
+  },
+  8: {
+    name: "案8 写真とすりガラスの帯",
+    note: "写真を全面に敷き、下端にすりガラスの帯を渡してリンクとSNSを載せる。作字は写真の上に大きく",
+  },
 };
 
 /* フッターのリンク。トップ内のセクションは GlobalNav と同じ飛び方をさせる */
@@ -221,6 +234,85 @@ function Body({ pat }: { pat: number }) {
         </div>
       );
 
+    /* ═══ 案6 写真が透けて出てくる（2026-09-16 ヒデさんのアイデア）═══
+       キービジュアルの写真を sticky で貼りつけたまま、その上に重なっている
+       白い面（下へ向かって透明になるグラデーション）がスクロールで上へ抜ける。
+       境目をパッツリ切らずに、写真がじわっと現れる。
+       ⚠️ 写真を position:fixed にすると、このサイトは自前のスクロール容器なので
+          ページの最初から画面に貼りついてしまう。sticky ＋ -mt で重ねるのが正解 */
+    case 6:
+      return (
+        <div className="relative h-[165dvh] w-full">
+          {/* ① 貼りつく写真。親が 165dvh・自分が 1画面ぶんなので、
+             その差（65dvh）のあいだ画面に止まったままになる */}
+          <div className="sticky top-0 h-dvh w-full overflow-hidden">
+            <img
+              src="/img/bg-hero.jpg"
+              alt=""
+              className="size-full object-cover"
+            />
+            {/* 写真の下側を少し沈ませて、白い文字を読めるように */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+          </div>
+          {/* ② 上に重なる白い面。写真と違って一緒にスクロールするので、
+             上へ抜けるにつれて写真が出てくる。
+             下端を透明にしてあるので、境目が線にならない */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[78dvh] bg-gradient-to-b from-white via-white to-transparent" />
+          {/* ③ フッターの中身は写真の上。いちばん下に置く */}
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-9 px-6 pb-[72px] sm:gap-12 sm:pb-[100px]">
+            <Logo cls="h-[130px] sm:h-[200px]" light />
+            <div className="flex flex-col items-center gap-7">
+              <NavLinks light className="justify-center" />
+              <SnsRow light />
+            </div>
+          </div>
+        </div>
+      );
+
+    /* ═══ 案7 写真の窓 ═══
+       白い余白の中に、写真を大きな窓のように開ける。
+       写真の面積は画面の6割ほど。作字は窓の中に白抜きで置く */
+    case 7:
+      return (
+        <div className="flex w-full flex-col items-center gap-12 px-6 py-[80px] sm:gap-[72px] sm:px-[120px] sm:py-[120px]">
+          <div className="relative h-[54dvh] w-full overflow-hidden sm:h-[62dvh]">
+            <img
+              src="/img/bg-hero.jpg"
+              alt=""
+              className="size-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/15" />
+            <div className="absolute inset-0 flex items-center justify-center px-6">
+              <Logo cls="h-[120px] sm:h-[200px]" light />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-8">
+            <NavLinks className="justify-center" />
+            <SnsRow />
+          </div>
+        </div>
+      );
+
+    /* ═══ 案8 写真とすりガラスの帯 ═══
+       写真を全面に敷き、下端にすりガラスの帯を渡してリンクとSNSを載せる。
+       トップページのガラス（bg-white/10＋ring＋blur65）と同じ作り */
+    case 8:
+      return (
+        <div className="relative h-[92dvh] w-full overflow-hidden">
+          <img src="/img/bg-hero.jpg" alt="" className="size-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          <div className="absolute inset-0 flex items-center justify-center px-6 pb-[18dvh]">
+            <Logo cls="h-[140px] sm:h-[230px]" light />
+          </div>
+          <div className="absolute inset-x-0 bottom-0">
+            <div className="flex flex-col items-center gap-6 bg-white/10 px-6 py-8 ring-1 ring-inset ring-white/25 backdrop-blur-65 sm:flex-row sm:justify-between sm:px-[120px] sm:py-10">
+              <NavLinks light className="justify-center sm:justify-start" />
+              <SnsRow light size={18} />
+            </div>
+          </div>
+        </div>
+      );
+
     /* 案1（既定）中央に大きく：作字を真ん中に、上下にたっぷり余白 */
     default:
       return (
@@ -253,8 +345,9 @@ export default function SiteFooter() {
     return () => window.removeEventListener(FOOTER_EVENT, onTune);
   }, []);
 
-  /* 案2だけ空グラデ＋白文字。ほかは白地 */
+  /* 案2だけ空グラデ＋白文字。案6・案8 は写真が地なので白を敷かない。ほかは白地 */
   const sky = pat === 2;
+  const photo = pat === 6 || pat === 8;
   return (
     /* ⚠️ フッターは登場アニメを付けない。理由は2つ:
        ①filter/opacity を動かすと要素が合成レイヤーになり、アニメ完了後も
@@ -269,7 +362,9 @@ export default function SiteFooter() {
       className={`relative z-10 -mt-[2px] w-full ${
         sky
           ? "bg-gradient-to-b from-sky-bottom via-brand/80 to-brand"
-          : "bg-white"
+          : photo
+            ? "bg-white"
+            : "bg-white"
       }`}
     >
       <Body pat={pat} />
