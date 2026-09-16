@@ -98,9 +98,10 @@
      既定でヘッダーを固定(追従)にする。スクロール状態(.hdr-stuck)で各案の見た目に。
      リビール(rv)がインラインで transform/opacity/filter を触るので、スクロール演出は transform を使わず
      top/padding/背景/margin で作って競合させない。PCのみ(mbは従来)。 */
+  :root { --hdr-radius: 8px; --hdr-top: 14px; --hdr-side: 16px; --hdr-dur: .5s; --hdr-ease: cubic-bezier(.22,.68,.16,1); }
   html:not(.mb).hdr-follow .header {
-    position: fixed; top: 0; left: 0; right: 0; padding: 26px 50px; box-sizing: border-box; z-index: 60;
-    transition: background .32s var(--e-out), -webkit-backdrop-filter .32s, backdrop-filter .32s, box-shadow .32s, padding .28s var(--e-out), top .38s var(--e-out), left .34s var(--e-out), right .34s var(--e-out), border-radius .34s var(--e-out);
+    position: fixed; top: 0; left: 0; right: 0; padding: 24px 50px; box-sizing: border-box; z-index: 60;
+    transition: background var(--hdr-dur) var(--hdr-ease), -webkit-backdrop-filter var(--hdr-dur), backdrop-filter var(--hdr-dur), box-shadow var(--hdr-dur), padding var(--hdr-dur) var(--hdr-ease), top var(--hdr-dur) var(--hdr-ease), left var(--hdr-dur) var(--hdr-ease), right var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), border-radius var(--hdr-dur) var(--hdr-ease);
   }
   html:not(.mb).hdr-follow .header .logo img { transition: width .28s var(--e-out), height .28s var(--e-out); }
   /* 追従で stuck の時は、KVイントロ(rv)がインラインで触る opacity/blur/transform を打ち消して必ず可視に
@@ -117,11 +118,12 @@
   html:not(.mb).hm-4 .header.hdr-stuck { padding: 13px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   html:not(.mb).hm-4 .header.hdr-stuck .logo img { width: 200px; height: 37px; }
   /* 5: フローティングピル(スクロールで縁から浮くカプセル) */
-  html:not(.mb).hm-5 .header.hdr-stuck { top: 14px; left: 16px; right: 16px; padding: 13px 28px; border-radius: 999px; background: rgba(255,255,255,.58); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
+  html:not(.mb).hm-5 .header.hdr-stuck { top: var(--hdr-top); left: var(--hdr-side); right: var(--hdr-side); padding: 13px 28px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.58); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
   html:not(.mb).hm-5 .header.hdr-stuck .logo img { width: 210px; height: 39px; }
 
   /* ===== 【V5.0 2026-09-16】ハンバーガー＋ドロワー(共通) ===== */
   .hdr-burger { display: none; width: 44px; height: 44px; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex: 0 0 auto; -webkit-appearance: none; appearance: none; z-index: 2; }
+  .hdr-burger { transition: opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), height var(--hdr-dur) var(--hdr-ease), background var(--hdr-dur), box-shadow var(--hdr-dur); }
   .hdr-burger span { position: absolute; left: 11px; right: 11px; height: 1.6px; background: var(--ink); border-radius: 2px; transition: transform .28s var(--e-out), opacity .2s; }
   .hdr-burger span:nth-child(1) { top: 16px; } .hdr-burger span:nth-child(2) { top: 21.2px; } .hdr-burger span:nth-child(3) { top: 26.4px; }
   .hdr-burger.is-open span:nth-child(1) { transform: translateY(5.2px) rotate(45deg); }
@@ -141,29 +143,32 @@
 
   /* ===== 【V5.0】スクロールで「ロゴ＋ハンバーガー」に変形する10案(hm-6〜15) ===== */
   /* 共通: stuck でナビ(nav)を格納しハンバーガーを出す。ロゴは残す。 */
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .nav { display: none; }
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { display: block; }
+  /* morph: バーガーは常設で透明→stuckでフェードイン。ナビは max-width＋opacity で滑らかに畳む(display:none は使わない=瞬間切替を避ける) */
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger { display: block; opacity: 0; pointer-events: none; }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav { overflow: hidden; max-width: 900px; transition: max-width var(--hdr-dur) var(--hdr-ease), opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), filter var(--hdr-dur) var(--hdr-ease); }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .nav { max-width: 0; opacity: 0; margin: 0; pointer-events: none; }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { opacity: 1; pointer-events: auto; }
   /* 6: 全幅ガラスバー(左ロゴ/右バーガー) */
   html:not(.mb).hm-6 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   /* 7: 全幅ソリッド白(左ロゴ/右バーガー) */
   html:not(.mb).hm-7 .header.hdr-stuck { background: #fff; box-shadow: 0 6px 24px rgba(20,30,60,.1); }
   /* 8: 左寄せピル(ロゴ＋バーガー隣接) */
-  html:not(.mb).hm-8 .header.hdr-stuck { left: 16px; right: auto; top: 14px; width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: 999px; background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-8 .header.hdr-stuck { left: var(--hdr-side); right: auto; top: var(--hdr-top); width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
   html:not(.mb).hm-8 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
   /* 9: 右寄せピル */
-  html:not(.mb).hm-9 .header.hdr-stuck { left: auto; right: 16px; top: 14px; width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: 999px; background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-9 .header.hdr-stuck { left: auto; right: var(--hdr-side); top: var(--hdr-top); width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
   html:not(.mb).hm-9 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
   /* 10: 中央ピル(transformを使わず fit-content＋margin auto で中央) */
-  html:not(.mb).hm-10 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: 14px; width: fit-content; padding: 9px 14px 9px 22px; gap: 14px; border-radius: 999px; background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-10 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 9px 14px 9px 22px; gap: 14px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
   html:not(.mb).hm-10 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
   /* 11: 分離(左ロゴ素 / 右に丸バーガー) */
   html:not(.mb).hm-11 .header.hdr-stuck { background: transparent; padding: 22px 26px; }
-  html:not(.mb).hm-11 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: 50%; background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
+  html:not(.mb).hm-11 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
   /* 12: 分離(左に丸ロゴマーク / 右に丸バーガー) */
   html:not(.mb).hm-12 .header.hdr-stuck { background: transparent; padding: 18px 22px; }
-  html:not(.mb).hm-12 .header.hdr-stuck .logo { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(255,255,255,.66); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
+  html:not(.mb).hm-12 .header.hdr-stuck .logo { width: 50px; height: 50px; border-radius: var(--hdr-radius); overflow: hidden; display: grid; place-items: center; background: rgba(255,255,255,.66); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
   html:not(.mb).hm-12 .header.hdr-stuck .logo img { width: 50px; height: 50px; object-fit: none; object-position: 2px center; }
-  html:not(.mb).hm-12 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: 50%; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
+  html:not(.mb).hm-12 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
   /* 13: ロゴマークのみ(テキスト省略)＋バーガー(全幅ガラス) */
   html:not(.mb).hm-13 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   html:not(.mb).hm-13 .header.hdr-stuck .logo { width: 42px; overflow: hidden; }
@@ -172,7 +177,7 @@
   html:not(.mb).hm-14 .header.hdr-stuck .logo img { width: 170px; height: 31px; }
   html:not(.mb).hm-14 .header.hdr-stuck .hdr-burger { width: 38px; height: 38px; }
   /* 15: 隠れて → 上スクロールでロゴ＋バーガーのミニピルが降臨(中央) */
-  html:not(.mb).hm-15 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: 14px; width: fit-content; padding: 8px 12px 8px 20px; gap: 12px; border-radius: 999px; background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-15 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 8px 12px 8px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
   html:not(.mb).hm-15 .header.hdr-stuck .logo img { width: 140px; height: 26px; }
   html:not(.mb).hm-15 .header.hdr-hidden { top: -130px; }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
