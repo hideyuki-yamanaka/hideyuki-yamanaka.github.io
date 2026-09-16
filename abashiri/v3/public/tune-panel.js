@@ -137,13 +137,14 @@
     '  font:inherit;color:inherit;background:#fff;}',
     '.tp-search::placeholder{color:#bbb;}',
     /* 大カテゴリ */
-    '.tp-cat{border:1px solid #e8e8e8;border-radius:8px;margin-top:10px;overflow:hidden;background:#fff;}',
-    '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;',
-    '  font-weight:500;background:#fafafa;cursor:pointer;user-select:none;}',
-    '.tp-cat-head:hover{background:#f2f2f2;}',
+    /* 枠・地・余白は anyflow の .cat の実測に合わせた */
+    '.tp-cat{border:1px solid #ececec;border-radius:8px;margin-top:10px;overflow:hidden;background:#fff;}',
+    '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;',
+    '  font-weight:500;background:#f2f2f2;cursor:pointer;user-select:none;}',
+    '.tp-cat-head:hover{background:#ececec;}',
     '.tp-cat-chev{font-size:10px;color:#888;transition:transform .2s;}',
     '.tp-cat.closed .tp-cat-chev{transform:rotate(-90deg);}',
-    '.tp-cat-body{padding:0 12px 12px;}',
+    '.tp-cat-body{padding:0 10px 10px;}',
     '.tp-cat.closed .tp-cat-body{display:none;}',
     '.tp-hidden{display:none !important;}',
     /* タブ（ページ切替。cfg.tabs:true で cat がタブになる）
