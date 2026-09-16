@@ -4470,6 +4470,7 @@ const DEFAULTS = {
   cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
   cvSway: '0',         // 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。0=現行 / 1〜5。URL ?sway=N
   cvEdge: '0',         // 【2026-09-16 改訂】お問い合わせ上部の溶け込みの深さ。0=標準/1さらに深く/2浅め。URL ?edge=N
+  cvForm: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの形。0=放射(現行)/1=縦グラデ/2=放射柔らか/3=斜め。URL ?form=N
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
   cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
@@ -5074,6 +5075,8 @@ try {
   if (_sw) { params.cvSway = _sw[1]; window.__swayFromUrl = true; }   /* 揺らぎの案(2026-09-15)。値の反映は init で(ここでは CV_SWAYS がまだ未初期化) */
   const _eg = location.search.match(/[?&]edge=(\d)(?:&|$)/);
   if (_eg) { params.cvEdge = _eg[1]; window.__edgeFromUrl = true; }   /* 切れ目の形(2026-09-16)。反映は init で */
+  const _fm = location.search.match(/[?&]form=(\d)(?:&|$)/);
+  if (_fm) { params.cvForm = _fm[1]; window.__formFromUrl = true; }   /* グラデの形(2026-09-16)。反映は init で */
 } catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
    世代ガードは『保存世代 < 焼き込み世代』でしか発火しないため、いったん現行世代のまま
@@ -6135,6 +6138,20 @@ function cvEdgeMask(canvas, span) {
   canvas.style.maskPosition = 'top';   canvas.style.webkitMaskPosition = 'top';
   canvas.style.maskComposite = '';     canvas.style.webkitMaskComposite = '';
 }
+
+/* ===== 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの「形」を調整パネルで選ぶ =====
+   デザインサンプル(17400:22955)は輪の無い“縦グラデ”。現行は放射(同心円)。色は現行のまま、形だけ切替。
+   最終形はヒデさんが実物を見比べて決める(varRowX でパターン選択)。 */
+const FORM_BASE = { gMode: 0, gAng: 0, gcx: 0.6, gcy: 0.0, gr: 0.9, gAspect: 1, gSpread: 1.5, contrast: 1.38 };   /* 現行(放射)の基準値=SHIPPED と一致 */
+const CV_FORMS = [
+  { key: '0', name: '放射（現行）',             tip: '現行の同心円グラデ。中心(右上寄り)から放射状に色が広がる。今の見た目。', cv: {} },
+  { key: '1', name: '縦グラデ（サンプル寄り）',   tip: 'サンプル同様、輪をなくして上→下へ素直に色が乗る。落ち着いた雰囲気。色は現行のまま。', cv: { gMode: 2, gAng: 90, gcx: 0.5, gcy: 0.5, gr: 1.15, gAspect: 1 } },
+  { key: '2', name: '放射・大きく柔らかく',       tip: '放射のまま“輪の主張”だけ消す。中心を大きく広げて同心円の帯をぼかす。色は残す。', cv: { gMode: 0, gcx: 0.60, gcy: 0.30, gr: 1.25, gAspect: 1.10, gSpread: 1.5, contrast: 1.34 } },
+  { key: '3', name: '斜めグラデ',               tip: '斜め35°の線形グラデ。帯が斜めに流れる。', cv: { gMode: 2, gAng: 35, gcx: 0.5, gcy: 0.5, gr: 1.2, gAspect: 1 } },
+];
+function cvFormKey() { const v = String((params && params.cvForm) || '0'); return (CV_FORMS.some(f => f.key === v) && !variantRemovedKey('cvForm', v)) ? v : '0'; }
+function cvFormDef() { return CV_FORMS.find(f => f.key === cvFormKey()) || CV_FORMS[0]; }
+function cvApplyForm(key) { const c = CV_FORMS.find(f => f.key === key); if (!c) return; params.cvForm = String(key); params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(FORM_BASE), structuredClone(c.cv)); }
 
 const CV_COLORS = [
   /* 【2026-09-16 ヒデさん依頼】デザインカンプ(node 17383:21430)の色味に忠実な案。13ストップのランプ(ramp:'comp')で、
@@ -18312,6 +18329,9 @@ function buildPanel() {
      帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい。
      【2026-09-16】1項目だけの見出しをやめ、上の「余白・高さ・境目」に含めた */
   /* 【2026-09-16 改訂】溶け込みは“形”でなく“深さ”の違いだけ(波/弧/斜め/二段/もやは撤去)。本体の中まで長い距離で溶かすので境目の線は出ない */
+  { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = 'グラデの形（溶け込み）'; (mount || body).appendChild(_t); }
+  varRowX('cvForm', CV_FORMS, () => cvFormKey(), v => { cvApplyForm(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  note('お問い合わせのグラデの“形”。放射(現行)／縦グラデ(サンプル寄り)／放射を大きく柔らかく／斜め、から選べます。色は現行のまま・上の境界はどれも長く馴染みます。最終形はこれで見比べて決めてください。');
   { const _t = document.createElement('div'); _t.className = 'grp-note'; _t.style.fontWeight = '600'; _t.style.color = '#555'; _t.textContent = '境界の溶け込み（馴染ませ方）'; (mount || body).appendChild(_t); }
   varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('サンプル(Figma 17400:22955)に合わせ、上端から本体の中まで長い距離で徐々に色が乗ります(境目の線・波・形は無し)。案は溶け込みの“深さ”違い。下のスライダーで微調整できます。');
@@ -18472,7 +18492,8 @@ try { const _dv = location.search.match(/[?&]dev=(\d{1,2})(?:&|$)/); if (_dv && 
       const _dt = location.search.match(/[?&]devt=([a-z]+)(?:&|$)/); if (_dt && DEV_TONES.some(d => d.key === _dt[1])) params.devTone = _dt[1]; } catch (e) {}
 try { const _cvc = location.search.match(/[?&]cvc=(C\d{1,2})(?:&|$)/); if (_cvc && CV_COLORS.some(s => s.key === _cvc[1])) { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = _cvc[1]; cvApplyColorFull(_cvc[1]); } } catch (e) {}
 if (window.__swayFromUrl) cvApplySway(cvSwayKey());   /* 【2026-09-15】?sway=N で来た時だけ案の値を入れ直す */
-applyCvEdge(cvEdgeKey());   /* 【2026-09-16】切れ目の形を初期反映(blend も案の値に) */
+cvApplyForm(cvFormKey());   /* 【2026-09-16】グラデの形を初期反映(放射/縦/斜め) */
+applyCvEdge(cvEdgeKey());   /* 【2026-09-16】溶け込みの深さを初期反映(blend も案の値に) */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
 applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */
 applyDevStyle();    /* 開発者体験モックのスタイル案を初期反映 (2026-09-15) */
