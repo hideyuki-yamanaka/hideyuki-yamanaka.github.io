@@ -244,6 +244,16 @@ const seg = (i: number, n: number, pad = 0.12) => {
   return [from, to] as const;
 };
 
+/* 【2026-09-16 ヒデさん指示】「3・4枚目も1・2枚目と同じ大きさで100%になってほしい」
+   これまでは1枚ずつ順番に終わる区間（seg）だったので、4枚目はセクションが
+   ぴったり中央に来るまで小さいままだった。
+   → 出はじめだけ少しずらして、**終わりは4枚とも同じ**にする。
+     こうすると、まだ中央に来る手前（p=0.62）で4枚とも実寸にそろう。 */
+const segTogether = (i: number, end = 0.62, stagger = 0.07) => {
+  const from = Math.max(0, Math.min(end - 0.0001, i * stagger));
+  return [from, end] as const;
+};
+
 /* ── 案の中身 ───────────────────────────── */
 
 /* ── 案の中身 ─────────────────────────────
@@ -260,7 +270,7 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
           <HTitle className="px-6 sm:px-[147px]" />
           <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
             {ITEMS.map((it, i) => {
-              const [a, b] = seg(i, 4, 0.3);
+              const [a, b] = segTogether(i);
               return (
                 <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
                   <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[560px] w-full" />
@@ -285,7 +295,7 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
           <VTitle className="mt-[40px]" />
           <div className="flex min-w-0 flex-1 gap-[5px]">
             {ITEMS.map((it, i) => {
-              const [a, b] = seg(i, 4, 0.3);
+              const [a, b] = segTogether(i);
               return (
                 <div key={it.title} className="flex min-w-0 flex-1 flex-col gap-5">
                   <GrowShot it={it} p={p} from={a} to={b} start={0.55} className="h-[600px] w-full" />
@@ -669,7 +679,7 @@ export default function EventSection() {
         （2026-09-16 ヒデさん指摘。赤背景テストで「背景の透け」ではないことは確認済み） */}
     <section
       id="events"
-      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white py-[90px] sm:py-[180px]"
+      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white pt-[90px] pb-[90px] sm:pt-[180px] sm:pb-[var(--ev-pad-bottom)]"
     >
       {ready ? (
         <Scrolled pat={pat} container={scRef} />

@@ -39,7 +39,12 @@ import {
   PAGE_TRANSITION_EVENT,
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
-import { FOOTER_EVENT, FOOTER_PATTERNS, FOOTER_LAYOUTS } from "./SiteFooter";
+import {
+  FOOTER_EVENT,
+  FOOTER_PATTERNS,
+  FOOTER_LAYOUTS,
+  FOOTER_SPECIALS,
+} from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -180,6 +185,7 @@ type Params = {
   footer: {
     pattern: number;
     layout: number;
+    special: number;
     padX: number;
     padBottom: number;
     colGap: number;
@@ -189,6 +195,10 @@ type Params = {
     itemGap: number;
     logoH: number;
     mapOffsetY: number;
+    stageH: number;
+    fadeH: number;
+    fadeSolid: number;
+    evPadBottom: number;
   };
   expIntro: IntroPace;
   expPick: { pattern: number };
@@ -250,6 +260,7 @@ export default function TopTunePanel({
       footer: {
         pattern: 1,
         layout: 1,
+        special: 1,
         padX: 160,
         padBottom: 110,
         colGap: 140,
@@ -259,6 +270,10 @@ export default function TopTunePanel({
         itemGap: 10,
         logoH: 260,
         mapOffsetY: 0,
+        stageH: 155,
+        fadeH: 95,
+        fadeSolid: 22,
+        evPadBottom: 180,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
@@ -298,6 +313,10 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-item-gap", `${f.itemGap}px`);
       root.style.setProperty("--ft-logo-h", `${f.logoH}px`);
       root.style.setProperty("--ft-map-offset-y", `${f.mapOffsetY}px`);
+      root.style.setProperty("--ft-stage-h", String(f.stageH));
+      root.style.setProperty("--ft-fade-h", String(f.fadeH));
+      root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
+      root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -523,7 +542,17 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
-              { sub: "余白と間隔", deep: true },
+              {
+                pills: "ぼーっと体験の見せ方",
+                path: "footer.special",
+                immediate: true,
+                options: Object.entries(FOOTER_SPECIALS).map(([v, p]) => ({
+                  name: p.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: p.note,
+                })),
+              },
               {
                 note: "つまみを動かすとその場で動きます（PC幅のときの値。スマホは詰めた固定値です）。",
               },
@@ -599,6 +628,47 @@ export default function TopTunePanel({
                 fmt: "px",
                 hint: "左カラムの作字ロゴの高さ（PC幅のとき）。スマホは150px固定",
               },
+              { sub: "最後のセクションからの流れ", deep: true },
+              {
+                note: "体験セクションからフッターまでが長いと感じる時はここで詰めます。",
+              },
+              {
+                slider: "体験セクションの下の余白",
+                path: "footer.evPadBottom",
+                min: 0,
+                max: 320,
+                step: 4,
+                fmt: "px",
+                hint: "最後のセクションの下端と、フッターが始まる所の間",
+              },
+              {
+                slider: "フッターの長さ",
+                path: "footer.stageH",
+                min: 100,
+                max: 240,
+                step: 5,
+                fmt: "%",
+                hint: "画面の高さの何%ぶんスクロールしてフッターを見せるか。小さいほど早く終わる（既定155%）",
+              },
+              {
+                slider: "グラデの長さ",
+                path: "footer.fadeH",
+                min: 30,
+                max: 150,
+                step: 5,
+                fmt: "%",
+                hint: "白から写真へ移り変わる帯の長さ。短いほどキリッと、長いほどゆっくり溶ける",
+              },
+              {
+                slider: "白のままの割合",
+                path: "footer.fadeSolid",
+                min: 0,
+                max: 60,
+                step: 2,
+                fmt: "%",
+                hint: "グラデのうち、真っ白のまま保つ割合。小さいほど早く写真が出てくる",
+              },
+              { sub: "余白と間隔", deep: true },
               {
                 slider: "右カラムの上下位置",
                 path: "footer.mapOffsetY",
@@ -1524,10 +1594,14 @@ export default function TopTunePanel({
               new CustomEvent(EVENT_TAIL_EVENT, { detail: { v: params.events.tailPad } })
             );
           }
-          if (info?.path === "footer.pattern" || info?.path === "footer.layout") {
+          if (String(info?.path || "").startsWith("footer.")) {
             window.dispatchEvent(
               new CustomEvent(FOOTER_EVENT, {
-                detail: { v: params.footer.pattern, layout: params.footer.layout },
+                detail: {
+                  v: params.footer.pattern,
+                  layout: params.footer.layout,
+                  special: params.footer.special,
+                },
               })
             );
           }
@@ -1602,7 +1676,11 @@ export default function TopTunePanel({
       );
       window.dispatchEvent(
         new CustomEvent(FOOTER_EVENT, {
-                detail: { v: params.footer.pattern, layout: params.footer.layout },
+                detail: {
+                  v: params.footer.pattern,
+                  layout: params.footer.layout,
+                  special: params.footer.special,
+                },
               })
       );
 

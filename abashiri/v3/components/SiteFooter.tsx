@@ -51,6 +51,31 @@ export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
   },
 };
 
+/** 「ぼーっと体験」の見せ方 5案（2026-09-16 ヒデさん依頼）。
+    ぼーっとスポットの列の中に置くが、上の5つのスポットとは別物だと分かるようにする */
+export const FOOTER_SPECIALS: Record<number, { name: string; note: string }> = {
+  1: {
+    name: "別扱いA 線で区切る",
+    note: "スポットの下に細い区切り線を引いてから置く。いちばん素直で、別の種類だと分かる",
+  },
+  2: {
+    name: "別扱いB ガラスのボタン",
+    note: "すりガラスの小さなボタンにする。押せるものだとはっきり分かり、目線も止まる",
+  },
+  3: {
+    name: "別扱いC 矢印を添える",
+    note: "文字の後ろに → を置いて「別のページへ行く」ことを示す。いちばん軽い",
+  },
+  4: {
+    name: "別扱いD 点線の枠",
+    note: "点線の枠で囲む。一覧の流れから浮かせて、おまけの入口に見せる",
+  },
+  5: {
+    name: "別扱いE 小さな見出しを付ける",
+    note: "上に「動画で」という小さなラベルを付けて、別のまとまりとして見せる",
+  },
+};
+
 /** フッターの組み方（左右の余白・カラムの幅）。2026-09-16 ヒデさん依頼で追加。
     きっかけ：「メガフッターがきつい。作字とサイトマップが近い」 */
 export const FOOTER_LAYOUTS: Record<number, { name: string; note: string }> = {
@@ -80,7 +105,16 @@ export type SiteNode = {
   href?: string;
   jump?: "spotAt" | "gourmetAt" | "eventsAt";
 };
-export const SITEMAP: { title: string; jump?: "spotAt" | "gourmetAt" | "eventsAt"; href?: string; items: SiteNode[] }[] = [
+export const SITEMAP: {
+  title: string;
+  jump?: "spotAt" | "gourmetAt" | "eventsAt";
+  href?: string;
+  items: SiteNode[];
+  /** その列の最後に、ほかの項目とは別扱いで置くもの。
+      【2026-09-16 ヒデさん指示】「ぼーっと体験は子階層をなくして、
+      ぼーっとスポットの中に格納。ただし他のスポットとは別だと分かる見せ方で」 */
+  special?: SiteNode & { lead?: string };
+}[] = [
   {
     title: "ぼーっとスポット",
     jump: "spotAt",
@@ -91,6 +125,7 @@ export const SITEMAP: { title: string; jump?: "spotAt" | "gourmetAt" | "eventsAt
       { label: "流氷クルーズ", href: "/spot/ryuhyo" },
       { label: "大曲湖畔園地ひまわり畑", href: "/spot/himawari" },
     ],
+    special: { label: "ぼーっと体験", href: "/experience", lead: "動画で" },
   },
   {
     title: "素朴なグルメ",
@@ -110,15 +145,6 @@ export const SITEMAP: { title: string; jump?: "spotAt" | "gourmetAt" | "eventsAt
       { label: "オホーツク流氷館", href: "/spot/ryuhyokan" },
       { label: "カヌー体験", href: "/spot/canoe" },
       { label: "オジロワシ・オオワシウォッチング", href: "/spot/washi" },
-    ],
-  },
-  {
-    title: "ぼーっと体験",
-    href: "/experience",
-    items: [
-      { label: "ぼーっとしてみる", href: "/experience" },
-      { label: "場所をえらぶ", href: "/experience" },
-      { label: "ぼーっとタイマー", href: "/experience" },
     ],
   },
 ];
@@ -194,6 +220,9 @@ function PhotoStage({
   const [vh, setVh] = useState(0);
   /** 写真がどれくらい顔を出したか 0〜1 */
   const [t, setT] = useState(0);
+  /** 調整パネルから変えられる値（CSS変数）。
+      高さとグラデはレイアウトに関わるので、変わった時だけ描き直す */
+  const [cfg, setCfg] = useState({ stageH: 155, fadeH: 95, solid: 22 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -220,6 +249,22 @@ function PhotoStage({
         const v = 1 - top / Math.max(1, H);
         const next = Math.max(0, Math.min(1, v));
         setT((p) => (Math.abs(p - next) > 0.004 ? next : p));
+        /* パネルのつまみ（CSS変数）を読み直す。変わった時だけ state を更新する */
+        const cs = getComputedStyle(document.documentElement);
+        const num = (n: string, d: number) => {
+          const x = parseFloat(cs.getPropertyValue(n));
+          return isFinite(x) && x > 0 ? x : d;
+        };
+        const nc = {
+          stageH: num("--ft-stage-h", 155),
+          fadeH: num("--ft-fade-h", 95),
+          solid: num("--ft-fade-solid", 22),
+        };
+        setCfg((o) =>
+          o.stageH === nc.stageH && o.fadeH === nc.fadeH && o.solid === nc.solid
+            ? o
+            : nc
+        );
       }
       id = requestAnimationFrame(tick);
     };
@@ -229,9 +274,17 @@ function PhotoStage({
 
   /* 高さが測れるまでは 1画面ぶんを仮に置く（描画のちらつき防止） */
   const H = vh || 900;
+  const stageH = cfg.stageH / 100;
+  const fadeH = cfg.fadeH / 100;
+  const solid = cfg.solid;
 
   return (
-    <div ref={ref} className="relative w-full" style={{ height: H * 1.55 }}>
+    <div
+      ref={ref}
+      className="relative w-full"
+      /* 高さ＝スクロール量。短くすると体験セクションからフッターまでが早く終わる */
+      style={{ height: H * stageH }}
+    >
       {/* ① 後ろの写真。画面に止まったまま、コンテンツだけが流れていく。
          1枚を画面いっぱいに引き延ばす（object-cover なので繰り返さない） */}
       <div
@@ -258,9 +311,10 @@ function PhotoStage({
         className="pointer-events-none absolute inset-x-0"
         style={{
           top: -3,
-          height: H * 0.95 + 3,
-          background:
-            "linear-gradient(to bottom, #ffffff 0%, #ffffff 22%, rgba(255,255,255,0.96) 38%, rgba(255,255,255,0.86) 52%, rgba(255,255,255,0.68) 65%, rgba(255,255,255,0.44) 78%, rgba(255,255,255,0.2) 90%, rgba(255,255,255,0) 100%)",
+          height: H * fadeH + 3,
+          /* 白のまま保つ割合（solid）から先を、少しずつ透明にしていく。
+             solid を小さくすると早く写真が出る＝境目がやわらかくなる */
+          background: `linear-gradient(to bottom, #ffffff 0%, #ffffff ${solid}%, rgba(255,255,255,0.96) ${solid + (100 - solid) * 0.2}%, rgba(255,255,255,0.86) ${solid + (100 - solid) * 0.38}%, rgba(255,255,255,0.68) ${solid + (100 - solid) * 0.55}%, rgba(255,255,255,0.44) ${solid + (100 - solid) * 0.72}%, rgba(255,255,255,0.2) ${solid + (100 - solid) * 0.87}%, rgba(255,255,255,0) 100%)`,
         }}
       />
 
@@ -287,10 +341,13 @@ function MapColumn({
   col,
   light = false,
   level = 1,
+  special = 1,
 }: {
   col: (typeof SITEMAP)[number];
   light?: boolean;
   level?: number;
+  /** 「ぼーっと体験」の見せ方（5案） */
+  special?: number;
 }) {
   const white = light ? "text-white" : "text-ink";
   /* 親の文字。案3だけ大きく */
@@ -397,6 +454,85 @@ function MapColumn({
           );
         })}
       </ul>
+      {/* 「ぼーっと体験」だけは、上のスポット一覧とは別物だと分かる見せ方にする */}
+      {col.special && <SpecialLink node={col.special} light={light} kind={special} />}
+    </div>
+  );
+}
+
+/** ぼーっとスポットの列の最後に置く「ぼーっと体験」。見せ方は5案から選ぶ */
+function SpecialLink({
+  node,
+  light,
+  kind = 1,
+}: {
+  node: NonNullable<(typeof SITEMAP)[number]["special"]>;
+  light?: boolean;
+  kind?: number;
+}) {
+  const base = `text-body-13 font-light leading-[1.9] transition-colors duration-300 ease-standard ${
+    light ? "text-white hover:text-white" : "text-ink hover:text-ink"
+  }`;
+  const rule = light ? "border-white/30" : "border-ink/15";
+
+  const inner = (
+    <Link href={node.href || "/"} className={base}>
+      {node.label}
+      {kind === 3 && <span className="ml-2 opacity-70">→</span>}
+    </Link>
+  );
+
+  /* A 線で区切る */
+  if (kind === 1)
+    return (
+      <div className={`mt-5 border-t pt-5 ${rule}`}>{inner}</div>
+    );
+  /* B ガラスのボタン */
+  if (kind === 2)
+    return (
+      <div className="mt-6">
+        <Link
+          href={node.href || "/"}
+          className={`inline-flex items-center gap-2 px-5 py-2.5 text-body-13 font-light transition-colors duration-300 ease-standard ${
+            light
+              ? "bg-white/15 text-white ring-1 ring-inset ring-white/30 backdrop-blur-65 hover:bg-white/25"
+              : "bg-ink/5 text-ink hover:bg-ink/10"
+          }`}
+        >
+          {node.label}
+          <span className="opacity-70">→</span>
+        </Link>
+      </div>
+    );
+  /* C 矢印を添える（線なし・軽く） */
+  if (kind === 3) return <div className="mt-5">{inner}</div>;
+  /* D 点線の枠 */
+  if (kind === 4)
+    return (
+      <div className="mt-6">
+        <Link
+          href={node.href || "/"}
+          className={`inline-flex items-center gap-2 border border-dashed px-4 py-2.5 text-body-13 font-light transition-colors duration-300 ease-standard ${
+            light
+              ? "border-white/45 text-white hover:border-white"
+              : "border-ink/25 text-ink hover:border-ink/50"
+          }`}
+        >
+          {node.label}
+        </Link>
+      </div>
+    );
+  /* E 小さな見出しを付ける */
+  return (
+    <div className="mt-7 flex flex-col gap-2">
+      <span
+        className={`text-body-12 font-light tracking-[0.2em] ${
+          light ? "text-white/45" : "text-ink/35"
+        }`}
+      >
+        {node.lead || "そのほか"}
+      </span>
+      {inner}
     </div>
   );
 }
@@ -406,21 +542,23 @@ function SiteMapGrid({
   light = false,
   level = 1,
   cols = 4,
+  special = 1,
 }: {
   light?: boolean;
   level?: number;
   cols?: 2 | 4;
+  special?: number;
 }) {
   return (
     <div
       className={`grid w-full gap-y-[var(--ft-map-gap-y)] ${
         cols === 4
-          ? "grid-cols-2 gap-x-8 sm:grid-cols-4 sm:gap-x-[var(--ft-map-gap-x)]"
+          ? "grid-cols-1 gap-x-8 sm:grid-cols-3 sm:gap-x-[var(--ft-map-gap-x)]"
           : "grid-cols-2 gap-x-8 sm:gap-x-[var(--ft-map-gap-x)]"
       }`}
     >
       {SITEMAP.map((c) => (
-        <MapColumn key={c.title} col={c} light={light} level={level} />
+        <MapColumn key={c.title} col={c} light={light} level={level} special={special} />
       ))}
     </div>
   );
@@ -428,7 +566,15 @@ function SiteMapGrid({
 
 /* ── 案ごとの中身 ─────────────────────────── */
 
-function Body({ pat, layout }: { pat: number; layout: number }) {
+function Body({
+  pat,
+  layout,
+  special,
+}: {
+  pat: number;
+  layout: number;
+  special: number;
+}) {
   /* 左の作字。サイトの顔なので大きく出す（2026-09-16 ヒデさん指示） */
   const logo = (cls: string) => (
     /* 2026-09-16 ヒデさん指示で SNS アイコンは削除。左カラムは作字だけ */
@@ -444,7 +590,7 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
         <div className="flex w-full flex-col gap-[var(--ft-col-gap)]">
           {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
           <div style={{ transform: "translateY(var(--ft-map-offset-y))" }}>
-            <SiteMapGrid light level={pat} />
+            <SiteMapGrid light level={pat} special={special} />
           </div>
         </div>
       </PhotoStage>
@@ -464,7 +610,7 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
                transform なので周りのレイアウトは動かない */
             style={{ transform: "translateY(var(--ft-map-offset-y))" }}
           >
-            <SiteMapGrid light level={pat} cols={2} />
+            <SiteMapGrid light level={pat} cols={2} special={special} />
           </div>
         </div>
       </PhotoStage>
@@ -481,7 +627,7 @@ function Body({ pat, layout }: { pat: number; layout: number }) {
           className="min-w-0 flex-1"
           style={{ transform: "translateY(var(--ft-map-offset-y))" }}
         >
-          <SiteMapGrid light level={pat} />
+          <SiteMapGrid light level={pat} special={special} />
         </div>
       </div>
     </PhotoStage>
@@ -492,6 +638,7 @@ export default function SiteFooter() {
   /* 選ぶのは「組み（レイアウト）」3案 と「階層の見せ方」6案。既定は 組みA／階層A */
   const [pat, setPat] = useState(1);
   const [layout, setLayout] = useState(1);
+  const [special, setSpecial] = useState(1);
   useEffect(() => {
     fetch("/tune-defaults.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -500,12 +647,17 @@ export default function SiteFooter() {
         if (typeof v === "number" && FOOTER_PATTERNS[v]) setPat(v);
         const l = d?.footer?.layout;
         if (typeof l === "number" && FOOTER_LAYOUTS[l]) setLayout(l);
+        const sp = d?.footer?.special;
+        if (typeof sp === "number" && FOOTER_SPECIALS[sp]) setSpecial(sp);
       })
       .catch(() => {});
     const onTune = (e: Event) => {
-      const d = (e as CustomEvent<{ v?: number; layout?: number }>).detail;
+      const d = (e as CustomEvent<{ v?: number; layout?: number; special?: number }>)
+        .detail;
       if (typeof d?.v === "number" && FOOTER_PATTERNS[d.v]) setPat(d.v);
       if (typeof d?.layout === "number" && FOOTER_LAYOUTS[d.layout]) setLayout(d.layout);
+      if (typeof d?.special === "number" && FOOTER_SPECIALS[d.special])
+        setSpecial(d.special);
     };
     window.addEventListener(FOOTER_EVENT, onTune);
     return () => window.removeEventListener(FOOTER_EVENT, onTune);
@@ -527,7 +679,7 @@ export default function SiteFooter() {
          写真はこの白の上に載るので、白地でも見た目は変わらない */
       className="relative z-10 -mt-[2px] w-full bg-white"
     >
-      <Body pat={pat} layout={layout} />
+      <Body pat={pat} layout={layout} special={special} />
     </footer>
   );
 }
