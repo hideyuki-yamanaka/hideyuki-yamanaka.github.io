@@ -6,9 +6,9 @@
  * 2026-09-16 ヒデさん依頼を4グループに分けて作った：
  *
  *   A. 案26      サムネイルが「パツッ」と切れず、グラデで白い解説の面に移る
- *   B. 案27〜31  見出しを付けて「左に見出し・右に本文」。余白を生かした5案。
- *                2カラムの案（案3のような組み）も入れる。
- *                ⚠️ 色は付けない。カラムは【罫線と余白だけ】で表す
+ *   B. 案31      見出しを付けて「左に見出し・右に本文」。余白を生かした案。
+ *                ⚠️ 色は付けない。区切りは【罫線と余白だけ】で表す
+ *                （同じ組で出した案27〜30 は 2026-09-16 に完全削除）
  *   C. 案32〜36  左カラムに目次。スクロール位置に応じて目次が動く5案
  *   D. 案37      最初は画面いっぱい（100dvh）のサムネ＋左下に名前。
  *                スクロールすると裏がぼけて、白いコンテンツの面になる
@@ -328,11 +328,12 @@ export function V26Dissolve({ spot }: VProps) {
 }
 
 /* ═══════════════════════════════════════════════════
-   B. 案27〜31  左に見出し・右に本文（余白を生かす5案）
-   ⚠️ 5案とも **色は一切足さない**。カラムの区切りは罫線と余白だけ
+   B. 案31  左に見出し・右に本文（余白を生かす案）
+   ⚠️ **色は一切足さない**。区切りは罫線と余白だけ
+   【2026-09-16 ヒデさん依頼】この組の案27・28・29・30 は完全削除した
    ═══════════════════════════════════════════════════ */
 
-/** 5案で共通のヒーロー（写真いっぱい・見出しは小さく下に） */
+/** 案31 と目次5案で共通のヒーロー（写真いっぱい・見出しは小さく下に） */
 function QuietHero({ spot, h = "h-[88dvh]" }: { spot: SpotDetail; h?: string }) {
   return (
     <div className={`relative w-full overflow-hidden ${h}`}>
@@ -342,182 +343,6 @@ function QuietHero({ spot, h = "h-[88dvh]" }: { spot: SpotDetail; h?: string }) 
         <HeroTitle spot={spot} size="sm" />
       </div>
     </div>
-  );
-}
-
-/* ── 案27 見出しは小さく、うんと離す ──────────────
-   変えたところ：左右の間（余白）
-   見出しは本文よりずっと小さくして、間を 140px も空ける。
-   目は自然と右の本文へ行き、左の見出しは「しおり」として残る */
-export function V27SideQuiet({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} />
-      <div className="px-6 py-[130px] sm:px-[120px]">
-        <div className="mx-auto flex max-w-[1060px] flex-col gap-[110px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="flex flex-col gap-5 sm:flex-row sm:gap-[140px]"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
-            >
-              <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.2em] text-ink/50 sm:w-[150px] sm:pt-[6px]">
-                {s.heading}
-              </h3>
-              <p className="w-full whitespace-pre-line text-body-16 font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 sm:max-w-[540px]">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-          {spot.photos.map((p, i) => (
-            <Photo key={i} src={p} root={ref} className="h-[64dvh] w-full" />
-          ))}
-          <QuietBlocks spot={spot} root={ref} from={heads.length} />
-        </div>
-      </div>
-    </Shell>
-  );
-}
-
-/* ── 案28 見出しを大きく、本文を細く ────────────────
-   変えたところ：文字の大きさの関係
-   左の見出しを 28px の細見出しにして主役に。本文は柱を 460px まで細くする。
-   見出しが「章タイトル」として立ち、本文は静かに添う */
-export function V28BigHead({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} h="h-[92dvh]" />
-      <div className="px-6 py-[130px] sm:px-[120px]">
-        <div className="mx-auto flex max-w-[1080px] flex-col gap-[120px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="flex flex-col gap-6 sm:flex-row sm:gap-[100px]"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
-            >
-              <h3 className="shrink-0 text-title-28 font-thin leading-[1.5] tracking-[0.02em] text-ink sm:w-[300px] [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
-                {s.heading}
-              </h3>
-              <p className="w-full whitespace-pre-line text-body-14 font-extralight leading-[2.6] tracking-[0.6px] text-ink/80 sm:max-w-[460px]">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-          {spot.photos.map((p, i) => (
-            <Photo key={i} src={p} root={ref} className="h-[68dvh] w-full" />
-          ))}
-          <QuietBlocks spot={spot} root={ref} from={heads.length} />
-        </div>
-      </div>
-    </Shell>
-  );
-}
-
-/* ── 案29 罫線で2カラム ───────────────────────
-   変えたところ：カラムの表し方（案3のような2カラム組み）
-   左右の間に縦の細い罫線を1本だけ通す。色は使わず ink/12 の線と余白だけ。
-   見出しはその線に向かって右揃えにして、線を境に文字が向かい合う */
-export function V29RuleColumns({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} />
-      <div className="px-6 py-[120px] sm:px-[120px]">
-        <div className="mx-auto max-w-[1040px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="flex flex-col gap-5 border-t border-ink/12 py-[68px] first:border-t-0 first:pt-0 sm:flex-row sm:gap-0"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
-            >
-              {/* 左：罫線に向かって右揃え */}
-              <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:w-[260px] sm:pr-[48px] sm:text-right">
-                {s.heading}
-              </h3>
-              {/* 縦の罫線。これがカラムの境目（色は足さない） */}
-              <div className="hidden w-px shrink-0 self-stretch bg-ink/12 sm:block" />
-              <p className="w-full whitespace-pre-line text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px] sm:pl-[48px]">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-          <div className="flex flex-col gap-[90px] pt-[40px]">
-            {spot.photos.map((p, i) => (
-              <Photo key={i} src={p} root={ref} className="h-[62dvh] w-full" />
-            ))}
-            <QuietBlocks spot={spot} root={ref} from={heads.length} />
-          </div>
-        </div>
-      </div>
-    </Shell>
-  );
-}
-
-/* ── 案30 番号と横罫線 ──────────────────────
-   変えたところ：見出しの持ち方（通し番号を振る）
-   左の柱に 01 / 02 / 03 の番号、その下に見出し。
-   区切りは横に長く引いた1本の罫線だけ。目次のような読み心地になる */
-export function V30Numbered({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} h="h-[86dvh]" />
-      <div className="px-6 py-[120px] sm:px-[120px]">
-        <div className="mx-auto max-w-[1060px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="flex flex-col gap-6 border-b border-ink/12 pb-[76px] pt-[76px] first:pt-0 sm:flex-row sm:gap-[110px]"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
-            >
-              <div className="flex shrink-0 flex-col gap-3 sm:w-[200px]">
-                <span className="font-num text-body-14 font-thin tracking-[0.2em] text-ink/40">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <h3 className="text-body-16 font-light leading-[1.8] tracking-[0.1em] text-ink/70">
-                  {s.heading}
-                </h3>
-              </div>
-              <p className="w-full whitespace-pre-line text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-          <div className="flex flex-col gap-[90px] pt-[90px]">
-            {spot.photos.map((p, i) => (
-              <Photo key={i} src={p} root={ref} className="h-[64dvh] w-full" />
-            ))}
-            <QuietBlocks spot={spot} root={ref} from={heads.length} />
-          </div>
-        </div>
-      </div>
-    </Shell>
   );
 }
 

@@ -21,7 +21,7 @@
  *   （Noto Thin/ExtraLight・white/10 + blur65 のガラス・body-14 行間2 字間0.7px）
  */
 import { useRef } from "react";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   BackPill,
   FooterBlocks,
@@ -218,54 +218,6 @@ export function V12Vertical({ spot }: VProps) {
   );
 }
 
-/* ═══════════ 案13 横に流れる写真 ═══════════
-   変えたところ：インタラクション
-   下へスクロールすると、貼りついた写真の列が横へ流れていく。
-   縦に読むのをやめて「眺める」時間を作る */
-export function V13Reel({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const reel = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ container: ref, target: reel });
-  /* 写真の枚数ぶんだけ横へ。入力は必ず 0→1 の増加順 */
-  const xRaw = useTransform(scrollYProgress, [0, 1], ["2%", "-62%"]);
-  /* バネで少し遅れて追従させる＝指を止めてもふわっと流れ続ける“ため”が出る */
-  const x = useSpring(xRaw, { stiffness: 42, damping: 26, mass: 1.1 });
-
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <div className="relative h-[88dvh] w-full overflow-hidden">
-        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
-          <HeroTitle spot={spot} size="sm" />
-        </div>
-      </div>
-      {/* 横に流れるリール。高さぶんスクロールする間、写真が横へ動く */}
-      {/* 【2026-09-16】スクロールできる長さが短いと、少し動かしただけで写真が
-             ビュッと流れて忙しい。460dvh まで伸ばして、同じ距離をゆっくり進ませる */}
-      <div ref={reel} className="relative h-[460dvh]">
-        <div className="sticky top-0 flex h-dvh items-center overflow-hidden">
-          <motion.div className="flex gap-6 pl-6 sm:gap-10 sm:pl-[120px]" style={{ x }}>
-            {[spot.hero, ...spot.photos].map((p, i) => (
-              <img
-                key={`${p}-${i}`}
-                src={p}
-                alt=""
-                className="h-[80dvh] w-[84vw] shrink-0 object-cover sm:w-[56vw]"
-              />
-            ))}
-          </motion.div>
-        </div>
-      </div>
-      <div className="mx-auto flex w-[640px] max-w-full flex-col gap-[80px] px-6 py-[96px]">
-        <Sections spot={spot} root={ref} />
-        <FooterBlocks spot={spot} root={ref} />
-      </div>
-    </Shell>
-  );
-}
-
 /* ═══════════ 案16 写真が入れ替わる ═══════════
    変えたところ：見せ方（写真が常に画面いっぱい）
    背景の写真を貼りつけたまま、スクロールに合わせて入れ替える。
@@ -371,58 +323,6 @@ export function V18Mosaic({ spot }: VProps) {
         <div className="mx-auto w-[600px] max-w-full">
           <Sections spot={spot} root={ref} />
         </div>
-      </div>
-      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
-        <FooterBlocks spot={spot} root={ref} />
-      </div>
-    </Shell>
-  );
-}
-
-/* ═══════════ 案19 引きで見せる ═══════════
-   変えたところ：インタラクション（ズームアウト）
-   ヒーローは寄った状態から始まり、スクロールでゆっくり引いて全景になる。
-   「近くから見て、離れて眺める」動き */
-export function V19ZoomOut({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const stage = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ container: ref, target: stage });
-  const scale = useTransform(scrollYProgress, [0, 0.9], [1.35, 1]);
-  const titleOp = useTransform(scrollYProgress, [0, 0.45], [1, 0]);
-
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      {/* 引いていく動きもゆっくりに（180→300dvh） */}
-      <div ref={stage} className="relative h-[300dvh]">
-        <div className="sticky top-0 h-dvh w-full overflow-hidden">
-          <motion.img
-            src={spot.hero}
-            alt={spot.name}
-            className="absolute inset-0 size-full object-cover"
-            style={{ scale }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          <motion.div
-            className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]"
-            style={{ opacity: titleOp }}
-          >
-            <HeroTitle spot={spot} size="sm" />
-          </motion.div>
-        </div>
-      </div>
-      <div className="mx-auto w-[560px] max-w-full px-6 py-[104px]">
-        <Sections spot={spot} root={ref} />
-      </div>
-      <div className="flex flex-col gap-[64px] pb-[104px]">
-        {spot.photos.map((p) => (
-          <Photo
-            key={p}
-            src={p}
-            root={ref}
-            className="h-[78dvh] w-full sm:h-[86dvh]"
-            />
-        ))}
       </div>
       <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
         <FooterBlocks spot={spot} root={ref} />
@@ -686,59 +586,3 @@ export function V23RightColumn({ spot }: VProps) {
     </Shell>
   );
 }
-
-/* ═══════════ 案24 余白が広がっていく ═══════════
-   変えたところ：レイアウト（段ごとに字下げ）
-   段落が進むほど本文の柱が少しずつ右へ下がり、左の余白が育っていく。
-   読み進むほど静かになっていく感じ */
-export function V24Indent({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  /* 字下げは4段まで。増やしすぎると右端が詰まる */
-  const indent = ["sm:ml-0", "sm:ml-[80px]", "sm:ml-[160px]", "sm:ml-[240px]"];
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} />
-      <div className="flex flex-col gap-[120px] px-6 py-[130px] sm:px-[120px]">
-        {spot.sections.map((s, i) => (
-          <motion.div
-            key={i}
-            className={`flex flex-col gap-4 sm:flex-row sm:gap-[64px] ${indent[Math.min(i, 3)]}`}
-            variants={revealSlow}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ root: ref, once: true, amount: 0.3 }}
-          >
-            <div className="shrink-0 sm:w-[160px]">
-              {s.heading && (
-                <h3 className="text-body-13 font-light leading-[1.9] tracking-[0.18em] text-ink/55">
-                  {s.heading}
-                </h3>
-              )}
-            </div>
-            <p className="w-full text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[520px]">
-              {s.text}
-            </p>
-          </motion.div>
-        ))}
-      </div>
-      {/* 写真も同じ発想で、1枚ごとに少しずつ右へ寄る */}
-      <div className="flex flex-col gap-[80px] pb-[130px]">
-        {spot.photos.map((p, i) => (
-          <QuietPhoto
-            key={p}
-            src={p}
-            root={ref}
-            className={`h-[68dvh] sm:h-[82dvh] ${
-              i === 0 ? "w-full" : i === 1 ? "ml-auto w-[92%]" : "ml-auto w-[84%]"
-            }`}
-          />
-        ))}
-      </div>
-      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
-        <FooterBlocks spot={spot} root={ref} />
-      </div>
-    </Shell>
-  );
-}
-
