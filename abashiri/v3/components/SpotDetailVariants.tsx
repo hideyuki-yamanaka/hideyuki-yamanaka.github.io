@@ -29,9 +29,9 @@ import type { SpotDetail } from "./spotDetailData";
 import SiteFooter from "./SiteFooter";
 
 /* ゆったり共通のイージング（既存サイトと同じ緩急） */
-const EASE = [0.22, 1, 0.36, 1] as const;
+export const EASE = [0.22, 1, 0.36, 1] as const;
 /* 画面に入ったらブラーが晴れて浮き上がる（reveal）。トップページと同じ質感 */
-const reveal = {
+export const reveal = {
   hidden: { opacity: 0, y: 40, filter: "blur(16px)" },
   show: {
     opacity: 1,
@@ -142,11 +142,16 @@ export function MapEmbed({
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
       />
+      {/* ⚠️ 左上は Google 自身の情報カード（店名・住所・評価）の定位置。
+         そこに置くと必ず重なるので【右上】へ逃がす（2026-09-16 ヒデさん指摘）。
+         左下＝Googleロゴ・サムネ／右下＝操作ボタン／下中央＝利用規約 も避ける。
+         見た目はトップページのすりガラス（bg-white/10＋ring＋blur65）と同じ作りだが、
+         地図は明るいので、地の白と枠を濃いめにして文字が読めるようにしている */}
       <a
         href={spot.map.link}
         target="_blank"
         rel="noreferrer"
-        className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-body-14 font-light text-ink backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white"
+        className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/55 px-4 py-2 text-body-14 font-light text-ink shadow-floating ring-1 ring-inset ring-white/70 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/80"
       >
         マップで開く
         <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
@@ -156,7 +161,7 @@ export function MapEmbed({
 }
 
 /** 本文（小見出し＋段落）。1段落ずつ画面に入ったら浮き上がる */
-function Sections({
+export function Sections({
   spot,
   light,
   root,
@@ -199,7 +204,7 @@ function Sections({
 }
 
 /** 下部の共通ブロック（ポイント → 基本情報 → 周辺マップ） */
-function FooterBlocks({
+export function FooterBlocks({
   spot,
   root,
   kind = "plain",
@@ -247,7 +252,7 @@ function FooterBlocks({
 }
 
 /** ヒーローに重ねる見出し（共通の書式） */
-function HeroTitle({
+export function HeroTitle({
   spot,
   className = "",
   size = "lg",
@@ -286,10 +291,10 @@ function HeroTitle({
 }
 
 /* 案ごとの共通の型 */
-type VProps = { spot: SpotDetail };
+export type VProps = { spot: SpotDetail };
 
 /** 写真の上に薄く敷く暗幕（文字を置く時だけ） */
-const VEIL =
+export const VEIL =
   "absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent";
 
 /* ═══════════ 案1 パララックス没入 ═══════════

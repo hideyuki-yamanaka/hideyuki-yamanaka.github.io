@@ -1,0 +1,682 @@
+"use client";
+
+/* eslint-disable @next/next/no-img-element */
+/*
+ * ぼーっとスポット詳細ページ｜追加の10案（案11〜20）
+ * 2026-09-16 ヒデさん依頼:
+ *   「レイアウト・文字組み・見せ方・インタラクションを変えたパターンを10案。
+ *     今のベースでミニマムだけど余白をうまく使い、文字が目に入ってくる。
+ *     写真が主役なので、スクロールしても写真がパッと目に入って、
+ *     その補足としてテキストが入ってくる。写真が6〜7割を占める形」
+ *
+ * 全案の共通ルール
+ *   ・**写真の占有率 6〜7割**：画面の高さに対して写真の塊が 60〜70% を占めるよう、
+ *     写真は 62〜78dvh、文章の柱は最大 520〜640px に抑える
+ *   ・動かしてよいのは transform / opacity / clip-path だけ（幅や高さは動かさない）
+ *   ・このページは自前のスクロール容器（html/body が overflow:hidden のため）。
+ *     スクロール連動は容器 ref を渡した useScroll で取る
+ *   ・案ごとの「何を変えたか」が分かる名前を付ける（調整パネルに出る）
+ *
+ * 🟡仮置き：このページのカンプは無い。数値は既存のトンマナから流用
+ *   （Noto Thin/ExtraLight・white/10 + blur65 のガラス・body-14 行間2 字間0.7px）
+ */
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
+import {
+  BackPill,
+  FooterBlocks,
+  HeroTitle,
+  Sections,
+  reveal,
+  EASE,
+  type VProps,
+} from "./SpotDetailVariants";
+import SiteFooter from "./SiteFooter";
+
+/* 画面に入ったら写真がブラーから立ち上がる。文字より先に目に入るよう、
+   文字の reveal（1.2秒）より少しだけ速くしてある */
+const photoIn = {
+  hidden: { opacity: 0, scale: 1.04, filter: "blur(18px)" },
+  show: {
+    opacity: 1,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { duration: 1.0, ease: EASE },
+  },
+};
+
+/** 全案で使うスクロール容器 */
+function Shell({
+  children,
+  refEl,
+  dark = false,
+}: {
+  children: React.ReactNode;
+  refEl: React.RefObject<HTMLElement | null>;
+  dark?: boolean;
+}) {
+  return (
+    /* ⚠️ overflow-x-hidden は必須。写真の登場アニメで一瞬 scale を掛けるため、
+       全幅の写真が左右に数十px はみ出してページごと横スクロールしてしまう
+       （2026-09-16 実測：案15で21px・案19で30px・案20で38px） */
+    <main
+      ref={refEl}
+      className={`h-dvh overflow-y-auto overflow-x-hidden overscroll-contain ${dark ? "bg-ink" : "bg-white"}`}
+    >
+      {children}
+      <SiteFooter />
+    </main>
+  );
+}
+
+/* ═══════════ 案11 余白で読ませる ═══════════
+   変えたところ：レイアウト（余白）
+   写真は全幅で大きく、文章は細い柱にして左に寄せる。
+   写真と写真の間をたっぷり空けて、目が休むところを作る */
+export function V11Margins({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[86dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
+          <HeroTitle spot={spot} size="sm" />
+        </div>
+      </div>
+      {/* 文章は細い柱。右に大きな余白を残して「読む場所」を限定する */}
+      <div className="px-6 py-[96px] sm:px-[120px] sm:py-[140px]">
+        <div className="w-full max-w-[520px]">
+          <Sections spot={spot} root={ref} />
+        </div>
+      </div>
+      {/* 写真は1枚ずつ、間を大きく空けて */}
+      <div className="flex flex-col gap-[72px] pb-[120px] sm:gap-[104px]">
+        {spot.photos.map((p) => (
+          <motion.div
+            key={p}
+            className="overflow-hidden h-[74dvh] w-full object-cover sm:h-[86dvh]"
+            variants={photoIn}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.2 }}
+            >
+              <img src={p} alt="" className="size-full object-cover" />
+          </motion.div>
+        ))}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案12 縦書きの見出し ═══════════
+   変えたところ：文字組み
+   名前と小見出しを縦書きにして写真の右脇に立てる。
+   本文は横書きのまま細い柱に。日本語の縦組みで「静けさ」を出す */
+export function V12Vertical({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[92dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-l from-black/45 to-transparent" />
+        {/* 縦書きの名前。右端に立てて、写真の邪魔をしない */}
+        <div className="absolute right-6 top-[10dvh] flex items-start gap-5 sm:right-[96px]">
+          <h1 className="[writing-mode:vertical-rl] text-title-34 font-thin leading-[1.6] tracking-[0.2em] text-white sm:text-title-56">
+            {spot.name}
+          </h1>
+          <p className="[writing-mode:vertical-rl] text-body-13 font-extralight leading-[2] tracking-[0.3em] text-white/75">
+            {spot.category} {spot.no}　{spot.kana}
+          </p>
+        </div>
+        <p className="absolute inset-x-6 bottom-[64px] max-w-[520px] text-body-14 font-extralight leading-[2] tracking-[0.7px] text-white/90 sm:inset-x-[120px]">
+          {spot.lead}
+        </p>
+      </div>
+      {/* 本文：小見出しだけ縦書きで右に添える */}
+      <div className="flex flex-col gap-[96px] px-6 py-[110px] sm:px-[120px]">
+        {spot.sections.map((s, i) => (
+          <motion.div
+            key={i}
+            className="flex justify-between gap-8"
+            variants={reveal}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.3 }}
+          >
+            <p className="max-w-[560px] text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+              {s.text}
+            </p>
+            {s.heading && (
+              <h3 className="hidden shrink-0 [writing-mode:vertical-rl] text-title-24 font-thin leading-[1.6] tracking-[0.2em] text-ink sm:block">
+                {s.heading}
+              </h3>
+            )}
+          </motion.div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-[56px] pb-[120px]">
+        {spot.photos.map((p) => (
+          <motion.div
+            key={p}
+            className="overflow-hidden h-[82dvh] w-full object-cover"
+            variants={photoIn}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.2 }}
+            >
+              <img src={p} alt="" className="size-full object-cover" />
+          </motion.div>
+        ))}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案13 横に流れる写真 ═══════════
+   変えたところ：インタラクション
+   下へスクロールすると、貼りついた写真の列が横へ流れていく。
+   縦に読むのをやめて「眺める」時間を作る */
+export function V13Reel({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const reel = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ container: ref, target: reel });
+  /* 写真の枚数ぶんだけ横へ。入力は必ず 0→1 の増加順 */
+  const x = useTransform(scrollYProgress, [0, 1], ["2%", "-62%"]);
+
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[88dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
+          <HeroTitle spot={spot} size="sm" />
+        </div>
+      </div>
+      {/* 横に流れるリール。高さぶんスクロールする間、写真が横へ動く */}
+      <div ref={reel} className="relative h-[260dvh]">
+        <div className="sticky top-0 flex h-dvh items-center overflow-hidden">
+          <motion.div className="flex gap-6 pl-6 sm:gap-10 sm:pl-[120px]" style={{ x }}>
+            {[spot.hero, ...spot.photos].map((p, i) => (
+              <img
+                key={`${p}-${i}`}
+                src={p}
+                alt=""
+                className="h-[80dvh] w-[84vw] shrink-0 object-cover sm:w-[56vw]"
+              />
+            ))}
+          </motion.div>
+        </div>
+      </div>
+      <div className="mx-auto flex w-[640px] max-w-full flex-col gap-[80px] px-6 py-[96px]">
+        <Sections spot={spot} root={ref} />
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案14 写真が開く ═══════════
+   変えたところ：インタラクション（clip-path）
+   写真が中央から上下に開いて現れる。幕が上がるような入り方 */
+export function V14Curtain({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const curtain = {
+    hidden: { clipPath: "inset(45% 0% 45% 0%)", opacity: 0.6 },
+    show: {
+      clipPath: "inset(0% 0% 0% 0%)",
+      opacity: 1,
+      transition: { duration: 1.3, ease: EASE },
+    },
+  };
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[90dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
+          <HeroTitle spot={spot} size="sm" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-[72px] py-[96px]">
+        {spot.photos.map((p, i) => (
+          <div key={p} className="flex flex-col gap-[40px]">
+            <motion.div
+              className="h-[78dvh] w-full overflow-hidden sm:h-[86dvh]"
+              variants={curtain}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.25 }}
+            >
+              <img src={p} alt="" className="size-full object-cover" />
+            </motion.div>
+            {/* 写真のすぐ下に、対応する段落を1つだけ添える */}
+            {spot.sections[i] && (
+              <motion.div
+                className="mx-auto w-[560px] max-w-full px-6"
+                variants={reveal}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ root: ref, once: true, amount: 0.4 }}
+              >
+                {spot.sections[i].heading && (
+                  <h3 className="mb-4 text-title-24 font-thin leading-[1.5] text-ink">
+                    {spot.sections[i].heading}
+                  </h3>
+                )}
+                <p className="text-body-14 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+                  {spot.sections[i].text}
+                </p>
+              </motion.div>
+            )}
+          </div>
+        ))}
+        {/* 写真より段落が多い時は、残りをまとめて出す */}
+        {spot.sections.length > spot.photos.length && (
+          <div className="mx-auto w-[560px] max-w-full px-6">
+            <Sections
+              spot={{ ...spot, sections: spot.sections.slice(spot.photos.length) }}
+              root={ref}
+            />
+          </div>
+        )}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案15 左右に組む ═══════════
+   変えたところ：レイアウト
+   写真7割・文章3割で左右に組み、行ごとに向きを入れ替える。
+   視線が左右に振れて、写真と文章が交互に主役になる */
+export function V15Zigzag({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[84dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
+          <HeroTitle spot={spot} size="sm" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-[72px] py-[96px] sm:gap-[104px]">
+        {spot.photos.map((p, i) => (
+          <div
+            key={p}
+            className={`flex flex-col items-center gap-8 sm:flex-row sm:gap-[72px] ${
+              i % 2 ? "sm:flex-row-reverse" : ""
+            }`}
+          >
+            <motion.div
+              className="overflow-hidden h-[58dvh] w-full object-cover sm:h-[80dvh] sm:w-[72%]"
+              variants={photoIn}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.2 }}
+              >
+                <img src={p} alt="" className="size-full object-cover" />
+            </motion.div>
+            {spot.sections[i] && (
+              <motion.div
+                className="w-full px-6 sm:w-[28%] sm:px-0 sm:pr-[80px]"
+                variants={reveal}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ root: ref, once: true, amount: 0.3 }}
+              >
+                {spot.sections[i].heading && (
+                  <h3 className="mb-4 text-title-24 font-thin leading-[1.5] text-ink">
+                    {spot.sections[i].heading}
+                  </h3>
+                )}
+                <p className="text-body-14 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+                  {spot.sections[i].text}
+                </p>
+              </motion.div>
+            )}
+          </div>
+        ))}
+        {spot.sections.length > spot.photos.length && (
+          <div className="mx-auto w-[560px] max-w-full px-6">
+            <Sections
+              spot={{ ...spot, sections: spot.sections.slice(spot.photos.length) }}
+              root={ref}
+            />
+          </div>
+        )}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案16 写真が入れ替わる ═══════════
+   変えたところ：見せ方（写真が常に画面いっぱい）
+   背景の写真を貼りつけたまま、スクロールに合わせて入れ替える。
+   写真の占有率がいちばん高く、文字はその上を静かに流れていく */
+export function V16Swap({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ container: ref, target: stage });
+  const shots = [spot.hero, ...spot.photos];
+  const n = shots.length;
+
+  return (
+    <Shell refEl={ref} dark>
+      <BackPill />
+      <div ref={stage} className="relative" style={{ height: `${n * 110}dvh` }}>
+        <div className="sticky top-0 h-dvh w-full overflow-hidden">
+          {shots.map((p, i) => (
+            <Swapped key={p + i} src={p} i={i} n={n} p={scrollYProgress} />
+          ))}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+          {/* 文字はガラスの札に載せて、写真の上でも読めるように */}
+          <div className="absolute inset-x-6 bottom-[72px] sm:inset-x-[120px]">
+            <div className="max-w-[560px] bg-white/10 p-7 backdrop-blur-65 sm:p-9">
+              <HeroTitle spot={spot} size="sm" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mx-auto flex w-[640px] max-w-full flex-col gap-[96px] px-6 py-[140px]">
+        <Sections spot={spot} root={ref} light />
+        <FooterBlocks spot={spot} root={ref} kind="solid" />
+      </div>
+    </Shell>
+  );
+}
+
+/** 案16 用：自分の出番の区間だけ見えている1枚 */
+function Swapped({
+  src,
+  i,
+  n,
+  p,
+}: {
+  src: string;
+  i: number;
+  n: number;
+  p: import("framer-motion").MotionValue<number>;
+}) {
+  /* 区間を 0〜1 の中に必ず収める（マイナスや減少順を渡すとページが落ちる） */
+  const a = Math.max(0, (i - 0.35) / n);
+  const b = i / n;
+  const c = Math.min(1, (i + 0.85) / n);
+  const d = Math.min(1, (i + 1.1) / n);
+  const stops = [a, b, c, d].map((v, k, arr) =>
+    k === 0 ? v : Math.max(v, arr[k - 1] + 0.0001)
+  );
+  const opacity = useTransform(p, stops, i === 0 ? [1, 1, 1, 0] : [0, 1, 1, 0]);
+  return (
+    <motion.img
+      src={src}
+      alt=""
+      className="absolute inset-0 size-full object-cover"
+      style={{ opacity }}
+    />
+  );
+}
+
+/* ═══════════ 案17 中央の静けさ ═══════════
+   変えたところ：文字組み（すべて中央揃え・小さく）
+   写真は中央に大きく、文字は細く小さく真ん中に。
+   余白が左右に均等に残るので、ページ全体が静かになる */
+export function V17Centered({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[88dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center text-white">
+          <p className="text-body-12 font-light tracking-[0.4em]">
+            {spot.category} {spot.no}
+          </p>
+          <h1 className="text-title-34 font-thin leading-[1.3] tracking-[0.12em] sm:text-title-56">
+            {spot.name}
+          </h1>
+          <p className="max-w-[520px] text-body-13 font-extralight leading-[2.2] tracking-[0.2em] text-white/85">
+            {spot.lead}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-[72px] py-[100px]">
+        {spot.sections.map((s, i) => (
+          <motion.div
+            key={i}
+            className="flex w-[520px] max-w-full flex-col items-center gap-5 px-6 text-center"
+            variants={reveal}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.3 }}
+          >
+            {s.heading && (
+              <h3 className="text-title-24 font-thin leading-[1.6] tracking-[0.1em] text-ink">
+                {s.heading}
+              </h3>
+            )}
+            <p className="text-body-13 font-extralight leading-[2.6] tracking-[0.12em] text-ink/85">
+              {s.text}
+            </p>
+          </motion.div>
+        ))}
+        {spot.photos.map((p) => (
+          <motion.div
+            key={p}
+            className="overflow-hidden h-[72dvh] w-[92%] object-cover sm:h-[84dvh] sm:w-[80%]"
+            variants={photoIn}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.2 }}
+            >
+              <img src={p} alt="" className="size-full object-cover" />
+          </motion.div>
+        ))}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案18 写真の格子 ═══════════
+   変えたところ：レイアウト（グリッド）
+   写真を大小まぜた格子に敷き詰め、文章はその間に小さく挟む。
+   一度に複数の写真が目に入るので「場所の空気」がまとめて伝わる */
+export function V18Mosaic({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const V = {
+    variants: photoIn,
+    initial: "hidden" as const,
+    whileInView: "show" as const,
+    viewport: { root: ref, once: true, amount: 0.15 },
+  };
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[78dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[72px] sm:px-[120px] sm:pb-[100px]">
+          <HeroTitle spot={spot} size="sm" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-[64px] px-6 py-[84px] sm:px-[60px]">
+        {/* 大小まぜた格子。1枚は縦長で背を高く */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+          {spot.photos.map((p, i) => (
+            <motion.div
+              key={p}
+              /* 登場時に少しだけ拡大するので、枠で切らないと格子からはみ出す */
+              className={`overflow-hidden w-full ${
+                i === 0
+                  ? "h-[62dvh] sm:col-span-2 sm:h-[76dvh]"
+                  : i === 1
+                    ? "h-[52dvh] sm:h-[76dvh]"
+                    : "h-[52dvh] sm:col-span-3 sm:h-[64dvh]"
+              }`}
+              {...V}
+            >
+              <img src={p} alt="" className="size-full object-cover" />
+            </motion.div>
+          ))}
+        </div>
+        <div className="mx-auto w-[600px] max-w-full">
+          <Sections spot={spot} root={ref} />
+        </div>
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案19 引きで見せる ═══════════
+   変えたところ：インタラクション（ズームアウト）
+   ヒーローは寄った状態から始まり、スクロールでゆっくり引いて全景になる。
+   「近くから見て、離れて眺める」動き */
+export function V19ZoomOut({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ container: ref, target: stage });
+  const scale = useTransform(scrollYProgress, [0, 0.9], [1.35, 1]);
+  const titleOp = useTransform(scrollYProgress, [0, 0.45], [1, 0]);
+
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div ref={stage} className="relative h-[180dvh]">
+        <div className="sticky top-0 h-dvh w-full overflow-hidden">
+          <motion.img
+            src={spot.hero}
+            alt={spot.name}
+            className="absolute inset-0 size-full object-cover"
+            style={{ scale }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <motion.div
+            className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]"
+            style={{ opacity: titleOp }}
+          >
+            <HeroTitle spot={spot} size="sm" />
+          </motion.div>
+        </div>
+      </div>
+      <div className="mx-auto w-[560px] max-w-full px-6 py-[104px]">
+        <Sections spot={spot} root={ref} />
+      </div>
+      <div className="flex flex-col gap-[64px] pb-[104px]">
+        {spot.photos.map((p) => (
+          <motion.div
+            key={p}
+            className="overflow-hidden h-[78dvh] w-full object-cover sm:h-[86dvh]"
+            variants={photoIn}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ root: ref, once: true, amount: 0.2 }}
+            >
+              <img src={p} alt="" className="size-full object-cover" />
+          </motion.div>
+        ))}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════ 案20 文字が先、写真が追う ═══════════
+   変えたところ：見せ方の順番
+   短い文がさきに出て、少し遅れて写真が現れる。
+   「ことばで期待させてから、写真で見せる」流れ */
+export function V20TextFirst({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const late = {
+    hidden: { opacity: 0, scale: 1.05, filter: "blur(20px)" },
+    show: {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: { duration: 1.2, ease: EASE, delay: 0.45 },
+    },
+  };
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <div className="relative h-[88dvh] w-full overflow-hidden">
+        <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
+          <HeroTitle spot={spot} size="sm" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-[80px] py-[96px]">
+        {spot.photos.map((p, i) => (
+          <div key={p} className="flex flex-col gap-[36px]">
+            {/* さきに文字 */}
+            {spot.sections[i] && (
+              <motion.div
+                className="mx-auto w-[560px] max-w-full px-6"
+                variants={reveal}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ root: ref, once: true, amount: 0.5 }}
+              >
+                {spot.sections[i].heading && (
+                  <h3 className="mb-4 text-title-24 font-thin leading-[1.5] text-ink">
+                    {spot.sections[i].heading}
+                  </h3>
+                )}
+                <p className="text-body-14 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+                  {spot.sections[i].text}
+                </p>
+              </motion.div>
+            )}
+            {/* 少し遅れて写真 */}
+            <motion.div
+              className="overflow-hidden h-[76dvh] w-full object-cover sm:h-[86dvh]"
+              variants={late}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.2 }}
+              >
+                <img src={p} alt="" className="size-full object-cover" />
+            </motion.div>
+          </div>
+        ))}
+        {spot.sections.length > spot.photos.length && (
+          <div className="mx-auto w-[560px] max-w-full px-6">
+            <Sections
+              spot={{ ...spot, sections: spot.sections.slice(spot.photos.length) }}
+              root={ref}
+            />
+          </div>
+        )}
+      </div>
+      <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[96px] px-6 pb-[180px]">
+        <FooterBlocks spot={spot} root={ref} />
+      </div>
+    </Shell>
+  );
+}

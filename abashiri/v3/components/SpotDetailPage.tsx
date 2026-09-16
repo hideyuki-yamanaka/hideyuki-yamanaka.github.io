@@ -18,6 +18,18 @@ import {
   V8SplitSticky,
   V10BigQuiet,
 } from "./SpotDetailVariants";
+import {
+  V11Margins,
+  V12Vertical,
+  V13Reel,
+  V14Curtain,
+  V15Zigzag,
+  V16Swap,
+  V17Centered,
+  V18Mosaic,
+  V19ZoomOut,
+  V20TextFirst,
+} from "./SpotDetailVariants2";
 
 /* tune-panel.js（依存ゼロの素のJS）の必要なところだけの型 */
 type PanelLib = {
@@ -56,6 +68,49 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案10",
     note: "大きな一枚を静かに。白い余白に大きな写真、文字は縦書きで小さく添える",
   },
+  /* 2026-09-16 ヒデさん依頼で追加した10案（案11〜20）。
+     「写真が6〜7割・ミニマル・余白を効かせる・写真がさきに目に入る」が共通の狙い。
+     名前は【何を変えたか】が分かる言い方にしてある */
+  11: {
+    name: "案11 余白で読ませる",
+    note: "レイアウトを変更。写真は全幅で大きく、文章は細い柱にして左へ。写真と写真の間をたっぷり空けて目を休ませる",
+  },
+  12: {
+    name: "案12 縦書きの見出し",
+    note: "文字組みを変更。名前と小見出しを縦書きにして写真の脇に立てる。本文は横書きのまま細い柱に",
+  },
+  13: {
+    name: "案13 横に流れる写真",
+    note: "インタラクションを変更。下へスクロールすると、貼りついた写真の列が横へ流れる。縦に読むのをやめて眺める時間を作る",
+  },
+  14: {
+    name: "案14 写真が開く",
+    note: "インタラクションを変更。写真が中央から上下に開いて現れる（幕が上がる感じ）。段落は写真のすぐ下に1つずつ",
+  },
+  15: {
+    name: "案15 左右に組む",
+    note: "レイアウトを変更。写真7割・文章3割で左右に組み、行ごとに向きを入れ替える",
+  },
+  16: {
+    name: "案16 写真が入れ替わる",
+    note: "見せ方を変更。背景の写真を貼りつけたまま、スクロールで入れ替える。写真の占有率がいちばん高い",
+  },
+  17: {
+    name: "案17 中央の静けさ",
+    note: "文字組みを変更。すべて中央揃えで字間を広く、文字は小さく。左右に均等な余白が残って静かになる",
+  },
+  18: {
+    name: "案18 写真の格子",
+    note: "レイアウトを変更。大小まぜた格子に写真を敷き詰める。一度に複数の写真が目に入る",
+  },
+  19: {
+    name: "案19 引きで見せる",
+    note: "インタラクションを変更。寄った写真から始まり、スクロールでゆっくり引いて全景になる",
+  },
+  20: {
+    name: "案20 文字が先、写真が追う",
+    note: "見せ方の順番を変更。短い文がさきに出て、少し遅れて写真が現れる",
+  },
 };
 
 export default function SpotDetailPage({ slug }: { slug: string }) {
@@ -79,8 +134,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
         /* ⚠️ 案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 旧3案 → 5案に作り直し
            v3: 写真主体の案6〜10を追加・案1の視差を弱めた
-           v4: 案1/8/10 を残して初期3案を復活、他は削除（2026-09-15） */
-        version: 4,
+           v4: 案1/8/10 を残して初期3案を復活、他は削除（2026-09-15）
+           v5: 案11〜20 を追加（2026-09-16・写真6〜7割のミニマル10案） */
+        version: 5,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -91,7 +147,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             open: true,
             items: [
               {
-                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。選んだ案1・案8・案10 と、最初に作った3案（案2〜4）を残しています。番号は選定時の呼び方のままなので、5〜7・9 は欠番です。",
+                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。案1〜4・8・10 はこれまでの案、案11〜20 は 2026-09-16 に足した10案（写真が6〜7割・余白を効かせたミニマル）。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので 5〜7・9 は欠番です。",
               },
               {
                 pills: "デザインと動きの案",
@@ -142,6 +198,16 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
     4: V4SkyGlass,
     8: V8SplitSticky,
     10: V10BigQuiet,
+    11: V11Margins,
+    12: V12Vertical,
+    13: V13Reel,
+    14: V14Curtain,
+    15: V15Zigzag,
+    16: V16Swap,
+    17: V17Centered,
+    18: V18Mosaic,
+    19: V19ZoomOut,
+    20: V20TextFirst,
   };
   const V = MAP[pattern] ?? V1Parallax;
   return <V key={pattern} spot={spot} />;
