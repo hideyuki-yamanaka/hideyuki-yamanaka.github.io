@@ -3291,6 +3291,22 @@
   .panel-body.tabbed > .cat > .cat-body { display: block; padding: 0; }
   /* 【2026-08-26 整理】セクションの区切りと余白をはっきりさせて読みやすく */
   .grp { margin-top: 9px; padding-top: 8px; border-top: 1px solid #e8e8e8; }
+  /* 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン: 情報の階層(入れ子=cv-subg)の見せ方5案(catCv.hier-1〜5) */
+  .cv-subg { margin: 2px 0 6px; }
+  .cv-subg-lab { font-size: 11px; font-weight: 600; color: #8a8a8a; margin: 4px 0 6px; }
+  .hier-1 .cv-subg { margin: 2px 0 8px 8px; padding-left: 12px; border-left: 2px solid #e3e3e3; }
+  .hier-2 .grp { border-top: 0; margin-top: 20px; padding-top: 0; }
+  .hier-2 .cv-subg { margin: 2px 0 8px 12px; }
+  .hier-2 .cv-subg-lab { color: #9a9a9a; margin: 6px 0 6px; }
+  .hier-3 .grp { border-top: 0; margin-top: 12px; padding-left: 10px; border-left: 3px solid var(--brand-cyan); }
+  .hier-3 .cv-subg { margin: 2px 0 8px 4px; padding-left: 10px; border-left: 2px solid #dcdcdc; }
+  .hier-4 .grp { border-top: 0; margin-top: 10px; background: #f5f5f6; border-radius: 10px; padding: 9px 11px; }
+  .hier-4 .cv-subg { margin: 7px 0 2px; padding: 8px 10px; background: #fff; border: 1px solid #ececec; border-radius: 8px; }
+  .hier-4 .cv-subg-lab { color: #808080; margin: 0 0 6px; }
+  .hier-5 .grp { border-top: 0; margin-top: 16px; }
+  .hier-5 .grp-title { font-size: 13.5px; }
+  .hier-5 .cv-subg { margin: 2px 0 8px 12px; padding-left: 12px; border-left: 1px dotted #cfcfcf; }
+  .hier-5 .cv-subg-lab { font-size: 10.5px; font-weight: 700; color: #a6a6a6; }
   .cat-body .grp:first-child { border-top: none; margin-top: 8px; padding-top: 0; }
   .grp-title { font-weight: 600; font-size: 12.5px; color: #1a1a1a; margin-bottom: 7px;
                display: flex; align-items: center; gap: 6px; min-height: 22px; }
@@ -4649,7 +4665,7 @@ const DEFAULTS = {
   cvEdge: '0',         // 【2026-09-16 改訂】お問い合わせ上部の溶け込みの深さ。0=標準/1さらに深く/2浅め。URL ?edge=N
   cvForm: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの形。0=放射(現行)/1=縦グラデ/2=放射柔らか/3=斜め。URL ?form=N
   cvCta: 'button',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
-  cvPanelUi: 'obj',    // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの見せ方(UX検証)。obj=要素別/easy=かんたん優先/ctx=文脈で
+  cvHier: '1',         // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの“情報の階層”の見せ方。1インデント/2余白区分/3左アクセント/4背景ブロック/5見出し強弱
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
   formWidth: 660,      // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせフォームの横幅(px)。パネルで調整
   hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
@@ -7280,7 +7296,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"]};   /* 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":[],"valSaas":["S1","S5","S8","S16","S10","S17","S4"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13"]};   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
@@ -18636,30 +18652,29 @@ function buildPanel() {
       rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'あいだの余白。マイナスは導入事例の下の空きを詰めます(カードが切れない所で自動停止)。', { signed: true }));
     },
   };
-  /* --- 見せ方3案(UX検証)。切り替えるとパネルを組み直す --- */
-  sub(catCv, '🧪 パネルの見せ方（UX検証・3案）', null, { fixed: true });
-  segRow('見せ方', [['要素別', 'obj'], ['かんたん優先', 'easy'], ['文脈で', 'ctx']], () => (params.cvPanelUi || 'obj'), v => { params.cvPanelUi = v; markDirty(); if (typeof buildPanel === 'function') buildPanel(); });
-  note('要素別=編集する“もの”ごとに全部／かんたん優先=よく使う3つ＋詳細はたたむ／文脈で=いま必要なものだけ出す(CTAでフォーム項目が出入り)。');
-  const _cvui = params.cvPanelUi || 'obj';
-  if (_cvui === 'obj') {
-    sub(catCv, '① CTA（ボタン / フォーム）'); B.cta();
-    if (isForm()) { sub(catCv, '② フォームのスタイル'); B.formStyle(); }
-    sub(catCv, '③ 背景グラデーション'); B.gradForm(); B.gradGeom(); B.color();
-    sub(catCv, '④ 粒（ディザ）と流れ'); B.dither(); B.flow();
-    sub(catCv, '⑤ 境界（溶け込み）'); B.edge();
-    sub(catCv, '⑥ 余白・高さ'); B.spacing();
-  } else if (_cvui === 'easy') {
-    sub(catCv, 'よく使う'); B.cta(); if (isForm()) B.formStyle(); B.gradForm(); B.edge();
-    sub(catCv, '詳細：グラデの中心・色', true); B.gradGeom(); B.color();
-    sub(catCv, '詳細：粒・流れ', true); B.dither(); B.flow();
-    sub(catCv, '詳細：余白・高さ', true); B.spacing();
-  } else {
-    sub(catCv, 'いま編集中'); B.cta();
-    if (isForm()) { sub(catCv, 'フォーム'); B.formStyle(); }
-    sub(catCv, '背景グラデ'); B.gradForm(); B.gradGeom();
-    sub(catCv, '境界（溶け込み）'); B.edge();
-    sub(catCv, 'その他（色・粒・流れ・余白）', true); B.color(); B.dither(); B.flow(); B.spacing();
-  }
+  /* 【V5.0 2026-09-16 ヒデさん依頼】要素別に固定。CTAの中に「フォーム」が入る等の“包含関係”を入れ子(cv-subg)で見せる。
+     絵文字・番号は付けない(後の改修がしやすいように)。階層の見せ方だけ5案(cvHier)で切替。 */
+  const subgroup = (label, fn) => {
+    const g = document.createElement('div'); g.className = 'cv-subg';
+    if (label) { const l = document.createElement('div'); l.className = 'cv-subg-lab'; l.textContent = label; g.appendChild(l); }
+    (mount || body).appendChild(g);
+    const prev = mount; mount = g; try { fn(); } finally { mount = prev; }
+  };
+  catCv.classList.remove('hier-1', 'hier-2', 'hier-3', 'hier-4', 'hier-5');
+  catCv.classList.add('hier-' + (params.cvHier || '1'));
+  sub(catCv, '情報の見せ方（階層の表現・5案）', null, { fixed: true });
+  segRow('見せ方', [['インデント', '1'], ['余白で区分', '2'], ['左アクセント', '3'], ['背景ブロック', '4'], ['見出し強弱', '5']], () => (params.cvHier || '1'), v => { params.cvHier = v; markDirty(); if (typeof buildPanel === 'function') buildPanel(); });
+  note('「CTA の中にフォームが入る」といった“包含関係”の見せ方を選べます。並び(要素別)は共通です。');
+  /* ---- 要素別(共通の並び)。入れ子は subgroup() で表現 ---- */
+  sub(catCv, 'CTA（ボタン / フォーム）'); B.cta();
+  if (isForm()) subgroup('フォーム（見た目・横幅）', () => { B.formStyle(); });
+  sub(catCv, '背景グラデーション'); B.gradForm();
+  subgroup('形の詳細（中心・広がり・回転）', () => { B.gradGeom(); });
+  subgroup('色の移ろい（時間で色が変わる）', () => { B.color(); });
+  sub(catCv, '粒（ディザ）と流れ'); B.dither();
+  subgroup('流れ・ゆらゆら', () => { B.flow(); });
+  sub(catCv, '境界（溶け込み）'); B.edge();
+  sub(catCv, '余白・高さ'); B.spacing();
 
   /* ボタン。
      ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。
