@@ -60,7 +60,9 @@
     justify-content: space-between;
     opacity: 0;
   }
-  .header .logo img { width: 255px; height: 47px; display: block; }
+  /* 【2026-09-17 ヒデさん指定】ロゴは常に縦横比を保つ＝高さ基準＋width:auto。縮小案も transition は height だけ動かし、
+     幅は比率で自動追従(=どのフレームでも潰れない)。自然サイズ 255×47(比 5.426)。 */
+  .header .logo img { height: 47px; width: auto; display: block; }
   .nav { display: flex; align-items: center; gap: var(--space-32); }
   /* 【2026-08-30 ヒデさん指定】ナビ項目の左右の間隔を広めに(20→32px)。--nav-gap で調整パネルから変えられる */
   .nav-links { display: flex; gap: var(--nav-gap, 32px); align-items: center; }
@@ -104,7 +106,7 @@
     position: fixed; top: 0; left: 0; right: 0; padding: 24px 50px; box-sizing: border-box; z-index: 60;
     transition: background var(--hdr-dur) var(--hdr-ease), -webkit-backdrop-filter var(--hdr-dur), backdrop-filter var(--hdr-dur), box-shadow var(--hdr-dur), padding var(--hdr-dur) var(--hdr-ease), top var(--hdr-dur) var(--hdr-ease), left var(--hdr-dur) var(--hdr-ease), right var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), border-radius var(--hdr-dur) var(--hdr-ease);
   }
-  html:not(.mb).hdr-follow .header .logo img { transition: width var(--hdr-dur) var(--hdr-ease), height var(--hdr-dur) var(--hdr-ease); }   /* ロゴの縮小も本体と同じ尺で(バラつかず一緒に滑らかに動く) */
+  html:not(.mb).hdr-follow .header .logo img { transition: height var(--hdr-dur) var(--hdr-ease); }   /* 高さだけ動かす＝幅は width:auto が比率で追従して潰れない。本体と同じ尺で一緒に滑らかに */
   /* 追従で stuck の時は、KVイントロ(rv)がインラインで触る opacity/blur/transform を打ち消して必ず可視に
      (ヒーロー内スクロールでイントロが再生リセットしてもヘッダーが消えないように) */
   html:not(.mb).hdr-follow .header.hdr-stuck { opacity: 1 !important; filter: none !important; transform: none !important; }
@@ -117,10 +119,10 @@
   html:not(.mb).hm-3 .header.hdr-hidden { top: -104px; }
   /* 4: 縮む(ロゴ小・余白小・ガラス) */
   html:not(.mb).hm-4 .header.hdr-stuck { padding: 13px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
-  html:not(.mb).hm-4 .header.hdr-stuck .logo img { width: 200px; height: 37px; }
+  html:not(.mb).hm-4 .header.hdr-stuck .logo img { height: 37px; width: auto; }
   /* 5: フローティングピル(スクロールで縁から浮くカプセル) */
   html:not(.mb).hm-5 .header.hdr-stuck { top: var(--hdr-top); left: var(--hdr-side); right: var(--hdr-side); padding: 13px 28px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.58); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
-  html:not(.mb).hm-5 .header.hdr-stuck .logo img { width: 210px; height: 39px; }
+  html:not(.mb).hm-5 .header.hdr-stuck .logo img { height: 39px; width: auto; }
 
   /* ===== 【V5.0 2026-09-16】ハンバーガー＋ドロワー(共通) ===== */
   .hdr-burger { display: none; width: 44px; height: 44px; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex: 0 0 auto; -webkit-appearance: none; appearance: none; z-index: 2; }
@@ -151,38 +153,39 @@
   /* 【2026-09-17 バグ修正】stuck時は position:relative(static ではなく)。static だとバーガーが位置基準でなくなり、
      中の position:absolute なバー(span, left:11px/right:11px)がヘッダー(fixed)基準に化けて“全幅の黒い線”に破綻する。
      relative ならフロー内に残って右寄せは保ちつつ、span の基準がバーガー(44px)に戻る。 */
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { position: relative; transform: none; opacity: 1; pointer-events: auto; }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { position: relative; left: auto; right: auto; top: auto; transform: none; opacity: 1; pointer-events: auto; }
   /* 6: 全幅ガラスバー(左ロゴ/右バーガー) */
   html:not(.mb).hm-6 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   /* 7: 全幅ソリッド白(左ロゴ/右バーガー) */
   html:not(.mb).hm-7 .header.hdr-stuck { background: #fff; box-shadow: 0 6px 24px rgba(20,30,60,.1); }
   /* 8: 左寄せピル(ロゴ＋バーガー隣接) */
   html:not(.mb).hm-8 .header.hdr-stuck { left: var(--hdr-side); right: auto; top: var(--hdr-top); width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-8 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
+  html:not(.mb).hm-8 .header.hdr-stuck .logo img { height: 28px; width: auto; }
   /* 9: 右寄せピル */
   html:not(.mb).hm-9 .header.hdr-stuck { left: auto; right: var(--hdr-side); top: var(--hdr-top); width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-9 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
+  html:not(.mb).hm-9 .header.hdr-stuck .logo img { height: 28px; width: auto; }
   /* 10: 中央ピル(transformを使わず fit-content＋margin auto で中央) */
   html:not(.mb).hm-10 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 9px 14px 9px 22px; gap: 14px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-10 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
+  html:not(.mb).hm-10 .header.hdr-stuck .logo img { height: 28px; width: auto; }
   /* 11: 分離(左ロゴ素 / 右に丸バーガー) */
   html:not(.mb).hm-11 .header.hdr-stuck { background: transparent; padding: 22px 26px; }
   html:not(.mb).hm-11 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
   /* 12: 分離(左に丸ロゴマーク / 右に丸バーガー) */
   html:not(.mb).hm-12 .header.hdr-stuck { background: transparent; padding: 18px 22px; }
   html:not(.mb).hm-12 .header.hdr-stuck .logo { width: 50px; height: 50px; border-radius: var(--hdr-radius); overflow: hidden; display: grid; place-items: center; background: rgba(255,255,255,.66); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
-  html:not(.mb).hm-12 .header.hdr-stuck .logo img { width: 50px; height: 50px; object-fit: none; object-position: 2px center; }
+  /* 【2026-09-17 修正】ロゴマーク(左の三角)だけを丸窓に。object-fit:cover は比率を保ったまま左を切り出す＝潰れない・変なトリミングにならない。 */
+  html:not(.mb).hm-12 .header.hdr-stuck .logo img { width: 50px; height: 50px; object-fit: cover; object-position: left center; }
   html:not(.mb).hm-12 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
   /* 13: ロゴマークのみ(テキスト省略)＋バーガー(全幅ガラス) */
   html:not(.mb).hm-13 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
   html:not(.mb).hm-13 .header.hdr-stuck .logo { width: 42px; overflow: hidden; }
   /* 14: 縮む(全幅ガラス・小さめ) */
   html:not(.mb).hm-14 .header.hdr-stuck { padding: 12px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
-  html:not(.mb).hm-14 .header.hdr-stuck .logo img { width: 170px; height: 31px; }
+  html:not(.mb).hm-14 .header.hdr-stuck .logo img { height: 31px; width: auto; }
   html:not(.mb).hm-14 .header.hdr-stuck .hdr-burger { width: 38px; height: 38px; }
   /* 15: 隠れて → 上スクロールでロゴ＋バーガーのミニピルが降臨(中央) */
   html:not(.mb).hm-15 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 8px 12px 8px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-15 .header.hdr-stuck .logo img { width: 140px; height: 26px; }
+  html:not(.mb).hm-15 .header.hdr-stuck .logo img { height: 26px; width: auto; }
   html:not(.mb).hm-15 .header.hdr-hidden { top: -130px; }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
