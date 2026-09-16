@@ -15,31 +15,22 @@ import {
   V3Editorial,
 } from "./SpotDetailVariants";
 import {
-  V11Margins,
   V12Vertical,
-  V16Swap,
-  V18Mosaic,
-  V20TextFirst,
-  V22StickyHead,
-  V23RightColumn,
 } from "./SpotDetailVariants2";
 import {
   V26Dissolve,
-  V31Hanging,
   V32TocSlide,
   V33TocRule,
-  V34TocInk,
   V35TocDot,
   V36TocNum,
   V37PinnedBlur,
   V38Grid,
   V39FarHead,
-  V40Diagonal,
 } from "./SpotDetailVariants3";
 
 /* tune-panel.js（依存ゼロの素のJS）の必要なところだけの型 */
 type PanelLib = {
-  create: (cfg: Record<string, unknown>) => { destroy: () => void };
+  create: (cfg: Record<string, unknown>) => { destroy: () => void; sync?: () => void };
 };
 
 export const SPOT_DETAIL_PATTERNS: Record<
@@ -61,36 +52,12 @@ export const SPOT_DETAIL_PATTERNS: Record<
   /* 2026-09-16 ヒデさん依頼で追加した10案（案11〜20）。
      「写真が6〜7割・ミニマル・余白を効かせる・写真がさきに目に入る」が共通の狙い。
      名前は【何を変えたか】が分かる言い方にしてある */
-  11: {
-    name: "案11 余白で読ませる",
-    note: "レイアウトを変更。写真は全幅で大きく、文章は細い柱にして左へ。写真と写真の間をたっぷり空けて目を休ませる",
-  },
   12: {
     name: "案12 縦書きの見出し",
     note: "文字組みを変更。名前と小見出しを縦書きにして写真の脇に立てる。本文は横書きのまま細い柱に",
   },
-  16: {
-    name: "案16 写真が入れ替わる",
-    note: "見せ方を変更。背景の写真を貼りつけたまま、スクロールで入れ替える。写真の占有率がいちばん高い",
-  },
-  18: {
-    name: "案18 写真の格子",
-    note: "レイアウトを変更。大小まぜた格子に写真を敷き詰める。一度に複数の写真が目に入る",
-  },
-  20: {
-    name: "案20 文字が先、写真が追う",
-    note: "見せ方の順番を変更。短い文がさきに出て、少し遅れて写真が現れる",
-  },
   /* 2026-09-16 追加の5案。「左に小さく見出し・右に本文」のように、
      余白の取り方そのものをデザインにした案 */
-  22: {
-    name: "案22 見出しが貼りつく",
-    note: "余白＋インタラクション。本文を読んでいる間、左の小さな見出しが画面に貼りついたまま残る",
-  },
-  23: {
-    name: "案23 右三分の一に本文",
-    note: "余白の割り当てを変更。本文を右の1/3に寄せ、左の2/3は写真と余白のために空ける",
-  },
   /* ═══ 2026-09-16 ヒデさん依頼の追加12案（案26〜37）═══
      26        サムネイルがグラデで白い解説の面に溶ける
      27〜31    見出しを付けて「左に見出し・右に本文」。色は使わず罫線と余白だけ
@@ -100,10 +67,6 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案26 グラデで白へ",
     note: "サムネイルと本文の境目を変更。写真の下側がそのまま白へ溶けて、どこからが解説か分からないくらいなだらかに本文へ入る（フッターのグラデ案と同じ考え方）",
   },
-  31: {
-    name: "案31 見出しがぶら下がる",
-    note: "見出しの置き方を変更。本文の柱は中央に据えたまま、見出しだけ左の余白へぶら下げる。写真は本文より外へ広がる",
-  },
   32: {
     name: "案32 目次が右へずれる",
     note: "左カラムに目次を追加。いま読んでいる項目が10px右へ動く",
@@ -111,10 +74,6 @@ export const SPOT_DETAIL_PATTERNS: Record<
   33: {
     name: "案33 目次の罫線が伸びる",
     note: "左カラムに目次を追加。いま読んでいる項目の短い罫線が12px→48pxに伸びる",
-  },
-  34: {
-    name: "案34 目次が濃くなる",
-    note: "左カラムに目次を追加。いま読んでいる項目だけ文字が濃くなり、字間がわずかに開く",
   },
   35: {
     name: "案35 印がレールを滑る",
@@ -138,10 +97,6 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案39 見出しをうんと離す",
     note: "見出しと本文の間を変更。見出しを先に大きく置いて、画面の半分ぶん空けてから本文が来る。間そのものが息を吸う場所になる",
   },
-  40: {
-    name: "案40 対角に離す",
-    note: "見出しと本文の位置関係を変更。見出しは左上に小さく、本文は右下へ大きく下げる。写真も左右交互に寄せて斜めの流れを続ける",
-  },
 };
 
 export default function SpotDetailPage({ slug }: { slug: string }) {
@@ -152,15 +107,44 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   /* 右下の調整パネル（tune-panel.js）。案の切替だけの小さいパネル */
   useEffect(() => {
     if (madeRef.current) return;
-    let panel: { destroy: () => void } | null = null;
+    let panel: { destroy: () => void; sync?: () => void } | null = null;
+
     /* 文字の大きさは CSS 変数で持つ（つまみを動かすたびに React を描き直さないため）。
        値の住み家：①globals.css の :root ②ここの params ③ブラウザ保存
-       ——3つとも同じ数にしておくこと */
-    const params = { detail: { pattern: 1, headSize: 26, bodySize: 15 } };
+       ——3つとも同じ数にしておくこと。
+
+       【2026-09-16 ヒデさん指示】「各案で個別に設定できるように。連動しない」
+       → 案ごとの値を sizes に持つ。つまみ（headSize / bodySize）は
+         「いま選んでいる案の値」を映す窓で、動かすと sizes の その案の欄だけ書き換わる。
+         案を切り替えると、その案がおぼえている値をつまみへ読み戻す。 */
+    const SIZE0 = { head: 26, body: 15 };
+    const sizes: Record<string, { head: number; body: number }> = {};
+    Object.keys(SPOT_DETAIL_PATTERNS).forEach((k) => {
+      sizes[k] = { ...SIZE0 };
+    });
+    const params = {
+      detail: { pattern: 1, headSize: SIZE0.head, bodySize: SIZE0.body, sizes },
+    };
     const applyType = () => {
       const r = document.documentElement;
       r.style.setProperty("--dt-head", params.detail.headSize + "px");
       r.style.setProperty("--dt-body", params.detail.bodySize + "px");
+    };
+    /* つまみ → その案の欄へ書き戻す */
+    const rememberSize = () => {
+      const k = String(params.detail.pattern);
+      params.detail.sizes[k] = {
+        head: params.detail.headSize,
+        body: params.detail.bodySize,
+      };
+    };
+    /* その案の欄 → つまみへ読み戻す */
+    const recallSize = () => {
+      const k = String(params.detail.pattern);
+      const v = params.detail.sizes[k] ?? SIZE0;
+      params.detail.headSize = v.head;
+      params.detail.bodySize = v.body;
+      panel?.sync?.();
     };
 
     const build = () => {
@@ -180,8 +164,10 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v8: 案26〜37 を追加（2026-09-16・グラデ移行／左見出し5案／目次連動5案／全画面ぼかし）
            v9: ヒデさんの選定で 案13・19・24・27・28・29・30 を完全削除（2026-09-16）
            v10: 本文・見出しの大きさのつまみを追加（2026-09-16）
-           v11: 案11 の系統をもう3案（案38〜40）追加（2026-09-16） */
-        version: 11,
+           v11: 案11 の系統をもう3案（案38〜40）追加（2026-09-16）
+           v12: ヒデさんの選定で 案11・16・18・20・22・23・31・34・40 を完全削除（2026-09-16）
+           v13: 文字の大きさを案ごとに別々に持つようにした（2026-09-16） */
+        version: 13,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -214,7 +200,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             open: true,
             items: [
               {
-                note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます（全案に効きます）。",
+                note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます。【案ごとに別々の値を持ちます】。案を切り替えると、その案でいじった値に戻ります（他の案には影響しません）。",
               },
               {
                 slider: "本文の大きさ",
@@ -237,15 +223,23 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             ],
           },
         ],
-        onChange: () => {
+        onChange: (info?: { path?: string }) => {
+          /* 案を切り替えた時だけ読み戻す。つまみを動かした時は書き戻す
+             （こうしないと、案ごとの値がすぐ上書きされて連動してしまう） */
+          if (info?.path === "detail.pattern") recallSize();
+          else rememberSize();
           applyType();
           setPattern(params.detail.pattern);
         },
-        onSettle: () => {
+        onSettle: (info?: { path?: string }) => {
+          if (info?.path === "detail.pattern") recallSize();
+          else rememberSize();
           applyType();
           setPattern(params.detail.pattern);
         },
       });
+      /* 保存値を読んだ直後の状態を、いま選んでいる案の値にそろえる */
+      recallSize();
       applyType();
       setPattern(params.detail.pattern);
     };
@@ -275,24 +269,15 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   const MAP: Record<number, (p: { spot: typeof spot }) => React.ReactElement> = {
     1: V1Parallax,
     3: V3Editorial,
-    11: V11Margins,
     12: V12Vertical,
-    16: V16Swap,
-    18: V18Mosaic,
-    20: V20TextFirst,
-    22: V22StickyHead,
-    23: V23RightColumn,
     26: V26Dissolve,
-    31: V31Hanging,
     32: V32TocSlide,
     33: V33TocRule,
-    34: V34TocInk,
     35: V35TocDot,
     36: V36TocNum,
     37: V37PinnedBlur,
     38: V38Grid,
     39: V39FarHead,
-    40: V40Diagonal,
   };
   const V = MAP[pattern] ?? V1Parallax;
   return <V key={pattern} spot={spot} />;

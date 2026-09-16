@@ -136,10 +136,10 @@
   "itemGap": 10,
   "logoH": 260,
   "mapOffsetY": 0,
-  "stageH": 155,
-  "fadeH": 95,
-  "fadeSolid": 22,
-  "evPadBottom": 180
+  "stageH": 120,
+  "fadeH": 80,
+  "fadeSolid": 6,
+  "evPadBottom": 80
  },
  "expIntro": {
   "startDelay": 0.8,

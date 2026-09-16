@@ -147,7 +147,7 @@ function PhotoStage({
   const [t, setT] = useState(0);
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す */
-  const [cfg, setCfg] = useState({ stageH: 155, fadeH: 95, solid: 22 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 80, solid: 6 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -181,9 +181,9 @@ function PhotoStage({
           return isFinite(x) && x > 0 ? x : d;
         };
         const nc = {
-          stageH: num("--ft-stage-h", 155),
-          fadeH: num("--ft-fade-h", 95),
-          solid: num("--ft-fade-solid", 22),
+          stageH: num("--ft-stage-h", 120),
+          fadeH: num("--ft-fade-h", 80),
+          solid: num("--ft-fade-solid", 6),
         };
         setCfg((o) =>
           o.stageH === nc.stageH && o.fadeH === nc.fadeH && o.solid === nc.solid

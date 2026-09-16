@@ -346,57 +346,6 @@ function QuietHero({ spot, h = "h-[88dvh]" }: { spot: SpotDetail; h?: string }) 
   );
 }
 
-/* ── 案31 見出しがぶら下がる ──────────────────
-   変えたところ：見出しの置き方（本文の外へ出す）
-   本文の柱は中央に据えたまま、見出しだけを左の余白へぶら下げる。
-   本文の頭に短い罫線を1本置いて、段落のはじまりを示す */
-export function V31Hanging({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} />
-      <div className="px-6 py-[130px] sm:px-[200px]">
-        <div className="mx-auto flex max-w-[620px] flex-col gap-[104px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="relative flex flex-col gap-6"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
-            >
-              {/* 左の余白へぶら下げる。狭い画面では本文の上に戻す */}
-              <h3 className="text-body-14 font-light leading-[1.9] tracking-[0.2em] text-ink/50 sm:absolute sm:left-[-170px] sm:top-[2px] sm:w-[140px] sm:text-right">
-                {s.heading}
-              </h3>
-              <span className="block h-px w-[56px] bg-ink/20" />
-              <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-          {spot.photos.map((p, i) => (
-            <Photo
-              key={i}
-              src={p}
-              root={ref}
-              /* 本文より外へ広げて、写真だけが余白を越える。
-                 ⚠️ 広げるのは sm 以上だけ。スマホで幅だけ広げると
-                    176px 横にはみ出す（2026-09-16 実測） */
-              className="h-[58dvh] w-full sm:-ml-[100px] sm:w-[calc(100%+200px)]"
-            />
-          ))}
-          <QuietBlocks spot={spot} root={ref} from={heads.length} />
-        </div>
-      </div>
-    </Shell>
-  );
-}
-
 /* ═══════════════════════════════════════════════════
    C. 案32〜36  左カラムの目次がスクロールに反応する
    【2026-09-16 ヒデさん指示】
@@ -576,9 +525,6 @@ export function V33TocRule({ spot }: VProps) {
   return <TocLayout spot={spot} kind="rule" />;
 }
 /** 案34 目次の文字が濃くなる */
-export function V34TocInk({ spot }: VProps) {
-  return <TocLayout spot={spot} kind="ink" heroH="h-[92dvh]" />;
-}
 /** 案35 印がレールを滑る */
 export function V35TocDot({ spot }: VProps) {
   return <TocLayout spot={spot} kind="dot" />;
@@ -803,61 +749,6 @@ export function V39FarHead({ spot }: VProps) {
       <div className="flex flex-col gap-[96px] pb-[120px]">
         {spot.photos.map((p) => (
           <Photo key={p} src={p} root={ref} className="h-[68dvh] w-full sm:h-[84dvh]" />
-        ))}
-      </div>
-
-      <div className="mx-auto flex w-[860px] max-w-full flex-col gap-[80px] px-6 pb-[170px]">
-        <QuietBlocks spot={spot} root={ref} from={heads.length} />
-      </div>
-    </Shell>
-  );
-}
-
-/* ── 案40 見出しと本文が対角に離れる ──────────────
-   変えたところ：見出しと本文の位置関係（斜めに離す）
-   見出しは左上に小さく、本文は右下へ大きく下げる。
-   横にも縦にも離れているので、目が斜めに動いて「間」を長く感じる */
-export function V40Diagonal({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const heads = headsOf(spot);
-  return (
-    <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} h="h-[86dvh]" />
-
-      <div className="px-6 py-[120px] sm:px-[100px]">
-        <div className="mx-auto flex max-w-[1120px] flex-col gap-[120px]">
-          {heads.map((s, i) => (
-            <motion.section
-              key={i}
-              data-sec={i}
-              className="flex flex-col"
-              variants={revealSlow}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.25 }}
-            >
-              <h3 className="text-body-14 font-light leading-[1.9] tracking-[0.2em] text-ink/50">
-                {s.heading}
-              </h3>
-              {/* 斜めに離す：下へ 18dvh ＋ 右へ寄せる */}
-              <p className="mt-[12dvh] max-w-[520px] self-start whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 sm:mt-[18dvh] sm:self-end">
-                {s.text}
-              </p>
-            </motion.section>
-          ))}
-        </div>
-      </div>
-
-      {/* 写真も左右交互に寄せて、斜めの流れを続ける */}
-      <div className="flex flex-col gap-[110px] px-6 pb-[130px] sm:px-[100px]">
-        {spot.photos.map((p, i) => (
-          <div
-            key={p}
-            className={`w-full sm:w-[76%] ${i % 2 === 1 ? "sm:ml-auto" : ""}`}
-          >
-            <Photo src={p} root={ref} className="h-[54dvh] w-full sm:h-[70dvh]" />
-          </div>
         ))}
       </div>
 

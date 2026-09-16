@@ -2,7 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 /*
- * 体験セクション｜さらに10案（案21〜30）
+ * 体験セクション｜さらに追加した案（もとは案21〜30 の10案。
+ * 2026-09-16 ヒデさんの選定で 26・27・28 は完全削除し、7案が残っている）
  * 2026-09-16 ヒデさん依頼。ご指定のアイデアと、没入・3Dの案を混ぜてある。
  *
  *   21 机の上           真っ白な画面に、写真が机にパンパンと置かれたように散っている。
@@ -13,9 +14,6 @@
  *   23 曲がる帯         写真が1枚の帯になってゆるく湾曲。奥行きのある3Dで手前に迫ってくる
  *   24 めくれる紙       4枚がカードのように奥から起き上がって正面を向く（rotateX）
  *   25 回る柱           4枚が円柱の面に貼られていて、スクロールで柱がゆっくり回る
- *   26 奥から前へ       遠くにあった4枚が、奥行きを保ったまま手前へ進んでくる
- *   27 しおりが開く     本のページのように、左右から観音開きで開く（rotateY）
- *   28 白に浮かぶ       真っ白な面に写真が影だけで浮き、スクロールで静かに定位置へ降りる
  *   29 のぞき穴         白い面に丸い穴が開いていて、穴が広がると写真が全部見える
  *   30 重ねて配る       中央で重なっていた4枚が、トランプを配るように順に置かれる
  *
@@ -48,9 +46,6 @@ export const EVENT_EXTRA3_PATTERNS: Record<
   23: { name: "案23 曲がる帯", note: "4枚が1本の帯につながって、ゆるく湾曲しながら手前に迫ってくる。3Dの奥行きで真ん中がいちばん近い" },
   24: { name: "案24 めくれる紙", note: "奥に倒れていた4枚が、紙が起き上がるように正面を向く（横軸の回転）。立ち上がりきった時がいちばん良く見える" },
   25: { name: "案25 回る柱", note: "4枚が見えない円柱の面に貼られていて、スクロールに合わせて柱がゆっくり回る。奥の写真は小さく暗く見える" },
-  26: { name: "案26 奥から前へ", note: "遠くに小さくあった4枚が、前後の差を保ったまま手前へ進んでくる。まっすぐ近づいてくる没入感" },
-  27: { name: "案27 しおりが開く", note: "本を開くように、左右2枚ずつが観音開きで正面を向く（縦軸の回転）。閉じた状態から開ききるまでが見どころ" },
-  28: { name: "案28 白に浮かぶ", note: "真っ白な面に、写真が影だけで浮いている。スクロールで静かに定位置へ降りて影が薄くなる。いちばん静かな案" },
   29: { name: "案29 のぞき穴", note: "白い面に小さな丸い穴が開いていて、そこから写真が見えている。スクロールで穴が広がり、全部が見える" },
   30: { name: "案30 重ねて配る", note: "中央で重なっていた4枚が、トランプを配るように1枚ずつ定位置へ置かれる。置かれるたび少し傾く" },
 };
@@ -375,136 +370,6 @@ function ColumnFace({ it, i, p }: { it: EventItem; i: number; p: MotionValue<num
   );
 }
 
-/* ═══════════ 案26 奥から前へ ═══════════
-   遠くに小さくあった4枚が、前後の差を保ったまま手前へ進んでくる */
-function ComeForward({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <Head />
-      <Deep className="flex h-[640px] w-full items-center justify-center" perspective={1200}>
-        <div className="relative size-0" style={{ transformStyle: "preserve-3d" }}>
-          {ITEMS.map((it, i) => (
-            <ForwardCard key={it.title} it={it} i={i} p={p} />
-          ))}
-        </div>
-      </Deep>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function ForwardCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  const lane = [-520, -175, 175, 520][i];
-  const depth = [-260, -90, -90, -260][i];
-  const tz = useTransform(p, [0, 0.72], [depth - 1100, depth]);
-  const o = useTransform(p, [0, 0.3], [0, 1]);
-  return (
-    <motion.div
-      className="absolute left-0 top-0 h-[520px] w-[320px]"
-      style={{
-        x: lane,
-        z: tz,
-        opacity: o,
-        marginLeft: -160,
-        marginTop: -260,
-        transformStyle: "preserve-3d",
-        boxShadow: "0 24px 60px rgba(0,0,0,.18)",
-      }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
-/* ═══════════ 案27 しおりが開く ═══════════
-   本を開くように、左右2枚ずつが観音開きで正面を向く（縦軸の回転） */
-function BookOpen({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-      <Head />
-      <Deep className="flex w-full justify-center" perspective={1700}>
-        <div className="flex" style={{ transformStyle: "preserve-3d" }}>
-          {ITEMS.map((it, i) => (
-            <BookCard key={it.title} it={it} i={i} p={p} />
-          ))}
-        </div>
-      </Deep>
-      <div className="flex w-full gap-5 px-4 sm:px-[40px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function BookCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  /* 内側の2枚を軸に、外側の2枚が開いてくる */
-  const start = [78, 38, -38, -78][i];
-  const origin = i < 2 ? "right center" : "left center";
-  const ry = useTransform(p, [0.05, 0.75], [start, 0]);
-  const o = useTransform(p, [0, 0.3], [0.3, 1]);
-  return (
-    <motion.div
-      className="h-[540px] w-[320px] shrink-0"
-      style={{
-        rotateY: ry,
-        opacity: o,
-        transformOrigin: origin,
-        transformStyle: "preserve-3d",
-        boxShadow: "0 22px 56px rgba(0,0,0,.18)",
-      }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
-/* ═══════════ 案28 白に浮かぶ ═══════════
-   真っ白な面に写真が影だけで浮いていて、静かに定位置へ降りる */
-function FloatOnWhite({ p }: { p: MotionValue<number> }) {
-  return (
-    <div className="flex w-full flex-col gap-12 bg-white sm:gap-[90px]">
-      <Head />
-      <div className="flex w-full gap-[26px] px-4 sm:px-[80px]">
-        {ITEMS.map((it, i) => (
-          <FloatCard key={it.title} it={it} i={i} p={p} />
-        ))}
-      </div>
-      <div className="flex w-full gap-5 px-4 sm:px-[80px]">
-        {ITEMS.map((it) => (
-          <Caption key={it.title} it={it} className="min-w-0 flex-1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-function FloatCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  const from = Math.min(0.45, i * 0.08);
-  const y = useTransform(p, [from, 0.72], [-90 - i * 18, 0]);
-  const s = useTransform(p, [from, 0.72], [1.08, 1]);
-  const o = useTransform(p, [from, from + 0.2], [0, 1]);
-  /* 浮いている間は影が大きく、降りると小さくなる */
-  const sh = useTransform(p, [from, 0.72], [64, 18]);
-  const shadow = useTransform(sh, (v) => `0 ${v}px ${v * 2}px rgba(0,0,0,.16)`);
-  return (
-    <motion.div
-      className="h-[560px] min-w-0 flex-1"
-      style={{ y, scale: s, opacity: o, boxShadow: shadow }}
-    >
-      <CardLink it={it} className="size-full">
-        <img src={it.img} alt={it.title} className="size-full object-cover" />
-      </CardLink>
-    </motion.div>
-  );
-}
-
 /* ═══════════ 案29 のぞき穴 ═══════════
    白い面に小さな丸い穴が開いていて、そこから写真が見えている。
    スクロールで穴が広がって全部が見える */
@@ -609,12 +474,6 @@ export function ExtraPattern3({ pat, p }: { pat: number; p: MotionValue<number> 
       return <PaperFlip p={p} />;
     case 25:
       return <TurnColumn p={p} />;
-    case 26:
-      return <ComeForward p={p} />;
-    case 27:
-      return <BookOpen p={p} />;
-    case 28:
-      return <FloatOnWhite p={p} />;
     case 29:
       return <Keyhole p={p} />;
     case 30:
