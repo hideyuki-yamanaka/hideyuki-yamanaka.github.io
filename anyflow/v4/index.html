@@ -4471,7 +4471,7 @@ const DEFAULTS = {
   cvSway: '0',         // 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。0=現行 / 1〜5。URL ?sway=N
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
   devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
-  cvStyle: '0',        // 【2026-09-15 ヒデさん指定】お問い合わせのデザイン案(0=現行 / 1〜10。パネル「コンバージョン」・URL ?cv=N)
+  cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
   crossDelay: 2.5,     // クロスが効き始めるまでの秒数 (それまではカンプ通り平行)
   crossLead: 6,        // 完全にクロスするまでにかける秒数           // ゆらぎ 1=固定 / 2=シーソー / 3=クロス
   design: 'B',       // 惑星デザイン B〜E ＋ F/G/H(波が流れる)
@@ -6098,6 +6098,72 @@ const CV_SWAYS = [
 ];
 function cvSwayKey() { const v = String((params && params.cvSway) || '0'); return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
 function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
+
+/* ===== 【2026-09-16 ヒデさん依頼】お問い合わせ上部の「切れ目(溶け込み)」の形バリエーション =====
+   直線だけでなく、弧・斜め・波・もや など馴染む形を10案。案ごとに「ぼかしの高さ(blend)」も変える。
+   高さを出す案は導入事例の下の空きへ逃がし、足りない分は見出しの上の余白を削って“見た目上の総高さ”を一定に保つ。 */
+const CV_EDGE_BASE_ROOM = 100;   /* gapTop=0 のときの「導入事例の下の空き」概算(px)。これを超える blend は補正する */
+const CV_EDGES = [
+  { key: '0', name: '直線・標準',        blend: 100, shape: 'linear',  fixed: true, tip: 'まっすぐ横に、標準の幅でなだらかに溶ける。いまの形。' },
+  { key: '1', name: '直線・細くくっきり', blend: 40,  shape: 'linear',  tip: '細い幅でさっと切り替わる。境目が締まる。' },
+  { key: '2', name: '直線・太くやわらか', blend: 200, shape: 'linear',  tip: '広い幅でゆっくり溶ける。いちばん馴染む。' },
+  { key: '3', name: '弧（中央が下がる）',  blend: 150, shape: 'arcDown', tip: '境目が中央でやや下がる弧。柔らかい膨らみ。' },
+  { key: '4', name: '弧（中央が上がる）',  blend: 150, shape: 'arcUp',   tip: '境目が中央でやや上がる弧。すくい上げるような形。' },
+  { key: '5', name: '斜め',              blend: 130, shape: 'diag',    tip: '少し斜めに溶ける。動きが出る。' },
+  { key: '6', name: 'ゆるい波',          blend: 170, shape: 'waveL',   tip: '大きくうねる波の境目。流線形でいちばん有機的。' },
+  { key: '7', name: '細かい波',          blend: 130, shape: 'waveS',   tip: '小刻みな波の境目。さざなみ調。' },
+  { key: '8', name: 'もや（にじみ）',     blend: 200, shape: 'mist',    tip: '二重のグラデでぼんやり霧のように。境目が最もあいまい。' },
+  { key: '9', name: '二段',              blend: 160, shape: 'step',    tip: 'いったん薄く出て、もう一段で濃くなる。二段の溶け込み。' },
+];
+function cvEdgeKey() { const v = String((params && params.cvEdge) || '0'); return (CV_EDGES.some(e => e.key === v) && !variantRemovedKey('cvEdge', v)) ? v : '0'; }
+function cvEdgeDef() { return CV_EDGES.find(e => e.key === cvEdgeKey()) || CV_EDGES[0]; }
+function applyCvEdge(key) { const e = CV_EDGES.find(x => x.key === key); if (!e) return; params.cvEdge = String(key); params.cv = params.cv || {}; params.cv.blend = e.blend; }
+
+/* 溶け込みの縦グラデ(スムーザーステップ)を H px で作る文字列 */
+function cvFadeStops(H, ang) {
+  const P = [[0,0],[.0625,.01],[.125,.042],[.1875,.098],[.25,.167],[.375,.333],[.5,.5],[.625,.667],[.75,.833],[.8125,.902],[.875,.958],[.9375,.99],[1,1]];
+  const body = P.map(([t,a]) => `rgba(0,0,0,${a}) ${(t*H).toFixed(1)}px`).join(',');
+  return `linear-gradient(${ang||'180deg'}, ${body})`;
+}
+/* 波・弧の SVG マスク(上端が波/弧・下へ黒くフェード)。tile=1タイルの横幅px(繰り返す) */
+function cvEdgeSVG(topPath) {
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'>"
+    + "<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>"
+    + "<stop offset='0' stop-color='black' stop-opacity='0'/><stop offset='1' stop-color='black' stop-opacity='1'/></linearGradient></defs>"
+    + "<path d='" + topPath + " L100,100 L0,100 Z' fill='url(%23g)'/></svg>";
+  return "url(\"data:image/svg+xml," + encodeURIComponent(svg).replace(/%23/g, '%23') + "\")";
+}
+/* #cvCanvas にマスクを直接インライン適用(PCのみ)。H=溶け込みの高さpx */
+function cvEdgeMask(canvas, shape, H) {
+  H = Math.max(1, Math.round(H));
+  const set = (img, size, rep, pos) => {
+    canvas.style.maskImage = img; canvas.style.webkitMaskImage = img;
+    canvas.style.maskSize = size; canvas.style.webkitMaskSize = size;
+    canvas.style.maskRepeat = rep; canvas.style.webkitMaskRepeat = rep;
+    canvas.style.maskPosition = pos; canvas.style.webkitMaskPosition = pos;
+    canvas.style.maskComposite = 'add'; canvas.style.webkitMaskComposite = 'source-over';
+  };
+  const solid = 'linear-gradient(#000,#000)';
+  if (shape === 'linear' || shape === 'diag') {
+    set(cvFadeStops(H, shape === 'diag' ? '99deg' : '180deg'), '100% 100%', 'no-repeat', 'top');
+  } else if (shape === 'step') {
+    const img = `linear-gradient(180deg, rgba(0,0,0,0) 0px, rgba(0,0,0,.5) ${(H*.30).toFixed(0)}px, rgba(0,0,0,.56) ${(H*.52).toFixed(0)}px, rgba(0,0,0,.62) ${(H*.62).toFixed(0)}px, #000 ${H}px)`;
+    set(img, '100% 100%', 'no-repeat', 'top');
+  } else if (shape === 'mist') {
+    const a = cvFadeStops(H, '180deg');
+    const b = `linear-gradient(180deg, rgba(0,0,0,0) ${(H*.18).toFixed(0)}px, rgba(0,0,0,.45) ${(H*.7).toFixed(0)}px, #000 ${(H*1.05).toFixed(0)}px)`;
+    set(a + ',' + b, '100% 100%, 100% 100%', 'no-repeat, no-repeat', 'top, top');
+  } else {
+    /* SVG(弧/波) 上端フェード + 下は黒ベタ */
+    const tiles = { arcDown: ['M0,42 Q50,68 100,42', 100], arcUp: ['M0,58 Q50,28 100,58', 100],
+                    waveL: ['M0,45 C25,20 75,70 100,45', 220], waveS: ['M0,45 C12,25 26,65 38,45 C50,25 64,65 76,45 C86,30 94,55 100,45', 120] };
+    const t = tiles[shape] || tiles.arcDown;
+    const svg = cvEdgeSVG(t[0]);
+    const tile = t[1];
+    set(svg + ',' + solid, `${tile}px ${H}px, 100% calc(100% - ${H}px)`, 'repeat-x, no-repeat', 'top, bottom');
+  }
+}
+
 const CV_COLORS = [
   /* 【2026-09-16 ヒデさん依頼】デザインカンプ(node 17383:21430)の色味に忠実な案。13ストップのランプ(ramp:'comp')で、
      C1(現行)の5段近似より青の階調と紫の中間色がカンプ通りに出る。形・ディザは現行と同じ。 */
@@ -6118,7 +6184,7 @@ function cvColorKey() { const by = (params && params.cvColorBy) || {}; const v =
 /* カラー案の値(既定＋その案の「上書き」控え)を params.cv に入れる */
 function cvApplyColorFull(key) { cvApplyColor(key); const ov = ((params.gfxVarOverride || {}).cvColor || {})[key]; if (ov) { try { Object.assign(params.cv, structuredClone(ov)); } catch (e) {} } }
 function cvApplyColor(key) { const c = CV_COLORS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(CV_BASE), structuredClone(c.cv)); }
-function cvStyleKey() { const v = String((params && params.cvStyle) || '0'); return (CV_STYLES.some(s => s.key === v) && !variantRemovedKey('cvStyle', v)) ? v : '0'; }
+function cvStyleKey() { const v = String((params && params.cvStyle) || '10'); return (CV_STYLES.some(s => s.key === v) && !variantRemovedKey('cvStyle', v)) ? v : '10'; }   /* 【2026-09-16 確定】既定は一体型(10) */
 function cvStyleDef() { const k = cvStyleKey(); return CV_STYLES.find(s => s.key === k) || CV_STYLES[0]; }
 
 /* ===== 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(立体感)と配色。#dev に dev-st-N / dev-tone-X を付け、CSS 変数で傾き・ぼかし・影を渡す ===== */
@@ -16199,9 +16265,8 @@ function varRowX(bucket, items, getSel, setSel, o) {
 function rfxNo(key, strict) { const v = (VAR_VIEW.resFx || []).find(x => x.key === String(key)); return v ? v.no : (strict ? null : 'ID' + key); }
 function rfxNos(keys) { const a = keys.map(k => rfxNo(k, true)).filter(Boolean); return a.length ? a.join('・') : 'ID' + keys.join('/'); }
 const RFX_TITLES = [];   /* [要素, 文言を作る関数] 実績の案別グループの小見出し(番号が変わったら書き直す) */
-const CV_DYN = [];       /* お問い合わせ: デザイン案(現行以外)を選んだ時だけ出すまとまり(カラー案・色・形・暗さ) */
-const CV_DYN10 = [];     /* 「溶け込む」(ID10)を選んだ時だけ出すまとまり(溶け込みの境界) */
-function syncCvDyn() { const k = (typeof cvStyleKey === 'function' ? cvStyleKey() : '0'); CV_DYN.forEach(el => { if (el) el.style.display = k !== '0' ? '' : 'none'; }); CV_DYN10.forEach(el => { if (el) el.style.display = k === '10' ? '' : 'none'; }); }
+/* 【2026-09-16】お問い合わせのデザイン案を「一体型」で確定し、案を選ぶ項目を削除したので、
+   「案によってまとまりを出し分ける」仕掛け(CV_DYN / CV_DYN10 / syncCvDyn)も不要になった。 */
 function subT(cat, fn) { sub(cat, fn(), true, { fixed: true }); const el = cat.lastElementChild && cat.lastElementChild.querySelector('.grp-title span'); if (el) RFX_TITLES.push([el, fn]); }
 function syncRfxTitles() { RFX_TITLES.forEach(([el, fn]) => { el.textContent = fn(); }); }
 /* 旧 API(variantRow / resFxRow)は共通行への包み */
@@ -17820,7 +17885,6 @@ function buildPanel() {
   const catRes = category('📈 実績（導入企業◯◯社などの数字）', false);
   RFX_DYN.length = 0;   /* 案ごとの動的パネルの登録をやり直す(組み立てのたび) */
   RFX_TITLES.length = 0;
-  CV_DYN.length = 0; CV_DYN10.length = 0;
   try { Object.keys(DEV_DYN).forEach(k => { delete DEV_DYN[k]; }); } catch (e) {}   /* 2026-09-15: モックの案ごとのつまみも作り直す */
   catNote(catRes, '見出し → 数字と本文 → 見終わると暗くなって次のセクションへ。');
 
@@ -18228,13 +18292,13 @@ function buildPanel() {
   const catCv = category('💠 コンバージョン（お問い合わせの流れる背景）', false);
   catNote(catCv, 'カンプのラジアルグラデを、惑星と同じ発想で流れさせ、Bayerディザで粒立たせています。');
   const cvv = () => (params.cv || (params.cv = {}));
-  /* 【2026-09-15 ヒデさん指定】お問い合わせのデザイン案(10案)。★ピン留め／上書き(ディザの値)／削除は他のバリエーションと同じ */
-  sub(catCv, 'デザイン案（比較用・フッター一体型を含む）', true, { fixed: true });
-  varRowX('cvStyle', CV_STYLES, () => cvStyleKey(), v => { params.cvStyle = String(v); }, { after: () => { applyCvStyle(true); fit(); renderFrame(); syncCvDyn(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('URL でも切替: ?cv=1 / 10 / 11 / 12 / 13。「フッター一体型」はロゴなしのフッター(ナビ・住所・©)を同じ面に置き、通常のフッターを隠します。ボタンに乗せると狙いが出ます。');
+  /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
+     案を選ぶ項目はパネルから削除し、既定値として固定した。
+     ⚠️ CV_STYLES の他の案(0/11/12/13)の定義と CSS は残してあるので、
+        比べ直したくなったら URL ?cv=0 などで一時的に切り替えられる。 */
   /* 【2026-09-15 ヒデさん指定】カラー案(10案)。選ぶとその案の値が下のつまみに入る。つまみで細かく変えたら ⋯「いまの設定で上書き」でその案に保存 */
   /* 【2026-09-16 ヒデさん依頼】カラー案・グラデの色・暗さ・明るさコントラストのセクションは削除(デザインカンプで確定)。値は焼き込み(cvColorBy CK / ramp comp)に残るので見た目は不変 */
-  sub(catCv, 'グラデーションの形'); CV_DYN.push(catCv.lastElementChild);
+  sub(catCv, 'グラデーションの形');
   segRow('形', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
   /* 【2026-09-15 ヒデさん依頼】Figma風の棒でグラデを直感編集。ボタンを押すと編集モードに入り、お問い合わせのグラデの上に棒が出る */
   { const gb = document.createElement('button'); gb.type = 'button'; gb.id = 'cvGizmoBtn'; gb.className = 'cvg-editbtn';
@@ -18247,27 +18311,29 @@ function buildPanel() {
   rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり(きつい)、大きいほどゆるやか。カンプの形でも効きます。'));
   rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。カンプの形でも効きます。'));
   rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。カンプの形でも効きます。'));
-  sub(catCv, '色味の移ろい（時間で色が変わる）'); CV_DYN.push(catCv.lastElementChild);
+  sub(catCv, '色味の移ろい（時間で色が変わる）');
   segRow('動き', [['なし', 'off'], ['往復（青⇄白⇄ピンク）', 'swing'], ['巡る（紺→シアン→白→ピンク）', 'cycle']], () => (cvv().hueMode || 'off'), v => { cvv().hueMode = v; markDirty(); renderFrame(); });
   rows.push(slider('1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '往復は「行って戻る」まで、巡るは「ひとまわり」する時間。長いほどゆっくり移ろいます。', { fixedMax: true }));
   rows.push(slider('白の入り具合', 0, 1, 0.05, () => (cvv().moodWhite != null ? cvv().moodWhite : 0.85), v => { cvv().moodWhite = v; }, v => Math.round(v * 100) + '%', '色が入れ替わる間に白をどれだけ通すか。100%でいったん白く抜けてから次の色へ(にごらない)。0%にすると白を通らず直接つなぐので中間色が出ます。', { fixedMax: true }));
   note('色味はブランドの青(シアン〜紺)・ピンク・白だけを行き来します(色相を回すやり方はやめました。途中で緑や黄など、ブランドにない色が出るため)。');
-  sub(catCv, '縦幅・間隔');
+  /* 【2026-09-16 ヒデさん指示】まとまりが細かく分かれすぎていたので整理。
+     「縦幅・間隔」と、1項目しかなかった「溶け込みの境界」をここに統合した。
+     一体型で確定したので、各項目の「（一体型）」という但し書きも外している */
+  sub(catCv, '余白・高さ・境目');
   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白はここで減らせる */
-  rows.push(slider('見出しの上の余白（一体型）', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px',
+  rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px',
     'お問い合わせの見出しの【上】の余白。減らすほど導入事例との間の空きが詰まり、セクション自体も短くなります。カンプ相当は210px。SP は変わりません。', { fixedMax: true }));
-  rows.push(slider('上に足す高さ（一体型）', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+  rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
     '見出しの【上】に足す高さ。増やすほど、お問い合わせの見出しの上に色の面が増えます。0 でいままで。SP は変わりません。', { fixedMax: true }));
-  rows.push(slider('下に足す高さ（一体型）', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+  rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
     'ボタンの【下】(フッターとの間)に足す高さ。0 でいままで。', { fixedMax: true }));
-  rows.push(slider('縦幅（枠の案）', 300, 1200, 10, () => (cvv().h != null ? cvv().h : 416), v => { cvv().h = v; applyCvStyle(); }, v => Math.round(v) + 'px', '「現行」のように枠で見せる案の高さ(カンプ 416)。一体型では上の「追加の高さ」を使います。'));
+  /* 【2026-09-16】「縦幅（枠の案）」は枠で見せる案(現行)専用のつまみ。一体型で確定したので削除した */
   rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '導入事例とお問い合わせの【あいだの余白】(地色)。プラスで隙間が空きます。マイナスは導入事例の“下の空き”を詰めます(カードが切れないところまでで自動的に止まります)。見出しの上の【色の面】を増やしたい時は下の「上に足す高さ」を使ってください(PC のみ)。', { signed: true }));
-  sub(catCv, '溶け込みの境界（一体型・溶け込む）'); CV_DYN10.push(catCv.lastElementChild);
   /* 【2026-09-15 ヒデさん指摘】溶け込みの薄い帯がお問い合わせの【中】にあったので上の余白が詰まらなかった。
-     帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい */
-  rows.push(slider('上の溶け込み（ぼかし幅）', 0, 300, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px',
+     帯は導入事例の下の空きへ逃がす方式にしたので、つまみは「ぼかし幅(px)」ひとつでよい。
+     【2026-09-16】1項目だけの見出しをやめ、上の「余白・高さ・境目」に含めた */
+  rows.push(slider('導入事例との境目のぼかし', 0, 300, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px',
     '導入事例との境目をぼかす幅。この帯は【導入事例の下の空きへ逃がす】ので、お問い合わせは必ず上端から色が乗ります(余白が増えません)。空きが足りない時は自動でぼかし幅の方が縮みます。0px でくっきり。SP は従来どおり(%指定)。', { fixedMax: true }));
-  syncCvDyn();
   sub(catCv, 'ディザリング（粗さ・階調）');
   rows.push(slider('粗さ（ドットの大きさ）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px',
     '大きいほど粗い(ドットが大きい)ディザに。1でカンプ(Size1)。'));
