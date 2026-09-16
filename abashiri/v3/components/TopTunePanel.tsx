@@ -43,7 +43,6 @@ import {
   FOOTER_EVENT,
   FOOTER_PATTERNS,
   FOOTER_LAYOUTS,
-  FOOTER_SPECIALS,
 } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
@@ -185,7 +184,6 @@ type Params = {
   footer: {
     pattern: number;
     layout: number;
-    special: number;
     padX: number;
     padBottom: number;
     colGap: number;
@@ -260,7 +258,6 @@ export default function TopTunePanel({
       footer: {
         pattern: 1,
         layout: 1,
-        special: 1,
         padX: 160,
         padBottom: 110,
         colGap: 140,
@@ -445,7 +442,7 @@ export default function TopTunePanel({
            v33: 古いブラウザ保存値を一斉破棄。自動焼き込み（tune-defaults.json）導入前に
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
-        version: 33,
+        version: 34,
         /* ⚠️ autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
@@ -482,6 +479,7 @@ export default function TopTunePanel({
                 pills: "遷移の案",
                 path: "pageTrans.pattern",
                 immediate: true,
+                autoNum: "案",
                 options: Object.entries(PAGE_TRANSITION_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
@@ -523,6 +521,7 @@ export default function TopTunePanel({
               {
                 pills: "組み（余白とカラム幅）",
                 path: "footer.layout",
+                autoNum: { prefix: "組み", style: "alpha" },
                 immediate: true,
                 options: Object.entries(FOOTER_LAYOUTS).map(([v, p]) => ({
                   name: p.name,
@@ -534,19 +533,9 @@ export default function TopTunePanel({
               {
                 pills: "階層の見せ方",
                 path: "footer.pattern",
+                autoNum: { prefix: "階層", style: "alpha" },
                 immediate: true,
                 options: Object.entries(FOOTER_PATTERNS).map(([v, p]) => ({
-                  name: p.name,
-                  value: Number(v),
-                  swatch: "#0070c9",
-                  desc: p.note,
-                })),
-              },
-              {
-                pills: "ぼーっと体験の見せ方",
-                path: "footer.special",
-                immediate: true,
-                options: Object.entries(FOOTER_SPECIALS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
                   swatch: "#0070c9",
@@ -1075,6 +1064,7 @@ export default function TopTunePanel({
                 pills: "登場の案",
                 path: "msg.pattern",
                 immediate: true,
+                autoNum: "案",
                 options: Object.entries(MSG_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
@@ -1297,6 +1287,7 @@ export default function TopTunePanel({
                 pills: "レイアウトの案",
                 path: "events.pattern",
                 immediate: true,
+                autoNum: "案",
                 options: Object.entries(EVENT_LAYOUT_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
@@ -1436,6 +1427,7 @@ export default function TopTunePanel({
                 pills: "案",
                 path: "expPick.pattern",
                 immediate: true,
+                autoNum: "案",
                 options: [
                   { name: "案1", value: 1, swatch: "#0070c9", desc: "一斉にブラー解除。全体が同時にゆっくりピントが合う" },
                   { name: "案2", value: 2, swatch: "#0070c9", desc: "中央から順に。真ん中が先に晴れて両隣が続く" },
@@ -1600,7 +1592,6 @@ export default function TopTunePanel({
                 detail: {
                   v: params.footer.pattern,
                   layout: params.footer.layout,
-                  special: params.footer.special,
                 },
               })
             );
@@ -1679,7 +1670,6 @@ export default function TopTunePanel({
                 detail: {
                   v: params.footer.pattern,
                   layout: params.footer.layout,
-                  special: params.footer.special,
                 },
               })
       );

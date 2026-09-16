@@ -12,6 +12,8 @@
  *   C. 案32〜36  左カラムに目次。スクロール位置に応じて目次が動く5案
  *   D. 案37      最初は画面いっぱい（100dvh）のサムネ＋左下に名前。
  *                スクロールすると裏がぼけて、白いコンテンツの面になる
+ *   E. 案38〜40  案11（余白で読ませる）の系統をもう3案。
+ *                12列グリッド／見出しと本文をうんと離す／斜めに離す
  *
  * 全案の共通ルール（案11〜24 から引き継ぎ）
  *   ・動かしてよいのは transform / opacity / filter だけ（幅や高さは動かさない）
@@ -223,7 +225,7 @@ function QuietBlocks({
     viewport: { root, once: true, amount: 0.2 },
   };
   const head =
-    "text-title-28 font-thin leading-[1.6] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]";
+    "text-[length:var(--dt-head)] font-thin leading-[1.6] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]";
   return (
     <>
       <motion.section
@@ -304,7 +306,7 @@ export function V26Dissolve({ spot }: VProps) {
               <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:w-[200px]">
                 {s.heading}
               </h3>
-              <p className="w-full whitespace-pre-line text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
+              <p className="w-full whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
                 {s.text}
               </p>
             </motion.section>
@@ -374,7 +376,7 @@ export function V31Hanging({ spot }: VProps) {
                 {s.heading}
               </h3>
               <span className="block h-px w-[56px] bg-ink/20" />
-              <p className="whitespace-pre-line text-body-16 font-extralight leading-[2.5] tracking-[0.5px] text-ink/90">
+              <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90">
                 {s.text}
               </p>
             </motion.section>
@@ -528,10 +530,10 @@ function TocLayout({
                 whileInView="show"
                 viewport={{ root: ref, once: true, amount: 0.3 }}
               >
-                <h3 className="text-title-28 font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
+                <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                   {s.heading}
                 </h3>
-                <p className="whitespace-pre-line text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[620px]">
+                <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[620px]">
                   {s.text}
                 </p>
               </motion.section>
@@ -643,7 +645,7 @@ export function V37PinnedBlur({ spot }: VProps) {
                 <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:w-[190px]">
                   {s.heading}
                 </h3>
-                <p className="w-full whitespace-pre-line text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
+                <p className="w-full whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
                   {s.text}
                 </p>
               </motion.section>
@@ -654,6 +656,194 @@ export function V37PinnedBlur({ spot }: VProps) {
             <QuietBlocks spot={spot} root={ref} from={heads.length} />
           </div>
         </div>
+      </div>
+    </Shell>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   E. 案38〜40  案11（余白で読ませる）の系統をもう3案
+   【2026-09-16 ヒデさん依頼】
+   「案11みたいなアイディアがあるといいですね。見出しと、なんかちょっと
+     若干グリッドっぽくなっている感じ。見出しとすごく離して本文みたいな形もいい」
+   → 解釈：①見出し・本文・写真が見えない12列のグリッドに乗る
+          ②見出しと本文の【間】そのものをデザインにする
+   3案とも案11 と同じ約束（写真は全幅で大きく／本文は細い柱／色は足さない）
+   ═══════════════════════════════════════════════════ */
+
+/** 12列のグリッド。列のまたぎ方だけを案ごとに変える */
+function Grid({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`grid grid-cols-4 gap-x-5 sm:grid-cols-12 sm:gap-x-6 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ── 案38 グリッドに乗せる ──────────────────────
+   変えたところ：置き場所の決め方（12列のグリッド）
+   見出しは1〜3列、本文は5〜10列。写真も列にそろえて、1枚ごとに
+   またぐ列をずらす。目に見えない格子に全部が乗っているので、
+   バラバラに見えて実はそろっている */
+export function V38Grid({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const heads = headsOf(spot);
+  /* 写真がまたぐ列。1枚ごとにずらして、右だけ・左だけの余白を作る */
+  const span = [
+    "sm:col-start-2 sm:col-end-13",
+    "sm:col-start-1 sm:col-end-9",
+    "sm:col-start-5 sm:col-end-13",
+    "sm:col-start-3 sm:col-end-11",
+  ];
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <QuietHero spot={spot} h="h-[88dvh]" />
+
+      <div className="px-6 py-[120px] sm:px-[80px]">
+        <Grid className="gap-y-[104px]">
+          {heads.map((s, i) => (
+            <motion.section
+              key={i}
+              data-sec={i}
+              className="col-span-4 grid grid-cols-subgrid sm:col-span-12"
+              variants={revealSlow}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.3 }}
+            >
+              <h3 className="col-span-4 mb-4 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:col-start-1 sm:col-end-4 sm:mb-0">
+                {s.heading}
+              </h3>
+              <p className="col-span-4 whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:col-start-5 sm:col-end-11">
+                {s.text}
+              </p>
+            </motion.section>
+          ))}
+        </Grid>
+      </div>
+
+      {/* 写真も同じ格子に乗せる。またぐ列を1枚ずつずらす */}
+      <div className="px-6 pb-[120px] sm:px-[80px]">
+        <Grid className="gap-y-[96px]">
+          {spot.photos.map((p, i) => (
+            <div key={p} className={`col-span-4 ${span[i % span.length]}`}>
+              <Photo src={p} root={ref} className="h-[52dvh] w-full sm:h-[66dvh]" />
+            </div>
+          ))}
+        </Grid>
+      </div>
+
+      <div className="px-6 pb-[160px] sm:px-[80px]">
+        <Grid>
+          <div className="col-span-4 flex flex-col gap-[72px] sm:col-start-3 sm:col-end-11">
+            <QuietBlocks spot={spot} root={ref} from={heads.length} />
+          </div>
+        </Grid>
+      </div>
+    </Shell>
+  );
+}
+
+/* ── 案39 見出しをうんと離す ────────────────────
+   変えたところ：見出しと本文の【間】
+   見出しだけを先に大きく置いて、画面の半分ぶん空けてから本文が来る。
+   間そのものが「息を吸う場所」になる。案11 の余白をもっと極端にした形 */
+export function V39FarHead({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const heads = headsOf(spot);
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <QuietHero spot={spot} h="h-[90dvh]" />
+
+      <div className="px-6 py-[120px] sm:px-[120px]">
+        <div className="flex flex-col gap-[64px]">
+          {heads.map((s, i) => (
+            <motion.section
+              key={i}
+              data-sec={i}
+              variants={revealSlow}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.25 }}
+            >
+              <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] tracking-[0.04em] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
+                {s.heading}
+              </h3>
+              {/* ここが「間」。画面の半分ぶん空けてから本文へ */}
+              <div className="h-[24dvh] sm:h-[42dvh]" />
+              <p className="max-w-[520px] whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 sm:ml-auto sm:mr-[60px]">
+                {s.text}
+              </p>
+            </motion.section>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-[96px] pb-[120px]">
+        {spot.photos.map((p) => (
+          <Photo key={p} src={p} root={ref} className="h-[68dvh] w-full sm:h-[84dvh]" />
+        ))}
+      </div>
+
+      <div className="mx-auto flex w-[860px] max-w-full flex-col gap-[80px] px-6 pb-[170px]">
+        <QuietBlocks spot={spot} root={ref} from={heads.length} />
+      </div>
+    </Shell>
+  );
+}
+
+/* ── 案40 見出しと本文が対角に離れる ──────────────
+   変えたところ：見出しと本文の位置関係（斜めに離す）
+   見出しは左上に小さく、本文は右下へ大きく下げる。
+   横にも縦にも離れているので、目が斜めに動いて「間」を長く感じる */
+export function V40Diagonal({ spot }: VProps) {
+  const ref = useRef<HTMLElement>(null);
+  const heads = headsOf(spot);
+  return (
+    <Shell refEl={ref}>
+      <BackPill />
+      <QuietHero spot={spot} h="h-[86dvh]" />
+
+      <div className="px-6 py-[120px] sm:px-[100px]">
+        <div className="mx-auto flex max-w-[1120px] flex-col gap-[120px]">
+          {heads.map((s, i) => (
+            <motion.section
+              key={i}
+              data-sec={i}
+              className="flex flex-col"
+              variants={revealSlow}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ root: ref, once: true, amount: 0.25 }}
+            >
+              <h3 className="text-body-14 font-light leading-[1.9] tracking-[0.2em] text-ink/50">
+                {s.heading}
+              </h3>
+              {/* 斜めに離す：下へ 18dvh ＋ 右へ寄せる */}
+              <p className="mt-[12dvh] max-w-[520px] self-start whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 sm:mt-[18dvh] sm:self-end">
+                {s.text}
+              </p>
+            </motion.section>
+          ))}
+        </div>
+      </div>
+
+      {/* 写真も左右交互に寄せて、斜めの流れを続ける */}
+      <div className="flex flex-col gap-[110px] px-6 pb-[130px] sm:px-[100px]">
+        {spot.photos.map((p, i) => (
+          <div
+            key={p}
+            className={`w-full sm:w-[76%] ${i % 2 === 1 ? "sm:ml-auto" : ""}`}
+          >
+            <Photo src={p} root={ref} className="h-[54dvh] w-full sm:h-[70dvh]" />
+          </div>
+        ))}
+      </div>
+
+      <div className="mx-auto flex w-[860px] max-w-full flex-col gap-[80px] px-6 pb-[170px]">
+        <QuietBlocks spot={spot} root={ref} from={heads.length} />
       </div>
     </Shell>
   );

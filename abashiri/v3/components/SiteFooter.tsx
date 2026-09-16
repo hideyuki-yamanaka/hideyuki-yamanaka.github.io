@@ -51,30 +51,9 @@ export const FOOTER_PATTERNS: Record<number, { name: string; note: string }> = {
   },
 };
 
-/** 「ぼーっと体験」の見せ方 5案（2026-09-16 ヒデさん依頼）。
-    ぼーっとスポットの列の中に置くが、上の5つのスポットとは別物だと分かるようにする */
-export const FOOTER_SPECIALS: Record<number, { name: string; note: string }> = {
-  1: {
-    name: "別扱いA 線で区切る",
-    note: "スポットの下に細い区切り線を引いてから置く。いちばん素直で、別の種類だと分かる",
-  },
-  2: {
-    name: "別扱いB ガラスのボタン",
-    note: "すりガラスの小さなボタンにする。押せるものだとはっきり分かり、目線も止まる",
-  },
-  3: {
-    name: "別扱いC 矢印を添える",
-    note: "文字の後ろに → を置いて「別のページへ行く」ことを示す。いちばん軽い",
-  },
-  4: {
-    name: "別扱いD 点線の枠",
-    note: "点線の枠で囲む。一覧の流れから浮かせて、おまけの入口に見せる",
-  },
-  5: {
-    name: "別扱いE 小さな見出しを付ける",
-    note: "上に「動画で」という小さなラベルを付けて、別のまとまりとして見せる",
-  },
-};
+/* 【2026-09-16 ヒデさん指示】「ぼーっと体験」の別扱い5案（FOOTER_SPECIALS）は撤去した。
+   「区切り線などもなしで普通に入れちゃう感じで大丈夫」「ぼーっと疑似体験というタイトルに」
+   → ぼーっとスポットの一覧のいちばん下に、ほかの項目と同じ見た目で並べる */
 
 /** フッターの組み方（左右の余白・カラムの幅）。2026-09-16 ヒデさん依頼で追加。
     きっかけ：「メガフッターがきつい。作字とサイトマップが近い」 */
@@ -110,10 +89,6 @@ export const SITEMAP: {
   jump?: "spotAt" | "gourmetAt" | "eventsAt";
   href?: string;
   items: SiteNode[];
-  /** その列の最後に、ほかの項目とは別扱いで置くもの。
-      【2026-09-16 ヒデさん指示】「ぼーっと体験は子階層をなくして、
-      ぼーっとスポットの中に格納。ただし他のスポットとは別だと分かる見せ方で」 */
-  special?: SiteNode & { lead?: string };
 }[] = [
   {
     title: "ぼーっとスポット",
@@ -121,11 +96,11 @@ export const SITEMAP: {
     items: [
       { label: "能取岬", href: "/spot/notoro" },
       { label: "能取湖サンゴ草群落地", href: "/spot/sango" },
-      { label: "網走駅", href: "/spot/eki" },
       { label: "流氷クルーズ", href: "/spot/ryuhyo" },
       { label: "大曲湖畔園地ひまわり畑", href: "/spot/himawari" },
+      /* 動画の疑似体験ページ。区切り線などは付けず、ふつうの項目として並べる */
+      { label: "ぼーっと疑似体験", href: "/experience" },
     ],
-    special: { label: "ぼーっと体験", href: "/experience", lead: "動画で" },
   },
   {
     title: "素朴なグルメ",
@@ -341,13 +316,11 @@ function MapColumn({
   col,
   light = false,
   level = 1,
-  special = 1,
 }: {
   col: (typeof SITEMAP)[number];
   light?: boolean;
   level?: number;
   /** 「ぼーっと体験」の見せ方（5案） */
-  special?: number;
 }) {
   const white = light ? "text-white" : "text-ink";
   /* 親の文字。案3だけ大きく */
@@ -454,100 +427,20 @@ function MapColumn({
           );
         })}
       </ul>
-      {/* 「ぼーっと体験」だけは、上のスポット一覧とは別物だと分かる見せ方にする */}
-      {col.special && <SpecialLink node={col.special} light={light} kind={special} />}
     </div>
   );
 }
 
-/** ぼーっとスポットの列の最後に置く「ぼーっと体験」。見せ方は5案から選ぶ */
-function SpecialLink({
-  node,
-  light,
-  kind = 1,
-}: {
-  node: NonNullable<(typeof SITEMAP)[number]["special"]>;
-  light?: boolean;
-  kind?: number;
-}) {
-  const base = `text-body-13 font-light leading-[1.9] transition-colors duration-300 ease-standard ${
-    light ? "text-white hover:text-white" : "text-ink hover:text-ink"
-  }`;
-  const rule = light ? "border-white/30" : "border-ink/15";
-
-  const inner = (
-    <Link href={node.href || "/"} className={base}>
-      {node.label}
-      {kind === 3 && <span className="ml-2 opacity-70">→</span>}
-    </Link>
-  );
-
-  /* A 線で区切る */
-  if (kind === 1)
-    return (
-      <div className={`mt-5 border-t pt-5 ${rule}`}>{inner}</div>
-    );
-  /* B ガラスのボタン */
-  if (kind === 2)
-    return (
-      <div className="mt-6">
-        <Link
-          href={node.href || "/"}
-          className={`inline-flex items-center gap-2 px-5 py-2.5 text-body-13 font-light transition-colors duration-300 ease-standard ${
-            light
-              ? "bg-white/15 text-white ring-1 ring-inset ring-white/30 backdrop-blur-65 hover:bg-white/25"
-              : "bg-ink/5 text-ink hover:bg-ink/10"
-          }`}
-        >
-          {node.label}
-          <span className="opacity-70">→</span>
-        </Link>
-      </div>
-    );
-  /* C 矢印を添える（線なし・軽く） */
-  if (kind === 3) return <div className="mt-5">{inner}</div>;
-  /* D 点線の枠 */
-  if (kind === 4)
-    return (
-      <div className="mt-6">
-        <Link
-          href={node.href || "/"}
-          className={`inline-flex items-center gap-2 border border-dashed px-4 py-2.5 text-body-13 font-light transition-colors duration-300 ease-standard ${
-            light
-              ? "border-white/45 text-white hover:border-white"
-              : "border-ink/25 text-ink hover:border-ink/50"
-          }`}
-        >
-          {node.label}
-        </Link>
-      </div>
-    );
-  /* E 小さな見出しを付ける */
-  return (
-    <div className="mt-7 flex flex-col gap-2">
-      <span
-        className={`text-body-12 font-light tracking-[0.2em] ${
-          light ? "text-white/45" : "text-ink/35"
-        }`}
-      >
-        {node.lead || "そのほか"}
-      </span>
-      {inner}
-    </div>
-  );
-}
 
 /** サイトマップ。cols で1行に並べる数を変える（組みの案で使う） */
 function SiteMapGrid({
   light = false,
   level = 1,
   cols = 4,
-  special = 1,
 }: {
   light?: boolean;
   level?: number;
   cols?: 2 | 4;
-  special?: number;
 }) {
   return (
     <div
@@ -558,7 +451,7 @@ function SiteMapGrid({
       }`}
     >
       {SITEMAP.map((c) => (
-        <MapColumn key={c.title} col={c} light={light} level={level} special={special} />
+        <MapColumn key={c.title} col={c} light={light} level={level} />
       ))}
     </div>
   );
@@ -569,11 +462,9 @@ function SiteMapGrid({
 function Body({
   pat,
   layout,
-  special,
 }: {
   pat: number;
   layout: number;
-  special: number;
 }) {
   /* 左の作字。サイトの顔なので大きく出す（2026-09-16 ヒデさん指示） */
   const logo = (cls: string) => (
@@ -590,7 +481,7 @@ function Body({
         <div className="flex w-full flex-col gap-[var(--ft-col-gap)]">
           {logo("h-[150px] sm:h-[var(--ft-logo-h)]")}
           <div style={{ transform: "translateY(var(--ft-map-offset-y))" }}>
-            <SiteMapGrid light level={pat} special={special} />
+            <SiteMapGrid light level={pat} />
           </div>
         </div>
       </PhotoStage>
@@ -610,7 +501,7 @@ function Body({
                transform なので周りのレイアウトは動かない */
             style={{ transform: "translateY(var(--ft-map-offset-y))" }}
           >
-            <SiteMapGrid light level={pat} cols={2} special={special} />
+            <SiteMapGrid light level={pat} cols={2} />
           </div>
         </div>
       </PhotoStage>
@@ -627,7 +518,7 @@ function Body({
           className="min-w-0 flex-1"
           style={{ transform: "translateY(var(--ft-map-offset-y))" }}
         >
-          <SiteMapGrid light level={pat} special={special} />
+          <SiteMapGrid light level={pat} />
         </div>
       </div>
     </PhotoStage>
@@ -638,7 +529,6 @@ export default function SiteFooter() {
   /* 選ぶのは「組み（レイアウト）」3案 と「階層の見せ方」6案。既定は 組みA／階層A */
   const [pat, setPat] = useState(1);
   const [layout, setLayout] = useState(1);
-  const [special, setSpecial] = useState(1);
   useEffect(() => {
     fetch("/tune-defaults.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -647,17 +537,13 @@ export default function SiteFooter() {
         if (typeof v === "number" && FOOTER_PATTERNS[v]) setPat(v);
         const l = d?.footer?.layout;
         if (typeof l === "number" && FOOTER_LAYOUTS[l]) setLayout(l);
-        const sp = d?.footer?.special;
-        if (typeof sp === "number" && FOOTER_SPECIALS[sp]) setSpecial(sp);
       })
       .catch(() => {});
     const onTune = (e: Event) => {
-      const d = (e as CustomEvent<{ v?: number; layout?: number; special?: number }>)
+      const d = (e as CustomEvent<{ v?: number; layout?: number }>)
         .detail;
       if (typeof d?.v === "number" && FOOTER_PATTERNS[d.v]) setPat(d.v);
       if (typeof d?.layout === "number" && FOOTER_LAYOUTS[d.layout]) setLayout(d.layout);
-      if (typeof d?.special === "number" && FOOTER_SPECIALS[d.special])
-        setSpecial(d.special);
     };
     window.addEventListener(FOOTER_EVENT, onTune);
     return () => window.removeEventListener(FOOTER_EVENT, onTune);
@@ -679,7 +565,7 @@ export default function SiteFooter() {
          写真はこの白の上に載るので、白地でも見た目は変わらない */
       className="relative z-10 -mt-[2px] w-full bg-white"
     >
-      <Body pat={pat} layout={layout} special={special} />
+      <Body pat={pat} layout={layout} />
     </footer>
   );
 }

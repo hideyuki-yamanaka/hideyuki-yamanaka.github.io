@@ -183,7 +183,8 @@ export function Sections({
         >
           {s.heading && (
             <h3
-              className={`text-title-28 font-thin leading-[1.4] ${
+              /* 大きさは調整パネルのつまみ（--dt-head）。行間は倍率なので一緒に動く */
+              className={`text-[length:var(--dt-head)] font-thin leading-[1.4] ${
                 light ? "text-white" : "text-ink"
               }`}
             >
@@ -191,7 +192,8 @@ export function Sections({
             </h3>
           )}
           <p
-            className={`text-body-16 font-extralight leading-[2.4] tracking-[0.5px] ${
+            /* 大きさは調整パネルのつまみ（--dt-body） */
+            className={`text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] ${
               light ? "text-white/90" : "text-ink/90"
             }`}
           >

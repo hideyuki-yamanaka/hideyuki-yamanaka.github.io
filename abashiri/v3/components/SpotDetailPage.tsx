@@ -32,6 +32,9 @@ import {
   V35TocDot,
   V36TocNum,
   V37PinnedBlur,
+  V38Grid,
+  V39FarHead,
+  V40Diagonal,
 } from "./SpotDetailVariants3";
 
 /* tune-panel.js（依存ゼロの素のJS）の必要なところだけの型 */
@@ -125,6 +128,20 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案37 ぼかして白へ",
     note: "最初は画面いっぱいの写真＋左下に名前。スクロールすると写真が貼りついたままぼけて遠のき、白いコンテンツの面がグラデを先頭に乗り上げる",
   },
+  /* ═══ 2026-09-16 ヒデさん依頼「案11 みたいなのをあと3案」═══
+     見出しと本文・写真の【置き場所】と【間】を変えた3案 */
+  38: {
+    name: "案38 グリッドに乗せる",
+    note: "置き場所の決め方を変更。見出し・本文・写真を12列の見えない格子に乗せ、写真ごとにまたぐ列をずらす。バラバラに見えて実はそろっている",
+  },
+  39: {
+    name: "案39 見出しをうんと離す",
+    note: "見出しと本文の間を変更。見出しを先に大きく置いて、画面の半分ぶん空けてから本文が来る。間そのものが息を吸う場所になる",
+  },
+  40: {
+    name: "案40 対角に離す",
+    note: "見出しと本文の位置関係を変更。見出しは左上に小さく、本文は右下へ大きく下げる。写真も左右交互に寄せて斜めの流れを続ける",
+  },
 };
 
 export default function SpotDetailPage({ slug }: { slug: string }) {
@@ -136,7 +153,15 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   useEffect(() => {
     if (madeRef.current) return;
     let panel: { destroy: () => void } | null = null;
-    const params = { detail: { pattern: 1 } };
+    /* 文字の大きさは CSS 変数で持つ（つまみを動かすたびに React を描き直さないため）。
+       値の住み家：①globals.css の :root ②ここの params ③ブラウザ保存
+       ——3つとも同じ数にしておくこと */
+    const params = { detail: { pattern: 1, headSize: 26, bodySize: 15 } };
+    const applyType = () => {
+      const r = document.documentElement;
+      r.style.setProperty("--dt-head", params.detail.headSize + "px");
+      r.style.setProperty("--dt-body", params.detail.bodySize + "px");
+    };
 
     const build = () => {
       const lib = (window as unknown as { TunePanel?: PanelLib }).TunePanel;
@@ -153,8 +178,10 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v6: 案11〜20 のテンポをゆったりに＋余白を生かした案21〜25 を追加（2026-09-16）
            v7: ヒデさんの選定で 案2・4・8・10・14・15・17・21・25 を完全削除（2026-09-16）
            v8: 案26〜37 を追加（2026-09-16・グラデ移行／左見出し5案／目次連動5案／全画面ぼかし）
-           v9: ヒデさんの選定で 案13・19・24・27・28・29・30 を完全削除（2026-09-16） */
-        version: 9,
+           v9: ヒデさんの選定で 案13・19・24・27・28・29・30 を完全削除（2026-09-16）
+           v10: 本文・見出しの大きさのつまみを追加（2026-09-16）
+           v11: 案11 の系統をもう3案（案38〜40）追加（2026-09-16） */
+        version: 11,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -165,12 +192,14 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             open: true,
             items: [
               {
-                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。いま残っているのは17案です。案1・3 は最初からの案、案11〜23 は写真が6〜7割のミニマル、案26 はサムネがグラデで白へ溶ける案、案31 は左に見出し・右に本文（色は使わず罫線と余白だけ）、案32〜36 は左の目次がスクロール位置に反応する案、案37 は全画面写真がぼけて白へ移る案。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので欠番があります。"
+                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。いま残っているのは17案です。案1・3 は最初からの案、案11〜23 は写真が6〜7割のミニマル、案26 はサムネがグラデで白へ溶ける案、案31 は左に見出し・右に本文（色は使わず罫線と余白だけ）、案32〜36 は左の目次がスクロール位置に反応する案、案37 は全画面写真がぼけて白へ移る案、案38〜40 は案11（余白で読ませる）の系統で見出しと本文の置き場所・間を変えた3案。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので欠番があります。"
               },
               {
                 pills: "デザインと動きの案",
                 path: "detail.pattern",
                 immediate: true,
+                /* 案を消したら、残った数に応じて 案1 から振り直す（2026-09-16 ヒデさん指示） */
+                autoNum: "案",
                 options: Object.entries(SPOT_DETAIL_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
@@ -180,10 +209,44 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               },
             ],
           },
+          {
+            cat: "🔠 文字の大きさ",
+            open: true,
+            items: [
+              {
+                note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます（全案に効きます）。",
+              },
+              {
+                slider: "本文の大きさ",
+                path: "detail.bodySize",
+                min: 12,
+                max: 20,
+                step: 0.5,
+                unit: "px",
+                immediate: true,
+              },
+              {
+                slider: "見出しの大きさ",
+                path: "detail.headSize",
+                min: 16,
+                max: 40,
+                step: 1,
+                unit: "px",
+                immediate: true,
+              },
+            ],
+          },
         ],
-        onChange: () => setPattern(params.detail.pattern),
-        onSettle: () => setPattern(params.detail.pattern),
+        onChange: () => {
+          applyType();
+          setPattern(params.detail.pattern);
+        },
+        onSettle: () => {
+          applyType();
+          setPattern(params.detail.pattern);
+        },
       });
+      applyType();
       setPattern(params.detail.pattern);
     };
 
@@ -227,6 +290,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
     35: V35TocDot,
     36: V36TocNum,
     37: V37PinnedBlur,
+    38: V38Grid,
+    39: V39FarHead,
+    40: V40Diagonal,
   };
   const V = MAP[pattern] ?? V1Parallax;
   return <V key={pattern} spot={spot} />;

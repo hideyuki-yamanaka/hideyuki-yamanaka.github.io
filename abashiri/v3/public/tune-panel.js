@@ -1240,6 +1240,36 @@
     var alive = function () {
       return (item.options || []).filter(function (o) { return B.hidden.indexOf(K(o.value)) < 0; });
     };
+
+    /* ── 案の通し番号を自動で振る（2026-09-16 ヒデさん指示）─────────
+       「案を削除したあと、残った総数に応じて再度1番からナンバリングされる形」
+       item.autoNum に呼び方を渡すと、残っている案を上から 1,2,3… と数え直す。
+         autoNum: '案'                  → 案1・案2・案3…
+         autoNum: { prefix:'階層', style:'alpha' } → 階層A・階層B・階層C…
+       元の name に「案11」「階層C」のような古い番号が付いていても、
+       先頭のその部分だけ外してから振り直すので、二重に番号が出ることはない */
+    var autoCfg = (function () {
+      var a = item.autoNum;
+      if (!a) return null;
+      if (typeof a === 'string') return { prefix: a, style: 'num' };
+      return { prefix: a.prefix || '', style: a.style || 'num' };
+    })();
+    var ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var numOf = function (i) {
+      return autoCfg.style === 'alpha' ? (ALPHA[i] || String(i + 1)) : String(i + 1);
+    };
+    /* 先頭の「<呼び方><番号や英字>」を外して、説明の部分だけ残す */
+    var bareName = function (name) {
+      if (!autoCfg || !name) return name || '';
+      var re = new RegExp('^' + autoCfg.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[0-9A-Za-z]+\\s*');
+      return String(name).replace(re, '').trim();
+    };
+    /* 一覧に出す名前。autoNum が無ければ今まで通り name をそのまま出す */
+    var labelOf = function (o, i) {
+      if (!autoCfg) return o.name;
+      var b = bareName(o.name);
+      return autoCfg.prefix + numOf(i) + (b ? ' ' + b : '');
+    };
     var isFav = function (o) { return B.fav.indexOf(K(o.value)) >= 0; };
 
     var choose = function (o) {
@@ -1254,7 +1284,8 @@
     };
 
     var menuFor = function (anchor, o) {
-      var label = o.name;
+      var idx = alive().map(function (q) { return K(q.value); }).indexOf(K(o.value));
+      var label = (autoCfg && idx >= 0) ? labelOf(o, idx) : o.name;
       var items = [];
       var fav = isFav(o);
       items.push([fav ? '★ ピン留めを解除（元の位置に戻す）' : '★ お気に入りにピン留め', function () {
@@ -1302,7 +1333,7 @@
       b.type = 'button';
       b.className = 'tp-pill' + (isFav(o) ? ' fav' : '');
       b.dataset.value = o.value;
-      b.title = o.name + (o.desc ? ' — ' + o.desc : '') +
+      b.title = label + (o.desc ? ' — ' + o.desc : '') +
         (B.ov[K(o.value)] ? '（⤓ 上書き済み・⋯から解除できます）' : '');
       if (o.swatch) {
         var sw = document.createElement('span');
@@ -1333,10 +1364,16 @@
         return list.filter(function (o) { return K(o.value) === k; })[0];
       }).filter(Boolean);
       favHead.style.display = favRow.style.display = pinned.length ? '' : 'none';
-      pinned.forEach(function (o, i) { pill(o, '★' + (i + 1) + ' ' + o.name, favRow); });
-      list.forEach(function (o) {
+      /* ピン留めも通常の案も、番号は「残っている案の並び順」で数える。
+         ピン留めして上に出しても、案の番号そのものは変わらない */
+      var numAt = {};
+      list.forEach(function (o, i) { numAt[K(o.value)] = i; });
+      pinned.forEach(function (o, i) {
+        pill(o, '★' + (i + 1) + ' ' + labelOf(o, numAt[K(o.value)]), favRow);
+      });
+      list.forEach(function (o, i) {
         if (pinned.indexOf(o) >= 0) return;
-        pill(o, o.name, rowEl);
+        pill(o, labelOf(o, i), rowEl);
       });
       /* 消した案を戻す */
       if (B.hidden.length) {
@@ -1347,7 +1384,8 @@
         back.addEventListener('click', function () {
           var names = B.hidden.map(function (k) {
             var o = (item.options || []).filter(function (q) { return K(q.value) === k; })[0];
-            return o ? o.name : k;
+            if (!o) return k;
+            return autoCfg ? (bareName(o.name) || o.name) : o.name;
           });
           self._pick('消した案を戻す', '戻したい案の「戻す」を押してください。', names, function (nm, idx) {
             B.hidden.splice(idx, 1);

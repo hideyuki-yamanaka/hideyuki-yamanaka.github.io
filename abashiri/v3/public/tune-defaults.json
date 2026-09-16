@@ -1,181 +1,180 @@
 {
-  "pos": {
-    "frameRight": 57,
-    "frameTop": 750,
-    "personX": 0,
-    "personY": 14,
-    "personW": 162,
-    "tamaraneeX": 107,
-    "tamaraneeY": -10,
-    "tamaraneeW": 75,
-    "boX": 135,
-    "boY": 8,
-    "boW": 62,
-    "sparkleX": 4,
-    "sparkleY": 53,
-    "sparkleW": 18,
-    "sparkle2Dx": -5,
-    "sparkle2Dy": -5,
-    "birdTopSky1X": -20,
-    "birdTopSky1Y": 16,
-    "birdTopSky2X": 50,
-    "birdTopSky2Y": 535,
-    "birdTopSky1W": 64,
-    "birdTopSky1Rot": -14,
-    "birdTopSky2W": 105,
-    "birdTopSky2Rot": 0,
-    "birdExpSky1X": -20,
-    "birdExpSky1Y": 16,
-    "birdExpSky2X": 50,
-    "birdExpSky2Y": 64,
-    "birdExpSky2W": 105,
-    "birdExpSky2Rot": 0,
-    "birdExpX": 150,
-    "birdExpY": 180,
-    "birdExpW": 84,
-    "birdExpRot": -8
-  },
-  "anim": {
-    "boPattern": 4,
-    "illustEnter": 3,
-    "tamaranee": 1,
-    "bouncePattern": 1,
-    "bounceStrength": 10,
-    "illustDelay": 0.5
-  },
-  "intro": {
-    "delay": 350,
-    "hold": 3000
-  },
-  "preview": {
-    "faceOn": false,
-    "patchRed": false
-  },
-  "sound": {
-    "volume": 66
-  },
-  "bird": {
-    "opacity": 65,
-    "color": "#ffffff",
-    "stroke": 100
-  },
-  "face": {
-    "browLift": 1,
-    "browX": 0,
-    "browY": 0,
-    "hoverPad": 0,
-    "mouthX": 47.9,
-    "mouthY": 79,
-    "mouthW": 11.2,
-    "mouthStroke": 1.5,
-    "patchSpread": 120
-  },
-  "sparkle": {
-    "period": 1.2
-  },
-  "spot": {
-    "kvOut": 320,
-    "bgFrom": 120,
-    "bgTo": 420,
-    "bgBlur": 16,
-    "spotFrom": 260,
-    "spotTo": 620,
-    "spotBlur": 30,
-    "stepLen": 982,
-    "hold": 500
-  },
-  "kvExit": {
-    "pattern": 0,
-    "range": 320,
-    "fadeStart": 60,
-    "blurMax": 22,
-    "scaleTo": 80,
-    "yTo": 0,
-    "ease": 1
-  },
-  "hero": {
-    "blur": 9,
-    "duration": 1450,
-    "tamaGap": 100
-  },
-  "msg": {
-    "pattern": 1,
-    "len": 2400,
-    "fadeIn": 120,
-    "minOpacity": 15,
-    "soft": 1.3,
-    "tail": 600,
-    "titleOpacity": 80,
-    "titleDelay": 200,
-    "titleAppearSec": 1.4,
-    "titleWeight": 100,
-    "titleLeading": 1,
-    "bodyWeight": 300,
-    "bodyLeading": 2,
-    "title": "網走は何もない。",
-    "body": "よくそんなことを言われます。\nただ、それ逆によくないですか？ むしろ魅力かも。\n\nいまの情報過多な社会で暮らしていると、考えることが多すぎるかもです。\n職場にいても、家にいても、何かしら考えて頭が動き続けて疲れる。\n\n網走は何もないからこそ、余計なことを考える必要ない、ぼーっとする時間をお届けします。\n\nオホーツクの海と、広大な大地と、空。あるのはそれだけ。\nそれ以外は、何もありません。\n網走は何もない。だから、たまらない。"
-  },
-  "gourmet": {
-    "speed": 40,
-    "pauseOnHover": true
-  },
-  "events": {
-    "pattern": 1,
-    "tailPad": 0
-  },
-  "pageTrans": {
-    "pattern": 1
-  },
-  "footer": {
-    "pattern": 1,
-    "layout": 1,
-    "special": 1,
-    "padX": 60,
-    "padBottom": 110,
-    "colGap": 248,
-    "mapGapX": 84,
-    "mapGapY": 48,
-    "headGap": 16,
-    "itemGap": 10,
-    "logoH": 260,
-    "mapOffsetY": 0,
-    "stageH": 155,
-    "fadeH": 95,
-    "fadeSolid": 22,
-    "evPadBottom": 180
-  },
-  "expIntro": {
-    "startDelay": 0.8,
-    "stagger": 0.35,
-    "duration": 1.15,
-    "blur": 18
-  },
-  "expPick": {
-    "pattern": 3
-  },
-  "scrollSpd": {
-    "kvToMsg": 40
-  },
-  "tips": {
-    "delay": 5,
-    "fade": 1.2,
-    "pattern": 5
-  },
-  "videoVol": {
-    "fadeIn": true,
-    "fadeSec": 3,
-    "uiHideSec": 2
-  },
-  "expEnter": {
-    "durationSec": 1.6,
-    "tame": 100,
-    "parallax": 6,
-    "dim": 55,
-    "blurMid": 0
-  },
-  "loop": {
-    "cycle": 8,
-    "show": 2.6,
-    "swayFirst": true
-  }
+ "pos": {
+  "frameRight": 57,
+  "frameTop": 750,
+  "personX": 0,
+  "personY": 14,
+  "personW": 162,
+  "tamaraneeX": 107,
+  "tamaraneeY": -10,
+  "tamaraneeW": 75,
+  "boX": 135,
+  "boY": 8,
+  "boW": 62,
+  "sparkleX": 4,
+  "sparkleY": 53,
+  "sparkleW": 18,
+  "sparkle2Dx": -5,
+  "sparkle2Dy": -5,
+  "birdTopSky1X": -20,
+  "birdTopSky1Y": 16,
+  "birdTopSky2X": 50,
+  "birdTopSky2Y": 535,
+  "birdTopSky1W": 64,
+  "birdTopSky1Rot": -14,
+  "birdTopSky2W": 105,
+  "birdTopSky2Rot": 0,
+  "birdExpSky1X": -20,
+  "birdExpSky1Y": 16,
+  "birdExpSky2X": 50,
+  "birdExpSky2Y": 64,
+  "birdExpSky2W": 105,
+  "birdExpSky2Rot": 0,
+  "birdExpX": 150,
+  "birdExpY": 180,
+  "birdExpW": 84,
+  "birdExpRot": -8
+ },
+ "anim": {
+  "boPattern": 4,
+  "illustEnter": 3,
+  "tamaranee": 1,
+  "bouncePattern": 1,
+  "bounceStrength": 10,
+  "illustDelay": 0.5
+ },
+ "intro": {
+  "delay": 350,
+  "hold": 3000
+ },
+ "preview": {
+  "faceOn": false,
+  "patchRed": false
+ },
+ "sound": {
+  "volume": 66
+ },
+ "bird": {
+  "opacity": 65,
+  "color": "#ffffff",
+  "stroke": 100
+ },
+ "face": {
+  "browLift": 1,
+  "browX": 0,
+  "browY": 0,
+  "hoverPad": 0,
+  "mouthX": 47.9,
+  "mouthY": 79,
+  "mouthW": 11.2,
+  "mouthStroke": 1.5,
+  "patchSpread": 120
+ },
+ "sparkle": {
+  "period": 1.2
+ },
+ "spot": {
+  "kvOut": 320,
+  "bgFrom": 120,
+  "bgTo": 420,
+  "bgBlur": 16,
+  "spotFrom": 260,
+  "spotTo": 620,
+  "spotBlur": 30,
+  "stepLen": 982,
+  "hold": 500
+ },
+ "kvExit": {
+  "pattern": 0,
+  "range": 320,
+  "fadeStart": 60,
+  "blurMax": 22,
+  "scaleTo": 80,
+  "yTo": 0,
+  "ease": 1
+ },
+ "hero": {
+  "blur": 9,
+  "duration": 1450,
+  "tamaGap": 100
+ },
+ "msg": {
+  "pattern": 1,
+  "len": 2400,
+  "fadeIn": 120,
+  "minOpacity": 15,
+  "soft": 1.3,
+  "tail": 600,
+  "titleOpacity": 80,
+  "titleDelay": 200,
+  "titleAppearSec": 1.4,
+  "titleWeight": 100,
+  "titleLeading": 1,
+  "bodyWeight": 300,
+  "bodyLeading": 2,
+  "title": "網走は何もない。",
+  "body": "よくそんなことを言われます。\nただ、それ逆によくないですか？ むしろ魅力かも。\n\nいまの情報過多な社会で暮らしていると、考えることが多すぎるかもです。\n職場にいても、家にいても、何かしら考えて頭が動き続けて疲れる。\n\n網走は何もないからこそ、余計なことを考える必要ない、ぼーっとする時間をお届けします。\n\nオホーツクの海と、広大な大地と、空。あるのはそれだけ。\nそれ以外は、何もありません。\n網走は何もない。だから、たまらない。"
+ },
+ "gourmet": {
+  "speed": 40,
+  "pauseOnHover": true
+ },
+ "events": {
+  "pattern": 1,
+  "tailPad": 0
+ },
+ "pageTrans": {
+  "pattern": 1
+ },
+ "footer": {
+  "pattern": 1,
+  "layout": 1,
+  "padX": 60,
+  "padBottom": 110,
+  "colGap": 248,
+  "mapGapX": 84,
+  "mapGapY": 48,
+  "headGap": 16,
+  "itemGap": 10,
+  "logoH": 260,
+  "mapOffsetY": 0,
+  "stageH": 155,
+  "fadeH": 95,
+  "fadeSolid": 22,
+  "evPadBottom": 180
+ },
+ "expIntro": {
+  "startDelay": 0.8,
+  "stagger": 0.35,
+  "duration": 1.15,
+  "blur": 18
+ },
+ "expPick": {
+  "pattern": 3
+ },
+ "scrollSpd": {
+  "kvToMsg": 40
+ },
+ "tips": {
+  "delay": 5,
+  "fade": 1.2,
+  "pattern": 5
+ },
+ "videoVol": {
+  "fadeIn": true,
+  "fadeSec": 3,
+  "uiHideSec": 2
+ },
+ "expEnter": {
+  "durationSec": 1.6,
+  "tame": 100,
+  "parallax": 6,
+  "dim": 55,
+  "blurMid": 0
+ },
+ "loop": {
+  "cycle": 8,
+  "show": 2.6,
+  "swayFirst": true
+ }
 }

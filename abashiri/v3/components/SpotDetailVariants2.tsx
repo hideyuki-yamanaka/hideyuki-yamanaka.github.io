@@ -190,7 +190,7 @@ export function V12Vertical({ spot }: VProps) {
             whileInView="show"
             viewport={{ root: ref, once: true, amount: 0.3 }}
           >
-            <p className="max-w-[560px] text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+            <p className="max-w-[560px] text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
               {s.text}
             </p>
             {s.heading && (
@@ -373,7 +373,7 @@ export function V20TextFirst({ spot }: VProps) {
                     {spot.sections[i].heading}
                   </h3>
                 )}
-                <p className="text-body-14 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+                <p className="text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
                   {spot.sections[i].text}
                 </p>
               </motion.div>
@@ -453,7 +453,7 @@ function SideHeadBlock({
         )}
       </div>
       <p
-        className={`w-full text-body-16 font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 ${bodyW}`}
+        className={`w-full text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 ${bodyW}`}
       >
         {text}
       </p>
@@ -561,7 +561,7 @@ export function V23RightColumn({ spot }: VProps) {
                       {spot.sections[i].heading}
                     </h3>
                   )}
-                  <p className="text-body-14 font-extralight leading-[2.5] tracking-[0.5px] text-ink/90">
+                  <p className="text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90">
                     {spot.sections[i].text}
                   </p>
                 </div>
