@@ -181,7 +181,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
   kangoku: {
     slug: "kangoku",
     no: "01",
-    category: "体験・イベント",
+    category: "体験",
     name: "博物館 網走監獄",
     kana: "はくぶつかんあばしりかんごく",
     lead: "「北海道開拓と監獄受刑者」をテーマとした野外歴史博物館",
@@ -216,7 +216,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
   ryuhyokan: {
     slug: "ryuhyokan",
     no: "02",
-    category: "体験・イベント",
+    category: "体験",
     name: "オホーツク流氷館",
     kana: "おほーつくりゅうひょうかん",
     lead: "流氷とオホーツク海の生き物をテーマとした観光施設",
@@ -249,7 +249,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
   canoe: {
     slug: "canoe",
     no: "03",
-    category: "体験・イベント",
+    category: "体験",
     name: "カヌー体験",
     kana: "かぬーたいけん",
     lead: "アイヌ語地名の解説を聞きながら、古代の人々が見た景色に浸る",
@@ -287,7 +287,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
   washi: {
     slug: "washi",
     no: "04",
-    category: "体験・イベント",
+    category: "体験",
     name: "オジロワシ・オオワシウォッチング",
     kana: "おおわしうぉっちんぐ",
     lead: "天然記念物のオジロワシ・オオワシを網走市内周辺で観察します。",

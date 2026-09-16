@@ -78,10 +78,10 @@ const GOURMET = [
 
 /* 体験セクション（PC版 EventSection と同じ4件・同じ詳細ページへつなぐ） */
 const EVENTS = [
-  { slug: "kangoku", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg" },
-  { slug: "ryuhyokan", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg" },
-  { slug: "canoe", title: "カヌー体験", img: "/img/spot/canoe-1.jpg" },
-  { slug: "washi", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg" },
+  { no: "01", slug: "kangoku", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg" },
+  { no: "02", slug: "ryuhyokan", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg" },
+  { no: "03", slug: "canoe", title: "カヌー体験", img: "/img/spot/canoe-1.jpg" },
+  { no: "04", slug: "washi", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg" },
 ];
 
 /* KV / メッセージ / スポット×4 / グルメ / 体験 / フッター
@@ -395,7 +395,7 @@ export default function MobileTop() {
                 />
               </div>
               <p className="text-body-12 font-extralight leading-[1.4] text-ink/50">
-                体験・イベント
+                体験 {e.no}
               </p>
               <p className="text-body-14 font-light leading-[1.5] text-ink">
                 {e.title}
