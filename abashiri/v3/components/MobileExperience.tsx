@@ -192,9 +192,11 @@ export default function MobileExperience() {
       {step === "intro" && (
         <section className="relative z-10 flex h-full flex-col">
           <div className="flex flex-1 -translate-y-6 flex-col items-center justify-center px-6 text-center">
-            <p className="text-body-13 font-light">網走に来る前に、まずやってみよう</p>
-            <p className="mt-2 text-title-34 font-thin">ぼーっと体験</p>
-            <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9]">
+            {/* タブレット（744px以上）は画面が大きいので一段大きく組む
+                （2026-09-17 タブレット対応。実測: 1024x1366 で本文14pxは小さすぎた） */}
+            <p className="text-body-13 font-light tab:text-body-16">網走に来る前に、まずやってみよう</p>
+            <p className="mt-2 text-title-34 font-thin tab:mt-3 tab:text-title-56">ぼーっと体験</p>
+            <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9] tab:mt-14 tab:space-y-7 tab:text-body-18 tab:leading-[2]">
               <p>網走は何もないけど、それがたまらない。</p>
               <p>
                 忙しなく過ごす、あなたの日常からそっと離れて、
@@ -211,7 +213,7 @@ export default function MobileExperience() {
             <button
               type="button"
               onClick={() => setStep("pick")}
-              className={`${glass} mt-10 px-8 py-[13px] text-body-14 font-medium leading-none`}
+              className={`${glass} mt-10 px-8 py-[13px] text-body-14 font-medium leading-none tab:mt-14 tab:px-12 tab:py-[18px] tab:text-body-18`}
             >
               次へ進む
             </button>
@@ -222,7 +224,7 @@ export default function MobileExperience() {
       {/* ── 場所えらび（青グラデ＋横カルーセル） ── */}
       {step === "pick" && (
         <section className="relative z-10 flex h-full flex-col items-center pb-10 pt-20">
-          <h2 className="text-center text-title-24 font-thin">どこでぼーっとする？</h2>
+          <h2 className="text-center text-title-24 font-thin tab:text-title-44">どこでぼーっとする？</h2>
 
           {/* 横カルーセル（PC版のレスポンシブ。中央のカードが選択） */}
           <div
@@ -253,19 +255,19 @@ export default function MobileExperience() {
           {/* ラベル＋ボタン（中央グループ） */}
           <div className="mt-7 flex flex-col items-center gap-5 px-6">
             <div className="flex flex-col items-center">
-              <p className="text-body-13 font-extralight">ぼーっとスポット {active.no}</p>
-              <p className="mt-1 text-title-24 font-thin">{active.label}</p>
+              <p className="text-body-13 font-extralight tab:text-body-16">ぼーっとスポット {active.no}</p>
+              <p className="mt-1 text-title-24 font-thin tab:mt-2 tab:text-title-34">{active.label}</p>
             </div>
             {active.video ? (
               <button
                 type="button"
                 onClick={dive}
-                className={`${glass} w-full max-w-[342px] py-[15px] text-body-15 font-medium leading-none`}
+                className={`${glass} w-full max-w-[342px] py-[15px] text-body-15 font-medium leading-none tab:max-w-[420px] tab:py-[20px] tab:text-body-18`}
               >
                 この場所にする
               </button>
             ) : (
-              <p className="text-body-12 font-light text-white/70">
+              <p className="text-body-12 font-light text-white/70 tab:text-body-14">
                 この場所の体験は準備中です
               </p>
             )}

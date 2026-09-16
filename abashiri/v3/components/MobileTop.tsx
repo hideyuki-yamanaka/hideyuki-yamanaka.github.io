@@ -94,6 +94,13 @@ const SCENE_COUNT = 9;
 /* フッターの作字ロゴの倍率。枠 415x379 を高さ150pxに収める（150/379） */
 const FOOT_LOGO_SCALE = 150 / 379;
 
+/* 【2026-09-17】タブレット（縦長の大きい画面）用の倍率。
+   縦長タブレットは useIsMobile で【この縦長用レイアウト】に回している。
+   iPhone 用の倍率のままだと、1024px の画面で作字が 266px しかなく
+   スカスカに見えたので、744px 以上では大きくする（実測して決めた値）。 */
+const KV_SCALE_TAB = 1.0;
+const FOOT_LOGO_SCALE_TAB = 230 / 379;
+
 const KV_SCALE = 0.64;
 const DUR = 800; // トランジション時間(ms)
 
@@ -229,12 +236,21 @@ export default function MobileTop() {
                 片方だけ直すと中身と枠がずれるため）。
                 2026-09-16 ヒデさん指示で 0.8 → さらに80%の 0.64 へ */}
             <div
-              style={{ width: 415 * KV_SCALE, height: 379 * KV_SCALE }}
-              className="relative"
+              /* ⚠️ 倍率は CSS 変数で持つ。JS の定数のままだと
+                 タブレット（744px以上）で差し替えられないため
+                 （2026-09-17 タブレット対応） */
+              style={
+                {
+                  ["--kv-s" as string]: KV_SCALE,
+                  ["--kv-s-tab" as string]: KV_SCALE_TAB,
+                  width: "calc(415px * var(--kv-s))",
+                  height: "calc(379px * var(--kv-s))",
+                } as React.CSSProperties
+              }
+              className="relative tab:![width:calc(415px*var(--kv-s-tab))] tab:![height:calc(379px*var(--kv-s-tab))]"
             >
               <div
-                className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left"
-                style={{ transform: `scale(${KV_SCALE})` }}
+                className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left [transform:scale(var(--kv-s))] tab:[transform:scale(var(--kv-s-tab))]"
               >
                 {/* ⚠️ 作字は 471x390。415px の枠に直接置くと img の max-width:100% で
                    415px まで縮められ（実測 390→343.6px）、「網走市観光サイト」との
@@ -272,12 +288,15 @@ export default function MobileTop() {
 
       {/* ── 1: メッセージ ─────────────────── */}
       <section
-        className="absolute inset-0 flex items-center bg-gradient-to-b from-sky-top to-brand px-6 text-white"
+        className="absolute inset-0 flex items-center bg-gradient-to-b from-sky-top to-brand px-6 text-white tab:px-[80px]"
         style={scene(1)}
       >
-        <div>
-          <h2 className="text-title-28 font-thin leading-[1.5]">{MSG_TITLE}</h2>
-          <div className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.3px]">
+        {/* タブレットは行が長くなりすぎるので、柱の幅を決めて中央に置く */}
+        <div className="w-full tab:mx-auto tab:max-w-[680px]">
+          <h2 className="text-title-28 font-thin leading-[1.5] tab:text-title-44">
+            {MSG_TITLE}
+          </h2>
+          <div className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.3px] tab:mt-12 tab:space-y-8 tab:text-body-18">
             {MSG_BLOCKS.map((lines, i) => (
               <p key={i}>
                 {lines.map((l, j) => (
@@ -309,23 +328,25 @@ export default function MobileTop() {
           <button
             type="button"
             onClick={() => router.push(`/spot/${spot.slug}`)}
-            className="absolute inset-x-6 bottom-[72px] flex flex-col gap-4 bg-white/10 p-6 text-left text-white backdrop-blur-65"
+            className="absolute inset-x-6 bottom-[72px] flex flex-col gap-4 bg-white/10 p-6 text-left text-white backdrop-blur-65 tab:inset-x-[80px] tab:bottom-[110px] tab:gap-6 tab:p-10"
           >
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-body-13 font-extralight">
+                <p className="text-body-13 font-extralight tab:text-body-16">
                   ぼーっとスポット {spot.no}
                 </p>
-                <p className="mt-1 text-title-24 font-thin leading-tight">
+                <p className="mt-1 text-title-24 font-thin leading-tight tab:mt-2 tab:text-title-34">
                   {spot.title}
                 </p>
               </div>
-              <span className="flex shrink-0 items-center gap-1 pb-1 text-body-12 font-extralight">
+              <span className="flex shrink-0 items-center gap-1 pb-1 text-body-12 font-extralight tab:text-body-14">
                 もっと見る
                 <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
               </span>
             </div>
-            <p className="text-body-13 font-extralight leading-[1.9] tracking-[0.3px]">
+            {/* ⚠️ タブレットで1行が長くなりすぎる（実測: 1024px幅で約66文字）ので
+                読みやすい行長（約40文字）で止める */}
+            <p className="text-body-13 font-extralight leading-[1.9] tracking-[0.3px] tab:max-w-[640px] tab:text-body-16 tab:leading-[2]">
               {spot.body}
             </p>
           </button>
@@ -334,36 +355,36 @@ export default function MobileTop() {
 
       {/* ── 6: 素朴なグルメ ───────────────── */}
       <section
-        className="absolute inset-0 flex flex-col justify-center bg-white px-6"
+        className="absolute inset-0 flex flex-col justify-center bg-white px-6 tab:px-[80px]"
         style={scene(6)}
       >
-        <h2 className="text-body-20 font-thin leading-[1.7] text-ink">
+        <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-34">
           なーんにもない、道東の土地、網走。
           <br />
           そこの味が沁みちゃうんです。
         </h2>
         {/* 自動スライドショー（連続スクロール＝gourmet-marquee を再利用）。
             シームレスにループさせるためカードを2周ぶん並べる */}
-        <div className="-mx-6 mt-8 overflow-hidden">
+        <div className="-mx-6 mt-8 overflow-hidden tab:-mx-[80px] tab:mt-12">
           <div
-            className="gourmet-marquee flex w-max gap-3 pl-6"
+            className="gourmet-marquee flex w-max gap-3 pl-6 tab:gap-5 tab:pl-[80px]"
             style={{ ["--gourmet-speed" as string]: "28s" }}
           >
             {[...GOURMET, ...GOURMET].map((card, idx) => (
               <div
                 key={idx}
-                className="relative w-[230px] shrink-0 overflow-hidden"
+                className="relative w-[230px] shrink-0 overflow-hidden tab:w-[330px]"
               >
                 <img
                   src={card.img}
                   alt={card.title}
-                  className="h-[300px] w-full object-cover"
+                  className="h-[300px] w-full object-cover tab:h-[430px]"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
-                  <p className="text-body-12 font-extralight">
+                  <p className="text-body-12 font-extralight tab:text-body-13">
                     素朴なグルメ {card.no}
                   </p>
-                  <p className="mt-0.5 text-body-16 font-light leading-snug">
+                  <p className="mt-0.5 text-body-16 font-light leading-snug tab:text-body-20">
                     {card.title}
                   </p>
                 </div>
@@ -375,14 +396,14 @@ export default function MobileTop() {
 
       {/* ── 7: 体験セクション ───────────────── */}
       <section
-        className="absolute inset-0 flex flex-col justify-center bg-white px-6"
+        className="absolute inset-0 flex flex-col justify-center bg-white px-6 tab:px-[80px]"
         style={scene(7)}
       >
-        <h2 className="text-body-20 font-thin leading-[1.7] text-ink">
+        <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-34">
           意外とオモロい、網走。
         </h2>
         {/* 2列×2段。タップで詳細ページへ */}
-        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6">
+        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 tab:mt-12 tab:gap-x-6 tab:gap-y-10">
           {EVENTS.map((e) => (
             <button
               key={e.slug}
@@ -394,13 +415,13 @@ export default function MobileTop() {
                 <img
                   src={e.img}
                   alt={e.title}
-                  className="h-[150px] w-full object-cover"
+                  className="h-[150px] w-full object-cover tab:h-[300px]"
                 />
               </div>
-              <p className="text-body-12 font-extralight leading-[1.4] text-ink/50">
+              <p className="text-body-12 font-extralight leading-[1.4] text-ink/50 tab:text-body-13">
                 体験 {e.no}
               </p>
-              <p className="text-body-14 font-light leading-[1.5] text-ink">
+              <p className="text-body-14 font-light leading-[1.5] text-ink tab:text-body-20">
                 {e.title}
               </p>
             </button>
@@ -421,12 +442,18 @@ export default function MobileTop() {
             ⚠️ ここは白背景。もとの text-kanko-site.svg は【白い文字】なので、
                青にした text-kanko-site-blue.svg を使う（白のままだと見えない） */}
         <div
-          className="relative"
-          style={{ width: 415 * FOOT_LOGO_SCALE, height: 379 * FOOT_LOGO_SCALE }}
+          className="relative tab:![width:calc(415px*var(--ft-s-tab))] tab:![height:calc(379px*var(--ft-s-tab))]"
+          style={
+            {
+              ["--ft-s" as string]: FOOT_LOGO_SCALE,
+              ["--ft-s-tab" as string]: FOOT_LOGO_SCALE_TAB,
+              width: "calc(415px * var(--ft-s))",
+              height: "calc(379px * var(--ft-s))",
+            } as React.CSSProperties
+          }
         >
           <div
-            className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left"
-            style={{ transform: `scale(${FOOT_LOGO_SCALE})` }}
+            className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left [transform:scale(var(--ft-s))] tab:[transform:scale(var(--ft-s-tab))]"
           >
             <div className="absolute left-[-28px] top-[13.1px]">
               <img
@@ -442,13 +469,13 @@ export default function MobileTop() {
             />
           </div>
         </div>
-        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 tab:gap-x-8">
           {NAV.map((n) => (
             <button
               key={n.label}
               type="button"
               onClick={() => (n.href ? router.push(n.href) : goTo(n.scene ?? 0))}
-              className="text-body-13 font-light leading-[1.2] text-ink/70"
+              className="text-body-13 font-light leading-[1.2] text-ink/70 tab:text-body-16"
             >
               {n.label}
             </button>
@@ -467,7 +494,7 @@ export default function MobileTop() {
               className="opacity-70"
               onClick={(ev) => ev.preventDefault()}
             >
-              <img src={s.icon} alt="" className="h-[18px] w-auto [filter:brightness(0)]" />
+              <img src={s.icon} alt="" className="h-[18px] w-auto [filter:brightness(0)] tab:h-[24px]" />
             </a>
           ))}
         </div>
