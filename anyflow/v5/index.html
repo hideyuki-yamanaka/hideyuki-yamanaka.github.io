@@ -2738,7 +2738,9 @@
   .cv-form .cvf-submit:active { transform: translateY(1px); }
 
   /* --- fst-1 リキッドグラス(明): 磨りガラスの白カード。背景グラデが透ける(既定) --- */
-  #conversion.fst-1 .cv-form { padding: 34px 32px; border-radius: 22px; background: rgba(255,255,255,.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); border: 1px solid rgba(255,255,255,.66); box-shadow: 0 20px 60px rgba(20,30,60,.14), inset 0 1px 0 rgba(255,255,255,.6); }
+  /* 【2026-09-17 ヒデさん依頼】フォームカードの地色の白さ・ぼかし・彩度をパネルから調整可能に(--cvf-bg-a/--cvf-blur/--cvf-sat)。
+     背景に白が来た時の白飛び対策として、白さを下げたり彩度を上げたりできる。 */
+  #conversion.fst-1 .cv-form { padding: 34px 32px; border-radius: 22px; background: rgba(255,255,255, var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); border: 1px solid rgba(255,255,255,.66); box-shadow: 0 20px 60px rgba(20,30,60,.14), inset 0 1px 0 rgba(255,255,255,.6); }
   #conversion.fst-1 .cvf-in { background: rgba(255,255,255,.56); border-color: rgba(255,255,255,.72); }
   /* --- fst-2 リキッドグラス(濃): スモークガラス。文字は白 --- */
   #conversion.fst-2 .cv-form { padding: 34px 32px; border-radius: 22px; background: rgba(18,22,34,.34); -webkit-backdrop-filter: blur(20px) saturate(1.3); backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 24px 60px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.22); }
