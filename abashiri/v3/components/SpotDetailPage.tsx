@@ -29,6 +29,11 @@ import {
   V18Mosaic,
   V19ZoomOut,
   V20TextFirst,
+  V21SideHead,
+  V22StickyHead,
+  V23RightColumn,
+  V24Indent,
+  V25Rules,
 } from "./SpotDetailVariants2";
 
 /* tune-panel.js（依存ゼロの素のJS）の必要なところだけの型 */
@@ -111,6 +116,28 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案20 文字が先、写真が追う",
     note: "見せ方の順番を変更。短い文がさきに出て、少し遅れて写真が現れる",
   },
+  /* 2026-09-16 追加の5案。「左に小さく見出し・右に本文」のように、
+     余白の取り方そのものをデザインにした案 */
+  21: {
+    name: "案21 左に見出し、右に本文",
+    note: "余白を生かしたレイアウト。小さな見出しを左の柱に、本文は右の細い柱に。間の余白をたっぷり取る",
+  },
+  22: {
+    name: "案22 見出しが貼りつく",
+    note: "余白＋インタラクション。本文を読んでいる間、左の小さな見出しが画面に貼りついたまま残る",
+  },
+  23: {
+    name: "案23 右三分の一に本文",
+    note: "余白の割り当てを変更。本文を右の1/3に寄せ、左の2/3は写真と余白のために空ける",
+  },
+  24: {
+    name: "案24 余白が広がっていく",
+    note: "段が進むほど本文が少しずつ右へ下がり、左の余白が育つ。写真も1枚ごとに右へ寄る",
+  },
+  25: {
+    name: "案25 細い罫線で区切る",
+    note: "文字組みを変更。段落の上に細い線を1本、その左に番号と小さな見出し。線と余白だけで整理する",
+  },
 };
 
 export default function SpotDetailPage({ slug }: { slug: string }) {
@@ -135,8 +162,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v2: 旧3案 → 5案に作り直し
            v3: 写真主体の案6〜10を追加・案1の視差を弱めた
            v4: 案1/8/10 を残して初期3案を復活、他は削除（2026-09-15）
-           v5: 案11〜20 を追加（2026-09-16・写真6〜7割のミニマル10案） */
-        version: 5,
+           v5: 案11〜20 を追加（2026-09-16・写真6〜7割のミニマル10案）
+           v6: 案11〜20 のテンポをゆったりに＋余白を生かした案21〜25 を追加（2026-09-16） */
+        version: 6,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -147,7 +175,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             open: true,
             items: [
               {
-                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。案1〜4・8・10 はこれまでの案、案11〜20 は 2026-09-16 に足した10案（写真が6〜7割・余白を効かせたミニマル）。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので 5〜7・9 は欠番です。",
+                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。案1〜4・8・10 はこれまでの案、案11〜20 は 2026-09-16 に足した10案（写真が6〜7割・余白を効かせたミニマル）。案21〜25 は余白の取り方そのものをデザインにした5案。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので 5〜7・9 は欠番です。",
               },
               {
                 pills: "デザインと動きの案",
@@ -208,6 +236,11 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
     18: V18Mosaic,
     19: V19ZoomOut,
     20: V20TextFirst,
+    21: V21SideHead,
+    22: V22StickyHead,
+    23: V23RightColumn,
+    24: V24Indent,
+    25: V25Rules,
   };
   const V = MAP[pattern] ?? V1Parallax;
   return <V key={pattern} spot={spot} />;
