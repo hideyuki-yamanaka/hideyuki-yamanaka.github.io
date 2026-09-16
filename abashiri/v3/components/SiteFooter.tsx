@@ -185,8 +185,16 @@ function SnsRow({ light = false, size = 20 }: { light?: boolean; size?: number }
 }
 
 /** 案6〜8 の土台。
-    後ろに居る写真（sticky＝画面に止まる）／その手前の白いグラデーション／
+    後ろに居る写真（画面に止まる）／その手前の白いグラデーション／
     写真の上に載るフッターの中身、の3枚を重ねる。
+
+    ⚠️ 高さに dvh（画面の高さ）を使ってはいけない。
+       トップページは 1512×982 の紙を画面に合わせて【縮小して】表示しているので、
+       dvh と実際の見た目の高さが一致しない。写真が画面を埋めきらず、
+       下に地が出て「画像が繰り返している」ように見える（2026-09-16 実測：
+       画面756pxに対して写真が582pxしかなかった）。
+       → スクロールしている箱の clientHeight を測って px で組む。
+
     zoom: スクロールに合わせて写真が少し引く（案8）
     align: 中身を中央に置くか、下寄せにするか */
 function PhotoStage({
@@ -199,20 +207,34 @@ function PhotoStage({
   align?: "center" | "end";
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [t, setT] = useState(0); /* 0=まだ出ていない 〜 1=出きった */
+  /** 1画面ぶんの高さ（スクロールしている箱の内寸・CSS px） */
+  const [vh, setVh] = useState(0);
+  /** 写真がどれくらい顔を出したか 0〜1 */
+  const [t, setT] = useState(0);
 
-  /* 「どれくらい顔を出したか」を自前で測る。
-     framer の useScroll はこのページ構成（自前のスクロール箱）だと 0 のままになる
-     ことがあったので、rAF で素直に測る（2026-09-15 の実測メモと同じやり方） */
   useEffect(() => {
+    /* このフッターが入っているスクロールの箱を探す
+       （トップページは [data-abashiri-scroller]、詳細ページは main） */
+    const findScroller = () => {
+      let el: HTMLElement | null = ref.current?.parentElement ?? null;
+      while (el) {
+        const o = getComputedStyle(el).overflowY;
+        if ((o === "auto" || o === "scroll") && el.scrollHeight > el.clientHeight) return el;
+        el = el.parentElement;
+      }
+      return null;
+    };
     let id = 0;
     const tick = () => {
       const el = ref.current;
-      if (el) {
-        const r = el.getBoundingClientRect();
-        const vh = window.innerHeight || 1;
-        /* 上端が画面下に来た時 0、上端が画面上端まで上がった時 1 */
-        const v = 1 - r.top / vh;
+      const sc = findScroller();
+      if (el && sc) {
+        const H = sc.clientHeight;
+        setVh((p) => (Math.abs(p - H) > 1 ? H : p));
+        /* ⚠️ 進み具合は getBoundingClientRect（縮小後のpx）ではなく、
+           offsetTop と scrollTop（どちらも縮小前のpx）で出す。混ぜると比率が狂う */
+        const top = el.offsetTop - sc.scrollTop;
+        const v = 1 - top / Math.max(1, H);
         const next = Math.max(0, Math.min(1, v));
         setT((p) => (Math.abs(p - next) > 0.004 ? next : p));
       }
@@ -222,30 +244,49 @@ function PhotoStage({
     return () => cancelAnimationFrame(id);
   }, []);
 
+  /* 高さが測れるまでは 1画面ぶんを仮に置く（描画のちらつき防止） */
+  const H = vh || 900;
+
   return (
-    <div ref={ref} className="relative h-[118dvh] w-full">
-      {/* ① 後ろの写真。画面に止まったまま、コンテンツだけが流れていく */}
-      <div className="sticky top-0 h-dvh w-full overflow-hidden">
+    <div ref={ref} className="relative w-full" style={{ height: H * 1.55 }}>
+      {/* ① 後ろの写真。画面に止まったまま、コンテンツだけが流れていく。
+         1枚を画面いっぱいに引き延ばす（object-cover なので繰り返さない） */}
+      <div
+        className="sticky top-0 w-full overflow-hidden"
+        style={{ height: H }}
+      >
         <img
           src="/img/bg-hero.jpg"
           alt=""
           className="size-full object-cover"
           /* 案8：顔を出しながら少し引く。動かすのは transform だけ */
-          style={zoom ? { transform: `scale(${1.14 - 0.14 * t})` } : undefined}
+          style={zoom ? { transform: `scale(${1.12 - 0.12 * t})` } : undefined}
         />
         {/* 文字が読めるよう、下側だけわずかに沈ませる */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
       </div>
 
-      {/* ② 手前の白。箱ではなく「下が透明になるグラデーションの面」なので、
-         上へ抜けるにつれ写真がじわっと出てくる（境目が線にならない） */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[42dvh] bg-gradient-to-b from-white via-white/85 to-transparent" />
+      {/* ② 手前の白。箱ではなく「だんだん透明になる面」。
+         【2026-09-16 ヒデさん指摘】境目が急だったので、1画面ぶん近くまで伸ばし、
+         途中の濃さも細かく刻んで、ゆっくり風景に入れ替わるようにした */}
+      {/* ⚠️ top を少し上にはみ出させる。ぴったり 0 だと、小数点のまるめで
+         写真の上端が1pxだけのぞいて、うすい水色のすじになる（2026-09-16 実測） */}
+      <div
+        className="pointer-events-none absolute inset-x-0"
+        style={{
+          top: -3,
+          height: H * 0.95 + 3,
+          background:
+            "linear-gradient(to bottom, #ffffff 0%, #ffffff 22%, rgba(255,255,255,0.96) 38%, rgba(255,255,255,0.86) 52%, rgba(255,255,255,0.68) 65%, rgba(255,255,255,0.44) 78%, rgba(255,255,255,0.2) 90%, rgba(255,255,255,0) 100%)",
+        }}
+      />
 
       {/* ③ フッターの中身は写真の上 */}
       <div
-        className={`absolute inset-x-0 bottom-0 flex h-dvh flex-col px-6 pb-[80px] sm:px-[120px] sm:pb-[100px] ${
-          align === "end" ? "justify-end" : "justify-center pb-0 sm:pb-0"
+        className={`absolute inset-x-0 bottom-0 flex flex-col px-6 sm:px-[120px] ${
+          align === "end" ? "justify-end pb-[72px] sm:pb-[100px]" : "justify-center"
         }`}
+        style={{ height: H }}
       >
         {children}
       </div>
@@ -396,9 +437,12 @@ export default function SiteFooter() {
     return () => window.removeEventListener(FOOTER_EVENT, onTune);
   }, []);
 
-  /* 案2は空グラデ＋白文字。案6〜8 は写真が地（背景は透明のまま）。ほかは白地 */
+  /* 案2は空グラデ＋白文字。ほかは白地。
+     ⚠️ 案6〜8（写真の案）も【白地のまま】にする。背景を透明にすると、
+        上のセクションと2px重ねている所からページの地（うすい水色）が
+        すじになって見える（2026-09-16 実測。以前の案1・案5と同じ症状）。
+        写真はこの白の上に載るので、白地でも見た目は変わらない */
   const sky = pat === 2;
-  const photo = pat >= 6 && pat <= 8;
   return (
     /* ⚠️ フッターは登場アニメを付けない。理由は2つ:
        ①filter/opacity を動かすと要素が合成レイヤーになり、アニメ完了後も
@@ -413,9 +457,7 @@ export default function SiteFooter() {
       className={`relative z-10 -mt-[2px] w-full ${
         sky
           ? "bg-gradient-to-b from-sky-bottom via-brand/80 to-brand"
-          : photo
-            ? "bg-transparent"
-            : "bg-white"
+          : "bg-white"
       }`}
     >
       <Body pat={pat} />
