@@ -12,28 +12,19 @@ import Link from "next/link";
 import { SPOT_DETAILS } from "./spotDetailData";
 import {
   V1Parallax,
-  V2Hero,
   V3Editorial,
-  V4SkyGlass,
-  V8SplitSticky,
-  V10BigQuiet,
 } from "./SpotDetailVariants";
 import {
   V11Margins,
   V12Vertical,
   V13Reel,
-  V14Curtain,
-  V15Zigzag,
   V16Swap,
-  V17Centered,
   V18Mosaic,
   V19ZoomOut,
   V20TextFirst,
-  V21SideHead,
   V22StickyHead,
   V23RightColumn,
   V24Indent,
-  V25Rules,
 } from "./SpotDetailVariants2";
 
 /* tune-panel.js（依存ゼロの素のJS）の必要なところだけの型 */
@@ -53,25 +44,9 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案1",
     note: "パララックス没入。写真がゆっくり奥へ引き、白い本文の面がせり上がる",
   },
-  2: {
-    name: "案2",
-    note: "全画面ヒーロー。写真に浸ってから白地で読む（初期案を復活）",
-  },
   3: {
     name: "案3",
     note: "白エディトリアル。縦書きの名前＋2カラム、基本情報が右に追従（初期案を復活）",
-  },
-  4: {
-    name: "案4",
-    note: "空グラデ没入。体験ページと同じ青の世界＋白枠の窓（初期案を復活）",
-  },
-  8: {
-    name: "案8",
-    note: "ファーストビューがブラーで切り替わり、左に写真・右に文章の2カラムへ",
-  },
-  10: {
-    name: "案10",
-    note: "大きな一枚を静かに。白い余白に大きな写真、文字は縦書きで小さく添える",
   },
   /* 2026-09-16 ヒデさん依頼で追加した10案（案11〜20）。
      「写真が6〜7割・ミニマル・余白を効かせる・写真がさきに目に入る」が共通の狙い。
@@ -88,21 +63,9 @@ export const SPOT_DETAIL_PATTERNS: Record<
     name: "案13 横に流れる写真",
     note: "インタラクションを変更。下へスクロールすると、貼りついた写真の列が横へ流れる。縦に読むのをやめて眺める時間を作る",
   },
-  14: {
-    name: "案14 写真が開く",
-    note: "インタラクションを変更。写真が中央から上下に開いて現れる（幕が上がる感じ）。段落は写真のすぐ下に1つずつ",
-  },
-  15: {
-    name: "案15 左右に組む",
-    note: "レイアウトを変更。写真7割・文章3割で左右に組み、行ごとに向きを入れ替える",
-  },
   16: {
     name: "案16 写真が入れ替わる",
     note: "見せ方を変更。背景の写真を貼りつけたまま、スクロールで入れ替える。写真の占有率がいちばん高い",
-  },
-  17: {
-    name: "案17 中央の静けさ",
-    note: "文字組みを変更。すべて中央揃えで字間を広く、文字は小さく。左右に均等な余白が残って静かになる",
   },
   18: {
     name: "案18 写真の格子",
@@ -118,10 +81,6 @@ export const SPOT_DETAIL_PATTERNS: Record<
   },
   /* 2026-09-16 追加の5案。「左に小さく見出し・右に本文」のように、
      余白の取り方そのものをデザインにした案 */
-  21: {
-    name: "案21 左に見出し、右に本文",
-    note: "余白を生かしたレイアウト。小さな見出しを左の柱に、本文は右の細い柱に。間の余白をたっぷり取る",
-  },
   22: {
     name: "案22 見出しが貼りつく",
     note: "余白＋インタラクション。本文を読んでいる間、左の小さな見出しが画面に貼りついたまま残る",
@@ -133,10 +92,6 @@ export const SPOT_DETAIL_PATTERNS: Record<
   24: {
     name: "案24 余白が広がっていく",
     note: "段が進むほど本文が少しずつ右へ下がり、左の余白が育つ。写真も1枚ごとに右へ寄る",
-  },
-  25: {
-    name: "案25 細い罫線で区切る",
-    note: "文字組みを変更。段落の上に細い線を1本、その左に番号と小さな見出し。線と余白だけで整理する",
   },
 };
 
@@ -163,8 +118,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v3: 写真主体の案6〜10を追加・案1の視差を弱めた
            v4: 案1/8/10 を残して初期3案を復活、他は削除（2026-09-15）
            v5: 案11〜20 を追加（2026-09-16・写真6〜7割のミニマル10案）
-           v6: 案11〜20 のテンポをゆったりに＋余白を生かした案21〜25 を追加（2026-09-16） */
-        version: 6,
+           v6: 案11〜20 のテンポをゆったりに＋余白を生かした案21〜25 を追加（2026-09-16）
+           v7: ヒデさんの選定で 案2・4・8・10・14・15・17・21・25 を完全削除（2026-09-16） */
+        version: 7,
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -221,26 +177,17 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   /* 案ごとにスクロール容器そのものが変わるので、key で作り直す */
   const MAP: Record<number, (p: { spot: typeof spot }) => React.ReactElement> = {
     1: V1Parallax,
-    2: V2Hero,
     3: V3Editorial,
-    4: V4SkyGlass,
-    8: V8SplitSticky,
-    10: V10BigQuiet,
     11: V11Margins,
     12: V12Vertical,
     13: V13Reel,
-    14: V14Curtain,
-    15: V15Zigzag,
     16: V16Swap,
-    17: V17Centered,
     18: V18Mosaic,
     19: V19ZoomOut,
     20: V20TextFirst,
-    21: V21SideHead,
     22: V22StickyHead,
     23: V23RightColumn,
     24: V24Indent,
-    25: V25Rules,
   };
   const V = MAP[pattern] ?? V1Parallax;
   return <V key={pattern} spot={spot} />;
