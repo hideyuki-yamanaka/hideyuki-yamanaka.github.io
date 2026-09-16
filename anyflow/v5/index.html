@@ -265,6 +265,15 @@
   /* 10 リキッドグラス2(色づいた艶・強め) */
   html:not(.mb).fs-10:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: linear-gradient(135deg, rgba(120,200,255,.28), rgba(255,255,255,.1) 44%, rgba(255,150,200,.22)), rgba(255,255,255,.5); --hdr-skin-filter: blur(26px) saturate(1.9); --hdr-skin-shadow: 0 18px 44px rgba(20,30,60,.2), inset 0 1px 0 rgba(255,255,255,.8); --hdr-skin-border: 1px solid rgba(255,255,255,.6); }
   html:not(.mb).hm-15 .header.hdr-hidden { top: -130px; }
+
+  /* ===== 【2026-09-17 ヒデさん指定】レスポンシブ: ウィンドウ幅が狭まってロゴとナビが干渉する前に、
+     ナビを3本線ハンバーガーへ格納する(押すとドロワー)。PC追従ヘッダーの全案共通。
+     閾値: ロゴ255 + 左右余白100 + ナビ実寸〜663 が収まる下限(約1040px)の少し手前=1080px。 ===== */
+  @media (max-width: 1080px) {
+    html:not(.mb).hdr-follow .header .nav { max-width: 0; opacity: 0; margin-left: auto; overflow: hidden; pointer-events: none; }
+    html:not(.mb).hdr-follow .hdr-burger { display: block; position: relative; overflow: visible; left: auto; right: auto; top: auto; transform: none;
+      width: var(--burger-w, 44px); opacity: 1; pointer-events: auto; }
+  }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
      通常=黒(#090909) / ホバー=シアン(#0EBBFF)
