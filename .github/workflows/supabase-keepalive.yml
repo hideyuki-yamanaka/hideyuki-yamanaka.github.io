@@ -72,8 +72,13 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - name: travel-shiori
-            url: https://tabinoshiori-swart.vercel.app/api/keep-alive
+          # ⚠️ travel-shiori は 2026-09-17 に監視から外した。
+          #    ヒデさん「旅のしおりについてはほぼ使っていないです」。
+          #    実測: 本体の最終更新は 2026-05-13（4ヶ月前）、
+          #    /api/keep-alive は fetch failed（＝Supabase 側がもう止まっている）。
+          #    直す予定が無いものを毎日失敗させると、このワークフローが
+          #    ずっと赤いままになり、houmon-app が本当に止まった時に気づけない。
+          #    また使うことになったら、Supabase を Restore してからここに戻す。
           - name: houmon-app
             url: https://houmon-app-lilac.vercel.app/api/keep-alive
           - name: nittei-chousei
