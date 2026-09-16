@@ -265,7 +265,7 @@ function QuietHero({ spot, h = "h-[88dvh]" }: { spot: SpotDetail; h?: string }) 
     <div className={`relative w-full overflow-hidden ${h}`}>
       <img src={spot.hero} alt={spot.name} className="size-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] sm:px-[120px] sm:pb-[120px]">
+      <div className="absolute inset-x-0 bottom-0 px-6 pb-[80px] lg:px-[120px] lg:pb-[120px]">
         <HeroTitle spot={spot} size="sm" />
       </div>
     </div>
@@ -399,11 +399,11 @@ function TocLayout({
     <Shell refEl={ref}>
       <BackPill />
       <QuietHero spot={spot} h={heroH} />
-      <div className="px-6 py-[110px] sm:px-[100px]">
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] sm:flex-row sm:gap-[110px]">
+      <div className="px-6 py-[110px] md:px-[56px] lg:px-[100px]">
+        <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[110px]">
           {/* 左カラム：目次。本文を読んでいる間ずっと画面に残る */}
-          <aside className="shrink-0 sm:w-[230px]">
-            <div className="sm:sticky sm:top-[110px]">
+          <aside className="shrink-0 lg:w-[230px]">
+            <div className="lg:sticky lg:top-[110px]">
               <p className="mb-7 text-body-14 font-light tracking-[0.2em] text-ink/35">
                 目次
               </p>
@@ -426,7 +426,7 @@ function TocLayout({
                 <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                   {s.heading}
                 </h3>
-                <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[620px]">
+                <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 lg:max-w-[620px]">
                   {s.text}
                 </p>
               </motion.section>
@@ -499,7 +499,7 @@ export function V37PinnedBlur({ spot }: VProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20" />
           {/* 左下にスポットの名前 */}
           <motion.div
-            className="absolute inset-x-0 bottom-0 px-6 pb-[86px] sm:px-[120px] sm:pb-[110px]"
+            className="absolute inset-x-0 bottom-0 px-6 pb-[86px] lg:px-[120px] lg:pb-[110px]"
             style={{ opacity: titleO, y: titleY }}
           >
             <HeroTitle spot={spot} />
@@ -517,22 +517,22 @@ export function V37PinnedBlur({ spot }: VProps) {
               "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 38%, rgba(255,255,255,0.72) 66%, rgba(255,255,255,0.95) 86%, #fff 100%)",
           }}
         />
-        <div className="-mt-px bg-white px-6 pb-[120px] sm:px-[120px]">
+        <div className="-mt-px bg-white px-6 pb-[120px] md:px-[56px] lg:px-[120px]">
           <div className="mx-auto flex max-w-[1000px] flex-col gap-[96px]">
             {heads.map((s, i) => (
               <motion.section
                 key={i}
                 data-sec={i}
-                className="flex flex-col gap-4 sm:flex-row sm:gap-[90px]"
+                className="flex flex-col gap-4 lg:flex-row lg:gap-[90px]"
                 variants={revealSlow}
                 initial="hidden"
                 whileInView="show"
                 viewport={{ root: ref, once: true, amount: 0.3 }}
               >
-                <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:w-[190px]">
+                <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 lg:w-[190px]">
                   {s.heading}
                 </h3>
-                <p className="w-full whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:max-w-[560px]">
+                <p className="w-full whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 lg:max-w-[560px]">
                   {s.text}
                 </p>
               </motion.section>
@@ -561,7 +561,7 @@ export function V37PinnedBlur({ spot }: VProps) {
 /** 12列のグリッド。列のまたぎ方だけを案ごとに変える */
 function Grid({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`grid grid-cols-4 gap-x-5 sm:grid-cols-12 sm:gap-x-6 ${className}`}>
+    <div className={`grid grid-cols-4 gap-x-5 lg:grid-cols-12 lg:gap-x-6 ${className}`}>
       {children}
     </div>
   );
@@ -577,32 +577,32 @@ export function V38Grid({ spot }: VProps) {
   const heads = headsOf(spot);
   /* 写真がまたぐ列。1枚ごとにずらして、右だけ・左だけの余白を作る */
   const span = [
-    "sm:col-start-2 sm:col-end-13",
-    "sm:col-start-1 sm:col-end-9",
-    "sm:col-start-5 sm:col-end-13",
-    "sm:col-start-3 sm:col-end-11",
+    "lg:col-start-2 lg:col-end-13",
+    "lg:col-start-1 lg:col-end-9",
+    "lg:col-start-5 lg:col-end-13",
+    "lg:col-start-3 lg:col-end-11",
   ];
   return (
     <Shell refEl={ref}>
       <BackPill />
       <QuietHero spot={spot} h="h-[88dvh]" />
 
-      <div className="px-6 py-[120px] sm:px-[80px]">
+      <div className="px-6 py-[120px] md:px-[56px] lg:px-[80px]">
         <Grid className="gap-y-[104px]">
           {heads.map((s, i) => (
             <motion.section
               key={i}
               data-sec={i}
-              className="col-span-4 grid grid-cols-subgrid sm:col-span-12"
+              className="col-span-4 grid grid-cols-subgrid lg:col-span-12"
               variants={revealSlow}
               initial="hidden"
               whileInView="show"
               viewport={{ root: ref, once: true, amount: 0.3 }}
             >
-              <h3 className="col-span-4 mb-4 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 sm:col-start-1 sm:col-end-4 sm:mb-0">
+              <h3 className="col-span-4 mb-4 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 lg:col-start-1 lg:col-end-4 lg:mb-0">
                 {s.heading}
               </h3>
-              <p className="col-span-4 whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 sm:col-start-5 sm:col-end-11">
+              <p className="col-span-4 whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90 lg:col-start-5 lg:col-end-11">
                 {s.text}
               </p>
             </motion.section>
@@ -611,19 +611,19 @@ export function V38Grid({ spot }: VProps) {
       </div>
 
       {/* 写真も同じ格子に乗せる。またぐ列を1枚ずつずらす */}
-      <div className="px-6 pb-[120px] sm:px-[80px]">
+      <div className="px-6 pb-[120px] md:px-[56px] lg:px-[80px]">
         <Grid className="gap-y-[96px]">
           {spot.photos.map((p, i) => (
             <div key={p} className={`col-span-4 ${span[i % span.length]}`}>
-              <Photo src={p} root={ref} className="h-[52dvh] w-full sm:h-[66dvh]" />
+              <Photo src={p} root={ref} className="h-[52dvh] w-full lg:h-[66dvh]" />
             </div>
           ))}
         </Grid>
       </div>
 
-      <div className="px-6 pb-[160px] sm:px-[80px]">
+      <div className="px-6 pb-[160px] md:px-[56px] lg:px-[80px]">
         <Grid>
-          <div className="col-span-4 flex flex-col gap-[72px] sm:col-start-3 sm:col-end-11">
+          <div className="col-span-4 flex flex-col gap-[72px] lg:col-start-3 lg:col-end-11">
             <QuietBlocks spot={spot} root={ref} from={heads.length} />
           </div>
         </Grid>
@@ -644,7 +644,7 @@ export function V39FarHead({ spot }: VProps) {
       <BackPill />
       <QuietHero spot={spot} h="h-[90dvh]" />
 
-      <div className="px-6 py-[120px] sm:px-[120px]">
+      <div className="px-6 py-[120px] md:px-[56px] lg:px-[120px]">
         <div className="flex flex-col gap-[64px]">
           {heads.map((s, i) => (
             <motion.section
@@ -660,8 +660,8 @@ export function V39FarHead({ spot }: VProps) {
               </h3>
               {/* ここが「間」。【2026-09-16 ヒデさん指示】「離しすぎなので、
                   もう少し近づけて」→ 42dvh→16dvh（スマホは 24→10dvh）に詰めた */}
-              <div className="h-[10dvh] sm:h-[16dvh]" />
-              <p className="max-w-[520px] whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 sm:ml-auto sm:mr-[60px]">
+              <div className="h-[10dvh] lg:h-[16dvh]" />
+              <p className="max-w-[520px] whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.5] tracking-[0.5px] text-ink/90 lg:ml-auto lg:mr-[60px]">
                 {s.text}
               </p>
             </motion.section>
@@ -671,7 +671,7 @@ export function V39FarHead({ spot }: VProps) {
 
       <div className="flex flex-col gap-[96px] pb-[120px]">
         {spot.photos.map((p) => (
-          <Photo key={p} src={p} root={ref} className="h-[68dvh] w-full sm:h-[84dvh]" />
+          <Photo key={p} src={p} root={ref} className="h-[68dvh] w-full lg:h-[84dvh]" />
         ))}
       </div>
 

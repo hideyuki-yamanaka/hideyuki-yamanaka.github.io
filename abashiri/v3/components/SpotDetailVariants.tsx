@@ -332,7 +332,7 @@ export function V1Parallax({ spot }: VProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
         {/* 左下の見出し。小さめ＋下のセクションから離す
             （2026-09-15 ヒデさん指示：文字が大きく、下にくっつきすぎていた） */}
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-[90px] sm:px-[120px] sm:pb-[180px]">
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[90px] md:px-[56px] lg:px-[120px] lg:pb-[180px]">
           <HeroTitle spot={spot} size="sm" />
         </div>
       </div>
@@ -477,7 +477,7 @@ export function V3Editorial({ spot }: VProps) {
         <p className="mt-10 text-body-18 font-extralight leading-[2.2] tracking-[0.7px] text-ink/80">
           {spot.lead}
         </p>
-        <div className="mt-12 flex flex-col items-start gap-10 sm:mt-[88px] sm:flex-row sm:gap-[72px]">
+        <div className="mt-12 flex flex-col items-start gap-10 lg:mt-[88px] lg:flex-row lg:gap-[72px]">
           <div className="flex min-w-0 flex-1 flex-col gap-[72px]">
             <Sections spot={spot} root={ref} />
             <div className="flex flex-col gap-6">
@@ -488,7 +488,7 @@ export function V3Editorial({ spot }: VProps) {
             </div>
             <div className="flex gap-2">
               {spot.photos.map((p) => (
-                <img key={p} src={p} alt="" className="h-[150px] min-w-0 flex-1 object-cover sm:h-[240px]" />
+                <img key={p} src={p} alt="" className="h-[150px] min-w-0 flex-1 object-cover lg:h-[240px]" />
               ))}
             </div>
             <div className="flex flex-col gap-6">
@@ -496,7 +496,7 @@ export function V3Editorial({ spot }: VProps) {
               <MapEmbed spot={spot} />
             </div>
           </div>
-          <aside className="w-full shrink-0 bg-sky-bottom/40 p-6 sm:sticky sm:top-10 sm:w-[360px] sm:p-8">
+          <aside className="w-full shrink-0 bg-sky-bottom/40 p-6 lg:sticky lg:top-10 lg:w-[360px] lg:p-8">
             <h2 className="mb-4 text-body-18 font-thin text-ink">基本情報</h2>
             <InfoTable spot={spot} />
           </aside>

@@ -91,6 +91,9 @@ const SCENE_COUNT = 9;
 /** キービジュアルの作字ブロック（PC カンプ 415×379）をスマホで何倍にするか。
     PC との位置関係を壊さないよう、ブロックごと拡大縮小する。
     0.8 → 0.64（2026-09-16 ヒデさん指示「もう少し80%ぐらいに縮小」） */
+/* フッターの作字ロゴの倍率。枠 415x379 を高さ150pxに収める（150/379） */
+const FOOT_LOGO_SCALE = 150 / 379;
+
 const KV_SCALE = 0.64;
 const DUR = 800; // トランジション時間(ms)
 
@@ -410,11 +413,35 @@ export default function MobileTop() {
         className="absolute inset-0 flex flex-col items-center justify-center gap-10 bg-white px-6"
         style={scene(8)}
       >
-        <img
-          src="/img/hero-message-blue.svg"
-          alt="な〜んにもない たまらない"
-          className="h-[150px] w-auto"
-        />
+        {/* 作字ロゴ。PC のフッター（SiteFooter の Logo）と同じ組みにそろえて
+            「網走市観光サイト」を吹き出しの右上に入れる（2026-09-17 ヒデさん指摘で追加）。
+            ⚠️ 枠は 415x379。ここを高さ150pxに合わせるので倍率は 150/379 = 0.396。
+               作字は 471x390 なので、PC と同じく入れ子の div に逃がして
+               max-w-none を明示する（直に置くと 415px に切り詰められて位置がずれる）。
+            ⚠️ ここは白背景。もとの text-kanko-site.svg は【白い文字】なので、
+               青にした text-kanko-site-blue.svg を使う（白のままだと見えない） */}
+        <div
+          className="relative"
+          style={{ width: 415 * FOOT_LOGO_SCALE, height: 379 * FOOT_LOGO_SCALE }}
+        >
+          <div
+            className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left"
+            style={{ transform: `scale(${FOOT_LOGO_SCALE})` }}
+          >
+            <div className="absolute left-[-28px] top-[13.1px]">
+              <img
+                src="/img/hero-message-blue.svg"
+                alt="な〜んにもない たまらない"
+                className="h-[390px] w-[471px] max-w-none"
+              />
+            </div>
+            <img
+              src="/img/text-kanko-site-blue.svg"
+              alt="網走市観光サイト"
+              className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px]"
+            />
+          </div>
+        </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
           {NAV.map((n) => (
             <button
