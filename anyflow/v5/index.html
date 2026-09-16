@@ -119,6 +119,62 @@
   /* 5: フローティングピル(スクロールで縁から浮くカプセル) */
   html:not(.mb).hm-5 .header.hdr-stuck { top: 14px; left: 16px; right: 16px; padding: 13px 28px; border-radius: 999px; background: rgba(255,255,255,.58); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
   html:not(.mb).hm-5 .header.hdr-stuck .logo img { width: 210px; height: 39px; }
+
+  /* ===== 【V5.0 2026-09-16】ハンバーガー＋ドロワー(共通) ===== */
+  .hdr-burger { display: none; width: 44px; height: 44px; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex: 0 0 auto; -webkit-appearance: none; appearance: none; z-index: 2; }
+  .hdr-burger span { position: absolute; left: 11px; right: 11px; height: 1.6px; background: var(--ink); border-radius: 2px; transition: transform .28s var(--e-out), opacity .2s; }
+  .hdr-burger span:nth-child(1) { top: 16px; } .hdr-burger span:nth-child(2) { top: 21.2px; } .hdr-burger span:nth-child(3) { top: 26.4px; }
+  .hdr-burger.is-open span:nth-child(1) { transform: translateY(5.2px) rotate(45deg); }
+  .hdr-burger.is-open span:nth-child(2) { opacity: 0; }
+  .hdr-burger.is-open span:nth-child(3) { transform: translateY(-5.2px) rotate(-45deg); }
+  .hdr-drawer { position: fixed; inset: 0; z-index: 59; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; background: rgba(245,246,248,.62); -webkit-backdrop-filter: blur(26px) saturate(1.3); backdrop-filter: blur(26px) saturate(1.3); transition: opacity .34s var(--e-out); }
+  .hdr-drawer.is-open { opacity: 1; pointer-events: auto; }
+  .hdr-drawer-nav { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .hdr-drawer-nav a { display: flex; align-items: baseline; gap: 18px; font-family: var(--font-jp); font-weight: 300; font-size: 40px; line-height: 1.3; color: var(--ink-strong); text-decoration: none; opacity: 0; transform: translateY(14px); transition: opacity .4s var(--e-out), transform .4s var(--e-out), color .2s; }
+  .hdr-drawer-nav a span { font-family: var(--font-en); font-weight: 400; font-size: 14px; color: var(--brand-cyan); opacity: .85; }
+  .hdr-drawer-nav a:hover { color: var(--brand-cyan); }
+  .hdr-drawer.is-open .hdr-drawer-nav a { opacity: 1; transform: none; }
+  .hdr-drawer.is-open .hdr-drawer-nav a:nth-child(1){transition-delay:.05s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(2){transition-delay:.1s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(3){transition-delay:.15s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(4){transition-delay:.2s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(5){transition-delay:.3s}
+  .hdr-drawer-cta { margin-top: 24px; font-size: 22px !important; color: #fff !important; background: #111; padding: 14px 34px; border-radius: 999px; gap: 12px !important; align-items: center !important; }
+  .hdr-drawer-cta em { font-style: normal; }
+  .hdr-drawer-cta:hover { background: var(--brand-cyan); }
+
+  /* ===== 【V5.0】スクロールで「ロゴ＋ハンバーガー」に変形する10案(hm-6〜15) ===== */
+  /* 共通: stuck でナビ(nav)を格納しハンバーガーを出す。ロゴは残す。 */
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .nav { display: none; }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { display: block; }
+  /* 6: 全幅ガラスバー(左ロゴ/右バーガー) */
+  html:not(.mb).hm-6 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  /* 7: 全幅ソリッド白(左ロゴ/右バーガー) */
+  html:not(.mb).hm-7 .header.hdr-stuck { background: #fff; box-shadow: 0 6px 24px rgba(20,30,60,.1); }
+  /* 8: 左寄せピル(ロゴ＋バーガー隣接) */
+  html:not(.mb).hm-8 .header.hdr-stuck { left: 16px; right: auto; top: 14px; width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: 999px; background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-8 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
+  /* 9: 右寄せピル */
+  html:not(.mb).hm-9 .header.hdr-stuck { left: auto; right: 16px; top: 14px; width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: 999px; background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-9 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
+  /* 10: 中央ピル(transformを使わず fit-content＋margin auto で中央) */
+  html:not(.mb).hm-10 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: 14px; width: fit-content; padding: 9px 14px 9px 22px; gap: 14px; border-radius: 999px; background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-10 .header.hdr-stuck .logo img { width: 150px; height: 28px; }
+  /* 11: 分離(左ロゴ素 / 右に丸バーガー) */
+  html:not(.mb).hm-11 .header.hdr-stuck { background: transparent; padding: 22px 26px; }
+  html:not(.mb).hm-11 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: 50%; background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
+  /* 12: 分離(左に丸ロゴマーク / 右に丸バーガー) */
+  html:not(.mb).hm-12 .header.hdr-stuck { background: transparent; padding: 18px 22px; }
+  html:not(.mb).hm-12 .header.hdr-stuck .logo { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(255,255,255,.66); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
+  html:not(.mb).hm-12 .header.hdr-stuck .logo img { width: 50px; height: 50px; object-fit: none; object-position: 2px center; }
+  html:not(.mb).hm-12 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: 50%; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
+  /* 13: ロゴマークのみ(テキスト省略)＋バーガー(全幅ガラス) */
+  html:not(.mb).hm-13 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  html:not(.mb).hm-13 .header.hdr-stuck .logo { width: 42px; overflow: hidden; }
+  /* 14: 縮む(全幅ガラス・小さめ) */
+  html:not(.mb).hm-14 .header.hdr-stuck { padding: 12px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  html:not(.mb).hm-14 .header.hdr-stuck .logo img { width: 170px; height: 31px; }
+  html:not(.mb).hm-14 .header.hdr-stuck .hdr-burger { width: 38px; height: 38px; }
+  /* 15: 隠れて → 上スクロールでロゴ＋バーガーのミニピルが降臨(中央) */
+  html:not(.mb).hm-15 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: 14px; width: fit-content; padding: 8px 12px 8px 20px; gap: 12px; border-radius: 999px; background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  html:not(.mb).hm-15 .header.hdr-stuck .logo img { width: 140px; height: 26px; }
+  html:not(.mb).hm-15 .header.hdr-hidden { top: -130px; }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
      通常=黒(#090909) / ホバー=シアン(#0EBBFF)
@@ -3532,6 +3588,18 @@
           </span>
         </a>
       </nav>
+      <!-- 【V5.0 2026-09-16 ヒデさん依頼】ハンバーガー(スクロール変形案で表示)。ロゴは常時残す。 -->
+      <button class="hdr-burger" type="button" aria-label="メニューを開く" aria-controls="hdrDrawer" aria-expanded="false"><span></span><span></span><span></span></button>
+      <!-- ドロワー(ハンバーガーで開閉。表に出ていたナビ＋CTAを格納) -->
+      <div class="hdr-drawer" id="hdrDrawer" hidden>
+        <nav class="hdr-drawer-nav">
+          <a href="#vision"><span>01</span>ビジョン</a>
+          <a href="#results"><span>02</span>提供できること</a>
+          <a href="#dev"><span>03</span>使用イメージ</a>
+          <a href="#cases"><span>04</span>導入事例</a>
+          <a class="hdr-drawer-cta" href="/contact.html">お問い合わせ<em>→</em></a>
+        </nav>
+      </div>
     </header>
 
     <!-- 【2026-08-31 ヒデさん指定】メインコピーを上・サブコピーを下に入れ替え+サブ文言変更 -->
@@ -5188,7 +5256,7 @@ try {
   if (_cta) params.cvCta = _cta[1];   /* 【V5.0】CTA=ボタン/フォーム */
   const _fs = location.search.match(/[?&]fstyle=([1-5])(?:&|$)/);
   if (_fs) params.formStyle = _fs[1];   /* 【V5.0】フォームのスタイル案 */
-  const _hd = location.search.match(/[?&]hdr=([1-5])(?:&|$)/);
+  const _hd = location.search.match(/[?&]hdr=(1[0-5]|[1-9])(?:&|$)/);
   if (_hd) params.hdrMode = _hd[1];   /* 【V5.0】追従ヘッダーの案 */
 } catch (e) {}
 /* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
@@ -6284,6 +6352,16 @@ const CV_HDRS = [
   { key: '3', name: '隠す/戻す',            tip: '下スクロールで隠れ、上スクロールで戻る。ガラス背景。' },
   { key: '4', name: '縮む',                tip: 'スクロールでロゴと余白が縮んでコンパクトに(ガラス背景)。' },
   { key: '5', name: 'フローティングピル',   tip: 'スクロールで画面の縁から浮くカプセル型に。ガラス＋影。' },
+  { key: '6',  name: '⑥ 全幅ガラス・右バーガー',       tip: 'スクロールで全幅の磨りガラスバー。左ロゴ／右ハンバーガー。ナビはハンバーガーに格納。' },
+  { key: '7',  name: '⑦ 全幅ソリッド白・右バーガー',   tip: 'スクロールで全幅の白バー＋影。左ロゴ／右ハンバーガー。' },
+  { key: '8',  name: '⑧ 左寄せピル(ロゴ＋バーガー)',   tip: 'スクロールで左に小さなピル。ロゴとハンバーガーが隣接。' },
+  { key: '9',  name: '⑨ 右寄せピル(ロゴ＋バーガー)',   tip: 'スクロールで右に小さなピル。ロゴとハンバーガー。' },
+  { key: '10', name: '⑩ 中央ピル(ロゴ＋バーガー)',     tip: 'スクロールで中央に浮くピル。ロゴとハンバーガー。' },
+  { key: '11', name: '⑪ 分離: ロゴ素＋右に丸バーガー', tip: 'ロゴは左にそのまま、右に丸いハンバーガーボタンが浮く。' },
+  { key: '12', name: '⑫ 分離: 丸ロゴ＋丸バーガー',     tip: '左に丸いロゴマーク、右に丸いハンバーガー。2つの浮遊要素。' },
+  { key: '13', name: '⑬ ロゴマークのみ＋バーガー',     tip: 'スクロールでロゴがマークだけに(テキスト省略)、右にハンバーガー。全幅ガラス。' },
+  { key: '14', name: '⑭ 縮む＋バーガー',               tip: 'スクロールでロゴ・余白が縮み、右にハンバーガー。全幅ガラス。' },
+  { key: '15', name: '⑮ 隠れて→ミニピル降臨',         tip: '下で隠れ、上スクロールでロゴ＋ハンバーガーのミニピルが中央に降りてくる。' },
 ];
 function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); return (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) ? v : '1'; }
 function applyHdrMode(key) {
@@ -6295,8 +6373,11 @@ function applyHdrMode(key) {
   if (!h.classList.contains('mb')) {
     const hdr = document.querySelector('.header');
     if (hdr && hdr.parentElement !== document.body) document.body.appendChild(hdr);
+    /* ドロワーは backdrop-filter を持つ header の中だと fixed がクリップされるので body 直下へ出す */
+    const dr = document.getElementById('hdrDrawer');
+    if (dr && dr.parentElement !== document.body) document.body.appendChild(dr);
   }
-  ['1','2','3','4','5'].forEach(k => h.classList.toggle('hm-' + k, String(key) === k));
+  for (let i = 1; i <= 15; i++) h.classList.toggle('hm-' + i, String(key) === String(i));
 }
 /* 【V5.0】追従ヘッダーのスクロール監視(1回だけ設置)。lenis でも window.scrollY は追従する。 */
 let _hdrScrollBound = false;
@@ -6308,7 +6389,7 @@ function bindHdrScroll() {
     ticking = false;
     const y = window.scrollY || window.pageYOffset || 0;
     hdr.classList.toggle('hdr-stuck', y > 40);
-    if (document.documentElement.classList.contains('hm-3')) {
+    if (document.documentElement.classList.contains('hm-3') || document.documentElement.classList.contains('hm-15')) {
       if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
       else if (y < lastY - 4 || y <= 160) hdr.classList.remove('hdr-hidden');
     } else { hdr.classList.remove('hdr-hidden'); }
@@ -6316,6 +6397,23 @@ function bindHdrScroll() {
   };
   window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
   upd();
+}
+/* 【V5.0】ハンバーガーのドロワー開閉 */
+let _drawerBound = false;
+function bindDrawer() {
+  if (_drawerBound) return; _drawerBound = true;
+  const burger = document.querySelector('.hdr-burger');
+  const drawer = document.getElementById('hdrDrawer');
+  if (!burger || !drawer) return;
+  const setOpen = (open) => {
+    if (open) { drawer.hidden = false; requestAnimationFrame(() => drawer.classList.add('is-open')); }
+    else { drawer.classList.remove('is-open'); setTimeout(() => { if (!drawer.classList.contains('is-open')) drawer.hidden = true; }, 380); }
+    burger.classList.toggle('is-open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  burger.addEventListener('click', () => setOpen(!drawer.classList.contains('is-open')));
+  drawer.addEventListener('click', (e) => { if (e.target === drawer || (e.target.closest && e.target.closest('.hdr-drawer-nav a'))) setOpen(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
 }
 
 const CV_COLORS = [
@@ -18678,6 +18776,7 @@ cvApplyForm(cvFormKey());   /* 【2026-09-16】グラデの形を初期反映(�
 applyCvEdge(cvEdgeKey());   /* 【2026-09-16】溶け込みの深さを初期反映(blend も案の値に) */
 applyHdrMode(hdrModeKey());  /* 【V5.0】追従ヘッダーの案を初期反映＋固定化 */
 bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール監視を設置 */
+bindDrawer();                /* 【V5.0】ハンバーガーのドロワー開閉を設置 */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
 applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */
 applyDevStyle();    /* 開発者体験モックのスタイル案を初期反映 (2026-09-15) */
