@@ -1571,9 +1571,9 @@
   html.mb #results.rfx-21 .r2v-h, html.mb #results.rfx-23 .r2v-h { font-size: 25px; line-height: 1.45; }
   html.mb #results.rfx-21 .r2v-p, html.mb #results.rfx-23 .r2v-p { font-size: 14px; line-height: 1.8; }
   /* --- 案24(SP): 2列を縦積み(説明→ピクト300×220)。仕切り線なし。下段は見出し29px・2行と数値40px。大見出し 40px --- */
-  html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: 20px; width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-16】左右24px(V3.0)/縦gap 28→20 で詰める */
+  html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: var(--space-16); width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-16】左右24px(V3.0)/縦gap 28→16(--space-16)でスペーシングガイドラインに沿って詰める */
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track, html.mb #results.rfx-25 .res2-vals, html.mb #results.rfx-25 .r2v-track { display: contents; }
-  html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: 4px 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4 で for AI 上を詰める) */
+  html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */
   html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: -1; margin: 4px 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
   html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: -2; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 4px; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
   html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: var(--fs-title); line-height: var(--lh-loose); }   /* 【2026-09-16】V3.0: 22px(--fs-title)・中央。lh1.7=--lh-loose */
@@ -15102,7 +15102,7 @@ function fit() {
       const hh = Math.ceil(maxB - secTop + (pad || 40));
       if (hh > 100) { vp.style.position = 'relative'; vp.style.overflow = 'visible'; vp.style.height = hh + 'px'; sec.style.height = hh + 'px'; }
     };
-    fixH('vision', '#valP1, #valP2', 30);   /* 【2026-09-16 ヒデさん依頼】ビジョン末尾の余白を詰め、実績「事業の推進力を」の上を詰める(85→30。ビジョン上部は意図的なので不変) */
+    fixH('vision', '#valP1, #valP2', 16);   /* 【2026-09-16 ヒデさん依頼】ビジョン末尾の余白=実績「事業の推進力を」の上。85→16(=--space-16。スペーシングガイドライン準拠)。ビジョン上部は意図的なので不変 */
     if (resFxActive() === 'default') fixH('results', '#resVals, .r2v:last-child', 56);   /* 【2026-09-14】案の時は案の CSS/JS が高さを決める */
     fixH('cases', '.cg-cell', 64);
   });
