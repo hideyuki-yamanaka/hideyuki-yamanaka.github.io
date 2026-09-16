@@ -6,7 +6,14 @@
  * 2026-09-16 に EventSection.tsx から切り出した。
  * 案が増えてファイルが太ってきたので、データ・文字組み・カードの枠だけをここに置く。
  */
+import { useRef } from "react";
 import Link from "next/link";
+import {
+  useAnimationFrame,
+  useMotionValue,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 
 export type EventItem = {
   /* 【2026-09-16 ヒデさん指示】他のセクションと同じく通し番号を振る。
@@ -159,3 +166,69 @@ export function CardLink({
   );
 }
 
+
+/* ═══════════════════════════════════════════════════
+   画面を固定してから動かすしくみ（2026-09-17 ヒデさん依頼）
+   「中央に来た時にビューポートが中央に来て、真ん中に来た後に四方に飛び散る。
+     一旦画面の固定が入った方がいい」
+   ═══════════════════════════════════════════════════ */
+
+/** ピンしている間の進み具合 0→1 を返す。
+    ⚠️ トップページは window ではなく [data-abashiri-scroller] の中がスクロールする。
+       さらに 1512×982 のキャンバスを縮小表示しているので、
+       getBoundingClientRect（縮小後のpx）と scrollTop（縮小前のpx）を混ぜてはいけない。
+       offsetTop を親まで足し上げて、全部「縮小前のpx」でそろえる */
+export function usePinProgress(stage: React.RefObject<HTMLElement | null>) {
+  const q = useMotionValue(0);
+  useAnimationFrame(() => {
+    const st = stage.current;
+    const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
+    if (!st || !sc) return;
+    let top = 0;
+    let el: HTMLElement | null = st;
+    while (el && el !== sc) {
+      top += el.offsetTop;
+      el = el.offsetParent as HTMLElement | null;
+    }
+    const travel = Math.max(1, st.offsetHeight - sc.clientHeight);
+    const v = Math.max(0, Math.min(1, (sc.scrollTop - top) / travel));
+    if (Math.abs(v - q.get()) > 0.0005) q.set(v);
+  });
+  return q;
+}
+
+/** 画面いっぱい（1512×982）の場面を、指定した長さぶん貼りつけておく箱。
+    hold で「貼りついてから動き出すまでの“ため”」を作れる（0.18＝最初の18%は静止） */
+export function PinStage({
+  /** 貼りつけておく長さ。画面の高さの何倍か */
+  length = 2.6,
+  children,
+}: {
+  length?: number;
+  children: (q: MotionValue<number>) => React.ReactNode;
+}) {
+  const stage = useRef<HTMLDivElement>(null);
+  const q = usePinProgress(stage);
+  return (
+    /* ⚠️ -mt-[180px]：体験セクションの上パディングを打ち消して、
+       貼りついた場面がちょうど画面いっぱいになるようにする */
+    <div
+      ref={stage}
+      className="relative -mt-[180px] w-full"
+      style={{ height: `${Math.round(length * 982)}px` }}
+    >
+      <div className="sticky top-0 h-[982px] w-full overflow-hidden bg-white">
+        {children(q)}
+      </div>
+    </div>
+  );
+}
+
+/** 「ため」を作ってから 0→1 にする（貼りついた直後は動かさない） */
+export function afterHold(
+  q: MotionValue<number>,
+  hold = 0.18,
+  end = 0.92
+): MotionValue<number> {
+  return useTransform(q, [hold, end], [0, 1], { clamp: true });
+}

@@ -31,7 +31,7 @@
  */
 import Link from "next/link";
 import { motion, useTransform, type MotionValue } from "framer-motion";
-import { ITEMS, type EventItem } from "./eventParts";
+import { ITEMS, PinStage, afterHold, type EventItem } from "./eventParts";
 
 export const EVENT_KV_PATTERNS: Record<
   number,
@@ -45,12 +45,17 @@ export const EVENT_KV_PATTERNS: Record<
 /* ── カンプの実測値 ───────────────────────── */
 const FRAME_W = 1512;
 const FRAME_H = 920;
-/** カード（420×616）の置き方。中心座標と回転角 */
+/** カード（420×616）の置き方。中心座標と回転角。
+    【2026-09-17 ヒデさん指示】「写真が4枚重なっていて、それぞれ角度が違う感じで
+      4枚見えるような感じに」
+    ⚠️ カンプの座標をそのまま使うとカードがほぼ完全に重なって【1枚に見えた】。
+       回転の角度はカンプの大きさ（0/2.66/5.68/4.43）を保ったまま符号を左右に振り、
+       中心を少しずつずらして4枚ぶんの縁が出るようにした（🟡調整値） */
 const STACK = [
-  { cx: 773, cy: 478, rot: 0 },
-  { cx: 836, cy: 478, rot: 2.66 },
-  { cx: 765, cy: 519, rot: 5.68 },
-  { cx: 844, cy: 478, rot: 4.43 },
+  { cx: 726, cy: 462, rot: -5.68 },
+  { cx: 822, cy: 452, rot: 4.43 },
+  { cx: 752, cy: 506, rot: -2.66 },
+  { cx: 780, cy: 478, rot: 1.1 },
 ];
 const CARD_W = 420;
 const CARD_H = 616;
@@ -135,12 +140,20 @@ function StackCard({
        これをやらないと 180+920+80=1180px になり、1画面に収まらない
        （2026-09-17 実測：カードが画面の下に切れて見えた） */
 const CANVAS_H = 982;
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({
+  children,
+  /** カンプの 1512 幅ではなく、画面の横幅いっぱいに置きたいもの
+      （案31 の流れる文字。枠の中だと左右で切れて見える）*/
+  full,
+}: {
+  children: React.ReactNode;
+  full?: React.ReactNode;
+}) {
   return (
-    <div
-      className="relative -mt-[180px] w-full overflow-hidden bg-white"
-      style={{ height: CANVAS_H }}
-    >
+    /* ⚠️ 上の余白の打ち消しと画面いっぱいの高さは PinStage 側でやっている。
+       ここで二重に -mt を掛けないこと */
+    <div className="relative size-full overflow-hidden bg-white">
+      {full}
       <div
         className="absolute left-1/2 top-1/2"
         style={{
@@ -157,25 +170,39 @@ function Frame({ children }: { children: React.ReactNode }) {
 }
 
 /* ═══════════ 案31 流れる文字と重ね写真 ═══════════ */
-function MarqueeStack({ p }: { p: MotionValue<number> }) {
+function MarqueeStack() {
+  /* ⚠️ ピン留めが要る。セクションの高さ（1画面ぶん）だけだと、
+     セクションが見えた時点で進捗が 0.96 まで進んでいて
+     【剥がれ終わった状態からしか見えない】（2026-09-17 実測）。
+     貼りつけて“ため”を置くことで、束 → 1枚ずつ剥がれる、が見えるようになる */
+  return <PinStage length={2.6}>{(q) => <MarqueeScene q={q} />}</PinStage>;
+}
+function MarqueeScene({ q }: { q: MotionValue<number> }) {
+  const p = afterHold(q, 0.18, 0.94);
   return (
-    <Frame>
-      {/* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係に回り続ける） */}
-      <div
-        className="pointer-events-none absolute inset-x-0 overflow-hidden"
-        style={{ top: 398, height: 80 }}
-      >
-        <div className="tp-marquee flex whitespace-nowrap">
-          {[0, 1].map((k) => (
-            <span
-              key={k}
-              className="shrink-0 pr-[0.4em] text-[80px] font-thin leading-none text-black/80"
-            >
-              意外とオモロい、網走。意外とオモロい、網走。意外とオモロい、網走。
-            </span>
-          ))}
+    <Frame
+      full={
+        /* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係）。
+           【2026-09-17 ヒデさん指示】「セクション自体がちょん切れてる感じ。
+             横幅いっぱいに文字が伸びる感じに」→ カンプの1512枠の外に出して、
+             画面の横幅いっぱいに流す */
+        <div
+          className="pointer-events-none absolute inset-x-0 overflow-hidden"
+          style={{ top: (CANVAS_H - FRAME_H) / 2 + 398, height: 80 }}
+        >
+          <div className="tp-marquee flex whitespace-nowrap">
+            {[0, 1].map((k) => (
+              <span
+                key={k}
+                className="shrink-0 pr-[0.4em] text-[80px] font-thin leading-none text-black/80"
+              >
+                意外とオモロい、網走。意外とオモロい、網走。意外とオモロい、網走。
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      }
+    >
       {ITEMS.map((it, i) => (
         <StackCard key={it.title} it={it} i={i} p={p} />
       ))}
@@ -184,7 +211,11 @@ function MarqueeStack({ p }: { p: MotionValue<number> }) {
 }
 
 /* ═══════════ 案32 左右に文字 ═══════════ */
-function SideTextStack({ p }: { p: MotionValue<number> }) {
+function SideTextStack() {
+  return <PinStage length={2.6}>{(q) => <SideTextScene q={q} />}</PinStage>;
+}
+function SideTextScene({ q }: { q: MotionValue<number> }) {
+  const p = afterHold(q, 0.18, 0.94);
   return (
     <Frame>
       <p
@@ -219,9 +250,23 @@ const BURST = [
 ];
 const BURST_FROM = { x: 680, y: 395, w: 166, h: 115 };
 
-function BurstCopy({ p }: { p: MotionValue<number> }) {
+function BurstCopy() {
+  /* 【2026-09-17 ヒデさん指示】「中央に来た時にビューポートが中央に来て、
+     真ん中に来た後に四方に飛び散る。一旦画面の固定が入った方がいい」 */
+  return <PinStage length={2.6}>{(q) => <BurstScene q={q} />}</PinStage>;
+}
+function BurstScene({ q }: { q: MotionValue<number> }) {
+  const p = afterHold(q, 0.2, 0.92);
   return (
-    <Frame>
+    <div
+      className="absolute left-1/2 top-1/2"
+      style={{
+        width: FRAME_W,
+        height: FRAME_H,
+        marginLeft: -FRAME_W / 2,
+        marginTop: -FRAME_H / 2,
+      }}
+    >
       {ITEMS.map((it, i) => (
         <BurstCard key={it.title} it={it} i={i} p={p} />
       ))}
@@ -232,7 +277,7 @@ function BurstCopy({ p }: { p: MotionValue<number> }) {
       >
         意外とオモロい、網走。
       </p>
-    </Frame>
+    </div>
   );
 }
 function BurstCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
@@ -266,11 +311,11 @@ function BurstCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<numb
 export function ExtraPattern4({ pat, p }: { pat: number; p: MotionValue<number> }) {
   switch (pat) {
     case 31:
-      return <MarqueeStack p={p} />;
+      return <MarqueeStack />;
     case 32:
-      return <SideTextStack p={p} />;
+      return <SideTextStack />;
     case 33:
-      return <BurstCopy p={p} />;
+      return <BurstCopy />;
     default:
       return null;
   }

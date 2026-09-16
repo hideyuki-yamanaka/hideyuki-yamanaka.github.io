@@ -29,6 +29,8 @@ import {
   CardLink,
   HTitle,
   ITEMS,
+  PinStage,
+  afterHold,
   type EventItem,
 } from "./eventParts";
 
@@ -42,6 +44,20 @@ export const EVENT_EXTRA3_PATTERNS: Record<
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/* ── 中央の重ね束（案22 の始まりの形）────────────────
+   【2026-09-17 ヒデさん指示】「写真が4枚重なっていて、それぞれ角度が違う感じで
+     4枚見えるような感じに」
+   ⚠️ カンプの座標をそのまま使うとカードがほぼ完全に重なって【1枚に見えた】ので、
+      角度の符号を左右に振り、中心を少しずつずらして4枚の縁が出るようにした（🟡調整値） */
+const STACK_W = 300;
+const STACK_H = 412;
+const STACK_START = [
+  { x: -34, y: -12, r: -5.7 },
+  { x: 30, y: -20, r: 4.4 },
+  { x: -12, y: 22, r: -2.7 },
+  { x: 10, y: 4, r: 1.2 },
+];
+
 /** 大見出し（白い面の案で共通）。中央に置く形も用意する */
 function Head({ center = false }: { center?: boolean }) {
   return <HTitle className={center ? "text-center" : "px-6 sm:px-[147px]"} />;
@@ -52,14 +68,26 @@ function Head({ center = false }: { center?: boolean }) {
      その後ろからスケール0の写真たちがスクロールするとランダムに四方八方に飛び散る。ゆったり。
      画面外にはいかない。ランダムに散ったブロークングリッドで配置された
      セクションがホバーカードで選べる」 */
-function ScatterOut({ p }: { p: MotionValue<number> }) {
+function ScatterOut() {
+  /* 【2026-09-17 ヒデさん指示】
+     「中央に来た時にビューポートが中央に来て、真ん中に来た後に四方に飛び散る。
+       一旦画面の固定が入った方がいい」
+     → 画面いっぱいの場面を貼りつけ、ためを置いてから散らす。
+     「写真が4枚重なっていて、それぞれ角度が違う感じで4枚見える」
+     → 始まりは中央の重ね束。カンプと同じ「角度違いで4枚の縁が見える」置き方 */
   return (
-    <div className="relative mx-auto h-[860px] w-full max-w-[1420px] px-4 sm:px-[40px]">
-      {/* 散らばる写真（文字より後ろ） */}
+    <PinStage length={2.6}>
+      {(q) => <ScatterScene q={q} />}
+    </PinStage>
+  );
+}
+function ScatterScene({ q }: { q: MotionValue<number> }) {
+  const p = afterHold(q, 0.2, 0.92);
+  return (
+    <div className="relative size-full">
       {ITEMS.map((it, i) => (
         <ScatterCard key={it.title} it={it} i={i} p={p} />
       ))}
-      {/* 中央の大見出し。ジャンプ率を上げるためここだけ大きく出す */}
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
         <ScatterTitle p={p} />
       </div>
@@ -82,8 +110,10 @@ function ScatterTitle({ p }: { p: MotionValue<number> }) {
   );
 }
 function ScatterCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<number> }) {
-  /* 四方八方（左上・右上・左下・右下）へ。
-     ブロークングリッド＝きれいに揃えず、大きさも角度もバラバラにする。
+  /* 始まり：中央で4枚が重なっている。角度と少しのズレで4枚ぶんの縁が見える
+     （カンプの重ね置きと同じ考え方。数値は実際の見え方に合わせた🟡） */
+  const start = STACK_START[i];
+  /* 終わり：四方八方へ。きれいに揃えず、大きさも角度もバラバラ（ブロークングリッド）
      ⚠️ 画面の外へは出さない。中央から見た距離は max 480px に収めている */
   const spot = [
     { x: -430, y: -210, r: -5.5, w: 290, h: 380 },
@@ -94,22 +124,24 @@ function ScatterCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<nu
   /* ゆったり順に散る */
   const from = 0.08 + i * 0.09;
   const to = Math.min(1, from + 0.5);
-  const x = useTransform(p, [from, to], [0, spot.x]);
-  const y = useTransform(p, [from, to], [0, spot.y]);
-  const s = useTransform(p, [from, to], [0, 1]);
-  const rot = useTransform(p, [from, to], [0, spot.r]);
+  const x = useTransform(p, [from, to], [start.x, spot.x]);
+  const y = useTransform(p, [from, to], [start.y, spot.y]);
+  const w = useTransform(p, [from, to], [STACK_W, spot.w]);
+  const h = useTransform(p, [from, to], [STACK_H, spot.h]);
+  const rot = useTransform(p, [from, to], [start.r, spot.r]);
+  const mx = useTransform(w, (v) => -v / 2);
+  const my = useTransform(h, (v) => -v / 2);
   return (
     <motion.div
       className="group absolute left-1/2 top-1/2 z-10"
       style={{
         x,
         y,
-        scale: s,
         rotate: rot,
-        width: spot.w,
-        height: spot.h,
-        marginLeft: -spot.w / 2,
-        marginTop: -spot.h / 2,
+        width: w,
+        height: h,
+        marginLeft: mx,
+        marginTop: my,
       }}
     >
       {/* 触ると持ち上がって、説明が出る＝ホバーカード */}
@@ -182,7 +214,7 @@ function HoleCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<numbe
 export function ExtraPattern3({ pat, p }: { pat: number; p: MotionValue<number> }) {
   switch (pat) {
     case 22:
-      return <ScatterOut p={p} />;
+      return <ScatterOut />;
     case 29:
       return <Keyhole p={p} />;
     default:
