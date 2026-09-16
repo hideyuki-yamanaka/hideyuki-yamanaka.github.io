@@ -1,6 +1,7 @@
 "use client";
 
 import { FilterState, ViewMode } from "@/types";
+import { ScrapeButton } from "./ScrapeButton";
 
 interface HeaderProps {
   search: string;
@@ -170,6 +171,9 @@ export function Header({
           <rect x="9" y="9" width="6" height="6" rx="0.5" />
         </svg>
       </div>
+
+      {/* 今すぐ取り込む（2026-09-17 ヒデさん依頼。ふだんは朝9時と夜9時に自動） */}
+      <ScrapeButton />
 
       {/* 歯車アイコン: Eagle重複と「もう見ない」非表示の統合管理（最右端） */}
       <button

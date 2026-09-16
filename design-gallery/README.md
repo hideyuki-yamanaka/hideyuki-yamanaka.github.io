@@ -20,6 +20,28 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## スクレイピング（新着の取り込み）
+
+| いつ | どうやって |
+|---|---|
+| 自動 | 半日に1回（**朝9時・夜9時**）に GitHub Actions が走る |
+| 手動 | 画面ヘッダー右上の「**今すぐ取り込む**」ボタン |
+
+- 取り込みは GitHub 側で動く（Playwright でブラウザを開くので10分ほどかかる）。
+  押した直後に一覧は変わらない。取り込み → コミット → 本番の作り直し、の順に進む。
+- ボタンには最終取得（「3時間前」など）が出る。走っている間はクルクル回る。
+- **トークン未設定でもボタンは使える**。押すと GitHub の Actions 画面が開くので
+  そこで「Run workflow」を押す。ワンクリックで済ませたい時は `.env.example` の
+  `GH_DISPATCH_TOKEN` を参照して Vercel に登録する。
+
+### 本番の自動デプロイについて
+
+このリポジトリはモノレポで、main に push すると Vercel がビルドを始める。
+ただし `vercel.json` の `ignoreCommand` で **design-gallery を触っていない push は
+ビルドをスキップ**するようにしてある（2026-09-17）。
+他のプロダクトの作業で Vercel の1日100回の枠を食いつぶさないための措置。
+
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

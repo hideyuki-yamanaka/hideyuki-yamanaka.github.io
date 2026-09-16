@@ -2,8 +2,13 @@ name: Scrape Design Gallery
 
 on:
   schedule:
-    # 毎日 00:00 UTC = 09:00 JST
-    - cron: '0 0 * * *'
+    # 半日に1回（2026-09-17 ヒデさん指示「半日に一回スクレイピングが見れたり」）
+    #   00:00 UTC = 09:00 JST ／ 12:00 UTC = 21:00 JST
+    # ⚠️ GitHub の scheduled は混雑時に数十分ずれる（実測: 03:34〜03:54 UTC に着火）。
+    #    「できればいい程度」の位置づけなので、ずれても追いかけない。
+    - cron: '0 0,12 * * *'
+  # 画面の「今すぐ取り込む」ボタン（/api/scrape）と、GitHub の Actions 画面の
+  # 「Run workflow」からは、いつでも手で走らせられる
   workflow_dispatch: {}
 
 permissions:
@@ -55,4 +60,18 @@ jobs:
           # 据え置きになり、新着通知モーダルのベースラインが前進しなくなる。
           git add design-gallery/src/data/scraped-sites.json design-gallery/src/data/scrape-meta.json
           git commit -m "chore(design-gallery): scraped-sites.json 自動更新 ($(date -u +%Y-%m-%d))"
-          git push
+
+          # ⚠️ 取り込みに10分かかるので、その間にヒデさん／Claude が main へ push すると
+          #    ここが ! [rejected] (fetch first) で落ちる。
+          #    実測 2026-09-16 04:02 UTC の失敗がこれ（147行ぶんの新着が捨てられた）。
+          #    → 相手の変更を取り込んでから押し直す。3回まで粘る。
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              echo "push できました（${i}回目）"
+              exit 0
+            fi
+            echo "push が弾かれました。5秒待って ${i} 回目のやり直し"
+            sleep 5
+          done
+          echo "::error::3回試しても push できませんでした"
+          exit 1
