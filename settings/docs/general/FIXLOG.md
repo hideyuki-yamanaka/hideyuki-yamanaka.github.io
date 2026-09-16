@@ -133,3 +133,17 @@
 - **あわせて**: framer の `useScroll({container, target})` はこのサイトでは
   進捗が正しく出ない（体験セクションでも同じ目に遭っている）。
   `useAnimationFrame` でスクロール量から自分で出すのが確実
+
+## 2026-09-17 Three.js の ShaderMaterial で色が異様に濃く出る
+- **症状**: WebGL で写真を貼ると、同じ画像なのに `<img>` より青がどぎつく出る
+- **原因**: three は色空間の変換を「自前のマテリアル（MeshBasicMaterial 等）」には
+  自動で入れるが、**ShaderMaterial には入れない**。
+  テクスチャだけ `SRGBColorSpace` にすると「読む時に linear へ変換 → 変換されないまま出力」
+  となり、二度手間の分だけ色がずれる
+- **対処**: 読み込み側と書き出し側を**そろえて「変換しない」**にする
+  `renderer.outputColorSpace = THREE.LinearSRGBColorSpace`
+  `texture.colorSpace = THREE.LinearSRGBColorSpace`
+  → 画像のバイトがそのまま出るので `<img>` と同じ色になる
+- **ハマりどころ**: `THREE.NoColorSpace` を outputColorSpace に入れると
+  three が受け付けず、`.then()` の中で例外 → `.catch` に落ちて
+  **エラーも出さずフォールバック表示になる**。定数は存在チェックしてから使う
