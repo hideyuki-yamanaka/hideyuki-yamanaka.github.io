@@ -102,31 +102,46 @@
      top/padding/背景/margin で作って競合させない。PCのみ(mbは従来)。 */
   /* 【2026-09-17 ヒデさん依頼】スクロール変形を「ゆったり滑らか」に。尺 .5s→.72s、イージングは滑らかな in-out に。 */
   :root { --hdr-radius: 8px; --hdr-top: 14px; --hdr-side: 16px; --hdr-dur: .72s; --hdr-ease: cubic-bezier(.4,0,.2,1); }
+  /* ===== 【2026-09-17 作り直し】連続変形の土台。すべて --hdr-t(0=全幅/1=コンパクト)で補間 ===== */
   html:not(.mb).hdr-follow .header {
-    position: fixed; top: 0; left: 0; right: 0; padding: 24px 50px; box-sizing: border-box; z-index: 60;
-    transition: background var(--hdr-dur) var(--hdr-ease), -webkit-backdrop-filter var(--hdr-dur), backdrop-filter var(--hdr-dur), box-shadow var(--hdr-dur), padding var(--hdr-dur) var(--hdr-ease), top var(--hdr-dur) var(--hdr-ease), left var(--hdr-dur) var(--hdr-ease), right var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), border-radius var(--hdr-dur) var(--hdr-ease);
+    position: fixed; z-index: 60; box-sizing: border-box;
+    left: 0; right: 0; margin-left: auto; margin-right: auto;   /* max-width を絞ると中央へ寄る(既定) */
+    top: calc(var(--hdr-top) * var(--hdr-t, 0));
+    max-width: calc(100% - (100% - var(--hdr-cw, 100%)) * var(--hdr-t, 0));
+    padding: calc(24px - (24px - var(--hdr-py, 24px)) * var(--hdr-t, 0)) calc(50px - (50px - var(--hdr-px, 50px)) * var(--hdr-t, 0));
+    border-radius: calc(var(--hdr-radius) * var(--hdr-t, 0));
   }
-  html:not(.mb).hdr-follow .header .logo img { transition: height var(--hdr-dur) var(--hdr-ease); }   /* 高さだけ動かす＝幅は width:auto が比率で追従して潰れない。本体と同じ尺で一緒に滑らかに */
-  /* 追従で stuck の時は、KVイントロ(rv)がインラインで触る opacity/blur/transform を打ち消して必ず可視に
-     (ヒーロー内スクロールでイントロが再生リセットしてもヘッダーが消えないように) */
+  /* 地色・ぼかし・影・縁は ::before に持たせ opacity=--hdr-t でフェードイン(グラデ/リキッドでも一様に効く) */
+  html:not(.mb).hdr-follow .header::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+    opacity: var(--hdr-t, 0);
+    background: var(--hdr-skin-bg, rgba(255,255,255,.6));
+    -webkit-backdrop-filter: var(--hdr-skin-filter, blur(18px) saturate(1.5));
+    backdrop-filter: var(--hdr-skin-filter, blur(18px) saturate(1.5));
+    box-shadow: var(--hdr-skin-shadow, inset 0 -1px 0 rgba(0,0,0,.07));
+    border: var(--hdr-skin-border, 0 solid transparent);
+  }
+  html:not(.mb).hdr-follow .header .logo img {
+    height: calc(47px - (47px - var(--hdr-logo-h, 47px)) * var(--hdr-t, 0)); width: auto;   /* 高さのみ補間＝比率固定で潰れない */
+  }
+  /* 少しでもスクロールしたら KVイントロ(rv)の opacity/blur/transform を打ち消して必ず可視に */
   html:not(.mb).hdr-follow .header.hdr-stuck { opacity: 1 !important; filter: none !important; transform: none !important; }
-  /* 1: すりガラス(スクロールでガラス背景＋うっすら下線) */
-  html:not(.mb).hm-1 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  /* ===== 各案は「コンパクト側の目標値」を変数で置くだけ。--hdr-t が幅・位置・地色・ロゴを一体で動かす ===== */
+  /* 1: すりガラス(既定 skin。--hdr-cw:100% で幅は不変) */
   /* 2: ソリッド白＋影 */
-  html:not(.mb).hm-2 .header.hdr-stuck { background: #fff; box-shadow: 0 6px 24px rgba(20,30,60,.1); }
-  /* 3: 下スクロールで隠す/上で戻す(ガラス) */
-  html:not(.mb).hm-3 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
+  html:not(.mb).hm-2 .header { --hdr-skin-bg: #fff; --hdr-skin-filter: none; --hdr-skin-shadow: 0 6px 24px rgba(20,30,60,.1); }
+  /* 3: 下スクロールで隠す(現在は未使用) */
   html:not(.mb).hm-3 .header.hdr-hidden { top: -104px; }
   /* 4: 縮む(ロゴ小・余白小・ガラス) */
-  html:not(.mb).hm-4 .header.hdr-stuck { padding: 13px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
-  html:not(.mb).hm-4 .header.hdr-stuck .logo img { height: 37px; width: auto; }
-  /* 5: フローティングピル(スクロールで縁から浮くカプセル) */
-  html:not(.mb).hm-5 .header.hdr-stuck { top: var(--hdr-top); left: var(--hdr-side); right: var(--hdr-side); padding: 13px 28px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.58); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
-  html:not(.mb).hm-5 .header.hdr-stuck .logo img { height: 39px; width: auto; }
+  html:not(.mb).hm-4 .header { --hdr-py: 13px; --hdr-logo-h: 37px; --hdr-skin-bg: rgba(255,255,255,.64); }
+  /* 5: フローティングピル(ナビは残す・両端を少し浮かせてガラス) */
+  html:not(.mb).hm-5 .header { --hdr-py: 13px; --hdr-px: 28px; --hdr-logo-h: 39px;
+    margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: calc(var(--hdr-side) * var(--hdr-t, 0));
+    --hdr-skin-bg: rgba(255,255,255,.58); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 14px 36px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
 
   /* ===== 【V5.0 2026-09-16】ハンバーガー＋ドロワー(共通) ===== */
   .hdr-burger { display: none; width: 44px; height: 44px; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex: 0 0 auto; -webkit-appearance: none; appearance: none; z-index: 2; }
-  .hdr-burger { transition: opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), width var(--hdr-dur) var(--hdr-ease), height var(--hdr-dur) var(--hdr-ease), background var(--hdr-dur), box-shadow var(--hdr-dur); }
+  .hdr-burger { transition: background .2s, box-shadow .2s; }   /* 幅/opacity は --hdr-t 駆動(トランジションを掛けるとラグる)。開閉アニメは span 側 */
   /* 【2026-09-17 作り直し】バーは「中央基準(left/top:50%)＋margin で位置決め」。transform は回転専用にして、
      どんな配置でも横に伸びて破綻しない(旧: left/right 指定が親基準に化けて全幅の黒線になっていた)。
      既定つまみ: --bg-w=バー長 / --bg-h=太さ / --bg-gap=間隔。アイコン案(bi-)がこれを差し替える。 */
@@ -178,70 +193,79 @@
   /* ===== 【V5.0】スクロールで「ロゴ＋ハンバーガー」に変形する10案(hm-6〜15) ===== */
   /* 共通: stuck でナビ(nav)を格納しハンバーガーを出す。ロゴは残す。 */
   /* morph: バーガーは常設で透明→stuckでフェードイン。ナビは max-width＋opacity で滑らかに畳む(display:none は使わない=瞬間切替を避ける) */
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger { display: block; position: absolute; right: 50px; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; }
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav { overflow: hidden; max-width: 900px; transition: max-width var(--hdr-dur) var(--hdr-ease), opacity var(--hdr-dur) var(--hdr-ease), transform var(--hdr-dur) var(--hdr-ease), filter var(--hdr-dur) var(--hdr-ease); }
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .nav { max-width: 0; opacity: 0; margin: 0; pointer-events: none; }
-  /* 【2026-09-17 バグ修正】stuck時は position:relative(static ではなく)。static だとバーガーが位置基準でなくなり、
-     中の position:absolute なバー(span, left:11px/right:11px)がヘッダー(fixed)基準に化けて“全幅の黒い線”に破綻する。
-     relative ならフロー内に残って右寄せは保ちつつ、span の基準がバーガー(44px)に戻る。 */
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header.hdr-stuck .hdr-burger { position: relative; left: auto; right: auto; top: auto; transform: none; opacity: 1; pointer-events: auto; }
-  /* 6: 全幅ガラスバー(左ロゴ/右バーガー) */
-  html:not(.mb).hm-6 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
-  /* 7: 全幅ソリッド白(左ロゴ/右バーガー) */
-  html:not(.mb).hm-7 .header.hdr-stuck { background: #fff; box-shadow: 0 6px 24px rgba(20,30,60,.1); }
-  /* 8: 左寄せピル(ロゴ＋バーガー隣接) */
-  html:not(.mb).hm-8 .header.hdr-stuck { left: var(--hdr-side); right: auto; top: var(--hdr-top); width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-8 .header.hdr-stuck .logo img { height: 28px; width: auto; }
+  /* ナビ: --hdr-t で畳む(opacity は前半で消え、幅は t≒0.75 で 0)。バーガー: 常にフロー内で t に応じて開く(後半で出現)。
+     位置切替(absolute↔relative)をしない＝重ならない・瞬間移動しない。 */
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav {
+    overflow: hidden;
+    max-width: calc(var(--nav-w, 640px) * (1 - min(1, var(--hdr-t, 0) * 1.35)));
+    opacity: calc(1.15 - var(--hdr-t, 0) * 2.1);
+  }
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger {
+    display: block; position: relative; overflow: hidden; flex: 0 0 auto; pointer-events: auto;
+    width: calc(var(--burger-w, 44px) * min(1, var(--hdr-t, 0) * 1.4));
+    opacity: calc(var(--hdr-t, 0) * 2 - 1);
+  }
+  /* 6: 全幅ガラスバー(既定 skin) / 7: 全幅ソリッド白。幅は不変、ナビ→バーガーだけ */
+  html:not(.mb).hm-7 .header { --hdr-skin-bg: #fff; --hdr-skin-filter: none; --hdr-skin-shadow: 0 6px 24px rgba(20,30,60,.1); }
+  /* 8: 左寄せピル */
+  html:not(.mb).hm-8 .header { --hdr-cw: 250px; --hdr-py: 9px; --hdr-px: 16px; --hdr-logo-h: 28px;
+    margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: auto;
+    --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
   /* 9: 右寄せピル */
-  html:not(.mb).hm-9 .header.hdr-stuck { left: auto; right: var(--hdr-side); top: var(--hdr-top); width: fit-content; padding: 9px 12px 9px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-9 .header.hdr-stuck .logo img { height: 28px; width: auto; }
-  /* 10: 中央ピル(transformを使わず fit-content＋margin auto で中央) */
-  html:not(.mb).hm-10 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 9px 14px 9px 22px; gap: 14px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-10 .header.hdr-stuck .logo img { height: 28px; width: auto; }
-  /* 11: 分離(左ロゴ素 / 右に丸バーガー) */
-  html:not(.mb).hm-11 .header.hdr-stuck { background: transparent; padding: 22px 26px; }
-  html:not(.mb).hm-11 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
-  /* 12: 分離(左に丸ロゴマーク / 右に丸バーガー) */
-  html:not(.mb).hm-12 .header.hdr-stuck { background: transparent; padding: 18px 22px; }
-  html:not(.mb).hm-12 .header.hdr-stuck .logo { width: 50px; height: 50px; border-radius: var(--hdr-radius); overflow: hidden; display: grid; place-items: center; background: rgba(255,255,255,.66); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
-  /* 【2026-09-17 修正】ロゴマーク(左の三角)だけを丸窓に。object-fit:cover は比率を保ったまま左を切り出す＝潰れない・変なトリミングにならない。 */
-  html:not(.mb).hm-12 .header.hdr-stuck .logo img { width: 50px; height: 50px; object-fit: cover; object-position: left center; }
-  html:not(.mb).hm-12 .header.hdr-stuck .hdr-burger { width: 54px; height: 54px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 10px 26px rgba(20,30,60,.16); }
-  /* 13: ロゴマークのみ(テキスト省略)＋バーガー(全幅ガラス) */
-  html:not(.mb).hm-13 .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
-  html:not(.mb).hm-13 .header.hdr-stuck .logo { width: 42px; overflow: hidden; }
-  /* 14: 縮む(全幅ガラス・小さめ) */
-  html:not(.mb).hm-14 .header.hdr-stuck { padding: 12px 50px; background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: inset 0 -1px 0 rgba(0,0,0,.07); }
-  html:not(.mb).hm-14 .header.hdr-stuck .logo img { height: 31px; width: auto; }
-  html:not(.mb).hm-14 .header.hdr-stuck .hdr-burger { width: 38px; height: 38px; }
-  /* 15: 隠れて → 上スクロールでロゴ＋バーガーのミニピルが降臨(中央) */
-  html:not(.mb).hm-15 .header.hdr-stuck { left: 0; right: 0; margin: 0 auto; top: var(--hdr-top); width: fit-content; padding: 8px 12px 8px 20px; gap: 12px; border-radius: var(--hdr-radius); background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); }
-  html:not(.mb).hm-15 .header.hdr-stuck .logo img { height: 26px; width: auto; }
+  html:not(.mb).hm-9 .header { --hdr-cw: 250px; --hdr-py: 9px; --hdr-px: 16px; --hdr-logo-h: 28px;
+    margin-left: auto; margin-right: calc(var(--hdr-side) * var(--hdr-t, 0));
+    --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  /* 10: 中央ピル */
+  html:not(.mb).hm-10 .header { --hdr-cw: 250px; --hdr-py: 9px; --hdr-px: 18px; --hdr-logo-h: 28px;
+    --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
+  /* 11: 分離(ロゴ素／右に丸バーガー)。地色なし・バーガーだけ丸ガラス(t でフェード) */
+  html:not(.mb).hm-11 .header { --hdr-py: 22px; --hdr-px: 26px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
+  html:not(.mb).hm-11 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
+    background: rgba(255,255,255, calc(.62 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
+    box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
+  /* 12: 分離(左に丸ロゴマーク／右に丸バーガー) */
+  html:not(.mb).hm-12 .header { --hdr-py: 18px; --hdr-px: 22px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
+  html:not(.mb).hm-12 .header .logo { overflow: hidden; border-radius: var(--hdr-radius);
+    width: calc(255px - 205px * var(--hdr-t, 0)); height: calc(47px + 3px * var(--hdr-t, 0)); box-sizing: border-box;
+    background: rgba(255,255,255, calc(.66 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
+    box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
+  html:not(.mb).hm-12 .header { --hdr-logo-h: 50px; }   /* マークが箱を満たす高さ。幅auto＝比率保持でロゴ左端(三角)を .logo の overflow で切り出す */
+  html:not(.mb).hm-12 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
+    background: rgba(255,255,255, calc(.64 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
+    box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
+  /* 13: ロゴマークのみ＋バーガー(全幅ガラス)。ロゴを t で 42px 幅にクリップ */
+  html:not(.mb).hm-13 .header .logo { overflow: hidden; width: calc(255px - 213px * var(--hdr-t, 0)); }
+  /* 14: 縮む＋バーガー(全幅ガラス・小さめ) */
+  html:not(.mb).hm-14 .header { --hdr-py: 12px; --hdr-logo-h: 31px; --hdr-skin-bg: rgba(255,255,255,.64); }
+  html:not(.mb).hm-14 .hdr-burger { --burger-w: 38px; }
+  /* 15: 中央ミニピル */
+  html:not(.mb).hm-15 .header { --hdr-cw: 232px; --hdr-py: 8px; --hdr-px: 16px; --hdr-logo-h: 26px;
+    --hdr-skin-bg: rgba(255,255,255,.62); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
 
   /* ===== 【V5.0 2026-09-17 ヒデさん依頼】フローティング(ピル)のスタイリング案 10個(fs-1〜10)。
      対象＝浮くピルの案(hm-5/8/9/10/15)。影の濃さ・ブラー量・地の描き方・リキッドグラスの違い。配置やサイズは各案のまま。
      :is() で1案=1ルールにまとめ、fs+hm の2クラス指定なので各hm-Nの既定より詳細度が高く必ず勝つ。 ===== */
-  html:not(.mb):is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { border: 1px solid rgba(255,255,255,.5); }
+  /* 各案は skin 変数を差し替えるだけ(::before が --hdr-t でフェードイン)。fs+hm の2クラスで各hm-Nより詳細度が高く必ず勝つ */
   /* 1 標準ガラス */
-  html:not(.mb).fs-1:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 12px 30px rgba(20,30,60,.16); border-color: rgba(255,255,255,.5); }
+  html:not(.mb).fs-1:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); --hdr-skin-border: 1px solid rgba(255,255,255,.5); }
   /* 2 濃いフロスト(白強め・柔らかい影) */
-  html:not(.mb).fs-2:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.78); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 18px 44px rgba(20,30,60,.12); border-color: rgba(255,255,255,.7); }
+  html:not(.mb).fs-2:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.78); --hdr-skin-filter: blur(24px) saturate(1.5); --hdr-skin-shadow: 0 18px 44px rgba(20,30,60,.12); --hdr-skin-border: 1px solid rgba(255,255,255,.7); }
   /* 3 くっきり深い影 */
-  html:not(.mb).fs-3:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.64); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); box-shadow: 0 22px 50px -12px rgba(20,30,60,.34), 0 6px 14px rgba(20,30,60,.14); border-color: rgba(255,255,255,.5); }
+  html:not(.mb).fs-3:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.64); --hdr-skin-filter: blur(16px) saturate(1.6); --hdr-skin-shadow: 0 22px 50px -12px rgba(20,30,60,.34), 0 6px 14px rgba(20,30,60,.14); --hdr-skin-border: 1px solid rgba(255,255,255,.5); }
   /* 4 軽やか(薄い・影控えめ) */
-  html:not(.mb).fs-4:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.46); -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5); box-shadow: 0 8px 20px rgba(20,30,60,.1); border-color: rgba(255,255,255,.55); }
+  html:not(.mb).fs-4:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.46); --hdr-skin-filter: blur(14px) saturate(1.5); --hdr-skin-shadow: 0 8px 20px rgba(20,30,60,.1); --hdr-skin-border: 1px solid rgba(255,255,255,.55); }
   /* 5 リキッドグラス(斜めの光沢＋内側ハイライト) */
-  html:not(.mb).fs-5:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.14) 46%, rgba(255,255,255,.4)), rgba(255,255,255,.5); -webkit-backdrop-filter: blur(22px) saturate(1.7); backdrop-filter: blur(22px) saturate(1.7); box-shadow: 0 16px 40px rgba(20,30,60,.18), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(255,255,255,.35); border-color: rgba(255,255,255,.6); }
+  html:not(.mb).fs-5:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,.14) 46%, rgba(255,255,255,.4)), rgba(255,255,255,.5); --hdr-skin-filter: blur(22px) saturate(1.7); --hdr-skin-shadow: 0 16px 40px rgba(20,30,60,.18), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(255,255,255,.35); --hdr-skin-border: 1px solid rgba(255,255,255,.6); }
   /* 6 ソリッド白(ガラスなし・シャープ) */
-  html:not(.mb).fs-6:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 10px 30px rgba(20,30,60,.14); border-color: rgba(20,30,60,.06); }
+  html:not(.mb).fs-6:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: #fff; --hdr-skin-filter: none; --hdr-skin-shadow: 0 10px 30px rgba(20,30,60,.14); --hdr-skin-border: 1px solid rgba(20,30,60,.06); }
   /* 7 発光する縁(ブランド色のリング) */
-  html:not(.mb).fs-7:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.62); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 0 0 1px rgba(14,187,255,.4), 0 0 22px rgba(14,187,255,.28), 0 14px 34px rgba(20,30,60,.16); border-color: rgba(14,187,255,.32); }
+  html:not(.mb).fs-7:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.62); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 0 0 1px rgba(14,187,255,.4), 0 0 22px rgba(14,187,255,.28), 0 14px 34px rgba(20,30,60,.16); --hdr-skin-border: 1px solid rgba(14,187,255,.32); }
   /* 8 強ブラー(すりガラス最大) */
-  html:not(.mb).fs-8:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.5); -webkit-backdrop-filter: blur(34px) saturate(1.8); backdrop-filter: blur(34px) saturate(1.8); box-shadow: 0 14px 40px rgba(20,30,60,.14); border-color: rgba(255,255,255,.6); }
+  html:not(.mb).fs-8:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.5); --hdr-skin-filter: blur(34px) saturate(1.8); --hdr-skin-shadow: 0 14px 40px rgba(20,30,60,.14); --hdr-skin-border: 1px solid rgba(255,255,255,.6); }
   /* 9 長い影・低い角度(浮遊感) */
-  html:not(.mb).fs-9:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: rgba(255,255,255,.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 34px 60px -22px rgba(20,30,60,.4); border-color: rgba(255,255,255,.55); }
+  html:not(.mb).fs-9:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(18px) saturate(1.6); --hdr-skin-shadow: 0 34px 60px -22px rgba(20,30,60,.4); --hdr-skin-border: 1px solid rgba(255,255,255,.55); }
   /* 10 リキッドグラス2(色づいた艶・強め) */
-  html:not(.mb).fs-10:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header.hdr-stuck { background: linear-gradient(135deg, rgba(120,200,255,.28), rgba(255,255,255,.1) 44%, rgba(255,150,200,.22)), rgba(255,255,255,.5); -webkit-backdrop-filter: blur(26px) saturate(1.9); backdrop-filter: blur(26px) saturate(1.9); box-shadow: 0 18px 44px rgba(20,30,60,.2), inset 0 1px 0 rgba(255,255,255,.8); border-color: rgba(255,255,255,.6); }
+  html:not(.mb).fs-10:is(.hm-5,.hm-8,.hm-9,.hm-10,.hm-15) .header { --hdr-skin-bg: linear-gradient(135deg, rgba(120,200,255,.28), rgba(255,255,255,.1) 44%, rgba(255,150,200,.22)), rgba(255,255,255,.5); --hdr-skin-filter: blur(26px) saturate(1.9); --hdr-skin-shadow: 0 18px 44px rgba(20,30,60,.2), inset 0 1px 0 rgba(255,255,255,.8); --hdr-skin-border: 1px solid rgba(255,255,255,.6); }
   html:not(.mb).hm-15 .header.hdr-hidden { top: -130px; }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
@@ -6508,15 +6532,20 @@ function bindHdrScroll() {
   if (_hdrScrollBound) return; _hdrScrollBound = true;
   const hdr = document.querySelector('.header'); if (!hdr) return;
   let lastY = window.scrollY || 0, ticking = false;
+  /* 【2026-09-17 作り直し】スクロール量に連動した連続変形。--hdr-t(0=全幅/1=コンパクト)を毎フレーム更新し、
+     幅・位置・余白・ロゴ・ナビ・バーガー・地色を CSS の calc(var(--hdr-t)) で“ひとつの動き”として補間する。
+     クラス一気切替＋トランジションだと width:fit-content(アニメ不可)や position 切替で瞬間移動・重なりが出るのが原因だった。
+     連続変数なので低速スクロール・途中反転でも 1:1 で追従し、跳ね/ちらつきが出ない。 */
+  const HDR_T_START = 20, HDR_T_END = 180;   // このスクロール量(px)で 0→1 に変形
+  const _smoothstep = x => x * x * (3 - 2 * x);
   const upd = () => {
     ticking = false;
     const y = window.scrollY || window.pageYOffset || 0;
-    /* 【2026-09-17】ヒステリシス: 発火は 72px、解除は 40px(境目でのちらつき＝連続オンオフを防ぐ)。
-       変形自体は CSS の --hdr-dur(.72s)でゆったり進むので、切替は一度きりで急変しない。 */
-    const wasStuck = hdr.classList.contains('hdr-stuck');
-    hdr.classList.toggle('hdr-stuck', wasStuck ? (y > 40) : (y > 72));
-    /* 【2026-09-17 ヒデさん指摘】hm-15(ミニピル)が「スクロールで消えてどこかへ行く」→ 隠さない。常に残る中央ミニピルにする。
-       (hm-3 の下スクロール隠しは残すが hm-3 は現在削除済みなので実質どのモードも隠れない) */
+    const raw = Math.min(1, Math.max(0, (y - HDR_T_START) / (HDR_T_END - HDR_T_START)));
+    const t = _smoothstep(raw);
+    hdr.style.setProperty('--hdr-t', t.toFixed(4));
+    hdr.classList.toggle('hdr-stuck', t > 0.001);   /* KVイントロの opacity 打ち消し等のフラグ用(見た目は --hdr-t が作る) */
+    /* 【2026-09-17 ヒデさん指摘】hm-15(ミニピル)は「消える」をやめ常に表示。hm-3 のみ下スクロール隠し(現在削除済み) */
     if (document.documentElement.classList.contains('hm-3')) {
       if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
       else if (y < lastY - 4 || y <= 160) hdr.classList.remove('hdr-hidden');
