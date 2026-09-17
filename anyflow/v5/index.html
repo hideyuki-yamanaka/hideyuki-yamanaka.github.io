@@ -14064,18 +14064,20 @@ const kvEls = {
   const h = document.querySelector('.headline');
   if (h) h.style.opacity = '1';
 })();
-(function buildKvChars() {
+/* 【2026-09-17 ヒデさん依頼】タイピング演出は残しつつ「1文字スパン」をやめ、DOM は "表示中の部分文字列(普通のテキスト)＋キャレット" だけにする。
+   ＝ ソースHTMLの素のテキスト(例: <span id="hlL1">AIと事業を<i class="hl-caret"></i>)をそのまま編集でき、本番で検証ツールでも普通のテキストとして置き換えられる。 */
+kvEls.text = ['', ''];
+kvEls.textNodes = [null, null];
+(function buildKvType() {
   kvEls.lines.forEach((line, i) => {
     const caret = line.querySelector('.hl-caret');
-    const text = line.firstChild.textContent;
-    line.removeChild(line.firstChild);
-    [...text].forEach(ch => {
-      const sp = document.createElement('span');
-      sp.className = 'hl-ch';
-      sp.textContent = ch;
-      line.insertBefore(sp, caret);
-      kvEls.chars[i].push(sp);
-    });
+    const first = line.firstChild;
+    const full = (first && first.nodeType === 3) ? first.textContent : '';   // ソースの素テキストを保持
+    kvEls.text[i] = full;
+    if (first && first.nodeType === 3) line.removeChild(first);
+    const tn = document.createTextNode('');   // 表示中の部分文字列を入れる普通のテキストノード(スパンではない)
+    line.insertBefore(tn, caret);
+    kvEls.textNodes[i] = tn;
     kvEls.carets.push(caret);
   });
 })();
@@ -14236,7 +14238,7 @@ function updateKV() {
 
   /* 1文字ずつ打ち込む */
   const tt = t - c.typeAt;
-  const n0 = kvEls.chars[0].length, n1 = kvEls.chars[1].length;
+  const n0 = kvEls.text[0].length, n1 = kvEls.text[1].length;
   /* 緩急: 最初はゆっくり、だんだん速くなる。
      i文字目までの所要時間 = charDur * n * (i/n をイーズインした値) */
   const e = c.typeEase;
@@ -14245,14 +14247,15 @@ function updateKV() {
   const timeOf = (i, n, dur) => dur * n * ease(i / Math.max(1, n));
   const line1End = timeOf(n0, n0, c.charDur);
   const line2At = line1End + c.lineGap;
-  kvEls.chars.forEach((arr, li) => {
+  kvEls.textNodes.forEach((tn, li) => {
+    if (!tn) return;
     const base = li === 0 ? 0 : line2At;
     const dur = li === 0 ? c.charDur : c.charDur2;
-    const n = arr.length;
-    /* 未入力の文字は display:none。こうするとカーソルが打った文字の直後に来る */
-    arr.forEach((el, ci) => {
-      el.style.display = tt >= base + timeOf(ci, n, dur) ? 'inline-block' : 'none';
-    });
+    const full = kvEls.text[li], n = full.length;
+    /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後に来る)。スパンは使わない */
+    let count = 0;
+    for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
+    if (tn.data.length !== count) tn.data = full.slice(0, count);
   });
   const typeEnd = line2At + timeOf(n1, n1, c.charDur2);
   const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
