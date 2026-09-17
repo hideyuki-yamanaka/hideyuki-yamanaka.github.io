@@ -62,7 +62,10 @@
   }
   /* 【2026-09-17 ヒデさん指定】ロゴは常に縦横比を保つ＝高さ基準＋width:auto。縮小案も transition は height だけ動かし、
      幅は比率で自動追従(=どのフレームでも潰れない)。自然サイズ 255×47(比 5.426)。 */
+  .header .logo { position: relative; }
   .header .logo img { height: 47px; width: auto; display: block; }
+  /* 白版ロゴ(反転用)は色版の上に重ねてクロスフェード。色版がフローで箱サイズを決め、白版は絶対配置で追従(morph の height 補間は両方に効く) */
+  .header .logo .logo-w { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; }
   .nav { display: flex; align-items: center; gap: var(--space-32); }
   /* 【2026-08-30 ヒデさん指定】ナビ項目の左右の間隔を広めに(20→32px)。--nav-gap で調整パネルから変えられる */
   .nav-links { display: flex; gap: var(--nav-gap, 32px); align-items: center; }
@@ -251,9 +254,12 @@
      【2026-09-17 ヒデさん指定】開発者体験の“黒いセクション”の上に来た時だけ、ロゴとハンバーガーの色だけ白へ反転(hdr-on-dark)。 */
   html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; --hdr-skin-border: 0 solid transparent; }
   html:not(.mb).hm-12 .hdr-burger { --burger-w: 44px; background: transparent; box-shadow: none; }
-  html:not(.mb).hm-12 .header .logo img { transition: filter .45s var(--hdr-ease); }
+  html:not(.mb).hm-12 .header .logo-c, html:not(.mb).hm-12 .header .logo-w { transition: opacity .45s var(--hdr-ease); }
   html:not(.mb).hm-12 .header .hdr-burger span { transition: background .45s var(--hdr-ease); }
-  html:not(.mb).hm-12 .header.hdr-on-dark .logo img { filter: brightness(0) invert(1); }   /* 黒セクション上=ロゴ白 */
+  /* 【2026-09-17 ヒデさん指定】反転は brightness(0) invert(1) のベタ塗りだと重なりが潰れる。
+     色版を消して、重なりを opacity で残した白版へクロスフェードする(3枚のペタルの層が見える)。 */
+  html:not(.mb).hm-12 .header.hdr-on-dark .logo-c { opacity: 0; }   /* 黒セクション上=色版を消す */
+  html:not(.mb).hm-12 .header.hdr-on-dark .logo-w { opacity: 1; }   /* =重なりを保った白版へ */
   html:not(.mb).hm-12 .header.hdr-on-dark .hdr-burger span { background: #fff; }             /* 黒セクション上=線白 */
   /* 13: ロゴマークのみ＋バーガー(全幅ガラス)。ロゴを t で 42px 幅にクリップ */
   html:not(.mb).hm-13 .header .logo { overflow: hidden; width: calc(255px - 213px * var(--hdr-t, 0)); }
@@ -3714,7 +3720,7 @@
     <div class="kvp-secret" id="kvpSecret" title="調整パネル"></div>
 
     <header class="header">
-      <div class="logo"><img src="assets/header-logo.svg" alt="Anyflow Embed"></div>
+      <div class="logo"><img class="logo-c" src="assets/header-logo.svg" alt="Anyflow Embed"><img class="logo-w" src="assets/header-logo-white.svg?v=1" alt="" aria-hidden="true"></div>
       <nav class="nav">
         <div class="nav-links">
           <a href="#vision">ビジョン</a>
@@ -12379,7 +12385,6 @@ function resFxFrame(t) {
   } else if (k === '24' || k === '24-2') {
     const p = resFxPin(), H = rfxHero(), vh = rfxVH();
     const F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
-    if (SM) F.heroScale = 1.2;   /* 【2026-09-17】2段階化: ピクトの単独ズームを控えめに(1.7→1.2)＝ほぼ最終サイズで一斉に出す */
     /* 【案24-2 滑らかに繋ぐ版(2026-09-15 ヒデさん指定)】案24-1 は場面ごとに区間が離れていて「止まってから次」に見える。24-2 は前の動きの途中から次を始めて重ねる:
        文字の縮小 0.04〜0.34 / ピクトの登場 0.10〜0.40(1.4→1.7倍に育ちながら) / 終点へ 0.30〜0.70 / 線 0.56〜0.72 / 下段 0.62〜0.82 ＝ どこにも止まる区間がない */
     const SM = k === '24-2';
@@ -12387,13 +12392,11 @@ function resFxFrame(t) {
        Vision から続けて「for SaaS」「for AI」(70px)が左右に並ぶ(p 0) → 文字は 40px に小さくなって上へ(0.12-0.30)、各列の中央にピクトが大きく(1.7倍。モーションは動いたまま)、
        間に縦の仕切り線 → 終点(0.42-0.66): 上に説明(ラベル20/見出し46/本文14・幅530)、下にピクト(300)。横罫線の下に見出し(40px・2行)と数値(70px・スロットはここで回る)。
        説明はピクトがほぼ収まってから(重ねない)。パネル「案24」 */
-    /* 【2026-09-17 ヒデさん指定】24-2 を「2段階」に: for SaaS/AI(ラベル) → スクロールで“全部が一緒に”出る。
-       ピクトの単独ズーム段をやめ、P1(ピクト)/D(終点)/TK(本文)/B(数値)を重ねて一斉に出す。 */
-    const L2 = SM ? rfxRange(p, 0.04, 0.22) : rfxRange(p, 0.12, 0.30), P1 = SM ? rfxRange(p, 0.18, 0.55) : rfxRange(p, 0.16, 0.30), D = SM ? rfxRange(p, 0.18, 0.58) : rfxRange(p, 0.42, 0.66);
-    const TK = rfxRange(D, SM ? 0.30 : 0.55, 1), B = SM ? rfxRange(p, 0.40, 0.70) : rfxRange(p, 0.60, 0.76);
+    const L2 = SM ? rfxRange(p, 0.04, 0.34) : rfxRange(p, 0.12, 0.30), P1 = SM ? rfxRange(p, 0.10, 0.40) : rfxRange(p, 0.16, 0.30), D = SM ? rfxRange(p, 0.30, 0.70) : rfxRange(p, 0.42, 0.66);
+    const TK = rfxRange(D, 0.55, 1), B = SM ? rfxRange(p, 0.62, 0.82) : rfxRange(p, 0.60, 0.76);
     resFxSt.gate24 = on && B > 0.05;
     E.res2.style.setProperty('--rfx-vline', P1.toFixed(3));
-    E.res2.style.setProperty('--rfx-hr', (SM ? rfxRange(p, 0.44, 0.64) : rfxRange(p, 0.54, 0.68)).toFixed(3));
+    E.res2.style.setProperty('--rfx-hr', (SM ? rfxRange(p, 0.56, 0.72) : rfxRange(p, 0.54, 0.68)).toFixed(3));
     vis(E.top, on ? B : 0);
     tf(E.top, `translateY(${((1 - B) * 24).toFixed(2)}px)`);
     E.r2v.forEach((el, i) => {
