@@ -247,13 +247,15 @@
   html:not(.mb).hm-11 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
     background: rgba(255,255,255, calc(.62 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
     box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
-  /* 12: 分離(左に丸ロゴマーク／右に丸バーガー) */
-  html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; }
-  /* 【2026-09-17 ヒデさん指定】分離案は「左ロゴは無加工(箱・影・マーク化なし)、右のバーガーだけプクッと浮くガラス箱」。
-     ロゴは素のまま＝切断も断片も出ない。ロゴには何も足さない(基準の縦横比固定のみ)。 */
-  html:not(.mb).hm-12 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
-    background: rgba(255,255,255, calc(.64 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
-    box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
+  /* 12: 分離 【2026-09-17 ヒデさん指定】スクロールで黒バー化＋ロゴ白反転＋右のナビ(お問い合わせ)が左→右に畳まれ白ハンバーガーに。
+     位置・余白は不変(--hdr-top:0)。地色は黒(お問い合わせの黒ボタンと同色 #090909)、線は白。 */
+  html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px;
+    --hdr-skin-bg: #090909; --hdr-skin-filter: none; --hdr-skin-shadow: 0 10px 30px rgba(0,0,0, calc(.3 * var(--hdr-t,0))); --hdr-skin-border: 0 solid transparent; }
+  /* ロゴは位置そのまま、黒くなるにつれ白へ反転(brightness→0 で真っ黒 → invert で白) */
+  html:not(.mb).hm-12 .header .logo img { filter: brightness(calc(1 - var(--hdr-t, 0))) invert(var(--hdr-t, 0)); }
+  /* 右のハンバーガー: 箱なし(黒バーに溶ける)・白い線。お問い合わせの黒ボタンの位置に出る */
+  html:not(.mb).hm-12 .hdr-burger { --burger-w: 44px; background: transparent; box-shadow: none; }
+  html:not(.mb).hm-12 .hdr-burger span { background: #fff; }
   /* 13: ロゴマークのみ＋バーガー(全幅ガラス)。ロゴを t で 42px 幅にクリップ */
   html:not(.mb).hm-13 .header .logo { overflow: hidden; width: calc(255px - 213px * var(--hdr-t, 0)); }
   /* 14: 縮む＋バーガー(全幅ガラス・小さめ) */
