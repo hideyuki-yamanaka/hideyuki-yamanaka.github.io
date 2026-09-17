@@ -468,6 +468,14 @@
     vertical-align: -12px;
     opacity: 0;
   }
+  /* 【2026-09-17 ヒデさん依頼】フォントテスト: html.ft-on の時だけ KV の文字組み(太さ/サイズ/ジャンプ率/行間/字間/間隔)を案ごとに上書き。
+     --ft-* は applyFontTest() が :root に設定(案ごとに独立)。--ft-jms/jmw は最終行(競争力を)＝ジャンプ率。 */
+  html.ft-on:not(.mb) .hl-main { font-weight: var(--ft-mw, 400); font-size: var(--ft-ms, 72px); line-height: var(--ft-lh, 1.3); letter-spacing: var(--ft-ls, 0px); -webkit-text-stroke: 0; }
+  html.ft-on:not(.mb) .headline { gap: var(--ft-gap, 14px); }
+  html.ft-on:not(.mb) .hl-main .hl-line:last-child { font-size: var(--ft-jms, var(--ft-ms, 72px)); font-weight: var(--ft-jmw, var(--ft-mw, 400)); }
+  html.ft-on:not(.mb) .hl-eyebrow { font-weight: var(--ft-ew, 500); }
+  html.ft-on:not(.mb) .hl-caret { height: calc(var(--ft-ms, 72px) * 0.86); }
+  html.ft-on:not(.mb) .hl-main .hl-line:last-child .hl-caret { height: calc(var(--ft-jms, var(--ft-ms, 72px)) * 0.86); }
   @keyframes reveal {
     to { opacity: 1; transform: translateY(0); filter: blur(0); }
   }
@@ -4837,6 +4845,8 @@ const DEFAULTS = {
      キー→{fs,fw,lh,ls,pt,pr,pb,pl,text}。トップ全体で共有(案・KV非依存)。 */
   edits: {},
   fwDelta: 0,   // 【2026-09-17 ヒデさん依頼】文字の太さの一括±(相対移行)。+100で全体が1段濃く/-100で1段薄く。個別(edits.fw)や元CSS値の差は保ったまま
+  fontTest: '0',   // 【2026-09-17 ヒデさん依頼】フォントテスト案(0=オフ/1〜10)。KVを「力強い」方向へ文字組み・ジャンプ率・レイアウト・グラフィックを案ごとに変える
+  fontTestW: {},   // 【2026-09-17】案ごとに独立したメイン太さの上書き(案キー→weight)。パネルの太さスライダーで案別に調整
   sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
   swayAmp: 1,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる
   swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
@@ -10432,7 +10442,8 @@ function applySway() {
      .orbit の margin-left(−幅/2 = −238px) だけで画面中央に置く(実測: gx込みだと箱の中心が 232px で
      画面中央 195px より 37px 右だった)。gy はカンプの上端 y81 に合わせた値として残す。 */
   const gx = isMobile ? 0 : kv.gx;
-  swayEls.orbit.style.transform = `translate(${gx}px, ${kv.gy}px)${ob} ${swayOrbit}`.trim();
+  /* 【2026-09-17 ヒデさん依頼・フォントテスト】案ごとにグラフィックを拡大/移動できるよう --ft-gscale/gdx/gdy を合成(既定 1/0/0=変化なし) */
+  swayEls.orbit.style.transform = `translate(calc(${gx}px + var(--ft-gdx, 0px)), calc(${kv.gy}px + var(--ft-gdy, 0px)))${ob} ${swayOrbit} scale(var(--ft-gscale, 1))`.trim();
   swayEls.svgs.forEach(s => s.style.transform = isMobile ? '' : svg);
   /* 惑星の位置・サイズ (パネル設定) を ゆらぎ の上に合成。惑星は固定(回転させない) */
   const pl = params.planet;
@@ -14161,6 +14172,43 @@ function applyKvCopy() {
   r.setProperty('--kv-copy-y', (k.copyY || 0) + 'px');
 }
 applyKvCopy();
+/* 【2026-09-17 ヒデさん依頼】フォントテスト: KVを「力強い/太い」方向へ、案ごとに 文字組み(太さ/サイズ)・ジャンプ率(最終行 競争力を)・
+   行間/字間/間隔・サブの太さ・グラフィックの大きさ/位置 を変える10案。太さは案ごとに独立して上書き可(params.fontTestW)。 */
+const FONT_TEST_PRESETS = {
+  '1':  { name: '① しっかり太字',        tip: '全体を Medium(500) に。レイアウトは既定のまま、素直に太く読みやすく。',                 mw: 500, ms: 72, jms: 72,  jmw: 500, lh: 1.30, ls: 0,   gap: 14, ew: 500, gscale: 1,    gdx: 0,   gdy: 0 },
+  '2':  { name: '② ジャンプ率 大',       tip: '「競争力を」だけ特大＆極太(800)。上2行は中庸。強い言葉を主役にするジャンプ率大。',   mw: 400, ms: 60, jms: 108, jmw: 800, lh: 1.20, ls: 0,   gap: 8,  ew: 500, gscale: 1,    gdx: 0,   gdy: 0 },
+  '3':  { name: '③ 極太・詰め',          tip: '全行 Extra/Black(800)＋行間・字間を詰めて塊感。重量級でインパクト重視。',             mw: 800, ms: 70, jms: 70,  jmw: 800, lh: 1.14, ls: -1,  gap: 6,  ew: 600, gscale: 1,    gdx: 0,   gdy: 0 },
+  '4':  { name: '④ グラフィック大＋太字', tip: '文字は小さめの太字にして、右のグラフィックを1.35倍に拡大。図で力強さを出す(文字と重ならないよう文字を控えめに)。', mw: 600, ms: 52, jms: 52,  jmw: 600, lh: 1.32, ls: 0,   gap: 12, ew: 500, gscale: 1.35, gdx: 20,  gdy: 0 },
+  '5':  { name: '⑤ 見出し特大',          tip: '見出しを80pxまで特大にし、グラフィックは少し小さく右上へ寄せて文字と離す。文字が主役の構成。',      mw: 500, ms: 80, jms: 80,  jmw: 600, lh: 1.14, ls: -1,  gap: 6,  ew: 500, gscale: 0.82, gdx: 80,  gdy: -10 },
+  '6':  { name: '⑥ 細×太コントラスト',    tip: '上2行は極細(200)、最終行だけ極太特大(900)。細太の対比で「競争力を」を際立たせる。',   mw: 200, ms: 60, jms: 112, jmw: 900, lh: 1.25, ls: 0,   gap: 8,  ew: 400, gscale: 1,    gdx: 0,   gdy: 0 },
+  '7':  { name: '⑦ 字間広め・太字',       tip: 'Semibold(600)＋字間を広げ行間もゆったり。堂々とした落ち着いた力強さ。',               mw: 600, ms: 64, jms: 64,  jmw: 600, lh: 1.40, ls: 4,   gap: 16, ew: 500, gscale: 1,    gdx: 0,   gdy: 0 },
+  '8':  { name: '⑧ 大ジャンプ＋グラ拡大', tip: '最終行を大ジャンプ(96/800)にしつつ、グラフィックも1.25倍。文字も図も強い両立型。',    mw: 400, ms: 56, jms: 96,  jmw: 800, lh: 1.20, ls: 0,   gap: 8,  ew: 500, gscale: 1.25, gdx: 0,   gdy: 0 },
+  '9':  { name: '⑨ グラフィック移動＋太字', tip: 'グラフィックを右下へ寄せて1.1倍。文字は太字＋最終行を少しジャンプ。配置で新鮮に(文字とは重ねない)。', mw: 600, ms: 62, jms: 78,  jmw: 700, lh: 1.30, ls: 0,   gap: 12, ew: 500, gscale: 1.1,  gdx: 30,  gdy: 70 },
+  '10': { name: '⑩ 重厚ミニマル',        tip: 'Bold(700)で全体を重厚に、字間ほんの少し・間隔は整えて上質に。ミニマルで力強い。',      mw: 700, ms: 74, jms: 74,  jmw: 700, lh: 1.20, ls: 0.5, gap: 12, ew: 600, gscale: 1.05, gdx: 0,   gdy: 0 },
+};
+function fontTestKey() { const v = String((params && params.fontTest) || '0'); return (v === '0' || FONT_TEST_PRESETS[v]) ? v : '0'; }
+function applyFontTest() {
+  const k = fontTestKey(), on = k !== '0', r = document.documentElement.style;
+  document.documentElement.classList.toggle('ft-on', on);
+  const VARS = ['--ft-mw','--ft-ms','--ft-jms','--ft-jmw','--ft-lh','--ft-ls','--ft-gap','--ft-ew','--ft-gscale','--ft-gdx','--ft-gdy'];
+  if (!on) { VARS.forEach(v => r.removeProperty(v)); return; }
+  const p = FONT_TEST_PRESETS[k];
+  const wOv = (params.fontTestW && params.fontTestW[k] != null) ? +params.fontTestW[k] : null;   // 案ごとに独立した太さの上書き
+  const mw = wOv != null ? wOv : p.mw;
+  const jmw = wOv != null ? Math.max(100, Math.min(900, p.jmw + (wOv - p.mw))) : p.jmw;           // ジャンプ側も相対で追従
+  r.setProperty('--ft-mw', String(mw));
+  r.setProperty('--ft-ms', p.ms + 'px');
+  r.setProperty('--ft-jms', p.jms + 'px');
+  r.setProperty('--ft-jmw', String(jmw));
+  r.setProperty('--ft-lh', String(p.lh));
+  r.setProperty('--ft-ls', (p.ls || 0) + 'px');
+  r.setProperty('--ft-gap', (p.gap != null ? p.gap : 14) + 'px');
+  r.setProperty('--ft-ew', String(p.ew != null ? p.ew : 500));
+  r.setProperty('--ft-gscale', String(p.gscale != null ? p.gscale : 1));
+  r.setProperty('--ft-gdx', (p.gdx || 0) + 'px');
+  r.setProperty('--ft-gdy', (p.gdy || 0) + 'px');
+}
+applyFontTest();
 /* ポイント1・2の文字サイズ(2026-09-03) */
 function applyVpSize() {
   const v = (params.sections && params.sections.vision) || {};
@@ -17209,6 +17257,21 @@ function buildPanel() {
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
   const catKv = category('🖼 キービジュアル（いちばん上の画面）', true);
 
+  /* 【2026-09-17 ヒデさん依頼】フォントテスト: KVを「力強い/太い」方向へ、10案で文字組み・ジャンプ率・レイアウト・グラフィックを変える。案ごとに太さ独立。 */
+  { const FT_LIST = [{ key: '0', name: 'オフ（既定）', tip: '標準の文字組みに戻します。' }]
+      .concat(Object.keys(FONT_TEST_PRESETS).map(kk => ({ key: kk, name: FONT_TEST_PRESETS[kk].name, tip: FONT_TEST_PRESETS[kk].tip })));
+    sub(catKv, 'フォントテスト（力強い方向・10案）', null, { fixed: true });
+    varRowX('fontTest', FT_LIST, () => fontTestKey(), v => { params.fontTest = String(v); applyFontTest(); markDirty(); if (typeof buildPanel === 'function') buildPanel(); });
+    note('KVを「力強く/太く」見せる10案。太さだけでなく、ジャンプ率(「競争力を」の大きさ)・行間/字間・グラフィックの大きさや位置も案ごとに変えています。コピーは「データ連携で／AIとプロダクトに／競争力を」。');
+    const fk = fontTestKey();
+    if (fk !== '0') {
+      rows.push(slider('この案のメインの太さ', 100, 900, 100,
+        () => (params.fontTestW && params.fontTestW[fk] != null) ? params.fontTestW[fk] : (FONT_TEST_PRESETS[fk] ? FONT_TEST_PRESETS[fk].mw : 400),
+        v => { params.fontTestW = params.fontTestW || {}; params.fontTestW[fk] = v; applyFontTest(); markDirty(); },
+        v => Math.round(v), 'この案のメインコピーの太さ(案ごとに独立して保存)。「競争力を」のジャンプ側も相対で一緒に動きます。', { fixedMax: true }));
+    }
+  }
+
   /* ===== 🎨 グラフィック (2026-08-26 ヒデさん指定・整理) =====
      右側のグラフィックの設定をここに集約する。いちばん上が「直接編集」。
      以下は全部この中の入れ子: 案を選ぶ / 出てくるタイミング / 惑星のアニメーション / 軌道 */
@@ -19221,6 +19284,7 @@ applyCvEdge(cvEdgeKey());   /* 【2026-09-16】溶け込みの深さを初期反
 try { if (!localStorage.getItem('anyflow-hdr-restore-v2')) { if (params.gfxVariantHidden) delete params.gfxVariantHidden['hdrMode']; localStorage.setItem('anyflow-hdr-restore-v2', '1'); } } catch (e) {}
 applyHdrMode(hdrModeKey());  /* 【V5.0】追従ヘッダーの案を初期反映＋固定化 */
 applyHdrMotion();            /* 【V5.0 2026-09-17】ヘッダー変形のイージング/速さを初期反映 */
+applyFontTest();             /* 【V5.0 2026-09-17】フォントテスト案を初期反映(保存値どおり) */
 bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール監視を設置 */
 bindDrawer();                /* 【V5.0】ハンバーガーのドロワー開閉を設置 */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
