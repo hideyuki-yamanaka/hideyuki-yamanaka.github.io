@@ -4835,6 +4835,7 @@ const DEFAULTS = {
   /* 【2026-09-03 ヒデさん指定】編集モードの汎用テキスト編集の保存先。
      キー→{fs,fw,lh,ls,pt,pr,pb,pl,text}。トップ全体で共有(案・KV非依存)。 */
   edits: {},
+  fwDelta: 0,   // 【2026-09-17 ヒデさん依頼】文字の太さの一括±(相対移行)。+100で全体が1段濃く/-100で1段薄く。個別(edits.fw)や元CSS値の差は保ったまま
   sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
   swayAmp: 1,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる
   swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
@@ -17143,6 +17144,12 @@ function buildPanel() {
   /* ========== 🌊 全体 ========== */
   const catAll = category('🌊 全体（サイト全体のモーション）', false);
 
+  /* 【2026-09-17 ヒデさん依頼】文字の太さを一括で±(相対移行)。個別＆直接編集は「✏️編集」モードで各テキストをクリック。 */
+  sub(catAll, '文字の太さ（一括 ±）', null, { fixed: true });
+  rows.push(slider('全体の太さ（＋濃く / −薄く）', -300, 300, 100, () => params.fwDelta || 0,
+    v => { params.fwDelta = v; if (typeof textTools !== 'undefined') textTools.applyAll(); markDirty(); },
+    v => (v > 0 ? '+' : '') + Math.round(v), '主要テキスト全体の太さを一段(100)ずつ濃く(＋)/薄く(−)します。今ある濃淡の差は保ったまま相対的にずらします。0で元通り。個別に変えたい時は右上の「✏️編集」で各テキストをクリック→太さを選べます。', { fixedMax: true, signed: true }));
+
   /* 【2026-08-30 ヒデさん指定・パネル整理】「モーションの進み方(時間/スクロール駆動)」と
      「スクロールの固定(固定/固定追従なし)」の項目は削除。
      自動再生(時間)×固定追従なしで確定し、値もコード側で固定している。 */
@@ -19590,7 +19597,10 @@ const textTools = (() => {
       const el = specEl(sp); if (!el) continue;
       const e = params.edits[sp.key] || {};
       el.style.fontSize      = e.fs != null ? e.fs + 'px' : '';
-      el.style.fontWeight    = e.fw != null ? String(e.fw) : '';
+      /* 【2026-09-17 ヒデさん依頼】一括ウェイト(params.fwDelta)を相対加算。個別(e.fw)があればそれを基準、無ければ元のCSS値(fw0に控える)を基準にして、全体の濃淡差を保ったまま±移行する。 */
+      if (el.dataset.fw0 == null && !el.style.fontWeight) el.dataset.fw0 = getComputedStyle(el).fontWeight;
+      { const _b = e.fw != null ? +e.fw : (+el.dataset.fw0 || 400), _d = +(params.fwDelta || 0);
+        el.style.fontWeight = (e.fw != null || _d) ? String(Math.max(100, Math.min(900, _b + _d))) : ''; }
       el.style.lineHeight    = e.lh != null ? String(e.lh) : '';
       el.style.letterSpacing = e.ls != null ? e.ls + 'px' : '';
       const hasPad = ['pt', 'pr', 'pb', 'pl'].some(k => e[k] != null);
