@@ -470,12 +470,12 @@
   }
   /* 【2026-09-17 ヒデさん依頼】フォントテスト: html.ft-on の時だけ KV の文字組み(太さ/サイズ/ジャンプ率/行間/字間/間隔)を案ごとに上書き。
      --ft-* は applyFontTest() が :root に設定(案ごとに独立)。--ft-jms/jmw は最終行(競争力を)＝ジャンプ率。 */
-  html.ft-on:not(.mb) .hl-main { font-weight: var(--ft-mw, 400); font-size: var(--ft-ms, 72px); line-height: var(--ft-lh, 1.3); letter-spacing: var(--ft-ls, 0px); -webkit-text-stroke: 0; }
-  html.ft-on:not(.mb) .headline { gap: var(--ft-gap, 14px); }
-  html.ft-on:not(.mb) .hl-main .hl-line:last-child { font-size: var(--ft-jms, var(--ft-ms, 72px)); font-weight: var(--ft-jmw, var(--ft-mw, 400)); }
-  html.ft-on:not(.mb) .hl-eyebrow { font-weight: var(--ft-ew, 500); }
-  html.ft-on:not(.mb) .hl-caret { height: calc(var(--ft-ms, 72px) * 0.86); }
-  html.ft-on:not(.mb) .hl-main .hl-line:last-child .hl-caret { height: calc(var(--ft-jms, var(--ft-ms, 72px)) * 0.86); }
+  /* 太さは全ページ共通(textTools が site デルタで反映)なのでここでは触らない。KV はサイズ/ジャンプ率/行間/字間/間隔とジャンプ行の太さだけ味付け。未定義は既定のKV値に戻す。 */
+  html.ft-on:not(.mb) .hl-main { font-size: var(--ft-ms, var(--kv-main-size, 70px)); line-height: var(--ft-lh, 1.4); letter-spacing: var(--ft-ls, 0px); -webkit-text-stroke: 0; }
+  html.ft-on:not(.mb) .headline { gap: var(--ft-gap, var(--kv-copy-gap, 16px)); }
+  html.ft-on:not(.mb) .hl-main .hl-line:last-child { font-size: var(--ft-jms, var(--ft-ms, var(--kv-main-size, 70px))); font-weight: var(--ft-jmw); }   /* --ft-jmw 未設定の案は最終行も全体の太さを継承 */
+  html.ft-on:not(.mb) .hl-caret { height: calc(var(--ft-ms, var(--kv-main-size, 70px)) * 0.86); }
+  html.ft-on:not(.mb) .hl-main .hl-line:last-child .hl-caret { height: calc(var(--ft-jms, var(--ft-ms, var(--kv-main-size, 70px))) * 0.86); }
   @keyframes reveal {
     to { opacity: 1; transform: translateY(0); filter: blur(0); }
   }
@@ -14174,39 +14174,48 @@ function applyKvCopy() {
 applyKvCopy();
 /* 【2026-09-17 ヒデさん依頼】フォントテスト: KVを「力強い/太い」方向へ、案ごとに 文字組み(太さ/サイズ)・ジャンプ率(最終行 競争力を)・
    行間/字間/間隔・サブの太さ・グラフィックの大きさ/位置 を変える10案。太さは案ごとに独立して上書き可(params.fontTestW)。 */
+/* 【2026-09-17 ヒデさん再指定】フォントテストは「独立セクション」＋「太さはページ全体に反映」。site=全体の太さデルタ(相対移行・全見出しが太くなる)。
+   ms/jms/jmw/gscale 等の KV 味付けは任意(その案だけの飾り)。太さは textTools 経由で全ページへ、KV の文字組みは --ft-* で追加。 */
 const FONT_TEST_PRESETS = {
-  '1':  { name: '① しっかり太字',        tip: '全体を Medium(500) に。レイアウトは既定のまま、素直に太く読みやすく。',                 mw: 500, ms: 72, jms: 72,  jmw: 500, lh: 1.30, ls: 0,   gap: 14, ew: 500, gscale: 1,    gdx: 0,   gdy: 0 },
-  '2':  { name: '② ジャンプ率 大',       tip: '「競争力を」だけ特大＆極太(800)。上2行は中庸。強い言葉を主役にするジャンプ率大。',   mw: 400, ms: 60, jms: 108, jmw: 800, lh: 1.20, ls: 0,   gap: 8,  ew: 500, gscale: 1,    gdx: 0,   gdy: 0 },
-  '3':  { name: '③ 極太・詰め',          tip: '全行 Extra/Black(800)＋行間・字間を詰めて塊感。重量級でインパクト重視。',             mw: 800, ms: 70, jms: 70,  jmw: 800, lh: 1.14, ls: -1,  gap: 6,  ew: 600, gscale: 1,    gdx: 0,   gdy: 0 },
-  '4':  { name: '④ グラフィック大＋太字', tip: '文字は小さめの太字にして、右のグラフィックを1.35倍に拡大。図で力強さを出す(文字と重ならないよう文字を控えめに)。', mw: 600, ms: 52, jms: 52,  jmw: 600, lh: 1.32, ls: 0,   gap: 12, ew: 500, gscale: 1.35, gdx: 20,  gdy: 0 },
-  '5':  { name: '⑤ 見出し特大',          tip: '見出しを80pxまで特大にし、グラフィックは少し小さく右上へ寄せて文字と離す。文字が主役の構成。',      mw: 500, ms: 80, jms: 80,  jmw: 600, lh: 1.14, ls: -1,  gap: 6,  ew: 500, gscale: 0.82, gdx: 80,  gdy: -10 },
-  '6':  { name: '⑥ 細×太コントラスト',    tip: '上2行は極細(200)、最終行だけ極太特大(900)。細太の対比で「競争力を」を際立たせる。',   mw: 200, ms: 60, jms: 112, jmw: 900, lh: 1.25, ls: 0,   gap: 8,  ew: 400, gscale: 1,    gdx: 0,   gdy: 0 },
-  '7':  { name: '⑦ 字間広め・太字',       tip: 'Semibold(600)＋字間を広げ行間もゆったり。堂々とした落ち着いた力強さ。',               mw: 600, ms: 64, jms: 64,  jmw: 600, lh: 1.40, ls: 4,   gap: 16, ew: 500, gscale: 1,    gdx: 0,   gdy: 0 },
-  '8':  { name: '⑧ 大ジャンプ＋グラ拡大', tip: '最終行を大ジャンプ(96/800)にしつつ、グラフィックも1.25倍。文字も図も強い両立型。',    mw: 400, ms: 56, jms: 96,  jmw: 800, lh: 1.20, ls: 0,   gap: 8,  ew: 500, gscale: 1.25, gdx: 0,   gdy: 0 },
-  '9':  { name: '⑨ グラフィック移動＋太字', tip: 'グラフィックを右下へ寄せて1.1倍。文字は太字＋最終行を少しジャンプ。配置で新鮮に(文字とは重ねない)。', mw: 600, ms: 62, jms: 78,  jmw: 700, lh: 1.30, ls: 0,   gap: 12, ew: 500, gscale: 1.1,  gdx: 30,  gdy: 70 },
-  '10': { name: '⑩ 重厚ミニマル',        tip: 'Bold(700)で全体を重厚に、字間ほんの少し・間隔は整えて上質に。ミニマルで力強い。',      mw: 700, ms: 74, jms: 74,  jmw: 700, lh: 1.20, ls: 0.5, gap: 12, ew: 600, gscale: 1.05, gdx: 0,   gdy: 0 },
+  '1':  { name: '① やや太く',            tip: 'サイト全体を1段(+100)太く。見出しも本文も少し力強く。レイアウトは既定のまま。',            site: 100 },
+  '2':  { name: '② しっかり太く',        tip: 'サイト全体を2段(+200)太く。パッと見の印象がぐっと力強くなる。',                          site: 200 },
+  '3':  { name: '③ 太く・力強い',        tip: 'サイト全体を3段(+300)太く。堂々とした力強い印象。',                                      site: 300 },
+  '4':  { name: '④ 極太',                tip: 'サイト全体を4段(+400)太く。最も重量級。字間・間隔も少し詰める。',                        site: 400, ls: -0.3, gap: 10 },
+  '5':  { name: '⑤ 太め＋KVジャンプ大',   tip: '全体を+150太く＋KVの「競争力を」だけ特大に。強い言葉を主役に。',                         site: 150, ms: 62, jms: 104, jmw: 800, gap: 8 },
+  '6':  { name: '⑥ 太め＋KV見出し特大',   tip: '全体を+150太く＋KVの見出しを特大に。グラフィックは右上へ離す。',                          site: 150, ms: 80, jms: 80, gap: 6, gscale: 0.85, gdx: 70, gdy: -10 },
+  '7':  { name: '⑦ 太め＋KVグラフィック大', tip: '全体を+200太く＋KVのグラフィックを1.3倍に。図で力強さ(文字は控えめに離す)。',            site: 200, ms: 54, jms: 54, gscale: 1.3, gdx: 20 },
+  '8':  { name: '⑧ 太め＋字間広め',       tip: '全体を+200太く＋字間・行間をゆったり。堂々とした落ち着き。',                              site: 200, ls: 3, lh: 1.4, gap: 16 },
+  '9':  { name: '⑨ 太め＋KVグラフィック移動', tip: '全体を+150太く＋KVのグラフィックを右下へ寄せて新鮮に。',                                 site: 150, gscale: 1.1, gdx: 30, gdy: 70 },
+  '10': { name: '⑩ 少し細く(軽やか)',     tip: 'サイト全体を1段(-100)細く。軽やかで洗練された印象。',                                    site: -100, ls: 0.5 },
 };
 function fontTestKey() { const v = String((params && params.fontTest) || '0'); return (v === '0' || FONT_TEST_PRESETS[v]) ? v : '0'; }
+/* この案の「全体の太さデルタ」。案ごとに独立(スライダーで上書き=fontTestW)。off は 0。textTools.applyAll が fwDelta に加算して全ページへ反映。 */
+function ftSiteDelta() {
+  const k = fontTestKey(); if (k === '0' || !FONT_TEST_PRESETS[k]) return 0;
+  const ov = (params.fontTestW && params.fontTestW[k] != null) ? +params.fontTestW[k] : null;
+  return ov != null ? ov : (FONT_TEST_PRESETS[k].site || 0);
+}
 function applyFontTest() {
   const k = fontTestKey(), on = k !== '0', r = document.documentElement.style;
   document.documentElement.classList.toggle('ft-on', on);
-  const VARS = ['--ft-mw','--ft-ms','--ft-jms','--ft-jmw','--ft-lh','--ft-ls','--ft-gap','--ft-ew','--ft-gscale','--ft-gdx','--ft-gdy'];
-  if (!on) { VARS.forEach(v => r.removeProperty(v)); return; }
-  const p = FONT_TEST_PRESETS[k];
-  const wOv = (params.fontTestW && params.fontTestW[k] != null) ? +params.fontTestW[k] : null;   // 案ごとに独立した太さの上書き
-  const mw = wOv != null ? wOv : p.mw;
-  const jmw = wOv != null ? Math.max(100, Math.min(900, p.jmw + (wOv - p.mw))) : p.jmw;           // ジャンプ側も相対で追従
-  r.setProperty('--ft-mw', String(mw));
-  r.setProperty('--ft-ms', p.ms + 'px');
-  r.setProperty('--ft-jms', p.jms + 'px');
-  r.setProperty('--ft-jmw', String(jmw));
-  r.setProperty('--ft-lh', String(p.lh));
-  r.setProperty('--ft-ls', (p.ls || 0) + 'px');
-  r.setProperty('--ft-gap', (p.gap != null ? p.gap : 14) + 'px');
-  r.setProperty('--ft-ew', String(p.ew != null ? p.ew : 500));
-  r.setProperty('--ft-gscale', String(p.gscale != null ? p.gscale : 1));
-  r.setProperty('--ft-gdx', (p.gdx || 0) + 'px');
-  r.setProperty('--ft-gdy', (p.gdy || 0) + 'px');
+  const VARS = ['--ft-ms','--ft-jms','--ft-jmw','--ft-lh','--ft-ls','--ft-gap','--ft-gscale','--ft-gdx','--ft-gdy'];
+  if (on) {
+    const p = FONT_TEST_PRESETS[k];
+    const setC = (name, val) => { if (val != null) r.setProperty(name, val); else r.removeProperty(name); };   /* 定義された味付けだけ設定(未定義は既定のKVに任せる) */
+    setC('--ft-ms',  p.ms  != null ? p.ms + 'px'  : null);
+    setC('--ft-jms', p.jms != null ? p.jms + 'px' : null);
+    setC('--ft-jmw', p.jmw != null ? String(p.jmw) : null);
+    setC('--ft-lh',  p.lh  != null ? String(p.lh)  : null);
+    setC('--ft-ls',  p.ls  != null ? p.ls + 'px'  : null);
+    setC('--ft-gap', p.gap != null ? p.gap + 'px' : null);
+    setC('--ft-gscale', p.gscale != null ? String(p.gscale) : null);
+    setC('--ft-gdx', p.gdx != null ? p.gdx + 'px' : null);
+    setC('--ft-gdy', p.gdy != null ? p.gdy + 'px' : null);
+  } else { VARS.forEach(v => r.removeProperty(v)); }
+  /* 太さは全ページに反映(textTools 経由。applyAll が ftSiteDelta を加算)。
+     ⚠️ textTools は後方の const(=TDZ)。早期呼び出しでは typeof でも throw するので try/catch で安全に握り潰す。
+     init 時の本適用は textTools 定義直後の textTools.applyAll() が担う(ftSiteDelta を読んで全ページへ)。 */
+  try { if (textTools && textTools.applyAll) textTools.applyAll(); } catch (e) {}
 }
 applyFontTest();
 /* ポイント1・2の文字サイズ(2026-09-03) */
@@ -17255,22 +17264,23 @@ function buildPanel() {
 
   /* ========== 🖼 キービジュアル ========== */
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
-  const catKv = category('🖼 キービジュアル（いちばん上の画面）', true);
-
-  /* 【2026-09-17 ヒデさん依頼】フォントテスト: KVを「力強い/太い」方向へ、10案で文字組み・ジャンプ率・レイアウト・グラフィックを変える。案ごとに太さ独立。 */
-  { const FT_LIST = [{ key: '0', name: 'オフ（既定）', tip: '標準の文字組みに戻します。' }]
+  /* ========== 🔤 フォントテスト (2026-09-17 ヒデさん依頼・KVから独立・太さは全ページ反映) ========== */
+  const catFt = category('🔤 フォントテスト（サイト全体の太さ・見た目のお試し）', false);
+  { const FT_LIST = [{ key: '0', name: 'オフ（既定）', tip: '標準の太さに戻します。' }]
       .concat(Object.keys(FONT_TEST_PRESETS).map(kk => ({ key: kk, name: FONT_TEST_PRESETS[kk].name, tip: FONT_TEST_PRESETS[kk].tip })));
-    sub(catKv, 'フォントテスト（力強い方向・10案）', null, { fixed: true });
+    sub(catFt, '案を選ぶ（サイト全体に反映）', null, { fixed: true });
     varRowX('fontTest', FT_LIST, () => fontTestKey(), v => { params.fontTest = String(v); applyFontTest(); markDirty(); if (typeof buildPanel === 'function') buildPanel(); });
-    note('KVを「力強く/太く」見せる10案。太さだけでなく、ジャンプ率(「競争力を」の大きさ)・行間/字間・グラフィックの大きさや位置も案ごとに変えています。コピーは「データ連携で／AIとプロダクトに／競争力を」。');
+    note('サイト全体の文字の太さを「パッと見」で試す10案。選ぶと見出しも本文も相対的に太く/細くなり(今ある濃淡の差は保ったまま)、KVは案によってジャンプ率(「競争力を」の大きさ)やグラフィックの大きさ・位置も変わります。コピーは「データ連携で／AIとプロダクトに／競争力を」。');
     const fk = fontTestKey();
     if (fk !== '0') {
-      rows.push(slider('この案のメインの太さ', 100, 900, 100,
-        () => (params.fontTestW && params.fontTestW[fk] != null) ? params.fontTestW[fk] : (FONT_TEST_PRESETS[fk] ? FONT_TEST_PRESETS[fk].mw : 400),
+      rows.push(slider('この案の全体の太さ（＋濃く / −薄く）', -300, 500, 50,
+        () => ftSiteDelta(),
         v => { params.fontTestW = params.fontTestW || {}; params.fontTestW[fk] = v; applyFontTest(); markDirty(); },
-        v => Math.round(v), 'この案のメインコピーの太さ(案ごとに独立して保存)。「競争力を」のジャンプ側も相対で一緒に動きます。', { fixedMax: true }));
+        v => (v > 0 ? '+' : '') + Math.round(v), 'この案がサイト全体にかける太さ(案ごとに独立して保存)。＋で全体が濃く、−で薄く。0で元の太さに。', { fixedMax: true, signed: true }));
     }
   }
+
+  const catKv = category('🖼 キービジュアル（いちばん上の画面）', true);
 
   /* ===== 🎨 グラフィック (2026-08-26 ヒデさん指定・整理) =====
      右側のグラフィックの設定をここに集約する。いちばん上が「直接編集」。
@@ -19670,7 +19680,7 @@ const textTools = (() => {
       el.style.fontSize      = e.fs != null ? e.fs + 'px' : '';
       /* 【2026-09-17 ヒデさん依頼】一括ウェイト(params.fwDelta)を相対加算。個別(e.fw)があればそれを基準、無ければ元のCSS値(fw0に控える)を基準にして、全体の濃淡差を保ったまま±移行する。 */
       if (el.dataset.fw0 == null && !el.style.fontWeight) el.dataset.fw0 = getComputedStyle(el).fontWeight;
-      { const _b = e.fw != null ? +e.fw : (+el.dataset.fw0 || 400), _d = +(params.fwDelta || 0);
+      { const _b = e.fw != null ? +e.fw : (+el.dataset.fw0 || 400), _d = (+(params.fwDelta || 0)) + (typeof ftSiteDelta === 'function' ? ftSiteDelta() : 0);   /* 一括(fwDelta)＋フォントテスト案の全体デルタ(ftSiteDelta) */
         el.style.fontWeight = (e.fw != null || _d) ? String(Math.max(100, Math.min(900, _b + _d))) : ''; }
       el.style.lineHeight    = e.lh != null ? String(e.lh) : '';
       el.style.letterSpacing = e.ls != null ? e.ls + 'px' : '';
