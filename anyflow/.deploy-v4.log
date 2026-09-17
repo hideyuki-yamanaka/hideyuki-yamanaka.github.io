@@ -37,3 +37,21 @@
 [2026-09-17 03:10:00] === v4 自動デプロイ開始 ===
 [2026-09-17 03:10:00] プロジェクト = anyflow-embed-v4
 [2026-09-17 03:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-17 04:10:00] === v4 自動デプロイ開始 ===
+[2026-09-17 04:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-17 04:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-17 05:10:00] === v4 自動デプロイ開始 ===
+[2026-09-17 05:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-17 05:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-17 06:10:01] === v4 自動デプロイ開始 ===
+[2026-09-17 06:10:01] プロジェクト = anyflow-embed-v4
+[2026-09-17 06:10:01] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-17 07:10:00] === v4 自動デプロイ開始 ===
+[2026-09-17 07:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-17 07:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-17 08:10:00] === v4 自動デプロイ開始 ===
+[2026-09-17 08:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-17 08:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-17 09:10:00] === v4 自動デプロイ開始 ===
+[2026-09-17 09:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-17 09:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
