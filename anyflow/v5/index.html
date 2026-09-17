@@ -266,9 +266,12 @@
   }
   /* 黒箱(お問い合わせ): 200→44 の正方形へ収縮。ラベルと矢印は前半で消え、ハンバーガー(cta-burg)が後半で出る */
   html:not(.mb).hm-12 .header .cta {
-    flex: 0 0 auto; position: relative; justify-content: center;
+    flex: 0 0 auto; position: relative;
     width: calc(200px - 156px * clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1));   /* 200→44 を t≈0.6 で。空の横長箱の間を短く */
-    padding-left: 0; padding-right: 0;
+    /* 【2026-09-17 ヒデさん指摘】スクロール前は V4 と同じ左右余白(左20/右16)を残す＝矢印/文言が窮屈にならない。
+       箱の収縮に同期して余白も 0 へ(justify-content は base の space-between のまま。ハンバーガーは絶対中央) */
+    padding-left: calc(20px * (1 - clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1)));
+    padding-right: calc(16px * (1 - clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1)));
   }
   html:not(.mb).hm-12 .header .cta .cta-label { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 2.8, 1)); }
   html:not(.mb).hm-12 .header .cta .cta-arrow { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 3, 1)); }
