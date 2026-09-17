@@ -10,7 +10,7 @@
 <title>Anyflow Embed — API連携でAIと事業を強くする</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"><!-- 【2026-09-17】太いウェイト(500〜900)を追加。以前は100〜400のみで、フォントテスト/調整版の 600/700/800(ExtraBold) 等を指定しても実体が無く偽ボールド/フォールバックになり「太さが当たらない」状態だった(カンプは Noto Sans JP ExtraBold=800)。 -->
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -473,7 +473,8 @@
   /* 太さは全ページ共通(textTools が site デルタで反映)なのでここでは触らない。KV はサイズ/ジャンプ率/行間/字間/間隔とジャンプ行の太さだけ味付け。未定義は既定のKV値に戻す。 */
   html.ft-on:not(.mb) .hl-main { font-size: var(--ft-ms, var(--kv-main-size, 70px)); line-height: var(--ft-lh, 1.4); letter-spacing: var(--ft-ls, 0px); -webkit-text-stroke: 0; font-weight: var(--ft-mw); }   /* --ft-mw 未設定の案は KV見出しの太さを変えない(継承) */
   html.ft-on:not(.mb) .headline { gap: var(--ft-gap, var(--kv-copy-gap, 16px)); left: calc(120px + var(--ft-copy-x, var(--kv-copy-x, 0px))); top: calc(263px + var(--ft-copy-y, var(--kv-copy-y, 0px))); }   /* 調整版などで位置を動かす */
-  html.ft-on:not(.mb) .hl-main .hl-line:last-child { font-size: var(--ft-jms, var(--ft-ms, var(--kv-main-size, 70px))); font-weight: var(--ft-jmw); }   /* --ft-jmw 未設定の案は最終行も全体の太さを継承 */
+  html.ft-on:not(.mb) .hl-main .hl-line:last-child { font-size: var(--ft-jms, var(--ft-ms, var(--kv-main-size, 70px))); font-weight: var(--ft-jmw); line-height: var(--ft-jlh, var(--ft-lh, 1.4)); }   /* --ft-jmw/--ft-jlh 未設定の案は最終行も全体の太さ/行間を継承。調整版は行ごとにサイズ・太さ・行間が違う(Figma 17463:23576) */
+  html.ft-on:not(.mb) .hl-eyebrow { font-size: var(--ft-eye-fs, var(--kv-eyebrow-size, 14px)); }   /* 調整版はサブコピー20px(Figma) */
   html.ft-on:not(.mb) .hl-caret { height: calc(var(--ft-ms, var(--kv-main-size, 70px)) * 0.86); }
   html.ft-on:not(.mb) .hl-main .hl-line:last-child .hl-caret { height: calc(var(--ft-jms, var(--ft-ms, var(--kv-main-size, 70px))) * 0.86); }
   @keyframes reveal {
@@ -489,6 +490,7 @@
     width: 915.483px;
     height: 630px;
     opacity: 0;
+    z-index: 4;   /* 【2026-09-17 ヒデさん指定・全案共通】グラフィックを移動(gdx/gdy)した時、DOM後方のロゴ群/次セクションに覆われて下部が切れていた。前面に出して切れないように(ヘッダー/パネル等のUIオーバーレイ z:100+ より下) */
   }
   @keyframes fadein { to { opacity: 1; } }
   .orbit { transform-origin: 50% 50%; }
@@ -5565,6 +5567,25 @@ try {
     _s.sections.dev.ds2 = 'slide';
     localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
     localStorage.setItem('anyflow-dev-ds2-slide-20260829d', '1');
+  }
+} catch (e) {}
+/* 【2026-09-17 ヒデさん報告「ビジョンの左グラフィックが Point1/2 に干渉して破綻。今まではなってなかった」】根治。
+   9/15 の移行(anyflow-vision-comp-20260915)は loadParams() 内で merged を直すだけで localStorage に焼いて
+   いなかったため、フラグが立った後の再読込では【古いドラッグずらし p1X/p2X が復活】して Point が左へずれ、
+   惑星の軌道に重なっていた(実測: 保存 p2X=-250 で軌道右端が Point02 に 97px 被り)。カンプ位置は CSS 基準に
+   あるので p1X/p1Y/p2X/p2Y は 0 でよい。dev-ds2 と同じく params と保存(STORAGE_KEY)の【両方】へ 0 を焼く。 */
+try {
+  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vision-pt-reset-20260917')) {
+    if (params.sections && params.sections.vision) {
+      params.sections.vision.p1X = 0; params.sections.vision.p1Y = 0;
+      params.sections.vision.p2X = 0; params.sections.vision.p2Y = 0;
+    }
+    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    _s.sections = _s.sections || {}; _s.sections.vision = _s.sections.vision || {};
+    _s.sections.vision.p1X = 0; _s.sections.vision.p1Y = 0;
+    _s.sections.vision.p2X = 0; _s.sections.vision.p2Y = 0;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
+    localStorage.setItem('anyflow-vision-pt-reset-20260917', '1');
   }
 } catch (e) {}
 function loadParams() {
@@ -14189,7 +14210,7 @@ const FONT_TEST_PRESETS = {
   '8':  { name: '⑧ ウェイト900（極太）',    tip: '指定の見出し群をウェイト900(Black)に。最も太い。',           w: 900 },
   '9':  { name: '⑨ 700＋KVグラフィック大',  tip: '見出し群を700に＋KVのグラフィックを1.3倍に。',              w: 700, gscale: 1.3, gdx: 20 },
   '10': { name: '⑩ 700＋KVグラフィック移動', tip: '見出し群を700に＋KVのグラフィックを右下へ寄せる。',          w: 700, gscale: 1.1, gdx: 30, gdy: 70 },
-  '11': { name: '⑪ 調整版（Figmaトレース）', tip: 'Figmaの調整レイアウト(17435:22386)を再現: KV見出しを約88px・太字(700)で左上へ、グラフィックを大きく右下へ。見出し群はウェイト600。コピー/グラフィックは現状と同一。', w: 600, mw: 700, ms: 88, lh: 1.32, copyX: -46, copyY: -72, gscale: 1.5, gdx: 175, gdy: 205 },
+  '11': { name: '⑪ 調整版（Figmaトレース）', tip: 'Figma実測(17435:22386): KV見出し1・2行目=70px/行間140%、3行目「競争力を」=120px/行間120%、全行 ExtraBold(800)、色#101828。サブコピー20px。ブロック(72,208)。グラフィックは大きく右下へ。見出し群はウェイト600。', w: 600, mw: 800, ms: 70, lh: 1.4, jms: 120, jmw: 800, jlh: 1.2, eyeFs: 20, copyX: -48, copyY: -55, gscale: 1.15, gdx: 155, gdy: -40 },
 };
 function fontTestKey() { const v = String((params && params.fontTest) || '0'); return (v === '0' || FONT_TEST_PRESETS[v]) ? v : '0'; }
 /* この案の「サイト全体の絶対ウェイト」。案ごとに独立(スライダーで上書き=fontTestW)。off は null(=通常のtextTools処理)。textTools.applyAll が全ページへ揃える。 */
@@ -14203,14 +14224,15 @@ function ftSiteWeight() {
    開発者体験(Strength・見出し/スロット CLI/SDK/API)、お問い合わせ(英字Contact・見出し)。 */
 const FONT_TEST_TARGETS = [
   '#visLabel', '#visL1', '#pfTitle', '#pfSub', '#valP1 .vp-tag', '#valP1 h3', '#valP2 .vp-tag', '#valP2 h3',
-  '.r2v-tag', '.r2v-big', '.r2v-h', '.res2-head', '.res2-stats',
+  '.r2v-tag', '.r2v-big', '.r2v-h', '.res2-head', '.res2-stats', '.res2-stats .r2s b', '.res2-stats .r2s span',   /* 数値(span)/ラベル(b)は CSS で font-weight:100 が直指定なので、子を直接ターゲットにして上書き(2026-09-17) */
   '.dc-label', '.dc-one',
+  '.case-eyebrow', '.case-title',   /* 導入事例: Use Case ラベルと「導入事例」見出し(2026-09-17 追加) */
   '.cv-eyebrow', '.cv-head',
 ];
 function applyFontTest() {
   const k = fontTestKey(), on = k !== '0', r = document.documentElement.style;
   document.documentElement.classList.toggle('ft-on', on);
-  const VARS = ['--ft-mw','--ft-ms','--ft-jms','--ft-jmw','--ft-lh','--ft-ls','--ft-gap','--ft-copy-x','--ft-copy-y','--ft-gscale','--ft-gdx','--ft-gdy'];
+  const VARS = ['--ft-mw','--ft-ms','--ft-jms','--ft-jmw','--ft-jlh','--ft-eye-fs','--ft-lh','--ft-ls','--ft-gap','--ft-copy-x','--ft-copy-y','--ft-gscale','--ft-gdx','--ft-gdy'];
   if (on) {
     const p = FONT_TEST_PRESETS[k];
     const setC = (name, val) => { if (val != null) r.setProperty(name, val); else r.removeProperty(name); };   /* 定義された味付けだけ設定(未定義は既定のKVに任せる) */
@@ -14218,6 +14240,8 @@ function applyFontTest() {
     setC('--ft-ms',  p.ms  != null ? p.ms + 'px'  : null);
     setC('--ft-jms', p.jms != null ? p.jms + 'px' : null);
     setC('--ft-jmw', p.jmw != null ? String(p.jmw) : null);
+    setC('--ft-jlh', p.jlh != null ? String(p.jlh) : null);       /* 最終行の行間(調整版: 3行目=130%) */
+    setC('--ft-eye-fs', p.eyeFs != null ? p.eyeFs + 'px' : null); /* サブコピーのサイズ(調整版: 20px) */
     setC('--ft-lh',  p.lh  != null ? String(p.lh)  : null);
     setC('--ft-ls',  p.ls  != null ? p.ls + 'px'  : null);
     setC('--ft-gap', p.gap != null ? p.gap + 'px' : null);
