@@ -12379,6 +12379,7 @@ function resFxFrame(t) {
   } else if (k === '24' || k === '24-2') {
     const p = resFxPin(), H = rfxHero(), vh = rfxVH();
     const F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
+    if (SM) F.heroScale = 1.2;   /* 【2026-09-17】2段階化: ピクトの単独ズームを控えめに(1.7→1.2)＝ほぼ最終サイズで一斉に出す */
     /* 【案24-2 滑らかに繋ぐ版(2026-09-15 ヒデさん指定)】案24-1 は場面ごとに区間が離れていて「止まってから次」に見える。24-2 は前の動きの途中から次を始めて重ねる:
        文字の縮小 0.04〜0.34 / ピクトの登場 0.10〜0.40(1.4→1.7倍に育ちながら) / 終点へ 0.30〜0.70 / 線 0.56〜0.72 / 下段 0.62〜0.82 ＝ どこにも止まる区間がない */
     const SM = k === '24-2';
@@ -12386,11 +12387,13 @@ function resFxFrame(t) {
        Vision から続けて「for SaaS」「for AI」(70px)が左右に並ぶ(p 0) → 文字は 40px に小さくなって上へ(0.12-0.30)、各列の中央にピクトが大きく(1.7倍。モーションは動いたまま)、
        間に縦の仕切り線 → 終点(0.42-0.66): 上に説明(ラベル20/見出し46/本文14・幅530)、下にピクト(300)。横罫線の下に見出し(40px・2行)と数値(70px・スロットはここで回る)。
        説明はピクトがほぼ収まってから(重ねない)。パネル「案24」 */
-    const L2 = SM ? rfxRange(p, 0.04, 0.34) : rfxRange(p, 0.12, 0.30), P1 = SM ? rfxRange(p, 0.10, 0.40) : rfxRange(p, 0.16, 0.30), D = SM ? rfxRange(p, 0.30, 0.70) : rfxRange(p, 0.42, 0.66);
-    const TK = rfxRange(D, 0.55, 1), B = SM ? rfxRange(p, 0.62, 0.82) : rfxRange(p, 0.60, 0.76);
+    /* 【2026-09-17 ヒデさん指定】24-2 を「2段階」に: for SaaS/AI(ラベル) → スクロールで“全部が一緒に”出る。
+       ピクトの単独ズーム段をやめ、P1(ピクト)/D(終点)/TK(本文)/B(数値)を重ねて一斉に出す。 */
+    const L2 = SM ? rfxRange(p, 0.04, 0.22) : rfxRange(p, 0.12, 0.30), P1 = SM ? rfxRange(p, 0.18, 0.55) : rfxRange(p, 0.16, 0.30), D = SM ? rfxRange(p, 0.18, 0.58) : rfxRange(p, 0.42, 0.66);
+    const TK = rfxRange(D, SM ? 0.30 : 0.55, 1), B = SM ? rfxRange(p, 0.40, 0.70) : rfxRange(p, 0.60, 0.76);
     resFxSt.gate24 = on && B > 0.05;
     E.res2.style.setProperty('--rfx-vline', P1.toFixed(3));
-    E.res2.style.setProperty('--rfx-hr', (SM ? rfxRange(p, 0.56, 0.72) : rfxRange(p, 0.54, 0.68)).toFixed(3));
+    E.res2.style.setProperty('--rfx-hr', (SM ? rfxRange(p, 0.44, 0.64) : rfxRange(p, 0.54, 0.68)).toFixed(3));
     vis(E.top, on ? B : 0);
     tf(E.top, `translateY(${((1 - B) * 24).toFixed(2)}px)`);
     E.r2v.forEach((el, i) => {
