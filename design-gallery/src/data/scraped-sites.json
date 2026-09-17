@@ -1,5 +1,33 @@
 [
   {
+    "id": "669ee91dea97",
+    "title": "ANA大阪空港株式会社",
+    "url": "https://www.ana-osaap.co.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/anaosaap_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-17T16:22:44.577Z"
+  },
+  {
+    "id": "71f392228213",
+    "title": "生理の悩み 相談しようプロジェクト | ツムラ",
+    "url": "https://www.tsumura.co.jp/seirino-nayami/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/seirinonayami_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-17T16:22:44.577Z"
+  },
+  {
     "id": "049031b016f8",
     "title": "株式会社トヨックス | 採用サイト",
     "url": "https://recruit.toyox.co.jp/",
@@ -23441,6 +23469,20 @@
     "firstSeen": "2026-06-07T04:20:55.700Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:28:51.511Z"
+  },
+  {
+    "id": "281454642abb",
+    "title": "Heron AI",
+    "url": "https://heronaiapp.com/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/14-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "topjs"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-17T16:22:44.577Z"
   },
   {
     "id": "90e24daf19d4",
@@ -48066,6 +48108,25 @@
     "lastCheckedAt": "2026-08-02T05:30:50.520Z"
   },
   {
+    "id": "6bded15c345a",
+    "title": "Hitohira - 紙の本にぴったりな読書記録アプリ",
+    "url": "https://hitohira.vercel.app/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/tmc05bqg3xks-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ランディングページ",
+      "Webアプリ･SaaS･サービスサイト",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [
+      "グリッドデザイン",
+      "モチーフ 線"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-17T16:22:44.577Z"
+  },
+  {
     "id": "c1929ac65a79",
     "title": "Masaru Inaba — Portfolio",
     "url": "https://www.masaruinaba.com/",
@@ -52950,28 +53011,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:37:15.403Z"
-  },
-  {
-    "id": "6d56b6ca16d4",
-    "title": "世田谷区深沢のイタリアン Pienezza Fukasawa",
-    "url": "https://pienezza.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/pbe8i3xmtwf7-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "BtoCコーポレートサイト",
-      "商業施設･飲食店･カフェ･レストラン"
-    ],
-    "taste": [
-      "タイポグラフィー･文字",
-      "動画･映像",
-      "スクロールエフェクト",
-      "グリッドデザイン"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:17.115Z"
   },
   {
     "id": "61dbd2acd28e",
