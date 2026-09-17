@@ -3383,6 +3383,10 @@
   html.site-edit .se-sel { outline: 2px solid #FF5D97 !important; outline-offset: 3px; }
 
   /* 【2026-09-03 ヒデさん指定】テキスト編集レイヤー: 触れるテキストに枠・選択中は実線・ツールバー */
+  /* 【2026-09-17 ヒデさん報告「編集で要素が選べない」】実績などスクロール演出の中身は pointer-events:none で
+     スクロールを素通しにしていたため、編集モードでも文字・図が一切つかめなかった(実測: #valSaas/.r2v-tag の上で
+     elementFromPoint が #res2Wrap になる)。編集中は対象(.tt-hit/.se-hit)だけ当たり判定を戻す。 */
+  html.txt-edit .tt-hit, html.site-edit .se-hit { pointer-events: auto !important; }
   html.txt-edit .tt-hit { outline: 1px dashed #8075DC; outline-offset: 2px; cursor: text; }
   html.txt-edit .tt-hit:hover { outline-color: #FF5D97; }
   html.txt-edit .tt-sel { outline: 2px solid #FF5D97 !important; outline-offset: 2px; }
@@ -9617,7 +9621,10 @@ const editHandles = (() => {
     marqBg.setAttribute('x', -3000); marqBg.setAttribute('y', -3000);
     marqBg.setAttribute('width', 9000); marqBg.setAttribute('height', 9000);
     marqBg.setAttribute('fill', 'rgba(0,0,0,0)');
-    marqBg.style.pointerEvents = 'all';
+    /* 【2026-09-17 大掃除・ヒデさん報告「編集でグラフィックの位置移動ができない」】案をメッシュに固定したので
+       輪＋惑星の囲み選択(マーキー)は不要。この透明シートがドラッグを横取りして、siteEdit の
+       「KVグラフィック全体をつかんで動かす」が始まらなかった。pointer-events を切って下へ通す。 */
+    marqBg.style.pointerEvents = 'none';
     marqBg.style.cursor = 'crosshair';
     svg.appendChild(marqBg);
     marqBg.addEventListener('pointerdown', e => {
@@ -9976,6 +9983,9 @@ const editHandles = (() => {
         el.setAttribute('cx', g.cx); el.setAttribute('cy', g.cy);
         el.setAttribute('rx', g.rx); el.setAttribute('ry', g.ry);
         el.setAttribute('transform', `rotate(${g.rot} ${g.cx} ${g.cy})`);
+        /* 【2026-09-17 ヒデさん報告「編集でグラフィックが動かない」】メッシュ案では輪を描かないのに、輪の透明な当たり判定が
+           残っていて見えない輪をつかんでしまい、全体ドラッグ(siteEdit)の邪魔をしていた。輪が無い案では当たり判定も消す。 */
+        el.style.display = ((params.converge || 'reel') === 'mesh') ? 'none' : '';
       }
     }
     if (!selKeys.length) { if (boxG) boxG.style.display = 'none'; if (boxBg) boxBg.style.display = 'none'; return; }
@@ -16331,15 +16341,21 @@ const TEXT_SPEC = [
   { key: 'statsVal',  sel: '.res2-stats .r2s span', name: '数字（100+ など）',              sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
+  /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
+  { key: 'figSaas',   sel: '#valSaas',   name: 'for SaaS の図（位置だけ）',                  sec: 'res', text: 0, font: 0, rel: 1 },
+  { key: 'figAi',     sel: '#valAi',     name: 'for AI の図（位置だけ）',                    sec: 'res', text: 0, font: 0, rel: 1 },
   // --- 開発者体験 ---
   { key: 'dcLabel',   sel: '.dc-label',  name: 'Strength 01 / 02',                          sec: 'dev', text: 0, multi: 1 },
   { key: 'dcOne',     sel: '.dc-one',    name: '見出し（自動生成で〜／開発環境〜）',          sec: 'dev', text: 0, multi: 1 },
+  { key: 'devMock1',  sel: '#devMock1',  name: 'Strength 01 のモック（位置だけ）',           sec: 'dev', text: 0, font: 0, rel: 1 },
+  { key: 'devMock',   sel: '#devMock',   name: 'Strength 02 のモック（位置だけ）',           sec: 'dev', text: 0, font: 0, rel: 1 },
   // --- 導入事例 ---
   { key: 'caseEyebrow', sel: '#caseEyebrow', name: 'Use Case',                              sec: 'case', text: 1 },
   { key: 'caseTitle', sel: '#caseTitle',  name: '導入事例（見出し）',                        sec: 'case', text: 1 },
   { key: 'cgQuote',   sel: '.cg-quote',   name: 'カードの一言',                              sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'cgTag',     sel: '.cg-tag',     name: 'カードの業種タグ',                          sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'cgCompany', sel: '.cg-company', name: 'カードの会社名',                            sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'caseGrid',  sel: '#caseGrid',   name: '事例カード4枚（位置だけ）',                 sec: 'case', text: 0, font: 0, rel: 1 },
   // --- お問い合わせ ---
   { key: 'cvEyebrow', sel: '.cv-eyebrow', name: 'Contact',                                  sec: 'cv',  text: 1 },
   { key: 'cvHead',    sel: '.cv-head',    name: 'お問い合わせ（見出し）',                    sec: 'cv',  text: 1 },
@@ -16349,6 +16365,7 @@ const TEXT_SPEC = [
   { key: 'cvfFine',   sel: '.cvf-fine',   name: 'メルマガの注記',                            sec: 'cv',  text: 1 },
   { key: 'cvfSubmit', sel: '.cvf-submit', name: '送信ボタン',                                sec: 'cv',  text: 1 },
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
+  { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
   { key: 'footNav',   sel: '.cv-foot-nav a', name: 'フッターのナビ',                         sec: 'cv',  text: 0, multi: 1, move: 0 },
   { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所',                         sec: 'cv',  text: 1 },
@@ -17393,7 +17410,7 @@ function buildPanel() {
        ここには編集モード中に動的に出る数値パネル(X/Y/W/H/角度)と、行き先の案内だけ残す。 */
     const n2 = document.createElement('div');
     n2.className = 'grp-note';
-    n2.textContent = '右上の ✏️編集 を押すと編集モード。輪や惑星をクリック → 辺で幅・高さ、角で縦横、角の外で回転。';
+    n2.textContent = '右上の ✏️編集 を押すと編集モード。メッシュ全体はドラッグで移動、惑星はクリック → 辺で幅・高さ、角で大きさ。文字は端をつかんで移動、中をクリックで太さ・行間・打ち替え。';
     (mount || body).appendChild(n2);
     buildNumPanel(mount || body);
   }
@@ -19320,9 +19337,18 @@ const textTools = (() => {
         const hasPad = ['pt', 'pr', 'pb', 'pl'].some(k => e[k] != null);
         el.style.padding = hasPad
           ? `${e.pt || 0}px ${e.pr || 0}px ${e.pb || 0}px ${e.pl || 0}px` : '';
-        /* 位置移動は margin で反映(transformアニメと非競合。left/top指定要素にも効く) */
-        el.style.marginLeft = e.dx ? e.dx + 'px' : '';
-        el.style.marginTop  = e.dy ? e.dy + 'px' : '';
+        /* 位置移動は margin で反映(transformアニメと非競合。left/top指定要素にも効く)。
+           【2026-09-17】rel の要素(margin:auto で中央寄せのフォーム等)は margin だと中央寄せが壊れるので、
+           position:relative + left/top でずらす(static/relative の時だけ。absolute はそのまま margin)。 */
+        let useRel = false;
+        if (sp.rel) { const pos = getComputedStyle(el).position; if (pos === 'static') { el.style.position = 'relative'; useRel = true; } else if (pos === 'relative') useRel = true; }
+        if (useRel) {
+          el.style.left = e.dx ? e.dx + 'px' : ''; el.style.top = e.dy ? e.dy + 'px' : '';
+          el.style.marginLeft = ''; el.style.marginTop = '';
+        } else {
+          el.style.marginLeft = e.dx ? e.dx + 'px' : '';
+          el.style.marginTop  = e.dy ? e.dy + 'px' : '';
+        }
         if (sp.text && !sp.multi && e.text != null && el.textContent !== e.text) el.textContent = e.text;
       }
     }
@@ -19341,7 +19367,12 @@ const textTools = (() => {
   function onDown(e) {
     if (!on) return;
     const sp = this.__ttSpec; if (sp.move === 0) return;
-    if (!nearEdge(this, e)) return;   /* 内側はドラッグしない(click/dblclickでfont編集) */
+    /* 【2026-09-17 ヒデさん報告「編集で位置移動ができない」】文字の要素は端(TT_EDGE)をつかんだ時だけ移動
+       (内側はクリック→文字編集に譲る)。位置だけの要素(font:0＝図・モック・カード・かたまり)は面のどこをつかんでも移動。
+       ただし中の別の文字要素の上を押した時は、その文字側に譲る。 */
+    const innerText = e.target.closest && e.target.closest('.tt-hit');
+    if (sp.font !== 0) { if (!nearEdge(this, e)) return; }
+    else if (innerText && innerText !== this && !nearEdge(this, e)) return;
     e.preventDefault(); e.stopPropagation();
     const el = this, ed = editsOf(sp.key), k = scaleOf(el);
     const sx = e.clientX, sy = e.clientY, dx0 = ed.dx || 0, dy0 = ed.dy || 0;
@@ -19510,7 +19541,7 @@ const textTools = (() => {
           el.addEventListener('pointerdown', onDown);
           el.addEventListener('pointermove', ev => {
             if (!on) return;
-            el.style.cursor = (sp.move !== 0 && nearEdge(el, ev)) ? 'move' : (sp.text || sp.font !== 0 ? 'text' : 'default');
+            el.style.cursor = (sp.move !== 0 && (sp.font === 0 || nearEdge(el, ev))) ? 'move' : (sp.text || sp.font !== 0 ? 'text' : 'default');
           });
           el.__ttBound = true;
         }
