@@ -218,13 +218,13 @@
   /* morph: バーガーは常設で透明→stuckでフェードイン。ナビは max-width＋opacity で滑らかに畳む(display:none は使わない=瞬間切替を避ける) */
   /* ナビ: --hdr-t で畳む(opacity は前半で消え、幅は t≒0.75 で 0)。バーガー: 常にフロー内で t に応じて開く(後半で出現)。
      位置切替(absolute↔relative)をしない＝重ならない・瞬間移動しない。 */
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .header .nav {
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-13,.hm-14,.hm-15) .header .nav {
     overflow: hidden; margin-left: auto;   /* 【2026-09-17】右寄せ。space-between だと幅0のバーガーが右端を取りナビが中央に寄る不具合の対策 */
     /* 幅は t=0 で実寸(820px余裕)＝切れない。t 0.32 まで全幅を保ち(=お問い合わせが切れない)そこから畳む。opacity は前半で消す */
     max-width: calc(var(--nav-w, 820px) * (1 - clamp(0, (var(--hdr-t, 0) - 0.32) * 3.2, 1)));
     opacity: calc(1 - var(--hdr-t, 0) * 2.5);
   }
-  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-12,.hm-13,.hm-14,.hm-15) .hdr-burger {
+  html:not(.mb):is(.hm-6,.hm-7,.hm-8,.hm-9,.hm-10,.hm-11,.hm-13,.hm-14,.hm-15) .hdr-burger {
     display: block; position: relative; overflow: hidden; flex: 0 0 auto; pointer-events: auto;
     width: calc(var(--burger-w, 44px) * min(1, var(--hdr-t, 0) * 1.4));
     opacity: calc(var(--hdr-t, 0) * 2 - 1);
@@ -250,17 +250,38 @@
   html:not(.mb).hm-11 .hdr-burger { --burger-w: 54px; height: 54px; border-radius: var(--hdr-radius);
     background: rgba(255,255,255, calc(.62 * var(--hdr-t, 0))); -webkit-backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6); backdrop-filter: blur(calc(18px * var(--hdr-t,0))) saturate(1.6);
     box-shadow: 0 10px 26px rgba(20,30,60, calc(.16 * var(--hdr-t,0))); }
-  /* 12: 分離(ロゴ左・ハンバーガー右、地色なし)。位置・余白不変(--hdr-top:0)。ヘッダーの地色は黒くしない。
-     【2026-09-17 ヒデさん指定】開発者体験の“黒いセクション”の上に来た時だけ、ロゴとハンバーガーの色だけ白へ反転(hdr-on-dark)。 */
+  /* 12: 分離型 —【2026-09-17 ヒデさん指定】スクロールすると4つのリンクが右へ寄って「お問い合わせ」の黒箱へ吸い込まれ、
+     その黒箱がコンパクトな正方形に縮んで、中身が明るい色のハンバーガーに変わる＝箱がメニュー入口になる(一続きの動き)。
+     位置・余白・ロゴは不変(レイアウトシフト無し)。黒セクション上ではロゴだけ白反転。別バーガー(.hdr-burger)は出さない。 */
   html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; --hdr-skin-border: 0 solid transparent; }
-  html:not(.mb).hm-12 .hdr-burger { --burger-w: 44px; background: transparent; box-shadow: none; }
+  html:not(.mb).hm-12 .hdr-burger { display: none; }
+  html:not(.mb).hm-12 .header .nav { margin-left: auto; overflow: visible;
+    gap: calc(32px * (1 - clamp(0, var(--hdr-t, 0) * 1.25, 1))); }
+  /* リンク: 右へ寄せつつ幅を畳んで黒箱へ吸い込む(箱に近い右端から順に収まる)。opacity は前半で消える */
+  html:not(.mb).hm-12 .header .nav-links {
+    overflow: hidden; white-space: nowrap;
+    max-width: calc(var(--nl-w, 520px) * (1 - clamp(0, var(--hdr-t, 0) * 1.5, 1)));
+    opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 1.7, 1));
+    transform: translateX(calc(20px * clamp(0, var(--hdr-t, 0) * 1.35, 1)));
+  }
+  /* 黒箱(お問い合わせ): 200→44 の正方形へ収縮。ラベルと矢印は前半で消え、ハンバーガー(cta-burg)が後半で出る */
+  html:not(.mb).hm-12 .header .cta {
+    flex: 0 0 auto; position: relative; justify-content: center;
+    width: calc(200px - 156px * clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1));   /* 200→44 を t≈0.6 で。空の横長箱の間を短く */
+    padding-left: 0; padding-right: 0;
+  }
+  html:not(.mb).hm-12 .header .cta .cta-label { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 2.8, 1)); }
+  html:not(.mb).hm-12 .header .cta .cta-arrow { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 3, 1)); }
+  html:not(.mb).hm-12 .header .cta .cta-burg  { opacity: calc(clamp(0, (var(--hdr-t, 0) - 0.4) * 2.8, 1)); }   /* 箱が正方形に近づく頃(0.4〜)に出す */
   html:not(.mb).hm-12 .header .logo-c, html:not(.mb).hm-12 .header .logo-w { transition: opacity .45s var(--hdr-ease); }
-  html:not(.mb).hm-12 .header .hdr-burger span { transition: background .45s var(--hdr-ease); }
   /* 【2026-09-17 ヒデさん指定】反転は brightness(0) invert(1) のベタ塗りだと重なりが潰れる。
      色版を消して、重なりを opacity で残した白版へクロスフェードする(3枚のペタルの層が見える)。 */
   html:not(.mb).hm-12 .header.hdr-on-dark .logo-c { opacity: 0; }   /* 黒セクション上=色版を消す */
   html:not(.mb).hm-12 .header.hdr-on-dark .logo-w { opacity: 1; }   /* =重なりを保った白版へ */
-  html:not(.mb).hm-12 .header.hdr-on-dark .hdr-burger span { background: #fff; }             /* 黒セクション上=線白 */
+  /* 【2026-09-17 ヒデさん指定】黒セクション上は単純な色反転: 白いベタ箱＋黒い線。外枠なし・hoverでも青にしない */
+  html:not(.mb).hm-12 .header.hdr-on-dark .cta,
+  html:not(.mb).hm-12 .header.hdr-on-dark .cta:hover { background: #fff; box-shadow: none; }
+  html:not(.mb).hm-12 .header.hdr-on-dark .cta .cta-burg i { background: #090909; }
   /* 13: ロゴマークのみ＋バーガー(全幅ガラス)。ロゴを t で 42px 幅にクリップ */
   html:not(.mb).hm-13 .header .logo { overflow: hidden; width: calc(255px - 213px * var(--hdr-t, 0)); }
   /* 14: 縮む＋バーガー(全幅ガラス・小さめ) */
@@ -331,6 +352,19 @@
     transition: background-color .3s, color .3s;
   }
   .cta { width: 200px; height: 44px; }   /* ヘッダー用サイズ(モック section4 の 200×43 準拠) */
+  /* 分離型(hm-12)で黒箱の中に出るハンバーガー(明るい色)。既定は透明・当たり判定なし。中央に絶対配置 */
+  .cta .cta-burg { position: absolute; left: 50%; top: 50%; width: 20px; height: 16px;
+    transform: translate(-50%, -50%); opacity: 0; pointer-events: none; }
+  .cta .cta-burg i { position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px;
+    background: #fff;   /* 【2026-09-17 ヒデさん指定】線は白(黒セクション上は黒へ反転) */
+    transition: transform .3s var(--hdr-ease, cubic-bezier(.4,0,.2,1)), opacity .2s, background-color .4s var(--hdr-ease, cubic-bezier(.4,0,.2,1)); }
+  .cta .cta-burg i:nth-child(1) { top: 2px; }
+  .cta .cta-burg i:nth-child(2) { top: 7px; }
+  .cta .cta-burg i:nth-child(3) { top: 12px; }
+  /* ドロワーを開いたら黒箱の中で×に */
+  .cta.is-open .cta-burg i:nth-child(1) { top: 7px; transform: rotate(45deg); }
+  .cta.is-open .cta-burg i:nth-child(2) { opacity: 0; }
+  .cta.is-open .cta-burg i:nth-child(3) { top: 7px; transform: rotate(-45deg); }
   .cv-btn { width: 200px; height: 44px; margin: 36px auto 0; }   /* 2026-09-15 ヒデさん指定: display:flex の固定幅なので text-align では寄らない → 左右 auto で .cv-content の中央に */
   .cta:hover, .cv-btn:hover { background: var(--brand-cyan); color: #fff; }
   .cta:focus-visible, .cv-btn:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 3px; }
@@ -3747,6 +3781,8 @@
           <span class="cta-arrow" aria-hidden="true">
             <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg>
           </span>
+          <!-- 【V5.0 2026-09-17 ヒデさん指定】分離型(hm-12): スクロールで黒箱が縮み、この明るい色のハンバーガーへ変わる(箱＝メニュー入口) -->
+          <span class="cta-burg" aria-hidden="true"><i></i><i></i><i></i></span>
         </a>
       </nav>
       <!-- 【V5.0 2026-09-16 ヒデさん依頼】ハンバーガー(スクロール変形案で表示)。ロゴは常時残す。 -->
@@ -6681,14 +6717,23 @@ function bindDrawer() {
   if (_drawerBound) return; _drawerBound = true;
   const burger = document.querySelector('.hdr-burger');
   const drawer = document.getElementById('hdrDrawer');
-  if (!burger || !drawer) return;
+  const cta = document.querySelector('.header .cta');   /* 分離型(hm-12)で黒箱=メニューボタンになる */
+  if (!drawer) return;
   const setOpen = (open) => {
     if (open) { drawer.hidden = false; requestAnimationFrame(() => drawer.classList.add('is-open')); }
     else { drawer.classList.remove('is-open'); setTimeout(() => { if (!drawer.classList.contains('is-open')) drawer.hidden = true; }, 380); }
-    burger.classList.toggle('is-open', open);
-    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (burger) { burger.classList.toggle('is-open', open); burger.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    if (cta) cta.classList.toggle('is-open', open);   /* 黒箱の中のハンバーガーも×へ */
   };
-  burger.addEventListener('click', () => setOpen(!drawer.classList.contains('is-open')));
+  if (burger) burger.addEventListener('click', () => setOpen(!drawer.classList.contains('is-open')));
+  /* 【2026-09-17】分離型(hm-12)でスクロール後(コンパクト=hdr-stuck)は、黒箱クリックでドロワーを開く。
+     展開時(ページ上部)は通常どおり「お問い合わせ」へ遷移する。 */
+  if (cta) cta.addEventListener('click', (e) => {
+    const sep = document.documentElement.classList.contains('hm-12');
+    const hdr = document.querySelector('.header');
+    const compact = hdr && hdr.classList.contains('hdr-stuck');
+    if (sep && compact) { e.preventDefault(); setOpen(!drawer.classList.contains('is-open')); }
+  });
   drawer.addEventListener('click', (e) => { if (e.target === drawer || (e.target.closest && e.target.closest('.hdr-drawer-nav a'))) setOpen(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
 }
