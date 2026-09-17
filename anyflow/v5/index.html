@@ -3805,10 +3805,11 @@
     <!-- 【2026-08-31 ヒデさん指定】メインコピーを上・サブコピーを下に入れ替え+サブ文言変更 -->
     <h1 class="headline">
       <span class="hl-main">
-        <span class="hl-line" id="hlL1">AIと事業を<i class="hl-caret"></i></span>
-        <span class="hl-line" id="hlL2">強くする<i class="hl-caret"></i></span>
+        <span class="hl-line" id="hlL1">データ連携で<i class="hl-caret"></i></span>
+        <span class="hl-line" id="hlL2">AIとプロダクトに<i class="hl-caret"></i></span>
+        <span class="hl-line" id="hlL3">競争力を<i class="hl-caret"></i></span>
       </span>
-      <span class="hl-eyebrow" id="hlEyebrow"><i></i>APIでデータを繋ぐ統合開発プラットフォーム</span>
+      <span class="hl-eyebrow" id="hlEyebrow"><i></i>AI/プロダクト企業のためのデータ統合プラットフォーム</span>
     </h1>
 
     <div class="orbit">
@@ -14052,7 +14053,7 @@ function smoothTo(key, target) {
 const kvEls = {
   header: document.querySelector('.header'),
   eyebrow: document.getElementById('hlEyebrow'),
-  lines: [document.getElementById('hlL1'), document.getElementById('hlL2')],
+  lines: [document.getElementById('hlL1'), document.getElementById('hlL2'), document.getElementById('hlL3')].filter(Boolean),
   orbit: document.querySelector('.orbit'),
   logos: document.querySelector('.logos'),
   chars: [[], []],
@@ -14238,30 +14239,32 @@ function updateKV() {
 
   /* 1文字ずつ打ち込む */
   const tt = t - c.typeAt;
-  const n0 = kvEls.text[0].length, n1 = kvEls.text[1].length;
-  /* 緩急: 最初はゆっくり、だんだん速くなる。
-     i文字目までの所要時間 = charDur * n * (i/n をイーズインした値) */
+  /* 緩急: 最初はゆっくり、だんだん速くなる。i文字目までの所要時間 = charDur * n * (i/n をイーズインした値) */
   const e = c.typeEase;
   const ease = x => x * (1 - e) + e * x * x;          // 0→1 を前半ゆっくりに
-  /* 1行目「AIと事業を」は素早く、2行目「強くする」はゆったり打つ (行ごとに速さを変える) */
   const timeOf = (i, n, dur) => dur * n * ease(i / Math.max(1, n));
-  const line1End = timeOf(n0, n0, c.charDur);
-  const line2At = line1End + c.lineGap;
+  /* 【2026-09-17】行数可変(2〜3行など)に一般化: 各行の開始時刻を累積で出す。1行目は素早く charDur、以降はゆったり charDur2。行間は lineGap */
+  const durOf = li => (li === 0 ? c.charDur : c.charDur2);
+  const starts = []; let acc = 0;
+  kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
+  const typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
   kvEls.textNodes.forEach((tn, li) => {
     if (!tn) return;
-    const base = li === 0 ? 0 : line2At;
-    const dur = li === 0 ? c.charDur : c.charDur2;
-    const full = kvEls.text[li], n = full.length;
-    /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後に来る)。スパンは使わない */
+    const full = kvEls.text[li], n = full.length, base = starts[li], dur = durOf(li);
+    /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後)。スパンは使わない */
     let count = 0;
     for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
     if (tn.data.length !== count) tn.data = full.slice(0, count);
   });
-  const typeEnd = line2At + timeOf(n1, n1, c.charDur2);
   const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
   const typing = tt > -0.15 && tt < typeEnd + 0.5;
-  kvEls.carets[0].style.opacity = (typing && tt < line2At - c.lineGap * 0.4) ? blink : 0;
-  kvEls.carets[1].style.opacity = (typing && tt >= line2At - c.lineGap * 0.4) ? blink : 0;
+  /* いま打っている行のキャレットだけ点滅(その行の開始〜次の行の開始まで) */
+  kvEls.carets.forEach((car, li) => {
+    if (!car) return;
+    const on0 = starts[li] - c.lineGap * 0.4;
+    const on1 = (li + 1 < starts.length) ? starts[li + 1] - c.lineGap * 0.4 : typeEnd + 0.5;
+    car.style.opacity = (typing && tt >= on0 && tt < on1) ? blink : 0;
+  });
 
   /* 打ち終わってから小ラベル(罫線ごと) → グラフィック → ロゴ の順で出す
      (2026-08-14: 以前は小ラベルが先に出ていたが、タイピングの後に変更) */
@@ -14278,7 +14281,8 @@ function updateKV() {
   if (!isMobile) rv(kvEls.logos, easeOutQ(clamp01((t - gAt - RD * 0.6) / RD)), 8);
   /* 【2026-08-26 ヒデさん指定】1行目のタイピングが終わったあたりで、右のKV iframe に入場開始を合図する
      (モック→アイコン→軌道)。以前は全タイピング完了(gAt)を待っていた。introLead で前後にずらせる。 */
-  const kvIntroFireAt = c.typeAt + line1End + (c.introLead || 0);
+  const _line1End = (starts.length > 1 ? starts[1] - c.lineGap : typeEnd);   /* 1行目の打ち終わり(多行対応) */
+  const kvIntroFireAt = c.typeAt + _line1End + (c.introLead || 0);
   if (elapsed >= kvIntroFireAt) { kvIntroDue = true; kvSendIntro(); }
 }
 
