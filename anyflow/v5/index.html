@@ -4861,17 +4861,17 @@ const DEFAULTS = {
   cvSway: '0',         // 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。0=現行 / 1〜5。URL ?sway=N
   cvEdge: '0',         // 【2026-09-16 改訂】お問い合わせ上部の溶け込みの深さ。0=標準/1さらに深く/2浅め。URL ?edge=N
   cvForm: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの形。0=放射(現行)/1=縦グラデ/2=放射柔らか/3=斜め。URL ?form=N
-  cvCta: 'button',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
+  cvCta: 'form',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
   cvHier: '1',         // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの“情報の階層”の見せ方。1インデント/2余白区分/3左アクセント/4背景ブロック/5見出し強弱
   formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
   formWidth: 660,      // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせフォームの横幅(px)。パネルで調整
   cvfGlass: { bgA: 0.5, blur: 22, sat: 1.5, inA: 0.56, phA: 0.32 },   // 【V5.0 2026-09-17】フォームカードの地色の白さ/ぼかし/彩度/入力欄の白さ/プレースホルダーの濃さ(白飛び対策で調整可)
-  hdrMode: '1',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
-  burgerIcon: '1',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
+  hdrMode: '12',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
+  burgerIcon: '2',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
   burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
   floatStyle: '1',     // 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案 1〜10(影/ブラー/リキッドグラス等)
   hdrTune: { '8': { logoH: 47, cw: 345 } },   // 【V5.0 2026-09-17】案ごとのスクロール後サイズ微調整(その案を選んだ時だけパネルに出す)。hm-8: ロゴ縮小なし(47)
-  drawerStyle: '1',    // 【V5.0 2026-09-17】ハンバーガーを押した先の画面 1中央/2右スライド/3左寄せ大(ダーク)
+  drawerStyle: '3',    // 【V5.0 2026-09-17】ハンバーガーを押した先の画面 1中央/2右スライド/3左寄せ大(ダーク)
   hdrMotion: '1',      // 【V5.0 2026-09-17 ヒデさん依頼】ヘッダー変形のモーション(イージング)案 1なめらか/2キビキビ/3ゆったり/4バウンド/5直線
   hdrDur: 1.65,   /* 【2026-09-17 大掃除】ヘッダーの調整UIは撤去。ローカルで使っていた 1.65 秒を固定値に */ //         // 【V5.0 2026-09-17】ヘッダー変形の速さ(秒・進む時)。戻る時はこの0.55倍でキビキビ(トップ復帰のラグ解消)
   devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
@@ -5306,7 +5306,7 @@ const DEFAULTS = {
     resTrans: 'smooth',
     devStack: 'on', // 開発者体験②で後ろに2枚控えるか (カンプ 14924:21985)
     dev: 'A', cases: 'A', mock: 'B',
-    caseHover: 'cardtrim',   // 導入事例のホバー = カードの周りに線が引かれる (2026-09-15 ヒデさん採用)
+    caseHover: 'ct-lift',   // 導入事例のホバー = カードの周りに線が引かれる (2026-09-15 ヒデさん採用)
     caseLayout: '1',         // 導入事例の罫線 = なし (2026-09-15 ヒデさん採用)
     /* 【2026-08-28 ヒデさん指定】実績の2つの価値の、右側ピクトグラムの動き(各5案) */
     valSaas: 'S9',       // for SaaS「リアルタイムにデータ同期」2026-09-08: S1完全削除に伴い生存案へ
@@ -5592,6 +5592,29 @@ try {
     fix(_s);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
     localStorage.setItem('anyflow-v5-cleanup-20260917', '1');
+  }
+} catch (e) {}
+/* 【2026-09-17 大掃除②・ヒデさん指定】調整パネルから外した選択UIの値を固定(焼き込み)。ブラウザ保存に古い選択が残っていても
+   今の見た目(ヒデさんのローカル実測値)に揃える: ヘッダー12/なめらか/1.65秒、ハンバーガー2本線/クロス、浮くピル標準、ドロワー左寄せ大、
+   お問い合わせ=インデント/フォーム直置き/リキッドグラス明/放射グラデ(中心0.78,0.12 広がり0.9)/標準の溶け込み(260)/余白120,0,0,60、
+   導入事例=罫線なし/影でふわっと浮く、KV=ネットワーク★1 大きいケージ(mesh)。 */
+try {
+  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-v5-cleanup2-20260917')) {
+    const FIX = { hdrMode: '12', hdrMotion: '1', hdrDur: 1.65, burgerIcon: '2', burgerAnim: '1', floatStyle: '1', drawerStyle: '3',
+      cvHier: '1', cvCta: 'form', formStyle: '1', cvForm: '0', cvEdge: '0', converge: 'mesh' };
+    const CV = { blend: 260, headTop: 120, addT: 0, addB: 0, gapTop: 60, gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0 };
+    const fix2 = (o) => {
+      if (!o) return;
+      Object.assign(o, FIX);
+      o.cv = o.cv || {}; Object.assign(o.cv, CV);
+      o.patterns = o.patterns || {}; o.patterns.caseLayout = '1'; o.patterns.caseHover = 'ct-lift';
+      o.gfxVariantOn = o.gfxVariantOn || {}; o.gfxVariantOn.mesh = 3;
+    };
+    fix2(params);
+    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    fix2(_s);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
+    localStorage.setItem('anyflow-v5-cleanup2-20260917', '1');
   }
 } catch (e) {}
 function loadParams() {
@@ -10202,22 +10225,7 @@ const editBar = (() => {
     const sep0 = document.createElement('span');
     sep0.className = 'eb-sep';
     el.appendChild(sep0);
-    /* 【2026-08-28 ヒデさん指定】押すだけで、惑星の顔にかかっている軌道を自動で裏に回す。
-       もう一度押すと表に戻す(トグル)。「どこ」の指定は不要。 */
-    mk('behind', '🪐 軌道を裏へ', '押すと、惑星の顔にかかっている軌道を自動で見つけて裏に回します。もう一度で表に戻します。').onclick = () => {
-      const keys = ['outer', 'inner'];
-      const anyBehind = keys.some(k => params.orbits[k].behind);
-      if (anyBehind) {
-        keys.forEach(k => params.orbits[k].behind = false);   /* 表に戻す */
-      } else {
-        let any = false;
-        keys.forEach(k => { if (orbitCrossesFace(k)) { params.orbits[k].behind = true; any = true; } });
-        if (!any) keys.forEach(k => params.orbits[k].behind = true);  /* 顔にかかってなくても押したら裏へ(空振り防止) */
-      }
-      markDirty(); renderFrame();
-      if (typeof editHistory !== 'undefined') { editHistory.push(); }
-      sync();
-    };
+    /* 【2026-09-17 大掃除・ヒデさん指定】「🪐 軌道を裏へ」ボタンは削除(メッシュ案では輪が出ないので無意味だった) */
     const sep = document.createElement('span');
     sep.className = 'eb-sep';
     el.appendChild(sep);
@@ -10249,11 +10257,7 @@ const editBar = (() => {
     if (!el) return;
     btns.undo.disabled = !editHistory.canUndo;
     btns.redo.disabled = !editHistory.canRedo;
-    if (btns.behind) {
-      const anyBehind = params.orbits.outer.behind || params.orbits.inner.behind;
-      btns.behind.textContent = anyBehind ? '↩ 軌道を表に' : '🪐 軌道を裏へ';
-      btns.behind.classList.toggle('primary', anyBehind);
-    }
+    /* (「軌道を裏へ」ボタンは 2026-09-17 に削除) */
   }
   return {
     show() { ensure(); el.style.display = 'flex'; sync(); },
@@ -17339,34 +17343,8 @@ function buildPanel() {
   segRow('くり返し', [['する', 1], ['しない', 0]], () => params.replay ? 1 : 0, v => { params.replay = !!v; markDirty(); });
   note('一度見たセクションも、戻ってくるともう一度流れます。');
 
-  /* 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーはサイト全体の要素なので「🌊 全体」に置く */
-  sub(catAll, 'ヘッダー（追従・スクロールで変形）', null, { fixed: true });
-  varRowX('hdrMode', CV_HDRS, () => hdrModeKey(), v => { applyHdrMode(String(v)); }, { after: () => { if (typeof buildPanel === 'function') buildPanel(); else if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('ヘッダーを追従(固定)にして、スクロール時の見た目を選びます。少し下にスクロールすると違いが出ます。URL ?hdr=N。');
-  /* 【V5.0 2026-09-17 ヒデさん依頼】ヘッダー変形のモーション(動きのクセ)5案＋速さ。全案共通。 */
-  varRowX('hdrMotion', CV_HDR_MOTIONS, () => hdrMotionKey(), v => { params.hdrMotion = String(v); applyHdrMotion(); });
-  note('スクロールで変形する時の“動きのクセ”(イージング)です。なめらか/キビキビ/ゆったり/バウンド/直線。');
-  rows.push(slider('変化の速さ（進む時）', 0.3, 1.6, 0.05, () => params.hdrDur, v => { params.hdrDur = v; applyHdrMotion(); }, v => v.toFixed(2) + '秒', '変形にかける時間。小さいほどキビキビ。トップに戻る時はこの約半分の速さに自動でして、戻りのラグを無くしています。', { fixedMax: true }));
-  /* 【V5.0 2026-09-17 ヒデさん指定】左寄せピル(hm-8)を選んだ時だけ「スクロール後サイズ」を動的に出す(常時表示しない) */
-  if (hdrModeKey() === '8') {
-    params.hdrTune = params.hdrTune || {}; params.hdrTune['8'] = params.hdrTune['8'] || { logoH: 40, cw: 300 };
-    const T = params.hdrTune['8'];
-    rows.push(slider('左寄せピル: ロゴの高さ（スクロール後）', 24, 47, 1, () => T.logoH, v => { T.logoH = v; applyHdrTune(); }, v => Math.round(v) + 'px', 'スクロール後のロゴの高さ。47で元のサイズのまま。', { fixedMax: true }));
-    rows.push(slider('左寄せピル: ピルの幅（スクロール後）', 200, 520, 5, () => T.cw, v => { T.cw = v; applyHdrTune(); }, v => Math.round(v) + 'px', 'スクロール後の左寄せピルの横幅。', { fixedMax: true }));
-  }
-  /* 【V5.0 2026-09-17 ヒデさん指定】ハンバーガー/変化/質感 も、すりガラス等と同じピル型＋⋯削除メニュー(varRowX)に */
-  sub(catAll, 'ハンバーガーの形', null, { fixed: true });
-  varRowX('burgerIcon', CV_BURGER_ICONS, () => burgerIconKey(), v => { params.burgerIcon = String(v); applyBurgerStyle(); });
-  note('ハンバーガーの見た目です（変形するヘッダー案・狭幅で出ます）。⋯から不要な案を削除できます。押した時の変化は「クロス」固定。');
-  /* 【2026-09-17 ヒデさん指定】「押した時の変化」セクションは削除。クリックの変化はクロス(ba-1)固定。 */
-  sub(catAll, '浮くピルの質感', null, { fixed: true });
-  varRowX('floatStyle', CV_FLOATS, () => floatStyleKey(), v => { params.floatStyle = String(v); applyFloatStyle(); });
-  note('フローティングピルの案（⑤⑧⑨⑩⑮）の地・影・ブラー・リキッドグラスの質感。⋯から不要な案を削除できます。');
-  /* 【V5.0 2026-09-17 ヒデさん依頼】ハンバーガーを押した先の画面 3案 */
-  sub(catAll, 'ハンバーガーの中身（押した先の画面）', null, { fixed: true });
-  segRow('画面のタイプ', [['中央フル', '1'], ['右スライド', '2'], ['左寄せ大', '3']],
-    () => String(params.drawerStyle || '1'), v => { params.drawerStyle = String(v); applyDrawerStyle(); });
-  note('ハンバーガーを押すと開くメニュー。1=中央フルスクリーン(すりガラス) / 2=右からスライドインするパネル / 3=左寄せの大きな見出し(ダーク)。暫定の中身です。');
+  /* 【2026-09-17 大掃除・ヒデさん指定】ヘッダー(案12 分離型・なめらか・1.65秒)/ハンバーガー(2本線・クロス)/浮くピルの質感(標準)/
+     押した先の画面(左寄せ大) は【今の値で固定＝焼き込み】。選択UIは削除(DEFAULTS/SHIPPED/移行で値を固定)。 */
 
   /* ========== 🖼 キービジュアル ========== */
   /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
@@ -17399,261 +17377,10 @@ function buildPanel() {
   sub(gRoot, '', true, { fixed: true, bare: true });
   const aRoot = mount;
   let fillPresetRow = null;   /* ②のプリセット行を作り直す関数(案が変わったら中身を入れ替える) */
-  const onConvSwitch = (next) => {
-    convSwitchTo(next);
-    markDirty(); renderFrame();
-    fillAnimBody();                                   /* この案の調整だけ入れ替え */
-    syncPanelRows();                                  /* 位置・サイズの数値を追いつかせる */
-    if (fillPresetRow) fillPresetRow();               /* この案のプリセットに入れ替え */
-    fillVariantRow();                                 /* この案のバリエーションに入れ替え */
-    if (typeof meshHandles !== 'undefined') meshHandles.set(editHandles.on && meshHandles.usable);
-    if (editHandles.on) editHandles.place();          /* 編集中なら枠も追いつかせる */
-  };
-  /* 【2026-08-28 ヒデさん指定】選択ピルは「グループ」で束ねる(周回のみ/1収縮/2軌道と粒/3ネットワーク)。
-     内部モードは保持したまま表示だけ組み替えるので、プリセット・バリエーションは消えない。 */
-  /* 【2026-08-29 ヒデさん指定】カテゴリ絞り込みトグル(軌道の表示/粒/収縮)は一旦廃止。
-     A内のカテゴリ見出し(軌道のみ/粒とセット/収縮あり)は残し、全カテゴリを常時表示する。 */
-  let catToggleBox = null;
-  const fillCatToggles = () => {
-    if (catToggleBox) catToggleBox.innerHTML = '';   /* トグルは出さない(常に全カテゴリ表示) */
-  };
-  const onGroupSwitch = (g) => {
-    if (convGroupOf(params.converge).key !== g.key) {
-      if (params.conv) params.conv.net3d = false;   /* グループを跨ぐ時はネットワーク3Dフラグを解除 */
-      /* 【2026-09-09 ヒデさん指定】ネットワーク→軌道 などタブを切り替えた時、そのグループにお気に入り(★)が
-         あれば ★1(先頭) を選択した状態で開く。無ければ従来どおりグループ既定モードへ。 */
-      const fav = (params.gfxFav || []).filter(f => g.modes.includes(f.m));
-      let applied = false;
-      if (fav.length) {
-        const f = fav[0];
-        const vlist = GFX_VARIANTS[f.m] || [];
-        const vi = vlist.findIndex(v => v.name === f.name);
-        if (vi >= 0 && !(typeof variantRemoved === 'function' && variantRemoved(f.m, vlist[vi].name))) {
-          if ((params.converge || 'off') !== f.m) convSwitchTo(f.m);
-          applyGfxVariant(vi);
-          if (params.conv) params.conv.net3d = convVarIsNetwork(vlist[vi]);
-          markDirty(); renderFrame();
-          fillAnimBody(); syncPanelRows();
-          if (fillPresetRow) fillPresetRow();
-          fillVariantRow();
-          applied = true;
-        }
-      }
-      if (!applied) onConvSwitch(convGroupDefaultMode(g));
-    }
-    fillCatToggles();
-  };
-  /* 【2026-08-30 ヒデさん指定】グループを1つ(軌道と粒)に合体したので、タブは2つ以上ある時だけ出す */
-  if (CONV_GROUPS.length > 1) {
-    pillRow(CONV_GROUPS, g => convGroupOf(params.converge).key === g.key,
-      g => onGroupSwitch(g),
-      { get: () => convGroupOf(params.converge).key, set: k => { const g = CONV_GROUPS.find(x => x.key === k); if (g) onGroupSwitch(g); } },
-      { noRebuild: true, tip: g => g.desc || '' });
-  }
-  catToggleBox = document.createElement('div');
-  (mount || body).appendChild(catToggleBox);
+  /* 【2026-09-17 大掃除・ヒデさん指定】起動案(軌道と粒/ネットワーク)の切替ピル・カテゴリ絞り込みは削除。
+     案は ネットワーク★1「D 大きいケージ」(converge=mesh) に固定＝焼き込み。 */
 
-  /* --- この案のバリエーション (2026-08-27 ヒデさん指定) ---
-     ⚠️ 上の「アニメーションの選択ピル」と見分けがつくよう、
-        「バリエーション」の見出しを付けた別の箱に入れ、ピルの見た目も変える。
-     同じアニメーションの枠の中で、軌道と惑星の 位置・大きさ・つぶし・傾き・レイアウトと
-     その案のつまみ・軌道の回転だけを変えたもの。UIから任意に削除できる。 */
-  sub(aRoot, 'バリエーション', true, { fixed: true });
-  /* 【2026-08-28】案が増えたので、折り返しても背が伸びすぎないよう箱に入れる */
-  const varBox = document.createElement('div');
-  varBox.className = 'var-box';
-  const varRow = document.createElement('div');
-  varRow.className = 'sw-row';
-  varBox.appendChild(varRow);
-  (mount || body).appendChild(varBox);
-  /* 下にまだ案が続いているかを見て、下端のフェードを出し入れする */
-  const syncVarFade = () => {
-    const more = varBox.scrollHeight - varBox.clientHeight - varBox.scrollTop > 2;
-    varBox.classList.toggle('more', more);
-  };
-  varBox.addEventListener('scroll', syncVarFade);
-  /* ⚠️ パネルが閉じている間は高さが 0 なので、初回のフェード判定が always false になっていた(実測)。
-     箱に大きさが付いた時(＝パネルを開いた時)にも計算し直す */
-  if (window.ResizeObserver) new ResizeObserver(syncVarFade).observe(varBox);
-  const varHidden = () => {
-    if (!params.gfxVariantHidden) params.gfxVariantHidden = {};
-    const m = params.converge || 'reel';
-    return params.gfxVariantHidden[m] || (params.gfxVariantHidden[m] = []);
-  };
-  /* 【2026-08-30 ヒデさん指定】名称は機械割当に統一:
-       A=軌道のみ(A1,A2…) / B=粒とセット(B1,B2…) / C=収縮あり(C1,C2…) / D=ネットワーク(D1,D2…)。
-     消したら以降の番号は自動で詰める。元の名前はツールチップと「消した案の控え」に残す(取り違えない)。 */
-  const CAT_PREFIX = { orbdot: 'A', shrink: 'B' };   /* ネットワーク(Bタブ)は 'C' 接頭辞(下の else 分岐) */
-  const fillVariantRow = function () {
-    /* 【2026-08-29 ヒデさん指定・大枠再編】A(軌道)はカテゴリ(軌道のみ/粒とセット/収縮あり)に分けて表示し、
-       下のトグルで絞り込む。B(ネットワーク)は mesh + ネットワーク3D。記号は残っている中で通し(A,B,C…)。 */
-    const modes = convShowModes();   /* 下の「消した案を戻す」で使う */
-    const g = convGroupOf(params.converge);
-    const isA = g.key === 'orbit';
-    varRow.innerHTML = '';
-    const curMode = params.converge || 'off';
-    const curOn = gfxVariantOn();
-    const curNet = !!(params.conv && params.conv.net3d);
-    const collect = (m, net) => {   /* net: 'only'=net3dだけ / 'exclude'=net3d以外 / null=全部 */
-      const hid = (params.gfxVariantHidden && params.gfxVariantHidden[m]) || [];
-      const out = [];
-      (GFX_VARIANTS[m] || []).forEach((v, i) => {
-        if (hid.includes(v.name) || variantRemoved(m, v.name)) return;
-        /* 【2026-09-01 ヒデさん指定】お気に入りにピン留め中の案は、通常の一覧からは消す(上のおすすめ枠に出る) */
-        if ((params.gfxFav || []).some(f => f.m === m && f.name === v.name)) return;
-        const isNet = convVarIsNetwork(v);
-        if (net === 'only' && !isNet) return;
-        if (net === 'exclude' && isNet) return;
-        out.push({ m, i, v });
-      });
-      return out;
-    };
-    const addHead = (name) => {
-      const h = document.createElement('div');
-      h.className = 'var-cat-head';
-      h.textContent = name;
-      varRow.appendChild(h);
-    };
-    const makePill = (it, sym) => {
-      const label = sym;   /* 機械割当(A1/B2/C3/D1…)。元の名前はツールチップへ */
-      const selected = (it.m === curMode && curOn === it.i && convVarIsNetwork(it.v) === curNet);
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'var-pill' + (selected ? ' on' : '');
-      b.title = String(it.v.name) + (it.v.desc ? ' — ' + it.v.desc : '')
-        + (((params.gfxVarOverride || {})[it.m] || {})[it.v.name] ? '（⤓ 上書き済み・⋯から解除できます）' : '');
-      b.append(document.createTextNode(label));
-      b.onclick = () => {
-        if ((params.converge || 'off') !== it.m) convSwitchTo(it.m);
-        applyGfxVariant(it.i);
-        if (params.conv) params.conv.net3d = convVarIsNetwork(it.v);   /* ネットワーク3Dフラグを選択に合わせる */
-        markDirty(); renderFrame();
-        fillAnimBody(); syncPanelRows();
-        if (fillPresetRow) fillPresetRow();
-        if (typeof meshHandles !== 'undefined') meshHandles.set(editHandles.on && meshHandles.usable);
-        if (editHandles.on) editHandles.place();
-        fillVariantRow();
-      };
-      /* 【2026-08-30 ヒデさん指定】プリセットと同じ「⋯」メニューに。削除 / この設定で上書き / 上書きを解除 */
-      const x = document.createElement('button');
-      x.type = 'button';
-      x.className = 'var-x';
-      x.textContent = '⋯';
-      x.title = 'この設定で上書き / 削除';
-      x.onclick = ev => {
-        ev.stopPropagation();
-        const old = document.querySelector('.pmenu'); if (old) old.remove();
-        const menu = document.createElement('div'); menu.className = 'pmenu';
-        const close = () => menu.remove();
-        const mk = (lbl, fn, cls) => { const m = document.createElement('button'); m.type = 'button'; m.textContent = lbl; if (cls) m.className = cls; m.onclick = () => { close(); fn(); }; menu.appendChild(m); };
-        const isFav = (params.gfxFav || []).some(f => f.m === it.m && f.name === it.v.name);
-        mk(isFav ? '★ ピン留めを解除（元の位置に戻す）' : '★ お気に入りにピン留め', () => {
-          if (!Array.isArray(params.gfxFav)) params.gfxFav = [];
-          if (isFav) params.gfxFav = params.gfxFav.filter(f => !(f.m === it.m && f.name === it.v.name));
-          else params.gfxFav.push({ m: it.m, name: it.v.name });
-          presetStoreSave(); markDirty(); fillVariantRow();
-        });
-        mk('⤓ いまの設定で上書き', () => {
-          if (!params.gfxVarOverride) params.gfxVarOverride = {};
-          if (!params.gfxVarOverride[it.m]) params.gfxVarOverride[it.m] = {};
-          params.gfxVarOverride[it.m][it.v.name] = gfxSnapshotFull();
-          presetStoreSave(); markDirty(); fillVariantRow();
-        });
-        if (((params.gfxVarOverride || {})[it.m] || {})[it.v.name]) {
-          mk('↺ 上書きを解除（元の設定に戻す）', () => {
-            delete params.gfxVarOverride[it.m][it.v.name];
-            /* 「元の設定に戻す」なので、この案の調整の控え(gfxTweaks)も一緒に消す(残すと調整値が復元されて戻らない) */
-            if (params.gfxTweaks && params.gfxTweaks[it.m]) delete params.gfxTweaks[it.m][it.i];
-            /* 元の定義をその場で適用(画面も即戻る)。⚠️ ここで markDirty だけ呼ぶと、消した直後の
-               「上書き値のままの画面」が控えに再保存されて戻らない(実測)。適用してから保存する。 */
-            if ((params.converge || 'off') !== it.m) convSwitchTo(it.m);
-            applyGfxVariant(it.i);
-            presetStoreSave(); fillVariantRow();
-          });
-        }
-        mk('🗑 削除', () => {
-          askModal('削除しますか？', `バリエーション「${label}（${it.v.name}）」を一覧から消します。以降の番号は自動で詰めます。あとで「消した案を戻す」で戻せます。`,
-            '削除する', () => {
-              if (!params.gfxVariantHidden) params.gfxVariantHidden = {};
-              const arr = params.gfxVariantHidden[it.m] || (params.gfxVariantHidden[it.m] = []);
-              arr.push(it.v.name);
-              presetStoreSave(); markDirty(); fillVariantRow();
-            });
-        }, 'danger');
-        document.body.appendChild(menu);
-        const r = x.getBoundingClientRect();
-        menu.style.left = Math.min(r.left, innerWidth - menu.offsetWidth - 8) + 'px';
-        menu.style.top = Math.min(r.bottom + 4, innerHeight - menu.offsetHeight - 8) + 'px';
-        setTimeout(() => document.addEventListener('click', close, { once: true }), 0);
-      };
-      b.appendChild(x);
-      varRow.appendChild(b);
-    };
-    /* 【2026-09-01 ヒデさん指定】お気に入り(ピン留め)を「バリエーション」見出しとカテゴリの間に出す。
-       ピン中は下の一覧から消え、解除で元のカテゴリへ戻る。並びはピン留め順。 */
-    const favList = (params.gfxFav || []).filter(f => modes.includes(f.m));
-    if (favList.length) {
-      addHead('★ おすすめ（ピン留め）');
-      favList.forEach((f, idx) => {
-        const vi = (GFX_VARIANTS[f.m] || []).findIndex(v => v.name === f.name);
-        if (vi < 0) return;
-        const v = GFX_VARIANTS[f.m][vi];
-        if (variantRemoved(f.m, v.name)) return;
-        makePill({ m: f.m, i: vi, v }, '★' + (idx + 1));
-      });
-    }
-    if (isA) {
-      const cf = convCatFilter();
-      for (const cat of CONV_CATS) {
-        if (!cf[cat.key]) continue;   /* 絞り込みでオフのカテゴリは出さない */
-        let catItems = [];
-        for (const m of cat.modes) catItems = catItems.concat(collect(m, null));   /* 2026-08-30: ネットワーク3DもAに含める */
-        if (!catItems.length) continue;
-        const pfx = CAT_PREFIX[cat.key] || 'A';
-        addHead(pfx + ' ' + cat.name);
-        catItems.forEach((it, idx) => makePill(it, pfx + (idx + 1)));
-      }
-    } else {
-      /* ネットワーク(タブ): mesh のみ。カテゴリ記号はサイト通しで3番目='C'(見出しにも明記して迷わない) */
-      addHead('C ネットワーク');
-      /* 【2026-09-02 ヒデさん指定】「G 整った網（測地線）」はCの一番最後に出す。
-         ⚠️ 配列(GFX_VARIANTS)の並びを動かすと調整値(index対応)がズレるので、表示順だけ入れ替える */
-      const meshItems = collect('mesh', null);
-      const geoI = meshItems.findIndex(it => it.v.name === 'G 整った網（測地線）');
-      if (geoI >= 0) meshItems.push(meshItems.splice(geoI, 1)[0]);
-      meshItems.forEach((it, idx) => makePill(it, 'C' + (idx + 1)));
-    }
-    requestAnimationFrame(() => { syncVarFade(); requestAnimationFrame(syncVarFade); });
-    /* このグループで消した案をまとめて戻す */
-    const hiddenAll = [];
-    for (const m of modes) {
-      const hid = (params.gfxVariantHidden && params.gfxVariantHidden[m]) || [];
-      hid.forEach(nm => { if (!variantRemoved(m, nm)) hiddenAll.push({ m, nm }); });   /* 完全削除した案は「戻す」一覧にも出さない */
-    }
-    if (hiddenAll.length) {
-      const back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'var-pill var-back';
-      back.textContent = `↺ 消した案を戻す (${hiddenAll.length})`;
-      back.title = '消した案の一覧から、戻したいものを選びます';
-      back.onclick = () => {
-        pickModal('消した案を戻す', '戻したい案の「戻す」を押してください。まとめて全部は戻しません。',
-          hiddenAll.map(h => h.nm), name => {
-            const h = hiddenAll.find(x => x.nm === name);
-            if (h && params.gfxVariantHidden[h.m]) {
-              const arr = params.gfxVariantHidden[h.m];
-              const i2 = arr.indexOf(name);
-              if (i2 >= 0) arr.splice(i2, 1);
-            }
-            presetStoreSave(); markDirty(); fillVariantRow();
-          });
-      };
-      varRow.appendChild(back);
-    }
-  };
-  fillCatToggles();
-  fillVariantRow();
-
+  /* 【2026-09-17 大掃除・ヒデさん指定】バリエーション(ネットワークC1〜C3 など)の選択UIは削除(★1 D 大きいケージ に固定)。 */
   /* ═══ グラフィックを編集 ── 直接編集とプリセット ═══
      【2026-08-27 ヒデさん指定】見出しは出さず、選択ピルのすぐ下にボタンを置く。
      ⚠️ 置き場所は aRoot(選択ピルと同じ箱)。gRoot に入れると、案ごとの調整より
@@ -17671,124 +17398,7 @@ function buildPanel() {
     buildNumPanel(mount || body);
   }
 
-  /* --- プリセット: この案の形に名前を付けて保存し、ワンタップで呼び出す ---
-     【2026-08-27 ヒデさん指定】見出しも説明も置かず、②の中に1行で収めてコンパクトに。 */
-  {
-    const wrap = document.createElement('div');
-    wrap.className = 'pset';
-    const lab = document.createElement('span');
-    lab.className = 'pset-lab';
-    lab.textContent = 'プリセット';
-    const presetRow = document.createElement('div');
-    presetRow.className = 'sw-row pset-row';
-    wrap.append(lab, presetRow);
-    (mount || body).appendChild(wrap);
-    /* 案ごとに中身が変わるので、行ごと作り直せるようにしておく(パネル全体は作り直さない) */
-    /* 【2026-08-27 ヒデさん指定】✎ で「1/2/3を打つ」のをやめ、
-       小さなメニューから選ぶ + 名前はその場で書き換える形にした */
-    let pmenu = null;
-    const closeMenu = () => { if (pmenu) { pmenu.remove(); pmenu = null; } };
-    document.addEventListener('pointerdown', e => { if (pmenu && !pmenu.contains(e.target)) closeMenu(); }, true);
-
-    /* 削除したプリセットのゴミ箱(案ごと・復元できる) */
-    const presetTrash = () => {
-      if (!params.gfxPresetTrash) params.gfxPresetTrash = {};
-      const k = params.converge || 'reel';
-      return params.gfxPresetTrash[k] || (params.gfxPresetTrash[k] = []);
-    };
-    fillPresetRow = function () {
-      const list = gfxPresetList();
-      closeMenu();
-      presetRow.innerHTML = '';
-      const style = 'chips';   /* 【2026-09-09 ヒデさん指定】チップ固定=焼き込み(チップ/リスト切替UIは削除) */
-      /* 名前をその場で書き換える(Enterで確定 / Escで取り消し) */
-      const rename = (i, pillEl) => {
-        const ps = list[i]; if (!ps || !pillEl) return;
-        const inp = document.createElement('input');
-        inp.className = 'pname'; inp.value = ps.name;
-        const done = ok => { if (ok && inp.value.trim()) { ps.name = inp.value.trim(); presetStoreSave(); markDirty(); } fillPresetRow(); };
-        inp.onkeydown = e => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); };
-        inp.onblur = () => done(true);
-        pillEl.replaceWith(inp); inp.focus(); inp.select();
-      };
-      const applyAt = i => { applyGfxPreset(i); syncPanelRows(); fillAnimBody(); if (editHandles.on) editHandles.place(); if (syncPresetPills) syncPresetPills(); };
-      const delAt = i => { const ps = list[i]; if (ps) presetTrash().push(ps); list.splice(i, 1); if (gfxPresetOn() === i) gfxPresetSetOn(null); presetStoreSave(); markDirty(); fillPresetRow(); };
-      const openMenu = (i, anchor, renameTarget) => {
-        if (pmenu) { closeMenu(); return; }
-        pmenu = document.createElement('div'); pmenu.className = 'pmenu';
-        const mk = (label, fn, cls) => { const m = document.createElement('button'); m.type = 'button'; m.textContent = label; if (cls) m.className = cls; m.onclick = () => { closeMenu(); fn(); }; pmenu.appendChild(m); };
-        mk('✎ 名前を変える', () => rename(i, renameTarget));
-        const isFav = (params.gfxFav || []).some(f => f.m === it.m && f.name === it.v.name);
-        mk(isFav ? '★ ピン留めを解除（元の位置に戻す）' : '★ お気に入りにピン留め', () => {
-          if (!Array.isArray(params.gfxFav)) params.gfxFav = [];
-          if (isFav) params.gfxFav = params.gfxFav.filter(f => !(f.m === it.m && f.name === it.v.name));
-          else params.gfxFav.push({ m: it.m, name: it.v.name });
-          presetStoreSave(); markDirty(); fillVariantRow();
-        });
-        mk('⤓ いまの設定で上書き', () => { list[i].data = gfxSnapshotFull(); presetStoreSave(); markDirty(); fillPresetRow(); });
-        mk('🗑 削除', () => delAt(i), 'danger');
-        document.body.appendChild(pmenu);
-        const r = anchor.getBoundingClientRect();
-        pmenu.style.left = Math.min(r.left, innerWidth - pmenu.offsetWidth - 8) + 'px';
-        pmenu.style.top = Math.min(r.bottom + 4, innerHeight - pmenu.offsetHeight - 8) + 'px';
-      };
-      const addBtn = () => {
-        const add = document.createElement('button'); add.type = 'button'; add.className = 'sw-pill sw-save'; add.textContent = '＋保存';
-        add.title = 'いまのグラフィックの設定を、この案専用のプリセットとして保存する';
-        add.onclick = () => {
-          list.push({ name: 'プリセット ' + (list.length + 1), data: gfxSnapshotFull() });
-          gfxPresetSetOn(list.length - 1); markDirty(); fillPresetRow();
-          const chips = presetRow.querySelectorAll('.pset-chip-name');
-          const last = chips[chips.length - 1];
-          if (last) rename(list.length - 1, last);
-        };
-        return add;
-      };
-      /* 【2026-09-09 ヒデさん指定】プリセットの見せ方(チップ/リスト)切替UIは削除。チップ固定。 */
-      if (style === 'drop') {
-        /* B: ドロップダウン(いちばんコンパクト) */
-        const box = document.createElement('div'); box.className = 'pset-drop';
-        const sel = document.createElement('select'); sel.className = 'pset-select';
-        const ph = document.createElement('option'); ph.value = ''; ph.textContent = list.length ? 'プリセットを選ぶ…' : '(まだありません)'; sel.appendChild(ph);
-        let curSel = -1;
-        list.forEach((ps, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = ps.name; if (gfxPresetMatches(i)) { o.selected = true; curSel = i; } sel.appendChild(o); });
-        sel.onchange = () => { if (sel.value !== '') applyAt(+sel.value); };
-        const menuBtn = document.createElement('button'); menuBtn.type = 'button'; menuBtn.className = 'sw-pill sw-edit'; menuBtn.textContent = '⋯'; menuBtn.title = '選んでいるプリセットの 名前 / 上書き / 削除';
-        menuBtn.onclick = ev => { ev.stopPropagation(); const i = sel.value !== '' ? +sel.value : curSel; if (i >= 0) openMenu(i, menuBtn, null); };
-        box.append(sel, menuBtn, addBtn());
-        presetRow.appendChild(box);
-      } else {
-        /* A: コンパクト・チップ(名前チップに小さな⋯を内蔵。折り返して縦を詰める) */
-        list.forEach((ps, i) => {
-          const chip = document.createElement('span'); chip.className = 'pset-chip' + (gfxPresetMatches(i) ? ' on' : ''); chip.dataset.pi = i;
-          const b = document.createElement('button'); b.type = 'button'; b.className = 'pset-chip-name'; b.textContent = ps.name; b.title = 'この設定を呼び出す（ダブルクリックで名前）';
-          b.onclick = () => applyAt(i); b.ondblclick = e => { e.preventDefault(); rename(i, b); };
-          const mb = document.createElement('button'); mb.type = 'button'; mb.className = 'pset-chip-menu'; mb.textContent = '⋯'; mb.title = '名前 / 上書き / 削除';
-          mb.onclick = ev => { ev.stopPropagation(); openMenu(i, mb, b); };
-          chip.append(b, mb); presetRow.appendChild(chip);
-        });
-        presetRow.appendChild(addBtn());
-      }
-      /* 削除したプリセットを戻す(共通) */
-      const trash = presetTrash();
-      if (trash.length) {
-        const back = document.createElement('button'); back.type = 'button'; back.className = 'sw-pill var-back'; back.textContent = `↺ 削除したプリセットを戻す (${trash.length})`;
-        back.title = '削除したプリセットの一覧から、戻したいものを選びます';
-        back.onclick = () => {
-          pickModal('削除したプリセットを戻す', '戻したいプリセットの「戻す」を押してください。', trash.map(t => t.name), name => {
-            const idx = trash.findIndex(t => t.name === name);
-            if (idx >= 0) { list.push(trash[idx]); trash.splice(idx, 1); presetStoreSave(); markDirty(); fillPresetRow(); }
-          });
-        };
-        presetRow.appendChild(back);
-      }
-      /* いまの値と一致するプリセットだけ点灯させる */
-      syncPresetPills = () => {
-        presetRow.querySelectorAll('.pset-chip').forEach(el => { el.classList.toggle('on', gfxPresetMatches(+el.dataset.pi)); });
-      };
-    };
-    fillPresetRow();
-  }
+  /* 【2026-09-17 大掃除・ヒデさん指定】プリセット(＋保存/呼び出し)のUIは削除。 */
   liveEdit = false;
 
   liveEdit = false;
@@ -17845,7 +17455,7 @@ function buildPanel() {
        ON/OFF トグルで揃える。既定は 揺らぎON・回転OFF。速さ等の細かい調整はトグルONの時だけ出す。
        (以前は off 群だけこの「動き」セクションが無く、B/C/D 等は回転が焼き込みでいじれなかった) */
     {
-      sub(animModeBox, '動き（この案）', true, { fixed: true });
+      sub(animModeBox, '動き（揺らぎ）', true, { fixed: true });   /* 【2026-09-17 大掃除】旧「動き（この案）」。メッシュに効く揺らぎだけ残す */
       const moveGrpBody = mount;   /* 2026-08-29: あとで「スイッチ→スライダー」に並べ替えるため控える */
       /* 揺らぎ ON/OFF (既定オン=②シーソー。全案共通で効く緩やかな揺れ) */
       segRow('揺らぎ', [['する', 1], ['しない', 0]], () => (params.sway || 1) > 1 ? 1 : 0,
@@ -18085,28 +17695,14 @@ function buildPanel() {
         '粒の明滅の強さ。0で一定の明るさ。', { fixedMax: true });
     } else if (cvMode === 'mesh') {
       const M = params.conv.mesh;
-      sub(animModeBox, 'この案の調整（網でつながる）', true);
-      /* 【2026-08-28 ヒデさん指定】頂点をドラッグして置ける。使えるのは平面の3種だけ */
-      {
-        const row = document.createElement('div');
-        row.className = 'sw-row';
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'sw-pill sw-save';
-        const has = !!(params.conv.mesh.pts && params.conv.mesh.pts.length);
-        b.textContent = has ? '↺ 頂点を自動配置に戻す' : '頂点は自動配置です';
-        b.disabled = !has;
-        b.title = has ? '手で置いた頂点を捨てて、自動の並びに戻します' : 'まだ手で動かしていません';
-        b.onclick = () => { meshHandles.reset(); markDirty(); fillAnimBody(); };
-        row.appendChild(b);
-        (mount || body).appendChild(row);
-        note((params.conv.mesh.style || 'organic') === 'cage'
-          ? 'ケージ(球殻)は立体の並びなので、頂点の手置きはできません。右上の ✏️編集 で輪と惑星を動かせます。'
-          : '右上の ✏️編集 を押すと、各ノードに丸いつまみが出ます。ドラッグで頂点の位置を決められます（編集中は漂いが止まります）。');
-      }
+      sub(animModeBox, 'メッシュ（網）の形', true);   /* 【2026-09-17 大掃除】旧「この案の調整（網でつながる）」 */
+      /* 【2026-09-17 大掃除・ヒデさん指定】「頂点は自動配置」ボタンと案内は削除(ケージは立体並びで手置き不可のため常に空振りだった) */
       slider('ノードの数', 3, 60, 1, () => params.conv.mesh.nodes,
         v => { M.nodes = v; if (M.pts && M.pts.length !== Math.round(v)) M.pts = null; },
-        v => v + '個', '数を変えると、手で置いた頂点は自動配置に戻ります。', { fixedMax: true });
+        v => v + '個', '網の点(ノード)の数。', { fixedMax: true });
+      /* 【2026-09-17 ヒデさん指定】惑星の大きさは「カゴの大きさ」のすぐ上に置く(旧「惑星」節から移動) */
+      slider('惑星の大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
+        v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。');
       /* 【2026-08-27 ヒデさん指定】包囲ケージ専用のつまみ */
       if ((M.style || 'organic') === 'cage') {
         slider('カゴの大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
@@ -18437,26 +18033,9 @@ function buildPanel() {
   slider('溜まりの残り方', 1, 20, 0.5, () => params.conv.glowHold, v => params.conv.glowHold = v, v => v.toFixed(1) + '秒',
     '取り込んだぶんが半分に戻るまでの時間。右へ動かすほど、強くなった状態が長く残ります（Aパルス以外で効きます）。');
 
+  /* 【2026-09-17 大掃除・ヒデさん指定】「自由回転」(XYZ回転の枠・開始地点ボタン)は削除。メッシュ案では使っていない。 */
   /* ---------- 惑星（模様） ---------- */
-  /* 【2026-08-28 ヒデさん指定】グラフィック全体(右側のKV)を、ひとまとまりで XYZ 回転できる */
-  /* 【2026-08-29 ヒデさん指定】名称を「自由回転」に。右上の ✏️編集 を押した時だけ動的に出る(edit-only-grp)。 */
-  sub(gRoot, '自由回転', true);
-  if (mount && mount.parentElement) mount.parentElement.classList.add('edit-only-grp');
-  note('右上の ✏️編集 中に、四角い枠を「ドラッグ」すると右のグラフィック全体がその向きに回ります（左右＝Y／上下＝X／Shift＋左右＝Z）。数値直接入力もOK。↺で正面に戻ります。');
-  freeRotate();
-  note('惑星は動かさず、軌道だけを立体的に倒します（ペラペラの紙になりません）。');
-  /* 【2026-08-29 ヒデさん指定】いま表示されている回転の位置を、アニメの開始地点として保存する */
-  {
-    const row = document.createElement('div'); row.className = 'sw-row';
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'sw-pill sw-save';
-    b.textContent = '▶ いまを開始地点にする';
-    b.title = 'いま表示されている回転の位置を、アニメーションの開始地点として保存します(次に開いた時ここから始まります)。';
-    b.onclick = () => { params.conv.startPhase = kvGT(); markDirty(); b.textContent = '✓ 開始地点にしました'; setTimeout(() => b.textContent = '▶ いまを開始地点にする', 1000); };
-    row.appendChild(b); (mount || body).appendChild(row);
-  }
-  note('回転(アトム・ジャイロ・軌道の回転)の「見えている向き」を開始地点にできます。次に開いた時、その向きから始まります。');
-
-  sub(gRoot, '惑星', true);
+  sub(gRoot, '惑星（模様）', true);
   const PLANET_SKINS = [
     { key: 'A1', name: '1 ビビッドブルー' },
     { key: 'A2', name: '2 ピンク×ブルー' },
@@ -18467,9 +18046,7 @@ function buildPanel() {
   ];
   varRowX('planetSkin', PLANET_SKINS, () => params.design, v => { params.design = v; },
     { snap: VAR_SNAP.planet, after: (isLive => () => applyEdit(isLive, true))(liveEdit), reset: { get: () => params.design, set: v => { params.design = v; renderFrame(); } } });
-  /* 【2026-08-28 ヒデさん指定】惑星の大きさをパネルからも変えられるように */
-  slider('大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
-    v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準です。編集モードで角をつまんでも変えられます。');
+  /* 【2026-09-17 ヒデさん指定】「大きさ」のつまみは「メッシュ（網）の形」の中(ノードの数の下・カゴの大きさの上)へ移動 */
   /* 【2026-09-09 ヒデさん指定】惑星の「つぶし」項目は削除。真円(flat=1)に固定＝焼き込み。
      実装は params.planet.flat 未設定時 1(真円) が既定なので挙動不変。 */
 
@@ -19121,14 +18698,7 @@ function buildPanel() {
   const catCase = category('🗂 導入事例（2×2グリッド）', false);
   catNote(catCase, '見出し → 水平線が左から3本 → 中央の縦線 → カード4枚がブラーで登場。');
 
-  /* 【2026-09-15 ヒデさん指定】罫線あり/なし と ホバーの案 */
-  sub(catCase, '罫線（あり／なし）', true, { fixed: true });
-  varRowX('caseLayout', CASE_LAYOUTS, () => caseLayoutKey(), v => { params.patterns.caseLayout = String(v); }, { after: () => { applyCaseLayout(); renderFrame(); } });
-  note('URL でも切替: ?cl=0(あり) / ?cl=1(なし)');
-  sub(catCase, 'ホバーの動き', true, { fixed: true });
-  varRowX('caseHover', CASE_HOVERS, () => caseHoverKey(), v => { params.patterns.caseHover = String(v); }, { after: () => { applyCaseHover(); renderFrame(); } });
-  note('URL でも切替: ?ch=trim / cardtrim / ct-lift / ct-tight / ct-panel。「カードの周りに線」と影の3案では、サムネイルの枠は出ません。');
-
+  /* 【2026-09-17 大掃除・ヒデさん指定】罫線(あり/なし)とホバーの動きの選択UIは削除。罫線なし(caseLayout=1)・影でふわっと浮く(ct-lift)に固定＝焼き込み。 */
   sub(catCase, '基本（長さ・ぼけ具合）');
   sectionLenSlider('cases', 1000);
   rows.push(slider('全体の再生時間', 3, 20, 0.5, () => sv().cases.playSec, v => sv().cases.playSec = v, v => v.toFixed(1) + '秒',
@@ -19143,20 +18713,8 @@ function buildPanel() {
   rows.push(slider('見出しが出きるまで', 0.05, 1, 0.02, () => sv().cases.introDur, v => sv().cases.introDur = v, v => v.toFixed(2) + '秒',
     '「導入事例」の文字がぼけから出きるまでの時間。'));
 
-  sub(catCase, '② 罫線が引かれる（水平3本→中央の縦線）');
-  note('「%」はセクションの再生進捗です。');
-  rows.push(slider('1本目が引き始める', 0, 1, 0.02, () => sv().cases.lineAt, v => sv().cases.lineAt = v, v => Math.round(v * 100) + '%',
-    '一番上の水平線が左から引かれ始める時点。'));
-  rows.push(slider('次の線までの遅れ', 0, 0.4, 0.01, () => sv().cases.lineStagger, v => sv().cases.lineStagger = v, v => Math.round(v * 100) + '%',
-    '大きいほど「上→下へ1本ずつ順に」。0で3本同時。'));
-  rows.push(slider('1本を引き切るまで', 0.05, 1, 0.02, () => sv().cases.lineDur, v => sv().cases.lineDur = v, v => Math.round(v * 100) + '%',
-    '水平線1本が左から右へ引き切るのにかける長さ。'));
-  rows.push(slider('縦線が引き始める', 0, 1, 0.02, () => sv().cases.vlineAt, v => sv().cases.vlineAt = v, v => Math.round(v * 100) + '%',
-    '中央の縦線が上から引かれ始める時点。'));
-  rows.push(slider('縦線を引き切るまで', 0.05, 1, 0.02, () => sv().cases.vlineDur, v => sv().cases.vlineDur = v, v => Math.round(v * 100) + '%',
-    '縦線が上から下へ引き切るのにかける長さ。'));
-
-  sub(catCase, '③ カード4枚がブラーで登場');
+  /* 【2026-09-17 大掃除】「② 罫線が引かれる」のつまみは削除(罫線なしに固定したので効かない) */
+  sub(catCase, '② カード4枚がブラーで登場');
   rows.push(slider('カードが出る', 0, 1, 0.02, () => sv().cases.cardAt, v => sv().cases.cardAt = v, v => Math.round(v * 100) + '%',
     'カード4枚が【同時に】ブラーで出はじめる時点。罫線より後にすると線が引けてから出ます。'));
   /* 【2026-08-30 ヒデさん指定・確定仕様】「次のカードのディレイ」は削除。4枚同時で固定(1枚ずつには戻さない) */
@@ -19190,8 +18748,7 @@ function buildPanel() {
       note('現行はボタン遷移。「フォーム（直置き）」にすると、見出し・本文の下に自作フォームを置きます(送信先は無し=見た目のみ)。切り替えると下に必要な項目だけ出ます。');
     },
     formStyle() {
-      varRowX('formStyle', CV_FORMSTYLES, () => String(params.formStyle || '1'), v => { params.formStyle = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-      note('リキッドグラス系5案。背景グラデが磨りガラスに透けます。');
+      /* 【2026-09-17 大掃除・ヒデさん指定】リキッドグラス5案の選択は削除。「リキッドグラス（明）」(formStyle=1) に固定＝焼き込み。横幅と細かい調整だけ残す */
       rows.push(slider('フォームの横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { fixedMax: true }));
       /* 【2026-09-17 ヒデさん依頼】背景・バックドロップフィルター・プレースホルダーの色味を後から個別調整できるように(白飛び対策) */
       const _g = () => (params.cvfGlass = params.cvfGlass || {});
@@ -19254,21 +18811,13 @@ function buildPanel() {
     (mount || body).appendChild(g);
     const prev = mount; mount = g; try { fn(); } finally { mount = prev; }
   };
-  catCv.classList.remove('hier-1', 'hier-2', 'hier-3', 'hier-4', 'hier-5');
-  catCv.classList.add('hier-' + (params.cvHier || '1'));
-  sub(catCv, '情報の見せ方（階層の表現・5案）', null, { fixed: true });
-  segRow('見せ方', [['インデント', '1'], ['余白で区分', '2'], ['左アクセント', '3'], ['背景ブロック', '4'], ['見出し強弱', '5']], () => (params.cvHier || '1'), v => { params.cvHier = v; markDirty(); if (typeof buildPanel === 'function') buildPanel(); });
-  note('「CTA の中にフォームが入る」といった“包含関係”の見せ方を選べます。並び(要素別)は共通です。');
-  /* ---- 要素別(共通の並び)。入れ子は subgroup() で表現 ---- */
-  sub(catCv, 'CTA（ボタン / フォーム）'); B.cta();
-  if (isForm()) subgroup('フォーム（見た目・横幅）', () => { B.formStyle(); });
-  sub(catCv, '背景グラデーション'); B.gradForm();
-  subgroup('形の詳細（中心・広がり・回転）', () => { B.gradGeom(); });
-  subgroup('色の移ろい（時間で色が変わる）', () => { B.color(); });
+  catCv.classList.add('hier-1');   /* 見せ方＝インデント固定(焼き込み) */
+  /* 【2026-09-17 大掃除・ヒデさん指定】見せ方(5案)/CTA案(ボタン↔フォーム)/リキッドグラス5案/背景グラデ案(0〜3)/形の詳細(中心・広がり・回転・棒で編集)/
+     境界(溶け込み)/余白・高さ の選択UIは削除。今の値(フォーム直置き・明るいリキッドグラス・放射グラデ・標準の溶け込み・余白120/0/0/60)に固定＝焼き込み。 */
+  sub(catCv, 'フォーム（横幅・磨りガラスの細かい調整）'); B.formStyle();
+  sub(catCv, '色の移ろい（時間で色が変わる）'); B.color();
   sub(catCv, '粒（ディザ）と流れ'); B.dither();
   subgroup('流れ・ゆらゆら', () => { B.flow(); });
-  sub(catCv, '境界（溶け込み）'); B.edge();
-  sub(catCv, '余白・高さ'); B.spacing();
 
   sub(catCv, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
   note('お問い合わせとフッターの文字ごとに 太さ・行間・字間(Contact・見出し・本文・フォームの項目名/入力欄・送信ボタン・フッター)。空欄＝今のCSSの値(カッコ内)。');
