@@ -5911,6 +5911,22 @@ function load() {
         localStorage.setItem('anyflow-mesh-d-20260915', '1');
       }
     } catch (e) {}
+    /* 【2026-09-17 ヒデさん報告】ネットワーク★1『D 大きいケージ』が organic(14ノード・疎で横広がり)に化けていた件の根治。
+       旧移行(20260915)の MD は数値だけで style/cageShape/nodes を含まず、保存側が organic のままだった＝
+       ★1 を選んでも V4 のような測地線ケージ(cage/geo/32)にならない。V5焼き込みの conv.mesh と同一の完全なケージ設定を、
+       active(conv.mesh)・調整の控え(gfxTweaks.mesh['3'].mode)・上書きの控え(gfxVarOverride.mesh['D 大きいケージ'].mode)の3か所へ揃える。 */
+    try {
+      if (!localStorage.getItem('anyflow-mesh-d-geo-20260917')) {
+        const MD2 = { style: 'cage', cageShape: 'geo', cageFreq: 2, nodes: 32, cageR: 2.1, cageSpin: 0.4, cageLinks: 4, cageTilt: -11,
+                      lineAlpha: 0.25, lineWidth: 1.5, rate: 10.9, size: 0.52, spread: 1.2, span: 0.34, random: 0.5, drift: 1.3, hop: 0.7 };
+        if (merged.conv && merged.conv.mesh) Object.assign(merged.conv.mesh, MD2);
+        const _tw2 = merged.gfxTweaks && merged.gfxTweaks.mesh && merged.gfxTweaks.mesh['3'];
+        if (_tw2 && _tw2.mode) Object.assign(_tw2.mode, MD2);
+        const _ovD2 = merged.gfxVarOverride && merged.gfxVarOverride.mesh && merged.gfxVarOverride.mesh['D 大きいケージ'];
+        if (_ovD2 && _ovD2.mode) { Object.assign(_ovD2.mode, MD2); st.over = merged.gfxVarOverride; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); }
+        localStorage.setItem('anyflow-mesh-d-geo-20260917', '1');
+      }
+    } catch (e) {}
     if (Array.isArray(st.fav)) merged.gfxFav = st.fav;                              /* 2026-09-01: お気に入りを復元 */
   } else if (merged.gfxPresets && Object.keys(merged.gfxPresets).length) {
     /* まだ別置きしていない古い持ち物は、ここで引っ越す */
