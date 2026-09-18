@@ -50,6 +50,7 @@
 | ファイル | 中身 |
 |---|---|
 | [anyflow/HANDOFF.md](anyflow/HANDOFF.md) | 実装の引き継ぎ書（一番厚い。実測値と経緯が全部ここ） |
+| [anyflow/DESIGN-SYSTEM.md](anyflow/DESIGN-SYSTEM.md) | V5.0 のデザインシステム（実装トークンの一覧・2026-09-19 の整理の記録・戻し方）。値の唯一の出どころは index.html の DS-TOKENS ブロック |
 | [anyflow/RESULTS-INITIAL-RESTORATION.md](anyflow/RESULTS-INITIAL-RESTORATION.md) | 最初に納品した10案の復元。独立URL /mock/results-initial/、当時のレイアウト・操作・CSS、復元元と実測、現在の一覧とは別の番号・保存領域 |
 | [anyflow/RESULTS-SECOND-RESTORATION.md](anyflow/RESULTS-SECOND-RESTORATION.md) | 2回目に納品した10案の復元。2026/09/13 22:50版、独立URL /mock/results-second/、横スクロール3案・Visionから開発者体験まで |
 | [anyflow/RESULTS-REVEAL-STUDY.md](anyflow/RESULTS-REVEAL-STUDY.md) | 現在の検討一覧、残存案の連番、2回目No.03の追加、新規10案（既存の別版5＋新しいアプローチ5）、画面占有率・発火条件・移植用文面。削除済みの専用ファイルを除去。No.01は着地後に横移動し、通常の縦スクロールへ復帰 |
