@@ -1395,6 +1395,13 @@
   #results.rfx-24 .r2v-graphic, #results.rfx-25 .r2v-graphic { width: 300px; height: 300px; }
   #results.rfx-24 .r2v-big, #results.rfx-25 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: 70px; line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-24 .r2v-big-ai, #results.rfx-25 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
+  /* 【2026-09-18 ヒデさん依頼】for SaaS/AI の「Product」: 登場の大きい文字では下の行(サイズはパネルの --r2v-prod-size、既定38px≒70pxの55%)、
+     終点の小さいタグでは改行せず1行「for SaaS Product」。太さ等は「🔤 文字」(r2vBigProd / r2vTagProd) */
+  .r2v-big { text-align: center; }
+  .r2v-big .r2v-big-w { display: block; }
+  .r2v-big .r2v-big-prod { display: block; font-size: var(--r2v-prod-size, 38px); line-height: 1.2; margin-top: 0.12em; }
+  html.mb .r2v-big .r2v-big-prod { font-size: calc(var(--r2v-prod-size, 38px) * 0.57); }
+  .r2v-tag .r2v-prod { white-space: nowrap; }
   /* ===== 【2026-09-15 ヒデさん指定】「読み飛ばさない・しっかり読ませる」10案(27〜36) =====
      共通(29/31/32/34/35/36): 案6と同じ舞台(導入と SaaS/AI を同じ場所で切替)。文章 左(560)・ピクト 右(300)。見出しは行ごとの窓、本文は文ごとの span(.rs) */
   html:not(.mb) #results.rfx-29 .res2, html:not(.mb) #results.rfx-31 .res2, html:not(.mb) #results.rfx-32 .res2, html:not(.mb) #results.rfx-34 .res2, html:not(.mb) #results.rfx-35 .res2, html:not(.mb) #results.rfx-36 .res2 { display: grid; grid-template-columns: 1fr; align-items: center; justify-items: stretch; }
@@ -3935,7 +3942,7 @@
         <div class="r2v">
           <div class="r2v-text">
             <div class="r2v-tagh">
-              <div class="r2v-tag r2v-tag-saas">for SaaS</div>
+              <div class="r2v-tag r2v-tag-saas">for SaaS<span class="r2v-prod"> Product</span></div><!-- 【2026-09-18 ヒデさん依頼】終点は1行「for SaaS Product」 -->
               <div class="r2v-h"><span class="r2v-hl"><span class="r2v-hli">リアルタイムに</span></span><br><span class="r2v-hl"><span class="r2v-hli">データ同期</span></span></div><!-- .r2v-hl/.r2v-hli: 案1 の行ごとマスク出現用(既定は inline＝見た目・現行は不変) -->
             </div>
             <!-- 【2026-08-31 ヒデさん指定】本文差し替え -->
@@ -3949,7 +3956,7 @@
         <div class="r2v">
           <div class="r2v-text">
             <div class="r2v-tagh">
-              <div class="r2v-tag r2v-tag-ai">for AI</div>
+              <div class="r2v-tag r2v-tag-ai">for AI<span class="r2v-prod"> Product</span></div>
               <div class="r2v-h"><span class="r2v-hl"><span class="r2v-hli">コンテキスト取得</span></span><br><span class="r2v-hl"><span class="r2v-hli">から実行まで</span></span></div>
             </div>
             <!-- 【2026-08-31 ヒデさん指定】本文差し替え -->
@@ -5056,7 +5063,7 @@ const DEFAULTS = {
       fx14: { drawLen: 0.55, drift: 12, settleLen: 0.2 },   // 案14: 描き上がりの長さ(場面の割合)・描きながら上がる距離(vh)・収まる長さ
       fx20: { labelRise: 120, heroScale: 1.55 },            // 案20: 大見出しが上へ抜ける距離(px)・ピクトの主役の大きさ(2026-09-15 ヒデさん指定: 主役を約1.3倍に=527px相当。終点の枠は 340px)
       fx21: { numScale: 3.0, settleAt: 0.06, settleLen: 0.20, panAt: 0.50, panLen: 0.22 },   // 案21〜23: 数値の大きさ・収まり始め/長さ・横移動の始め/長さ(固定区間の割合)
-      fx24: { heroScale: 1.7, labelUp: 190 },   // 案24: ピクトの主役の大きさ(絵コンテ 666枠/386枠≒1.7)・文字が上へ動く距離(px)
+      fx24: { heroScale: 1.7, labelUp: 190, prodSize: 38 },   /* prodSize: 登場の大きい文字の下に付く「Product」のサイズ(px)。2026-09-18 */   // 案24: ピクトの主役の大きさ(絵コンテ 666枠/386枠≒1.7)・文字が上へ動く距離(px)
       fx26: { numScale: 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 },   /* 2026-09-15: SaaS を読む区間 4%→15%(下段が出てすぐ横へ動いて「表示されない」に見えていた) */   // 案26: 数値の大きさ(120/70)・収まり・線・横移動(固定区間の割合)
       /* 数字のスロット (2026-08-17 指定)。
          数字は最初から出しておき、回転そのものを見せる。ブラー出現は見出しだけ。
@@ -12077,13 +12084,20 @@ function resFxBuildBig() {
   resFxSt.big = E.r2v.map((r2v, i) => {
     const d = document.createElement('div');
     d.className = 'r2v-big' + (i ? ' r2v-big-ai' : '');
-    d.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (i ? 'for AI' : 'for SaaS');
+    /* 【2026-09-18 ヒデさん依頼】登場の大きい文字は「for SaaS」＋下の行に小さめの「Product」(サイズは --r2v-prod-size) */
+    const w = document.createElement('span'); w.className = 'r2v-big-w'; w.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (i ? 'for AI' : 'for SaaS');
+    const pr = document.createElement('span'); pr.className = 'r2v-big-prod'; pr.textContent = 'Product';
+    d.append(w, pr);
     d.setAttribute('aria-hidden', 'true');
     r2v.appendChild(d);
     return d;
   });
+  try { textTools.applyAll(); } catch (e) {}   /* 作った直後に文字システム(太さ等)を当てる */
 }
 function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = []; }
+/* 【2026-09-18】大きい文字の下の「Product」のサイズ(px)。パネル「案24…：ピクトの大きさと文字の動き」から */
+function applyResProd() { const f = (params.sections && params.sections.results && params.sections.results.fx24) || {}; document.documentElement.style.setProperty('--r2v-prod-size', (f.prodSize != null ? f.prodSize : 38) + 'px'); }
+applyResProd();
 /* 毎フレーム(updateResults から)。t=入場リビールの再生位置(秒・マイナスは未再生)。 */
 function resFxFrame(t) {
   const k = resFxSt.key;
@@ -16151,7 +16165,9 @@ const TEXT_SPEC = [
   { key: 'p2p',       sel: '#valP2 p',       name: 'Point 02 本文',                      sec: 'vis', text: 1 },
   // --- 実績 ---
   { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for SaaS / for AI（小ラベル）',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for SaaS / for AI（小ラベル）の Product', sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'r2vBig',    sel: '.r2v-big',   name: 'for SaaS / for AI（大きい英字）',            sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for SaaS / for AI（大）の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
   { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（リアルタイムに〜／コンテキスト取得〜）', sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'r2vP',      sel: '.r2v-p',     name: '価値の本文',                                 sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'resHl1',    sel: '#resHl1',    name: '推進力の見出し 1行目（事業の推進力を、）',    sec: 'res', text: 1 },
@@ -18323,10 +18339,13 @@ function buildPanel() {
     subT(catRes, () => '案' + rfxNos(['24', '24-2', '24-3', '24-4', '25']) + '：ピクトの大きさと文字の動き');
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
-    const F24 = { heroScale: 1.7, labelUp: 190 };
+    const F24 = { heroScale: 1.7, labelUp: 190, prodSize: 38 };
     const s24 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip));
     s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。');
     s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。');
+    /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
+    rows.push(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
+      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「🔤 文字」で。', { fixedMax: true }));
     rows.push(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
       '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。', { fixedMax: true }));
     rows.push(slider('区切り線の下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
