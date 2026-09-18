@@ -3143,7 +3143,7 @@
     left: 24px;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 65;   /* 【2026-09-18 ヒデさん指摘】ハンバーガーメニュー(z 59)を開くと調整パネルが下に隠れて触れなかった→メニューより上に */
+    z-index: 65;   /* 【2026-09-18 ヒデさん指摘】ハンバーガーメニュー(z 59)やヘッダー(z 60)を開くと調整パネルが下に隠れて触れなかった→その上に */
   }
   /* 隠しモード（2026-08-21 ヒデさん指示）：パネルは最初は見えない。
      画面右上の透明ボックス（.tools-secret-hot）をクリックすると出る/隠れる */
@@ -5147,7 +5147,7 @@ const DEFAULTS = {
      ※ pin='on' のまま(=リビール演出は維持)、この scrollHold で“ロックの強さ”だけ切替える。 */
   scrollHold: 'smooth', // 2026-08-26 ヒデさん指定: サイト全体は「固定追従なし」を既定に(掴み無し・ロック無し)。固定は個別で必要な所だけ。切替は 固定追従なし / 固定 の2択
   kvDesign: 'planet',   // 右グラフィックの案。'planet'=V1.0の惑星(2026-08-26 復活・既定) / それ以外=iframe(kv/embed.html)の案
-  drawer: { padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 },
+  drawer: { padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14, barW: 20, barH: 2, barGap: 4.5 },   /* barW/barH/barGap=右上のハンバーガー(2本線)の 長さ/太さ/間隔(px) 2026-09-18 */
   /* 【2026-09-18 ヒデさん依頼「ロゴティッカーを目視で美しく」】ロゴごとの微調整。dy=上下(px・＋で下)、mx=左右それぞれに足す余白(px)。
      既定値はインク(見える部分)の重心と濃さの実測から: 重心が箱の中心より下のロゴは上げ(akerun/ANDPAD)、上のロゴは下げ(sweeep)、
      黒ベタで重いロゴ(スマレジ/ContractS/UPSIDER)は余白を広く、線の細い NP掛け払い は狭く。 */
@@ -14150,6 +14150,8 @@ function applyDrawerTune() {
   const d = Object.assign({ padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
   r.setProperty('--drw-gap', d.gap + 'px'); r.setProperty('--drw-fs', d.fs + 'px'); r.setProperty('--drw-num-fs', d.numFs + 'px');
+  /* 【2026-09-18 ヒデさん依頼】ハンバーガーアイコン(2本線)の長さ・太さ・間隔(html.bi-2 の CSS より優先させるため要素に直接) */
+  document.querySelectorAll('.hdr-burger').forEach(b => { b.style.setProperty('--bg-w', (d.barW != null ? d.barW : 20) + 'px'); b.style.setProperty('--bg-h', (d.barH != null ? d.barH : 2) + 'px'); b.style.setProperty('--bg-gap', (d.barGap != null ? d.barGap : 4.5) + 'px'); });
 }
 function applyKvCopy() {
   const r = document.documentElement.style, k = params.kv;
@@ -18850,6 +18852,10 @@ function buildPanel() {
     ds('項目の間隔（上下）', 'gap', 24, 0, 120, 2, v => Math.round(v) + 'px', 'ビジョン／提供できること… の行と行の間。以前は10px。');
     ds('項目の文字サイズ', 'fs', 56, 24, 120, 1, v => Math.round(v) + 'px', 'メニュー項目の文字サイズ。');
     ds('番号の文字サイズ', 'numFs', 14, 8, 40, 1, v => Math.round(v) + 'px', '01〜04 の番号の文字サイズ。');
+    /* 【2026-09-18 ヒデさん依頼】右上のハンバーガー(横線2本)の 長さ/太さ/間隔 */
+    ds('アイコンの線の長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
+    ds('アイコンの線の太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
+    ds('アイコンの線の間隔', 'barGap', 4.5, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
   }
   sub(catMenu, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
   note('メニューの項目・番号・お問い合わせボタンの 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。');
