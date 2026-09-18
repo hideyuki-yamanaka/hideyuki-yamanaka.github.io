@@ -675,7 +675,7 @@
     --fs-lead:20px;      /* ポイント見出し */
     --fs-title:22px;     /* セクション見出し（実績/for SaaS/AI） */
     --fs-display:26px;   /* ビジョンのメッセージ */
-    --fs-hero:46px;      /* KVメインコピー（モバイル） */
+    --fs-hero:34px;      /* KVメインコピー（モバイル）。2026-09-19: 46→34(8文字「AIとプロダクトに」が1行に収まる幅。PCノーマル案 50px の比例・仮置き) */
     /* --fs-stat(50px) は 2026-09-09 削除: 実績の数値はカンプ更新で 34px 直書きになり未使用に */
     /* 【2026-09-09 追加】カンプSP の総点検で出た3サイズ(10/18/24)を役割名で登録し、リテラル直書きを解消 */
     --fs-micro:10px;     /* 事例タグ(枠付き小ラベル) */
@@ -2871,21 +2871,44 @@
     .cta { width: 150px; height: 36px; font-size: 12px; padding: 6px 12px 6px 14px; gap: 10px; border-radius: 5px; }   /* 【V4.0 2026-09-13】マーキー化に伴いスマホでも矢印+マーキー入る幅を確保 */
     .cta .cta-arrow { width: 18px; height: 18px; }
     .cta .cta-arrow svg { width: 15px; height: 12px; }
+    /* 【2026-09-19 仮置き】SP も PC(hm-12 分離型)と同じ: スクロール後は「お問い合わせ」の箱が 44px の黒いハンバーガー箱に縮み、タップでメニュー。
+       ページ上部では従来どおり「お問い合わせ」へ遷移(JS bindDrawer は hdr-stuck で判定) */
+    html.mb.hm-12 .header .cta { position: relative; width: calc(150px - 106px * clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1)); height: calc(36px + 8px * clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1)); padding-left: calc(14px * (1 - clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1))); padding-right: calc(12px * (1 - clamp(0, (var(--hdr-t, 0) - 0.1) * 2, 1))); }
+    html.mb.hm-12 .header .cta .cta-label { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 2.8, 1)); }
+    html.mb.hm-12 .header .cta .cta-arrow { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 3, 1)); }
+    html.mb.hm-12 .header .cta .cta-burg { opacity: calc(clamp(0, (var(--hdr-t, 0) - 0.4) * 2.8, 1)); }
+    html.mb.hm-12 .header.hdr-on-dark .cta, html.mb.hm-12 .header.hdr-on-dark .cta:hover { background: #fff; box-shadow: none; }
+    html.mb.hm-12 .header.hdr-on-dark .cta .cta-burg i { background: #090909; }
+    html.mb.hm-12 .header.hdr-on-dark .logo-c { opacity: 0; }
+    html.mb.hm-12 .header.hdr-on-dark .logo-w { opacity: 1; }
+    /* 【2026-09-19 仮置き】SP でもヘッダーを追従(fixed)に。PC(hdr-follow)と同じく、スクロール後にハンバーガー箱でメニューを開けるように(旧: absolute で上部だけ) */
+    html.mb.hm-12 .header { position: fixed; top: 18px; left: 17px; right: 17px; z-index: 60; }
+    /* SP はタップ後に :hover が残るので、箱の色はホバーで変えない。メニューを開いている間は PC と同じ「白い箱＋黒い線」 */
+    html.mb .header .cta:hover:not(.is-open) { background: #090909; }
+    html.mb .header .cta.is-open, html.mb .header .cta.is-open:hover { background: #fff; box-shadow: none; }
+    html.mb .header .cta.is-open .cta-burg i { background: #090909; }
+    /* ドロワー(メニュー)の SP 寸法: PC の 130px 左余白・56px 文字は入らないので縮める(仮置き) */
+    html.mb .hdr-drawer.drw-3 .hdr-drawer-nav { padding: 0 24px; gap: 14px; }
+    html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: 34px; }
+    html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a .hdr-drawer-num { font-size: 12px; }
+    html.mb .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: 16px; width: 200px; height: 44px; font-size: 14px; }
 
     /* --- キービジュアル (2026-09-02 ヒデさん指定: モバイルは【グラフィックが上・コピーが下】) --- */
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
     /* 【2026-09-09 カンプ node16534:22139 準拠】グラフィックは幅~414・上端~81・中央(左に少しはみ出し)。
        gx/gy(17,-52)ぶんを見込んで top/margin を調整(top=133-52=81 / left=195-218+17≈-6)。 */
-    .orbit { right: auto; left: 50%; top: 144px; transform-origin: 0 0; margin-left: -243px; }   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
+    .orbit { right: auto; left: 50%; top: 120px; transform-origin: 0 0; margin-left: -243px; }   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
     /* コピーはグラフィックの下へ。幅を制限して折り返し可にし、右はみ出しを解消 */
     /* 【2026-09-08 カンプ node16534:22195 準拠】KVコピーは中央寄せ。メイン46px Thin/行間1.4・中央、
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
-    .headline { left: 24px; right: 24px; top: 416px; white-space: normal; gap: var(--space-16);   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
+    .headline { left: 24px; right: 24px; top: 400px; white-space: normal; gap: var(--space-12);   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
                 align-items: center; text-align: center; }
-    .hl-main { font-size: var(--fs-hero); line-height: var(--lh-tight); text-align: center; font-weight: 100; }   /* 46px / 1.4 中央。太さ100=9/9のSPトレースのまま(PCは調整版800。仮置き: SPカンプ未確認) */
+    .hl-main { font-size: var(--fs-hero); line-height: 1.35; text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース) */
+    .hl-main .hl-line:last-child { font-size: 60px; line-height: 1.2; font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例) */
+    .hl-main .hl-line:last-child .hl-caret { height: 50px; vertical-align: -6px; }   /* 46px / 1.4 中央。太さ100=9/9のSPトレースのまま(PCは調整版800。仮置き: SPカンプ未確認) */
     .hl-eyebrow { font-size: 12px; font-weight: 400; }   /* 【2026-09-17 大掃除】PCのサブコピーは20px/Medium500(Figma)に焼き込んだので、SPは従来の12px/400を明示して据え置き(仮置き) */
-    .hl-caret { height: 36px; vertical-align: -6px; }
-    .hl-eyebrow { font-size: var(--fs-caption); font-weight: 300; letter-spacing: 0.6px; gap: var(--space-4);
+    .hl-caret { height: 26px; vertical-align: -4px; }   /* 2026-09-19: 34px に合わせて */
+    .hl-eyebrow { font-size: var(--fs-caption); font-weight: 500; letter-spacing: 0.6px; gap: var(--space-4);   /* 2026-09-19: 太さ 300→500(PC サブコピー Medium と同じ・仮置き) */
                   flex-wrap: nowrap; justify-content: center; margin-top: 0; }   /* カンプSP node16534:22199: Noto Light(300) 12px / 字間0.6 (PCの --kv-eyebrow-weight=400 は使わない) */
     .hl-eyebrow i { width: 10px; flex: 0 0 auto; }   /* カンプの罫線10px */
     /* カンプSP node16534:22200: ロゴ帯は y624・高さ42.4、ロゴ1つは 13.5〜19px 高(→⚠️仮置き 16px)・間隔 24〜31px(→27px)。
@@ -2923,7 +2946,7 @@
     html.mb .pin-stage { top: 0; width: var(--sw); transform: scale(var(--s)); transform-origin: left top; }
     html.mb #results .pin-stage { align-items: flex-start; }   /* 中身は上から流す(縦中央寄せ解除) */
     #vision { margin-top: 0; }   /* PC用の 200px 余白を撤去(KV→ビジョンが空きすぎていた) */
-    .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 300; text-align: center; }   /* カンプSP: SF Pro Text Light(300)/16px → y741。【2026-09-16】左右対称=中央に */
+    .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 600; letter-spacing: 0; text-align: center; }   /* カンプSP: 16px → y741。【2026-09-19】太さは共通部品(600)に(旧SPカンプ Light300 は仮置きで上書き) */
     .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--fs-display); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)/26px/1.7 */
     /* 【2026-09-09 ヒデさん指定】SP でも「つなぐ/強み」のギラギラのグラデ揺らぎを PC と同じく出す。
        (以前カンプが単色だったため SP で無効化したが、ヒデさんの意向で PC 同様に復活。base の
@@ -3006,8 +3029,8 @@
     /* 【2026-09-09 ヒデさん指定「開発者体験1と2のギャップが広い」】上下 72px → 40px に詰める。
        ⚠️仮置き: カンプSP(node16534:22257)は 440px の暗い帯だけで中身(Strength01/02)の指定が無い。 */
     .dev-block { padding: var(--space-40) 18px; gap: 28px; min-height: 0; }
-    .dev-center .dc-label { font-size: 14px; margin-bottom: var(--space-8); }
-    .dev-center .dc-one { font-size: 22px; line-height: 1.5; }
+    .dev-center .dc-label { font-size: var(--fs-base); margin-bottom: var(--sec-head-gap, 6px); }   /* 【2026-09-19 仮置き】共通部品: SP の英字ラベルは 16px、間隔は --sec-head-gap(旧 14px / 8px) */
+    .dev-center .dc-one { font-size: var(--fs-heading); line-height: 1.45; }   /* 【2026-09-19 仮置き】共通部品: SP の見出しは 24px/1.45(旧 22px/1.5) */
     /* CLI/SDKの箱もモバイル文字サイズに合わせて縮める(1行に収める) */
     .dc-one .ds-box { height: 30px; }
     .dc-one .ds-roll { height: 26px; }
@@ -3035,8 +3058,8 @@
     .dl-head span { font-size: 14px; }
 
     /* --- 導入事例 (カンプ node16534:22646 準拠: 画像上・縦カード4枚を通常フローで縦積み) --- */
-    .case-eyebrow { position: static; left: auto; right: auto; top: auto; text-align: center; margin: 0 var(--space-24) 6px; font-size: var(--fs-base); }   /* 【2026-09-16】左→中央(導入事例と揃える) */
-    .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) 17px; font-weight: 300; font-size: var(--fs-heading); line-height: 64px; }   /* カンプSP node16534:22644: Noto Light 24px / 行間64px、カード群まで 17px(3515−3498) */
+    .case-eyebrow { position: static; left: auto; right: auto; top: auto; text-align: center; margin: 0 var(--space-24) var(--sec-head-gap, 6px); font-size: var(--fs-base); }   /* 【2026-09-16】左→中央。【2026-09-19】間隔は共通変数 */
+    .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) 17px; font-weight: 600; font-size: var(--fs-heading); line-height: 1.45; }   /* 【2026-09-19】共通部品: 24px/600/1.45(旧SPカンプ Light 24px/行間64px は仮置きで上書き) */   /* カンプSP node16534:22644: Noto Light 24px / 行間64px、カード群まで 17px(3515−3498) */
     .case-grid { position: static; left: auto; top: auto; width: 100%; height: auto;
                  display: flex; flex-direction: column; gap: 0; }   /* カンプSP node16534:22646: カードは隙間なく積む(余白はカード内 padding 40) */
     .cg-vline { display: none; }
@@ -3065,7 +3088,8 @@
        背景グラデ(16534:22768)は枠より上下 17px 大きい 275 高なので、枠を 275 にして中身を 17px 下げる */
     .cv-inner { width: calc(100% - 44px); height: 275px; }
     .cv-content { left: 0; right: 0; transform: none; width: auto; padding: 0 var(--space-24); top: 57px; }
-    .cv-head { font-size: var(--fs-display); line-height: 1.5; }                                   /* Noto Light 26px / 1.5 */
+    .cv-eyebrow { font-size: var(--fs-base); }   /* 【2026-09-19】共通部品: SP の英字ラベルは 16px(PC 20px) */
+    .cv-head { font-size: var(--fs-heading); line-height: 1.45; }                                   /* 【2026-09-19 仮置き】共通部品: 24px/1.45(旧 26px/1.5) */
     .cv-sub  { font-size: var(--fs-caption); line-height: var(--lh-body); margin-top: var(--space-8); text-align: center; }   /* Noto Light 12px / 1.8 / 中央 */
     .cv-sub br { display: none; }                                                                 /* カンプSP は手動改行なし */
     .cv-btn  { margin-top: var(--space-8); }   /* 140×40・角丸4・#090909・Light 14px は base がカンプと同じ */
@@ -6736,8 +6760,10 @@ function applyHdrMode(key) {
   const h = document.documentElement;
   h.classList.add('hdr-follow');
   /* 【V5.0】親 .stage に transform があると position:fixed がそれ基準になり追従しない。
-     PC はヘッダーを body 直下へ出して viewport 基準の fixed にする(mb はスケール維持のため動かさない)。 */
-  if (!h.classList.contains('mb')) {
+     ヘッダーを body 直下へ出して viewport 基準の fixed にする。
+     【2026-09-19 仮置き】SP も出す(旧: mb はスケール維持のため動かさなかった)。SP でもスクロール後にハンバーガー箱でメニューを開けるようにするため。
+     ドロワーも stage の中だと fixed(inset:0)が stage 基準になり画面外へ飛ぶので同様に出す */
+  {
     const hdr = document.querySelector('.header');
     if (hdr && hdr.parentElement !== document.body) document.body.appendChild(hdr);
     /* ドロワーは backdrop-filter を持つ header の中だと fixed がクリップされるので body 直下へ出す */
