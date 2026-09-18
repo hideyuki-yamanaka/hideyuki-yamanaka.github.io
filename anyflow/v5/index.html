@@ -605,6 +605,7 @@
     flex: none;
   }
   .mq-set { min-height: 42px; }   /* Figma の帯の高さ(42.4px) */
+  .mq-set img { transform: translateY(var(--dy, 0px)); }   /* 【2026-09-18】目視の上下補正(applyLogoTune) */
   @keyframes marquee {
     from { transform: translate3d(0, 0, 0); }
     to   { transform: translate3d(-50%, 0, 0); }
@@ -3741,7 +3742,7 @@
           <a href="#cases">導入事例</a>
         </div>
         <!-- 【V4.0 2026-09-13】notds風マーキーCTA(通常=黒／ホバー=シアン) -->
-        <a class="cta" href="/contact.html" aria-label="お問い合わせ">
+        <a class="cta" href="#conversion" aria-label="お問い合わせ">
           <span class="cta-label" aria-hidden="true">
             <span class="cta-window">
               <span class="cta-reel">
@@ -3772,7 +3773,7 @@
           <a href="#results"><span>02</span>提供できること</a>
           <a href="#dev"><span>03</span>使用イメージ</a>
           <a href="#cases"><span>04</span>導入事例</a>
-          <a class="hdr-drawer-cta" href="/contact.html">お問い合わせ<em>→</em></a>
+          <a class="hdr-drawer-cta" href="#conversion">お問い合わせ<em>→</em></a>
         </nav>
       </div>
     </header>
@@ -5146,7 +5147,12 @@ const DEFAULTS = {
      ※ pin='on' のまま(=リビール演出は維持)、この scrollHold で“ロックの強さ”だけ切替える。 */
   scrollHold: 'smooth', // 2026-08-26 ヒデさん指定: サイト全体は「固定追従なし」を既定に(掴み無し・ロック無し)。固定は個別で必要な所だけ。切替は 固定追従なし / 固定 の2択
   kvDesign: 'planet',   // 右グラフィックの案。'planet'=V1.0の惑星(2026-08-26 復活・既定) / それ以外=iframe(kv/embed.html)の案
-  drawer: { padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 },   // 【2026-09-18 ヒデさん依頼】ハンバーガーメニューの余白(px)・項目の間隔・文字サイズ(項目/番号)。上下は以前(10)より広め
+  drawer: { padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 },
+  /* 【2026-09-18 ヒデさん依頼「ロゴティッカーを目視で美しく」】ロゴごとの微調整。dy=上下(px・＋で下)、mx=左右それぞれに足す余白(px)。
+     既定値はインク(見える部分)の重心と濃さの実測から: 重心が箱の中心より下のロゴは上げ(akerun/ANDPAD)、上のロゴは下げ(sweeep)、
+     黒ベタで重いロゴ(スマレジ/ContractS/UPSIDER)は余白を広く、線の細い NP掛け払い は狭く。 */
+  logoTune: { hennge: { dy: 0, mx: 0 }, upsider: { dy: -0.5, mx: 5 }, np: { dy: -0.5, mx: -4 }, akerun: { dy: -1.5, mx: -1 }, smaregi: { dy: 0, mx: 8 },
+              andpad: { dy: -2, mx: -1 }, icare: { dy: -0.5, mx: 0 }, contracts: { dy: 0.5, mx: 8 }, sweeep: { dy: 2, mx: -1 } },   // 【2026-09-18 ヒデさん依頼】ハンバーガーメニューの余白(px)・項目の間隔・文字サイズ(項目/番号)。上下は以前(10)より広め
   kvVar: 'normal',     // 【2026-09-18 ヒデさん依頼】KVのバリエーション(normal=ノーマル Figma 17707:26544 / strong=強調 調整版)
   kvGfx: { scale: 1.21, dx: 148, dy: 184 },   // 【2026-09-18】右グラフィック全体の拡大・移動(PCのみ)。案(KV_VARIANTS)が入れ替える
   converge: 'mesh',     // 【V4.0 2026-09-09 ヒデさん指定】既定＝ネットワークタブ★1(mesh『D 大きいケージ』)。惑星への集約アニメ。既定は「周回のみ」(2026-08-28 ヒデさん指定・グループ再編)
@@ -14133,6 +14139,13 @@ applyNavGap();
    【2026-09-17 大掃除】太さ・字間は「🔤 文字」(params.edits)へ一本化したのでここでは扱わない。
    コピー左端は「ヘッダーロゴの左端」が基準(--kv-copy-base を実測で入れる)。copyX はそこからのずらし。 */
 /* 【2026-09-18 ヒデさん依頼】ハンバーガーメニュー(左寄せ大)の余白・間隔・文字サイズ → CSS 変数 */
+const LOGO_KEYS = ['hennge', 'upsider', 'np', 'akerun', 'smaregi', 'andpad', 'icare', 'contracts', 'sweeep'];
+const LOGO_NAMES = { hennge: 'HENNGE', upsider: 'UPSIDER', np: 'NP掛け払い', akerun: 'akerun', smaregi: 'スマレジ', andpad: 'ANDPAD', icare: 'iCARE', contracts: 'ContractS', sweeep: 'sweeep' };
+/* 【2026-09-18 ヒデさん依頼】ロゴ帯の目視の微調整(上下・左右の余白)を両セットの img に当てる */
+function applyLogoTune() {
+  const T = params.logoTune || {};
+  document.querySelectorAll('.mq-set').forEach(set => { Array.from(set.querySelectorAll('img')).forEach((img, i) => { const k = LOGO_KEYS[i]; const t = (k && T[k]) || {}; img.style.setProperty('--dy', (t.dy || 0) + 'px'); img.style.marginLeft = (t.mx || 0) + 'px'; img.style.marginRight = (t.mx || 0) + 'px'; }); });
+}
 function applyDrawerTune() {
   const d = Object.assign({ padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
@@ -14172,6 +14185,7 @@ function applyKvCopy() {
 }
 applyKvCopy();
 applyDrawerTune();
+applyLogoTune();
 /* (旧フォントテスト FONT_TEST_PRESETS / applyFontTest は 2026-09-17 の大掃除で撤去。⑪調整版の値は CSS(.hl-main 等)・DEFAULTS.kv・applySway(KV_GFX) に焼き込み済み) */
 /* ポイント1・2の文字サイズ(2026-09-03) */
 function applyVpSize() {
@@ -18036,6 +18050,20 @@ function buildPanel() {
      惑星案に絞った今、その iframe は表示されていないので何も効かない。
      実測: 4つのつまみを動かしても、描画中の円・楕円の位置と濃さが1つも変わらなかった。 */
   subDefaultOpen = false;     /* グラフィックはここまで */
+  /* 【2026-09-18 ヒデさん依頼】ロゴ帯の目視の微調整(ロゴごとに 上下 / 左右の余白) */
+  sub(catKv, 'ロゴ帯（目視の微調整）', null, { fixed: true });
+  note('デザインデータ上は揃っていても、目で見ると上下や間隔がずれて見えるぶんの補正。上下は＋で下・−で上(px)、余白は左右それぞれに足す量(px・−で詰める)。既定値は見える部分の重心と濃さの実測から。');
+  { if (!document.getElementById('logoRowCss')) { const st = document.createElement('style'); st.id = 'logoRowCss'; st.textContent = '.logo-row .txt-ctl{display:flex;gap:4px;align-items:center}.logo-row input.txt-n{width:56px;font-size:11px;padding:2px 4px}.logo-row .txt-lab{font-size:10px;opacity:.65;margin-left:4px}'; document.head.appendChild(st); }
+    const LT = () => (params.logoTune = params.logoTune || {});
+    LOGO_KEYS.forEach(k => {
+      const row = document.createElement('div'); row.className = 'row logo-row'; const lab = document.createElement('label'); lab.textContent = LOGO_NAMES[k]; row.appendChild(lab);
+      const box = document.createElement('div'); box.className = 'txt-ctl';
+      const numIn = (title, key, step, min, max) => { const i = document.createElement('input'); i.type = 'number'; i.className = 'txt-n'; i.title = title; i.step = step; i.min = min; i.max = max; i.value = (LT()[k] && LT()[k][key] != null) ? LT()[k][key] : 0; i.oninput = () => { LT()[k] = LT()[k] || {}; LT()[k][key] = i.value === '' ? 0 : parseFloat(i.value); applyLogoTune(); markDirty(); }; i.onpointerdown = ev => ev.stopPropagation(); return i; };
+      const mkLab = (t, el) => { const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; box.append(l, el); };
+      mkLab('上下', numIn('上下(px・＋で下)', 'dy', '0.5', '-10', '10')); mkLab('余白', numIn('左右それぞれに足す余白(px)', 'mx', '1', '-20', '30'));
+      row.appendChild(box); (mount || body).appendChild(row);
+    });
+  }
   /* 【2026-08-27 ヒデさん指定】「左側コピー」に改名し、順番 / タイミング に分ける */
   sub(catKv, '左側コピー');
   const copyRoot = mount;
