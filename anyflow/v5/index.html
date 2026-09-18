@@ -189,14 +189,18 @@
   .hdr-drawer.is-open { opacity: 1; pointer-events: auto; }
   .hdr-drawer-nav { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
   .hdr-drawer-nav a { display: flex; align-items: baseline; gap: 18px; font-family: var(--font-jp); font-weight: 300; font-size: 40px; line-height: 1.3; color: var(--ink-strong); text-decoration: none; opacity: 0; transform: translateY(14px); transition: opacity .4s var(--e-out), transform .4s var(--e-out), color .2s; }
-  .hdr-drawer-nav a span { font-family: var(--font-en); font-weight: 400; font-size: 14px; color: var(--brand-cyan); opacity: .85; }
-  .hdr-drawer-nav a:hover { color: var(--brand-cyan); }
+  .hdr-drawer-nav a .hdr-drawer-num { font-family: var(--font-en); font-weight: 400; font-size: 14px; color: var(--brand-cyan); opacity: .85; }
+  /* 【2026-09-18 ヒデさん指定】ヘッダーのナビと同じ「上下ロール」ホバー(.nlab の2段構造。色は変えない=ヘッダーと同じ) */
+  .hdr-drawer-nav a .nlab { position: relative; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: top; }
+  .hdr-drawer-nav a .nlab > span { display: block; transition: transform .34s var(--e-out); }
+  .hdr-drawer-nav a .nlab > span:nth-child(2) { position: absolute; left: 0; top: 100%; }
+  .hdr-drawer-nav a:hover .nlab > span { transform: translateY(-100%); }
   .hdr-drawer.is-open .hdr-drawer-nav a { opacity: 1; transform: none; }
   .hdr-drawer.is-open .hdr-drawer-nav a:nth-child(1){transition-delay:.05s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(2){transition-delay:.1s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(3){transition-delay:.15s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(4){transition-delay:.2s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(5){transition-delay:.3s}
-  .hdr-drawer-cta { margin-top: 24px; font-size: 22px !important; color: #fff !important; background: #111; padding: 14px 34px; border-radius: 999px; gap: 12px !important; align-items: center !important; }
-  .hdr-drawer-cta em { font-style: normal; }
+  /* 【2026-09-18 ヒデさん指定】メニューのお問い合わせ＝ヘッダーと同じマーキーCTA(.cta)。暗い地に溶けないよう白黒反転(白地・黒文字)、ホバーはヘッダーと同じシアン */
+  .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: 24px; font-family: var(--font-jp); font-size: 14px; line-height: 1; gap: 0; align-items: center; background: #fff; color: #111; }   /* 特異性を .drw-3 の a より上げる */
+  .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta:hover { background: var(--brand-cyan); color: #fff; }
   .cvf-in option { font-weight: inherit; }   /* 2026-09-18: セレクトの選択肢も入力欄と同じ太さ(300) */
-  .hdr-drawer-cta:hover { background: var(--brand-cyan); }
   /* ===== 【V5.0 2026-09-17 ヒデさん依頼】ハンバーガーを押した先の画面 3案(drw-1/2/3) ===== */
   /* 1: フルスクリーン中央・すりガラス(既定) — base のまま */
   /* 2: 右からスライドインするパネル */
@@ -211,13 +215,11 @@
   /* 【2026-09-18 ヒデさん依頼】ハンバーガーメニューの余白(上下左右)・項目の間隔・文字サイズは調整パネル「🍔 ハンバーガーメニュー」(applyDrawerTune) */
   .hdr-drawer.drw-3 .hdr-drawer-nav { padding: var(--drw-pt, 0px) var(--drw-pr, 0px) var(--drw-pb, 0px) var(--drw-pl, 130px); gap: var(--drw-gap, 24px); }
   .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: var(--drw-fs, 56px); color: #fff; }
-  .hdr-drawer.drw-3 .hdr-drawer-nav a span { font-size: var(--drw-num-fs, 14px); }
+  .hdr-drawer.drw-3 .hdr-drawer-nav a .hdr-drawer-num { font-size: var(--drw-num-fs, 14px); }
   /* 【2026-09-18 ヒデさん依頼】メニューを開いている時の右上ボタンは 白ベタの四角＋黒いアイコン(反転) */
   .hdr-burger.is-open { background: #fff !important; box-shadow: none !important; }
   .hdr-burger.is-open span { background: #111 !important; }
-  .hdr-drawer.drw-3 .hdr-drawer-nav a span { color: var(--brand-cyan); }
-  .hdr-drawer.drw-3 .hdr-drawer-cta { background: #fff; color: #111 !important; }
-  .hdr-drawer.drw-3 .hdr-drawer-cta:hover { background: var(--brand-cyan); color: #fff !important; }
+  .hdr-drawer.drw-3 .hdr-drawer-nav a .hdr-drawer-num { color: var(--brand-cyan); }
 
   /* ===== 【V5.0】スクロールで「ロゴ＋ハンバーガー」に変形する10案(hm-6〜15) ===== */
   /* 共通: stuck でナビ(nav)を格納しハンバーガーを出す。ロゴは残す。 */
@@ -3772,11 +3774,30 @@
       <!-- ドロワー(ハンバーガーで開閉。表に出ていたナビ＋CTAを格納) -->
       <div class="hdr-drawer" id="hdrDrawer" hidden>
         <nav class="hdr-drawer-nav">
-          <a href="#vision"><span>01</span>ビジョン</a>
-          <a href="#results"><span>02</span>提供できること</a>
-          <a href="#dev"><span>03</span>使用イメージ</a>
-          <a href="#cases"><span>04</span>導入事例</a>
-          <a class="hdr-drawer-cta" href="#conversion">お問い合わせ<em>→</em></a>
+          <!-- 【2026-09-18 ヒデさん指定】メニューの項目はヘッダーの部品と同じ作り: テキスト＝上下ロール(.nlab 2段)、お問い合わせ＝マーキーCTA(.cta)を白黒反転 -->
+          <a href="#vision"><span class="hdr-drawer-num">01</span><span class="nlab"><span>ビジョン</span><span aria-hidden="true">ビジョン</span></span></a>
+          <a href="#results"><span class="hdr-drawer-num">02</span><span class="nlab"><span>提供できること</span><span aria-hidden="true">提供できること</span></span></a>
+          <a href="#dev"><span class="hdr-drawer-num">03</span><span class="nlab"><span>使用イメージ</span><span aria-hidden="true">使用イメージ</span></span></a>
+          <a href="#cases"><span class="hdr-drawer-num">04</span><span class="nlab"><span>導入事例</span><span aria-hidden="true">導入事例</span></span></a>
+          <a class="hdr-drawer-cta cta" href="#conversion" aria-label="お問い合わせ">
+            <span class="cta-label" aria-hidden="true">
+              <span class="cta-window">
+                <span class="cta-reel">
+                  <span class="cta-row"><span class="cta-track">
+                    <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                    <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                  </span></span>
+                  <span class="cta-row"><span class="cta-track">
+                    <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                    <span class="cta-group"><span class="cta-copy">お問い合わせ</span><span class="cta-copy">お問い合わせ</span></span>
+                  </span></span>
+                </span>
+              </span>
+            </span>
+            <span class="cta-arrow" aria-hidden="true">
+              <svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+            </span>
+          </a>
         </nav>
       </div>
     </header>
@@ -16326,7 +16347,7 @@ const TEXT_SPEC = [
   { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト',                           sec: 'cv',  text: 1 },
   // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---
   { key: 'drwNav',    sel: '.hdr-drawer-nav a:not(.hdr-drawer-cta)', name: 'メニューの項目（ビジョン など）', sec: 'menu', text: 0, multi: 1, move: 0 },
-  { key: 'drwNum',    sel: '.hdr-drawer-nav a span', name: 'メニューの番号（01〜04）',           sec: 'menu', text: 0, multi: 1, move: 0 },
+  { key: 'drwNum',    sel: '.hdr-drawer-nav .hdr-drawer-num', name: 'メニューの番号（01〜04）',           sec: 'menu', text: 0, multi: 1, move: 0 },
   { key: 'drwCta',    sel: '.hdr-drawer-cta', name: 'メニューのお問い合わせボタン',              sec: 'menu', text: 0, move: 0 },
 ];
 
