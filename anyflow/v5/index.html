@@ -1093,6 +1093,7 @@
   .res2-stats .r2s span { font-family: var(--font-en); font-weight: 100; font-size: 60px; line-height: 1; color: var(--ink-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }   /* 【2026-09-20】4項目化: 70→60px(Figma 17950:34275 準拠) */
   /* 区切り線(横・全幅) */
   .res2-hr { width: 100%; height: 1px; background: var(--line-grid); }   /* 2026-09-09: 導入事例のグリッド線と同じ濃さに(--line #D1D5DC→--line-grid #ACACAC・ヒデさん指定) */
+  .res2-hr-top { display: none; }   /* 【2026-09-20】for SaaS の上の横線。既定は出さず、案24/25 でだけ出す */
   /* 下段: 2つの価値。フレーム 1138×220・各カラム 512(text260 + gap32 + graphic220)・中央に縦線182 */
   .res2-vals { display: flex; align-items: center; justify-content: space-between; }
   .res2-vals .r2v { display: flex; align-items: center; gap: var(--space-32); }
@@ -1390,18 +1391,20 @@
      DOM(導入企業/連携実績/連携アプリ数)は動かさず order だけ(JS は DOM index で主役 i=1 を扱う) */
   /* ===== 案24 for SaaS / for AI から入る(絵コンテ Figma 17271:23392・2026-09-14)。2列(SaaS | 仕切り線 | AI)+横罫線+下段(見出し2行 | 数値70px)。
      絵コンテの実測: 大見出し 70px→40px / ラベル 20 / 見出し 46・1.5 / 本文 14・1.8・幅530 / ピクト 386枠(=300)・主役 666枠(≒1.7倍) / 下段 見出し 40px・2行 / 数値 70px ===== */
-  html:not(.mb) #results.rfx-24 .res2, html:not(.mb) #results.rfx-25 .res2 { width: min(1248px, 100% - 120px); display: grid; grid-template-columns: 1fr 1px 1fr; grid-template-rows: auto auto auto; column-gap: var(--space-48); row-gap: 0; align-items: start; }   /* カンプの内容幅 96〜1343 = 1247 */
+  html:not(.mb) #results.rfx-24 .res2, html:not(.mb) #results.rfx-25 .res2 { width: min(1248px, 100% - 120px); display: grid; grid-template-columns: 1fr 1px 1fr; grid-template-rows: auto auto auto auto; column-gap: var(--space-48); row-gap: 0; align-items: start; }   /* カンプの内容幅 96〜1343 = 1247。【2026-09-20】上の横線ぶん行を1つ増やして4行に */
   #results.rfx-24 .res2-vals, #results.rfx-24 .r2v-track, #results.rfx-25 .res2-vals, #results.rfx-25 .r2v-track { display: contents; }
-  #results.rfx-24 .r2v-track > .r2v:nth-of-type(1), #results.rfx-25 .r2v-track > .r2v:nth-of-type(1) { grid-area: 1 / 1 / 2 / 2; }
-  #results.rfx-24 .r2v-track > .r2v:nth-of-type(3), #results.rfx-25 .r2v-track > .r2v:nth-of-type(3) { grid-area: 1 / 3 / 2 / 4; }
-  #results.rfx-24 .res2-vline, #results.rfx-25 .res2-vline { display: block; grid-area: 1 / 2 / 2 / 3; width: 1px; height: auto; align-self: stretch; margin: 0; background: var(--rfx-line); transform-origin: center top; transform: scaleY(var(--rfx-vline, 0)); }
+  /* 【2026-09-20 ヒデさん依頼】for SaaS/AI の上の横線(下段と同じ見た目・同じ出現アニメ)。行1に置き、カード類は行2へ繰り下げ */
+  #results.rfx-24 .res2-hr-top, #results.rfx-25 .res2-hr-top { display: block; grid-area: 1 / 1 / 2 / 4; height: 1px; background: var(--line-grid); margin: 0 0 var(--rfx-hr-gap-top, 56px); transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  #results.rfx-24 .r2v-track > .r2v:nth-of-type(1), #results.rfx-25 .r2v-track > .r2v:nth-of-type(1) { grid-area: 2 / 1 / 3 / 2; }
+  #results.rfx-24 .r2v-track > .r2v:nth-of-type(3), #results.rfx-25 .r2v-track > .r2v:nth-of-type(3) { grid-area: 2 / 3 / 3 / 4; }
+  #results.rfx-24 .res2-vline, #results.rfx-25 .res2-vline { display: block; grid-area: 2 / 2 / 3 / 3; width: 1px; height: auto; align-self: stretch; margin: 0; background: var(--rfx-line); transform-origin: center top; transform: scaleY(var(--rfx-vline, 0)); }
   /* 【2026-09-15 ヒデさん指摘】2つの価値のブロックと区切り線の間の余白。36→72→(つまみ)100px。
      ブロック全体は中央寄せなので、ここを広げると線と「事業の推進力を、Anyflowが支えます。」が下がり、
      上のブロックとの間が空く。調整パネル「実績」→ 案24 のまとまりの「区切り線の上の余白」で変えられる。 */
-  #results.rfx-24 .res2-hr, #results.rfx-25 .res2-hr { display: block; grid-area: 2 / 1 / 3 / 4; margin: var(--rfx-hr-gap, 100px) 0 var(--rfx-hr-gap2, 0px); transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
-  #results.rfx-24 .res2-top, #results.rfx-25 .res2-top { grid-area: 3 / 1 / 4 / 4; display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: var(--space-40); padding-top: var(--space-28); }
+  #results.rfx-24 .res2-hr, #results.rfx-25 .res2-hr { display: block; grid-area: 3 / 1 / 4 / 4; margin: var(--rfx-hr-gap, 100px) 0 var(--rfx-hr-gap2, 0px); transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  #results.rfx-24 .res2-top, #results.rfx-25 .res2-top { grid-area: 4 / 1 / 5 / 4; display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: var(--space-40); padding-top: var(--space-28); }
   #results.rfx-24 .res2-head, #results.rfx-25 .res2-head { flex-direction: column; align-items: flex-start; justify-content: flex-start; font-size: var(--fs-stat); line-height: var(--lh-loose); }   /* カンプ: Noto Sans JP Light 34px / 1.7 の2行 */
-  #results.rfx-24 .res2-stats, #results.rfx-25 .res2-stats { gap: var(--space-44); align-items: flex-end; }
+  #results.rfx-24 .res2-stats, #results.rfx-25 .res2-stats { gap: var(--space-28); align-items: flex-end; }   /* 【2026-09-20 ヒデさん依頼】数値の左右の間隔を詰める(44→28) */
   #results.rfx-24 .res2-stats .r2s span, #results.rfx-25 .res2-stats .r2s span { font-size: var(--fs-stat-lg); line-height: 1; }
   #results.rfx-24 .res2-stats .r2s, #results.rfx-25 .res2-stats .r2s { gap: var(--space-8); }
   #results.rfx-24 .res2-stats .r2s b, #results.rfx-25 .res2-stats .r2s b { font-size: var(--fs-base); line-height: 24px; }   /* カンプ: Noto Sans JP Thin 16px / 24px */
@@ -1413,7 +1416,7 @@
   #results.rfx-24 .r2v-h, #results.rfx-25 .r2v-h { font-size: var(--fs-h2); line-height: var(--lh-normal); text-align: center; }   /* カンプ: 44px / 1.6 */
   #results.rfx-24 .r2v-p, #results.rfx-25 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
   #results.rfx-24 .r2v-fig, #results.rfx-25 .r2v-fig { display: block; order: 1; transform-origin: center; }
-  #results.rfx-24 .r2v-graphic, #results.rfx-25 .r2v-graphic { width: 300px; height: 300px; }
+  #results.rfx-24 .r2v-graphic, #results.rfx-25 .r2v-graphic { width: 390px; height: 390px; }   /* 【2026-09-20 ヒデさん依頼】ピクトのサイズ感を+30%(300→390) */
   #results.rfx-24 .r2v-big, #results.rfx-25 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: var(--fs-stat-lg); line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-24 .r2v-big-ai, #results.rfx-25 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
   /* 【2026-09-18 ヒデさん依頼】for SaaS/AI の「Product」: 登場の大きい文字では下の行(サイズはパネルの --r2v-prod-size、既定38px≒70pxの55%)、
@@ -4003,6 +4006,8 @@
           <div class="r2s r2s-static"><b>iPaasサービス</b><span id="cntSub3">No.1</span></div>   <!-- 【2026-09-20 ヒデさん依頼・Figma 17950:34275】4つ目。No.1 は数えない=静的 -->
         </div>
       </div>
+      <!-- 【2026-09-20 ヒデさん依頼】for SaaS/AI の上にも、下段と同じ横線を引く -->
+      <div class="res2-hr-top" id="resHrTop"></div>
       <!-- 区切り線(横) -->
       <div class="res2-hr" id="resHr"></div>
       <!-- 下段: 2つの価値 -->
