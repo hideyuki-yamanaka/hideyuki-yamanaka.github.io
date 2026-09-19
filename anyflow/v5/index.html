@@ -962,6 +962,16 @@
   .slot .stp { font-style: normal; display: block; }   /* 2026-09-15: will-change を外す(合成レイヤーだと拡大時に文字が荒れる。毎フレーム再描画で常にくっきり) */
   .slot .stp em { font-style: normal; display: block; height: 1em; line-height: 1; text-align: center; }
   .slot .fx { font-style: normal; display: inline-block; }
+  /* 【2026-09-19 ヒデさん依頼】スロットの案2「ぼかして消える」: 窓の上下に段階的なぼかし(端ほど強く)を重ねて、数字が溶けるように消える。
+     ::before/::after の backdrop-filter は .rl(マスク付き=backdrop root)の中の数字だけをぼかす。量は --slot-blur / 範囲は --slot-blur-zone(実績タブ) */
+  #results.slot-fx-blur .slot .rl { position: relative; transition: height .35s ease, padding .35s ease, margin .35s ease; }
+  /* 回っている間(.spin=renderSlots が桁ごとに付ける)だけ窓を --slot-win まで広げ、止まると 1.24em に戻る(隣の数字の残像を残さない) */
+  #results.slot-fx-blur .slot .rl.spin { height: var(--slot-win, 1.5em); padding: calc((var(--slot-win, 1.5em) - 1em) / 2) 0; margin: calc((1em - var(--slot-win, 1.5em)) / 2) 0; }
+  #results.slot-fx-blur .slot .rl::before, #results.slot-fx-blur .slot .rl::after { content: ''; position: absolute; left: -0.1em; right: -0.1em; height: var(--slot-blur-zone, 45%); pointer-events: none; z-index: 1; opacity: 0; transition: opacity .35s ease;
+    -webkit-backdrop-filter: blur(var(--slot-blur, 3px)); backdrop-filter: blur(var(--slot-blur, 3px)); }
+  #results.slot-fx-blur .slot .rl.spin::before, #results.slot-fx-blur .slot .rl.spin::after { opacity: 1; }
+  #results.slot-fx-blur .slot .rl::before { top: 0; -webkit-mask-image: linear-gradient(to bottom, #000 0, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, transparent 100%); }
+  #results.slot-fx-blur .slot .rl::after { bottom: 0; -webkit-mask-image: linear-gradient(to top, #000 0, transparent 100%); mask-image: linear-gradient(to top, #000 0, transparent 100%); }
   .res-main { display: flex; flex-direction: column; gap: var(--space-32); color: var(--ink-strong); }
   .res-text { font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
   .res-stats { display: flex; align-items: center; color: var(--ink-strong); }
@@ -5117,6 +5127,7 @@ const DEFAULTS = {
       slotCycles: 3,     // 止まるまでに 0〜9 を何周流すか
       entryBlur: 16, entryBlur44: 26, entryFrom: 0.4, entryTo: 0.95, entryOp: 1, bigStartY: 0.4,   // 【2026-09-19】for SaaS/AI の入場のぼかし(強さpx / 解け始め・解けきり=入場の進み 0〜1 / 出だしの薄さ 1=薄くしない)
       slotEnterAt: 0.85, // 数字が画面のどこまで入ったら回り出すか (1.0=下端 / 0.5=中央)
+      slotFx: 'plain', slotBlur: 0, slotBlurZone: 45, slotWin: 1.24,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)
       slotEase: 5,       // 減速の強さ。大きいほど「最初速く→最後じりじり」になる (2〜9)
                          /* ⚠️ 回転中のぼかしは 2026-08-17 に「要らない」で確定。
                             パラメータごと削除したので、復活させる時は renderSlots にも戻すこと */
@@ -11759,6 +11770,7 @@ function renderSlots(ts) {
          ⚠️ easeSlick(臨界減衰) だと全体的に均一で、スロットらしい溜めが出なかった */
       const e = 1 - Math.pow(1 - k, Math.max(1, c.slotEase));
       setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`);
+      if (re.spin !== (k > 0 && k < 1)) { re.spin = (k > 0 && k < 1); re.rl.classList.toggle('spin', re.spin); }   /* 【2026-09-19】案2「ぼかして消える」用: 回っている桁に印 */
       /* ⚠️ 回転中のぼかしは入れない（2026-08-17 に「要らない」で確定）。
          数字はくっきりしたまま回して止める */
     });
@@ -12200,7 +12212,18 @@ function vfDraw(tSec) {
     g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); }
 }
 applyVfFade();
-function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; document.documentElement.style.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%'); }
+function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
+  /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
+  d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win', (r.slotWin != null ? r.slotWin : 1.24) + 'em');
+  const sec = document.getElementById('results'); if (sec) sec.classList.toggle('slot-fx-blur', resSlotFxKey() === 'blur'); }
+/* 【2026-09-19 ヒデさん依頼】数字のスロットの案(案1=現状 / 案2=上下のマスクにぼかしをかけて徐々に消える)。値は仮置き */
+const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin'];
+const RES_SLOT_FX = [
+  { key: 'plain', name: '案1 現状（上下をうすく消す）', fixed: true, tip: '窓の上下 14% をグラデで消すだけ。ぼかし無し。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.24 } },
+  { key: 'blur',  name: '案2 ぼかして消える', tip: '回っている間だけ窓を高くし(1.5文字分)、上下 45% に端ほど強いぼかし(3px)を重ね、22% をグラデで消す。数字が溶けるように消え、止まると窓が閉じる。', cfg: { slotFade: 22, slotBlur: 3, slotBlurZone: 45, slotWin: 1.5 } },
+];
+function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'plain'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'plain'; }
+function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
 applyResSlotFade();
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
 /* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
@@ -17094,6 +17117,8 @@ const VAR_SNAP = {
   cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; }); return o; },
              set: s => Object.assign(params.cv, s), reset: () => cvApplySway(cvSwayKey()) },
   /* 【2026-09-19】ビジョンのメッシュの案(描き方に関わるキーだけ。大きさ・フェード・ロゴは巻き込まない) */
+  resSlotFx: { get: () => { const r = params.sections.results, o = {}; RES_SLOT_KEYS.forEach(k => { if (r[k] != null) o[k] = r[k]; }); return o; },
+               set: s => { Object.assign(params.sections.results, s); applyResSlotFade(); }, reset: () => resApplySlotFx(resSlotFxKey()) },
   visLogo: { get: () => { const c = vfCfg(), o = {}; VF_LOGO_KEYS.forEach(k => { if (c[k] != null) o[k] = c[k]; }); return o; },
              set: s => { const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, s); applyVfFade(); }, reset: () => vfApplyLogoVariant(vfLogoKey()) },
   visMesh: { get: () => { const c = vfCfg(), o = {}; VF_VAR_KEYS.forEach(k => { if (c[k] != null) o[k] = c[k]; }); return o; },
@@ -18115,6 +18140,9 @@ function buildPanel() {
   /* 【2026-09-19 ヒデさん依頼】図の差し替えで実績までの空白が空きすぎ → 実績を上へ引き上げる量 */
   rows.push(slider('実績との間隔（詰める）', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
     'ビジョンの図が過ぎてから実績(for SaaS / for AI)が出るまでの空白を、この分だけ詰めます(実績のセクションを上へ引き上げる)。PCのみ。既定 260px は仮置き。'));
+  /* 【2026-09-19 ヒデさん依頼】見出し(メッセージ)→コンテンツ(図・ポイント)の上下の間隔。②から「基本」へ移動(ヒデさん「基本に入れといて」) */
+  rows.push(slider('見出し→図・ポイントの間隔（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
+    'メッセージの下にどれだけ余白を取るか。図(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px は仮置き。', { fixedMax: true }));
 
   /* 【2026-08-29 ヒデさん指定】固定追従なし(時間再生)の「ブロックの表示タイミング」を細かく調整。
      塊＝メッセージ / グラフィック / ポイント1 / ポイント2。メッセージ自体は上の「1行目が出るまで」。 */
@@ -18164,9 +18192,6 @@ function buildPanel() {
     'ぼけた状態から出きるまでの時間。'));
   rows.push(slider('1文字ずつずらす', -0.9, 0.9, 0.05, () => sv().vision.charLag, v => sv().vision.charLag = v, v => Math.round(v * 100) + '%',
     '真ん中(0)で行まるごと同時。左右どちらへ動かしても1文字ずつバラバラに出ます。', { signed: true }));
-  /* 【2026-09-19 ヒデさん依頼】メッセージの下の余白 */
-  rows.push(slider('メッセージ→図・ポイントの間隔', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
-    'メッセージの下にどれだけ余白を取るか。図(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px は仮置き。', { fixedMax: true }));
   /* 【2026-09-15 ヒデさん指定】「つなぐ／強み」の揺らぎのグラデ: くすまない鮮やかな配色 3案(色味はブランド色のまま)＋つまみ */
   sub(catVis, '揺らぎのグラデ（つなぐ／強み）の配色', true, { fixed: true });
   varRowX('visGrad', VIS_GRADS, () => visGradKey(), v => { visApplyGrad(String(v)); }, { snap: VAR_SNAP.vision, after: () => { applyVisGrad(); } });
@@ -18451,6 +18476,9 @@ function buildPanel() {
 
   sub(catRes, '数字が回って止まる演出');
   note('数字が桁ごとに回り、左の桁から順に止まります。');
+  /* 【2026-09-19 ヒデさん依頼】スロットの案(案1=現状 / 案2=ぼかして消える)。⋯で上書き/削除可 */
+  varRowX('resSlotFx', RES_SLOT_FX, () => resSlotFxKey(), v => { resApplySlotFx(String(v)); markDirty(); }, { snap: VAR_SNAP.resSlotFx, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  note('案を選ぶと「上下のなじませ・ぼかしの強さ・ぼかしの範囲・窓の高さ」に値が入ります。細かく変えたら ⋯「この設定で上書き」。');
   rows.push(slider('回り出すまで', 0, 2, 0.05, () => sv().results.slotAt, v => sv().results.slotAt = v, v => v.toFixed(2) + '秒後',
     'セクションが始まってから回り出すまで。0で即。'));
   rows.push(slider('1桁が止まるまで', 0.3, 3, 0.05, () => sv().results.slotDur, v => sv().results.slotDur = v, v => v.toFixed(2) + '秒',
@@ -18460,6 +18488,12 @@ function buildPanel() {
   rows.push(slider('何周まわすか', 1, 6, 1, () => sv().results.slotCycles, v => sv().results.slotCycles = v, v => v + '周',
     '0〜9 を何回流すか。多いほど勢いよく見えます。'));
   rows.push(slider('スロットの上下のなじませ', 0, 30, 1, () => (sv().results.slotFade != null ? sv().results.slotFade : 14), v => { sv().results.slotFade = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%', '数字の窓の上下を透明へグラデで消す幅(窓の高さに対する%)。0でパツッと切れる(従来)。', { fixedMax: true }));
+  rows.push(slider('上下のぼかしの強さ', 0, 8, 0.5, () => (sv().results.slotBlur != null ? sv().results.slotBlur : 0), v => { sv().results.slotBlur = v; applyResSlotFade(); markDirty(); }, v => v === 0 ? 'なし' : v.toFixed(1) + 'px',
+    '案2用。窓の上下に重ねるぼかしの強さ(端ほど強い)。0でぼかし無し。'));
+  rows.push(slider('上下のぼかしの範囲', 10, 60, 1, () => (sv().results.slotBlurZone != null ? sv().results.slotBlurZone : 45), v => { sv().results.slotBlurZone = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%',
+    '案2用。窓の高さの何%までぼかしを重ねるか(上下それぞれ)。'));
+  rows.push(slider('窓の高さ', 1, 2, 0.02, () => (sv().results.slotWin != null ? sv().results.slotWin : 1.24), v => { sv().results.slotWin = v; applyResSlotFade(); markDirty(); }, v => v.toFixed(2) + '文字分',
+    '案2用。回っている間だけ広がる窓の高さ(1＝数字ぴったり)。高いほど前後の数字がのぞく。止まると 1.24 に戻ります。行の高さは変わりません。'));
   rows.push(slider('回り出す位置', 0.4, 1, 0.05, () => sv().results.slotEnterAt, v => sv().results.slotEnterAt = v, v => Math.round(v * 100) + '%',
     '100%＝画面の下に出た瞬間 / 50%＝真ん中まで来てから。'));
   rows.push(slider('止まり際の粘り', 2, 9, 0.5, () => sv().results.slotEase, v => sv().results.slotEase = v, v => '×' + v.toFixed(1),
