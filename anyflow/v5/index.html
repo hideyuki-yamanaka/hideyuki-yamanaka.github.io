@@ -4881,6 +4881,7 @@ const DEFAULTS = {
   /* 【2026-09-03 ヒデさん指定】編集モードの汎用テキスト編集の保存先。
      キー→{fs,fw,lh,ls,pt,pr,pb,pl,text}。トップ全体で共有(案・KV非依存)。 */
   edits: {},
+  editsMb: {},   /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホモードで付けた文字設定の上書き(スマホの時だけ base に重なる) */
   sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
   swayAmp: 0,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる。【2026-09-19 ヒデさん指定】軸は固定で回すだけ→0(KVタブ「揺らぎの強さ」で戻せる)
   swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
@@ -17041,14 +17042,24 @@ st.textContent = '.txt-row{align-items:flex-start}'
       + '.txt-row select.txt-w{font-size:11px;padding:2px 18px 2px 4px;max-width:none;width:88px;flex:0 0 auto;text-overflow:clip}'
       + '.txt-row input.txt-n{width:44px;font-size:11px;padding:2px 4px;flex:0 0 auto}'
       + '.txt-row .txt-lab{font-size:10px;opacity:.6;margin-left:0;flex:0 0 auto;white-space:nowrap}'
-      + '.txt-row input.txt-n.is-auto{color:#9aa0a6}';   /* 自動(いまの大きさのまま)は薄いグレー、変えると黒 */
+      + '.txt-row input.txt-n.is-auto{color:#9aa0a6}'   /* 自動(いまの大きさのまま)は薄いグレー、変えると黒 */
+      + '.txt-row{gap:2px}'                              /* 【2026-09-20】↺の分を詰める */
+      + '.txt-row > label{flex:0 0 74px}'               /* ↺リセットを右端に置くぶんラベル幅を少し詰める */
+      + '.txt-row > .rst{flex:0 0 18px;width:18px;height:22px;line-height:20px;font-size:12px;border-radius:5px;margin-left:1px}';
     document.head.appendChild(st);
   }
   const row = document.createElement('div');
   row.className = 'row txt-row';
   const lab = document.createElement('label'); lab.textContent = sp.name; lab.title = sp.sel; row.appendChild(lab);
   const box = document.createElement('div'); box.className = 'txt-ctl';
-  const ed = () => { if (!params.edits) params.edits = {}; return params.edits[sp.key] || (params.edits[sp.key] = {}); };
+  row.dataset.key = sp.key;   /* 【2026-09-20】スマホ上書きの印付け(markMbOverrides)で使う */
+  /* 【2026-09-20 ヒデさん依頼・PC/SP独立】書き込み先を切り替える:
+     スマホモード中は「スマホだけの上書き」params.editsMb[key] へ、通常は共有の params.edits[key] へ。
+     → スマホモードでいじってもPC(共有値)は変わらない。適用は textTools.applyAll が isMobile の時だけ mb を base に重ねる。 */
+  const phoneOn = () => { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } };
+  const edBase = () => { if (!params.edits) params.edits = {}; return params.edits[sp.key] || (params.edits[sp.key] = {}); };
+  const edMob  = () => { if (!params.editsMb) params.editsMb = {}; return params.editsMb[sp.key] || (params.editsMb[sp.key] = {}); };
+  const ed = () => phoneOn() ? edMob() : edBase();
   const cs = () => { const el = document.querySelector(sp.sel); return el ? getComputedStyle(el) : null; };
   const apply = () => { try { textTools.applyAll(); textTools.refresh(); } catch (e) {} markDirty(); };
   const wSel = document.createElement('select'); wSel.className = 'txt-w'; wSel.title = '太さ(ウェイト)。自動＝CSSのまま';
@@ -17067,7 +17078,10 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const mkLab = (t, el, title) => { const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; box.append(l, el); };
   mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('行', lh, '行間(倍)'); mkLab('字', ls, '字間(px)');   /* 1文字ラベル＋ホバーで説明。1行に収めるため */
   function sync() {
-    const e = (params.edits && params.edits[sp.key]) || {}, c = cs();
+    /* スマホモード中は「共有(base)＋スマホ上書き(mb)」を表示。通常は共有だけ */
+    const _base = (params.edits && params.edits[sp.key]) || {};
+    const _mob = (params.editsMb && params.editsMb[sp.key]) || {};
+    const e = phoneOn() ? Object.assign({}, _base, _mob) : _base, c = cs();
     const _eff = c ? Math.round(parseFloat(c.fontSize)) : '';
     fsz.value = e.fs != null ? e.fs : _eff;   /* 【2026-09-19】いまの大きさを入れておく → そこから上下。触っていない間は e.fs 未設定(=CSSのまま) */
     fsz.placeholder = _eff + '';
@@ -17081,6 +17095,21 @@ st.textContent = '.txt-row{align-items:flex-start}'
   }
   sync();
   row.appendChild(box);
+  /* 【2026-09-20 ヒデさん依頼】各フォント行に↺リセット。押した時のモードのストア(通常=共有/スマホモード=スマホ上書き)の
+     文字設定(サイズ・太さ・行間・字間)だけを消す。位置(dx/dy)やパディングは触らない。
+     ＝スマホモードでいじってPCに移ってしまった値も、通常モードで↺を押せば既定へ戻せる。 */
+  const resetFont = () => {
+    const store = phoneOn() ? (params.editsMb && params.editsMb[sp.key]) : (params.edits && params.edits[sp.key]);
+    if (store) ['fs', 'fw', 'lh', 'ls'].forEach(k => { delete store[k]; });
+    apply(); sync();
+    try { if (typeof window.__markMbOverrides === 'function') window.__markMbOverrides(); } catch (e) {}
+  };
+  const rst = document.createElement('button'); rst.type = 'button'; rst.className = 'rst'; rst.textContent = '↺';
+  rst.title = '文字の設定（サイズ・太さ・行間・字間）を既定に戻す';
+  rst.onpointerdown = ev => ev.stopPropagation();
+  rst.onclick = ev => { ev.stopPropagation(); resetFont(); };
+  row.appendChild(rst);
+  if (subItems) subItems.push({ reset: resetFont });
   row._sync = sync;
   if (rows) rows.push({ _sync: sync });
   (mount || body).appendChild(row);
@@ -19441,8 +19470,12 @@ const textTools = (() => {
   /* params.edits を全対象のDOMへ反映(起動時・変更時) */
   function applyAll() {
     if (!params.edits) params.edits = {};
+    /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ「スマホ上書き(editsMb)」を共有(edits)に重ねる。
+       PCでは editsMb を一切見ない＝スマホモードでいじった値がPCに出ない。 */
+    const _mb = (typeof isMobile !== 'undefined' && isMobile && params.editsMb) ? params.editsMb : null;
     for (const sp of SPEC) {
-      const e = params.edits[sp.key] || {};
+      const _base = params.edits[sp.key] || {};
+      const e = (_mb && _mb[sp.key]) ? Object.assign({}, _base, _mb[sp.key]) : _base;
       for (const el of specEls(sp)) {
         el.style.fontSize      = e.fs != null ? e.fs + 'px' : '';
         el.style.fontWeight    = e.fw != null ? String(e.fw) : '';
@@ -19907,6 +19940,9 @@ document.getElementById('panelBody').addEventListener('click', () => {
       try { el = sel ? document.querySelector(sel) : null; } catch (e) {}
       var props = {};
       if (el) for (var j = 0; j < _mbRulesCache.length; j++) { try { if (el.matches(_mbRulesCache[j].sel)) _mbRulesCache[j].props.forEach(function (q) { props[q] = 1; }); } catch (e) {} }
+      /* 【2026-09-20】CSSの@mediaだけでなく、実際にスマホモードで付けた上書き(editsMb)も青印にする */
+      var _mk = row.dataset.key, _mo = (params.editsMb && params.editsMb[_mk]) || null;
+      if (_mo) { var _MAP = { fs: 'font-size', fw: 'font-weight', lh: 'line-height', ls: 'letter-spacing' }; for (var _k in _MAP) { if (_mo[_k] != null) props[_MAP[_k]] = 1; } }
       row.classList.toggle('mb-override', Object.keys(props).length > 0);
       var inp = row.querySelectorAll('[data-prop]');
       for (var m = 0; m < inp.length; m++) inp[m].classList.toggle('mb-diff', !!props[inp[m].dataset.prop]);
