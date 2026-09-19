@@ -867,7 +867,7 @@
      出現は updateVision の mi(ブラー)。位置は ✏️編集(TEXT_SPEC vfWrap)でずらせる */
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図＝網目のドーム(Figma 18004:38228)。容器はカンプのグループ座標(ステージ x165 / y245・600×600)。
      下半球はカンプの「地色のレイヤーブラー(75px)矩形」の代わりに mask で上→下へ消す(--vf-fade-a/b は JS applyVfFade) */
-  .vf-wrap { position: absolute; left: 165px; top: calc(245px + var(--vis-below, 0px)); width: 640px; height: 600px; }   /* --vis-below=メッセージ→図・ポイントの間隔(ビジョンタブ) */
+  .vf-wrap { position: absolute; left: 165px; top: calc(245px + var(--vis-below, 0px) + var(--vf-dy, 0px)); width: 640px; height: 600px; }   /* --vis-below=メッセージ→図・ポイントの間隔 / --vf-dy=図だけの上下(ビジョンタブ③「図の上下位置」) */
   /* 【2026-09-19 ヒデさん指摘「ロゴがかすむ」】下半球のフェード(mask)は網目の canvas だけに。ロゴと機能名は常にくっきり(以前は容器ごとかけていてロゴの高さが薄れる帯に入っていた) */
   /* 【2026-09-19 ヒデさん依頼「メッシュを大きく・文字はそのまま」】canvas は 900px(左上 −150)で、球の中心(容器 291,315)は変えずに半径だけ拡大できる。mask の位置は JS(applyVfFade)が px で入れる */
   .vf-wrap .vf-dome { position: absolute; left: -150px; top: -150px; width: 900px; height: 900px; display: block;
@@ -5430,7 +5430,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919220000;
+const SHIPPED_GENERATION = 20260919230000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -12084,7 +12084,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dy: 30 };   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
 const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
 const VIS_MESHES = [
@@ -12106,6 +12106,7 @@ function applyVisBelow() { const sec = document.getElementById('vision'); if (!s
 applyVisBelow();
 function applyVfFade() {
   const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
+  w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* 図だけの上下 */
   /* 下のフェード: 容器の高さ(600)に対する割合を、中心基準で拡大して canvas(上 −150)の px に */
   const fy = (f) => (VF_CY + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';
   w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
@@ -18135,6 +18136,7 @@ function buildPanel() {
   varRowX('visMesh', VIS_MESHES, () => vfVarKey(), v => { vfApplyVariant(String(v)); markDirty(); }, { snap: VAR_SNAP.visMesh, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと下のつまみ(半径・回転・傾き・線・点・細かさ・パケット)にその案の値が入ります。細かく変えたら ⋯「この設定で上書き」でその案に保存。');
   const vfS = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, { fixedMax: true }));
+  vfS('図の上下位置', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '図(ドーム・ロゴ・機能名)だけを上下に。Point 01/02 は動きません。メッセージとの間隔を Point ごと変える時は「② メッセージ」の「メッセージ→図・ポイントの間隔」。既定 +30px は仮置き。');
   vfS('メッシュの大きさ', 'scale', 0.5, 1.6, 0.02, v => Math.round(v * 100) + '%', '網目とロゴを球の中心から拡大縮小。機能名は文字サイズを変えず位置だけ外へ。既定 115%(仮置き)。');
   vfS('ロゴの大きさ', 'logoScale', 0.4, 2.5, 0.02, v => Math.round(v * 100) + '%', '中央のロゴだけの大きさ(メッシュの大きさに掛かる)。');
   vfS('ロゴ 横位置', 'logoDx', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを左右へ。✏️編集モードのドラッグでも動きます。');
