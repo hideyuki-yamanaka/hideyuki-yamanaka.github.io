@@ -752,6 +752,10 @@
      そのまま透けて連続し、暗幕が leave で引くと下地の var(--surface) へ自然にクロスフェードする
      （＝不透明な上端が下から硬く重なる「プツン」が出ない）。 */
   #cases .pin-vp { position: relative; background: transparent; }
+  /* 【2026-09-20 ヒデさん依頼・#5】固定追従(スクロール演出)ではない普通に流れるセクションは、中身が1画面(100vh)を
+     超えても上下で切らず全部見せる(overflow:visible)。→ 縦の余白を広げても見出し等がトリミングされない。
+     ※実績・開発者体験の「スクロールで段々出す」演出セクションはクリップが演出の要なので対象外(そのまま)。横スクロールは出ない(実測)。 */
+  #vision .pin-vp, #cases .pin-vp { overflow: visible; }
   /* 【2026-09-09 ヒデさん指定】タブレットは NOPIN セクションの1画面を詰める(JSの --nopin-vh に連動)。
      中身は中央寄せのまま高さだけ縮むので上下の余白が減る。コンテンツは収まる範囲(=クリップしない)。 */
   html.tab #vision .pin-vp, html.tab #results.res-smooth .pin-vp, html.tab #cases .pin-vp { height: var(--nopin-vh, 100vh); }
