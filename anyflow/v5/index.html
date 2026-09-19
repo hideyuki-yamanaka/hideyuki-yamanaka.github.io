@@ -901,8 +901,8 @@
   }
   /* 【2026-09-02 ヒデさん指定】「連携が生む、2つの価値」見出しは削除済み(DOM/CSS/JSごと)。 */
   .val-point { position: absolute; width: var(--vp-width, 328px); color: var(--ink); }   /* 2026-09-03: 横幅もパネル調整可 */
-  .val-p1 { left: -98px; top: calc(290px + var(--vis-below, 0px)); }    /* 【2026-09-19】カンプ ベース(17753:27563): Point01 x877 y1214 → ステージ x877(=975−98) y290(=1214−924)。旧 x895 y347 */
-  .val-p2 { left: -7px; top: calc(468px + var(--vis-below, 0px)); }     /* 【2026-09-19】カンプ: Point02 x968 y1392 → ステージ x968 y468。旧 x975 y551 */
+  .val-p1 { left: calc(-98px + var(--vis-points-x, 0px)); top: calc(290px + var(--vis-below, 0px)); }    /* 【2026-09-19】カンプ ベース(17753:27563): Point01 x877 y1214 → ステージ x877(=975−98) y290(=1214−924)。旧 x895 y347 */
+  .val-p2 { left: calc(-7px + var(--vis-points-x, 0px)); top: calc(468px + var(--vis-below, 0px)); }     /* 【2026-09-19】カンプ: Point02 x968 y1392 → ステージ x968 y468。旧 x975 y551 */
   .val-point .vp-tag {
     display: flex;
     align-items: center;
@@ -12182,6 +12182,9 @@ function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome =
 /* 【2026-09-19 ヒデさん依頼】メッセージの下の余白: 図(ドーム)と Point 01/02 を同じ量だけ下へ(PC。既定 50px は仮置き) */
 function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-below', (v.belowGap != null ? v.belowGap : 50) + 'px'); }
 applyVisBelow();
+/* 【2026-09-19 ヒデさん依頼】ビジョンの図と Point 01/02 の左右の間隔(PCのみ)。+で Point を右へ(間隔を広げる) */
+function applyVisPointsX() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-points-x', (v.pointsX != null ? v.pointsX : 0) + 'px'); }
+applyVisPointsX();
 function applyVfFade() {
   const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
   w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* セット(網目＋ロゴ＋機能名)の上下 */
@@ -18193,6 +18196,9 @@ function buildPanel() {
   /* 【2026-09-19 ヒデさん依頼】見出し(メッセージ)→コンテンツ(図・ポイント)の上下の間隔。②から「基本」へ移動(ヒデさん「基本に入れといて」) */
   rows.push(slider('見出し→図・ポイントの間隔（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
     'メッセージの下にどれだけ余白を取るか。図(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px は仮置き。', { fixedMax: true }));
+  /* 【2026-09-19 ヒデさん依頼】図と Point 01/02 の左右の間隔 */
+  rows.push(slider('図とポイントの左右の間隔', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+    '左のグラフィックと Point 01/02 の横の間隔。＋で Point を右へ(間隔を広げる)・−で左へ(詰める)。0＝いまの位置(PCのみ)。', { signed: true }));
 
   /* 【2026-08-29 ヒデさん指定】固定追従なし(時間再生)の「ブロックの表示タイミング」を細かく調整。
      塊＝メッセージ / グラフィック / ポイント1 / ポイント2。メッセージ自体は上の「1行目が出るまで」。 */
