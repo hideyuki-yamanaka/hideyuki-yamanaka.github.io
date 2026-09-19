@@ -335,9 +335,11 @@
      ナビを3本線ハンバーガーへ格納する(押すとドロワー)。PC追従ヘッダーの全案共通。
      閾値: ロゴ255 + 左右余白100 + ナビ実寸〜663 が収まる下限(約1040px)の少し手前=1080px。 ===== */
   @media (max-width: 1080px) {
-    html:not(.mb).hdr-follow .header .nav { max-width: 0; opacity: 0; margin-left: auto; overflow: hidden; pointer-events: none; }
-    html:not(.mb).hdr-follow .hdr-burger { display: block; position: relative; overflow: visible; left: auto; right: auto; top: auto; transform: none;
-      width: var(--burger-w, 44px); opacity: 1; pointer-events: auto; }
+    /* 【2026-09-19 ヒデさん指定】この幅でも「別のハンバーガー(.hdr-burger)」は出さない。ナビの文字だけ隠して、
+       PC と同じ「お問い合わせ」の箱(スクロールで黒い四角＋白線のアイコンに変わり、押すとメニュー)を使う。
+       旧: .nav ごと隠して .hdr-burger を出していた(アイコンが2種類ある状態) */
+    html:not(.mb).hdr-follow .header .nav-links { max-width: 0 !important; opacity: 0 !important; overflow: hidden; pointer-events: none; }
+    html:not(.mb).hdr-follow .hdr-burger { display: none; }
   }
   /* 【V4.0 2026-09-13 ヒデさん採用】ヘッダー「お問い合わせ」CTA + コンバージョン「フォームを記入」CV
      を notdesignschool.jp/lp/portfolio-dojo 由来のマーキーボタンに変更。
