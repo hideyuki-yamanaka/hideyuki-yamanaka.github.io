@@ -3014,8 +3014,8 @@
     .val-head .vh-s { font-size: var(--fs-body); }
     .val-head .vh-l { font-size: var(--fs-stat); }
     .val-point { width: calc(100% - 48px); }   /* カンプSP node16534:22144(Plugin API 実測): 枠 342 幅・子は Fill → 左右 24 の全幅(以前の 328 は更新前の値) */
-    .val-p1 { left: 24px; top: 511px; }   /* カンプSP: Point01 y1204 (=1204−667−26: .val-group 経由の実測オフセット) */
-    .val-p2 { left: 24px; top: 617px; }   /* カンプSP: Point02 y1315 (=1315−667−31) */
+    .val-p1 { left: 24px; top: 565px; }   /* 【2026-09-20 ヒデさん依頼】メッシュとPoint01/02の上下の間隔を空ける(511→565)。旧カンプSP: y511 */
+    .val-p2 { left: 24px; top: 671px; }   /* 同上(617→671・Point間の106pxは維持) */
     /* 【カンプ node16534:22144】Point見出し20px / 本文12px / タグ12px, gap 8/4 */
     .val-point { display: flex; flex-direction: column; gap: var(--space-4); }   /* カンプSP: タグ→見出し 4 / 見出し→本文 8(本文側の margin 4 と合算) */
     .val-point .vp-tag { font-size: var(--fs-caption); line-height: 1; }
