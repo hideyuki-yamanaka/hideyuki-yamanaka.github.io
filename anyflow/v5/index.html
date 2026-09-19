@@ -19714,16 +19714,20 @@ document.getElementById('panelBody').addEventListener('click', () => {
     try { var sv = sessionStorage.getItem('anyflow-live-scroll'); if (sv != null) { var y = +sv; requestAnimationFrame(function () { window.scrollTo(0, y); setTimeout(function () { window.scrollTo(0, y); }, 60); }); } } catch (e) {}
     var reloadT = null, firstMsg = true;
     function applyIncoming(text) {
-      try {
-        var d = JSON.parse(text);
-        if (d && typeof d === 'object' && 'main' in d) {
-          if (d.main != null) localStorage.setItem('anyflow-embed-anim-v81', d.main); else localStorage.removeItem('anyflow-embed-anim-v81');
-          if (d.preset != null) localStorage.setItem('anyflow-gfx-presets', d.preset); else localStorage.removeItem('anyflow-gfx-presets');
-          /* 焼き込み世代ガードに勝てるよう、世代印も最新にしておく(本番ドメインでも同期が消えない) */
-          try { localStorage.setItem('anyflow-shipped-gen', '99999999999999'); } catch (e) {}
-        }
-      } catch (e) { return; }
+      var d; try { d = JSON.parse(text); } catch (e) { return; }
+      if (!(d && typeof d === 'object' && 'main' in d)) return;
       badge.classList.remove('off'); badge.textContent = '📱 PCと同期中';
+      /* 【2026-09-20 ヒデさん報告バグ修正】SSE は接続のたびに前回値(latest)を送ってくるので、
+         毎回リロードすると『チカチカ無限リロード』になる。前回適用した“生ペイロード”と同じなら何もしない。
+         (localStorage 比較だと起動時 migration が値を書き換えて常に不一致になり止まらないため、生ペイロードで判定) */
+      var last = null; try { last = sessionStorage.getItem('anyflow-pm-last'); } catch (e) {}
+      if (text === last) return;
+      try { sessionStorage.setItem('anyflow-pm-last', text); } catch (e) {}
+      try {
+        if (d.main != null) localStorage.setItem('anyflow-embed-anim-v81', d.main); else localStorage.removeItem('anyflow-embed-anim-v81');
+        if (d.preset != null) localStorage.setItem('anyflow-gfx-presets', d.preset); else localStorage.removeItem('anyflow-gfx-presets');
+        try { localStorage.setItem('anyflow-shipped-gen', '99999999999999'); } catch (e) {}
+      } catch (e) { return; }
       clearTimeout(reloadT);
       reloadT = setTimeout(function () {
         try { sessionStorage.setItem('anyflow-live-scroll', String(window.scrollY || window.pageYOffset || 0)); } catch (e) {}
@@ -19765,6 +19769,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
     + '.live-pop button{flex:1;border:1px solid rgba(0,0,0,.1);background:#fff;border-radius:8px;padding:7px;font:600 12px/1 inherit;cursor:pointer}'
     + '.live-pop button.pri{background:#0e5cff;color:#fff;border-color:#0e5cff}.live-pop button.pri.on{background:#111;border-color:#111}'
     + '.live-pop .st{font-size:11px;color:#666;margin-top:8px;min-height:15px}.live-pop .err{color:#c0392b}'
+    + '.live-pop .pm-prompt{display:none;width:100%;margin-top:8px;border:1px dashed rgba(14,92,255,.5);background:#eef8ff;color:#0b4bd6;border-radius:8px;padding:8px;font:600 11px/1.35 inherit;cursor:pointer;text-align:center}.live-pop .pm-prompt.show{display:block}'
     /* ▼ スマホモード(同期中)の見た目 */
     + '.phone-mode-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;color:#0b4bd6;background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.14));border-top:1px solid rgba(14,92,255,.22);border-bottom:1px solid rgba(14,92,255,.22);padding:7px 12px;text-align:center}'
     + '.phone-mode-banner b{font-weight:800}'
@@ -19787,6 +19792,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
     + '<img class="qr" alt="QR">'
     + '<div class="url">読み込み中…</div>'
     + '<div class="st"></div>'
+    + '<button id="lvPrompt" class="pm-prompt">📋 起動プロンプトをコピー（Claudeに貼る）</button>'
     + '<div class="row"><button id="lvCopy">URLコピー</button><button class="pri" id="lvStop">スマホモード終了</button></div>';
   document.body.appendChild(pop);
   /* パネル上部の「スマホモード」帯(同期中だけ表示) */
@@ -19794,7 +19800,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
   banner.innerHTML = '📱 <b>スマホモード</b>：この画面の調整が、同期中のスマホ実機に反映されます';
   var pbody = document.getElementById('panelBody'); if (pbody && pbody.parentNode) pbody.parentNode.insertBefore(banner, pbody);
   var qrImg = pop.querySelector('.qr'), urlEl = pop.querySelector('.url'), stEl = pop.querySelector('.st'),
-      copyBtn = pop.querySelector('#lvCopy'), stopBtn = pop.querySelector('#lvStop');
+      copyBtn = pop.querySelector('#lvCopy'), stopBtn = pop.querySelector('#lvStop'), promptBtn = pop.querySelector('#lvPrompt');
   var phoneUrl = '', ipInfo = null, statusT = null;
 
   function refreshStatus() {
@@ -19803,7 +19809,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       urlEl.textContent = phoneUrl; urlEl.classList.remove('err');
       qrImg.src = SYNC + '/qr?t=' + Date.now();
       var n = j.clients || 0;
-      stEl.classList.remove('err');
+      stEl.classList.remove('err'); promptBtn.classList.remove('show');
       stEl.textContent = window.__liveSyncOn
         ? ('同期ON ・ つないでいるスマホ ' + n + '台')
         : ('スマホでこのQRを読むと同期プレビューが開きます（' + n + '台接続中）');
@@ -19811,7 +19817,8 @@ document.getElementById('panelBody').addEventListener('click', () => {
       urlEl.textContent = '同期サーバが起動していません'; urlEl.classList.add('err');
       qrImg.removeAttribute('src');
       stEl.classList.add('err');
-      stEl.textContent = 'ターミナルで次を実行:  node anyflow/v5/tools/live-sync.mjs';
+      stEl.textContent = 'このボタンでプロンプトをコピーして Claude に貼ると起動できます↓';
+      promptBtn.classList.add('show');
     });
   }
   function positionPop() {
@@ -19888,6 +19895,10 @@ document.getElementById('panelBody').addEventListener('click', () => {
   copyBtn.addEventListener('click', function () {
     if (!phoneUrl) return;
     try { navigator.clipboard.writeText(phoneUrl); copyBtn.textContent = 'コピーしました'; setTimeout(function () { copyBtn.textContent = 'URLコピー'; }, 1200); } catch (e) {}
+  });
+  promptBtn.addEventListener('click', function () {
+    var t = 'anyflow V5.0 のスマホモード(実機ライブ同期)の中継サーバが起動していないようです。起動してください。\n\ncd "/Users/hideyuki/Developer/Claude Code/anyflow/v5/tools" && (test -d node_modules || npm install) && node live-sync.mjs';
+    try { navigator.clipboard.writeText(t); promptBtn.textContent = '✅ コピーしました（Claudeに貼ってください）'; setTimeout(function () { promptBtn.textContent = '📋 起動プロンプトをコピー（Claudeに貼る）'; }, 2000); } catch (e) {}
   });
 })();
 </script>

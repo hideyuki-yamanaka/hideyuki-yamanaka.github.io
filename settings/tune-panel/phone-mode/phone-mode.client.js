@@ -51,13 +51,16 @@
     try { var sv = sessionStorage.getItem('pm-scroll'); if (sv != null) { var y = +sv; requestAnimationFrame(function () { window.scrollTo(0, y); setTimeout(function () { window.scrollTo(0, y); }, 60); }); } } catch (e) {}
     var reloadT = null, firstMsg = true;
     function applyIncoming(text) {
-      try { var d = JSON.parse(text);
-        if (d && typeof d === 'object' && d.store) {
-          for (var k in d.store) { if (d.store[k] != null) localStorage.setItem(k, d.store[k]); else localStorage.removeItem(k); }
-          if (C.shippedGenKey) { try { localStorage.setItem(C.shippedGenKey, '99999999999999'); } catch (e) {} }
-        }
-      } catch (e) { return; }
+      var d; try { d = JSON.parse(text); } catch (e) { return; }
+      if (!(d && typeof d === 'object' && d.store)) return;
       badge.classList.remove('off'); badge.textContent = '📱 PCと同期中';
+      /* SSE は接続のたびに前回値(latest)を送るので、前回適用した“生ペイロード”と同じならリロードしない(=チカチカ無限リロード防止)。
+         localStorage 比較だと起動時 migration が値を書き換えて常に不一致になり止まらないため、生ペイロードで判定。 */
+      var last = null; try { last = sessionStorage.getItem('pm-last'); } catch (e) {}
+      if (text === last) return;
+      try { sessionStorage.setItem('pm-last', text); } catch (e) {}
+      for (var k in d.store) { if (d.store[k] != null) localStorage.setItem(k, d.store[k]); else localStorage.removeItem(k); }
+      if (C.shippedGenKey) { try { localStorage.setItem(C.shippedGenKey, '99999999999999'); } catch (e) {} }
       clearTimeout(reloadT);
       reloadT = setTimeout(function () { try { sessionStorage.setItem('pm-scroll', String(window.scrollY || 0)); } catch (e) {} location.reload(); }, firstMsg ? 120 : 260);
       firstMsg = false;
@@ -93,6 +96,7 @@
     + '.pm-pop button{flex:1;border:1px solid rgba(0,0,0,.1);background:#fff;border-radius:8px;padding:7px;font:600 12px/1 inherit;cursor:pointer}'
     + '.pm-pop button.pri{background:' + ACCENT.btn + ';color:#fff;border-color:' + ACCENT.btn + '}'
     + '.pm-pop .st{font-size:11px;color:#666;margin-top:8px;min-height:15px}.pm-pop .err{color:#c0392b}'
+    + '.pm-pop .pm-prompt{display:none;width:100%;margin-top:8px;border:1px dashed rgba(' + ACCENT.a + ',.5);background:' + ACCENT.diffBg + ';color:' + ACCENT.fg + ';border-radius:8px;padding:8px;font:600 11px/1.35 inherit;cursor:pointer;text-align:center}.pm-pop .pm-prompt.show{display:block}'
     + '.pm-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;color:' + ACCENT.fg + ';background:linear-gradient(90deg,rgba(' + ACCENT.a + ',.12),rgba(' + ACCENT.b + ',.16));border-top:1px solid rgba(' + ACCENT.a + ',.28);border-bottom:1px solid rgba(' + ACCENT.a + ',.28);padding:7px 12px;text-align:center}'
     + '.pm-banner b{font-weight:800}'
     + 'html.phone-mode .pm-banner{display:flex}'
@@ -110,23 +114,25 @@
 
   var pop = document.createElement('div'); pop.className = 'pm-pop';
   pop.innerHTML = '<h4>📱 スマホモード（実機プレビュー）</h4><img class="qr" alt="QR"><div class="url">読み込み中…</div><div class="st"></div>'
+    + '<button id="pmPrompt" class="pm-prompt">📋 起動プロンプトをコピー（Claudeに貼る）</button>'
     + '<div class="row"><button id="pmCopy">URLコピー</button><button class="pri" id="pmStop">スマホモード終了</button></div>';
   document.body.appendChild(pop);
   var banner = document.createElement('div'); banner.className = 'pm-banner'; banner.innerHTML = '📱 <b>スマホモード</b>：この画面の調整が、同期中のスマホ実機に反映されます';
   var bref = C.bannerBeforeSel && document.querySelector(C.bannerBeforeSel);
   if (bref && bref.parentNode) bref.parentNode.insertBefore(banner, bref); else document.body.appendChild(banner);
   var qrImg = pop.querySelector('.qr'), urlEl = pop.querySelector('.url'), stEl = pop.querySelector('.st'),
-      copyBtn = pop.querySelector('#pmCopy'), stopBtn = pop.querySelector('#pmStop');
+      copyBtn = pop.querySelector('#pmCopy'), stopBtn = pop.querySelector('#pmStop'), promptBtn = pop.querySelector('#pmPrompt');
   var phoneUrl = '', statusT = null;
+  var START_PROMPT = C.startPrompt || 'スマホモード（実機ライブ同期）の中継サーバが起動していないようです。起動してください。\n\ncd settings/tune-panel/phone-mode && (test -d node_modules || npm install) && node server.mjs';
 
   function refreshStatus() {
     fetch(SYNC + '/ip').then(function (r) { return r.json(); }).then(function (j) {
       phoneUrl = j.phoneUrl; urlEl.textContent = phoneUrl; urlEl.classList.remove('err');
-      qrImg.src = SYNC + '/qr?t=' + Date.now(); stEl.classList.remove('err');
+      qrImg.src = SYNC + '/qr?t=' + Date.now(); stEl.classList.remove('err'); promptBtn.classList.remove('show');
       stEl.textContent = window.__phoneModeOn ? ('同期ON ・ つないでいるスマホ ' + (j.clients || 0) + '台') : ('スマホでこのQRを読むと同期プレビューが開きます');
     }).catch(function () {
       urlEl.textContent = '同期サーバが起動していません'; urlEl.classList.add('err'); qrImg.removeAttribute('src');
-      stEl.classList.add('err'); stEl.textContent = 'ターミナルで server.mjs を起動してください';
+      stEl.classList.add('err'); stEl.textContent = 'このボタンでプロンプトをコピーして Claude に貼ると起動できます↓'; promptBtn.classList.add('show');
     });
   }
   function positionPop() {
@@ -192,4 +198,5 @@
   trigger.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
   stopBtn.addEventListener('click', function () { setActive(false); hidePop(); });
   copyBtn.addEventListener('click', function () { if (!phoneUrl) return; try { navigator.clipboard.writeText(phoneUrl); copyBtn.textContent = 'コピーしました'; setTimeout(function () { copyBtn.textContent = 'URLコピー'; }, 1200); } catch (e) {} });
+  promptBtn.addEventListener('click', function () { try { navigator.clipboard.writeText(START_PROMPT); promptBtn.textContent = '✅ コピーしました（Claudeに貼ってください）'; setTimeout(function () { promptBtn.textContent = '📋 起動プロンプトをコピー（Claudeに貼る）'; }, 2000); } catch (e) {} });
 })();
