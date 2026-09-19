@@ -6189,6 +6189,7 @@ function save() {
   /* いま画面に出ている形を、いまの案の引き出しへ入れてから保存する
      (2026-08-27 ヒデさん指定・案ごとに形を分ける) */
   if (typeof gfxStash === 'function') gfxStash();
+  try { if (typeof varAutoCapture === 'function') varAutoCapture(); } catch (e) {}   /* 【2026-09-20】案(kvVar等)の上書き控えを保存前に最新化(デフォルトにしても戻るバグの修正) */
   /* 【2026-09-15 ヒデさん指摘「デフォルトにしても反映されない」の根治】選択中の KV バリエーションに「⤓ いまの設定で上書き」の控えがあると、
      起動時にその控えが再適用されて保存値に勝つ(実測: 線の濃さ 0.25 で保存→再読込で 0.54 に戻った)。
      「これをデフォルトに設定」＝いま見えている形を既定にする操作なので、控えも同じ内容に更新する */
@@ -17212,6 +17213,10 @@ const VAR_AUTOSAVE = [
   { bucket: 'visGrad',   sel: () => visGradKey(),   snap: () => VAR_SNAP.visGrad,   base: (key) => { const g = (VIS_GRADS.find(x => x.key === key) || VIS_GRADS[0]); const m = Object.assign({ gradVar: key, gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v || {}), o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (m[k] != null) o[k] = m[k]; }); return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
+  /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
+     起動時の applyKvVariant で案の焼き込み値が再適用されるため、上書き控えを常に最新にしておかないと『デフォルトにしても戻る』。
+     ここに入れることで、保存のたびに gfxVarOverride.kvVar[案] = いまの値 になり、起動時にそれが勝つ。 */
+  { bucket: 'kvVar',     sel: () => kvVarKey(),     snap: () => VAR_SNAP.kvVar,     base: (key) => { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; const d = ((KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0]).data) || {}; return { kv: pick(d.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, d.kvGfx), planet: Object.assign({}, d.planet), mesh: pick(d.mesh, KV_VAR_MESH_KEYS) }; } },
 ];
 function varAutoInfo(bucket) { return VAR_AUTOSAVE.find(b => b.bucket === bucket) || null; }
 /* いまの見た目を、選択中の案の控えへ書き込む(自動保存のたびに) */

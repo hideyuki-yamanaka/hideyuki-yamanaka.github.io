@@ -102,6 +102,7 @@
 | H149 | スマホがチカチカ無限リロード／サーバ未起動時のClaude導線 | ✅ 無限リロードの原因はSSEが接続のたびに前回値(latest)を送るため毎回リロードしていたこと。前回適用した“生ペイロード”をsessionStorage(pm-last)で覚え、同じなら何もしない(localStorage比較だと起動時migrationで常に不一致→止まらないため生ペイロードで判定)。Playwrightで2回で settle・値同期・バッジ同期中を確認。＋サーバ未起動時はポップアップに「📋起動プロンプトをコピー（Claudeに貼る）」ボタン。共通版 phone-mode.client.js も同修正＋C.startPrompt |
 | H150 | SPビジョン: メッシュ中央・機能名を球の中に収める・ロゴを平らに中央 | ✅ スマホ専用(PC非影響)。applyVfFadeに_mb分岐: 機能名 labelDist=0.6(球の中に収めてはみ出し防止)、ロゴは平ら(transform無し)＋球の中央、.vf-wrap left 3→20で球の中心を画面中央に。fit()確定後にapplyVfFadeを取り直し。Playwrightでラベル収納・ロゴcx195/flat・dome中央を確認 |
 | H151 | SP: KVをヘッダーに被らない位置まで下げる／ロゴティッカー減速 | ✅ SP(@media)で .orbit 120→168・.headline 400→448・.logos 624→672(＋48px下げ)でヘッダーから離す。ロゴティッカーは applyMarquee のモバイル値 14→20s(720px/20s≒36px/s)に減速。Playwrightでヘッダー下端54→メッシュ余白拡大・duration20sを確認 |
+| H152 | 【優先バグ】KVコピー・惑星・カゴの大きさ等を変えデフォルトにしても巻き戻る | ✅ 原因: 起動時 applyKvVariant(kvVarKey) が KV案(kvVar)の焼き込み値(kv/kvGfx/planet/mesh)を再適用し、ユーザー変更を上書き。上書き控えが無いと戻る(gxはkvVar対象外なので残っていた)。修正: kvVar を VAR_AUTOSAVE に追加(保存のたびに gfxVarOverride.kvVar[案]=いまの値)＋save()冒頭でvarAutoCapture()を呼ぶ(デフォルト設定ボタンの経路もカバー)。Playwrightで planet2.4/cageR3.3/gx77 がリロード後も保持を確認 |
 
 ### 🟡 仮置き（違ったら1行で直せる）
 - **惑星の大きさ**: ヒデさんのローカルは 130%(球の直径 429px)、カンプ実測に合わせた値は 99%(直径 311px)。今回はローカルの値を触っていない(本番の焼き込みは 99% のまま)。どちらを正にするか要確認
