@@ -17725,6 +17725,7 @@ function buildPanel() {
   varRowX('kvVar', KV_VARIANTS, () => kvVarKey(), k => { params.kvVar = String(k); applyKvVariant(String(k)); },
     { snap: VAR_SNAP.kvVar, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); if (typeof fillAnimBody === 'function') fillAnimBody(); } });
   note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・カゴ)や「🔤 文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
+  note('⚠️【調整パネルの絶対ルール】値は①バリエーション別（案ごと）②PC/SP別 で独立します。強調でいじった位置・数値はノーマルに出ません。スマホモード中に変えた値はPCに出ず、その項目はブルーで印が付きます（案を作り直す時もこの2軸の独立を必ず残すこと）。');
 
   /* ===== 🎨 グラフィック (2026-08-26 ヒデさん指定・整理) =====
      右側のグラフィックの設定をここに集約する。いちばん上が「直接編集」。
