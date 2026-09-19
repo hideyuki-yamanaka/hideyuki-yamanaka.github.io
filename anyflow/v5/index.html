@@ -741,6 +741,9 @@
   /* 【2026-08-29 ヒデさん指定】Our Vision は「セクション内で下げる」と中身が 100vh からはみ出して
      見切れるので、セクションごと 200px 下へ下げる(前に 200px の余白を足す)。中身は中央のまま＝見切れない。 */
   #vision { margin-top: var(--space-200); }
+  /* 【2026-09-20 ヒデさん依頼】KVの「強調」案の時だけ、惑星ビジュアルが大きくビジョンとぶつかるので、ビジョン以下を+100px下げる(PC/タブレットのみ。SP・ノーマルはそのまま) */
+  html.kv-strong:not(.mb):not(.tab) #vision { margin-top: calc(var(--space-200) + 100px); }
+  html.kv-strong.tab #vision { margin-top: calc(var(--space-80) + 100px); }
   /* 【2026-08-29】実績→開発者体験「スムーズフェード」時は実績も固定追従なし。 */
   #results.res-smooth .pin-vp { position: relative; }
   /* 【2026-08-29】導入事例も固定追従なし（余分スクロールをなくす）。 */
@@ -17234,7 +17237,7 @@ const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cag
 function kvVarKey() { const v = String((params && params.kvVar) || 'normal'); if (KV_VARIANTS.some(x => x.key === v) && !variantRemovedKey('kvVar', v)) return v; const f = KV_VARIANTS.find(x => !variantRemovedKey('kvVar', x.key)); return (f || KV_VARIANTS[0]).key; }
 function kvVarSnapshot() { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; return { kv: pick(params.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, params.kvGfx), planet: Object.assign({}, params.planet), mesh: pick(params.conv && params.conv.mesh, KV_VAR_MESH_KEYS) }; }
 function kvVarAssign(sn) { if (!sn) return; if (sn.kv) Object.assign(params.kv, sn.kv); if (sn.kvGfx) params.kvGfx = Object.assign(params.kvGfx || {}, sn.kvGfx); if (sn.planet) Object.assign(params.planet, sn.planet); if (sn.mesh && params.conv && params.conv.mesh) Object.assign(params.conv.mesh, sn.mesh); }
-function kvVarRefresh() { try { applyKvCopy(); } catch (e) {} try { textTools.applyAll(); } catch (e) {} try { renderFrame(); } catch (e) {} try { if (editHandles.on) editHandles.place(); } catch (e) {} }
+function kvVarRefresh() { try { document.documentElement.classList.toggle('kv-strong', kvVarKey() === 'strong'); } catch (e) {}   /* 【2026-09-20 ヒデさん依頼】強調案の時だけビジョン以下を下げる(PCのみ)。CSS: html.kv-strong:not(.mb) #vision */ try { applyKvCopy(); } catch (e) {} try { textTools.applyAll(); } catch (e) {} try { renderFrame(); } catch (e) {} try { if (editHandles.on) editHandles.place(); } catch (e) {} }
 /* 案の値(＋⋯で上書き保存した控え)を params へ流し込む。quiet=起動時(未保存扱いにしない) */
 function applyKvVariant(key, quiet) {
   const v = KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0];
@@ -19509,10 +19512,16 @@ const textTools = (() => {
     if (!params.edits) params.edits = {};
     /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ「スマホ上書き(editsMb)」を共有(edits)に重ねる。
        PCでは editsMb を一切見ない＝スマホモードでいじった値がPCに出ない。 */
-    const _mb = (typeof isMobile !== 'undefined' && isMobile && params.editsMb) ? params.editsMb : null;
+    const _isMb = (typeof isMobile !== 'undefined' && isMobile);
+    const _mb = (_isMb && params.editsMb) ? params.editsMb : null;
     for (const sp of SPEC) {
       const _base = params.edits[sp.key] || {};
-      const e = (_mb && _mb[sp.key]) ? Object.assign({}, _base, _mb[sp.key]) : _base;
+      const _mob = _mb ? _mb[sp.key] : null;
+      const e = _mob ? Object.assign({}, _base, _mob) : Object.assign({}, _base);
+      /* 【2026-09-20 ヒデさん報告・修正】SP は文字サイズ(fs)を PC(base)から引き継がない。SP のサイズは CSS(--fs-hero 等) か
+         スマホモードで付けた SP 専用の上書き(editsMb)だけで決まる。→ PC のコピーのサイズをいじっても SP は連動しない。
+         太さ・行間・字間(fw/lh/ls)は共通デザインなので base を引き継ぐ(SP専用の上書きがあればそちらが勝つ)。 */
+      if (_isMb && (!_mob || _mob.fs == null)) delete e.fs;
       for (const el of specEls(sp)) {
         el.style.fontSize      = e.fs != null ? e.fs + 'px' : '';
         el.style.fontWeight    = e.fw != null ? String(e.fw) : '';
