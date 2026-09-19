@@ -5422,7 +5422,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919160000;
+const SHIPPED_GENERATION = 20260919170000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -5683,6 +5683,8 @@ try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-coresoft2-20260919')) { const fx = (o) => { if (!o || !o.cv) return; if (o.cv.coreSoft == null || o.cv.coreSoft === 0.08) o.cv.coreSoft = (String(o.cvSway) === '13') ? 0.12 : 0; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-coresoft2-20260919', '1'); } } catch (e) {}
 /* 【2026-09-19 ヒデさん指定】KV の惑星/ケージの「ゆらぎ(軸の揺れ)」を止めて回転だけに(旧既定 1 のままの保存値だけ 0 に) */
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-sway0-20260919')) { const fx = (o) => { if (o && (o.swayAmp == null || o.swayAmp === 1)) o.swayAmp = 0; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-kv-sway0-20260919', '1'); } } catch (e) {}
+/* 【2026-09-19 ヒデさん依頼】ビジョンの Point 01 を元(焼き込み時の状態)に戻す: ✏️編集で入った見出しのずれ(dx19/dy1)・太さ500・ブロックの下ずれ(p1Y 17) を、焼き込み値(ずれ0・600)へ。見出しサイズ(pHSize 30)は焼き込み値どおりなので触らない */
+try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-p1-reset-20260919')) { const fx = (o) => { if (!o) return; o.sections = o.sections || {}; o.sections.vision = o.sections.vision || {}; const v = o.sections.vision; v.p1X = 0; v.p1Y = 0; o.edits = o.edits || {}; o.edits.p1h = { fw: 600 }; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-p1-reset-20260919', '1'); } } catch (e) {}
 function loadParams() {
   try {
     let s = JSON.parse(localStorage.getItem(STORAGE_KEY));
