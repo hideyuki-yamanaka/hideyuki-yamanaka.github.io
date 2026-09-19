@@ -966,14 +966,14 @@
   #results.slot-fx-drum .slot .stp em.x { display: block; }
   /* 【2026-09-19 ヒデさん依頼】スロットの案2「ぼかして消える」: 窓の上下に段階的なぼかし(端ほど強く)を重ねて、数字が溶けるように消える。
      ::before/::after の backdrop-filter は .rl(マスク付き=backdrop root)の中の数字だけをぼかす。量は --slot-blur / 範囲は --slot-blur-zone(実績タブ) */
-  /* 【2026-09-19 作り直し】窓の高さ(--sw・文字数)を @property で「連続的に」動かす。回っている桁は --slot-win-n まで開き、止まると 1.24 に閉じる(0.4秒)。
+  /* 【2026-09-19 作り直し】窓の高さ(--slot-sw・文字数)を @property で「連続的に」動かす。回っている桁は --slot-win-n まで開き、止まると 1.24 に閉じる(0.4秒)。
      消える帯 --rr も --sw から計算するので、窓の開閉と一緒に伸び縮みし、止まる瞬間の切り替わり(パッ)が無い。
      帯の中は端ほどゆっくり薄くなる曲線(0→.04→.16→.45→1)。休止時 --rr=0.27em(数字の上端にちょうど届く)＝数字はくっきり・隣の数字はほぼ透明 */
-  @property --sw { syntax: '<number>'; inherits: false; initial-value: 1.24; }
-  #results.slot-fx-blur .slot .rl { position: relative; height: calc(var(--sw) * 1em); padding: calc((var(--sw) - 1) * .5em) 0; margin: calc((1 - var(--sw)) * .5em) 0; transition: --sw .4s ease;
-    --rr: calc(((var(--sw) - 1) * .5em + .15em) * var(--slot-ramp, 1));
+  @property --slot-sw { syntax: '<number>'; inherits: false; initial-value: 1.24; }   /* ⚠️ 名前は必ず slot- 付き: 素の --sw はスマホの stage 幅(html.mb .pin-stage{width:var(--sw)})に使われていて、@property で <number> 登録すると px が無効になりビジョンの幅が 0 になった(2026-09-19 事故) */
+  #results.slot-fx-blur .slot .rl { position: relative; height: calc(var(--slot-sw) * 1em); padding: calc((var(--slot-sw) - 1) * .5em) 0; margin: calc((1 - var(--slot-sw)) * .5em) 0; transition: --slot-sw .4s ease;
+    --rr: calc(((var(--slot-sw) - 1) * .5em + .15em) * var(--slot-ramp, 1));
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.04) calc(var(--rr) * .25), rgba(0,0,0,.16) calc(var(--rr) * .5), rgba(0,0,0,.45) calc(var(--rr) * .75), #000 var(--rr), #000 calc(100% - var(--rr)), rgba(0,0,0,.45) calc(100% - var(--rr) * .75), rgba(0,0,0,.16) calc(100% - var(--rr) * .5), rgba(0,0,0,.04) calc(100% - var(--rr) * .25), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.04) calc(var(--rr) * .25), rgba(0,0,0,.16) calc(var(--rr) * .5), rgba(0,0,0,.45) calc(var(--rr) * .75), #000 var(--rr), #000 calc(100% - var(--rr)), rgba(0,0,0,.45) calc(100% - var(--rr) * .75), rgba(0,0,0,.16) calc(100% - var(--rr) * .5), rgba(0,0,0,.04) calc(100% - var(--rr) * .25), transparent 100%); }
-  #results.slot-fx-blur .slot .rl.spin { --sw: var(--slot-win-n, 1.6); }
+  #results.slot-fx-blur .slot .rl.spin { --slot-sw: var(--slot-win-n, 1.6); }
   #results.slot-fx-blur .slot .rl::before, #results.slot-fx-blur .slot .rl::after { content: ''; position: absolute; left: -0.1em; right: -0.1em; height: var(--slot-blur-zone, 45%); pointer-events: none; z-index: 1; opacity: 0; transition: opacity .4s ease;
     -webkit-backdrop-filter: blur(var(--slot-blur, 2.5px)); backdrop-filter: blur(var(--slot-blur, 2.5px)); }
   #results.slot-fx-blur .slot .rl.spin::before, #results.slot-fx-blur .slot .rl.spin::after { opacity: 1; }
@@ -6208,6 +6208,7 @@ function markDirty() {
      調整が消える方が困る、との指定で自動保存に変更。連続ドラッグ中は書かない(0.8秒デバウンス)。 */
   clearTimeout(markDirty._t);
   markDirty._t = setTimeout(() => {
+    try { if (typeof varAutoCapture === 'function') varAutoCapture(); } catch (e) {}   /* 【2026-09-19】案の上書き控えを常に最新に */
     try { save(); dirty = false; if (syncSaveBtn) syncSaveBtn(); } catch (e) {}
   }, 800);
 }
@@ -14433,6 +14434,7 @@ setTimeout(function applyOverrideOnBoot() {
 }, 0);
 /* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
 setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映 */
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -17158,6 +17160,9 @@ const VAR_SNAP = {
   conv:    { get: () => params.conv, set: s => Object.assign(params.conv, s), reset: () => Object.assign(params.conv, structuredClone(DEFAULTS_PRISTINE.conv)) },
   planet:  { get: () => params.planet, set: s => Object.assign(params.planet, s), reset: () => Object.assign(params.planet, structuredClone(DEFAULTS_PRISTINE.planet)) },
   vision:  { get: () => params.sections.vision, set: s => Object.assign(params.sections.vision, s), reset: () => Object.assign(params.sections.vision, structuredClone(DEFAULTS_PRISTINE.sections.vision)) },
+  /* 【2026-09-19】揺らぎのグラデは「グラデに関わるキーだけ」を控える(dome や余白を巻き込まない) */
+  visGrad: { get: () => { const v = params.sections.vision, o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (v[k] != null) o[k] = v[k]; }); return o; },
+             set: s => Object.assign(params.sections.vision, s), reset: () => { visApplyGrad(visGradKey()); applyVisGrad(); } },
   cv:      { get: () => params.cv, set: s => Object.assign(params.cv, s), reset: () => Object.assign(params.cv, structuredClone(DEFAULTS_PRISTINE.cv)) },
   /* 【2026-09-15】揺らぎの案は「動きに関わるキーだけ」を控える(余白や色の設定を巻き込まない) */
   cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; }); return o; },
@@ -17171,6 +17176,32 @@ const VAR_SNAP = {
              set: s => { const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, s); vfMesh = null; applyVfFade(); }, reset: () => vfApplyVariant(vfVarKey()) },
   dev:     { get: () => params.sections.dev, set: s => Object.assign(params.sections.dev, s), reset: () => Object.assign(params.sections.dev, structuredClone(DEFAULTS_PRISTINE.sections.dev)) },
 };
+
+/* ===== 【2026-09-19 ヒデさん依頼・最重要】バリエーションの上書きが「選び直す/リロードで戻る」バグの根治 =====
+   仕組み: 案ごとの上書き控え params.gfxVarOverride[bucket][key] を『常にいまの見た目』に保つ。
+   ・つまみを触る → markDirty の自動保存で、選択中の案の控えを更新(varAutoCapture)
+   ・案を切り替える → 離れる案の控えも即更新(varRowX の choose 内)/選んだ案は控えを重ねる(既存)
+   ・起動時 → 選択中の案の控えを適用(varApplyOverridesAtStartup)
+   これで『触った値=案の値』になり、選び直しても・リロードしても戻らない。
+   snap は必ず『その案が持つキーだけ』の狭いものにすること(広いと別の設定を巻き込む)。 */
+const VAR_AUTOSAVE = [
+  { bucket: 'visMesh',   sel: () => vfVarKey(),     snap: () => VAR_SNAP.visMesh,   base: (key) => { const m = (VIS_MESHES.find(x => x.key === key) || VIS_MESHES[0]); const g = Object.assign({}, VF_DEF, m.cfg || {}), o = {}; VF_VAR_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
+  { bucket: 'visLogo',   sel: () => vfLogoKey(),    snap: () => VAR_SNAP.visLogo,   base: (key) => { const m = (VIS_LOGOS.find(x => x.key === key) || VIS_LOGOS[0]); const o = {}; VF_LOGO_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
+  { bucket: 'visGrad',   sel: () => visGradKey(),   snap: () => VAR_SNAP.visGrad,   base: (key) => { const g = (VIS_GRADS.find(x => x.key === key) || VIS_GRADS[0]); const m = Object.assign({ gradVar: key, gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v || {}), o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (m[k] != null) o[k] = m[k]; }); return o; } },
+  { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
+  { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
+];
+function varAutoInfo(bucket) { return VAR_AUTOSAVE.find(b => b.bucket === bucket) || null; }
+/* いまの見た目を、選択中の案の控えへ書き込む(自動保存のたびに) */
+function varAutoCapture() {
+  if (!params) return; if (!params.gfxVarOverride) params.gfxVarOverride = {};
+  for (const b of VAR_AUTOSAVE) { try { const snap = b.snap(); if (!snap) continue; const key = String(b.sel()); if (!params.gfxVarOverride[b.bucket]) params.gfxVarOverride[b.bucket] = {}; params.gfxVarOverride[b.bucket][key] = JSON.parse(JSON.stringify(snap.get())); } catch (e) {} }
+  try { presetStoreSave(); } catch (e) {}
+}
+/* 起動時: 選択中の案の控えを画面へ適用(リロードで戻らないように) */
+function varApplyOverridesAtStartup() {
+  for (const b of VAR_AUTOSAVE) { try { const snap = b.snap(); if (!snap) continue; const key = String(b.sel()); const ov = ((params.gfxVarOverride || {})[b.bucket] || {})[key]; if (ov) snap.set(JSON.parse(JSON.stringify(ov))); } catch (e) {} }
+}
 /* 実績の調整を「コード既定」へ(既定に無い後付けの鍵(fx21 など案ごとの値)は消す＝コード側の初期値に戻る) */
 function varResetResults() { const r = params.sections.results, d = structuredClone(DEFAULTS_PRISTINE.sections.results); for (const k in r) { if (!(k in d)) delete r[k]; } Object.assign(r, d); }
 function varRowX(bucket, items, getSel, setSel, o) {
@@ -17186,9 +17217,14 @@ function varRowX(bucket, items, getSel, setSel, o) {
   const favs = () => { if (!Array.isArray(params.gfxFav)) params.gfxFav = []; return params.gfxFav; };
   const isFav = it => favs().some(f => f.m === bucket && K(f.name) === K(it.key));
   const ovOf = it => ((params.gfxVarOverride || {})[bucket] || {})[K(it.key)];
+  const autoInfo = (typeof varAutoInfo === 'function') ? varAutoInfo(bucket) : null;   /* 【2026-09-19】この案は自動控え対象か */
+  /* 「上書き済み」と見なすのは、控えが素の案の値と実際に違う時だけ(自動控えで素の値が入っただけの時は隠す) */
+  const ovCustom = it => { const ov = ovOf(it); if (!ov) return false; if (!autoInfo) return true; try { return JSON.stringify(ov) !== JSON.stringify(autoInfo.base(K(it.key))); } catch (e) { return true; } };
   const gone = it => hidden().includes(K(it.key)) || variantRemovedKey(bucket, K(it.key));
   const plainName = it => String(it.name).replace(/^(\d+(?:-\d+)?|[A-Za-z]{1,2}\d{0,2})\s+/, '');
   const choose = it => {
+    /* 【2026-09-19】自動控え対象は、いま離れる案の見た目を控えへ即保存してから切り替える(選び直しで戻らない) */
+    if (autoInfo && o.snap) { try { const cur = K(getSel()); if (!params.gfxVarOverride) params.gfxVarOverride = {}; if (!params.gfxVarOverride[bucket]) params.gfxVarOverride[bucket] = {}; params.gfxVarOverride[bucket][cur] = JSON.parse(JSON.stringify(o.snap.get())); } catch (e) {} }
     setSel(it.key);
     const ov = ovOf(it);
     if (ov && o.snap) { try { o.snap.set(JSON.parse(JSON.stringify(ov))); } catch (e) {} }   /* 上書き済みの案は、その控えを重ねる */
@@ -17216,7 +17252,7 @@ function varRowX(bucket, items, getSel, setSel, o) {
         params.gfxVarOverride[bucket][K(it.key)] = JSON.parse(JSON.stringify(o.snap.get()));
         presetStoreSave(); markDirty(); fill();
       });
-      if (ovOf(it)) mk('↺ 上書きを解除（元の設定に戻す）', () => {
+      if (ovCustom(it)) mk('↺ 上書きを解除（元の設定に戻す）', () => {
         delete params.gfxVarOverride[bucket][K(it.key)];
         if (o.snap.reset && K(getSel()) === K(it.key)) { try { o.snap.reset(); } catch (e) {} }   /* 選択中なら画面もその場で元へ */
         presetStoreSave(); markDirty(); renderFrame(); if (o.after) o.after(it); if (typeof syncPanelRows === 'function') syncPanelRows(); fill();
@@ -17242,7 +17278,7 @@ function varRowX(bucket, items, getSel, setSel, o) {
   const pill = (it, label, no, target) => {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.key = K(it.key); b.dataset.no = no || '';
     b.className = 'var-pill' + (K(getSel()) === K(it.key) ? ' on' : '') + (isFav(it) ? ' fav' : '');
-    b.title = plainName(it) + (it.tip ? ' — ' + it.tip : '') + `（ID ${it.key}）` + (ovOf(it) ? '（⤓ 上書き済み・⋯から解除できます）' : '');
+    b.title = plainName(it) + (it.tip ? ' — ' + it.tip : '') + `（ID ${it.key}）` + (ovCustom(it) ? '（⤓ 上書き済み・⋯から解除できます）' : '');
     b.append(document.createTextNode(label));
     b.onclick = () => choose(it);
     { /* 【2026-09-18 ヒデさん指定】現行(fixed)の案にも ⋯ を出して削除できるようにする(最後の1案だけは削除不可) */ const x = document.createElement('button'); x.type = 'button'; x.className = 'var-x'; x.textContent = '⋯'; x.title = 'ピン留め / この設定で上書き / 削除'; x.onclick = menuFor(x, it, label); b.appendChild(x); }
@@ -18241,7 +18277,7 @@ function buildPanel() {
     '真ん中(0)で行まるごと同時。左右どちらへ動かしても1文字ずつバラバラに出ます。', { signed: true }));
   /* 【2026-09-15 ヒデさん指定】「つなぐ／強み」の揺らぎのグラデ: くすまない鮮やかな配色 3案(色味はブランド色のまま)＋つまみ */
   sub(catVis, '揺らぎのグラデ（つなぐ／強み）の配色', true, { fixed: true });
-  varRowX('visGrad', VIS_GRADS, () => visGradKey(), v => { visApplyGrad(String(v)); }, { snap: VAR_SNAP.vision, after: () => { applyVisGrad(); } });
+  varRowX('visGrad', VIS_GRADS, () => visGradKey(), v => { visApplyGrad(String(v)); }, { autosave: true, snap: VAR_SNAP.visGrad, after: () => { applyVisGrad(); } });
   note('選ぶとその案の彩度・明るさが下のつまみに入ります。細かく変えたら ⋯「いまの設定で上書き」でその案に保存できます。');
   rows.push(slider('彩度', 0.6, 2.2, 0.02, () => (sv().vision.gradSat != null ? sv().vision.gradSat : 1), v => { sv().vision.gradSat = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の彩度。100%が元の色。'));
   rows.push(slider('明るさ', 0.8, 1.3, 0.01, () => (sv().vision.gradBri != null ? sv().vision.gradBri : 1), v => { sv().vision.gradBri = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の明るさ。'));
@@ -18253,7 +18289,7 @@ function buildPanel() {
   sub(catVis, '③ 図（網目のドーム）');
   note('Figma 18004:38228 の図を KV のケージと同じくコードで描画(正二十面体を分割した球)。出るタイミングは上の「表示タイミング」、ぼけの強さは「基本」の「ぼかしの強さ」。位置は ✏️編集でドラッグ。');
   /* 【2026-09-19 ヒデさん依頼】メッシュの案(案1 ドーム=既定 / 案2 KV のメッシュ)。⋯で上書き/削除可 */
-  varRowX('visMesh', VIS_MESHES, () => vfVarKey(), v => { vfApplyVariant(String(v)); markDirty(); }, { snap: VAR_SNAP.visMesh, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  varRowX('visMesh', VIS_MESHES, () => vfVarKey(), v => { vfApplyVariant(String(v)); markDirty(); }, { autosave: true, snap: VAR_SNAP.visMesh, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと下のつまみ(回転・傾き・線・点・細かさ・パケット)にその案の値が入ります。細かく変えたら ⋯「この設定で上書き」でその案に保存。');
   const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true }, o || {})));
   /* 【2026-09-19 ヒデさん依頼「似ている情報はグループに・重複は省く」】セット／網目の位置と向き／網目の見た目／ロゴ の4組に。
@@ -18266,6 +18302,8 @@ function buildPanel() {
   vfS('網目だけの位置 X', 'mx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを左右に。ロゴと機能名は動きません。0＝いまの位置。', { signed: true });
   vfS('網目だけの位置 Y', 'my', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを上下に(下のフェードも一緒に動く)。0＝いまの位置。', { signed: true });
   vfS('網目だけの奥行き Z', 'mz', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '%', '網目だけを手前(+)＝大きく／奥(−)＝小さく。ロゴと機能名はそのまま。0＝いまの大きさ。', { signed: true });
+  /* 【2026-09-19 ヒデさん依頼】網目(球)単体の大きさ=半径。patch44 で「奥行き Z と重複」と判断して消したが、半径は球そのものの大きさ(点の間隔・機能名の位置の基準)で別物 → 復活 */
+  vfS('網目の大きさ（半径）', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。案ごとの既定はカンプ 262px。奥行き Z は見かけの拡大、こちらは球そのものの大きさ。');
   vfS('傾き（前後）', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
   vfS('傾き（左右）', 'roll', -45, 45, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '網目の軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { signed: true });
   vfS('向き（回転の位置）', 'yaw', -180, 180, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '縦軸まわりの向きをずらす。「回転 なし」の時はどの面を見せるか、ありの時はどこから回り始めるか。', { signed: true });
@@ -18282,7 +18320,7 @@ function buildPanel() {
   vfS('下のフェード 終わり', 'fadeB', 0, 1, 0.02, v => Math.round(v * 100) + '%', 'ここで完全に消える。');
   note('▼ ロゴ');
   segRow('ロゴ', [['表示', 1], ['非表示', 0]], () => (vfCfg().logoOn === 0 ? 0 : 1), v => { vfSet('logoOn', v ? 1 : 0); markDirty(); });
-  varRowX('visLogo', VIS_LOGOS, () => vfLogoKey(), v => { vfApplyLogoVariant(String(v)); markDirty(); }, { snap: VAR_SNAP.visLogo, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  varRowX('visLogo', VIS_LOGOS, () => vfLogoKey(), v => { vfApplyLogoVariant(String(v)); markDirty(); }, { autosave: true, snap: VAR_SNAP.visLogo, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('ロゴの案を選ぶと「奥行きの傾き・左右の傾き・透明度・影・ガラスの板・貼り付け」に値が入ります。細かく変えたら ⋯「この設定で上書き」。案5(貼り付け)の時は傾きのつまみは効かず、網目の回転で向きが決まります。');
   vfS('ロゴの大きさ', 'logoScale', 0.4, 2.5, 0.02, v => Math.round(v * 100) + '%', '中央のロゴだけの大きさ(メッシュの大きさに掛かる)。');
   vfS('ロゴ 横位置', 'logoDx', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを左右へ。✏️編集モードのドラッグでも動きます。');
@@ -18524,7 +18562,7 @@ function buildPanel() {
   sub(catRes, '数字が回って止まる演出');
   note('数字が桁ごとに回り、左の桁から順に止まります。');
   /* 【2026-09-19 ヒデさん依頼】スロットの案(案1=現状 / 案2=ぼかして消える)。⋯で上書き/削除可 */
-  varRowX('resSlotFx', RES_SLOT_FX, () => resSlotFxKey(), v => { resApplySlotFx(String(v)); markDirty(); }, { snap: VAR_SNAP.resSlotFx, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  varRowX('resSlotFx', RES_SLOT_FX, () => resSlotFxKey(), v => { resApplySlotFx(String(v)); markDirty(); }, { autosave: true, snap: VAR_SNAP.resSlotFx, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと「上下のなじませ・ぼかしの強さ・ぼかしの範囲・窓の高さ」に値が入ります。細かく変えたら ⋯「この設定で上書き」。');
   rows.push(slider('回り出すまで', 0, 2, 0.05, () => sv().results.slotAt, v => sv().results.slotAt = v, v => v.toFixed(2) + '秒後',
     'セクションが始まってから回り出すまで。0で即。'));
@@ -18828,7 +18866,7 @@ function buildPanel() {
     },
     flow() {
       /* 【2026-09-18 ヒデさん依頼】白い光の居場所(右上を漂う)の案。⋯で削除/上書き可 */
-      varRowX('cvSway', CV_SWAYS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      varRowX('cvSway', CV_SWAYS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { autosave: true, snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
       note('現行＝今の動き。案1〜3＝白い光が右上のあたりを漂い、フォームまで流れ込まないようにした案。案4＝白を軸に揺らす。案5・6＝案4の動き＋色の入れ替わり(白はそのまま)。どの案も「動き」と「色」を丸ごと決めるので、案を切り替えれば前の案の色設定は残らない。選んでから下のつまみで微調整→⋯「この設定で上書き」。');
       /* 【2026-09-19】色の入れ替わり(案5・6)の細かい調整。案1〜4では効かない(hueMode=off) */
       rows.push(slider('色の入れ替わり: 1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '案5・6で色が一周する時間。長いほどゆっくり。案1〜4では効きません。', { fixedMax: true }));
