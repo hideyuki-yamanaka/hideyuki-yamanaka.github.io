@@ -874,6 +874,11 @@
     -webkit-mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 402px), transparent var(--vf-fade-b, 546px));
             mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 402px), transparent var(--vf-fade-b, 546px)); }
   .vf-wrap .vf-logo { position: absolute; left: 127px; top: 288px; width: 204px; height: 37px; display: block; -webkit-user-drag: none; user-select: none; }   /* カンプ: ケージ(29,49)＋ロゴ bbox(98,239) */
+  /* 【2026-09-19 ヒデさん依頼】ロゴの後ろの楕円: 中の網目をぼかし(backdrop-filter)＋地色で薄める。縁は radial の mask でやわらかく。値は JS(applyVfFade) */
+  .vf-wrap .vf-logo-bg { position: absolute; display: none; pointer-events: none; border-radius: 50%; background: rgba(231,231,231,var(--vfbg-a, 0));
+    -webkit-backdrop-filter: blur(var(--vfbg-blur, 0px)); backdrop-filter: blur(var(--vfbg-blur, 0px));
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 35%, transparent 100%); mask-image: radial-gradient(ellipse at center, #000 35%, transparent 100%); }
+  .vf-wrap .vf-logo-bg.is-on { display: block; }
   .vf-wrap .vf-lab { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; white-space: nowrap; line-height: var(--lh-tight); color: var(--ink); }
   .vf-wrap .vf-lab b { font-weight: 500; font-size: var(--fs-base); }   /* カンプ: Noto Medium 16px */
   .vf-wrap .vf-lab span { font-weight: 400; font-size: 8px; color: var(--ink-muted); }   /* カンプ: Noto Regular 8px #545961 */
@@ -3912,6 +3917,7 @@
            下半球はカンプの「地色のレイヤーブラー矩形」の代わりに容器の mask で消す(ビジョンタブ「下のフェード」) -->
       <div class="vf-wrap" id="vfWrap">
         <canvas class="vf-dome" id="vfDome" aria-hidden="true"></canvas>
+        <div class="vf-logo-bg" id="vfLogoBg" aria-hidden="true"></div>
         <img class="vf-logo" id="vfLogo" src="assets/vision-logo.svg" alt="Anyflow Embed" width="204" height="37" draggable="false">
         <div class="vf-lab" id="vfLab1" data-x="0" data-y="84" style="left: 0px; top: 84px;"><b id="vfL1">コネクタ</b><span id="vfL1s">外部サービスをつなぐ</span></div>
         <div class="vf-lab" id="vfLab2" data-x="97" data-y="35" style="left: 97px; top: 35px;"><b id="vfL2">認証ウィザード</b><span id="vfL2s">認証設定を支える</span></div>
@@ -5424,7 +5430,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919210000;
+const SHIPPED_GENERATION = 20260919220000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -12078,14 +12084,17 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14 };   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
-const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk'];
+const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
-    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0 } },
+    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
   { key: 'kv', name: '案2 KV のメッシュをそのまま', tip: 'キービジュアルのケージと同じ描き方: 測地線球(頂点42)・線 #6B7690 を奥ほど薄く/細く・点はピンク/シアン交互で手前ほど大きく・骨の上を光(パケット)が走る。半径と回転の速さも KV と同じ比率。',
-    cfg: { r: 251, spin: 1.4, tilt: -11, lineAlpha: 0.25, lineWidth: 1.5, dot: 2.9, freq: 2, lineColor: '#6B7690', nodeMode: 'alt', levels: 0, pk: 4 } },
+    cfg: { r: 251, spin: 1.4, tilt: -11, lineAlpha: 0.25, lineWidth: 1.5, dot: 2.9, freq: 2, lineColor: '#6B7690', nodeMode: 'alt', levels: 0, pk: 4, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
+  /* 【2026-09-19 ヒデさん依頼】案3=案1＋ロゴの後ろをぼかす(楕円の中の網目をぼかし、地色で薄める) */
+  { key: 'domeBlur', name: '案3 ブラーあり（ロゴの後ろをぼかす）', tip: '案1 の色味のまま、ロゴの後ろに楕円の領域を置いて中の網目をぼかし、地色で少し薄める。ぼかし・濃さ・広さは下のつまみ。',
+    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 10, bgAlpha: 0.55, bgW: 1.6, bgH: 2.8 } },
 ];
 function vfVarKey() { const v = String(vfCfg().variant || 'dome'); return (VIS_MESHES.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visMesh', v))) ? v : 'dome'; }
 function vfApplyVariant(key) { const m = VIS_MESHES.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.variant = key; vfMesh = null; applyVfFade(); }   /* scale=メッシュの大きさ(2026-09-19 ヒデさん指定で 1.15・仮置き)。機能名の文字サイズは変えず位置だけ中心から外へ */
@@ -12104,7 +12113,9 @@ function applyVfFade() {
   w.querySelectorAll('.vf-lab').forEach(el => { const x = +el.dataset.x, y = +el.dataset.y; el.style.left = (VF_CX + (x - VF_CX) * sc).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc).toFixed(1) + 'px'; });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const lg = w.querySelector('.vf-logo'); if (lg) { const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; const lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
-    const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0); lg.style.transformOrigin = '50% 50%'; lg.style.transform = (ang || tx) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : ''; }   /* ロゴ: 中心基準で大きさ(logoScale)・ずらし(logoDx/Dy)・角度(logoAngle)・奥行きの傾き(logoTiltX) */
+    const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0); lg.style.transformOrigin = '50% 50%'; lg.style.transform = (ang || tx) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : '';
+    /* ロゴの後ろの楕円(案3): ロゴの中心に、横 bgW 倍・縦 bgH 倍 */
+    const bg = w.querySelector('.vf-logo-bg'); if (bg) { const on = (c.bgBlur || 0) > 0.05 || (c.bgAlpha || 0) > 0.005; bg.classList.toggle('is-on', on); if (on) { const bw = lw * (c.bgW != null ? c.bgW : 1.6), bh = lh * (c.bgH != null ? c.bgH : 2.8); bg.style.left = (lcx - bw / 2).toFixed(1) + 'px'; bg.style.top = (lcy - bh / 2).toFixed(1) + 'px'; bg.style.width = bw.toFixed(1) + 'px'; bg.style.height = bh.toFixed(1) + 'px'; bg.style.setProperty('--vfbg-blur', (c.bgBlur || 0).toFixed(1) + 'px'); bg.style.setProperty('--vfbg-a', (c.bgAlpha || 0).toFixed(3)); } } }   /* ロゴ: 中心基準で大きさ(logoScale)・ずらし(logoDx/Dy)・角度(logoAngle)・奥行きの傾き(logoTiltX) */
 }
 function vfBuild(f) {
   const t = (1 + Math.sqrt(5)) / 2, nrm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
@@ -17532,191 +17543,8 @@ function buildPanel() {
     /* 【2026-08-29 ヒデさん指定・フォーマット統一】どの案でも「揺らぎ」「軌道の回転」を
        ON/OFF トグルで揃える。既定は 揺らぎON・回転OFF。速さ等の細かい調整はトグルONの時だけ出す。
        (以前は off 群だけこの「動き」セクションが無く、B/C/D 等は回転が焼き込みでいじれなかった) */
-    {
-      sub(animModeBox, '動き（揺らぎ）', true, { fixed: true });   /* 【2026-09-17 大掃除】旧「動き（この案）」。メッシュに効く揺らぎだけ残す */
-      const moveGrpBody = mount;   /* 2026-08-29: あとで「スイッチ→スライダー」に並べ替えるため控える */
-      /* 揺らぎ ON/OFF (既定オン=②シーソー。全案共通で効く緩やかな揺れ) */
-      segRow('揺らぎ', [['する', 1], ['しない', 0]], () => (params.sway || 1) > 1 ? 1 : 0,
-        v => { params.sway = v ? 2 : 1; markDirty(); renderFrame(); fillAnimBody(); });
-      if ((params.sway || 1) > 1) {
-        /* 【2026-08-30 ヒデさん指定】揺らぎの動きを選べるように(傾き/左右/上下/斜め) */
-        optRow('swayDir', '揺らぎの動き', [['傾き', 'tilt'], ['左右', 'h'], ['上下', 'v'], ['斜め', 'diag']],
-          () => (params.swayDir || 'tilt'),
-          v => { params.swayDir = v; markDirty(); renderFrame(); });
-      }
-      if ((params.sway || 1) > 1) {
-        slider('揺らぎの強さ', 0, 3, 0.05, () => (params.swayAmp == null ? 1 : params.swayAmp),
-          v => { params.swayAmp = v; markDirty(); }, v => '×' + v.toFixed(2),
-          '揺らぎの振れ幅。0でぴたっと止まり、大きいほど大きく揺れます。');
-      }
-      const net3dOn = !!params.conv.net3d;
-      if (net3dOn) {
-        /* 【2026-08-29 ヒデさん指定】ネットワーク3D案の専用つまみ(2D/3D・手前奥の太さ・物理・周回速度)。 */
-        const NT = params.net3d || (params.net3d = { mode: '3d', frontW: 5, backW: 1, phys: 0.7, flatW: 2, spd: 0.7 });
-        segRow('見え方', [['2D（フラット）', 0], ['3D（奥行き）', 1]], () => (NT.mode === '2d' ? 0 : 1),
-          v => { NT.mode = v ? '3d' : '2d'; markDirty(); renderFrame(); fillAnimBody(); });
-        if (NT.mode !== '2d') {
-          slider('手前の太さ', 1, 10, 0.2, () => NT.frontW, v => { NT.frontW = v; renderFrame(); },
-            v => v.toFixed(1) + 'px', '手前(こちら側)の線の太さ。');
-          slider('奥の太さ', 0.3, 4, 0.1, () => NT.backW, v => { NT.backW = v; renderFrame(); },
-            v => v.toFixed(1) + 'px', '奥(向こう側)の線の太さ。小さいほど奥が細い＝立体的。');
-          slider('物理の強さ', 0, 0.95, 0.05, () => NT.phys, v => { NT.phys = v; renderFrame(); },
-            v => '×' + v.toFixed(2), '手前のドットほど速く過ぎ、奥ほどゆっくり流れる強さ。0で一定。');
-        } else {
-          slider('線の太さ', 0.5, 5, 0.1, () => NT.flatW, v => { NT.flatW = v; renderFrame(); },
-            v => v.toFixed(1) + 'px', '2D(フラット)時の均一な線の太さ。');
-        }
-        /* 【2026-08-30 ヒデさん指定】軌道の回転(3D構造まるごとスピン)。しない＝形は固定。 */
-        segRow('軌道の回転', [['する', 1], ['しない', 0]], () => (NT.spin ? 1 : 0),
-          v => { NT.spin = v ? (Math.abs(NT.spin || 0) > 0.01 ? NT.spin : 0.4) : 0; markDirty(); renderFrame(); fillAnimBody(); });
-        if (NT.spin) {
-          slider('回転の速さ', -2, 2, 0.05, () => NT.spin,
-            v => { NT.spin = v; renderFrame(); }, v => '×' + v.toFixed(2),
-            '右で速く、左で逆回り。3D構造ぜんぶが縦軸まわりに回ります。', { signed: true });
-          /* 【2026-08-30 ヒデさん指定】軌道の回転に粒を連動させるか。連動しない＝線だけ回って粒は元の回転軸のまま。 */
-          segRow('粒も一緒に回す', [['連動する', 1], ['連動しない', 0]], () => (NT.spinDots === false ? 0 : 1),
-            v => { NT.spinDots = !!v; markDirty(); renderFrame(); });
-        }
-        slider('周回速度', 0, 2, 0.05, () => NT.spd, v => { NT.spd = v; renderFrame(); },
-          v => '×' + v.toFixed(2), 'ドットが軌道を回る速さ。');
-        /* 【2026-08-30 ヒデさん指定】粒(飛び交うドット)の表示/非表示。 */
-        segRow('粒(ドット)', [['表示', 1], ['非表示', 0]], () => (NT.showDots === false ? 0 : 1),
-          v => { NT.showDots = !!v; markDirty(); renderFrame(); fillAnimBody(); });
-        if (NT.showDots !== false) {
-          slider('飛び交うドット数', 1, 12, 1, () => (NT.dots != null ? NT.dots : 1), v => { NT.dots = v; renderFrame(); },
-            v => Math.round(v) + '個', '1本の軌道に流すドットの数。等間隔で並んで回ります。');
-        }
-      } else {
-      /* 軌道の回転 ON/OFF (既定オフ)。ONにした時の速さは案が持つ値、無ければ 0.30。
-         【2026-08-29 ヒデさん指定・改】シェイプ案(アトム/土星/花)の回転(ringRotate)もこの1つのトグルで統一。
-         2本軌道は orbitSpin、シェイプは ringRotate を同時に切り替える(混在の解消)。 */
-      const isShapeV = (params.conv.ringCount || 0) >= 2;
-      const gyMixNow = () => ((params.conv.gyroMixBy || {})[cvMode] || 0);
-      segRow('軌道の回転', [['する', 1], ['しない', 0]],
-        () => (convOrbitSpinAmt() !== 0 || params.conv.ringRotate === true) ? 1 : 0,
-        v => {
-          if (!params.conv.orbitSpinBy) params.conv.orbitSpinBy = {};
-          if (v) {
-            const def = (params.conv.spinDefBy || {})[cvMode];
-            params.conv.orbitSpinBy[cvMode] = (typeof def === 'number' && Math.abs(def) > 0.01) ? def : 0.3;
-            params.conv.ringRotate = true;
-            /* 【2026-08-30 ヒデさん指定】転がり(gyroMix)の自動抱き合わせをやめた。
-               ⚠️ 輪が倒れる転がりが同時に入ると、ドットが軌道上を走っていないように見えていた。
-               転がりは下の別トグルで(この案が転がりを持つ時だけ表示)。 */
-          } else { params.conv.orbitSpinBy[cvMode] = 0; params.conv.ringRotate = false; }
-          markDirty(); renderFrame(); fillAnimBody();
-        });
-      /* 転がり(ジャイロ): 輪が倒れながら回る動き。持っている案でだけ独立トグルとして出す */
-      if (typeof (params.conv.gyroMixDefBy || {})[cvMode] === 'number' && (params.conv.gyroMixDefBy || {})[cvMode] > 0) {
-        segRow('転がり（ジャイロ）', [['する', 1], ['しない', 0]],
-          () => (gyMixNow() !== 0 ? 1 : 0),
-          v => {
-            if (!params.conv.gyroMixBy) params.conv.gyroMixBy = {};
-            params.conv.gyroMixBy[cvMode] = v ? ((params.conv.gyroMixDefBy || {})[cvMode] || 0.45) : 0;
-            markDirty(); renderFrame(); fillAnimBody();
-          });
-      }
-      if (convOrbitSpinAmt() !== 0) {
-        /* 【2026-08-30 ヒデさん指定】回り方のバリエーション: ぐるっと一周 / グラグラ揺れる(往復) */
-        segRow('回り方', [['ぐるっと一周', 'turn'], ['グラグラ揺れる', 'wobble']],
-          () => ((params.conv.spinStyleBy || {})[cvMode] || 'turn'),
-          v => { if (!params.conv.spinStyleBy) params.conv.spinStyleBy = {}; params.conv.spinStyleBy[cvMode] = v; markDirty(); renderFrame(); fillAnimBody(); });
-        slider('回転の速さ', -3, 3, 0.05, () => convOrbitSpinAmt(),
-          v => { if (!params.conv.orbitSpinBy) params.conv.orbitSpinBy = {}; params.conv.orbitSpinBy[cvMode] = v; },
-          v => '×' + v.toFixed(2),
-          '右へ動かすほど速く回り、左へ動かすと逆回りになります。グラグラの時は揺れの速さ。', { signed: true });
-        /* 【2026-08-30 ヒデさん指定】軌道の回転と粒の連動を、案の内蔵の粒(渦/円盤/粒リング)＋
-           追加の粒(吸い込み)ぜんぶまとめて切替。連動しない=粒の回転軸は固定のまま。 */
-        segRow('粒も一緒に回す', [['連動する', 1], ['連動しない', 0]],
-          () => (params.conv.spinLink === false ? 0 : 1),
-          v => { params.conv.spinLink = !!v; markDirty(); renderFrame(); });
-        if (((params.conv.spinStyleBy || {})[cvMode] || 'turn') === 'wobble') {
-          slider('揺れ幅', 2, 60, 1, () => (params.conv.spinWobbleDeg != null ? params.conv.spinWobbleDeg : 16),
-            v => { params.conv.spinWobbleDeg = v; renderFrame(); }, v => Math.round(v) + '°',
-            'グラグラの振れ幅(角度)。大きいほど大きく揺れます。');
-        }
-      } else if (isShapeV && params.conv.ringRotate) {
-        /* シェイプ案(アトム/土星/花)の回る速さは ringSpin */
-        slider('回転の速さ', 0, 2, 0.05, () => params.conv.ringSpin,
-          v => { params.conv.ringSpin = v; renderFrame(); }, v => '×' + v.toFixed(2), 'シェイプ(輪)の回る速さ。');
-      }
-      /* 【2026-09-01 ヒデさん指定】B3「J 地平線・横揺れ」専用: 内外の輪の左右ゆれ */
-      if (params.conv.hsway && params.conv.hsway.on) {
-        const HS = params.conv.hsway;
-        segRow('横揺れの揺れ方', [['なめらか', 'sine'], ['ふわふわ', 'drift'], ['等速で往復', 'tri']],
-          () => (HS.pat || 'sine'),
-          v => { HS.pat = v; markDirty(); renderFrame(); });
-        slider('外側の振れ幅', 0, 80, 1, () => (HS.outerAmp != null ? HS.outerAmp : 16),
-          v => { HS.outerAmp = v; renderFrame(); }, v => Math.round(v) + 'px',
-          '外側の輪が左右にゆれる幅。0で止まります。');
-        slider('内側の振れ幅', 0, 80, 1, () => (HS.innerAmp != null ? HS.innerAmp : 16),
-          v => { HS.innerAmp = v; renderFrame(); }, v => Math.round(v) + 'px',
-          '内側の輪が左右にゆれる幅。0で止まります。');
-        slider('揺れの周期', 1, 15, 0.1, () => (HS.period != null ? HS.period : 6),
-          v => { HS.period = v; renderFrame(); }, v => v.toFixed(1) + '秒',
-          '左右1往復にかける秒数。大きいほどゆったり。');
-        slider('内側のディレイ', 0, 5, 0.05, () => (HS.delay != null ? HS.delay : 0.8),
-          v => { HS.delay = v; renderFrame(); }, v => v.toFixed(2) + '秒',
-          '内側の輪が外側より遅れて揺れる時間差。0でぴったり連動。');
-      }
-      /* 軌道のサイズ・線の太さ (全案共通) */
-      slider('軌道のサイズ', 0.3, 2.5, 0.02,
-        () => { const v = (params.conv.orbitScaleBy || {})[cvMode]; return (typeof v === 'number' && v > 0.05) ? v : 1; },
-        v => { if (!params.conv.orbitScaleBy) params.conv.orbitScaleBy = {}; params.conv.orbitScaleBy[cvMode] = v; },
-        v => '×' + v.toFixed(2),
-        '右へ動かすほど軌道全体が大きくなります。1.00 がそのままの大きさ。');
-      slider('軌道の線の太さ', 0.2, 4, 0.05,
-        () => { const v = (params.conv.orbitWidthBy || {})[cvMode]; return (typeof v === 'number' && v > 0) ? v : 1; },
-        v => { if (!params.conv.orbitWidthBy) params.conv.orbitWidthBy = {}; params.conv.orbitWidthBy[cvMode] = v; },
-        v => (3 * v).toFixed(1) + 'px',
-        '右へ動かすほど軌道の線が太くなります。カンプ通りは 3.0px。');
-      }
-      /* ドットの周回は周回系(off以外)のみ。周回のみ(off)はドットが常に周回する */
-      if (cvMode !== 'off') {
-        const DM = params.conv.dotMove || (params.conv.dotMove = {});
-        segRow('ドットの周回', [['する', 1], ['しない', 0]],
-          () => (DM[cvMode] !== false) ? 1 : 0,
-          v => { DM[cvMode] = !!v; markDirty(); renderFrame(); });
-      }
-      if (cvMode === 'reel') {
-        /* 【2026-08-30 ヒデさん指定・統一】くるくる系のつまみを1箇所に。
-           旧「スピン(spinUp)」は廃止し、「入れ替わりの回転(する/しない)+速さ(秒)」だけにする。 */
-        const R0 = params.conv.reel;
-        segRow('入れ替わりの回転', [['する', 1], ['しない', 0]],
-          () => (params.conv.reel.transRot === false) ? 0 : 1,
-          v => { R0.transRot = !!v; markDirty(); renderFrame(); fillAnimBody(); });
-        slider('入れ替わりの速さ', 0.3, 4, 0.1,
-          () => (params.conv.reel.swapSec != null ? params.conv.reel.swapSec
-                 : Math.max(0.3, (params.conv.reel.moveDur || 0.16) * Math.max(1, params.conv.reel.T))),
-          v => { R0.swapSec = v; markDirty(); renderFrame(); },
-          v => v.toFixed(1) + '秒',
-          '輪が次の位置へすべり込む(回りながら入れ替わる)のにかける時間。大きいほどゆっくり。' +
-          '必要なら吸収の終わりを自動で前倒しして、この時間を必ず確保します。', { fixedMax: true });
-      }
-      if (cvMode === 'beads') {
-        const B0 = params.conv.beads;
-        slider('吸い込みのスピン', 0, 3, 0.05, () => params.conv.beads.spin, v => B0.spin = v,
-          v => '×' + v.toFixed(2), '右へ動かすほど、吸い込まれる時に強く渦を巻きます。0(左端)でまっすぐ落ちます。');
-        if ((params.conv.beads.spin || 0) > 0) {
-          slider('スピンの効き方', 0.2, 3, 0.05, () => params.conv.beads.spinEase, v => B0.spinEase = v,
-            v => '×' + v.toFixed(2), '大きいほど中心の近くで一気に巻き込みます。');
-        }
-      }
-      if (cvMode === 'spiral' || cvMode === 'accre') {
-        const K0 = params.conv[cvMode];
-        slider('渦の巻き具合', 0, 3, 0.05, () => params.conv[params.converge].swirl, v => K0.swirl = v,
-          v => '×' + v.toFixed(2), '0で巻かずにまっすぐ。大きいほど中心に近づくほど速く回り、きつく巻き込みます。');
-        slider('落ち方のカーブ', 0.1, 3, 0.05, () => params.conv[params.converge].fallCurve, v => K0.fallCurve = v,
-          v => '×' + v.toFixed(2), '1で一定の速さ。大きいほど中心の近くで一気に吸い込まれます。');
-      }
-      /* 【2026-08-29 ヒデさん指定】UIを見やすく: この節のスイッチ(する/しない)を上へ、スライダーを下へまとめる
-         (スイッチ・スライダーが交互に並ぶのを避ける)。DOMを並べ替えるだけで挙動は不変。 */
-      if (moveGrpBody) {
-        const kids = [...moveGrpBody.children];
-        [...kids.filter(k => k.classList.contains('seg-row')), ...kids.filter(k => !k.classList.contains('seg-row'))]
-          .forEach(k => moveGrpBody.appendChild(k));
-      }
-    }
+    /* 【2026-09-19 ヒデさん指定】「動き（揺らぎ）」の節(揺らぎ する/しない・揺らぎの動き/強さ・軌道の回転・転がり・回り方・粒の連動・ドットの周回・3D網の細目・横揺れ・軌道のサイズ・軌道の線の太さ)は削除。
+       値は削除時点の保存値のまま固定(揺らぎ しない=sway1・揺らぎの強さ0 / 軌道の回転 しない / ドットの周回 する / 軌道のサイズ×1.00 / 線 4.1px)。戻したい時は git 履歴(2026-09-19 以前)の fillAnimBody を参照 */
     if (cvMode === 'reel') {
       const R = params.conv.reel;
       sub(animModeBox, 'この案の調整（輪が縮んで吸収）', true);
@@ -18313,6 +18141,11 @@ function buildPanel() {
   vfS('ロゴ 縦位置', 'logoDy', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを上下へ。');
   vfS('ロゴの角度', 'logoAngle', -45, 45, 0.5, v => (v > 0 ? '+' : '') + v.toFixed(1) + '°', 'ロゴを平面で回す角度(時計回りがプラス)。');
   vfS('ロゴの奥行きの傾き', 'logoTiltX', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'ロゴの上端を奥へ/手前へ倒す(3D)。既定 −14° はメッシュの傾きと同じ(仮置き)。0で真正面。');
+  /* 【2026-09-19 ヒデさん依頼】ロゴの後ろをぼかす(案3)。案1/2 では 0(なし) */
+  vfS('ロゴ背景: ぼかしの強さ', 'bgBlur', 0, 40, 0.5, v => v === 0 ? 'なし' : v.toFixed(1) + 'px', 'ロゴの後ろの楕円の中で、網目をどれだけぼかすか。案3 は 10px。');
+  vfS('ロゴ背景: 濃さ', 'bgAlpha', 0, 1, 0.02, v => Math.round(v * 100) + '%', '楕円を地色でどれだけ薄めるか(0=透明・網目はぼけるだけ / 100%=地色で塗りつぶし)。案3 は 55%。');
+  vfS('ロゴ背景: 横の広さ', 'bgW', 1, 3.5, 0.05, v => '×' + v.toFixed(2), 'ロゴの幅の何倍まで楕円を広げるか。');
+  vfS('ロゴ背景: 縦の広さ', 'bgH', 1, 6, 0.1, v => '×' + v.toFixed(1), 'ロゴの高さの何倍まで楕円を広げるか。');
   vfS('網目の半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。カンプは 262px。');
   vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '0で止まる。0.35 で約2分半で1周。');
   vfS('傾き', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
