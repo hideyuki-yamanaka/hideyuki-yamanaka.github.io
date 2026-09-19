@@ -1,5 +1,7 @@
 # anyflow V5.0 スマホ実機ライブ同期（PC で調整 → スマホに即反映）
 
+> 全プロダクト共通の標準機能・単一ソースは [settings/docs/general/PHONE-MODE.md](../general/PHONE-MODE.md) と [settings/tune-panel/phone-mode/](../../tune-panel/phone-mode/)。ここは anyflow の実装メモ（リファレンス実装）。
+
 2026-09-19 ヒデさん依頼。スマホでレスポンシブを詰める時、**PC で数値をいじると同じ Wi‑Fi のスマホ実機プレビューがリアルタイムで変わる**仕組み。スマホは QR を読むだけ。
 
 ## 使い方（3 ステップ）
