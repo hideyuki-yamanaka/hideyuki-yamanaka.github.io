@@ -6937,7 +6937,9 @@ function bindHdrScroll() {
        変形の“動き”は CSS の transition(--hdr-t を --hdr-dur で補間)に任せる＝どれだけ速くスクロールしても一定速度でゆったり。
        ヒステリシス(発火70px/解除30px)で境目のちらつきを防ぐ。 */
     const wasOn = hdr.classList.contains('hdr-stuck');
-    const on = wasOn ? (y > 30) : (y > 70);
+    /* 【2026-09-20 ヒデさん依頼】SP はヘッダー右を常に黒い四角ハンバーガーに(スクロール前から)。クリックでドロワーが開く(compact判定=hdr-stuck) */
+    const _mbHdr = !!(window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches);
+    const on = _mbHdr ? true : (wasOn ? (y > 30) : (y > 70));
     if (on !== wasOn) {   /* 【2026-09-17 ヒデさん指摘】進む=ゆったり / 戻る=キビキビ(トップ復帰のラグ解消)。速さは params.hdrDur */
       const d = Math.max(0.15, +(params && params.hdrDur) || 0.7);
       hdr.style.setProperty('--hdr-dur', (on ? d : d * 0.55).toFixed(3) + 's');
