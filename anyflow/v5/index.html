@@ -87,10 +87,10 @@
   .header[data-navhover="fade"] .nav-links a { transition: opacity var(--t-fast) var(--e-fast); }
   .header[data-navhover="fade"] .nav-links a:hover { opacity: .5; }
   /* 2: 下線が左から伸びる */
-  .header[data-navhover="underline"] .nav-links a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: -4px; height: 1.5px; background: currentColor; transition: right .3s var(--e-out); }
+  .header[data-navhover="underline"] .nav-links a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: -4px; height: 1.5px; background: currentColor; transition: right var(--t-ui) var(--e-out); }
   .header[data-navhover="underline"] .nav-links a:hover::after { right: 0; }
   /* 3: 上下ロール(Framer参照 https://extraordinary-topic-909967.framer.app/) */
-  .header[data-navhover="roll"] .nav-links a .nlab > span { transition: transform .34s var(--e-out); }
+  .header[data-navhover="roll"] .nav-links a .nlab > span { transition: transform var(--t-ui) var(--e-out); }
   .header[data-navhover="roll"] .nav-links a:hover .nlab > span { transform: translateY(-100%); }
   /* 4: 少し浮く＋色 */
   .header[data-navhover="lift"] .nav-links a { transition: transform .26s var(--e-out), color .26s; }
@@ -122,9 +122,9 @@
   html:not(.mb).hdr-follow .header::before {
     content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
     opacity: var(--hdr-t, 0);
-    background: var(--hdr-skin-bg, rgba(255,255,255,.6));
-    -webkit-backdrop-filter: var(--hdr-skin-filter, blur(18px) saturate(1.5));
-    backdrop-filter: var(--hdr-skin-filter, blur(18px) saturate(1.5));
+    background: var(--hdr-skin-bg, var(--glass-60));
+    -webkit-backdrop-filter: var(--hdr-skin-filter, blur(var(--blur-glass)) saturate(1.5));
+    backdrop-filter: var(--hdr-skin-filter, blur(var(--blur-glass)) saturate(1.5));
     box-shadow: var(--hdr-skin-shadow, inset 0 -1px 0 rgba(0,0,0,.07));
     border: var(--hdr-skin-border, 0 solid transparent);
   }
@@ -148,13 +148,13 @@
 
   /* ===== 【V5.0 2026-09-16】ハンバーガー＋ドロワー(共通) ===== */
   .hdr-burger { display: none; width: 44px; height: 44px; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; flex: 0 0 auto; -webkit-appearance: none; appearance: none; z-index: 2; }
-  .hdr-burger { transition: background .2s, box-shadow .2s; }   /* 幅/opacity は --hdr-t 駆動(トランジションを掛けるとラグる)。開閉アニメは span 側 */
+  .hdr-burger { transition: background var(--t-tap), box-shadow var(--t-tap); }   /* 幅/opacity は --hdr-t 駆動(トランジションを掛けるとラグる)。開閉アニメは span 側 */
   /* 【2026-09-17 作り直し】バーは「中央基準(left/top:50%)＋margin で位置決め」。transform は回転専用にして、
      どんな配置でも横に伸びて破綻しない(旧: left/right 指定が親基準に化けて全幅の黒線になっていた)。
      既定つまみ: --bg-w=バー長 / --bg-h=太さ / --bg-gap=間隔。アイコン案(bi-)がこれを差し替える。 */
   .hdr-burger span { position: absolute; left: 50%; top: 50%; width: var(--bg-w, 20px); height: var(--bg-h, 2px);
     margin-left: calc(var(--bg-w, 20px) / -2); background: var(--ink); border-radius: 3px; transform-origin: center center;
-    transition: transform .34s var(--hdr-ease), opacity .24s var(--hdr-ease), width .34s var(--hdr-ease), height .34s var(--hdr-ease), margin .34s var(--hdr-ease), background .2s; }
+    transition: transform var(--t-ui) var(--hdr-ease), opacity .24s var(--hdr-ease), width var(--t-ui) var(--hdr-ease), height var(--t-ui) var(--hdr-ease), margin var(--t-ui) var(--hdr-ease), background var(--t-tap); }
   .hdr-burger span:nth-child(1) { margin-top: calc(var(--bg-h, 2px) / -2 - var(--bg-gap, 6px)); }
   .hdr-burger span:nth-child(2) { margin-top: calc(var(--bg-h, 2px) / -2); }
   .hdr-burger span:nth-child(3) { margin-top: calc(var(--bg-h, 2px) / -2 + var(--bg-gap, 6px)); }
@@ -185,14 +185,14 @@
   html.ba-5 .hdr-burger.is-open span:nth-child(1) { margin-top: calc(var(--bg-h, 2px) / -2); transform: rotate(40deg); }
   html.ba-5 .hdr-burger.is-open span:nth-child(2) { opacity: 0; }
   html.ba-5 .hdr-burger.is-open span:nth-child(3) { margin-top: calc(var(--bg-h, 2px) / -2); transform: rotate(-40deg); }
-  .hdr-drawer { position: fixed; inset: 0; z-index: 59; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; background: rgba(245,246,248,.62); -webkit-backdrop-filter: blur(26px) saturate(1.3); backdrop-filter: blur(26px) saturate(1.3); transition: opacity .34s var(--e-out); }
+  .hdr-drawer { position: fixed; inset: 0; z-index: 59; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; background: var(--surface-drawer-light); -webkit-backdrop-filter: blur(var(--blur-drawer)) saturate(1.3); backdrop-filter: blur(var(--blur-drawer)) saturate(1.3); transition: opacity var(--t-ui) var(--e-out); }
   .hdr-drawer.is-open { opacity: 1; pointer-events: auto; }
   .hdr-drawer-nav { display: flex; flex-direction: column; gap: var(--space-6); align-items: flex-start; }
-  .hdr-drawer-nav a { display: flex; align-items: baseline; gap: var(--space-16); font-family: var(--font-jp); font-weight: 300; font-size: var(--fs-xl); line-height: var(--lh-tight); color: var(--ink-strong); text-decoration: none; opacity: 0; transform: translateY(14px); transition: opacity .4s var(--e-out), transform .4s var(--e-out), color .2s; }
+  .hdr-drawer-nav a { display: flex; align-items: baseline; gap: var(--space-16); font-family: var(--font-jp); font-weight: 300; font-size: var(--fs-xl); line-height: var(--lh-tight); color: var(--ink-strong); text-decoration: none; opacity: 0; transform: translateY(14px); transition: opacity var(--t-move) var(--e-out), transform var(--t-move) var(--e-out), color var(--t-tap); }
   .hdr-drawer-nav a .hdr-drawer-num { font-family: var(--font-en); font-weight: 400; font-size: var(--fs-body); color: var(--brand-cyan); opacity: .85; }
   /* 【2026-09-18 ヒデさん指定】ヘッダーのナビと同じ「上下ロール」ホバー(.nlab の2段構造。色は変えない=ヘッダーと同じ) */
   .hdr-drawer-nav a .nlab { position: relative; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: top; }
-  .hdr-drawer-nav a .nlab > span { display: block; transition: transform .34s var(--e-out); }
+  .hdr-drawer-nav a .nlab > span { display: block; transition: transform var(--t-ui) var(--e-out); }
   .hdr-drawer-nav a .nlab > span:nth-child(2) { position: absolute; left: 0; top: 100%; }
   .hdr-drawer-nav a:hover .nlab > span { transform: translateY(-100%); }
   .hdr-drawer.is-open .hdr-drawer-nav a { opacity: 1; transform: none; }
@@ -207,11 +207,11 @@
   .hdr-drawer.drw-2 { justify-content: flex-end; background: rgba(18,22,30,.34); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
   .hdr-drawer.drw-2 .hdr-drawer-nav { height: 100vh; width: min(440px, 84vw); box-sizing: border-box; padding: var(--space-120) var(--space-56); justify-content: center;
     background: rgba(255,255,255,.94); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
-    box-shadow: -30px 0 80px rgba(20,30,60,.22); transform: translateX(48px); transition: transform .42s var(--e-out); }
+    box-shadow: -30px 0 80px rgba(20,30,60,.22); transform: translateX(48px); transition: transform var(--t-move) var(--e-out); }
   .hdr-drawer.drw-2.is-open .hdr-drawer-nav { transform: none; }
   .hdr-drawer.drw-2 .hdr-drawer-nav a { font-size: 30px; }
   /* 3: フルスクリーン・左寄せの大きな見出し(ダーク) */
-  .hdr-drawer.drw-3 { justify-content: flex-start; align-items: center; background: rgba(14,16,22,.9); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); }
+  .hdr-drawer.drw-3 { justify-content: flex-start; align-items: center; background: var(--surface-drawer); -webkit-backdrop-filter: blur(var(--blur-drawer)); backdrop-filter: blur(var(--blur-drawer)); }
   /* 【2026-09-18 ヒデさん依頼】ハンバーガーメニューの余白(上下左右)・項目の間隔・文字サイズは調整パネル「🍔 ハンバーガーメニュー」(applyDrawerTune) */
   .hdr-drawer.drw-3 .hdr-drawer-nav { padding: var(--drw-pt, 0px) var(--drw-pr, 0px) var(--drw-pb, 0px) var(--drw-pl, 130px); gap: var(--drw-gap, 24px); }
   .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: var(--drw-fs, 56px); color: var(--ink-on-dark); }
@@ -286,7 +286,7 @@
   html:not(.mb).hm-12 .header .cta .cta-label { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 2.8, 1)); }
   html:not(.mb).hm-12 .header .cta .cta-arrow { opacity: calc(1 - clamp(0, var(--hdr-t, 0) * 3, 1)); }
   html:not(.mb).hm-12 .header .cta .cta-burg  { opacity: calc(clamp(0, (var(--hdr-t, 0) - 0.4) * 2.8, 1)); }   /* 箱が正方形に近づく頃(0.4〜)に出す */
-  html:not(.mb).hm-12 .header .logo-c, html:not(.mb).hm-12 .header .logo-w { transition: opacity .45s var(--hdr-ease); }
+  html:not(.mb).hm-12 .header .logo-c, html:not(.mb).hm-12 .header .logo-w { transition: opacity var(--t-move) var(--hdr-ease); }
   /* 【2026-09-17 ヒデさん指定】反転は brightness(0) invert(1) のベタ塗りだと重なりが潰れる。
      色版を消して、重なりを opacity で残した白版へクロスフェードする(3枚のペタルの層が見える)。 */
   html:not(.mb).hm-12 .header.hdr-on-dark .logo-c { opacity: 0; }   /* 黒セクション上=色版を消す */
@@ -363,7 +363,7 @@
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
-    transition: background-color .3s, color .3s;
+    transition: background-color var(--t-ui), color var(--t-ui);
   }
   .cta { width: 200px; height: 44px; }   /* ヘッダー用サイズ(モック section4 の 200×43 準拠) */
   /* 分離型(hm-12)で黒箱の中に出るハンバーガー(明るい色)。既定は透明・当たり判定なし。中央に絶対配置 */
@@ -371,7 +371,7 @@
     transform: translate(-50%, -50%); opacity: 0; pointer-events: none; }
   .cta .cta-burg i { position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px;
     background: var(--surface-white);   /* 【2026-09-17 ヒデさん指定】線は白(黒セクション上は黒へ反転) */
-    transition: transform .3s var(--hdr-ease, var(--e-fast)), opacity .2s, background-color .4s var(--hdr-ease, var(--e-fast)); }
+    transition: transform var(--t-ui) var(--hdr-ease, var(--e-fast)), opacity var(--t-tap), background-color var(--t-move) var(--hdr-ease, var(--e-fast)); }
   /* 【2026-09-18 ヒデさん指定】黒箱の中のハンバーガーも2本線に(真ん中を消す)。線の長さ/太さ/間隔は 🍔タブ(--bg-w/--bg-h/--bg-gap を applyDrawerTune が入れる) */
   .cta .cta-burg { width: var(--bg-w, 20px); }
   .cta .cta-burg i { height: var(--bg-h, 2px); }
@@ -396,7 +396,7 @@
     -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
             mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
   }
-  .cta .cta-reel, .cv-btn .cta-reel { transition: transform .4s var(--e-out); display: block; }
+  .cta .cta-reel, .cv-btn .cta-reel { transition: transform var(--t-move) var(--e-out); display: block; }
   .cta .cta-row,  .cv-btn .cta-row  { height: 1.4em; display: block; }
   .cta .cta-track,.cv-btn .cta-track{ width: max-content; animation: cta-marquee 9s linear infinite; display: flex; }
   .cta .cta-group,.cv-btn .cta-group{ flex: 0 0 auto; display: flex; }
@@ -410,7 +410,7 @@
   }
   .cta .cta-arrow svg, .cv-btn .cta-arrow svg {
     width: 18px; height: 14px; display: block;
-    transition: translate .3s;
+    transition: translate var(--t-ui);
   }
   .cta:hover .cta-arrow svg, .cv-btn:hover .cta-arrow svg { translate: 3px 0; }
 
@@ -628,6 +628,7 @@
   :root {
     --s: 1; --sp: 1; --dh: 921px;
     --t-fast: .25s; --t-in: .8s; --t-big: 1.3s;
+    --t-tap: .18s; --t-ui: .3s; --t-move: .4s; --t-slow: .5s;   /* 2026-09-19 整理②: 押した反応 / UIの色変化・ロール(.32,.34,.35→.3) / 動き(.38,.42,.45→.4) / ゆっくり */
     --e-fast: cubic-bezier(.4, 0, .2, 1);
     --e-out: cubic-bezier(.22, 1, .36, 1);
   }
@@ -654,19 +655,24 @@
     /* 色：コード構文（開発モック） */
     --code-green:#7CE7A6;   /* 2026-09-09統合: --code-string(#9BE8A4) は mid/high で #7CE7A6=--code-green に収束のため一本化 */
     /* 色：ガラス（暗い面の上の白） */
-    --glass-10:rgba(255,255,255,.10); --glass-06:rgba(255,255,255,.06);
+    --glass-06:rgba(255,255,255,.06); --glass-10:rgba(255,255,255,.10); --glass-16:rgba(255,255,255,.16); --glass-32:rgba(255,255,255,.32); --glass-40:rgba(255,255,255,.40);
+    --glass-60:rgba(255,255,255,.60); --glass-72:rgba(255,255,255,.72); --glass-82:rgba(255,255,255,.82); --glass-90:rgba(255,255,255,.90);   /* 2026-09-19 整理②: 白の透明度を 9 段に(.05→06 / .08,.09→10 / .14,.18→16 / .34→32 / .66→72 / .8,.85→82 / .92→90 に寄せた)。主に開発者体験のモック文字と、フォームのガラス(既定値) */
+    --line-soft:rgba(0,0,0,.14); --ink-soft:rgba(0,0,0,.42);   /* 2026-09-19 整理②: 薄い黒の線(入力欄の枠・フッターの罫。.16→.14) / セレクトの矢印 */
+    --surface-drawer:rgba(14,16,22,.9); --surface-drawer-light:rgba(245,246,248,.62);   /* 2026-09-19 整理②: メニュー(ドロワー)の地色(暗い/明るい案) */
     /* 角丸 */
     --radius-xs:4px; --radius-sm:8px; --radius-md:8px; --radius-lg:16px; --radius-btn:6px;   /* 2026-09-19 整理: md/lg は下で 8/16 に上書きしていたのをここに一本化。btn=お問い合わせボタン(6px。SPの5pxも寄せた) */
-    --radius-full:50%;   /* 2026-09-09: --radius-pill(999px) は未使用のため削除 */
+    --radius-full:50%; --radius-input:10px; --radius-form:22px;   /* 2026-09-19 整理②: フォームの入力欄・送信ボタン / フォームの箱(調整パネル --cvf-r / --cvf-in-r の既定) */   /* 2026-09-09: --radius-pill(999px) は未使用のため削除 */
     /* 影 */
     --shadow-mock-panel:0 24px 48px rgba(0,0,0,.2), inset 1px 1px 2px rgba(255,255,255,.2);
+    --shadow-form:0 20px 60px rgba(20,30,60,.14), inset 0 1px 0 var(--glass-60);   /* 2026-09-19 整理②: お問い合わせフォームの浮き */
+    --shadow-lift:0 22px 44px rgba(16,24,40,calc(.12 * var(--cg-sh, 1)));   /* 2026-09-19 整理②: 導入事例カードのホバーの浮き(濃さは --cg-sh) */
     /* ぼかし */
-    --blur-panel:75px;
+    --blur-panel:75px; --blur-glass:18px; --blur-drawer:30px;   /* 2026-09-19 整理②: ヘッダーのガラス / メニューの地(26→30 に寄せた) */
     /* 余白（4pxグリッド。gap/padding/margin用。配置座標(left/top)には使わない） */
     --space-4:4px; --space-5:5px; --space-6:6px; --space-8:8px; --space-10:10px;
     --space-12:12px; --space-16:16px; --space-20:20px; --space-24:24px; --space-32:32px;
     --space-40:40px; --space-44:44px; --space-48:48px; --space-56:56px; --space-60:60px; --space-72:72px; --space-80:80px;
-    --space-14:14px; --space-28:28px; --space-90:90px; --space-96:96px; --space-120:120px; --space-200:200px;   /* 2026-09-19 整理: 生の px を置き換えるために追加(14=フォームの2列間隔・28=フッター/開発者体験の間隔・90/120=開発者体験ブロックの内側余白・96/200=セクション間) */   /* 80: 実績の見出し+数値→for SaaS/AI(カンプSP 16534:22511) 2026-09-09 追加 */
+    --space-14:14px; --space-28:28px; --space-90:90px; --space-96:96px; --space-120:120px; --space-160:160px; --space-200:200px;   /* 2026-09-19 整理: 生の px を置き換えるために追加(14=フォームの2列間隔・28=フッター/開発者体験の間隔・90/120=開発者体験ブロックの内側余白・96/200=セクション間) */   /* 80: 実績の見出し+数値→for SaaS/AI(カンプSP 16534:22511) 2026-09-09 追加 */
     /* 【2026-09-08 整備】タイプスケール（font-size トークン）。従来は全部ハードコード(12px×24箇所等)で
        近い値(10/10.5/11/11.5)が乱立していたので統一。名前=役割ベース。まず新・静的モバイルで採用し、
        段階的にサイト全体へ寄せる。数値はカンプ実測(SP 390)に準拠。 */
@@ -1153,7 +1159,7 @@
   #results.rfx-4 .res2-stats .r2s b { font-size: var(--fs-caption); }
 
   /* --- 案5: 実績を残す、二つの横景色。上=見出し / 中段=SaaS→AI(横) / 下=実績帯(固定) --- */
-  html:not(.mb) #results.rfx-5 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: calc(100 * var(--rvh)); box-sizing: border-box; }
+  html:not(.mb) #results.rfx-5 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: var(--space-40) 0 var(--space-20); height: calc(100 * var(--rvh)); box-sizing: border-box; }
   #results.rfx-5 .res2-top { display: contents; }
   #results.rfx-5 .res2-head { order: 1; font-size: 33px; line-height: var(--lh-normal); padding: 0 30px 30px; }
   #results.rfx-5 .res2-vals { order: 2; flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; overflow: hidden; }
@@ -1175,7 +1181,7 @@
   #results.rfx-5 .r2v-tag { display: none; }
   #results.rfx-5 .r2v-tagh { gap: 0; }
   #results.rfx-5 .r2v-text { }
-  #results.rfx-5 .res2-stats { order: 3; width: min(1138px, 100% - 140px); margin: 20px auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); justify-content: space-between; gap: var(--space-24); }
+  #results.rfx-5 .res2-stats { order: 3; width: min(1138px, 100% - 140px); margin: var(--space-20) auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); justify-content: space-between; gap: var(--space-24); }
   #results.rfx-5 .res2-stats .r2s { flex-direction: row; align-items: center; gap: var(--space-24); }
   #results.rfx-5 .res2-stats .r2s span { font-size: var(--fs-h2); }
   #results.rfx-5 .res2-stats .r2s b { font-size: var(--fs-caption); }
@@ -1227,7 +1233,7 @@
   /* 案13 回転する舞台: ピクトは Y 軸で回る(裏面は見せない) */
   #results.rfx-13 .r2v-fig { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
   /* 案11 ピクトの行進: 案5と同じ上下の帯。中段はレーン(両方の値を同じ場所に重ね、ピクトだけが横に動く) */
-  html:not(.mb) #results.rfx-11 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: calc(100 * var(--rvh)); box-sizing: border-box; }
+  html:not(.mb) #results.rfx-11 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: var(--space-40) 0 var(--space-20); height: calc(100 * var(--rvh)); box-sizing: border-box; }
   #results.rfx-11 .res2-top { display: contents; }
   #results.rfx-11 .res2-head { order: 1; font-size: 33px; line-height: var(--lh-normal); padding: 0 30px 30px; }
   #results.rfx-11 .res2-vals { order: 2; flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; overflow: hidden; }
@@ -1243,7 +1249,7 @@
   #results.rfx-11 .r2v-tag { display: none; }
   #results.rfx-11 .r2v-h { font-size: 48px; line-height: var(--lh-normal); }
   #results.rfx-11 .r2v-p { font-size: var(--fs-base); line-height: 1.95; }
-  #results.rfx-11 .res2-stats { order: 3; width: min(1138px, 100% - 140px); margin: 20px auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); justify-content: space-between; gap: var(--space-24); }
+  #results.rfx-11 .res2-stats { order: 3; width: min(1138px, 100% - 140px); margin: var(--space-20) auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); justify-content: space-between; gap: var(--space-24); }
   #results.rfx-11 .res2-stats .r2s { flex-direction: row; align-items: center; gap: var(--space-24); }
   #results.rfx-11 .res2-stats .r2s span { font-size: var(--fs-h2); }
   #results.rfx-11 .res2-stats .r2s b { font-size: var(--fs-caption); }
@@ -1318,7 +1324,7 @@
   #results.rfx-20 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: 130px; line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-20 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
   /* ===== 案21〜23 数値が大きく→終点(上の帯)へ、for SaaS→for AI は横スクロール(2026-09-14 ヒデさん指定)。帯は案5と同じ寸法で上に ===== */
-  html:not(.mb) #results.rfx-21 .res2, html:not(.mb) #results.rfx-23 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: calc(100 * var(--rvh)); box-sizing: border-box; }
+  html:not(.mb) #results.rfx-21 .res2, html:not(.mb) #results.rfx-23 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: var(--space-40) 0 var(--space-20); height: calc(100 * var(--rvh)); box-sizing: border-box; }
   #results.rfx-21 .res2-top, #results.rfx-23 .res2-top { display: contents; }
   #results.rfx-21 .res2-head, #results.rfx-23 .res2-head { order: 1; font-size: 33px; line-height: var(--lh-normal); padding: 0 30px; }
   #results.rfx-21 .res2-stats, #results.rfx-23 .res2-stats { order: 2; width: min(1138px, 100% - 140px); margin: 18px auto 0; padding: 14px 0 18px; border-bottom: 1px solid var(--rfx-line); justify-content: space-between; gap: var(--space-24); transform-origin: center center; }
@@ -1361,7 +1367,7 @@
   #results.rfx-24 .res2-stats .r2s, #results.rfx-25 .res2-stats .r2s { gap: var(--space-8); }
   #results.rfx-24 .res2-stats .r2s b, #results.rfx-25 .res2-stats .r2s b { font-size: var(--fs-base); line-height: 24px; }   /* カンプ: Noto Sans JP Thin 16px / 24px */
   #results.rfx-24 .slot .fx:last-child, #results.rfx-25 .slot .fx:last-child { font-size: var(--fs-xl); }   /* カンプ: 末尾の「+」は 40px(数字は 70px) */
-  #results.rfx-24 .r2v, #results.rfx-25 .r2v { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-24); min-width: 0; padding: 0 20px; }
+  #results.rfx-24 .r2v, #results.rfx-25 .r2v { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-24); min-width: 0; padding: 0 var(--space-20); }
   #results.rfx-24 .r2v-text, #results.rfx-25 .r2v-text { order: 0; width: 100%; max-width: 530px; gap: var(--space-16); align-items: center; }
   #results.rfx-24 .r2v-tagh, #results.rfx-25 .r2v-tagh { align-items: center; gap: var(--space-8); }
   #results.rfx-24 .r2v-tag, #results.rfx-25 .r2v-tag { font-size: var(--fs-lead); line-height: 1; }
@@ -1430,7 +1436,7 @@
   #results.rfx-28 .res2-stats .r2s span { font-size: var(--fs-stat-lg); line-height: 1; }
   #results.rfx-28 .res2-stats .r2s b { font-size: var(--fs-base); line-height: 24px; }
   #results.rfx-28 .slot .fx:last-child { font-size: var(--fs-xl); }
-  #results.rfx-28 .res2-hr { display: block; margin: 60px 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  #results.rfx-28 .res2-hr { display: block; margin: var(--space-60) 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
   #results.rfx-28 .res2-vals { display: grid; width: 100%; margin-top: var(--space-56); }
   #results.rfx-28 .r2v-track { display: contents; }
   #results.rfx-28 .res2-vline { display: none; }
@@ -1470,7 +1476,7 @@
   #results.rfx-33 .res2-stats .r2s span { font-size: var(--fs-stat-lg); line-height: 1.08; }
   #results.rfx-33 .res2-hr, #results.rfx-33 .res2-vline { display: none; }
   #results.rfx-33 .res2-vals, #results.rfx-33 .r2v-track { display: contents; }
-  #results.rfx-33 .r2v { display: grid; grid-template-columns: 1fr 300px; gap: var(--space-60); align-items: start; padding: 56px 0; border-top: 1px solid var(--rfx-line); min-width: 0; }
+  #results.rfx-33 .r2v { display: grid; grid-template-columns: 1fr 300px; gap: var(--space-60); align-items: start; padding: var(--space-56) 0; border-top: 1px solid var(--rfx-line); min-width: 0; }
   #results.rfx-33 .r2v-text { order: 0; width: auto; max-width: 620px; gap: var(--space-20); }
   #results.rfx-33 .r2v-tagh { gap: var(--space-12); }
   #results.rfx-33 .r2v-tag { font-size: var(--fs-lead); }
@@ -1505,7 +1511,7 @@
 
   /* ===== 【2026-09-15 ヒデさん指定】モック(/mock/reveal/)に残っていた5案(No.01〜05)を本実装へ移植(動き・概念を踏襲。寸法はモックの値) ===== */
   /* --- 案37 見出しを綴り、本文が現れる(モック No.01「trigger-typing」)。上=見出し36px / 中段=面(SaaS→AI を同じ場所で入替) / 下=実績帯52px。導入の拡大(見出し1.28倍・数値2.65倍)は JS の transform --- */
-  html:not(.mb) #results.rfx-37 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 40px 0 20px; height: calc(100 * var(--rvh)); box-sizing: border-box; }
+  html:not(.mb) #results.rfx-37 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: var(--space-40) 0 var(--space-20); height: calc(100 * var(--rvh)); box-sizing: border-box; }
   #results.rfx-37 .pin-stage { overflow: hidden; }
   #results.rfx-37 .res2-top { display: contents; }
   #results.rfx-37 .res2-head { order: 1; justify-content: center; font-size: 36px; line-height: var(--lh-normal); padding: 0 30px 30px; transform-origin: center center; }
@@ -1522,7 +1528,7 @@
   #results.rfx-37 .r2v-p { font-size: var(--fs-base); line-height: 1.95; }
   #results.rfx-37 .r2v-hli .rc { position: relative; display: inline-block; opacity: 0; }
   #results.rfx-37 .rc-cur::after { content: ''; position: absolute; left: 100%; top: .2em; width: 1px; height: 1em; background: currentColor; }
-  #results.rfx-37 .res2-stats { order: 3; width: min(1220px, 100% - 140px); margin: 20px auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); display: grid; grid-template-columns: repeat(3, 1fr); justify-items: center; gap: var(--space-24); }   /* モックの pf-stat: 3等分の列の中央に、ラベルの下に数値 */
+  #results.rfx-37 .res2-stats { order: 3; width: min(1220px, 100% - 140px); margin: var(--space-20) auto 0; padding: 22px 0 14px; border-top: 1px solid var(--rfx-line); display: grid; grid-template-columns: repeat(3, 1fr); justify-items: center; gap: var(--space-24); }   /* モックの pf-stat: 3等分の列の中央に、ラベルの下に数値 */
   #results.rfx-37 .res2-stats .r2s { flex-direction: column; align-items: center; gap: var(--space-8); transform-origin: center center; }
   #results.rfx-37 .res2-stats .r2s span { font-size: 52px; line-height: 1.08; }
   #results.rfx-37 .res2-stats .r2s b { font-size: var(--fs-body); line-height: var(--lh-normal); }
@@ -1546,7 +1552,7 @@
   /* --- 案39 メッセージを残す縦読み(モック No.03「restored-reading」= 初回 No.07 の復元)。固定なし・等倍(sticky)。左: What we empower / 見出し38 / 数値44 / 「2つの価値を、順に。」が sticky、右: 章(01・02: 図300×240 → ラベル20 → 見出し36 → 本文15) --- */
   html:not(.mb) #results.rfx-39 .res2 { width: calc(100% - 120px); max-width: 1138px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-96); align-items: start; padding: 74px 0 100px; }
   html:not(.mb) #results.rfx-39 .res2-top { position: sticky; top: 125px; display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding-bottom: var(--space-32); min-width: 0; }
-  #results.rfx-39 .res2-top::before { content: 'What we empower'; display: block; margin: 0 0 24px; font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); line-height: normal; letter-spacing: .055em; color: var(--ink); }
+  #results.rfx-39 .res2-top::before { content: 'What we empower'; display: block; margin: 0 0 var(--space-24); font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); line-height: normal; letter-spacing: .055em; color: var(--ink); }
   #results.rfx-39 .res2-head { flex-direction: column; align-items: flex-start; justify-content: flex-start; white-space: normal; font-size: 38px; line-height: var(--lh-normal); letter-spacing: .015em; }
   #results.rfx-39 .res2-stats { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 30px; margin-top: var(--space-48); align-items: flex-start; }
   #results.rfx-39 .res2-stats .r2s { gap: var(--space-6); }
@@ -1598,7 +1604,7 @@
   #results.rfx-40 .r2v-p { margin-top: var(--space-20); font-size: var(--fs-body); line-height: var(--lh-body); max-width: 40em; }
   /* --- 案41 図から言葉へ、焦点を渡す(モック No.05「attention-focus」)。固定なし・等倍(sticky)。上=見出し+数値(76vh・中央) / 各用途は 220vh の章: 図(左列・510)と文章(右列)が章の間 sticky。JS で図 880px 中央→510px 左(0.64)・文章のブラーがほどける --- */
   html:not(.mb) #results.rfx-41 .res2 { width: 100%; max-width: none; display: flex; flex-direction: column; gap: 0; padding: 0; }
-  html:not(.mb) #results.rfx-41 .res2-top { width: min(84%, 1240px); margin: 0 auto; min-height: 76vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 64px; padding: 90px 0; box-sizing: border-box; }
+  html:not(.mb) #results.rfx-41 .res2-top { width: min(84%, 1240px); margin: 0 auto; min-height: 76vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 64px; padding: var(--space-90) 0; box-sizing: border-box; }
   #results.rfx-41 .res2-head { font-size: clamp(30px, 3.2vw, 46px); line-height: var(--lh-normal); letter-spacing: .015em; justify-content: center; }
   html:not(.mb) #results.rfx-41 .res2-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-24); width: 100%; }
   #results.rfx-41 .res2-stats .r2s { align-items: center; gap: var(--space-16); }
@@ -1628,7 +1634,7 @@
   /* --- 案1(SP): 3面は横に。各面は縦積み(図250×190 上/言葉 下)。数値面: 主数字 clamp(68,24vw,105)・ほか49 --- */
   /* --- 案27(SP): 案1(SP)の複製 --- */
   html.mb #results.rfx-27 .res2 { width: 100%; flex-direction: row; }
-  html.mb #results.rfx-27 .res2-top, html.mb #results.rfx-27 .r2v { flex: 0 0 100%; padding: 0 20px; box-sizing: border-box; }
+  html.mb #results.rfx-27 .res2-top, html.mb #results.rfx-27 .r2v { flex: 0 0 100%; padding: 0 var(--space-20); box-sizing: border-box; }
   html.mb #results.rfx-27 .res2-top { gap: 35px; align-items: stretch; }
   html.mb #results.rfx-27 .res2-head { font-size: 28px; line-height: var(--lh-normal); }
   html.mb #results.rfx-27 .res2-stats { flex-direction: row; flex-wrap: wrap; gap: var(--space-28) var(--space-60); width: 100%; justify-content: flex-start; }
@@ -1666,7 +1672,7 @@
   /* --- 案5(SP): 上下の帯は固定。中段は図235×145 上/言葉 下。指標帯 33 --- */
   html.mb #results.rfx-5 .res2 { width: 100%; padding: 22px 0 12px; }
   html.mb #results.rfx-5 .res2-head { font-size: var(--fs-heading); line-height: var(--lh-normal); padding: 0 20px 14px; }
-  html.mb #results.rfx-5 .r2v { padding: 0 20px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  html.mb #results.rfx-5 .r2v { padding: 0 var(--space-20); display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   html.mb #results.rfx-5 .r2v-fig { order: -1; align-self: center; width: 235px; }
   html.mb #results.rfx-5 .r2v-graphic { width: 235px; height: 145px; }
   html.mb #results.rfx-5 .r2v-text { max-width: none; width: 100%; gap: var(--space-10); margin-top: var(--space-10); }
@@ -1707,7 +1713,7 @@
   /* 案11(SP): 上下の帯は案5と同じ。中段のレーンをピクト(235×145)が横切る。文章は下 */
   html.mb #results.rfx-11 .res2 { width: 100%; padding: 22px 0 12px; }
   html.mb #results.rfx-11 .res2-head { font-size: var(--fs-heading); line-height: var(--lh-normal); padding: 0 20px 14px; }
-  html.mb #results.rfx-11 .r2v { padding: 0 20px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  html.mb #results.rfx-11 .r2v { padding: 0 var(--space-20); display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   html.mb #results.rfx-11 .r2v-fig { order: -1; align-self: center; width: 235px; }
   html.mb #results.rfx-11 .r2v-fig::before { font-size: var(--fs-base); margin-bottom: var(--space-4); }
   html.mb #results.rfx-11 .r2v-graphic { width: 235px; height: 145px; }
@@ -1720,7 +1726,7 @@
   html.mb #results.rfx-11 .res2-stats .r2s b { font-size: 10px; }
   /* 案12(SP): カードは 100vh の縦積み(図上/言葉下) */
   html.mb #results.rfx-12 .res2 { width: 100%; height: 330vh; }
-  html.mb #results.rfx-12 .res2-top, html.mb #results.rfx-12 .r2v { padding: 0 20px; }
+  html.mb #results.rfx-12 .res2-top, html.mb #results.rfx-12 .r2v { padding: 0 var(--space-20); }
   html.mb #results.rfx-12 .res2-top { gap: var(--space-28); }
   html.mb #results.rfx-12 .r2v { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: var(--space-14); }
   html.mb #results.rfx-12 .r2v-fig { order: -1; align-self: center; width: 300px; }
@@ -1759,12 +1765,12 @@
   html.mb #results.rfx-20 .r2v-big { font-size: 56px; }
   /* --- 案21〜23(SP): 帯は上(数値33)。面は図235×145 上/言葉 下。数値の拡大は 1.15倍(3列の帯が画面幅を超えないため・仮置き) --- */
   html.mb #results.rfx-21 .res2, html.mb #results.rfx-23 .res2 { width: 100%; padding: 22px 0 12px; }
-  html.mb #results.rfx-21 .res2-head, html.mb #results.rfx-23 .res2-head { font-size: var(--fs-heading); line-height: var(--lh-normal); padding: 0 20px; }
+  html.mb #results.rfx-21 .res2-head, html.mb #results.rfx-23 .res2-head { font-size: var(--fs-heading); line-height: var(--lh-normal); padding: 0 var(--space-20); }
   html.mb #results.rfx-21 .res2-stats, html.mb #results.rfx-23 .res2-stats { width: calc(100% - 40px); margin: 10px auto 0; padding: 10px 0 12px; gap: var(--space-14); justify-content: space-between; }
   html.mb #results.rfx-21 .res2-stats .r2s, html.mb #results.rfx-23 .res2-stats .r2s { flex-direction: column; align-items: flex-start; gap: var(--space-4); }
   html.mb #results.rfx-21 .res2-stats .r2s span, html.mb #results.rfx-23 .res2-stats .r2s span { font-size: 33px; }
   html.mb #results.rfx-21 .res2-stats .r2s b, html.mb #results.rfx-23 .res2-stats .r2s b { font-size: 10px; }
-  html.mb #results.rfx-21 .r2v, html.mb #results.rfx-23 .r2v { padding: 0 20px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  html.mb #results.rfx-21 .r2v, html.mb #results.rfx-23 .r2v { padding: 0 var(--space-20); display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   html.mb #results.rfx-21 .r2v-fig, html.mb #results.rfx-23 .r2v-fig { order: -1; align-self: center; width: 235px; }
   html.mb #results.rfx-21 .r2v-fig::before, html.mb #results.rfx-23 .r2v-fig::before { font-size: var(--fs-base); margin-bottom: var(--space-4); }
   html.mb #results.rfx-21 .r2v-graphic, html.mb #results.rfx-23 .r2v-graphic { width: 235px; height: 145px; }
@@ -1775,7 +1781,7 @@
   html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: var(--space-16); width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-16】左右24px(V3.0)/縦gap 28→16(--space-16)でスペーシングガイドラインに沿って詰める */
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track, html.mb #results.rfx-25 .res2-vals, html.mb #results.rfx-25 .r2v-track { display: contents; }
   html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */
-  html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: -1; margin: 4px 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
+  html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: -1; margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
   html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: -2; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: var(--space-4); }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
   html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: var(--fs-title); line-height: var(--lh-loose); }   /* 【2026-09-16】V3.0: 22px(--fs-title)・中央。lh1.7=--lh-loose */
   html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: nowrap; gap: var(--space-14); justify-content: space-between; width: 100%; }   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
@@ -1793,13 +1799,13 @@
   html.mb #results.rfx-24 .r2v-big, html.mb #results.rfx-25 .r2v-big { font-size: var(--fs-xl); }
   /* --- 案26(SP): 上段は見出し(29px・2行)と数値(40px)を縦に。線 → 下段は図235×145 上/言葉 下の面が横に動く。数値の拡大は 1.1倍 --- */
   html.mb #results.rfx-26 .res2 { width: 100%; padding: 22px 0 12px; }
-  html.mb #results.rfx-26 .res2-top { flex-direction: column; align-items: flex-start; gap: var(--space-16); padding: 0 20px; }
+  html.mb #results.rfx-26 .res2-top { flex-direction: column; align-items: flex-start; gap: var(--space-16); padding: 0 var(--space-20); }
   html.mb #results.rfx-26 .res2-head { flex-direction: column; align-items: flex-start; font-size: 29px; line-height: var(--lh-normal); }
   html.mb #results.rfx-26 .res2-stats { flex-wrap: wrap; gap: var(--space-12) var(--space-24); justify-content: space-between; width: 100%; margin-top: 0; }
   html.mb #results.rfx-26 .res2-stats .r2s span { font-size: var(--fs-xl); }
   html.mb #results.rfx-26 .res2-stats .r2s b { font-size: var(--fs-caption); line-height: 18px; }
-  html.mb #results.rfx-26 .res2-hr { margin: 28px 20px 0; width: auto; }
-  html.mb #results.rfx-26 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 24px 20px 0; min-height: 0; }
+  html.mb #results.rfx-26 .res2-hr { margin: var(--space-28) var(--space-20) 0; width: auto; }
+  html.mb #results.rfx-26 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-24) var(--space-20) 0; min-height: 0; }
   html.mb #results.rfx-26 .r2v-fig { order: -1; align-self: center; width: 235px; margin: 0; }
   html.mb #results.rfx-26 .r2v-graphic { width: 235px; height: 145px; }
   html.mb #results.rfx-26 .r2v-text { max-width: none; width: 100%; gap: var(--space-10); margin-top: var(--space-10); }
@@ -1819,17 +1825,17 @@
   html.mb #results.rfx-29 .r2v-h, html.mb #results.rfx-31 .r2v-h, html.mb #results.rfx-32 .r2v-h, html.mb #results.rfx-34 .r2v-h, html.mb #results.rfx-35 .r2v-h, html.mb #results.rfx-36 .r2v-h, html.mb #results.rfx-28 .r2v-h, html.mb #results.rfx-30 .r2v-h, html.mb #results.rfx-33 .r2v-h { font-size: 28px; line-height: var(--lh-normal); }
   html.mb #results.rfx-29 .r2v-p, html.mb #results.rfx-31 .r2v-p, html.mb #results.rfx-32 .r2v-p, html.mb #results.rfx-34 .r2v-p, html.mb #results.rfx-35 .r2v-p, html.mb #results.rfx-36 .r2v-p, html.mb #results.rfx-28 .r2v-p, html.mb #results.rfx-30 .r2v-p, html.mb #results.rfx-33 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
   html.mb #results.rfx-28 .res2 { width: 100%; padding: 22px 0 12px; }
-  html.mb #results.rfx-28 .res2-top { flex-direction: column; align-items: flex-start; padding: 0 20px; }
-  html.mb #results.rfx-28 .res2-hr { margin: 28px 20px 0; width: auto; }
+  html.mb #results.rfx-28 .res2-top { flex-direction: column; align-items: flex-start; padding: 0 var(--space-20); }
+  html.mb #results.rfx-28 .res2-hr { margin: var(--space-28) var(--space-20) 0; width: auto; }
   html.mb #results.rfx-28 .res2-vals { margin-top: var(--space-24); }
-  html.mb #results.rfx-28 .r2v { padding: 0 20px; }
+  html.mb #results.rfx-28 .r2v { padding: 0 var(--space-20); }
   html.mb #results.rfx-30 .res2 { display: flex; flex-direction: column; gap: var(--space-40); padding: 40px 0 20vh; }
   html.mb #results.rfx-30 .res2-top { margin-bottom: 0; }
   html.mb #results.rfx-30 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-14); }
   html.mb #results.rfx-30 .r2v-fig { position: static; order: -1; align-self: center; width: 300px; }
   html.mb #results.rfx-30 .r2v-graphic { width: 300px; height: 220px; }
   html.mb #results.rfx-33 .res2 { padding: 40px 0 15vh; }
-  html.mb #results.rfx-33 .r2v { padding: 24px 0; border-top: 1px solid var(--rfx-line); }
+  html.mb #results.rfx-33 .r2v { padding: var(--space-24) 0; border-top: 1px solid var(--rfx-line); }
   html.mb #results.rfx-36 .r2v-ring { left: 10px; top: -10px; width: 280px; height: 240px; }
   /* --- 案の SP 共通: 価値見出しは設計の改行(<br>)を生かして2行。
          現行SPの「1行 nowrap」は 22px の時だけ成立し、案の 28〜32px では本文幅 350px に収まらない
@@ -1842,10 +1848,10 @@
   html.mb.rfx-short #results.rfx-5 .r2v { padding: 30px 20px; }
   html.mb.rfx-short #results.rfx-5 .r2v-fig { transform: none !important; }
   html.mb.rfx-short #results.rfx-5 .r2v-text { opacity: 1 !important; transform: none !important; }
-  html.mb.rfx-short #results.rfx-6 .res2 { display: flex; flex-direction: column; gap: 50px; padding: 40px 0; }
+  html.mb.rfx-short #results.rfx-6 .res2 { display: flex; flex-direction: column; gap: 50px; padding: var(--space-40) 0; }
   html.mb.rfx-short #results.rfx-6 .res2-top, html.mb.rfx-short #results.rfx-6 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-6 .r2v-fig, html.mb.rfx-short #results.rfx-6 .r2v-text { transform: none !important; opacity: 1 !important; }
-  html.mb.rfx-short #results.rfx-13 .res2, html.mb.rfx-short #results.rfx-14 .res2 { display: flex; flex-direction: column; gap: 50px; padding: 40px 0; }
+  html.mb.rfx-short #results.rfx-13 .res2, html.mb.rfx-short #results.rfx-14 .res2 { display: flex; flex-direction: column; gap: 50px; padding: var(--space-40) 0; }
   html.mb.rfx-short #results.rfx-13 .res2-top, html.mb.rfx-short #results.rfx-13 .r2v, html.mb.rfx-short #results.rfx-14 .res2-top, html.mb.rfx-short #results.rfx-14 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-13 .r2v-fig, html.mb.rfx-short #results.rfx-13 .r2v-text, html.mb.rfx-short #results.rfx-14 .r2v-fig, html.mb.rfx-short #results.rfx-14 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; clip-path: none !important; }
   html.mb.rfx-short #results.rfx-11 .res2 { height: auto; }
@@ -1853,11 +1859,11 @@
   html.mb.rfx-short #results.rfx-11 .r2v-track { display: block; }
   html.mb.rfx-short #results.rfx-11 .r2v { padding: 30px 20px; }
   html.mb.rfx-short #results.rfx-11 .r2v-fig, html.mb.rfx-short #results.rfx-11 .r2v-text { transform: none !important; opacity: 1 !important; pointer-events: auto !important; }
-  html.mb.rfx-short #results.rfx-15 .res2, html.mb.rfx-short #results.rfx-16 .res2, html.mb.rfx-short #results.rfx-17 .res2, html.mb.rfx-short #results.rfx-19 .res2 { display: flex; flex-direction: column; gap: 50px; padding: 40px 0; }
+  html.mb.rfx-short #results.rfx-15 .res2, html.mb.rfx-short #results.rfx-16 .res2, html.mb.rfx-short #results.rfx-17 .res2, html.mb.rfx-short #results.rfx-19 .res2 { display: flex; flex-direction: column; gap: 50px; padding: var(--space-40) 0; }
   html.mb.rfx-short #results.rfx-15 .res2-top, html.mb.rfx-short #results.rfx-15 .r2v, html.mb.rfx-short #results.rfx-16 .res2-top, html.mb.rfx-short #results.rfx-16 .r2v, html.mb.rfx-short #results.rfx-17 .res2-top, html.mb.rfx-short #results.rfx-17 .r2v, html.mb.rfx-short #results.rfx-19 .res2-top, html.mb.rfx-short #results.rfx-19 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-15 .r2v-fig, html.mb.rfx-short #results.rfx-15 .r2v-text, html.mb.rfx-short #results.rfx-15 .r2v-hli, html.mb.rfx-short #results.rfx-15 .r2v-p, html.mb.rfx-short #results.rfx-15 .rc, html.mb.rfx-short #results.rfx-16 .r2v-fig, html.mb.rfx-short #results.rfx-16 .r2v-text, html.mb.rfx-short #results.rfx-16 .r2v-hli, html.mb.rfx-short #results.rfx-16 .r2v-p, html.mb.rfx-short #results.rfx-16 .rc, html.mb.rfx-short #results.rfx-17 .r2v-fig, html.mb.rfx-short #results.rfx-17 .r2v-text, html.mb.rfx-short #results.rfx-17 .r2v-hli, html.mb.rfx-short #results.rfx-17 .r2v-p, html.mb.rfx-short #results.rfx-17 .rc, html.mb.rfx-short #results.rfx-19 .r2v-fig, html.mb.rfx-short #results.rfx-19 .r2v-text, html.mb.rfx-short #results.rfx-19 .r2v-hli, html.mb.rfx-short #results.rfx-19 .r2v-p, html.mb.rfx-short #results.rfx-19 .rc { transform: none !important; opacity: 1 !important; filter: none !important; clip-path: none !important; }
   html.mb.rfx-short #results .res2-stats { transform: none !important; }
-  html.mb.rfx-short #results.rfx-20 .res2 { display: flex; flex-direction: column; gap: 50px; padding: 40px 0; }
+  html.mb.rfx-short #results.rfx-20 .res2 { display: flex; flex-direction: column; gap: 50px; padding: var(--space-40) 0; }
   html.mb.rfx-short #results.rfx-20 .res2-top, html.mb.rfx-short #results.rfx-20 .r2v { grid-area: auto; opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-20 .r2v-fig, html.mb.rfx-short #results.rfx-20 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; }
   html.mb.rfx-short #results.rfx-20 .r2v-big { display: none; }
@@ -1870,7 +1876,7 @@
   html.mb.rfx-short #results.rfx-24 .res2-hr, html.mb.rfx-short #results.rfx-25 .res2-hr { transform: none !important; }
   html.mb.rfx-short #results.rfx-24 .r2v-big, html.mb.rfx-short #results.rfx-25 .r2v-big { display: none; }
   /* ===== SP: モック5案(37〜41)は縦積み(固定なし・sticky なし・JS の拡大や透過は使わない) (2026-09-15) ===== */
-  html.mb #results.rfx-37 .res2, html.mb #results.rfx-38 .res2, html.mb #results.rfx-39 .res2, html.mb #results.rfx-40 .res2, html.mb #results.rfx-41 .res2 { display: flex; flex-direction: column; gap: var(--space-28); padding: 40px 0 60px; width: calc(100% - 40px); height: auto; }
+  html.mb #results.rfx-37 .res2, html.mb #results.rfx-38 .res2, html.mb #results.rfx-39 .res2, html.mb #results.rfx-40 .res2, html.mb #results.rfx-41 .res2 { display: flex; flex-direction: column; gap: var(--space-28); padding: var(--space-40) 0 var(--space-60); width: calc(100% - 40px); height: auto; }
   html.mb #results.rfx-37 .res2-top, html.mb #results.rfx-38 .res2-top, html.mb #results.rfx-39 .res2-top, html.mb #results.rfx-40 .res2-top, html.mb #results.rfx-41 .res2-top { position: static; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); min-height: 0; padding: 0; width: 100%; margin: 0; }
   html.mb #results.rfx-37 .res2-head, html.mb #results.rfx-38 .res2-head, html.mb #results.rfx-39 .res2-head, html.mb #results.rfx-40 .res2-head, html.mb #results.rfx-41 .res2-head { font-size: 29px; line-height: var(--lh-normal); flex-direction: column; align-items: flex-start; justify-content: flex-start; white-space: normal; padding: 0; transform: none !important; }
   html.mb #results.rfx-37 .res2-stats, html.mb #results.rfx-38 .res2-stats, html.mb #results.rfx-39 .res2-stats, html.mb #results.rfx-40 .res2-stats, html.mb #results.rfx-41 .res2-stats { display: flex; flex-wrap: wrap; gap: var(--space-12) var(--space-24); justify-content: space-between; width: 100%; margin: 0; padding: 0; border: 0; transform: none !important; }
@@ -1878,7 +1884,7 @@
   html.mb #results.rfx-37 .res2-stats .r2s span, html.mb #results.rfx-38 .res2-stats .r2s span, html.mb #results.rfx-39 .res2-stats .r2s span, html.mb #results.rfx-40 .res2-stats .r2s span, html.mb #results.rfx-41 .res2-stats .r2s span { font-size: var(--fs-xl); line-height: 1.08; letter-spacing: normal; }
   html.mb #results.rfx-37 .res2-stats .r2s b, html.mb #results.rfx-38 .res2-stats .r2s b, html.mb #results.rfx-39 .res2-stats .r2s b, html.mb #results.rfx-40 .res2-stats .r2s b, html.mb #results.rfx-41 .res2-stats .r2s b { font-size: var(--fs-caption); }
   html.mb #results.rfx-37 .res2-vals, html.mb #results.rfx-38 .res2-vals, html.mb #results.rfx-39 .res2-vals, html.mb #results.rfx-40 .res2-vals, html.mb #results.rfx-41 .res2-vals, html.mb #results.rfx-37 .r2v-track, html.mb #results.rfx-38 .r2v-track, html.mb #results.rfx-39 .r2v-track, html.mb #results.rfx-40 .r2v-track, html.mb #results.rfx-41 .r2v-track { display: block; width: 100%; transform: none !important; }
-  html.mb #results.rfx-37 .r2v, html.mb #results.rfx-38 .r2v, html.mb #results.rfx-39 .r2v, html.mb #results.rfx-40 .r2v, html.mb #results.rfx-41 .r2v { position: static; display: flex; flex-direction: column; align-items: stretch; gap: var(--space-14); height: auto; min-height: 0; width: 100%; padding: 24px 0 0; margin: 0; border: 0; }
+  html.mb #results.rfx-37 .r2v, html.mb #results.rfx-38 .r2v, html.mb #results.rfx-39 .r2v, html.mb #results.rfx-40 .r2v, html.mb #results.rfx-41 .r2v { position: static; display: flex; flex-direction: column; align-items: stretch; gap: var(--space-14); height: auto; min-height: 0; width: 100%; padding: var(--space-24) 0 0; margin: 0; border: 0; }
   html.mb #results.rfx-37 .r2v-fig, html.mb #results.rfx-38 .r2v-fig, html.mb #results.rfx-39 .r2v-fig, html.mb #results.rfx-40 .r2v-fig, html.mb #results.rfx-41 .r2v-fig { display: block; position: static; order: -1; align-self: center; width: 300px; height: auto; margin: 0; transform: none !important; filter: none !important; opacity: 1 !important; }
   html.mb #results.rfx-37 .r2v-graphic, html.mb #results.rfx-38 .r2v-graphic, html.mb #results.rfx-39 .r2v-graphic, html.mb #results.rfx-40 .r2v-graphic, html.mb #results.rfx-41 .r2v-graphic { width: 300px; height: 220px; }
   html.mb #results.rfx-37 .r2v-text, html.mb #results.rfx-38 .r2v-text, html.mb #results.rfx-39 .r2v-text, html.mb #results.rfx-40 .r2v-text, html.mb #results.rfx-41 .r2v-text { position: static; width: 100%; max-width: none; gap: var(--space-10); opacity: 1 !important; filter: none !important; transform: none !important; }
@@ -1899,7 +1905,7 @@
   html.mb.rfx-short #results.rfx-28 .res2-hr { transform: none !important; }
   html.mb.rfx-short #results.rfx-36 .r2v-ring { opacity: 1 !important; }
   /* 案24(SP): 常に縦流れ(rfx-flow)。全部見せる */
-  html.mb #results.rfx-24.rfx-flow .res2, html.mb #results.rfx-25.rfx-flow .res2 { padding: 40px 0; }
+  html.mb #results.rfx-24.rfx-flow .res2, html.mb #results.rfx-25.rfx-flow .res2 { padding: var(--space-40) 0; }
   html.mb #results.rfx-24.rfx-flow .res2-top, html.mb #results.rfx-24.rfx-flow .r2v, html.mb #results.rfx-24.rfx-flow .r2v-fig, html.mb #results.rfx-24.rfx-flow .r2v-text, html.mb #results.rfx-25.rfx-flow .res2-top, html.mb #results.rfx-25.rfx-flow .r2v, html.mb #results.rfx-25.rfx-flow .r2v-fig, html.mb #results.rfx-25.rfx-flow .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
   html.mb #results.rfx-24.rfx-flow .res2-hr, html.mb #results.rfx-25.rfx-flow .res2-hr { transform: none !important; }
   html.mb #results.rfx-24.rfx-flow .r2v-big, html.mb #results.rfx-25.rfx-flow .r2v-big { display: none; }
@@ -2000,14 +2006,14 @@
      つまみは案ごと(調整パネルで案を選ぶと、その案の項目に入れ替わる) ===== */
   @property --dm-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
   /* 11 ネオンが一周する: 縁を光が走る(既定は反時計回り)。縁取りは padding+mask の枠だけ塗る手法(案8と同じ) */
-  #dev.dev-st-11 .dm-panel { border-color: rgba(255,255,255,.10);
+  #dev.dev-st-11 .dm-panel { border-color: var(--glass-10);
     box-shadow: 0 0 0 1px rgba(14,187,255,.14), 0 26px 60px rgba(0,0,0,calc(.5 * var(--dm-sh))), inset 0 1px 0 rgba(255,255,255,calc(.14 * var(--dm-in))); }
   #dev.dev-st-11 .dm-panel::after { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: var(--dm-run-w, 2px); pointer-events: none; z-index: 6;
     background: conic-gradient(from var(--dm-ang),
       rgba(14,187,255,0) 0turn,
       rgba(14,187,255,0) calc(1turn - var(--dm-run-len, .28turn)),
       rgba(14,187,255,.9) calc(1turn - var(--dm-run-len, .28turn) * .62),
-      #ffffff calc(1turn - var(--dm-run-len, .28turn) * .22),
+      var(--surface-white) calc(1turn - var(--dm-run-len, .28turn) * .22),
       #ff5d97 1turn);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
@@ -2067,7 +2073,7 @@
   /* 【2026-09-15 ヒデさん指定】スロットの箱(API/CLI/SDK)の上下位置と高さを調整パネルから変えられるように。
      文字の並びの中に置く inline-flex なので、縦の微調整は translateY で行う(行の高さに影響させない) */
   .dc-one .ds-box { display: inline-flex; vertical-align: middle; align-items: center; justify-content: center;
-    overflow: hidden; height: var(--ds-box-h, 42px); border-radius: 0; background: rgba(255,255,255,.09); width: 0;
+    overflow: hidden; height: var(--ds-box-h, 42px); border-radius: 0; background: var(--glass-10); width: 0;
     transform: translateY(var(--ds-box-y, 0px));
     will-change: width; }  /* 2026-08-29 角丸なし / 2026-08-30 割れのカタつき低減(will-change) */
   .dc-one .ds-roll { position: relative; height: 34px; width: 100%; }
@@ -2132,7 +2138,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background: rgba(255,255,255,.05);
+    background: var(--glass-06);
     color: var(--ink-on-dark);
   }
   .dl-item {
@@ -2142,10 +2148,10 @@
     box-sizing: border-box;
     opacity: .2;
     cursor: pointer;
-    transition: opacity .3s var(--e-out, ease);
+    transition: opacity var(--t-ui) var(--e-out, ease);
     will-change: opacity;
   }
-  .dl-item.is-on { opacity: 1; border-left: 1px solid rgba(255,255,255,.8); }
+  .dl-item.is-on { opacity: 1; border-left: 1px solid var(--glass-82); }
   .dl-body { display: flex; flex-direction: column; gap: var(--space-4); }
   .dl-head { display: flex; align-items: flex-end; gap: var(--space-5); white-space: nowrap; }
   .dl-head b { font-family: var(--font-en); font-weight: 100; font-size: var(--fs-heading); line-height: 1; }   /* API= SF Pro Ultralight 24 */
@@ -2214,14 +2220,14 @@
     font-size: 11px;
     white-space: pre;
     flex: 0 0 auto;
-    color: rgba(255,255,255,.9);
+    color: var(--glass-90);
     clip-path: inset(0 100% 0 0);
   }
   .dm-line .kw { color: var(--brand-pink); }
   .dm-line .id { color: var(--brand-cyan); }
   .dm-line .st { color: var(--code-green); }   /* 2026-09-09: --code-string→--code-green 統合 */
-  .dm-line .cm { color: rgba(255,255,255,.32); }
-  .dm-line .pl { color: rgba(255,255,255,.82); }
+  .dm-line .cm { color: var(--glass-32); }
+  .dm-line .pl { color: var(--glass-82); }
   .dm-line .ok { color: var(--code-green); }
   /* 生成前のローディング (スケルトンがシマーする) */
   .dm-load {
@@ -2239,7 +2245,7 @@
     height: 6px;
     border-radius: var(--radius-xs);
     background: linear-gradient(100deg,
-      var(--glass-06) 30%, rgba(255,255,255,.34) 50%, var(--glass-06) 70%);
+      var(--glass-06) 30%, var(--glass-32) 50%, var(--glass-06) 70%);
     background-size: 260% 100%;
   }
   .dm-row .b { height: 6px; border-radius: var(--radius-xs); flex: 0 0 auto; }
@@ -2299,10 +2305,10 @@
     max-width: 86%;
     padding: var(--space-10) 14px;
     border-radius: var(--radius-md) var(--radius-md) var(--radius-xs) var(--radius-md);
-    background: rgba(255,255,255,.14);
+    background: var(--glass-16);
     font-size: var(--fs-caption);
     line-height: var(--lh-loose);
-    color: rgba(255,255,255,.92);
+    color: var(--glass-90);
   }
   /* AIの返答: 普通のテキストで返す */
   .dm-msg.dm-bot p {
@@ -2310,7 +2316,7 @@
     min-width: 0;
     font-size: var(--fs-caption);
     line-height: var(--lh-body);
-    color: rgba(255,255,255,.82);
+    color: var(--glass-82);
     padding-top: var(--space-4);
   }
   .dm-msg .av {
@@ -2352,17 +2358,17 @@
     font-family: 'Inter', var(--font-en);
     font-weight: 400;
     font-size: var(--fs-body);
-    color: rgba(255,255,255,.16);   /* カンプ: プレースホルダは 10% 相当 */
+    color: var(--glass-16);   /* カンプ: プレースホルダは 10% 相当 */
     white-space: nowrap;
     overflow: hidden;
   }
-  .dm-input .dm-typed { color: rgba(255,255,255,.92); }
+  .dm-input .dm-typed { color: var(--glass-90); }
   .dm-input .dm-cursor {
     display: inline-block;
     width: 1px;
     height: 13px;
     margin-left: 1px;
-    background: rgba(255,255,255,.85);
+    background: var(--glass-82);
     vertical-align: -2px;
     opacity: 0;
   }
@@ -2376,7 +2382,7 @@
     justify-content: center;
   }
   .dm-send img { width: 12px; height: 12px; display: block; }
-  .dm-send { transition: transform .18s var(--e-fast), background-color .18s var(--e-fast); }
+  .dm-send { transition: transform var(--t-tap) var(--e-fast), background-color var(--t-tap) var(--e-fast); }
   .dm-send.is-hit { transform: scale(.84); background: var(--brand-cyan); }
   /* AIが考えている3点 */
   /* 見出しの文字が出るまで、モックは「空の枠」だけにする (2026-08-15 指定)。
@@ -2398,12 +2404,12 @@
     display: none;
     position: absolute; left: 0; right: 0; top: 0; height: 40px;
     align-items: center; gap: var(--space-8); padding: 0 18px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    font-size: var(--fs-caption); font-weight: 300; color: rgba(255,255,255,.4);
+    border-bottom: 1px solid var(--glass-10);
+    font-size: var(--fs-caption); font-weight: 300; color: var(--glass-40);
   }
   .dm-panel.is-term .dm-term-bar { display: flex; }
   .dm-panel.is-term .dm-code { padding-top: 62px; }
-  .dm-term-bar i { width: 9px; height: 9px; border-radius: var(--radius-full); background: rgba(255,255,255,.18); }
+  .dm-term-bar i { width: 9px; height: 9px; border-radius: var(--radius-full); background: var(--glass-16); }
   /* ===== SDK: 右ペインをリファレンス一覧に差し替える (トンマナはAIペインを踏襲) ===== */
   .dm-sdk { flex: 0 0 400px; border-left: 1px solid var(--glass-10); display: none; flex-direction: column; min-height: 0; }
   .dm-panel.is-sdk .dm-sdk { display: flex; }
@@ -2415,11 +2421,11 @@
     background: var(--glass-06);
     border: 1px solid var(--glass-06);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: var(--fs-caption); color: rgba(255,255,255,.82);
+    font-size: var(--fs-caption); color: var(--glass-82);
     opacity: 0;
   }
   .dm-sdk-row .k { color: var(--brand-cyan); }
-  .dm-sdk-row .t { margin-left: auto; font-size: 10px; color: rgba(255,255,255,.34); }
+  .dm-sdk-row .t { margin-left: auto; font-size: 10px; color: var(--glass-32); }
   .dm-sdk-row .dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--brand-pink); flex: none; }
 
   .dm-think-b { display: flex !important; flex-direction: row !important; gap: var(--space-5); }
@@ -2503,10 +2509,10 @@
      ⚠️ セルの opacity と filter は【登場アニメでJSが毎フレーム書く】ので、ホバーでは絶対に触らない。
         触ってよいのは セルの transform と、中の要素(画像・文字)のスタイルだけ。
      どの案かは #caseGrid の data-hover で切り替える。 */
-  .cg-cell { transition: transform .32s var(--e-soft); }
+  .cg-cell { transition: transform var(--t-ui) var(--e-soft); }
   .cg-img img, .cg-quote, .cg-tag, .cg-company, .cg-img, .cg-body {
-    transition: transform .38s var(--e-soft), opacity .3s ease,
-                color .3s ease, border-color .3s ease, filter .38s ease;
+    transition: transform var(--t-move) var(--e-soft), opacity var(--t-ui) ease,
+                color var(--t-ui) ease, border-color var(--t-ui) ease, filter var(--t-move) ease;
   }
   /* A 写真が寄る: 写真だけゆっくり拡大。いちばん静か */
   [data-hover="zoom"] .cg-cell:hover .cg-img img { transform: scale(1.07); }
@@ -2519,7 +2525,7 @@
   .cg-uline {
     position: absolute; left: 60px; right: 60px; bottom: 46px; height: 1px;
     background: var(--brand-cyan); transform: scaleX(0); transform-origin: left center; opacity: 0;
-    transition: transform .42s var(--e-soft), opacity .2s ease; pointer-events: none;
+    transition: transform var(--t-move) var(--e-soft), opacity var(--t-tap) ease; pointer-events: none;
   }
   [data-hover="line"] .cg-cell:hover .cg-uline { transform: scaleX(1); opacity: 1; }
   [data-hover="line"] .cg-cell:hover .cg-company { transform: translateX(6px); }
@@ -2537,13 +2543,13 @@
      線: var(--ink-strong) 1px・角丸なし・画像の輪郭にぴったり(外へオフセットなし)。描く0.55s / 戻る0.5s / ease相当。
      画像は同時に scale1.0→1.04(中央基点・0.35sで線より先に着地)。文字・浮き・影・背景は一切変化なし。 */
   .cg-edge { position: absolute; background: var(--ink-strong); pointer-events: none; z-index: 2;
-             transition: transform .5s var(--e-standard); }
+             transition: transform var(--t-slow) var(--e-standard); }
   .cg-e-t { top: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: left center; }
   .cg-e-r { top: 0; right: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center top; }
   .cg-e-b { bottom: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: right center; }
   .cg-e-l { top: 0; left: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center bottom; }
   [data-hover="trim"] .cg-cell:hover .cg-edge { transform: scale(1); transition-duration: .55s; }
-  [data-hover="trim"] .cg-img img { transition: transform .35s var(--e-standard); }
+  [data-hover="trim"] .cg-img img { transition: transform var(--t-ui) var(--e-standard); }
   [data-hover="trim"] .cg-cell:hover .cg-img img { transform: scale(1.04); }
 
   /* ===== 【2026-09-15 ヒデさん指定】導入事例「4枚の見せ方」5案(#cases.cl-1〜5)と、ホバー5案(#caseGrid[data-hover]) =====
@@ -2558,24 +2564,24 @@
   /* カードの外周を4辺同時に引く(案Fと同じ手法。上辺は左から / 右辺は上から / 下辺は右から / 左辺は下から) */
   /* 線の色は、もともと引いてあった罫線と同じグレー(--line-grid)。黒だと濃すぎる(2026-09-15 ヒデさん指定) */
   .cg-cedge { position: absolute; background: var(--cg-edge, var(--line-grid)); pointer-events: none; z-index: 3;
-              transition: transform .5s var(--e-standard), background-color .3s ease; }
+              transition: transform var(--t-slow) var(--e-standard), background-color var(--t-ui) ease; }
   .cg-ce-t { top: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: left center; }
   .cg-ce-r { top: 0; right: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center top; }
   .cg-ce-b { bottom: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: right center; }
   .cg-ce-l { top: 0; left: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center bottom; }
   [data-hover="cardtrim"] .cg-cell:hover .cg-cedge { transform: scale(1); transition-duration: .55s; }
-  [data-hover="cardtrim"] .cg-img img { transition: transform .35s var(--e-standard); }
+  [data-hover="cardtrim"] .cg-img img { transition: transform var(--t-ui) var(--e-standard); }
   [data-hover="cardtrim"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
 
   /* ===== 【2026-09-15 ヒデさん指定・作り直し】線のアニメーションを使わない5案。
      カードの周りに線は引かず、【影の付け方】と【面のグレー／色み】だけで「触っている1枚」を示す。
      ⚠️ セルの opacity / filter は登場アニメが毎フレーム書くので触らない(transform・box-shadow・background だけ)。 */
-  [data-hover^="ct-"] .cg-cell { transition: transform .32s var(--e-soft), box-shadow .34s ease, background-color .34s ease; }
-  [data-hover^="ct-"] .cg-img img { transition: transform .35s var(--e-standard); }
+  [data-hover^="ct-"] .cg-cell { transition: transform var(--t-ui) var(--e-soft), box-shadow var(--t-ui) ease, background-color var(--t-ui) ease; }
+  [data-hover^="ct-"] .cg-img img { transition: transform var(--t-ui) var(--e-standard); }
   [data-hover^="ct-"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
   /* 1 影でふわっと浮く: 大きく遠い影。いちばん「持ち上がる」 */
   [data-hover="ct-lift"] .cg-cell:hover { transform: translateY(-6px);
-    box-shadow: 0 22px 44px rgba(16,24,40,calc(.12 * var(--cg-sh, 1))); }
+    box-shadow: var(--shadow-lift); }
   /* 2 影が近くに締まる: 小さく近い影。カチッとした手触り */
   [data-hover="ct-tight"] .cg-cell:hover { transform: translateY(-2px);
     box-shadow: 0 2px 4px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))), 0 8px 16px rgba(16,24,40,calc(.10 * var(--cg-sh, 1))); }
@@ -2615,7 +2621,7 @@
   }
 
   /* ================= コンバージョン (カンプ 15993:43965 実測) ================= */
-  #conversion { padding: 160px 0 200px; position: relative; }   /* 前後の余白はカンプから取れず仮置き。position=グラデ編集ギズモの基準 */
+  #conversion { padding: var(--space-160) 0 var(--space-200); position: relative; }   /* 前後の余白はカンプから取れず仮置き。position=グラデ編集ギズモの基準 */
   .cv-inner {
     position: relative;
     width: min(1200px, calc(100% - 80px));
@@ -2651,7 +2657,7 @@
     width: 497px; text-align: center; color: var(--ink-strong);
   }
   .cv-head { font-weight: 600; font-size: var(--fs-h2); line-height: var(--lh-heading); letter-spacing: 0; }   /* 【2026-09-18】共通部品(見出し): 導入事例と同じ 44px/600/1.45(旧 Light 34/1.7) */
-  .cv-sub  { font-weight: 300; font-size: var(--fs-base); line-height: var(--lh-body); margin: 24px 0 0; }   /* 2026-09-09: 見出しのline-height(1.7)ぶんを相殺し本文の上下の見た目余白を均等に(上30→24) */
+  .cv-sub  { font-weight: 300; font-size: var(--fs-base); line-height: var(--lh-body); margin: var(--space-24) 0 0; }   /* 2026-09-09: 見出しのline-height(1.7)ぶんを相殺し本文の上下の見た目余白を均等に(上30→24) */
   /* 【V4.0 2026-09-13】.cv-btn は .cta と共通の marquee CSS へ統合済み(上部)。ここでは削除。 */
 
   /* ===== 【2026-09-15 ヒデさん指定】お問い合わせのデザイン案(10案・調整パネル「コンバージョン」)。cvs-N を #conversion に付ける。
@@ -2661,7 +2667,7 @@
   .cv-foot { display: none; }
   .cv-foot-l { display: flex; flex-direction: column; }
   .cv-foot-nav { display: flex; flex-wrap: wrap; gap: var(--space-28); }
-  .cv-foot-nav a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); opacity: .72; transition: opacity .2s; }
+  .cv-foot-nav a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); opacity: .72; transition: opacity var(--t-tap); }
   .cv-foot-nav a:hover { opacity: 1; }
   .cv-foot-addr { font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; margin-top: var(--space-14); }
   .cv-foot-copy { font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); opacity: .55; white-space: nowrap; }
@@ -2696,55 +2702,55 @@
      リキッドグラス系で背景グラデが生きる方向。送信先/つなぎ込みは無し=見た目だけ。 */
   .cv-form { display: none; }
   #conversion.cv-cta-form .cv-btn { display: none; }
-  #conversion.cv-cta-form .cv-form { display: flex; flex-direction: column; gap: var(--space-16); width: min(var(--cvf-w, 660px), 92%); margin: 40px auto 0; text-align: left; }
+  #conversion.cv-cta-form .cv-form { display: flex; flex-direction: column; gap: var(--space-16); width: min(var(--cvf-w, 660px), 92%); margin: var(--space-40) auto 0; text-align: left; }
   #conversion.cv-cta-form.cv-fi .cv-content { width: min(calc(var(--cvf-w, 660px) + 48px), 94%); }
   .cv-form .cvf-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-14); }
   .cv-form .cvf-field { display: flex; flex-direction: column; gap: var(--space-8); }
   .cv-form .cvf-lab { font-weight: 400; font-size: var(--fs-body); line-height: var(--lh-tight); color: var(--ink-strong); }
   .cv-form .cvf-lab em { color: var(--brand-pink); font-style: normal; margin-left: 3px; }
   .cv-form .cvf-note { font-size: var(--fs-caption); line-height: var(--lh-normal); opacity: .68; margin: -3px 0 1px; }
-  .cv-form .cvf-in { width: 100%; box-sizing: border-box; font-family: inherit; font-size: var(--fs-base); font-weight: 300; color: var(--ink-strong); padding: var(--space-12) var(--space-14); border-radius: 10px; border: var(--cvf-in-bw, 1px) solid var(--cvf-in-bc, rgba(0,0,0,.14)); background: rgba(255,255,255,.72); outline: none; transition: border-color .18s, background .18s, box-shadow .18s; }
+  .cv-form .cvf-in { width: 100%; box-sizing: border-box; font-family: inherit; font-size: var(--fs-base); font-weight: 300; color: var(--ink-strong); padding: var(--space-12) var(--space-14); border-radius: var(--radius-input); border: var(--cvf-in-bw, 1px) solid var(--cvf-in-bc, var(--line-soft)); background: var(--glass-72); outline: none; transition: border-color var(--t-tap), background var(--t-tap), box-shadow var(--t-tap); }
   .cv-form .cvf-in::placeholder { color: rgba(var(--cvf-ph-rgb, 0,0,0), var(--cvf-ph-a, .32)); }
-  .cv-form .cvf-in:focus { border-color: var(--brand-cyan); box-shadow: 0 0 0 3px rgba(14,187,255,.18); background: rgba(255,255,255,.92); }
+  .cv-form .cvf-in:focus { border-color: var(--brand-cyan); box-shadow: 0 0 0 3px rgba(14,187,255,.18); background: var(--glass-90); }
   .cv-form .cvf-area { resize: vertical; min-height: 96px; }
   .cv-form .cvf-sel { position: relative; display: block; }
-  .cv-form .cvf-sel::after { content: ''; position: absolute; right: 15px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid rgba(0,0,0,.42); border-bottom: 1.5px solid rgba(0,0,0,.42); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+  .cv-form .cvf-sel::after { content: ''; position: absolute; right: 15px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
   .cv-form select.cvf-in { appearance: none; -webkit-appearance: none; padding-right: var(--space-32); cursor: pointer; }
   .cv-form .cvf-consent { display: flex; align-items: flex-start; gap: var(--space-10); font-size: var(--fs-body); font-weight: 300; line-height: var(--lh-normal); color: var(--ink-strong); cursor: pointer; }
   .cv-form .cvf-consent .cvf-check { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--brand-cyan); flex: 0 0 auto; }
   .cv-form .cvf-consent em { color: var(--brand-pink); font-style: normal; margin-left: 2px; }
   .cv-form .cvf-link { color: var(--ink-strong); text-decoration: underline; }   /* 【2026-09-18 ヒデさん指定】青→黒 */
   .cv-form .cvf-fine { font-size: var(--fs-caption); line-height: var(--lh-normal); opacity: .64; margin: 0; }
-  .cv-form .cvf-submit { align-self: center; margin-top: var(--space-6); padding: var(--space-14) var(--space-40); border: 0; border-radius: 10px; background: var(--surface-cta); color: var(--ink-on-dark); font-family: inherit; font-size: var(--fs-base); font-weight: 400; letter-spacing: .02em; cursor: pointer; transition: background .18s, transform .08s; }   /* 【2026-09-17 ヒデさん指定】送信ボタンは中央揃え */
+  .cv-form .cvf-submit { align-self: center; margin-top: var(--space-6); padding: var(--space-14) var(--space-40); border: 0; border-radius: var(--radius-input); background: var(--surface-cta); color: var(--ink-on-dark); font-family: inherit; font-size: var(--fs-base); font-weight: 400; letter-spacing: .02em; cursor: pointer; transition: background var(--t-tap), transform .08s; }   /* 【2026-09-17 ヒデさん指定】送信ボタンは中央揃え */
   .cv-form .cvf-submit:hover { background: var(--brand-cyan); }
   .cv-form .cvf-submit:active { transform: translateY(1px); }
 
   /* --- fst-1 リキッドグラス(明): 磨りガラスの白カード。背景グラデが透ける(既定) --- */
   /* 【2026-09-17 ヒデさん依頼】フォームカードの地色の白さ・ぼかし・彩度をパネルから調整可能に(--cvf-bg-a/--cvf-blur/--cvf-sat)。
      背景に白が来た時の白飛び対策として、白さを下げたり彩度を上げたりできる。 */
-  #conversion.fst-1 .cv-form { padding: var(--space-32) var(--space-32); border-radius: 22px; background: rgba(255,255,255, var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); border: var(--cvf-bw, 1px) solid var(--cvf-bc, rgba(255,255,255,.66)); box-shadow: 0 20px 60px rgba(20,30,60,.14), inset 0 1px 0 rgba(255,255,255,.6); }
-  #conversion.fst-1 .cvf-in { background: rgba(255,255,255, var(--cvf-in-a, .56)); border-color: var(--cvf-in-bc, rgba(255,255,255,.72)); }
+  #conversion.fst-1 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(255,255,255, var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); border: var(--cvf-bw, 1px) solid var(--cvf-bc, var(--glass-72)); box-shadow: var(--shadow-form); }
+  #conversion.fst-1 .cvf-in { background: rgba(255,255,255, var(--cvf-in-a, .56)); border-color: var(--cvf-in-bc, var(--glass-72)); }
   /* --- fst-2 リキッドグラス(濃): スモークガラス。文字は白 --- */
-  #conversion.fst-2 .cv-form { padding: var(--space-32) var(--space-32); border-radius: 22px; background: rgba(18,22,34,.34); -webkit-backdrop-filter: blur(20px) saturate(1.3); backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 24px 60px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.22); }
+  #conversion.fst-2 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(18,22,34,.34); -webkit-backdrop-filter: blur(20px) saturate(1.3); backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 24px 60px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.22); }
   #conversion.fst-2 .cvf-lab, #conversion.fst-2 .cvf-consent, #conversion.fst-2 .cvf-fine, #conversion.fst-2 .cvf-note { color: var(--ink-on-dark); }
   #conversion.fst-2 .cvf-in { color: var(--ink-on-dark); background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.26); }
   #conversion.fst-2 .cvf-in::placeholder { color: rgba(255,255,255,.5); }
-  #conversion.fst-2 .cvf-sel::after { border-color: rgba(255,255,255,.6); }
+  #conversion.fst-2 .cvf-sel::after { border-color: var(--glass-60); }
   #conversion.fst-2 .cvf-submit { background: var(--surface-white); color: var(--ink-strong); }
   #conversion.fst-2 .cvf-submit:hover { background: var(--brand-cyan); color: var(--ink-on-dark); }
   /* --- fst-3 枠なし・溶け込み: カード無し。入力欄が磨りガラスのピル。グラデ主役 --- */
   #conversion.fst-3 .cv-form { padding: 0; background: transparent; border: 0; box-shadow: none; }
-  #conversion.fst-3 .cvf-in { background: rgba(255,255,255,.42); border-color: rgba(255,255,255,.6); border-radius: 12px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #conversion.fst-3 .cvf-in { background: rgba(255,255,255,.42); border-color: var(--glass-60); border-radius: 12px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   /* --- fst-4 白カード(クリア): はっきり白。可読性重視 --- */
   #conversion.fst-4 .cv-form { padding: var(--space-32) var(--space-32); border-radius: 20px; background: rgba(255,255,255,.95); border: 1px solid rgba(0,0,0,.06); box-shadow: 0 24px 70px rgba(20,30,60,.18); }
-  #conversion.fst-4 .cvf-in { background: var(--surface-white); border-color: rgba(0,0,0,.16); }
+  #conversion.fst-4 .cvf-in { background: var(--surface-white); border-color: var(--line-soft); }
   /* --- fst-5 グラス＋発光縁: 磨りガラス＋ブランド色のにじむ縁 --- */
-  #conversion.fst-5 .cv-form { position: relative; padding: var(--space-32) var(--space-32); border-radius: 22px; background: rgba(255,255,255,.46); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); border: 1px solid transparent; box-shadow: 0 20px 60px rgba(20,30,60,.16); }
+  #conversion.fst-5 .cv-form { position: relative; padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(255,255,255,.46); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); border: 1px solid transparent; box-shadow: 0 20px 60px rgba(20,30,60,.16); }
   #conversion.fst-5 .cv-form::before { content: ''; position: absolute; inset: -1px; border-radius: 23px; padding: 1.4px; background: linear-gradient(135deg, rgba(14,187,255,.85), rgba(255,93,151,.72) 58%, rgba(122,75,216,.72)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
   #conversion.fst-5 .cvf-in { background: rgba(255,255,255,.5); border-color: rgba(255,255,255,.68); }
   /* 【2026-09-18 ヒデさん依頼】フォームの角丸(--cvf-r)と入力欄の角丸(--cvf-in-r)は調整パネル(applyCvfGlass) */
-  #conversion.cv-cta-form .cv-form { border-radius: var(--cvf-r, 22px) !important; }
-  .cv-form .cvf-in { border-radius: var(--cvf-in-r, 10px) !important; }
+  #conversion.cv-cta-form .cv-form { border-radius: var(--cvf-r, var(--radius-form)) !important; }
+  .cv-form .cvf-in { border-radius: var(--cvf-in-r, var(--radius-input)) !important; }
   /* 【2026-09-15 ヒデさん指定】ボタンのホバー色(パネル): --cv-hov-bg / --cv-hov-fg。白文字の案でも同じ指定が勝つ */
   #conversion .cv-btn.cv-btn:hover { background: var(--cv-hov-bg, var(--brand-cyan)); color: var(--cv-hov-fg, #fff); }
   /* 共通: フッター一体型(1・2・3・8・10) */
@@ -2757,7 +2763,7 @@
     flex: 1 1 auto; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
     padding-top: var(--cv-add-t, 0px); padding-bottom: var(--cv-add-b, 0px); }
   #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: var(--cv-head-top, 150px) auto 120px; }
-  #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-40); position: relative; z-index: 2; padding: 28px max(120px, calc((100% - 1200px) / 2)) 36px; border-top: 1px solid rgba(0,0,0,.16); color: var(--ink-strong); }   /* 左右は本文と同じグリッド(1200px 中央) */
+  #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-40); position: relative; z-index: 2; padding: 28px max(120px, calc((100% - 1200px) / 2)) 36px; border-top: 1px solid var(--line-soft); color: var(--ink-strong); }   /* 左右は本文と同じグリッド(1200px 中央) */
   .cv-foot-r { display: flex; align-items: center; gap: var(--space-28); }
   /* 案11: ボタンをフッター帯に(見出し・本文は左) */
   #conversion.cvs-11 .cv-content { width: min(1200px, 100% - 240px); text-align: left; margin: 140px auto 110px; }
@@ -2768,7 +2774,7 @@
   /* 案12: 下端が今のフッターの黒に溶ける */
   #conversion.cvs-12::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 64%; background: linear-gradient(180deg, rgba(22,22,22,0) 0%, rgba(22,22,22,.92) 72%, #161616 100%); pointer-events: none; z-index: 1; }
   #conversion.cvs-12 .cv-content { margin: 120px auto 170px; }
-  #conversion.cvs-12 .cv-foot { color: var(--ink-on-dark); border-top-color: rgba(255,255,255,.18); }
+  #conversion.cvs-12 .cv-foot { color: var(--ink-on-dark); border-top-color: var(--glass-16); }
   /* 案13: 左に CTA、右にフッターの情報(帯を持たない) */
   #conversion.cvs-13 { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--space-80); align-items: end; padding: 140px max(120px, calc((100% - 1200px) / 2)) 96px; }
   #conversion.cvs-13 .cv-inner { display: contents; }
@@ -2892,7 +2898,7 @@
     html.mb .header .cta.is-open, html.mb .header .cta.is-open:hover { background: var(--surface-white); box-shadow: none; }
     html.mb .header .cta.is-open .cta-burg i { background: var(--surface-cta); }
     /* ドロワー(メニュー)の SP 寸法: PC の 130px 左余白・56px 文字は入らないので縮める(仮置き) */
-    html.mb .hdr-drawer.drw-3 .hdr-drawer-nav { padding: 0 24px; gap: var(--space-14); }
+    html.mb .hdr-drawer.drw-3 .hdr-drawer-nav { padding: 0 var(--space-24); gap: var(--space-14); }
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: var(--fs-stat); }
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a .hdr-drawer-num { font-size: var(--fs-caption); }
     html.mb .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-16); width: 200px; height: 44px; font-size: var(--fs-body); }
@@ -3087,7 +3093,7 @@
     .cg-company { font-size: var(--fs-subhead); line-height: normal; }       /* カンプSP node16534:22655: Noto Light 18px */
 
     /* --- コンバージョン (モバイル: 左右24px・1カラム。497px固定でのはみ出しを解消) --- */
-    #conversion { padding: 72px 0 96px; }
+    #conversion { padding: var(--space-72) 0 var(--space-96); }
     /* カンプSP node16534:22767: 枠 346幅(左右22)・padding 40/24・見出し→本文→ボタン gap 8。
        背景グラデ(16534:22768)は枠より上下 17px 大きい 275 高なので、枠を 275 にして中身を 17px 下げる */
     .cv-inner { width: calc(100% - 44px); height: 275px; }
@@ -3119,7 +3125,7 @@
     #conversion.cvs-12 .cv-content { margin: var(--space-72) var(--space-24) var(--space-96); }
     #conversion.cvs-13 { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-72) var(--space-24) var(--space-40); }
     #conversion.cvs-13 .cv-head { font-size: 28px; }
-    #conversion.cvs-13 .cv-foot { margin-top: var(--space-40); padding: 24px 0 0; border-top: 1px solid rgba(0,0,0,.16); }
+    #conversion.cvs-13 .cv-foot { margin-top: var(--space-40); padding: var(--space-24) 0 0; border-top: 1px solid var(--line-soft); }
     #conversion.cvs-13 .cv-foot-addr { white-space: normal; }
 
     /* --- 調整パネルは画面いっぱいに --- */
@@ -3215,7 +3221,7 @@
   .sw-head:active { cursor: grabbing; }
   .sw-head .chev { transition: transform .25s; font-size: 10px; color: #888; cursor: pointer; padding: 2px 6px; }
   .switcher.closed .sw-head .chev { transform: rotate(180deg); }
-  .sw-body { overflow-y: auto; padding: 0 12px 12px; flex: 1 1 auto; }
+  .sw-body { overflow-y: auto; padding: 0 var(--space-12) var(--space-12); flex: 1 1 auto; }
   .switcher.closed .sw-body { display: none; }
   .switcher.closed { resize: none; height: auto !important; width: auto !important; min-width: 200px; }
   .sw-sec {
@@ -3237,7 +3243,7 @@
   }
   .sw-sec-head:hover { background: #f2f2f2; }
   .sw-sec-cur { color: #999; font-weight: 300; margin-left: auto; }
-  .sw-sec-chev { font-size: 10px; color: #888; transition: transform .2s; }
+  .sw-sec-chev { font-size: 10px; color: #888; transition: transform var(--t-tap); }
   .sw-sec.closed .sw-sec-chev { transform: rotate(-90deg); }
   .sw-sec-body { padding: var(--space-8) var(--space-10) var(--space-10); }
   .sw-sec.closed .sw-sec-body { display: none; }
@@ -3247,12 +3253,12 @@
     margin-top: var(--space-10);
     font-family: inherit;
     font-size: var(--fs-caption);
-    padding: 8px 0;
+    padding: var(--space-8) 0;
     border-radius: 8px;
     border: 1px solid #d8d8d8;
     background: var(--surface-white);
     cursor: pointer;
-    transition: background .2s;
+    transition: background var(--t-tap);
   }
   .sw-copy:hover { background: #f2f2f2; }
   .sw-pill {
@@ -3268,7 +3274,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-5);
-    transition: background .2s, border-color .2s;
+    transition: background var(--t-tap), border-color var(--t-tap);
   }
   .sw-pill:hover { border-color: #999; }
   .sw-pill.on { background: var(--surface-cta); color: var(--ink-on-dark); border-color: #090909; }
@@ -3345,7 +3351,7 @@
   .txt-editing { outline: 2px solid #0EBBFF !important; background: rgba(14,187,255,.06); cursor: text; }
   .txt-bar {
     position: fixed; z-index: 100000; display: none;
-    background: #1b1d24; color: var(--ink-on-dark); border-radius: 10px; padding: var(--space-8) var(--space-10);
+    background: #1b1d24; color: var(--ink-on-dark); border-radius: var(--radius-input); padding: var(--space-8) var(--space-10);
     box-shadow: 0 8px 28px rgba(0,0,0,.32); font-size: var(--fs-caption);
     display: none; gap: var(--space-8); align-items: center; flex-wrap: wrap; max-width: 92vw;
   }
@@ -3383,7 +3389,7 @@
   /* 編集モードのバー(キービジュアル右上) */
   .edit-bar { position: fixed; top: 16px; right: 16px; z-index: 70; display: none; align-items: center; gap: var(--space-6);
               background: rgba(255,255,255,.94); backdrop-filter: blur(10px);
-              border: 1px solid #e6e6e6; border-radius: 10px; padding: var(--space-6) var(--space-8);
+              border: 1px solid #e6e6e6; border-radius: var(--radius-input); padding: var(--space-6) var(--space-8);
               box-shadow: 0 8px 28px rgba(0,0,0,.12); font-size: var(--fs-caption); }
   .eb-btn { height: 28px; padding: 0 10px; border: 1px solid #e2e2e2; border-radius: 7px; background: var(--surface-white);
             color: #444; font-size: var(--fs-caption); cursor: pointer; white-space: nowrap;
@@ -3445,7 +3451,7 @@
   .hier-2 .cv-subg-lab { color: #9a9a9a; margin: 6px 0 6px; }
   .hier-3 .grp { border-top: 0; margin-top: var(--space-12); padding-left: var(--space-10); border-left: 3px solid var(--brand-cyan); }
   .hier-3 .cv-subg { margin: 2px 0 8px 4px; padding-left: var(--space-10); border-left: 2px solid #dcdcdc; }
-  .hier-4 .grp { border-top: 0; margin-top: var(--space-10); background: #f5f5f6; border-radius: 10px; padding: 9px 11px; }
+  .hier-4 .grp { border-top: 0; margin-top: var(--space-10); background: #f5f5f6; border-radius: var(--radius-input); padding: 9px 11px; }
   .hier-4 .cv-subg { margin: 7px 0 2px; padding: var(--space-8) var(--space-10); background: var(--surface-white); border: 1px solid #ececec; border-radius: 8px; }
   .hier-4 .cv-subg-lab { color: #808080; margin: 0 0 6px; }
   .hier-5 .grp { border-top: 0; margin-top: var(--space-16); }
@@ -3548,7 +3554,7 @@
   .pset-select { flex: 1 1 auto; min-width: 0; font-size: var(--fs-caption); padding: var(--space-5) var(--space-8); border: 1px solid #ddd; border-radius: 8px; background: var(--surface-white); color: #333; }
   /* 【2026-08-27 ヒデさん指定】✎ で 1/2/3 を打たせるのをやめ、小さなメニューにした */
   .pmenu { position: fixed; z-index: 120; background: var(--surface-white); border: 1px solid #e4e4e4; border-radius: 9px;
-           box-shadow: 0 8px 24px rgba(0,0,0,.16); padding: var(--space-4); min-width: 138px; }
+           box-shadow: 0 8px 24px var(--line-soft); padding: var(--space-4); min-width: 138px; }
   .pmenu button { display: block; width: 100%; text-align: left; border: 0; background: none;
                   font-family: inherit; font-size: var(--fs-caption); padding: var(--space-8) var(--space-10); border-radius: var(--radius-btn);
                   cursor: pointer; color: #222; }
@@ -3596,7 +3602,7 @@
          box-shadow: 0 18px 50px rgba(0,0,0,.24); font-size: var(--fs-caption); color: #222; }
   .mdl h4 { margin: 0 0 6px; font-size: var(--fs-body); font-weight: 600; }
   .mdl p { margin: 0 0 14px; font-size: var(--fs-caption); line-height: var(--lh-normal); color: #777; }
-  .mdl-list { max-height: 260px; overflow-y: auto; margin: 0 0 12px; }
+  .mdl-list { max-height: 260px; overflow-y: auto; margin: 0 0 var(--space-12); }
   .mdl-li { display: flex; align-items: center; gap: var(--space-8); padding: var(--space-8) var(--space-4);
             border-bottom: 1px solid #f0f0f0; font-size: 11.5px; color: #333; }
   .mdl-li:last-child { border-bottom: 0; }
@@ -3650,7 +3656,7 @@
   /* 開閉トグルは見出しの右端。押しやすいサイズに (2026-08-26 ヒデさん指定) */
   .grp-chev { flex: 0 0 auto; margin-left: var(--space-6); width: 24px; height: 24px; line-height: 22px; text-align: center;
               color: #9a9a9a; font-size: var(--fs-body); border: 1px solid transparent; border-radius: 8px;
-              transition: transform .18s, background .15s, color .15s; }
+              transition: transform var(--t-tap), background .15s, color .15s; }
   .grp-title:hover .grp-chev { background: #f2f2f2; color: #333; }
   .grp.closed .grp-chev { transform: rotate(-90deg); }
   .grp.closed .grp-body { display: none; }
@@ -3680,12 +3686,12 @@
     flex: 1;
     font-family: inherit;
     font-size: var(--fs-caption);
-    padding: 8px 0;
+    padding: var(--space-8) 0;
     border-radius: 8px;
     border: 1px solid #d8d8d8;
     background: var(--surface-white);
     cursor: pointer;
-    transition: background .2s;
+    transition: background var(--t-tap);
   }
   .btns button:hover { background: #f2f2f2; }
   .btns button.primary { background: var(--surface-cta); color: var(--ink-on-dark); border-color: #090909; }
