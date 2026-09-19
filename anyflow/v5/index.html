@@ -6213,10 +6213,17 @@ function save() {
    いまは【触っている間は画面で試せるだけ／保存ボタンを押して初めて残る】。
    dirty = 保存していない変更があるか */
 let dirty = false;
+let varCaptureReady = false;   /* 【2026-09-20】起動時の案適用が済むまで、markDirty での即時控えを止める門番(起動途中の初期値で控えを汚さない) */
 let syncSaveBtn = null;   /* パネルを組む時に、保存ボタンの表示を更新する関数が入る */
 function markDirty() {
   dirty = true; if (syncSaveBtn) syncSaveBtn(); if (syncPresetPills) syncPresetPills();
   if (typeof gfxTouchVariant === 'function') gfxTouchVariant();
+  /* 【2026-09-20 ヒデさん報告・巻き戻りの根治強化】つまみを触った瞬間に、選択中の案の控え(gfxVarOverride)を
+     【メモリ内だけ】即時更新する。これで 0.8秒の自動保存を待たずに案を選び直しても・パネルが再描画されても
+     applyKvVariant が『いまの値』を再適用する(＝焼き込み値に戻らない)。localStorage への書き込みは下のデバウンスで。
+     ⚠️ 起動が終わる(案の焼き込み適用が済む)までは動かさない。起動途中の初期値を控えに焼くと、
+        その後の applyKvVariant が壊れた控えを適用して逆に焼き込み値へ戻ってしまうため(varCaptureReady で門番)。 */
+  if (varCaptureReady) { try { if (typeof varAutoCapture === 'function') varAutoCapture(true); } catch (e) {} }
   /* 【2026-09-01 ヒデさん指定】調整は自動で保存する(リロード・ブラウザを閉じても引き継ぐ)。
      以前は「保存ボタンを押して初めて残る」設計(2026-08-19)だったが、押し忘れると
      調整が消える方が困る、との指定で自動保存に変更。連続ドラッグ中は書かない(0.8秒デバウンス)。 */
@@ -14456,7 +14463,7 @@ setTimeout(function applyOverrideOnBoot() {
 }, 0);
 /* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
 setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
-setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映 */
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁(varCaptureReady) */
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -17225,11 +17232,13 @@ const VAR_AUTOSAVE = [
   { bucket: 'kvVar',     sel: () => kvVarKey(),     snap: () => VAR_SNAP.kvVar,     base: (key) => { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; const d = ((KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0]).data) || {}; return { kv: pick(d.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, d.kvGfx), planet: Object.assign({}, d.planet), mesh: pick(d.mesh, KV_VAR_MESH_KEYS) }; } },
 ];
 function varAutoInfo(bucket) { return VAR_AUTOSAVE.find(b => b.bucket === bucket) || null; }
-/* いまの見た目を、選択中の案の控えへ書き込む(自動保存のたびに) */
-function varAutoCapture() {
+/* いまの見た目を、選択中の案の控えへ書き込む(自動保存のたびに)
+   skipStore=true のときは localStorage 書き込み(重い presetStoreSave)を省いて【メモリ内の控えだけ】即時更新する。
+   → つまみを触った瞬間に控えが最新になるので、0.8秒の自動保存を待たずに案を選び直しても・再描画されても戻らない。 */
+function varAutoCapture(skipStore) {
   if (!params) return; if (!params.gfxVarOverride) params.gfxVarOverride = {};
   for (const b of VAR_AUTOSAVE) { try { const snap = b.snap(); if (!snap) continue; const key = String(b.sel()); if (!params.gfxVarOverride[b.bucket]) params.gfxVarOverride[b.bucket] = {}; params.gfxVarOverride[b.bucket][key] = JSON.parse(JSON.stringify(snap.get())); } catch (e) {} }
-  try { presetStoreSave(); } catch (e) {}
+  if (!skipStore) { try { presetStoreSave(); } catch (e) {} }
 }
 /* 起動時: 選択中の案の控えを画面へ適用(リロードで戻らないように) */
 function varApplyOverridesAtStartup() {
