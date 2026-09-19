@@ -12240,8 +12240,13 @@ const VIS_MESHES = [
 function vfVarKey() { const v = String(vfCfg().variant || 'dome'); return (VIS_MESHES.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visMesh', v))) ? v : 'dome'; }
 function vfApplyVariant(key) { const m = VIS_MESHES.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.variant = key; vfMesh = null; applyVfFade(); }   /* scale=メッシュの大きさ(2026-09-19 ヒデさん指定で 1.15・仮置き)。機能名の文字サイズは変えず位置だけ中心から外へ */
 const VF_CX = 291, VF_CY = 315;   /* 球の中心(容器座標。カンプ: ケージ(29,49)＋(262,266)) */
-function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; return Object.assign({}, VF_DEF, v.dome); }
-function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; v.dome[k] = val; applyVfFade(); }
+/* 【2026-09-20 ヒデさん依頼・#3 PC/SP独立】ビジョンのメッシュの設定を PC(dome) と SP(domeMb) で分ける。
+   描画: SP(isMobile)の時だけ domeMb を dome に重ねる＝PCは domeMb を一切見ない(SPの調整がPCに出ない)。 */
+function _vfPhoneOn() { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } }
+function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; const c = Object.assign({}, VF_DEF, v.dome); if ((typeof isMobile !== 'undefined' && isMobile) && v.domeMb) Object.assign(c, v.domeMb); return c; }
+/* パネルのつまみの表示用: スマホモード中は SP 上書き(domeMb)を重ねて見せる(PCでいじる値と分ける) */
+function vfCfgVal(k) { const v = params.sections.vision; if (_vfPhoneOn() && v.domeMb && v.domeMb[k] != null) return v.domeMb[k]; if (v.dome && v.dome[k] != null) return v.dome[k]; return VF_DEF[k]; }
+function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; if (_vfPhoneOn()) { if (!v.domeMb) v.domeMb = {}; v.domeMb[k] = val; } else { v.dome[k] = val; } applyVfFade(); }
 /* 【2026-09-19 ヒデさん依頼】メッセージの下の余白: 図(ドーム)と Point 01/02 を同じ量だけ下へ(PC。既定 50px は仮置き) */
 function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-below', (v.belowGap != null ? v.belowGap : 50) + 'px'); }
 applyVisBelow();
@@ -16654,15 +16659,20 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
       input.min = nlo; input.max = nhi; input.value = v;
     }
   });
+  const _mbOn = () => { try { return (opts && typeof opts.mbActive === 'function') && (typeof _vfPhoneOn === 'function') && _vfPhoneOn() && opts.mbActive(); } catch (e) { return false; } };
   row._sync = () => {
     /* 外から値が変わった時(プリセット・案の切替・直接編集)も、範囲から外れないようにする */
     const v = get();
     if (v < +input.min || v > +input.max) { const r = rangeFor(v); input.min = r.lo; input.max = r.hi; }
     input.value = v; val.textContent = f(v);
+    /* 【2026-09-20 ヒデさん依頼・#2】スマホモード中に SP 専用の上書きがある項目はブルーで印(row.mb-override) */
+    try { row.classList.toggle('mb-override', !!_mbOn()); } catch (e) {}
   };
-  row.append(lab, input, val, mkReset(get, set, () => row._sync(), isLive));
+  const _rst = mkReset(get, set, () => row._sync(), isLive);
+  if (opts && typeof opts.mbClear === 'function') { const _oc = _rst.onclick; _rst.onclick = (e) => { if (_mbOn()) { if (e) e.stopPropagation(); opts.mbClear(); markDirty(); row._sync(); } else if (_oc) _oc(e); }; }
+  row.append(lab, input, val, _rst);
   /* セクション単位のリセット対象に登録 */
-  if (subItems) subItems.push({ reset: () => { const d = defaultOf(get); if (d != null) { set(d); row._sync(); } } });
+  if (subItems) subItems.push({ reset: () => { if (_mbOn() && opts.mbClear) { opts.mbClear(); row._sync(); } else { const d = defaultOf(get); if (d != null) { set(d); row._sync(); } } } });
   mount.appendChild(row);
   if (hint) {
     lab.title = hint;          /* 出さない代わりに、項目名にマウスを乗せれば読める */
@@ -18374,7 +18384,7 @@ function buildPanel() {
   /* 【2026-09-19 ヒデさん依頼】メッシュの案(案1 ドーム=既定 / 案2 KV のメッシュ)。⋯で上書き/削除可 */
   varRowX('visMesh', VIS_MESHES, () => vfVarKey(), v => { vfApplyVariant(String(v)); markDirty(); }, { autosave: true, snap: VAR_SNAP.visMesh, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと下のつまみ(回転・傾き・線・点・細かさ・パケット)にその案の値が入ります。細かく変えたら ⋯「この設定で上書き」でその案に保存。');
-  const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true }, o || {})));
+  const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfgVal(key), v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true, mbActive: () => { const _v = params.sections.vision; return !!(_v && _v.domeMb && _v.domeMb[key] != null); }, mbClear: () => { const _v = params.sections.vision; if (_v && _v.domeMb) { delete _v.domeMb[key]; applyVfFade(); } } }, o || {})));
   /* 【2026-09-19 ヒデさん依頼「似ている情報はグループに・重複は省く」】セット／網目の位置と向き／網目の見た目／ロゴ の4組に。
      「網目の半径」は「網目だけの奥行き Z」と同じ働き(網目だけの拡大縮小)なので省いた(値 r は案ごとの既定として残る) */
   note('▼ セット（網目＋ロゴ＋機能名）の位置と大きさ。真ん中(0)＝いまの位置');
