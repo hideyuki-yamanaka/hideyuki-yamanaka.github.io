@@ -865,7 +865,7 @@
      出現は updateVision の mi(ブラー)。位置は ✏️編集(TEXT_SPEC vfWrap)でずらせる */
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図＝網目のドーム(Figma 18004:38228)。容器はカンプのグループ座標(ステージ x165 / y245・600×600)。
      下半球はカンプの「地色のレイヤーブラー(75px)矩形」の代わりに mask で上→下へ消す(--vf-fade-a/b は JS applyVfFade) */
-  .vf-wrap { position: absolute; left: 165px; top: 245px; width: 640px; height: 600px; }
+  .vf-wrap { position: absolute; left: 165px; top: calc(245px + var(--vis-below, 0px)); width: 640px; height: 600px; }   /* --vis-below=メッセージ→図・ポイントの間隔(ビジョンタブ) */
   /* 【2026-09-19 ヒデさん指摘「ロゴがかすむ」】下半球のフェード(mask)は網目の canvas だけに。ロゴと機能名は常にくっきり(以前は容器ごとかけていてロゴの高さが薄れる帯に入っていた) */
   /* 【2026-09-19 ヒデさん依頼「メッシュを大きく・文字はそのまま」】canvas は 900px(左上 −150)で、球の中心(容器 291,315)は変えずに半径だけ拡大できる。mask の位置は JS(applyVfFade)が px で入れる */
   .vf-wrap .vf-dome { position: absolute; left: -150px; top: -150px; width: 900px; height: 900px; display: block;
@@ -890,8 +890,8 @@
   }
   /* 【2026-09-02 ヒデさん指定】「連携が生む、2つの価値」見出しは削除済み(DOM/CSS/JSごと)。 */
   .val-point { position: absolute; width: var(--vp-width, 328px); color: var(--ink); }   /* 2026-09-03: 横幅もパネル調整可 */
-  .val-p1 { left: -98px; top: 290px; }    /* 【2026-09-19】カンプ ベース(17753:27563): Point01 x877 y1214 → ステージ x877(=975−98) y290(=1214−924)。旧 x895 y347 */
-  .val-p2 { left: -7px; top: 468px; }     /* 【2026-09-19】カンプ: Point02 x968 y1392 → ステージ x968 y468。旧 x975 y551 */
+  .val-p1 { left: -98px; top: calc(290px + var(--vis-below, 0px)); }    /* 【2026-09-19】カンプ ベース(17753:27563): Point01 x877 y1214 → ステージ x877(=975−98) y290(=1214−924)。旧 x895 y347 */
+  .val-p2 { left: -7px; top: calc(468px + var(--vis-below, 0px)); }     /* 【2026-09-19】カンプ: Point02 x968 y1392 → ステージ x968 y468。旧 x975 y551 */
   .val-point .vp-tag {
     display: flex;
     align-items: center;
@@ -5422,7 +5422,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919170000;
+const SHIPPED_GENERATION = 20260919180000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -12080,6 +12080,9 @@ const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.32, dot: 2.2, fadeA
 const VF_CX = 291, VF_CY = 315;   /* 球の中心(容器座標。カンプ: ケージ(29,49)＋(262,266)) */
 function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; return Object.assign({}, VF_DEF, v.dome); }
 function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; v.dome[k] = val; applyVfFade(); }
+/* 【2026-09-19 ヒデさん依頼】メッセージの下の余白: 図(ドーム)と Point 01/02 を同じ量だけ下へ(PC。既定 50px は仮置き) */
+function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-below', (v.belowGap != null ? v.belowGap : 50) + 'px'); }
+applyVisBelow();
 function applyVfFade() {
   const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
   /* 下のフェード: 容器の高さ(600)に対する割合を、中心基準で拡大して canvas(上 −150)の px に */
@@ -18252,6 +18255,9 @@ function buildPanel() {
     'ぼけた状態から出きるまでの時間。'));
   rows.push(slider('1文字ずつずらす', -0.9, 0.9, 0.05, () => sv().vision.charLag, v => sv().vision.charLag = v, v => Math.round(v * 100) + '%',
     '真ん中(0)で行まるごと同時。左右どちらへ動かしても1文字ずつバラバラに出ます。', { signed: true }));
+  /* 【2026-09-19 ヒデさん依頼】メッセージの下の余白 */
+  rows.push(slider('メッセージ→図・ポイントの間隔', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
+    'メッセージの下にどれだけ余白を取るか。図(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px は仮置き。', { fixedMax: true }));
   /* 【2026-09-15 ヒデさん指定】「つなぐ／強み」の揺らぎのグラデ: くすまない鮮やかな配色 3案(色味はブランド色のまま)＋つまみ */
   sub(catVis, '揺らぎのグラデ（つなぐ／強み）の配色', true, { fixed: true });
   varRowX('visGrad', VIS_GRADS, () => visGradKey(), v => { visApplyGrad(String(v)); }, { snap: VAR_SNAP.vision, after: () => { applyVisGrad(); } });
