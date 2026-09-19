@@ -105,6 +105,7 @@
 | H152 | 【優先バグ】KVコピー・惑星・カゴの大きさ等を変えデフォルトにしても巻き戻る | ✅ 原因: 起動時 applyKvVariant(kvVarKey) が KV案(kvVar)の焼き込み値(kv/kvGfx/planet/mesh)を再適用し、ユーザー変更を上書き。上書き控えが無いと戻る(gxはkvVar対象外なので残っていた)。修正: kvVar を VAR_AUTOSAVE に追加(保存のたびに gfxVarOverride.kvVar[案]=いまの値)＋save()冒頭でvarAutoCapture()を呼ぶ(デフォルト設定ボタンの経路もカバー)。Playwrightで planet2.4/cageR3.3/gx77 がリロード後も保持を確認 |
 | H153 | 実績の数値訴求に4つ目「iPaasサービス No.1」を追加(Figma 17950:34275) | ✅ 導入企業/連携実績/連携アプリ数 の右に iPaasサービス No.1(数えない=静的span)。PCは数値70→60px・間隔44→40で1行に収める(overflow無し確認)。SPは横並び4がきついので 2×2(flex-wrap＋各50%)。ラベル16px/Noto・数値SF。Playwrightで PC4項目1行・SP2×2 を確認 |
 | H154 | ビジョンの機能名5つ: セット移動＋個別移動の調整パネル | ✅ ビジョン③に「機能名ぜんぶ 左右/上下」(labGX/labGY・5つまとめて)＋個別エディタ(コネクタ〜実行エンジン各 横/縦)。applyVfFadeで全体＋個別オフセットを加算。位置は params.sections.vision.dome(labGX/labGY/labOff)に保存(案切替・上書きで消えない)。Playwrightで全体+50/+30・個別+40を確認 |
+| H155 | SP実績の見出し＋数値を中央揃え | ✅ SP(rfx-24/25)の .r2s に align-items:center・text-align:center。PCは左揃えのまま(SP限定)。2×2で各項目中央 |
 
 ### 🟡 仮置き（違ったら1行で直せる）
 - **惑星の大きさ**: ヒデさんのローカルは 130%(球の直径 429px)、カンプ実測に合わせた値は 99%(直径 311px)。今回はローカルの値を触っていない(本番の焼き込みは 99% のまま)。どちらを正にするか要確認
