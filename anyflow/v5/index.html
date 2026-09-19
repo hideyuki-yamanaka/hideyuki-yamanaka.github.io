@@ -18080,32 +18080,7 @@ function buildPanel() {
     ];
     var fillGlowSub = function () {
       const keep = mount; mount = echoBox; echoBox.innerHTML = '';
-      if ((params.conv.glowKind || 'pulse') === 'echo') {
-        /* 見出し「バリエーション」= 上の選択ピル(種類)と、下の番号ピル(エコーの見た目)を分ける。
-           ⚠️ sub() は使わない(reset のグループを奪ってしまうため)。見た目だけの見出し。 */
-        { const vh = document.createElement('div'); vh.className = 'grp sub2 fixed';
-          const vt = document.createElement('div'); vt.className = 'grp-title'; vt.textContent = 'バリエーション';
-          vh.appendChild(vt); (mount || body).appendChild(vh); }
-        varRowX('glowEcho', ECHOES, () => params.conv.glowEcho || 'k1', v => { params.conv.glowEcho = v; }, { snap: VAR_SNAP.conv });
-        segRow('残像の輪郭', [['くっきり', 1], ['なめらか', 0]],
-          () => (params.conv.echoCrisp ? 1 : 0),
-          v => { params.conv.echoCrisp = !!v; markDirty(); renderFrame(); });
-        slider('広がる速さ', 0.15, 2.5, 0.05, () => params.conv.echoSpeed, v => params.conv.echoSpeed = v,
-          v => '×' + v.toFixed(2),
-          '左へ動かすほどゆっくり広がります。1コマの変化が小さくなるので、なめらかに見えます。');
-        slider('重ねる枚数', 1, 6, 1, () => params.conv.echoShells, v => params.conv.echoShells = v, v => v + '枚',
-          '1回の取り込みで何枚重ねるか。多いほど層が細かくなり、段差が目立ちにくくなります。'
-          + '（5〜7の溶ける案では「どれだけ細かく溶かすか」になります。多いほど滑らか）');
-        slider('広がる幅', 0.05, 0.9, 0.01, () => params.conv.echoSpread, v => params.conv.echoSpread = v,
-          v => '×' + v.toFixed(2), '残像がどこまで大きくなるか。小さいほど動きが穏やかです。');
-        slider('始まりの大きさ', 1.0, 1.6, 0.01, () => params.conv.echoStart, v => params.conv.echoStart = v,
-          v => '×' + v.toFixed(2), '惑星の何倍から出はじめるか。1.00 に近いほど惑星に隠れて見えにくくなります。');
-        slider('残像の濃さ', 0.1, 3, 0.05, () => params.conv.echoAlpha, v => params.conv.echoAlpha = v,
-          v => '×' + v.toFixed(2), '右へ動かすほど残像がはっきり見えます。全部の案に効きます。');
-        slider('消え方のなめらかさ', 0.4, 4, 0.05, () => params.conv.echoFade, v => params.conv.echoFade = v,
-          v => '×' + v.toFixed(2),
-          '右へ動かすほど、最後まで濃く残ってスッと消えます。パッと消える感じが減ります。');
-      }
+      /* 【2026-09-19 ヒデさん依頼】エコーの「バリエーション／残像の輪郭／詳細つまみ」は削除(使わないため)。エコーの見た目は現在の params.conv のまま固定。 */
       mount = keep;
     };
     fillFxPeriod();
@@ -18117,18 +18092,7 @@ function buildPanel() {
     '取り込んだぶんが半分に戻るまでの時間。右へ動かすほど、強くなった状態が長く残ります（Aパルス以外で効きます）。');
 
   /* 【2026-09-17 大掃除・ヒデさん指定】「自由回転」(XYZ回転の枠・開始地点ボタン)は削除。メッシュ案では使っていない。 */
-  /* ---------- 惑星（模様） ---------- */
-  sub(gRoot, '惑星（模様）', true);
-  const PLANET_SKINS = [
-    { key: 'A1', name: '1 ビビッドブルー' },
-    { key: 'A2', name: '2 ピンク×ブルー' },
-    { key: 'A3', name: '3 ライトグレイン' },
-    { key: 'B',  name: '4 ハーフトーン' },
-    /* 【2026-09-09 ヒデさん指定】5〜7(N1/N2/N3・溶け新版)は削除。惑星スキンは1〜4のみ。
-       本番の design は "B"(4) なので選択肢削除で本番は不変。 */
-  ];
-  varRowX('planetSkin', PLANET_SKINS, () => params.design, v => { params.design = v; },
-    { snap: VAR_SNAP.planet, after: (isLive => () => applyEdit(isLive, true))(liveEdit), reset: { get: () => params.design, set: v => { params.design = v; renderFrame(); } } });
+  /* 【2026-09-19 ヒデさん依頼】「惑星（模様）」の案の欄は削除(使わないため)。惑星スキンは現在の params.design のまま固定。 */
   /* 【2026-09-17 ヒデさん指定】「大きさ」のつまみは「メッシュ（網）の形」の中(ノードの数の下・カゴの大きさの上)へ移動 */
   /* 【2026-09-09 ヒデさん指定】惑星の「つぶし」項目は削除。真円(flat=1)に固定＝焼き込み。
      実装は params.planet.flat 未設定時 1(真円) が既定なので挙動不変。 */
@@ -18139,20 +18103,7 @@ function buildPanel() {
      惑星案に絞った今、その iframe は表示されていないので何も効かない。
      実測: 4つのつまみを動かしても、描画中の円・楕円の位置と濃さが1つも変わらなかった。 */
   subDefaultOpen = false;     /* グラフィックはここまで */
-  /* 【2026-09-18 ヒデさん依頼】ロゴ帯の目視の微調整(ロゴごとに 上下 / 左右の余白) */
-  sub(catKv, 'ロゴ帯（目視の微調整）', null, { fixed: true });
-  note('デザインデータ上は揃っていても、目で見ると上下や間隔がずれて見えるぶんの補正。上下は＋で下・−で上(px)、余白は左右それぞれに足す量(px・−で詰める)。既定値は見える部分の重心と濃さの実測から。');
-  { if (!document.getElementById('logoRowCss')) { const st = document.createElement('style'); st.id = 'logoRowCss'; st.textContent = '.logo-row .txt-ctl{display:flex;gap:4px;align-items:center}.logo-row input.txt-n{width:56px;font-size:11px;padding:2px 4px}.logo-row .txt-lab{font-size:10px;opacity:.65;margin-left:4px}'; document.head.appendChild(st); }
-    const LT = () => (params.logoTune = params.logoTune || {});
-    LOGO_KEYS.forEach(k => {
-      const row = document.createElement('div'); row.className = 'row logo-row'; const lab = document.createElement('label'); lab.textContent = LOGO_NAMES[k]; row.appendChild(lab);
-      const box = document.createElement('div'); box.className = 'txt-ctl';
-      const numIn = (title, key, step, min, max) => { const i = document.createElement('input'); i.type = 'number'; i.className = 'txt-n'; i.title = title; i.step = step; i.min = min; i.max = max; i.value = (LT()[k] && LT()[k][key] != null) ? LT()[k][key] : 0; i.oninput = () => { LT()[k] = LT()[k] || {}; LT()[k][key] = i.value === '' ? 0 : parseFloat(i.value); applyLogoTune(); markDirty(); }; i.onpointerdown = ev => ev.stopPropagation(); return i; };
-      const mkLab = (t, el) => { const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; box.append(l, el); };
-      mkLab('上下', numIn('上下(px・＋で下)', 'dy', '0.5', '-10', '10')); mkLab('余白', numIn('左右それぞれに足す余白(px)', 'mx', '1', '-20', '30'));
-      row.appendChild(box); (mount || body).appendChild(row);
-    });
-  }
+  /* 【2026-09-19 ヒデさん依頼】「ロゴ帯（目視の微調整）」の欄は削除(使わないため)。位置は現在の params.logoTune のまま固定。 */
   /* 【2026-08-27 ヒデさん指定】「左側コピー」に改名し、順番 / タイミング に分ける */
   sub(catKv, '左側コピー');
   const copyRoot = mount;
@@ -18923,7 +18874,7 @@ function buildPanel() {
      境界(溶け込み)/余白・高さ の選択UIは削除。今の値(フォーム直置き・明るいリキッドグラス・放射グラデ・標準の溶け込み・余白120/0/0/60)に固定＝焼き込み。 */
   sub(catCv, 'フォーム（横幅・磨りガラスの細かい調整）'); B.formStyle();
   sub(catCv, '粒（ディザ）と流れ'); B.dither();
-  subgroup('グラデの案（動き・色）と流れ', () => { B.flow(); });   /* 2026-09-19: 案の欄はここ1つに(色の移ろいの欄は統合) */
+  /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
   sub(catCv, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
   note('お問い合わせとフッターの文字ごとに 太さ・行間・字間(Contact・見出し・本文・フォームの項目名/入力欄・送信ボタン・フッター)。空欄＝今のCSSの値(カッコ内)。');
