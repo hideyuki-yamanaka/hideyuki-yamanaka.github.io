@@ -12,6 +12,7 @@
 |---|---|---|
 | **どのプロダクトにも効く話** | `settings/docs/general/` | 進め方のルール・カンプの読み方・Vercel の運用 |
 | **特定のプロダクトの話** | `settings/docs/<プロダクト名>/` | 網走サイトのデザインシステム・anyflow の引き継ぎ書 |
+| [anyflow/LIVE-SYNC.md](anyflow/LIVE-SYNC.md) | スマホ実機ライブ同期(QR・PC調整→スマホ即反映)の使い方と仕組み |
 
 - フォルダ名は**プロダクトのフォルダ名とそろえる**（`abashiri/` の資料 → `settings/docs/abashiri/`）
 - 新しいプロダクトの資料が出てきたら、`settings/docs/` に同じ名前のフォルダを作って入れる

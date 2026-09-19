@@ -19701,6 +19701,139 @@ textTools.applyAll();
 document.getElementById('panelBody').addEventListener('click', () => {
   requestAnimationFrame(() => { openPanelDownward(); keepPanelInView(); });
 });
+
+/* ============================================================================
+   【2026-09-19 ヒデさん依頼】スマホ実機ライブ同期
+   ・?live=phone … スマホ側。PCの調整を受け取り、保存し直してリロード表示(スクロール位置は保つ)。
+   ・それ以外(PC) … 右下に「📱」ボタン。QR/URL を出し、同期ONでPCの保存のたびに設定を送る。
+   中継サーバ: node anyflow/v5/tools/live-sync.mjs (:8779)。本体ページは既存 :8778(LAN公開)。
+   ============================================================================ */
+(function liveSync() {
+  var SYNC = location.protocol + '//' + location.hostname + ':8779';
+  var mode = (new URLSearchParams(location.search).get('live') || '').toLowerCase();
+  /* 開発(ローカル/LAN)だけで動かす。本番(vercel等)では同期UIもスマホ処理も出さない */
+  var isDev = /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
+  if (!isDev) return;
+
+  /* ---------------- スマホ側: 受信してリロード ---------------- */
+  if (mode === 'phone') {
+    try { document.documentElement.classList.add('live-phone'); } catch (e) {}
+    var st = document.createElement('style');
+    st.textContent = '.tools{display:none!important}'
+      + '.live-badge{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:2147483647;'
+      + 'background:rgba(17,24,39,.82);color:#fff;font:600 11px/1 -apple-system,system-ui,sans-serif;'
+      + 'padding:7px 10px;border-radius:999px;letter-spacing:.02em;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}'
+      + '.live-badge.off{background:rgba(190,40,40,.9)}';
+    document.head.appendChild(st);
+    var badge = document.createElement('div'); badge.className = 'live-badge'; badge.textContent = '📱 PCと接続中…';
+    document.body.appendChild(badge);
+    /* リロードをまたいでスクロール位置を保つ */
+    try { var sv = sessionStorage.getItem('anyflow-live-scroll'); if (sv != null) { var y = +sv; requestAnimationFrame(function () { window.scrollTo(0, y); setTimeout(function () { window.scrollTo(0, y); }, 60); }); } } catch (e) {}
+    var reloadT = null, firstMsg = true;
+    function applyIncoming(text) {
+      try {
+        var d = JSON.parse(text);
+        if (d && typeof d === 'object' && 'main' in d) {
+          if (d.main != null) localStorage.setItem('anyflow-embed-anim-v81', d.main); else localStorage.removeItem('anyflow-embed-anim-v81');
+          if (d.preset != null) localStorage.setItem('anyflow-gfx-presets', d.preset); else localStorage.removeItem('anyflow-gfx-presets');
+          /* 焼き込み世代ガードに勝てるよう、世代印も最新にしておく(本番ドメインでも同期が消えない) */
+          try { localStorage.setItem('anyflow-shipped-gen', '99999999999999'); } catch (e) {}
+        }
+      } catch (e) { return; }
+      badge.classList.remove('off'); badge.textContent = '📱 PCと同期中';
+      clearTimeout(reloadT);
+      reloadT = setTimeout(function () {
+        try { sessionStorage.setItem('anyflow-live-scroll', String(window.scrollY || window.pageYOffset || 0)); } catch (e) {}
+        location.reload();
+      }, firstMsg ? 120 : 260);
+      firstMsg = false;
+    }
+    function connect() {
+      var es;
+      try { es = new EventSource(SYNC + '/events'); } catch (e) { badge.classList.add('off'); badge.textContent = '📱 同期サーバに接続できません'; return; }
+      es.onmessage = function (ev) { if (ev && ev.data) applyIncoming(ev.data); };
+      es.onerror = function () { badge.classList.add('off'); badge.textContent = '📱 再接続中…'; };
+      es.onopen = function () { badge.classList.remove('off'); badge.textContent = '📱 PCと同期中'; };
+    }
+    connect();
+    return;
+  }
+
+  /* ---------------- PC側: QR/URL + 送信 ---------------- */
+  window.__liveSyncOn = false;
+  function liveSyncPush() {
+    if (!window.__liveSyncOn) return;
+    var payload;
+    try { payload = JSON.stringify({ main: localStorage.getItem('anyflow-embed-anim-v81'), preset: localStorage.getItem('anyflow-gfx-presets') }); } catch (e) { return; }
+    try { fetch(SYNC + '/push', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload }).catch(function () {}); } catch (e) {}   /* keepalive は付けない: 設定JSONが64KB超だと keepalive fetch は無言で失敗する(2026-09-19 実測) */
+  }
+  window.liveSyncPush = liveSyncPush;
+  /* 保存(save)のたびに送る。save は既存の関数。ラップして「保存 → 同期送信」に */
+  try { if (typeof save === 'function') { var _origSave = save; save = function () { var r = _origSave.apply(this, arguments); try { liveSyncPush(); } catch (e) {} return r; }; } } catch (e) {}
+
+  var css = document.createElement('style');
+  css.textContent =
+    '.live-fab{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147483000;width:44px;height:44px;border-radius:50%;'
+    + 'border:1px solid rgba(0,0,0,.08);background:#fff;box-shadow:0 6px 20px rgba(16,24,40,.18);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:transform .15s}'
+    + '.live-fab:hover{transform:translateY(-1px)}.live-fab.on{background:#0e5cff;border-color:#0e5cff}'
+    + '.live-pop{position:fixed;left:12px;bottom:64px;z-index:2147483000;width:250px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;'
+    + 'box-shadow:0 12px 40px rgba(16,24,40,.22);padding:14px;font:400 12px/1.5 -apple-system,system-ui,sans-serif;color:#222;display:none}'
+    + '.live-pop.show{display:block}.live-pop h4{margin:0 0 8px;font-size:12px;font-weight:700}'
+    + '.live-pop .qr{width:190px;height:190px;margin:2px auto 8px;display:block;background:#f4f4f5;border-radius:8px}'
+    + '.live-pop .url{word-break:break-all;background:#f4f4f5;border-radius:7px;padding:6px 8px;font-size:11px;color:#333;margin-bottom:8px}'
+    + '.live-pop .row{display:flex;gap:6px;align-items:center;margin-top:8px}'
+    + '.live-pop button{flex:1;border:1px solid rgba(0,0,0,.1);background:#fff;border-radius:8px;padding:7px;font:600 12px/1 inherit;cursor:pointer}'
+    + '.live-pop button.pri{background:#0e5cff;color:#fff;border-color:#0e5cff}.live-pop button.pri.on{background:#111;border-color:#111}'
+    + '.live-pop .st{font-size:11px;color:#666;margin-top:8px;min-height:15px}.live-pop .err{color:#c0392b}';
+  document.head.appendChild(css);
+
+  var fab = document.createElement('div'); fab.className = 'live-fab'; fab.title = 'スマホと同期'; fab.textContent = '📱';
+  var pop = document.createElement('div'); pop.className = 'live-pop';
+  pop.innerHTML = '<h4>📱 スマホ実機プレビュー</h4>'
+    + '<img class="qr" alt="QR">'
+    + '<div class="url">読み込み中…</div>'
+    + '<div class="row"><button class="pri" id="lvToggle">同期を開始</button><button id="lvCopy">URLコピー</button></div>'
+    + '<div class="st"></div>';
+  document.body.appendChild(fab); document.body.appendChild(pop);
+  var qrImg = pop.querySelector('.qr'), urlEl = pop.querySelector('.url'), stEl = pop.querySelector('.st'),
+      tgl = pop.querySelector('#lvToggle'), copyBtn = pop.querySelector('#lvCopy');
+  var phoneUrl = '', ipInfo = null, statusT = null;
+
+  function refreshStatus() {
+    fetch(SYNC + '/ip').then(function (r) { return r.json(); }).then(function (j) {
+      ipInfo = j; phoneUrl = j.phoneUrl;
+      urlEl.textContent = phoneUrl; urlEl.classList.remove('err');
+      qrImg.src = SYNC + '/qr?t=' + Date.now();
+      var n = j.clients || 0;
+      stEl.classList.remove('err');
+      stEl.textContent = window.__liveSyncOn
+        ? ('同期ON ・ つないでいるスマホ ' + n + '台')
+        : ('スマホでQRを読む → 「同期を開始」を押す（' + n + '台接続中）');
+    }).catch(function () {
+      urlEl.textContent = '同期サーバが起動していません'; urlEl.classList.add('err');
+      qrImg.removeAttribute('src');
+      stEl.classList.add('err');
+      stEl.textContent = 'ターミナルで次を実行:  node anyflow/v5/tools/live-sync.mjs';
+    });
+  }
+  fab.addEventListener('click', function () {
+    var show = !pop.classList.contains('show'); pop.classList.toggle('show', show);
+    if (show) { refreshStatus(); statusT = setInterval(refreshStatus, 3000); }
+    else { clearInterval(statusT); }
+  });
+  tgl.addEventListener('click', function () {
+    window.__liveSyncOn = !window.__liveSyncOn;
+    fab.classList.toggle('on', window.__liveSyncOn);
+    tgl.classList.toggle('on', window.__liveSyncOn);
+    tgl.textContent = window.__liveSyncOn ? '同期を停止' : '同期を開始';
+    if (window.__liveSyncOn) liveSyncPush();
+    refreshStatus();
+  });
+  copyBtn.addEventListener('click', function () {
+    if (!phoneUrl) return;
+    try { navigator.clipboard.writeText(phoneUrl); copyBtn.textContent = 'コピーしました'; setTimeout(function () { copyBtn.textContent = 'URLコピー'; }, 1200); } catch (e) {}
+  });
+})();
 </script>
 
 <!-- V2 KV: 右上の透明ボックスで、iframe内の「調整パネル」を出し入れ（網走と同じ隠しモード） -->

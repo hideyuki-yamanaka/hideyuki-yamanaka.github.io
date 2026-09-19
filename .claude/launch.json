@@ -174,6 +174,15 @@
       ],
       "port": 8778,
       "url": "http://localhost:8778"
+    },
+    {
+      "name": "anyflow-live-sync",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/hideyuki/Developer/Claude Code/anyflow/v5/tools' && (test -d node_modules || npm install --silent) && exec node live-sync.mjs"
+      ],
+      "port": 8779
     }
   ]
 }

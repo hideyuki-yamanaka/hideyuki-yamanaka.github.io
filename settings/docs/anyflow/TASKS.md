@@ -87,6 +87,7 @@
 | H134 | バリエーションの上書きが「選び直し・リロードで戻る」バグ（最重要・全体調査） | ✅ 根治。案ごとの控え gfxVarOverride を『常にいまの見た目』に保つ仕組み(varAutoCapture=自動保存時／choose=離れる案を即控え／varApplyOverridesAtStartup=起動時適用)。対象: visMesh/visLogo/visGrad/resSlotFx/cvSway。snapが広かったvisGradは専用の狭いsnapに。素の値と同じ時は「上書き済み」を出さない。Playwrightで4案とも選び直し・リロード両方PASS |
 | H135 | スマホのスロット窓変数 --sw がステージ幅 --sw と衝突しビジョンSPが崩壊 | ✅ スロットの @property を --slot-sw に改名(素の --sw は html.mb .pin-stage の幅に使用中。<number>登録でpxが無効化されビジョン幅が0になっていた)。SPビジョンの幅が復活 |
 | H136 | ビジョンの網目(カゴ)単体の大きさスライダーが消えた | ✅ 「網目の大きさ（半径）」を復活(patch44で重複と判断し削除→半径は球そのものの大きさで奥行きZとは別物) |
+| H137 | スマホ実機プレビュー＋PCからのリアルタイム調整(QR) | ✅ 中継サーバ anyflow/v5/tools/live-sync.mjs(:8779・依存qrcode)＋ページ末尾 liveSync()。スマホはQRで http://<LAN-IP>:8778/?live=phone を開く(パネル無し・PCと同期)。PCは左下📱ボタン→同期を開始→保存のたびに設定を配信→スマホがリロード反映(スクロール保持)。本体8778は既にLAN公開。keepalive fetchは64KB制限で無言失敗するため使わない。本番(vercel)ではUIを出さない。詳細 settings/docs/anyflow/LIVE-SYNC.md |
 
 ### 🟡 仮置き（違ったら1行で直せる）
 - **惑星の大きさ**: ヒデさんのローカルは 130%(球の直径 429px)、カンプ実測に合わせた値は 99%(直径 311px)。今回はローカルの値を触っていない(本番の焼き込みは 99% のまま)。どちらを正にするか要確認
