@@ -5189,7 +5189,7 @@ const DEFAULTS = {
   logoTune: { hennge: { dy: 0, mx: 0 }, upsider: { dy: -0.5, mx: 5 }, np: { dy: -0.5, mx: -4 }, akerun: { dy: -1.5, mx: -1 }, smaregi: { dy: 0, mx: 8 },
               andpad: { dy: -2, mx: -1 }, icare: { dy: -0.5, mx: 0 }, contracts: { dy: 0.5, mx: 8 }, sweeep: { dy: 2, mx: -1 } },   // 【2026-09-18 ヒデさん依頼】ハンバーガーメニューの余白(px)・項目の間隔・文字サイズ(項目/番号)。上下は以前(10)より広め
   kvVar: 'normal',     // 【2026-09-18 ヒデさん依頼】KVのバリエーション(normal=ノーマル Figma 17707:26544 / strong=強調 調整版)
-  kvGfx: { scale: 1.21, dx: 148, dy: 184 },   // 【2026-09-18】右グラフィック全体の拡大・移動(PCのみ)。案(KV_VARIANTS)が入れ替える
+  kvGfx: { scale: 1.21, dx: 148, dy: 184, ox: 0, oy: 0, oz: 0 },   // 【2026-09-18】右グラフィック全体の拡大・移動(PCのみ)。案(KV_VARIANTS)が入れ替える。ox/oy/oz=【2026-09-19】XYZのずらし(0=いまの位置。Z は % で手前/奥)
   converge: 'mesh',     // 【V4.0 2026-09-09 ヒデさん指定】既定＝ネットワークタブ★1(mesh『D 大きいケージ』)。惑星への集約アニメ。既定は「周回のみ」(2026-08-28 ヒデさん指定・グループ再編)
   /* 集約アニメの調整つまみ (2026-08-26 ヒデさん指定: 各項目をパネルで調整できるように)
      pers: 'normal'=今の実装 / 'fix'=パース調整版(輪が先に惑星の真ん中へ寄ってから同心円ですぼまる)
@@ -10612,7 +10612,7 @@ function applySway() {
      値は Figma 17547:21430 の球の見た目(中心/直径)に実測で合わせたもの。スマホは 9/9 のSPトレース値のまま(仮置き: SPカンプ未確認)。
      ⚠️ .orbit にはビジョンの惑星図(.pf-wrap)は入っていない(兄弟)ので、ここを変えてもビジョンの図は動かない(実測で確認済み)。 */
   const KV_GFX = isMobile ? { scale: 1, dx: 0, dy: 0 } : (params.kvGfx || { scale: 1.21, dx: 148, dy: 184 });   /* 【2026-09-18】案(KV_VARIANTS)で入れ替わる */
-  swayEls.orbit.style.transform = `translate(${gx + KV_GFX.dx}px, ${kv.gy + KV_GFX.dy}px)${ob} ${swayOrbit} scale(${KV_GFX.scale})`.trim();
+  swayEls.orbit.style.transform = `translate(${gx + KV_GFX.dx + (KV_GFX.ox || 0)}px, ${kv.gy + KV_GFX.dy + (KV_GFX.oy || 0)}px)${ob} ${swayOrbit} scale(${KV_GFX.scale * (1 + (KV_GFX.oz || 0) / 100)})`.trim();   /* ox/oy/oz=【2026-09-19】XYZのずらし */
   swayEls.svgs.forEach(s => s.style.transform = isMobile ? '' : svg);
   /* 惑星の位置・サイズ (パネル設定) を ゆらぎ の上に合成。惑星は固定(回転させない) */
   const pl = params.planet;
@@ -12094,7 +12094,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dy: 30, logoOn: 1, spinOn: 1, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate'];
 const VIS_LOGOS = [
@@ -12128,7 +12128,7 @@ function applyVfFade() {
   const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
   w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* 図だけの上下 */
   /* 下のフェード: 容器の高さ(600)に対する割合を、中心基準で拡大して canvas(上 −150)の px に */
-  const fy = (f) => (VF_CY + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';
+  const fy = (f) => (VF_CY + (c.my || 0) + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';   /* 網目を上下にずらしたらフェードも一緒に */
   w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
   w.querySelectorAll('.vf-lab').forEach(el => { const x = +el.dataset.x, y = +el.dataset.y; el.style.left = (VF_CX + (x - VF_CX) * sc).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc).toFixed(1) + 'px'; });
@@ -12172,7 +12172,7 @@ function vfDraw(tSec) {
   const W = 900, H = 900, dpr = Math.min(2, window.devicePixelRatio || 1);
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-  const cx = VF_CX + 150, cy = VF_CY + 150, R = c.r * (c.scale != null ? c.scale : 1);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ */
+  const cx = VF_CX + 150 + (c.mx || 0), cy = VF_CY + 150 + (c.my || 0), R = c.r * (c.scale != null ? c.scale : 1) * (1 + (c.mz || 0) / 100);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ。mx/my/mz=【2026-09-19】網目だけの XYZ ずらし(Z は %) */
   const spinOn = !(c.spinOn === 0 || c.spinOn === false);   /* 回転 あり/なし(速さの値は保持) */
   const a = (spinOn ? tSec : 0) * c.spin * 0.12, tl = c.tilt * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl);
   const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; return [cx + x1 * R, cy - y2 * R, (z2 + 1) / 2]; });
@@ -16951,12 +16951,15 @@ function textRow(sp) {
     i.onpointerdown = ev => ev.stopPropagation();
     return i;
   };
+  const fsz = numIn('文字サイズ(px)。空欄＝CSSのまま', '1', '6', '200', 'fs');   /* 【2026-09-19 ヒデさん依頼】サイズも全部の行に */
   const lh = numIn('行間(倍)。空欄＝CSSのまま', '0.05', '0.8', '3', 'lh');
   const ls = numIn('字間(px)。空欄＝CSSのまま', '0.1', '-5', '20', 'ls');
   const mkLab = (t, el) => { const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; box.append(l, el); };
-  mkLab('太さ', wSel); mkLab('行間', lh); mkLab('字間', ls);
+  mkLab('サイズ', fsz); mkLab('太さ', wSel); mkLab('行間', lh); mkLab('字間', ls);
   function sync() {
     const e = (params.edits && params.edits[sp.key]) || {}, c = cs();
+    fsz.value = e.fs != null ? e.fs : '';
+    fsz.placeholder = c ? Math.round(parseFloat(c.fontSize)) + '' : '';
     wSel.value = e.fw != null ? String(e.fw) : '';
     wSel.options[0].textContent = c ? `自動(${c.fontWeight})` : '自動';
     lh.value = e.lh != null ? e.lh : '';
@@ -17478,6 +17481,12 @@ function buildPanel() {
   liveEdit = true;
   subDefaultOpen = true;      /* ここから下(グラフィック)は既定で開く */
   sub(catKv, '🎨 グラフィック');
+  /* 【2026-09-19 ヒデさん依頼】右グラフィック(惑星＋カゴ)を XYZ で動かす。真ん中(0)＝いまの位置。Z は手前(+)/奥(−)＝大きく/小さく(PCのみ) */
+  { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true });
+    const px = v => (v > 0 ? '+' : '') + Math.round(v) + 'px', pc = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
+    ks('グラフィックの位置 X', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋カゴ)を左右に。0＝いまの位置。');
+    ks('グラフィックの位置 Y', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋カゴ)を上下に。0＝いまの位置。');
+    ks('グラフィックの奥行き Z', 'oz', -60, 60, 1, pc, '手前(+)に寄せると大きく、奥(−)に下げると小さく。0＝いまの大きさ。'); }
   const gRoot = mount;
   /* 【2026-08-29 ヒデさん指定】右グラフィックの登場タイミングは「左側コピー>タイミング」だと
      見つけにくいので、ここ(グラフィック直下)にも同じスライダーを置く(同じ params.kv.graphicGap)。 */
@@ -18164,8 +18173,12 @@ function buildPanel() {
   /* 【2026-09-19 ヒデさん依頼】メッシュの案(案1 ドーム=既定 / 案2 KV のメッシュ)。⋯で上書き/削除可 */
   varRowX('visMesh', VIS_MESHES, () => vfVarKey(), v => { vfApplyVariant(String(v)); markDirty(); }, { snap: VAR_SNAP.visMesh, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと下のつまみ(半径・回転・傾き・線・点・細かさ・パケット)にその案の値が入ります。細かく変えたら ⋯「この設定で上書き」でその案に保存。');
-  const vfS = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, { fixedMax: true }));
+  const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true }, o || {})));
   vfS('図の上下位置', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '図(ドーム・ロゴ・機能名)だけを上下に。Point 01/02 は動きません。メッセージとの間隔を Point ごと変える時は「② メッセージ」の「メッセージ→図・ポイントの間隔」。既定 +30px は仮置き。');
+  /* 【2026-09-19 ヒデさん依頼】網目だけを XYZ で動かす(ロゴ・機能名は動かない)。真ん中(0)＝いまの位置 */
+  vfS('メッシュの位置 X', 'mx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを左右に。ロゴと機能名は動きません。0＝いまの位置。', { signed: true });
+  vfS('メッシュの位置 Y', 'my', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを上下に(下のフェードも一緒に動く)。0＝いまの位置。', { signed: true });
+  vfS('メッシュの奥行き Z', 'mz', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '%', '網目だけを手前(+)＝大きく／奥(−)＝小さく。ロゴと機能名はそのまま。0＝いまの大きさ。', { signed: true });
   vfS('メッシュの大きさ', 'scale', 0.5, 1.6, 0.02, v => Math.round(v * 100) + '%', '網目とロゴを球の中心から拡大縮小。機能名は文字サイズを変えず位置だけ外へ。既定 115%(仮置き)。');
   /* 【2026-09-19 ヒデさん依頼】ロゴの表示/非表示 */
   segRow('ロゴ', [['表示', 1], ['非表示', 0]], () => (vfCfg().logoOn === 0 ? 0 : 1), v => { vfSet('logoOn', v ? 1 : 0); markDirty(); });
