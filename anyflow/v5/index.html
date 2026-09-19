@@ -18385,8 +18385,16 @@ function buildPanel() {
       const box = document.createElement('div'); box.className = 'txt-ctl';
       const numIn = (t, key) => { const inp = document.createElement('input'); inp.type = 'number'; inp.className = 'txt-n'; inp.title = t; inp.step = '1'; inp.value = (dm()[key] || 0); inp.oninput = () => { dm()[key] = inp.value === '' ? 0 : parseFloat(inp.value); applyVfFade(); markDirty(); }; inp.onpointerdown = ev => ev.stopPropagation(); return inp; };
       const mkLab = (t, el) => { const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; box.append(l, el); };
-      mkLab('横', numIn('横(＋で右)', 'x')); mkLab('縦', numIn('縦(＋で下)', 'y'));
-      row.appendChild(box); (mount || body).appendChild(row);
+      const xInp = numIn('横(＋で右)', 'x'), yInp = numIn('縦(＋で下)', 'y');
+      mkLab('横', xInp); mkLab('縦', yInp);
+      row.appendChild(box);
+      /* 【2026-09-20 ヒデさん依頼】各機能名の位置にも↺リセット(この機能名の個別ズレを0へ) */
+      const rstL = document.createElement('button'); rstL.type = 'button'; rstL.className = 'rst'; rstL.textContent = '↺'; rstL.title = 'この機能名の位置を戻す';
+      const resetLab = () => { const d = dm(); d.x = 0; d.y = 0; xInp.value = 0; yInp.value = 0; applyVfFade(); markDirty(); };
+      rstL.onpointerdown = ev => ev.stopPropagation(); rstL.onclick = ev => { ev.stopPropagation(); resetLab(); };
+      row.appendChild(rstL);
+      if (subItems) subItems.push({ reset: resetLab });
+      (mount || body).appendChild(row);
     });
   }
   vfS('下のフェード 始まり', 'fadeA', 0, 1, 0.02, v => Math.round(v * 100) + '%', 'ここから下が薄くなり始める(図の高さに対する%)。カンプの「地色のレイヤーブラー」の代わり。');
