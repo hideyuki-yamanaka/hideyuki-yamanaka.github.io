@@ -5722,6 +5722,24 @@ try {
     localStorage.setItem('anyflow-kv-sp-rollback-20260920', '1');
   }
 } catch (e) {}
+/* 【2026-09-20 ヒデさん依頼・#7】KVの位置移動を案別に独立させるにあたり、いまグローバルに付いている位置を
+   「いま選ばれている案」の控えへ一度だけ移す(以降は案別。他の案には付かない)。これをしないと起動時の kvClearEdits で位置が消える。 */
+try {
+  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-pos-pervariant-20260920')) {
+    /* ⚠️ ここは module 評価の早い段階なので、後方の const(KV_VARIANTS 等)や関数は参照しない(TDZ回避)。キーは直書き */
+    const EL = ['navLogo', 'navLinks', 'navCta', 'kvMain', 'kvMainLast', 'kvEyebrow', 'kvLogos'], PR = ['dx', 'dy', 'pt', 'pr', 'pb', 'pl'];
+    const snap = {}; if (params.edits) EL.forEach(k => { const e = params.edits[k]; if (e) { const o = {}; PR.forEach(pp => { if (e[pp] != null) o[pp] = e[pp]; }); if (Object.keys(o).length) snap[k] = o; } });
+    if (Object.keys(snap).length) {
+      const cur = String((params && params.kvVar) || 'normal');
+      if (!params.gfxVarOverride) params.gfxVarOverride = {};
+      if (!params.gfxVarOverride.kvVar) params.gfxVarOverride.kvVar = {};
+      const o = params.gfxVarOverride.kvVar[cur] || (params.gfxVarOverride.kvVar[cur] = {});
+      o.edits = Object.assign({}, o.edits, snap);
+      try { const st = JSON.parse(localStorage.getItem(PRESET_KEY)) || {}; st.over = st.over || {}; st.over.kvVar = params.gfxVarOverride.kvVar; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); } catch (e) {}
+    }
+    localStorage.setItem('anyflow-kv-pos-pervariant-20260920', '1');
+  }
+} catch (e) {}
 /* 【2026-09-18 ヒデさん指摘「コンプとの照合が100%でない・特にビジョン」】全277文字ノードを機械照合した差分: ビジョンの図の役割名(コネクタ等)・プラットフォーム＝Noto Regular(400)、
    開発者体験の見出しスロット CLI/SDK/API＝SF Pro Medium(500)。「Platform」(英字)はコンプに無いので据え置き。 */
 try {
@@ -17234,13 +17252,21 @@ const KV_VARIANTS = [
 ];
 const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
 const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread'];
+/* 【2026-09-20 ヒデさん依頼・#7】KV要素の「位置移動(dx/dy)・パディング」も案別に独立させる(強調でずらした位置がノーマルに効かないように)。
+   文字(fs/fw/lh/ls)は含めない=別系統(editsMb/共通)。対象要素は sec:'kv' の全て。 */
+const KV_VAR_EDIT_ELS = ['navLogo', 'navLinks', 'navCta', 'kvMain', 'kvMainLast', 'kvEyebrow', 'kvLogos'];
+const KV_VAR_EDIT_PROPS = ['dx', 'dy', 'pt', 'pr', 'pb', 'pl'];
+function kvVarEditsSnapshot() { const r = {}; if (!params.edits) return r; KV_VAR_EDIT_ELS.forEach(k => { const e = params.edits[k]; if (!e) return; const o = {}; KV_VAR_EDIT_PROPS.forEach(p => { if (e[p] != null) o[p] = e[p]; }); if (Object.keys(o).length) r[k] = o; }); return r; }
+function kvClearEdits() { if (!params.edits) return; KV_VAR_EDIT_ELS.forEach(k => { const e = params.edits[k]; if (e) KV_VAR_EDIT_PROPS.forEach(p => { delete e[p]; }); }); }
+function kvAssignEdits(ed) { if (!ed) return; if (!params.edits) params.edits = {}; for (const k in ed) { if (!params.edits[k]) params.edits[k] = {}; Object.assign(params.edits[k], ed[k]); } }
 function kvVarKey() { const v = String((params && params.kvVar) || 'normal'); if (KV_VARIANTS.some(x => x.key === v) && !variantRemovedKey('kvVar', v)) return v; const f = KV_VARIANTS.find(x => !variantRemovedKey('kvVar', x.key)); return (f || KV_VARIANTS[0]).key; }
-function kvVarSnapshot() { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; return { kv: pick(params.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, params.kvGfx), planet: Object.assign({}, params.planet), mesh: pick(params.conv && params.conv.mesh, KV_VAR_MESH_KEYS) }; }
-function kvVarAssign(sn) { if (!sn) return; if (sn.kv) Object.assign(params.kv, sn.kv); if (sn.kvGfx) params.kvGfx = Object.assign(params.kvGfx || {}, sn.kvGfx); if (sn.planet) Object.assign(params.planet, sn.planet); if (sn.mesh && params.conv && params.conv.mesh) Object.assign(params.conv.mesh, sn.mesh); }
+function kvVarSnapshot() { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; return { kv: pick(params.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, params.kvGfx), planet: Object.assign({}, params.planet), mesh: pick(params.conv && params.conv.mesh, KV_VAR_MESH_KEYS), edits: kvVarEditsSnapshot() }; }
+function kvVarAssign(sn) { if (!sn) return; if (sn.kv) Object.assign(params.kv, sn.kv); if (sn.kvGfx) params.kvGfx = Object.assign(params.kvGfx || {}, sn.kvGfx); if (sn.planet) Object.assign(params.planet, sn.planet); if (sn.mesh && params.conv && params.conv.mesh) Object.assign(params.conv.mesh, sn.mesh); if (sn.edits) kvAssignEdits(sn.edits); }
 function kvVarRefresh() { try { document.documentElement.classList.toggle('kv-strong', kvVarKey() === 'strong'); } catch (e) {}   /* 【2026-09-20 ヒデさん依頼】強調案の時だけビジョン以下を下げる(PCのみ)。CSS: html.kv-strong:not(.mb) #vision */ try { applyKvCopy(); } catch (e) {} try { textTools.applyAll(); } catch (e) {} try { renderFrame(); } catch (e) {} try { if (editHandles.on) editHandles.place(); } catch (e) {} }
 /* 案の値(＋⋯で上書き保存した控え)を params へ流し込む。quiet=起動時(未保存扱いにしない) */
 function applyKvVariant(key, quiet) {
   const v = KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0];
+  kvClearEdits();   /* 【2026-09-20 #7】案の位置移動は案別。切替時にいったん0へ戻し、下の控え(ov.edits)で案ごとの位置を入れ直す */
   kvVarAssign(structuredClone(v.data));
   const ov = ((params.gfxVarOverride || {}).kvVar || {})[v.key];
   if (ov) kvVarAssign(structuredClone(ov));
@@ -17290,7 +17316,7 @@ const VAR_AUTOSAVE = [
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
      起動時の applyKvVariant で案の焼き込み値が再適用されるため、上書き控えを常に最新にしておかないと『デフォルトにしても戻る』。
      ここに入れることで、保存のたびに gfxVarOverride.kvVar[案] = いまの値 になり、起動時にそれが勝つ。 */
-  { bucket: 'kvVar',     sel: () => kvVarKey(),     snap: () => VAR_SNAP.kvVar,     base: (key) => { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; const d = ((KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0]).data) || {}; return { kv: pick(d.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, d.kvGfx), planet: Object.assign({}, d.planet), mesh: pick(d.mesh, KV_VAR_MESH_KEYS) }; } },
+  { bucket: 'kvVar',     sel: () => kvVarKey(),     snap: () => VAR_SNAP.kvVar,     base: (key) => { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; const d = ((KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0]).data) || {}; return { kv: pick(d.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, d.kvGfx), planet: Object.assign({}, d.planet), mesh: pick(d.mesh, KV_VAR_MESH_KEYS), edits: {} }; } },
 ];
 function varAutoInfo(bucket) { return VAR_AUTOSAVE.find(b => b.bucket === bucket) || null; }
 /* いまの見た目を、選択中の案の控えへ書き込む(自動保存のたびに)
