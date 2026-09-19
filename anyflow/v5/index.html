@@ -962,6 +962,8 @@
   .slot .stp { font-style: normal; display: block; }   /* 2026-09-15: will-change を外す(合成レイヤーだと拡大時に文字が荒れる。毎フレーム再描画で常にくっきり) */
   .slot .stp em { font-style: normal; display: block; height: 1em; line-height: 1; text-align: center; }
   .slot .fx { font-style: normal; display: inline-block; }
+  .slot .stp em.x { display: none; }   /* 案4 ドラム用の「次の数字」。ドラム以外では出さない */
+  #results.slot-fx-drum .slot .stp em.x { display: block; }
   /* 【2026-09-19 ヒデさん依頼】スロットの案2「ぼかして消える」: 窓の上下に段階的なぼかし(端ほど強く)を重ねて、数字が溶けるように消える。
      ::before/::after の backdrop-filter は .rl(マスク付き=backdrop root)の中の数字だけをぼかす。量は --slot-blur / 範囲は --slot-blur-zone(実績タブ) */
   /* 【2026-09-19 作り直し】窓の高さ(--sw・文字数)を @property で「連続的に」動かす。回っている桁は --slot-win-n まで開き、止まると 1.24 に閉じる(0.4秒)。
@@ -5132,7 +5134,7 @@ const DEFAULTS = {
       slotCycles: 3,     // 止まるまでに 0〜9 を何周流すか
       entryBlur: 16, entryBlur44: 26, entryFrom: 0.4, entryTo: 0.95, entryOp: 1, bigStartY: 0.4,   // 【2026-09-19】for SaaS/AI の入場のぼかし(強さpx / 解け始め・解けきり=入場の進み 0〜1 / 出だしの薄さ 1=薄くしない)
       slotEnterAt: 0.85, // 数字が画面のどこまで入ったら回り出すか (1.0=下端 / 0.5=中央)
-      slotFx: 'plain', slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)
+      slotFx: 'plain', slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1, slotDrumN: 12, slotDrumFade: 1.3,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)
       slotEase: 5,       // 減速の強さ。大きいほど「最初速く→最後じりじり」になる (2〜9)
                          /* ⚠️ 回転中のぼかしは 2026-08-17 に「要らない」で確定。
                             パラメータごと削除したので、復活させる時は renderSlots にも戻すこと */
@@ -11739,9 +11741,11 @@ function buildSlots() {
           em.textContent = String(d);
           stp.appendChild(em);
         }
+        /* 【2026-09-19 ヒデさん依頼】案4「ドラム」用: 目的の数字の後ろにも次の数字を3つ置く(円筒の下側に見える)。ドラム以外では display:none */
+        for (let x = 1; x <= 3; x++) { const em = document.createElement('em'); em.className = 'x'; em.textContent = String((Number(ch) + x) % 10); stp.appendChild(em); }
         rl.appendChild(stp);
         wrap.appendChild(rl);
-        reels.push({ rl, stp, len: seq.length });
+        reels.push({ rl, stp, len: seq.length, ems: Array.from(stp.children) });
       } else {
         const fx = document.createElement('i');
         fx.className = 'fx';
@@ -11763,8 +11767,25 @@ function slotEnd() {
 }
 
 /* ts = 数字ブロックが出はじめてからの秒数。マイナスなら先頭(0)で待たせる */
+/* 【2026-09-19 ヒデさん依頼「消え方をもっと自然に」】案4 ドラム(円筒): 数字を円筒の面に貼ったように、中心から離れるほど縦に縮み(cosθ)・薄くなる(cosθ^k)。
+   帯(.stp)は動かさず、見えている数字(±88°)だけを translateY(R·sinθ − j) scaleY(cosθ) で置く。R = N/(2π) 文字分(N=ドラムの分割数) */
+function slotDrumPose(re, e, c) {
+  const N = Math.max(8, Math.round(c.slotDrumN || 12)), R = N / (2 * Math.PI), step = 360 / N, kf = (c.slotDrumFade != null ? c.slotDrumFade : 1.3);
+  const f = (re.len - 1) * e; re.drum = true; if (re.stp.style.transform) re.stp.style.transform = '';
+  const ems = re.ems || (re.ems = Array.from(re.stp.children));
+  for (let j = 0; j < ems.length; j++) {
+    const th = (j - f) * step, em = ems[j];
+    if (Math.abs(th) >= 88) { if (em._v !== false) { em.style.visibility = 'hidden'; em._v = false; } continue; }
+    const r = th * Math.PI / 180, cs = Math.cos(r);
+    if (em._v !== true) { em.style.visibility = ''; em._v = true; }
+    em.style.transform = 'translateY(' + (R * Math.sin(r) - j).toFixed(3) + 'em) scaleY(' + cs.toFixed(3) + ')';
+    em.style.opacity = Math.pow(cs, kf).toFixed(3);
+  }
+}
+function slotDrumClear(re) { (re.ems || []).forEach(em => { em.style.transform = ''; em.style.opacity = ''; em.style.visibility = ''; em._v = undefined; }); re.drum = false; }
 function renderSlots(ts) {
   const c = params.sections.results;
+  const drum = (typeof resSlotFxKey === 'function' && resSlotFxKey() === 'drum');
   for (let si = 0; si < slots.length; si++) {
     const s = slots[si];
     const tsi = Array.isArray(ts) ? (ts[si] != null ? ts[si] : -1) : ts;   /* 案28: 数値ごとの再生位置(配列) */
@@ -11774,7 +11795,8 @@ function renderSlots(ts) {
          n=2 でゆるやか / n=5 が既定 / n=9 でかなり粘って止まる。
          ⚠️ easeSlick(臨界減衰) だと全体的に均一で、スロットらしい溜めが出なかった */
       const e = 1 - Math.pow(1 - k, Math.max(1, c.slotEase));
-      setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`);
+      if (drum) { slotDrumPose(re, e, c); }
+      else { if (re.drum) slotDrumClear(re); setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`); }
       if (re.spin !== (k > 0 && k < 1)) { re.spin = (k > 0 && k < 1); re.rl.classList.toggle('spin', re.spin); }   /* 【2026-09-19】案2「ぼかして消える」用: 回っている桁に印 */
       /* ⚠️ 回転中のぼかしは入れない（2026-08-17 に「要らない」で確定）。
          数字はくっきりしたまま回して止める */
@@ -12115,19 +12137,21 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
-const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate'];
+const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 const VIS_LOGOS = [
-  { key: 'flat',   name: '案1 現状（奥行き −14°）', fixed: true, tip: 'メッシュの傾きと同じ −14° だけ奥行きを付けた平らなロゴ。', cfg: { logoTiltX: -14, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0 } },
-  { key: 'sphere', name: '案2 球面に貼る（位置に合わせたパース）', tip: 'ロゴがある位置(球の中心より左)の球面の向きに合わせて、左右にも傾ける(左右 −16°・奥行き −6°)。球に貼り付いて見える。', cfg: { logoTiltX: -6, logoTiltY: -16, logoOpacity: 1, logoShadow: 0, logoPlate: 0 } },
-  { key: 'float',  name: '案3 手前に浮かせる（影で奥行き）', tip: 'メッシュの手前に浮いているように、やわらかい影を落とす(左右 −8°・奥行き −14°)。', cfg: { logoTiltX: -14, logoTiltY: -8, logoOpacity: 1, logoShadow: 18, logoPlate: 0 } },
-  { key: 'plate',  name: '案4 ガラスの板に乗せる', tip: 'すりガラスの角丸板の上にロゴを置き、板ごと傾ける(左右 −10°・奥行き −14°)。板の後ろの網目はぼける。', cfg: { logoTiltX: -14, logoTiltY: -10, logoOpacity: 1, logoShadow: 10, logoPlate: 1 } },
+  { key: 'flat',   name: '案1 現状（奥行き −14°）', fixed: true, tip: 'メッシュの傾きと同じ −14° だけ奥行きを付けた平らなロゴ。', cfg: { logoTiltX: -14, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
+  { key: 'sphere', name: '案2 球面に貼る（位置に合わせたパース）', tip: 'ロゴがある位置(球の中心より左)の球面の向きに合わせて、左右にも傾ける(左右 −16°・奥行き −6°)。球に貼り付いて見える。', cfg: { logoTiltX: -6, logoTiltY: -16, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
+  { key: 'float',  name: '案3 手前に浮かせる（影で奥行き）', tip: 'メッシュの手前に浮いているように、やわらかい影を落とす(左右 −8°・奥行き −14°)。', cfg: { logoTiltX: -14, logoTiltY: -8, logoOpacity: 1, logoShadow: 18, logoPlate: 0, logoStick: 0 } },
+  { key: 'plate',  name: '案4 ガラスの板に乗せる', tip: 'すりガラスの角丸板の上にロゴを置き、板ごと傾ける(左右 −10°・奥行き −14°)。板の後ろの網目はぼける。', cfg: { logoTiltX: -14, logoTiltY: -10, logoOpacity: 1, logoShadow: 10, logoPlate: 1, logoStick: 0 } },
+  { key: 'stick',  name: '案5 球に貼り付いて一緒に回る', tip: 'ロゴを球の表面に貼り、網目と同じ回転で裏側へ回り込む(裏側では薄く・裏返しに透ける)。貼る位置は「ロゴ 横位置/縦位置」、「回転 なし」の時は「向き」で見える位置を決める。', cfg: { logoTiltX: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 1, logoBackAlpha: 0.3 } },
 ];
 function vfLogoKey() { const v = String(vfCfg().logoVar || 'flat'); return (VIS_LOGOS.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visLogo', v))) ? v : 'flat'; }
 function vfApplyLogoVariant(key) { const m = VIS_LOGOS.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.logoVar = key; applyVfFade(); }   /* logoOn=ロゴの表示/非表示(2026-09-19 ヒデさん依頼。非表示なら後ろのぼかしも消す) */   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
-const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
+const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'depthFade', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
+const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
     cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
@@ -12136,6 +12160,8 @@ const VIS_MESHES = [
   /* 【2026-09-19 ヒデさん依頼】案3=案1＋ロゴの後ろをぼかす(楕円の中の網目をぼかし、地色で薄める) */
   { key: 'domeBlur', name: '案3 ブラーあり（ロゴの後ろをぼかす）', tip: '案1 の色味のまま、ロゴの後ろに楕円の領域を置いて中の網目をぼかし、地色で少し薄める。ぼかし・濃さ・広さは下のつまみ。',
     cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 10, bgAlpha: 0.55, bgW: 1.6, bgH: 2.8 } },
+  /* 【2026-09-19 ヒデさん依頼】案4: 奥側の線・点を薄く(遠近感)。depthFade=奥をどれだけ薄くするか */
+  { key: 'domeDepth', name: '案4 奥の線を薄く（遠近感）', tip: '案1 と同じ図で、球の奥側の線と点を薄く・細く(75%減)。手前と奥の差がはっきりして立体に見える。', cfg: Object.assign({}, VIS_MESHES_DOME_CFG, { depthFade: 0.75 }) },
 ];
 function vfVarKey() { const v = String(vfCfg().variant || 'dome'); return (VIS_MESHES.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visMesh', v))) ? v : 'dome'; }
 function vfApplyVariant(key) { const m = VIS_MESHES.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.variant = key; vfMesh = null; applyVfFade(); }   /* scale=メッシュの大きさ(2026-09-19 ヒデさん指定で 1.15・仮置き)。機能名の文字サイズは変えず位置だけ中心から外へ */
@@ -12198,35 +12224,49 @@ function vfDraw(tSec) {
   const spinOn = !(c.spinOn === 0 || c.spinOn === false);   /* 回転 あり/なし(速さの値は保持) */
   const a = (spinOn ? tSec : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
   const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2]; });
+  /* 【2026-09-19 ヒデさん依頼】案5: ロゴを球の表面に貼って網目と一緒に回す。貼る点＝今のロゴ中心を球の手前側に投影した点。向きは面の法線(回転→傾き→左右の傾きを網目と同じ順で) */
+  if (c.logoStick && !(c.logoOn === 0 || c.logoOn === false)) { const lg = document.getElementById('vfLogo'); if (lg) {
+    const sc = (c.scale != null ? c.scale : 1); const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls;
+    const ux = ((127 + 102 - VF_CX) * sc + (c.logoDx || 0)) / R, uy = -((288 + 18.5 - VF_CY) * sc + (c.logoDy || 0)) / R;
+    const n0 = Math.hypot(ux, uy), rr = Math.min(0.9, n0); const x0 = n0 > 1e-6 ? ux / n0 * rr : 0, y0 = n0 > 1e-6 ? uy / n0 * rr : 0, z0 = Math.sqrt(Math.max(0, 1 - x0 * x0 - y0 * y0));
+    const az0 = Math.atan2(x0, z0), el0 = Math.asin(Math.max(-1, Math.min(1, y0)));
+    const x1 = x0 * ca + z0 * sa, z1 = -x0 * sa + z0 * ca; const y2 = y0 * ct - z1 * st, z2 = y0 * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr;
+    const px = (cx - 150) + x3 * R, py = (cy - 150) - y3 * R;
+    lg.style.left = (px - lw / 2).toFixed(1) + 'px'; lg.style.top = (py - lh / 2).toFixed(1) + 'px';
+    const D = 180 / Math.PI; lg.style.transform = 'perspective(900px) rotateZ(' + (-(c.roll || 0) + (c.logoAngle || 0)).toFixed(2) + 'deg) rotateX(' + (-c.tilt).toFixed(2) + 'deg) rotateY(' + ((a + az0) * D).toFixed(2) + 'deg) rotateX(' + (el0 * D).toFixed(2) + 'deg)';
+    const back = (c.logoBackAlpha != null ? c.logoBackAlpha : 0.3), t = Math.max(0, Math.min(1, (z2 + 0.15) / 0.3));   /* 縁(±0.15)でなめらかに裏側の濃さへ */
+    lg.style.opacity = ((c.logoOpacity != null ? c.logoOpacity : 1) * (back + (1 - back) * t)).toFixed(3); } }
   g.lineCap = 'round';
   const lc = vfRgb(c.lineColor || '#A6A6A6'), lw = (c.lineWidth != null ? c.lineWidth : 1), quant = (c.levels == null ? 1 : c.levels) > 0.5;
   const bin = (k) => Math.min(3, Math.floor(k * 4));
+  const df = c.depthFade || 0;   /* 【2026-09-19】案4: 奥(k→0)ほど薄く・細く */
   for (const [i, j] of vfMesh.edges) { const A = P[i], B = P[j]; const k = (A[2] + B[2]) / 2;
     const al = quant ? c.lineAlpha * VF_LV_LINE[bin(k)] : c.lineAlpha * (0.42 + 0.58 * k);   /* 案1=4段 / 案2(KV)=連続 */
-    g.strokeStyle = 'rgba(' + lc + ',' + al.toFixed(3) + ')'; g.lineWidth = quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
+    g.strokeStyle = 'rgba(' + lc + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.lineWidth = (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k)); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
   const PINK = '255,93,151', CYAN = '14,187,255', NAVY = '14,68,151', PALE = '157,176,201';
   for (let i = 0; i < P.length; i++) { const [x, y, k] = P[i]; let col, al, rad;
     if ((c.nodeMode || 'alt') === 'alt') { col = (i % 2) ? PINK : CYAN; if (quant) { al = VF_LV_NODE[bin(k)]; rad = c.dot * (0.55 + 0.45 * k); } else { const dep = 0.72 + 0.5 * k; al = 0.5 + 0.5 * dep; rad = c.dot * dep; } }
     else { const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; col = h < 0.12 ? PINK : h < 0.24 ? CYAN : h < 0.28 ? NAVY : PALE; al = (col === PALE) ? (0.3 + 0.45 * k) : (0.45 + 0.55 * k); rad = c.dot * (0.55 + 0.45 * k); }
-    g.fillStyle = 'rgba(' + col + ',' + al.toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = 'rgba(' + col + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad * (1 - 0.35 * df * (1 - k)), 0, Math.PI * 2); g.fill(); }
   /* パケット(骨の上を走る光。案2=KV と同じ発想。pk=1秒あたりの数) */
   const dt = vfLastT == null ? 0 : Math.min(0.1, Math.max(0, tSec - vfLastT)); vfLastT = tSec;
   if ((c.pk || 0) > 0) { vfPkNext -= dt; if (vfPkNext <= 0 && vfPk.length < 14) { vfPkNext = 1 / c.pk; const e = vfMesh.edges[(Math.random() * vfMesh.edges.length) | 0]; vfPk.push({ a: e[0], b: e[1], k: 0, dur: 0.7 + Math.random() * 0.5 }); } } else vfPk.length = 0;
   for (let i = vfPk.length - 1; i >= 0; i--) { const q = vfPk[i]; q.k += dt / q.dur; if (q.k >= 1) { vfPk.splice(i, 1); continue; } const A = P[q.a], B = P[q.b]; if (!A || !B) { vfPk.splice(i, 1); continue; } const x = A[0] + (B[0] - A[0]) * q.k, y = A[1] + (B[1] - A[1]) * q.k, k = A[2] + (B[2] - A[2]) * q.k; const fade = Math.sin(q.k * Math.PI);
-    g.fillStyle = 'rgba(' + ((q.a % 2) ? PINK : CYAN) + ',' + (0.35 + 0.5 * k).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * (0.9 + 0.6 * k) * (0.6 + 0.4 * fade), 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(' + ((q.a % 2) ? PINK : CYAN) + ',' + ((0.35 + 0.5 * k) * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * (0.9 + 0.6 * k) * (0.6 + 0.4 * fade), 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); }
 }
 applyVfFade();
 function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
   /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
   d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win-n', String(r.slotWin != null ? r.slotWin : 1.6)); d.setProperty('--slot-ramp', String(r.slotRamp != null ? r.slotRamp : 1));
-  const sec = document.getElementById('results'); if (sec) sec.classList.toggle('slot-fx-blur', resSlotFxKey() !== 'plain'); }
+  const sec = document.getElementById('results'); if (sec) { sec.classList.toggle('slot-fx-blur', resSlotFxKey() !== 'plain'); sec.classList.toggle('slot-fx-drum', resSlotFxKey() === 'drum'); } }
 /* 【2026-09-19 ヒデさん依頼】数字のスロットの案(案1=現状 / 案2=上下のマスクにぼかしをかけて徐々に消える)。値は仮置き */
-const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp'];
+const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp', 'slotDrumN', 'slotDrumFade'];
 const RES_SLOT_FX = [
   { key: 'plain', name: '案1 現状（上下をうすく消す）', fixed: true, tip: '窓の上下 14% をグラデで消すだけ。ぼかし無し。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
   { key: 'blur',  name: '案2 なめらかに溶ける', tip: '回っている桁だけ窓を 1.6 文字分に開き、端ほどゆっくり薄くなる曲線で消す＋端に弱いぼかし(2.5px)。止まると窓が 0.4 秒で閉じる(切り替わりの段差なし)。', cfg: { slotFade: 14, slotBlur: 2.5, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
   { key: 'melt',  name: '案3 さらに長く溶ける', tip: '案2 より窓を高く(2.0 文字分)、消える帯も長め(×1.15)、ぼかしは弱め(2px)。前後の数字が長い距離をかけて消える。', cfg: { slotFade: 14, slotBlur: 2, slotBlurZone: 55, slotWin: 2.0, slotRamp: 1.15 } },
+  { key: 'drum',  name: '案4 ドラム（円筒に貼った数字）', tip: '数字を円筒の面に貼ったように回す。中心から離れるほど縦に縮んで薄くなるので、端で自然に消える(ぼかし無し)。回っている間は窓を 1.7 文字分に開き(上のラベルに重ならない範囲)、止まると閉じる。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.7, slotRamp: 0.8, slotDrumN: 12, slotDrumFade: 1.3 } },
 ];
 function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'plain'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'plain'; }
 function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
@@ -18234,6 +18274,7 @@ function buildPanel() {
   note('▼ 網目の見た目');
   vfS('線の濃さ', 'lineAlpha', 0.05, 0.8, 0.01, v => Math.round(v * 100) + '%', '手前の線の濃さ。奥ほど自動で薄く(案1は4段の濃淡、案2は連続)。');
   vfS('線の太さ', 'lineWidth', 0.5, 3, 0.1, v => v.toFixed(1) + 'px', '手前の線の太さ。奥は少し細く。案1=1 / 案2(KV)=1.5。');
+  vfS('奥の線の薄さ', 'depthFade', 0, 1, 0.05, v => v === 0 ? 'なし' : Math.round(v * 100) + '%', '案4(遠近感)用。球の奥側の線・点をどれだけ薄く・細くするか。手前はそのまま。');
   vfS('点の大きさ', 'dot', 1, 5, 0.1, v => v.toFixed(1) + 'px', '節目の点(ピンク/シアン/紺/薄い青灰)の大きさ。');
   vfS('細かさ', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '球の分割数。3=カンプと同じ密度(点92・線270)。');
   vfS('パケット（骨を走る光）', 'pk', 0, 12, 0.5, v => v === 0 ? 'なし' : v.toFixed(1) + '/秒', '線の上を走る光の数(1秒あたり)。案2(KV)は 4。0でなし。');
@@ -18242,7 +18283,7 @@ function buildPanel() {
   note('▼ ロゴ');
   segRow('ロゴ', [['表示', 1], ['非表示', 0]], () => (vfCfg().logoOn === 0 ? 0 : 1), v => { vfSet('logoOn', v ? 1 : 0); markDirty(); });
   varRowX('visLogo', VIS_LOGOS, () => vfLogoKey(), v => { vfApplyLogoVariant(String(v)); markDirty(); }, { snap: VAR_SNAP.visLogo, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('ロゴの案を選ぶと「奥行きの傾き・左右の傾き・透明度・影・ガラスの板」に値が入ります。細かく変えたら ⋯「この設定で上書き」。');
+  note('ロゴの案を選ぶと「奥行きの傾き・左右の傾き・透明度・影・ガラスの板・貼り付け」に値が入ります。細かく変えたら ⋯「この設定で上書き」。案5(貼り付け)の時は傾きのつまみは効かず、網目の回転で向きが決まります。');
   vfS('ロゴの大きさ', 'logoScale', 0.4, 2.5, 0.02, v => Math.round(v * 100) + '%', '中央のロゴだけの大きさ(メッシュの大きさに掛かる)。');
   vfS('ロゴ 横位置', 'logoDx', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを左右へ。✏️編集モードのドラッグでも動きます。');
   vfS('ロゴ 縦位置', 'logoDy', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを上下へ。');
@@ -18250,6 +18291,7 @@ function buildPanel() {
   vfS('ロゴの奥行きの傾き', 'logoTiltX', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'ロゴの上端を奥へ/手前へ倒す(3D)。案1 は −14°(メッシュの傾きと同じ)。0で真正面。');
   vfS('ロゴの左右の傾き', 'logoTiltY', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'ロゴの右端を奥へ(−)/手前へ(+)回す(3D)。球面に貼る案は −16°。');
   vfS('ロゴの透明度', 'logoOpacity', 0.2, 1, 0.02, v => Math.round(v * 100) + '%', '薄くすると後ろの網目が透けて馴染む。');
+  vfS('ロゴ 裏側の濃さ', 'logoBackAlpha', 0, 1, 0.05, v => Math.round(v * 100) + '%', '案5(球に貼り付け)用。ロゴが球の裏側に回った時の濃さ。0で裏側では消える。');
   vfS('ロゴの影', 'logoShadow', 0, 40, 1, v => v === 0 ? 'なし' : Math.round(v) + 'px', 'ロゴの下に落とすやわらかい影の大きさ。手前に浮いて見える。');
   segRow('ガラスの板', [['乗せる', 1], ['なし', 0]], () => (vfCfg().logoPlate ? 1 : 0), v => { vfSet('logoPlate', v ? 1 : 0); markDirty(); });
   vfS('ロゴ背景: ぼかしの強さ', 'bgBlur', 0, 40, 0.5, v => v === 0 ? 'なし' : v.toFixed(1) + 'px', 'ロゴの後ろの楕円の中で、網目をどれだけぼかすか。案3 は 10px。');
@@ -18500,7 +18542,11 @@ function buildPanel() {
   rows.push(slider('窓の高さ', 1, 2, 0.02, () => (sv().results.slotWin != null ? sv().results.slotWin : 1.6), v => { sv().results.slotWin = v; applyResSlotFade(); markDirty(); }, v => v.toFixed(2) + '文字分',
     '案2/3用。回っている間だけ広がる窓の高さ(1＝数字ぴったり)。高いほど前後の数字がのぞく。止まると 1.24 に戻ります。行の高さは変わりません。'));
   rows.push(slider('消える長さ', 0.6, 2, 0.05, () => (sv().results.slotRamp != null ? sv().results.slotRamp : 1), v => { sv().results.slotRamp = v; applyResSlotFade(); markDirty(); }, v => '×' + v.toFixed(2),
-    '案2/3用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける(止まった時の数字には影響しない範囲で自動で縮む)。'));
+    '案2/3/4用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける(止まった時の数字には影響しない範囲で自動で縮む)。'));
+  rows.push(slider('ドラムの丸み（分割数）', 8, 20, 1, () => (sv().results.slotDrumN != null ? sv().results.slotDrumN : 12), v => { sv().results.slotDrumN = v; markDirty(); }, v => Math.round(v) + '分割',
+    '案4用。円筒を何分割して数字を貼るか。少ないほど丸みが強く(前後の数字が大きく傾く)、多いほど平らに近づく。'));
+  rows.push(slider('ドラムの端の薄さ', 0.5, 3, 0.1, () => (sv().results.slotDrumFade != null ? sv().results.slotDrumFade : 1.3), v => { sv().results.slotDrumFade = v; markDirty(); }, v => '×' + v.toFixed(1),
+    '案4用。端(傾いた数字)をどれだけ薄くするか。大きいほど早く薄くなる。'));
   rows.push(slider('回り出す位置', 0.4, 1, 0.05, () => sv().results.slotEnterAt, v => sv().results.slotEnterAt = v, v => Math.round(v * 100) + '%',
     '100%＝画面の下に出た瞬間 / 50%＝真ん中まで来てから。'));
   rows.push(slider('止まり際の粘り', 2, 9, 0.5, () => sv().results.slotEase, v => sv().results.slotEase = v, v => '×' + v.toFixed(1),
