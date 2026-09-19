@@ -865,10 +865,11 @@
      出現は updateVision の mi(ブラー)。位置は ✏️編集(TEXT_SPEC vfWrap)でずらせる */
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図＝網目のドーム(Figma 18004:38228)。容器はカンプのグループ座標(ステージ x165 / y245・600×600)。
      下半球はカンプの「地色のレイヤーブラー(75px)矩形」の代わりに mask で上→下へ消す(--vf-fade-a/b は JS applyVfFade) */
-  .vf-wrap { position: absolute; left: 165px; top: 245px; width: 640px; height: 600px;   /* 幅は mask の範囲=機能名(実行エンジン x515〜)が切れないよう 640 */
+  .vf-wrap { position: absolute; left: 165px; top: 245px; width: 640px; height: 600px; transform: scale(var(--vf-scale, 1)); transform-origin: 0 0; }   /* --vf-scale=図全体の大きさ(ビジョンタブ) */
+  /* 【2026-09-19 ヒデさん指摘「ロゴがかすむ」】下半球のフェード(mask)は網目の canvas だけに。ロゴと機能名は常にくっきり(以前は容器ごとかけていてロゴの高さが薄れる帯に入っていた) */
+  .vf-wrap .vf-dome { position: absolute; left: 0; top: 0; width: 600px; height: 600px; display: block;
     -webkit-mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 42%), transparent var(--vf-fade-b, 66%));
             mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 42%), transparent var(--vf-fade-b, 66%)); }
-  .vf-wrap .vf-dome { position: absolute; left: 0; top: 0; width: 600px; height: 600px; display: block; }
   .vf-wrap .vf-logo { position: absolute; left: 127px; top: 288px; width: 204px; height: 37px; display: block; -webkit-user-drag: none; user-select: none; }   /* カンプ: ケージ(29,49)＋ロゴ bbox(98,239) */
   .vf-wrap .vf-lab { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; white-space: nowrap; line-height: var(--lh-tight); color: var(--ink); }
   .vf-wrap .vf-lab b { font-weight: 500; font-size: var(--fs-base); }   /* カンプ: Noto Medium 16px */
@@ -2972,7 +2973,7 @@
     .vis-l1 { top: 106px; }   /* → y773 */
     .vis-l2 { top: 170px; }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
-    .vf-wrap { left: 3px; top: 285px; width: 640px; height: 600px; transform: scale(0.6); transform-origin: 0 0; }   /* 【2026-09-19 仮置き・SPカンプ未取得】ドームごと 0.62 倍(600→372px)で中央に */
+    .vf-wrap { left: 3px; top: 285px; width: 640px; height: 600px; transform: scale(calc(0.6 * var(--vf-scale, 1))); transform-origin: 0 0; }   /* 【2026-09-19 仮置き・SPカンプ未取得】ドームごと 0.62 倍(600→372px)で中央に */
     /* 右カラムはPCでは右アンカーだが、スマホは画面いっぱいの1カラムにする */
     .val-group { left: 0; right: auto; width: 100%; }
     .val-head { left: 24px; right: 24px; top: 372px; width: auto; }
@@ -3911,7 +3912,7 @@
         <img class="vf-logo" src="assets/vision-logo.svg" alt="Anyflow Embed" width="204" height="37" draggable="false">
         <div class="vf-lab" style="left: 0px; top: 84px;"><b>コネクタ</b><span>外部サービスをつなぐ</span></div>
         <div class="vf-lab" style="left: 97px; top: 35px;"><b>認証ウィザード</b><span>認証設定を支える</span></div>
-        <div class="vf-lab" style="left: 254px; top: 0px;"><b>SDK</b><span>開発環境に組み込む</span></div>
+        <div class="vf-lab" style="left: 274px; top: 0px;"><b>SDK</b><span>開発環境に組み込む</span></div>   <!-- 2026-09-19 ヒデさん指定: もう少し右へ(カンプ 254 → 274・仮置き) -->
         <div class="vf-lab" style="left: 418px; top: 45px;"><b>ワークフロー</b><span>連携処理を組み立てる</span></div>
         <div class="vf-lab" style="left: 515px; top: 121px;"><b>実行エンジン</b><span>処理を実行する</span></div>
       </div>
@@ -12061,10 +12062,10 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.32, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3 };
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.32, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1 };
 function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; return Object.assign({}, VF_DEF, v.dome); }
 function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; v.dome[k] = val; applyVfFade(); }
-function applyVfFade() { const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); w.style.setProperty('--vf-fade-a', Math.round(c.fadeA * 100) + '%'); w.style.setProperty('--vf-fade-b', Math.round(Math.max(c.fadeA + 0.02, c.fadeB) * 100) + '%'); }
+function applyVfFade() { const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); w.style.setProperty('--vf-fade-a', Math.round(c.fadeA * 100) + '%'); w.style.setProperty('--vf-fade-b', Math.round(Math.max(c.fadeA + 0.02, c.fadeB) * 100) + '%'); w.style.setProperty('--vf-scale', (c.scale != null ? c.scale : 1).toFixed(3)); }
 function vfBuild(f) {
   const t = (1 + Math.sqrt(5)) / 2, nrm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
   const base = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(nrm);
@@ -18223,7 +18224,8 @@ function buildPanel() {
   sub(catVis, '③ 図（網目のドーム）');
   note('Figma 18004:38228 の図を KV のケージと同じくコードで描画(正二十面体を分割した球)。出るタイミングは上の「表示タイミング」、ぼけの強さは「基本」の「ぼかしの強さ」。位置は ✏️編集でドラッグ。');
   const vfS = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); markDirty(); }, fmt, tip, { fixedMax: true }));
-  vfS('大きさ（半径）', 'r', 150, 360, 2, v => Math.round(v) + 'px', 'ドームの半径。カンプは 262px。');
+  vfS('図全体の大きさ', 'scale', 0.5, 1.6, 0.02, v => Math.round(v * 100) + '%', 'ロゴ・機能名ごと図全体を拡大縮小(左上を基準)。');
+  vfS('網目の半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。カンプは 262px。');
   vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '0で止まる。0.35 で約2分半で1周。');
   vfS('傾き', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
   vfS('線の濃さ', 'lineAlpha', 0.05, 0.8, 0.01, v => Math.round(v * 100) + '%', '手前の線の濃さ。奥ほど自動で薄く。');
