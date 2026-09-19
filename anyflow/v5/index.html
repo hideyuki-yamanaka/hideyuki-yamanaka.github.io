@@ -587,6 +587,7 @@
     top: 796px;
     overflow: hidden;
     opacity: 0;
+    z-index: 12;   /* 【2026-09-20 ヒデさん依頼】KVでロゴ帯を惑星グラフィック(.orbit z-index:4)より前面に */
   }
   /* 【2026-09-15 ヒデさん指摘】ロゴ帯も画面の端まで流す(KV ステージは --s スケール) */
   html:not(.mb) .logos { left: var(--bleed-x-s, 0px); right: auto; width: var(--bleed-w-s, 100%); }
