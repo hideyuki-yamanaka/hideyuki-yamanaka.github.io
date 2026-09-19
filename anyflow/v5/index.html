@@ -9400,9 +9400,10 @@ function convFrame(geoms) {
       convMesh = { style: 'cage', shape, freq, nodes: base, pairs, links, pk: [], next: 0 };
     }
     const spin = M.cageSpin == null ? 1 : M.cageSpin;
-    const yaw = (convDotMoves() ? elapsed : 0) * 0.42 * spin * (params.direction || 1);
+    const yaw = (convDotMoves() ? elapsed : 0) * 0.42 * spin * (params.direction || 1) + (M.cageYaw || 0) * Math.PI / 180;   /* cageYaw=【2026-09-19】向き(回転の位置のずらし) */
     const tilt = (M.cageTilt == null ? -20 : M.cageTilt) * Math.PI / 180;
-    const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt);
+    const roll = (M.cageRoll || 0) * Math.PI / 180;   /* 【2026-09-19】左右の傾き(画面の面内で回す) */
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     /* 息をするようにわずかに伸び縮み(0にすると完全に固い球)。geo(整った面)は歪ませないので固定。 */
     const breathe = shape === 'geo' ? 1 : (1 + Math.sin(elapsed * 0.55) * 0.03 * (M.random || 0));
     const squish = shape === 'geo' ? 1.0 : 0.94;   /* geoは縦潰しなし=真円の球で歪まない */
@@ -9413,8 +9414,9 @@ function convFrame(geoms) {
     const Rc = 130 * (M.cageR == null ? 1.75 : M.cageR) * breathe;
     const proj = q => {
       const x1 = q.x * cy + q.z * sy, z1 = -q.x * sy + q.z * cy, y1 = q.y;      /* 縦軸まわりに回す */
-      const y2 = y1 * ct - z1 * st, z2 = y1 * st + z1 * ct;                      /* 少し傾ける */
-      return { x: cc.x + x1 * Rc, y: cc.y + y2 * Rc * squish, z: z2 };           /* z>0 = 手前 */
+      const y2 = y1 * ct - z1 * st, z2 = y1 * st + z1 * ct;                      /* 少し傾ける(前後) */
+      const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr;                      /* 左右に傾ける(cageRoll) */
+      return { x: cc.x + x3 * Rc, y: cc.y + y3 * Rc * squish, z: z2 };           /* z>0 = 手前 */
     };
     const P = convMesh.nodes.map(proj);
     /* --- 骨(線) 手前は惑星の前、奥は惑星の後ろを通す --- */
@@ -12096,7 +12098,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate'];
 const VIS_LOGOS = [
@@ -12108,7 +12110,7 @@ const VIS_LOGOS = [
 function vfLogoKey() { const v = String(vfCfg().logoVar || 'flat'); return (VIS_LOGOS.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visLogo', v))) ? v : 'flat'; }
 function vfApplyLogoVariant(key) { const m = VIS_LOGOS.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.logoVar = key; applyVfFade(); }   /* logoOn=ロゴの表示/非表示(2026-09-19 ヒデさん依頼。非表示なら後ろのぼかしも消す) */   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
-const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
+const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
     cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
@@ -12176,8 +12178,8 @@ function vfDraw(tSec) {
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
   const cx = VF_CX + 150 + (c.mx || 0), cy = VF_CY + 150 + (c.my || 0), R = c.r * (c.scale != null ? c.scale : 1) * (1 + (c.mz || 0) / 100);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ。mx/my/mz=【2026-09-19】網目だけの XYZ ずらし(Z は %) */
   const spinOn = !(c.spinOn === 0 || c.spinOn === false);   /* 回転 あり/なし(速さの値は保持) */
-  const a = (spinOn ? tSec : 0) * c.spin * 0.12, tl = c.tilt * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl);
-  const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; return [cx + x1 * R, cy - y2 * R, (z2 + 1) / 2]; });
+  const a = (spinOn ? tSec : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
+  const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2]; });
   g.lineCap = 'round';
   const lc = vfRgb(c.lineColor || '#A6A6A6'), lw = (c.lineWidth != null ? c.lineWidth : 1), quant = (c.levels == null ? 1 : c.levels) > 0.5;
   const bin = (k) => Math.min(3, Math.floor(k * 4));
@@ -17062,7 +17064,7 @@ const KV_VARIANTS = [
             mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
 ];
 const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
-const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread'];
+const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread'];
 function kvVarKey() { const v = String((params && params.kvVar) || 'normal'); if (KV_VARIANTS.some(x => x.key === v) && !variantRemovedKey('kvVar', v)) return v; const f = KV_VARIANTS.find(x => !variantRemovedKey('kvVar', x.key)); return (f || KV_VARIANTS[0]).key; }
 function kvVarSnapshot() { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; return { kv: pick(params.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, params.kvGfx), planet: Object.assign({}, params.planet), mesh: pick(params.conv && params.conv.mesh, KV_VAR_MESH_KEYS) }; }
 function kvVarAssign(sn) { if (!sn) return; if (sn.kv) Object.assign(params.kv, sn.kv); if (sn.kvGfx) params.kvGfx = Object.assign(params.kvGfx || {}, sn.kvGfx); if (sn.planet) Object.assign(params.planet, sn.planet); if (sn.mesh && params.conv && params.conv.mesh) Object.assign(params.conv.mesh, sn.mesh); }
@@ -17656,8 +17658,13 @@ function buildPanel() {
           '惑星の半径の何倍でカゴを組むか。大きいほど大きく取り囲みます。');
         slider('カゴが回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
           v => '×' + v.toFixed(2), '右へ動かすほどカゴが速く回ります。0(左端)で止まります。');
-        slider('カゴの傾き', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
-          'カゴの軸の傾き。0で真横から見た形になります。');
+        slider('カゴの傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
+          'カゴの軸を手前/奥へ倒す。0で真横から見た形になります。');
+        /* 【2026-09-19 ヒデさん依頼】傾きを3軸に(前後・左右・向き) */
+        slider('カゴの傾き（左右）', -60, 60, 1, () => (params.conv.mesh.cageRoll || 0), v => M.cageRoll = v, v => (v > 0 ? '+' : '') + v + '°',
+          'カゴの軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { signed: true });
+        slider('カゴの向き（回転の位置）', -180, 180, 1, () => (params.conv.mesh.cageYaw || 0), v => M.cageYaw = v, v => (v > 0 ? '+' : '') + v + '°',
+          '縦軸まわりの向きをずらす。回っている時は「どこから回り始めるか」、止めている時は「どの面を見せるか」。', { signed: true });
         /* 【2026-09-18 ヒデさん依頼「メッシュの面の数などを変えられるように」】カゴの形(整った網/散らばり)を選べるようにし、
            整った網は「面の数」を段階スライダーに(旧: 粗い/ふつう/細かい の3択)。表示は実際の点・線の数。 */
         optRow('cageShape', 'カゴの形', [['整った網（測地線）', 'geo'], ['散らばり（フィボナッチ）', 'fibo']],
@@ -18204,7 +18211,10 @@ function buildPanel() {
   vfS('網目の半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。カンプは 262px。');
   segRow('回転', [['あり', 1], ['なし', 0]], () => (vfCfg().spinOn === 0 ? 0 : 1), v => { vfSet('spinOn', v ? 1 : 0); markDirty(); });   /* 【2026-09-19 ヒデさん依頼】 */
   vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '「回転 あり」の時の速さ。0.35 で約2分半で1周。');
-  vfS('傾き', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
+  vfS('傾き（前後）', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
+  /* 【2026-09-19 ヒデさん依頼】傾きを3軸に(前後・左右・向き) */
+  vfS('傾き（左右）', 'roll', -45, 45, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '網目の軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { signed: true });
+  vfS('向き（回転の位置）', 'yaw', -180, 180, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '縦軸まわりの向きをずらす。「回転 なし」の時はどの面を見せるか、ありの時はどこから回り始めるか。', { signed: true });
   vfS('線の濃さ', 'lineAlpha', 0.05, 0.8, 0.01, v => Math.round(v * 100) + '%', '手前の線の濃さ。奥ほど自動で薄く(案1は4段の濃淡、案2は連続)。');
   vfS('線の太さ', 'lineWidth', 0.5, 3, 0.1, v => v.toFixed(1) + 'px', '手前の線の太さ。奥は少し細く。案1=1 / 案2(KV)=1.5。');
   vfS('パケット（骨を走る光）', 'pk', 0, 12, 0.5, v => v === 0 ? 'なし' : v.toFixed(1) + '/秒', '線の上を走る光の数(1秒あたり)。案2(KV)は 4。0でなし。');
