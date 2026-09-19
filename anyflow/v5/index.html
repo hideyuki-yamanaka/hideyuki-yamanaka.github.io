@@ -3002,7 +3002,7 @@
     .vis-l1 { top: 106px; }   /* → y773 */
     .vis-l2 { top: 170px; }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
-    .vf-wrap { left: 3px; top: 285px; width: 640px; height: 600px; transform: scale(0.6); transform-origin: 0 0; }   /* 【2026-09-19 仮置き・SPカンプ未取得】ドームごと 0.62 倍(600→372px)で中央に */
+    .vf-wrap { left: 20px; top: 285px; width: 640px; height: 600px; transform: scale(0.6); transform-origin: 0 0; }   /* 【2026-09-20 ヒデさん依頼】SP はメッシュを中央に(球の中心を画面中央へ) */   /* 【2026-09-19 仮置き・SPカンプ未取得】ドームごと 0.62 倍(600→372px)で中央に */
     /* 右カラムはPCでは右アンカーだが、スマホは画面いっぱいの1カラムにする */
     .val-group { left: 0; right: auto; width: 100%; }
     .val-head { left: 24px; right: 24px; top: 372px; width: auto; }
@@ -12187,19 +12187,20 @@ function applyVisPointsX() { const sec = document.getElementById('vision'); if (
 applyVisPointsX();
 function applyVfFade() {
   const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
+  const _mb = (typeof isMobile !== 'undefined' && isMobile);   /* 【2026-09-20】SP は独立した見た目(PCに影響しない) */
   w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* セット(網目＋ロゴ＋機能名)の上下 */
   w.style.setProperty('--vf-dx', (c.dx || 0) + 'px');   /* 【2026-09-19 ヒデさん依頼】セットの左右(PCのみ。SPは固定) */
   /* 下のフェード: 容器の高さ(600)に対する割合を、中心基準で拡大して canvas(上 −150)の px に */
   const fy = (f) => (VF_CY + (c.my || 0) + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';   /* 網目を上下にずらしたらフェードも一緒に */
   w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
-  const ld = (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-19 ヒデさん依頼】機能名と球の距離(<1で近づく) */
+  const ld = _mb ? 0.6 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 ヒデさん依頼】SP は機能名(コネクタ〜実行エンジン)を球の中に収める(はみ出し防止)。PC は labelDist */
   w.querySelectorAll('.vf-lab').forEach(el => { const x = +el.dataset.x, y = +el.dataset.y; el.style.left = (VF_CX + (x - VF_CX) * sc * ld).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc * ld).toFixed(1) + 'px'; });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
-  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; const lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); if (_mb) { lcx = VF_CX + (c.logoDx || 0); lcy = VF_CY + (c.logoDy || 0) - 20; }   /* SP: ロゴを球の中央に */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
     const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
-    const tf3 = (ang || tx || ty) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateY(' + ty.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : ''; lg.style.transform = tf3;
+    const tf3 = _mb ? '' : ((ang || tx || ty) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateY(' + ty.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : '');   /* SP: 平らにまっすぐ */ lg.style.transform = tf3;
     lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
     const sh = (c.logoShadow || 0); lg.style.filter = sh > 0.05 ? 'drop-shadow(0 ' + (sh * 0.7).toFixed(1) + 'px ' + sh.toFixed(1) + 'px rgba(16,24,40,.22))' : '';
     /* 案4 ガラスの板: ロゴより一回り大きく、同じ傾き */
@@ -15832,6 +15833,7 @@ function fit() {
   DW = isMobile ? 390 : 1440;
   DH = isMobile ? 780 : 921;
   document.documentElement.classList.toggle('mb', isMobile);
+  try { applyVfFade(); } catch (e) {}   /* 【2026-09-20】SP/PC 確定後にビジョンの図の位置を取り直す(スマホ専用の見た目) */
   /* 【2026-09-09】isMobile が確定したこの時点でロゴティッカーの再生を再アサート。
      初回に applyMarquee が isMobile 未確定(=false)＋params.running=false で走ると
      ティッカーが止まったままになるため、モバイル確定後に必ず running へ戻す。 */
