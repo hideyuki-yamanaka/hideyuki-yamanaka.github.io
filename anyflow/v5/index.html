@@ -5696,6 +5696,29 @@ try {
     localStorage.setItem('anyflow-logo-gap-20260918', '1');
   }
 } catch (e) {}
+/* 【2026-09-20 ヒデさん依頼・優先】スマホモードで PC と連動していた頃に、SP で触った値が PC 側の
+   「KVのフォント」と「右グラフィック(惑星/カゴ/右グラフィック全体)」へ誤って移ってしまった分を、一度だけ焼き込みへ戻す。
+   以降は PC/SP 独立(文字=editsMb・起動時 applyKvVariant)なので再発しない。SP は CSS(--fs-hero 等)・焼き込み案で正しく出る。 */
+try {
+  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-sp-rollback-20260920')) {
+    const FULL = ['kvMain', 'kvMainLast', 'kvEyebrow'];   /* KVコピーは焼き込みに文字設定が無い＝丸ごと消せば焼き込みへ戻る(位置dx/dyは残す) */
+    const SIZE = ['navCta', 'navLinks'];                  /* ヘッダーは焼き込みで太さ600がある＝サイズ等だけ消して太さは残す */
+    const rollback = (o) => {
+      if (!o) return;
+      if (o.edits) {
+        for (const k of FULL) { const e = o.edits[k]; if (e) { delete e.fs; delete e.fw; delete e.lh; delete e.ls; } }
+        for (const k of SIZE) { const e = o.edits[k]; if (e) { delete e.fs; delete e.lh; delete e.ls; } }
+      }
+      /* 右グラフィック: KV案の「いまの設定で上書き」控えを消す → 起動時 applyKvVariant が焼き込み案の値を入れ直す */
+      if (o.gfxVarOverride) delete o.gfxVarOverride.kvVar;
+    };
+    rollback(params);
+    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    rollback(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
+    try { const st = JSON.parse(localStorage.getItem(PRESET_KEY)) || null; if (st && st.over) { delete st.over.kvVar; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); } } catch (e) {}
+    localStorage.setItem('anyflow-kv-sp-rollback-20260920', '1');
+  }
+} catch (e) {}
 /* 【2026-09-18 ヒデさん指摘「コンプとの照合が100%でない・特にビジョン」】全277文字ノードを機械照合した差分: ビジョンの図の役割名(コネクタ等)・プラットフォーム＝Noto Regular(400)、
    開発者体験の見出しスロット CLI/SDK/API＝SF Pro Medium(500)。「Platform」(英字)はコンプに無いので据え置き。 */
 try {
