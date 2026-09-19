@@ -5401,7 +5401,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919060000;
+const SHIPPED_GENERATION = 20260919070000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -5652,6 +5652,8 @@ try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vi
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-onerow-20260919')) { const fx = (o) => { if (!o || !o.cv) return; const sw = String(o.cvSway || '0'); if (['0', '7', '8', '9', '10'].includes(sw) && o.cv.hueMode && o.cv.hueMode !== 'off') o.cv.hueMode = 'off'; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-onerow-20260919', '1'); } } catch (e) {}
 /* 【2026-09-19】ビジョン→実績の詰め幅の既定 200→260(旧既定のままの保存値だけ更新。手で変えた値は触らない) */
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vis-res-pull-260-20260919')) { const fx = (o) => { if (o && (o.visResPull == null || o.visResPull === 200)) o.visResPull = 260; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-vis-res-pull-260-20260919', '1'); } } catch (e) {}
+/* 【2026-09-19】入場ぼかしの「はっきりし始める」既定 0.5→0.4(最初の版の既定のままの保存値だけ更新) */
+try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-entryfrom-04-20260919')) { const fx = (o) => { const r = o && o.sections && o.sections.results; if (r && (r.entryFrom == null || r.entryFrom === 0.5)) r.entryFrom = 0.4; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-entryfrom-04-20260919', '1'); } } catch (e) {}
 function loadParams() {
   try {
     let s = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -12381,12 +12383,20 @@ function resFxFrame(t) {
     E.r2v.forEach((el, i) => {
       vis(el, on ? 1 : 0);
       const big = resFxSt.big[i], fig = E.fig[i], tx = E.tx[i];
+      /* 【2026-09-19 ヒデさん依頼・修正】入場のぼかしと出だしの高さは 24 系(24/24-2/24-3/24-4/24-5)の共通処理。
+         ⚠️ 最初は 24-5 の分岐にだけ入れていて、ヒデさんの保存値(24-4)では動かなかった(Chrome 本体で実測して判明) */
+      /* 【2026-09-19 ヒデさん依頼】入場のぼかし: セクションが画面下から入ってくる進み具合(preP: 0=下端に顔を出す/1=所定の位置)に連動して、
+         ぼけ→くっきり。文字が画面下端に出るのは pre≒0.5 なので既定は 0.5→0.95 で解ける。所定の位置に着いたら(pre=1)効かない。実績タブ「入場のぼかし」 */
+      const rc = params.sections.results; const ePre = preP(SECS.results);
+      const eFrom = (rc.entryFrom != null ? rc.entryFrom : 0.4), eTo = Math.max(eFrom + 0.05, rc.entryTo != null ? rc.entryTo : 0.95);
+      const ek0 = clamp01((ePre - eFrom) / (eTo - eFrom)); const ek = ek0 * ek0 * (3 - 2 * ek0);
+      const eBlur = (rc.entryBlur != null ? rc.entryBlur : 16) * (1 - ek); const eOp0 = (rc.entryOp != null ? rc.entryOp : 1); const eOp = eOp0 + (1 - eOp0) * ek;
+      /* 【2026-09-19 ヒデさん依頼】出だしの高さ: 画面の何割の位置に文字の中心を置くか(既定 0.4=少し上。0.5=ど真ん中)。ビジョンとの空白を詰めるため。実績タブ「入場のぼかし」の「出だしの高さ」 */
+      const bsY = (params.sections.results.bigStartY != null ? params.sections.results.bigStartY : 0.4);
       if (big && V5) {
         /* 【24-5 絵コンテ 17770:28484】大きい文字そのものが、終点の小さいタグ(for SaaS Product)の位置・大きさへ移動して着地する。
            1行目「for SaaS」の中心を、タグの「for SaaS」部分の中心へ(20px/70px=0.2857倍)。着地の直前(0.38-0.44)で同じ場所のタグと入れ替わる */
         const m = L2 * L2 * (3 - 2 * L2);   /* 出だしと終わりをゆるく */
-        /* 【2026-09-19 ヒデさん依頼】出だしの高さ: 画面の何割の位置に文字の中心を置くか(既定 0.4=少し上。0.5=ど真ん中)。ビジョンとの空白を詰めるため。実績タブ「入場のぼかし」の「出だしの高さ」 */
-        const bsY = (params.sections.results.bigStartY != null ? params.sections.results.bigStartY : 0.4);
         const base = isMobile ? 0 : (vh * bsY) - rfxCenterY(el);
         const tagEl = tx ? tx.querySelector('.r2v-tag') : null;
         let dx = 0, dyv = base * (1 - m), s = 1;
@@ -12400,21 +12410,16 @@ function resFxFrame(t) {
           s = 1 - (1 - sEnd) * m;
           dx = (tcx - bcx) * m; dyv = base * (1 - m) + (tcy - off * sEnd - bcy) * m;
         }
-        /* 【2026-09-19 ヒデさん依頼】入場のぼかし: セクションが画面下から入ってくる進み具合(preP: 0=下端に顔を出す/1=所定の位置)に連動して、
-           ぼけ→くっきり。文字が画面下端に出るのは pre≒0.5 なので既定は 0.5→0.95 で解ける。所定の位置に着いたら(pre=1)効かない。実績タブ「入場のぼかし」 */
-        const rc = params.sections.results; const ePre = preP(SECS.results);
-        const eFrom = (rc.entryFrom != null ? rc.entryFrom : 0.4), eTo = Math.max(eFrom + 0.05, rc.entryTo != null ? rc.entryTo : 0.95);
-        const ek0 = clamp01((ePre - eFrom) / (eTo - eFrom)); const ek = ek0 * ek0 * (3 - 2 * ek0);
-        const eBlur = (rc.entryBlur != null ? rc.entryBlur : 16) * (1 - ek); const eOp0 = (rc.entryOp != null ? rc.entryOp : 1); const eOp = eOp0 + (1 - eOp0) * ek;
         const o = (on ? 1 : 0) * (1 - rfxRange(p, 0.38, 0.44)) * eOp;
         setStyle(big, 'opacity', o.toFixed(3));
         setStyle(big, 'filter', eBlur > 0.05 ? `blur(${eBlur.toFixed(2)}px)` : '');
         setStyle(big, 'transform', `translate(calc(-50% + ${dx.toFixed(2)}px), calc(-50% + ${dyv.toFixed(2)}px)) scale(${s.toFixed(4)})`);
       } else if (big) {
-        const base = isMobile ? 0 : (vh / 2) - rfxCenterY(el);   /* p=0 はステージ(=画面)の上下中央に。ステージ座標なので入場中も一緒に上がってくる(SP は列の中央) */
+        const base = isMobile ? 0 : (vh * bsY) - rfxCenterY(el);   /* p=0 は画面の bsY(出だしの高さ・既定0.4)の位置に。ステージ座標なので入場中も一緒に上がってくる(SP は列の中央) */
         const sc = 1 - (1 - 40 / 70) * L2;
-        const o = (on ? 1 : 0) * (1 - rfxRange(D, 0, 0.5));
+        const o = (on ? 1 : 0) * (1 - rfxRange(D, 0, 0.5)) * eOp;
         setStyle(big, 'opacity', o.toFixed(3));
+        setStyle(big, 'filter', eBlur > 0.05 ? `blur(${eBlur.toFixed(2)}px)` : '');   /* 入場のぼかし(共通) */
         setStyle(big, 'transform', `translate(-50%, calc(-50% + ${(base - (isMobile ? 60 : F.labelUp) * L2).toFixed(2)}px)) scale(${sc.toFixed(4)})`);
       }
       if (fig) {
