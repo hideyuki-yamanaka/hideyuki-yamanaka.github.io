@@ -1825,7 +1825,7 @@
   html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */
   html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: 1; /* 【2026-09-19 ヒデさん依頼】線は数値の上(ピクト→線→数値。PCと同じ並び) */ margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
   html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: var(--space-4); }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
-  html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: column; align-items: center; align-self: stretch; font-size: var(--fs-title); line-height: var(--lh-loose); }   /* 【2026-09-16】V3.0: 22px(--fs-title)・中央。lh1.7=--lh-loose */
+  html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: row; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: baseline; align-self: stretch; font-size: 18px; line-height: var(--lh-loose); }   /* 【2026-09-20 ヒデさん依頼】「事業の推進力を、Anyflowが支えます。」を1行に(折り返さないようフォントを18pxへ縮小)。旧: 22px 2行 */
   html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: wrap; gap: var(--space-20) var(--space-14); justify-content: flex-start; width: 100%; }   /* 【2026-09-20 ヒデさん依頼】4項目は 2×2 で */
   html.mb #results.rfx-24 .res2-stats .r2s, html.mb #results.rfx-25 .res2-stats .r2s { flex: 0 0 calc(50% - var(--space-14) / 2); box-sizing: border-box; align-items: center; text-align: center; }   /* 【2026-09-20 ヒデさん依頼】SP は見出し＋数値を中央揃え */   /* 2列 */   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
   html.mb #results.rfx-24 .res2-stats .r2s span, html.mb #results.rfx-25 .res2-stats .r2s span { font-size: var(--fs-stat); }   /* 【2026-09-16】V3.0: 34px=--fs-stat */
@@ -2954,7 +2954,7 @@
     /* コピーはグラフィックの下へ。幅を制限して折り返し可にし、右はみ出しを解消 */
     /* 【2026-09-08 カンプ node16534:22195 準拠】KVコピーは中央寄せ。メイン46px Thin/行間1.4・中央、
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
-    .headline { left: 24px; right: 24px; top: 524px; white-space: normal; gap: var(--space-12);   /* 【2026-09-20】KV下げ 400→448 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
+    .headline { left: 24px; right: 24px; top: 434px; white-space: normal; gap: var(--space-12);   /* 【2026-09-20】グラフィックと見出しの間隔を詰める(524→434・メッシュ最下端420の約14px下)。ヒデさん「離しすぎ→10pxほど」 */   /* 旧: KV下げ 400→448→524 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
                 align-items: center; text-align: center; }
     .hl-main { font-size: var(--fs-hero); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース) */
     .hl-main .hl-line:last-child { font-size: var(--fs-hero-jump); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例) */
@@ -2971,7 +2971,7 @@
        iOS Safari は scroll/レイヤー再構成のたびに遅延付き animation を再生し直すことがあり、その瞬間に
        opacity が 0 に戻って「一瞬消える」原因になっていた。常時表示(opacity 1)＋GPU固定で安定させる。
        出現の演出より“消えない”を優先(必要なら後で transition ベースの1回だけフェードに戻す)。 */
-    .logos { top: 736px; height: 42px; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }   /* 【2026-09-20】KV下げ 624→672 */
+    .logos { top: 646px; height: 42px; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }   /* 【2026-09-20】見出しを上げたぶんロゴ帯も上げてコピーとの間隔を維持(736→646) */
     /* 帯の流れは CSS アニメ(marquee)に戻す＝コンポジタ側で滑らか＆くっきり。JS 毎フレーム駆動は重い KV 描画
        ループと同フレームで translate を計算するためカクつき(ガタガタ)＋非GPU化で画質低下していた(2026-09-09)。
        速度は applyMarquee がモバイルだけ 8s(約90px/s)に。iOS で消える件は rv() の blur を止めて解消済み。 */
