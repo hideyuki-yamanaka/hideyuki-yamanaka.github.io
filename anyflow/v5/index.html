@@ -19766,18 +19766,18 @@ document.getElementById('panelBody').addEventListener('click', () => {
     + '.live-pop button.pri{background:#0e5cff;color:#fff;border-color:#0e5cff}.live-pop button.pri.on{background:#111;border-color:#111}'
     + '.live-pop .st{font-size:11px;color:#666;margin-top:8px;min-height:15px}.live-pop .err{color:#c0392b}'
     /* ▼ スマホモード(同期中)の見た目 */
-    + '.phone-mode-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;color:#b45309;background:linear-gradient(90deg,rgba(245,130,10,.12),rgba(255,170,60,.16));border-top:1px solid rgba(245,130,10,.28);border-bottom:1px solid rgba(245,130,10,.28);padding:7px 12px;text-align:center}'
+    + '.phone-mode-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;color:#0b4bd6;background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.14));border-top:1px solid rgba(14,92,255,.22);border-bottom:1px solid rgba(14,92,255,.22);padding:7px 12px;text-align:center}'
     + '.phone-mode-banner b{font-weight:800}'
     + 'html.phone-mode .phone-mode-banner{display:flex}'
-    + 'html.phone-mode .panel-head{background:linear-gradient(90deg,rgba(245,130,10,.12),rgba(255,170,60,.12))}'
-    + 'html.phone-mode #panel{box-shadow:0 0 0 2px rgba(245,130,10,.5),0 14px 40px rgba(16,24,40,.22)}'
-    + 'html.phone-mode #panelLiveBtn{background:#f5820a;border-color:#f5820a;color:#fff}'
+    + 'html.phone-mode .panel-head{background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.12))}'
+    + 'html.phone-mode #panel{box-shadow:0 0 0 2px rgba(14,92,255,.45),0 14px 40px rgba(16,24,40,.22)}'
+    + 'html.phone-mode #panelLiveBtn{background:#0e5cff;border-color:#0e5cff;color:#fff}'
     /* 【2026-09-19 ヒデさん依頼】レスポンシブ用に設定した値をオレンジで示す(将来: コントロール側で is-mb-override を付ける想定) */
-    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{color:#c2410c}'
-    + 'html.phone-mode .row.mb-override input[type=range]{accent-color:#f5820a}'
-    + 'html.phone-mode .txt-row.mb-override > label{color:#c2410c;font-weight:600}'
-    + 'html.phone-mode .txt-row.mb-override > label::before{content:"● ";color:#f5820a;font-size:8px;vertical-align:middle}'
-    + 'html.phone-mode .txt-row .txt-n.mb-diff,html.phone-mode .txt-row .txt-w.mb-diff{border-color:#f5820a!important;background:#fff7ed;color:#c2410c;font-weight:600}';
+    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{color:#0b4bd6}'
+    + 'html.phone-mode .row.mb-override input[type=range]{accent-color:#0EBBFF}'
+    + 'html.phone-mode .txt-row.mb-override > label{color:#0b4bd6;font-weight:600}'
+    + 'html.phone-mode .txt-row.mb-override > label::before{content:"● ";color:#0EBBFF;font-size:8px;vertical-align:middle}'
+    + 'html.phone-mode .txt-row .txt-n.mb-diff,html.phone-mode .txt-row .txt-w.mb-diff{border-color:#0EBBFF!important;background:#eef8ff;color:#0b4bd6;font-weight:600}';
   document.head.appendChild(css);
 
   var trigger = document.getElementById('panelLiveBtn');
@@ -19815,17 +19815,32 @@ document.getElementById('panelBody').addEventListener('click', () => {
     });
   }
   function positionPop() {
+    if (pop.__dragged) return;   /* 【2026-09-20】手で動かした後は自動配置しない */
     pop.style.right = ''; pop.style.bottom = 'auto';
     var pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 320, pad = 12;
-    var left, top, r = trigger ? trigger.getBoundingClientRect() : null;
-    if (r) { left = r.right - pw; top = r.bottom + 8; if (top + ph > window.innerHeight - pad) top = r.top - ph - 8; }
-    else { left = window.innerWidth - pw - pad; top = window.innerHeight - ph - pad; }
-    left = Math.max(pad, Math.min(left, window.innerWidth - pw - pad));   /* 【2026-09-19 ヒデさん依頼】必ず画面内に収める(はみ出して見えなくなるのを防ぐ) */
+    /* 【2026-09-20 ヒデさん依頼】パネルに重ならないよう、パネルの反対側に出す(左端なら右・右端なら左) */
+    var panel = document.getElementById('panel') || (trigger && trigger.closest('.tools'));
+    var pr = panel ? panel.getBoundingClientRect() : (trigger ? trigger.getBoundingClientRect() : null);
+    var left, top;
+    if (pr) {
+      var mid = pr.left + pr.width / 2;
+      left = (mid < window.innerWidth / 2) ? (pr.right + pad) : (pr.left - pw - pad);   /* パネルが左→右に / 右→左に */
+      if (left + pw > window.innerWidth - pad) left = pr.left - pw - pad;               /* 出した側がはみ出すなら反対へ */
+      if (left < pad) left = pr.right + pad;
+      top = pr.top;
+    } else { left = window.innerWidth - pw - pad; top = pad; }
+    left = Math.max(pad, Math.min(left, window.innerWidth - pw - pad));
     top = Math.max(pad, Math.min(top, window.innerHeight - ph - pad));
     pop.style.left = left + 'px'; pop.style.top = top + 'px';
   }
-  function showPop() { pop.classList.add('show'); positionPop(); requestAnimationFrame(positionPop); refreshStatus(); clearInterval(statusT); statusT = setInterval(refreshStatus, 3000); window.addEventListener('resize', positionPop); }
+  function showPop() { pop.__dragged = false; pop.classList.add('show'); positionPop(); requestAnimationFrame(positionPop); refreshStatus(); clearInterval(statusT); statusT = setInterval(refreshStatus, 3000); window.addEventListener('resize', positionPop); }
   function hidePop() { pop.classList.remove('show'); clearInterval(statusT); window.removeEventListener('resize', positionPop); }
+  /* 【2026-09-20 ヒデさん依頼】QRポップアップを見出しでドラッグ移動 */
+  (function () { var h = pop.querySelector('h4'); if (!h) return; h.style.cursor = 'move'; h.style.userSelect = 'none'; var sx, sy, sl, st, drag = false;
+    h.addEventListener('pointerdown', function (e) { drag = true; pop.__dragged = true; sx = e.clientX; sy = e.clientY; var r = pop.getBoundingClientRect(); sl = r.left; st = r.top; try { h.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    h.addEventListener('pointermove', function (e) { if (!drag) return; var pad = 6, nl = sl + (e.clientX - sx), nt = st + (e.clientY - sy); nl = Math.max(pad, Math.min(nl, window.innerWidth - pop.offsetWidth - pad)); nt = Math.max(pad, Math.min(nt, window.innerHeight - pop.offsetHeight - pad)); pop.style.left = nl + 'px'; pop.style.top = nt + 'px'; });
+    var end = function (e) { drag = false; try { h.releasePointerCapture(e.pointerId); } catch (x) {} }; h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  })();
   /* 【2026-09-19 ヒデさん依頼】スマホ実機ボタン1つで「スマホモードON＋QRポップアップ＋パネル切替」をまとめて。もう一度押すとQRの開閉。終了はポップアップの「スマホモード終了」 */
   /* 【2026-09-19 ヒデさん依頼・STUDIO風】スマホ(@media≤600 / html.mb)で文字プロパティを上書きしているルールを集め、
      その要素の 🔤文字 行をオレンジで光らせる(=レスポンシブで値が変わっている印) */

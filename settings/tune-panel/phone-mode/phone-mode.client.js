@@ -31,8 +31,9 @@
   /* 開発(ローカル/LAN)だけで動かす。本番(vercel等)では何も出さない */
   var isDev = /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
   if (!isDev) return;
-  var ACCENT = (C.theme === 'blue') ? { fg: '#0b4bd6', a: '14,92,255', b: '14,187,255', btn: '#0e5cff' }
-                                    : { fg: '#b45309', a: '245,130,10', b: '255,170,60', btn: '#f5820a' };
+  /* 既定はブランド寄りのブルー/ライトブルー。theme:'orange' で STUDIO 風オレンジ */
+  var ACCENT = (C.theme === 'orange') ? { fg: '#b45309', a: '245,130,10', b: '255,170,60', btn: '#f5820a', dot: '#f5820a', diffBg: '#fff7ed' }
+                                      : { fg: '#0b4bd6', a: '14,92,255', b: '14,187,255', btn: '#0e5cff', dot: '#0EBBFF', diffBg: '#eef8ff' };
 
   /* ---------------- スマホ側: 受信してリロード ---------------- */
   if (mode === 'phone') {
@@ -97,8 +98,8 @@
     + 'html.phone-mode .pm-banner{display:flex}'
     + 'html.phone-mode ' + (C.panelSel || '#panel') + '{box-shadow:0 0 0 2px rgba(' + ACCENT.a + ',.5),0 14px 40px rgba(16,24,40,.22)}'
     + 'html.phone-mode ' + (C.fontRowSel || '.txt-row') + '.mb-override>label{color:' + ACCENT.fg + ';font-weight:600}'
-    + 'html.phone-mode ' + (C.fontRowSel || '.txt-row') + '.mb-override>label::before{content:"● ";color:' + ACCENT.btn + ';font-size:8px;vertical-align:middle}'
-    + 'html.phone-mode ' + (C.fontRowSel || '.txt-row') + ' .mb-diff{border-color:' + ACCENT.btn + '!important;background:#fff7ed;color:' + ACCENT.fg + ';font-weight:600}';
+    + 'html.phone-mode ' + (C.fontRowSel || '.txt-row') + '.mb-override>label::before{content:"● ";color:' + ACCENT.dot + ';font-size:8px;vertical-align:middle}'
+    + 'html.phone-mode ' + (C.fontRowSel || '.txt-row') + ' .mb-diff{border-color:' + ACCENT.dot + '!important;background:' + ACCENT.diffBg + ';color:' + ACCENT.fg + ';font-weight:600}';
   document.head.appendChild(css);
 
   /* トリガー: ヘッダーのボタン(あれば)／無ければ右下FAB */
@@ -129,13 +130,29 @@
     });
   }
   function positionPop() {
-    var pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 320, pad = 12, r = trigger.getBoundingClientRect(), left, top;
-    left = r.right - pw; top = r.bottom + 8; if (top + ph > window.innerHeight - pad) top = r.top - ph - 8;
+    if (pop.__dragged) return;   /* 手で動かした後は自動配置しない */
+    var pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 320, pad = 12, left, top;
+    /* パネルに重ならないよう、パネルの反対側に出す(左端なら右・右端なら左) */
+    var panel = (C.panelSel && document.querySelector(C.panelSel)) || (trigger && trigger.closest && trigger.closest('.tools'));
+    var pr = panel ? panel.getBoundingClientRect() : (trigger ? trigger.getBoundingClientRect() : null);
+    if (pr) {
+      var mid = pr.left + pr.width / 2;
+      left = (mid < window.innerWidth / 2) ? (pr.right + pad) : (pr.left - pw - pad);
+      if (left + pw > window.innerWidth - pad) left = pr.left - pw - pad;
+      if (left < pad) left = pr.right + pad;
+      top = pr.top;
+    } else { left = window.innerWidth - pw - pad; top = pad; }
     left = Math.max(pad, Math.min(left, window.innerWidth - pw - pad));
     top = Math.max(pad, Math.min(top, window.innerHeight - ph - pad));   /* 必ず画面内に */
     pop.style.left = left + 'px'; pop.style.top = top + 'px';
   }
-  function showPop() { pop.classList.add('show'); positionPop(); requestAnimationFrame(positionPop); refreshStatus(); clearInterval(statusT); statusT = setInterval(refreshStatus, 3000); window.addEventListener('resize', positionPop); }
+  function showPop() { pop.__dragged = false; pop.classList.add('show'); positionPop(); requestAnimationFrame(positionPop); refreshStatus(); clearInterval(statusT); statusT = setInterval(refreshStatus, 3000); window.addEventListener('resize', positionPop); }
+  /* QRポップアップを見出しでドラッグ移動 */
+  (function () { var h = pop.querySelector('h4'); if (!h) return; h.style.cursor = 'move'; h.style.userSelect = 'none'; var sx, sy, sl, st, drag = false;
+    h.addEventListener('pointerdown', function (e) { drag = true; pop.__dragged = true; sx = e.clientX; sy = e.clientY; var r = pop.getBoundingClientRect(); sl = r.left; st = r.top; try { h.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    h.addEventListener('pointermove', function (e) { if (!drag) return; var pad = 6, nl = sl + (e.clientX - sx), nt = st + (e.clientY - sy); nl = Math.max(pad, Math.min(nl, window.innerWidth - pop.offsetWidth - pad)); nt = Math.max(pad, Math.min(nt, window.innerHeight - pop.offsetHeight - pad)); pop.style.left = nl + 'px'; pop.style.top = nt + 'px'; });
+    var end = function (e) { drag = false; try { h.releasePointerCapture(e.pointerId); } catch (x) {} }; h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  })();
   function hidePop() { pop.classList.remove('show'); clearInterval(statusT); window.removeEventListener('resize', positionPop); }
 
   /* ---- レスポンシブ値(モバイルCSSで上書きされる文字プロパティ)をオレンジで ---- */
