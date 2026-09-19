@@ -12215,7 +12215,8 @@ function applyVfFade() {
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
   const ld = _mb ? 0.6 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 ヒデさん依頼】SP は機能名(コネクタ〜実行エンジン)を球の中に収める(はみ出し防止)。PC は labelDist */
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
-  w.querySelectorAll('.vf-lab').forEach((el, i) => { const x = +el.dataset.x, y = +el.dataset.y; const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0; el.style.left = (VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + oy).toFixed(1) + 'px'; });
+  const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -95) : 0;   /* 【2026-09-20 ヒデさん依頼】SP は機能名の群れをメッシュの上の境界線あたりへ持ち上げる */
+  w.querySelectorAll('.vf-lab').forEach((el, i) => { const x = +el.dataset.x, y = +el.dataset.y; const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0; el.style.left = (VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + oy).toFixed(1) + 'px'; });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
   const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); if (_mb) { lcx = VF_CX + (c.logoDx || 0); lcy = VF_CY + (c.logoDy || 0) - 20; }   /* SP: ロゴを球の中央に */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
