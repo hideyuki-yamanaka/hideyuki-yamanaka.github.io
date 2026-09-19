@@ -5422,7 +5422,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919200000;
+const SHIPPED_GENERATION = 20260919210000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -12076,7 +12076,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoSpin: 0.3 };   /* logoSpin=ロゴの回転(Y軸・0で止まる。2026-09-19 ヒデさん依頼・0.3 は仮置き) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14 };   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
 const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk'];
 const VIS_MESHES = [
@@ -12101,7 +12101,8 @@ function applyVfFade() {
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
   w.querySelectorAll('.vf-lab').forEach(el => { const x = +el.dataset.x, y = +el.dataset.y; el.style.left = (VF_CX + (x - VF_CX) * sc).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc).toFixed(1) + 'px'; });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
-  const lg = w.querySelector('.vf-logo'); if (lg) { const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; const lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px'; }   /* ロゴ: 中心基準で大きさ(logoScale)・ずらし(logoDx/Dy) */
+  const lg = w.querySelector('.vf-logo'); if (lg) { const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; const lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+    const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0); lg.style.transformOrigin = '50% 50%'; lg.style.transform = (ang || tx) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : ''; }   /* ロゴ: 中心基準で大きさ(logoScale)・ずらし(logoDx/Dy)・角度(logoAngle)・奥行きの傾き(logoTiltX) */
 }
 function vfBuild(f) {
   const t = (1 + Math.sqrt(5)) / 2, nrm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
@@ -12145,8 +12146,6 @@ function vfDraw(tSec) {
     if ((c.nodeMode || 'alt') === 'alt') { col = (i % 2) ? PINK : CYAN; if (quant) { al = VF_LV_NODE[bin(k)]; rad = c.dot * (0.55 + 0.45 * k); } else { const dep = 0.72 + 0.5 * k; al = 0.5 + 0.5 * dep; rad = c.dot * dep; } }
     else { const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; col = h < 0.12 ? PINK : h < 0.24 ? CYAN : h < 0.28 ? NAVY : PALE; al = (col === PALE) ? (0.3 + 0.45 * k) : (0.45 + 0.55 * k); rad = c.dot * (0.55 + 0.45 * k); }
     g.fillStyle = 'rgba(' + col + ',' + al.toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill(); }
-  /* ロゴの回転: Y軸でコインのように(logoSpin 0.3 ≒ 21秒で1周) */
-  { const lg = document.getElementById('vfLogo'); if (lg) { const sp = (c.logoSpin != null ? c.logoSpin : 0); lg.style.transform = sp > 0 ? 'perspective(900px) rotateY(' + ((tSec * sp * 60) % 360).toFixed(2) + 'deg)' : ''; } }
   /* パケット(骨の上を走る光。案2=KV と同じ発想。pk=1秒あたりの数) */
   const dt = vfLastT == null ? 0 : Math.min(0.1, Math.max(0, tSec - vfLastT)); vfLastT = tSec;
   if ((c.pk || 0) > 0) { vfPkNext -= dt; if (vfPkNext <= 0 && vfPk.length < 14) { vfPkNext = 1 / c.pk; const e = vfMesh.edges[(Math.random() * vfMesh.edges.length) | 0]; vfPk.push({ a: e[0], b: e[1], k: 0, dur: 0.7 + Math.random() * 0.5 }); } } else vfPk.length = 0;
@@ -18310,7 +18309,8 @@ function buildPanel() {
   vfS('ロゴの大きさ', 'logoScale', 0.4, 2.5, 0.02, v => Math.round(v * 100) + '%', '中央のロゴだけの大きさ(メッシュの大きさに掛かる)。');
   vfS('ロゴ 横位置', 'logoDx', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを左右へ。✏️編集モードのドラッグでも動きます。');
   vfS('ロゴ 縦位置', 'logoDy', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを上下へ。');
-  vfS('ロゴの回転', 'logoSpin', 0, 2, 0.05, v => v === 0 ? '止める' : '×' + v.toFixed(2) + '（' + Math.round(6 / v) + '秒で1周）', 'ロゴが縦軸(Y軸)でコインのように回る速さ。0で止まる。既定 0.3(仮置き)。');
+  vfS('ロゴの角度', 'logoAngle', -45, 45, 0.5, v => (v > 0 ? '+' : '') + v.toFixed(1) + '°', 'ロゴを平面で回す角度(時計回りがプラス)。');
+  vfS('ロゴの奥行きの傾き', 'logoTiltX', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'ロゴの上端を奥へ/手前へ倒す(3D)。既定 −14° はメッシュの傾きと同じ(仮置き)。0で真正面。');
   vfS('網目の半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。カンプは 262px。');
   vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '0で止まる。0.35 で約2分半で1周。');
   vfS('傾き', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
