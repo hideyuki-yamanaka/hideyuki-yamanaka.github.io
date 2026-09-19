@@ -867,7 +867,7 @@
      出現は updateVision の mi(ブラー)。位置は ✏️編集(TEXT_SPEC vfWrap)でずらせる */
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図＝網目のドーム(Figma 18004:38228)。容器はカンプのグループ座標(ステージ x165 / y245・600×600)。
      下半球はカンプの「地色のレイヤーブラー(75px)矩形」の代わりに mask で上→下へ消す(--vf-fade-a/b は JS applyVfFade) */
-  .vf-wrap { position: absolute; left: 165px; top: calc(245px + var(--vis-below, 0px) + var(--vf-dy, 0px)); width: 640px; height: 600px; }   /* --vis-below=メッセージ→図・ポイントの間隔 / --vf-dy=図だけの上下(ビジョンタブ③「図の上下位置」) */
+  .vf-wrap { position: absolute; left: calc(165px + var(--vf-dx, 0px)); top: calc(245px + var(--vis-below, 0px) + var(--vf-dy, 0px)); width: 640px; height: 600px; }   /* --vis-below=メッセージ→図・ポイントの間隔 / --vf-dy=図だけの上下(ビジョンタブ③「図の上下位置」) */
   /* 【2026-09-19 ヒデさん指摘「ロゴがかすむ」】下半球のフェード(mask)は網目の canvas だけに。ロゴと機能名は常にくっきり(以前は容器ごとかけていてロゴの高さが薄れる帯に入っていた) */
   /* 【2026-09-19 ヒデさん依頼「メッシュを大きく・文字はそのまま」】canvas は 900px(左上 −150)で、球の中心(容器 291,315)は変えずに半径だけ拡大できる。mask の位置は JS(applyVfFade)が px で入れる */
   .vf-wrap .vf-dome { position: absolute; left: -150px; top: -150px; width: 900px; height: 900px; display: block;
@@ -12098,7 +12098,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate'];
 const VIS_LOGOS = [
@@ -12130,7 +12130,8 @@ function applyVisBelow() { const sec = document.getElementById('vision'); if (!s
 applyVisBelow();
 function applyVfFade() {
   const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
-  w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* 図だけの上下 */
+  w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* セット(網目＋ロゴ＋機能名)の上下 */
+  w.style.setProperty('--vf-dx', (c.dx || 0) + 'px');   /* 【2026-09-19 ヒデさん依頼】セットの左右(PCのみ。SPは固定) */
   /* 下のフェード: 容器の高さ(600)に対する割合を、中心基準で拡大して canvas(上 −150)の px に */
   const fy = (f) => (VF_CY + (c.my || 0) + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';   /* 網目を上下にずらしたらフェードも一緒に */
   w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
@@ -18183,12 +18184,16 @@ function buildPanel() {
   varRowX('visMesh', VIS_MESHES, () => vfVarKey(), v => { vfApplyVariant(String(v)); markDirty(); }, { snap: VAR_SNAP.visMesh, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと下のつまみ(半径・回転・傾き・線・点・細かさ・パケット)にその案の値が入ります。細かく変えたら ⋯「この設定で上書き」でその案に保存。');
   const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true }, o || {})));
-  vfS('図の上下位置', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '図(ドーム・ロゴ・機能名)だけを上下に。Point 01/02 は動きません。メッセージとの間隔を Point ごと変える時は「② メッセージ」の「メッセージ→図・ポイントの間隔」。既定 +30px は仮置き。');
-  /* 【2026-09-19 ヒデさん依頼】網目だけを XYZ で動かす(ロゴ・機能名は動かない)。真ん中(0)＝いまの位置 */
-  vfS('メッシュの位置 X', 'mx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを左右に。ロゴと機能名は動きません。0＝いまの位置。', { signed: true });
-  vfS('メッシュの位置 Y', 'my', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを上下に(下のフェードも一緒に動く)。0＝いまの位置。', { signed: true });
-  vfS('メッシュの奥行き Z', 'mz', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '%', '網目だけを手前(+)＝大きく／奥(−)＝小さく。ロゴと機能名はそのまま。0＝いまの大きさ。', { signed: true });
-  vfS('メッシュの大きさ', 'scale', 0.5, 1.6, 0.02, v => Math.round(v * 100) + '%', '網目とロゴを球の中心から拡大縮小。機能名は文字サイズを変えず位置だけ外へ。既定 115%(仮置き)。');
+  /* 【2026-09-19 ヒデさん依頼】位置は「セット(網目＋ロゴ＋機能名)」と「網目だけ」の2組。どちらも真ん中(0)＝いまの位置 */
+  note('▼ セット（網目＋ロゴ＋機能名）をまとめて動かす');
+  vfS('セットの左右位置 X', 'dx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セット(網目・ロゴ・機能名)を左右に。Point 01/02 は動きません。PCのみ(SPは固定)。0＝いまの位置。', { signed: true });
+  vfS('セットの上下位置 Y', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セット(網目・ロゴ・機能名)を上下に。Point 01/02 は動きません。メッセージとの間隔を Point ごと変える時は「② メッセージ」の「メッセージ→図・ポイントの間隔」。既定 +30px は仮置き。');
+  vfS('セットの大きさ（奥行き Z）', 'scale', 0.5, 1.6, 0.02, v => Math.round(v * 100) + '%', '網目とロゴを球の中心から拡大縮小。機能名は文字サイズを変えず位置だけ外へ。既定 115%(仮置き)。');
+  note('▼ 網目だけを動かす（ロゴ・機能名はそのまま）');
+  vfS('網目だけの位置 X', 'mx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを左右に。ロゴと機能名は動きません。0＝いまの位置。', { signed: true });
+  vfS('網目だけの位置 Y', 'my', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '網目だけを上下に(下のフェードも一緒に動く)。0＝いまの位置。', { signed: true });
+  vfS('網目だけの奥行き Z', 'mz', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '%', '網目だけを手前(+)＝大きく／奥(−)＝小さく。ロゴと機能名はそのまま。0＝いまの大きさ。', { signed: true });
+  vfS('網目の半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。カンプは 262px。');
   /* 【2026-09-19 ヒデさん依頼】ロゴの表示/非表示 */
   segRow('ロゴ', [['表示', 1], ['非表示', 0]], () => (vfCfg().logoOn === 0 ? 0 : 1), v => { vfSet('logoOn', v ? 1 : 0); markDirty(); });
   /* 【2026-09-19 ヒデさん依頼】ロゴの案(案1=現状 / 3Dのメッシュに馴染む新案3つ)。⋯で上書き/削除可 */
@@ -18208,7 +18213,6 @@ function buildPanel() {
   vfS('ロゴ背景: 濃さ', 'bgAlpha', 0, 1, 0.02, v => Math.round(v * 100) + '%', '楕円を地色でどれだけ薄めるか(0=透明・網目はぼけるだけ / 100%=地色で塗りつぶし)。案3 は 55%。');
   vfS('ロゴ背景: 横の広さ', 'bgW', 1, 3.5, 0.05, v => '×' + v.toFixed(2), 'ロゴの幅の何倍まで楕円を広げるか。');
   vfS('ロゴ背景: 縦の広さ', 'bgH', 1, 6, 0.1, v => '×' + v.toFixed(1), 'ロゴの高さの何倍まで楕円を広げるか。');
-  vfS('網目の半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', '網目の球だけの半径(ロゴ・機能名は動かない)。カンプは 262px。');
   segRow('回転', [['あり', 1], ['なし', 0]], () => (vfCfg().spinOn === 0 ? 0 : 1), v => { vfSet('spinOn', v ? 1 : 0); markDirty(); });   /* 【2026-09-19 ヒデさん依頼】 */
   vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '「回転 あり」の時の速さ。0.35 で約2分半で1周。');
   vfS('傾き（前後）', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
