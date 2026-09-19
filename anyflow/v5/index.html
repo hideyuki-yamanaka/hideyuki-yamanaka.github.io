@@ -3362,8 +3362,9 @@
   .panel-head:active { cursor: grabbing; }
   .panel-head .chev { transition: transform .25s; font-size: 10px; color: #888; }
   /* 【2026-08-29 ヒデさん指定】タイトル横のコンパクトな編集ボタン。編集モード中は青 */
+  .panel-head-btns { margin-left: auto; margin-right: 10px; display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }   /* 【2026-09-19 ヒデさん依頼】2ボタンを隣同士に(左=スマホ実機/右=編集) */
   .panel-edit-btn {
-    margin-left: auto; margin-right: 10px; flex: 0 0 auto;
+    flex: 0 0 auto;
     padding: 4px 10px; font-size: 11px; font-family: inherit;
     border: 1px solid #d5d5d5; border-radius: 6px; background: #fff; color: #444; cursor: pointer;
   }
@@ -4319,8 +4320,10 @@
   <div class="panel-head" id="panelHead">
     <span>⚙️ 調整パネル<span class="panel-head-sub">クリックで開く</span></span>
     <!-- 【2026-08-29 ヒデさん指定】タイトル横にコンパクトな「編集する」ボタン。クリックで直接編集モードのオン/オフ。 -->
-    <button class="panel-edit-btn" id="panelEditBtn" title="オブジェクトを直接編集">✏️ 編集</button>
-    <button class="panel-edit-btn" id="panelLiveBtn" title="スマホ実機とライブ同期(QR)" hidden>📱 スマホ実機</button>
+    <span class="panel-head-btns">
+      <button class="panel-edit-btn" id="panelLiveBtn" title="スマホ実機とライブ同期(QR)" hidden>📱 スマホ実機</button>
+      <button class="panel-edit-btn" id="panelEditBtn" title="オブジェクトを直接編集">✏️ 編集</button>
+    </span>
     <span class="chev">▲</span>
   </div>
   <div class="panel-body" id="panelBody"></div>
