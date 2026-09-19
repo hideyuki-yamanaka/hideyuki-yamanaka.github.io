@@ -644,7 +644,7 @@
     /* 色：ブランド */
     --brand-cyan:#0EBBFF; --brand-pink:#FF5D97; --brand-blue-deep:#0E4497;
     /* 色：インク（文字・マーク） */
-    --ink:#101828; --ink-strong:#000; --ink-on-dark:#fff; --surface-white:#FFF;   /* 2026-09-19 整理: 白い面(ドロワーのCTA・開いた時のハンバーガー箱・黒セクション上の箱)は --surface-white、白い文字/線は --ink-on-dark */   /* 2026-09-09統合: --ink-label は本番(high)で #101828=--ink に収束していたため --ink に一本化 */
+    --ink:#101828; --ink-strong:#000; --ink-on-dark:#fff; --surface-white:#FFF; --ink-muted:#545961;   /* 2026-09-19 整理: 白い面(ドロワーのCTA・開いた時のハンバーガー箱・黒セクション上の箱)は --surface-white、白い文字/線は --ink-on-dark */   /* 2026-09-09統合: --ink-label は本番(high)で #101828=--ink に収束していたため --ink に一本化 */
     /* 色：サーフェス（背景） */
     --surface:#E7E7E7; --surface-dark-top:#161616; --surface-dark-bottom:#454545;
     --surface-footer-bottom:#363636; --surface-cta:#090909;   /* フッター下端: 新カンプ 16083:23592 で #434343→#363636。2026-09-09統合: --surface-terminal(#080A0E) は high で #090909=--surface-cta に収束のため一本化 */
@@ -863,8 +863,16 @@
      楕円は SVG の座標そのものを毎フレーム計算して描く (常にベクターの実寸) */
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図(Figma 17802:29422 の SVG 書き出し・1052×440)。カンプ: ステージ x−236 / y265(=1189−924)。
      出現は updateVision の mi(ブラー)。位置は ✏️編集(TEXT_SPEC vfWrap)でずらせる */
-  .vf-wrap { position: absolute; left: -236px; top: 265px; width: 1052px; height: 440px; }
-  .vf-wrap .vf-img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; user-select: none; }
+  /* 【2026-09-19 ヒデさん依頼】ビジョンの図＝網目のドーム(Figma 18004:38228)。容器はカンプのグループ座標(ステージ x165 / y245・600×600)。
+     下半球はカンプの「地色のレイヤーブラー(75px)矩形」の代わりに mask で上→下へ消す(--vf-fade-a/b は JS applyVfFade) */
+  .vf-wrap { position: absolute; left: 165px; top: 245px; width: 640px; height: 600px;   /* 幅は mask の範囲=機能名(実行エンジン x515〜)が切れないよう 640 */
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 42%), transparent var(--vf-fade-b, 66%));
+            mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 42%), transparent var(--vf-fade-b, 66%)); }
+  .vf-wrap .vf-dome { position: absolute; left: 0; top: 0; width: 600px; height: 600px; display: block; }
+  .vf-wrap .vf-logo { position: absolute; left: 127px; top: 288px; width: 204px; height: 37px; display: block; -webkit-user-drag: none; user-select: none; }   /* カンプ: ケージ(29,49)＋ロゴ bbox(98,239) */
+  .vf-wrap .vf-lab { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; white-space: nowrap; line-height: var(--lh-tight); color: var(--ink); }
+  .vf-wrap .vf-lab b { font-weight: 500; font-size: var(--fs-base); }   /* カンプ: Noto Medium 16px */
+  .vf-wrap .vf-lab span { font-weight: 400; font-size: 8px; color: var(--ink-muted); }   /* カンプ: Noto Regular 8px #545961 */
   /* 右カラム: カンプでは Point02 の右端がちょうど余白120px。そこを基準に右アンカーする */
   /* 【2026-09-15 ヒデさん指摘・カンプ 16678:22987 にトレースし直し】
      Point ブロックの右端はカンプで x1303(=1440−137)。以前は right:120px＋パネルのドラッグずらし
@@ -2964,7 +2972,7 @@
     .vis-l1 { top: 106px; }   /* → y773 */
     .vis-l2 { top: 170px; }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
-    .vf-wrap { left: -120px; top: 300px; width: 513px; height: 215px; }
+    .vf-wrap { left: 3px; top: 285px; width: 640px; height: 600px; transform: scale(0.6); transform-origin: 0 0; }   /* 【2026-09-19 仮置き・SPカンプ未取得】ドームごと 0.62 倍(600→372px)で中央に */
     /* 右カラムはPCでは右アンカーだが、スマホは画面いっぱいの1カラムにする */
     .val-group { left: 0; right: auto; width: 100%; }
     .val-head { left: 24px; right: 24px; top: 372px; width: auto; }
@@ -3895,7 +3903,18 @@
 
       <!-- 【2026-09-19 ヒデさん依頼】ビジョンの図を Figma 17802:29422「07 1列にまとめる / ネイティブ図解」の SVG 書き出し(文字はアウトライン)に差し替え。
            旧: 軌道の楕円＋ドット＋役割名(Platform/プラットフォーム/コネクタ…)。カンプ(ベース 17753:27563)では図は x−236 / y1189(=Our Vision 上端964の225px下)・1052×440、左は画面の外へはみ出す -->
-      <div class="vf-wrap" id="vfWrap"><img class="vf-img" src="assets/vision-platform.svg" width="1052" height="440" alt="Anyflow Embed プラットフォーム図" decoding="async" draggable="false"></div>
+      <!-- 【2026-09-19 ヒデさん依頼】ビジョンの図を Figma 18004:38228「網目のドーム」に。KV のケージと同じくコードで描く(canvas)。
+           容器の座標系＝カンプのグループ(ベース内 x165 / y1169 → ステージ y245)。ドームの球は容器内 (291,315) 半径262。5つの機能名はカンプの位置(左上基準)。
+           下半球はカンプの「地色のレイヤーブラー矩形」の代わりに容器の mask で消す(ビジョンタブ「下のフェード」) -->
+      <div class="vf-wrap" id="vfWrap">
+        <canvas class="vf-dome" id="vfDome" aria-hidden="true"></canvas>
+        <img class="vf-logo" src="assets/vision-logo.svg" alt="Anyflow Embed" width="204" height="37" draggable="false">
+        <div class="vf-lab" style="left: 0px; top: 84px;"><b>コネクタ</b><span>外部サービスをつなぐ</span></div>
+        <div class="vf-lab" style="left: 97px; top: 35px;"><b>認証ウィザード</b><span>認証設定を支える</span></div>
+        <div class="vf-lab" style="left: 254px; top: 0px;"><b>SDK</b><span>開発環境に組み込む</span></div>
+        <div class="vf-lab" style="left: 418px; top: 45px;"><b>ワークフロー</b><span>連携処理を組み立てる</span></div>
+        <div class="vf-lab" style="left: 515px; top: 121px;"><b>実行エンジン</b><span>処理を実行する</span></div>
+      </div>
 
       <div class="val-group">
         <!-- 【2026-09-02 ヒデさん指定】「連携が生む、2つの価値」見出しはカンプに無く非表示だったため、
@@ -5401,7 +5420,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260919110000;
+const SHIPPED_GENERATION = 20260919120000;
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
@@ -11564,7 +11583,7 @@ function updateVision(p) {
      文字だけ CSS で 100px 等に膨らませていたため、カンプと全く違う見た目になっていた。 */
   /* 【2026-09-19 ヒデさん依頼】図は SVG 書き出し(#vfWrap)。グラフィック発火(miniAt)から miniDur でブラー出現するだけ。
      旧図の 楕円の座標計算(kFill/sc/tx/ty)・グラデ軸の追従・ドットの周回(pat2/easeDrive)・Platform 文字 は削除 */
-  if (visEls.vfWrap) rv(visEls.vfWrap, mi, B);
+  if (visEls.vfWrap) { rv(visEls.vfWrap, mi, B); vfDraw(elapsed); }   /* 2026-09-19: ドームは毎フレーム描く(ゆっくり回転) */
 
   /* 【2026-08-29 ヒデさん指定】no-pin は時間再生。グラフィックが出きった時点(miniAt+miniDur)を起点に、そこからディレイで Point01 → Point02 を1つずつ出す。
      【2026-09-19】Platform 文字・役割名・ドット停止後の処理は図の差し替えで削除 */
@@ -12038,6 +12057,45 @@ function resFxBuildBig() {
 }
 function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = []; }
 /* 【2026-09-18】大きい文字の下の「Product」のサイズ(px)。パネル「案24…：ピクトの大きさと文字の動き」から */
+/* ===== 【2026-09-19 ヒデさん依頼】ビジョンの図: 網目のドーム(Figma 18004:38228)を KV のケージと同じ発想でコード描画 =====
+   正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
+   ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
+   値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.32, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3 };
+function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; return Object.assign({}, VF_DEF, v.dome); }
+function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; v.dome[k] = val; applyVfFade(); }
+function applyVfFade() { const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); w.style.setProperty('--vf-fade-a', Math.round(c.fadeA * 100) + '%'); w.style.setProperty('--vf-fade-b', Math.round(Math.max(c.fadeA + 0.02, c.fadeB) * 100) + '%'); }
+function vfBuild(f) {
+  const t = (1 + Math.sqrt(5)) / 2, nrm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  const base = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(nrm);
+  const faces = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  const verts = [], idx = new Map(); const key = (v) => v.map(x => x.toFixed(4)).join(',');
+  const add = (v) => { const k = key(v); if (idx.has(k)) return idx.get(k); verts.push(v); idx.set(k, verts.length - 1); return verts.length - 1; };
+  const edges = new Set(); const E = (a, b) => edges.add(a < b ? a * 65536 + b : b * 65536 + a);
+  for (const [ia, ib, ic] of faces) {
+    const A = base[ia], B = base[ib], C = base[ic]; const grid = [];
+    for (let i = 0; i <= f; i++) { grid[i] = []; for (let j = 0; j <= f - i; j++) { const u = i / f, w = j / f; grid[i][j] = add(nrm([A[0] + (B[0] - A[0]) * u + (C[0] - A[0]) * w, A[1] + (B[1] - A[1]) * u + (C[1] - A[1]) * w, A[2] + (B[2] - A[2]) * u + (C[2] - A[2]) * w])); } }
+    for (let i = 0; i < f; i++) for (let j = 0; j < f - i; j++) { E(grid[i][j], grid[i + 1][j]); E(grid[i][j], grid[i][j + 1]); E(grid[i + 1][j], grid[i][j + 1]); }
+  }
+  return { verts, edges: Array.from(edges).map(k => [Math.floor(k / 65536), k % 65536]) };
+}
+let vfMesh = null, vfMeshFreq = 0;
+function vfDraw(tSec) {
+  const cv = document.getElementById('vfDome'); if (!cv) return;
+  const sec = SECS && SECS.vision; if (sec) { const r = sec.getBoundingClientRect(); if (r.bottom < -50 || r.top > (window.innerHeight || 1) + 50) return; }   /* 画面外では描かない */
+  const c = vfCfg(); const f = Math.max(1, Math.min(4, Math.round(c.freq)));
+  if (!vfMesh || vfMeshFreq !== f) { vfMesh = vfBuild(f); vfMeshFreq = f; }
+  const W = 600, H = 600, dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const cx = 291, cy = 315, R = c.r;   /* カンプ: ケージ(29,49)＋球の中心(262,266) */
+  const a = tSec * c.spin * 0.12, tl = c.tilt * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl);
+  const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; return [cx + x1 * R, cy - y2 * R, (z2 + 1) / 2]; });
+  g.lineCap = 'round';
+  for (const [i, j] of vfMesh.edges) { const A = P[i], B = P[j]; const k = (A[2] + B[2]) / 2; g.strokeStyle = 'rgba(157,176,201,' + (c.lineAlpha * (0.12 + 0.88 * k)).toFixed(3) + ')'; g.lineWidth = k > 0.5 ? 1 : 0.7; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
+  for (let i = 0; i < P.length; i++) { const [x, y, k] = P[i]; const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; const col = h < 0.12 ? [255, 93, 151] : h < 0.24 ? [14, 187, 255] : h < 0.28 ? [14, 68, 151] : null; const al = col ? (0.45 + 0.55 * k) : (0.3 + 0.45 * k); g.fillStyle = 'rgba(' + (col ? col.join(',') : '157,176,201') + ',' + al.toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * (0.55 + 0.45 * k), 0, Math.PI * 2); g.fill(); }
+}
+applyVfFade();
 function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; document.documentElement.style.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%'); }
 applyResSlotFade();
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
@@ -16181,7 +16239,9 @@ const TEXT_SPEC = [
   // --- ビジョン ---
   { key: 'visLabel',  sel: '#visLabel',      name: 'Our Vision',                         sec: 'vis', text: 1 },
   { key: 'visMsg',    sel: '.vis-l1',        name: 'メッセージ（データをつなぐことが〜）', sec: 'vis', text: 0 },
-  { key: 'vfWrap',    sel: '#vfWrap',        name: '図（SVG書き出し・位置だけ）',        sec: 'vis', text: 0, font: 0 },   /* 【2026-09-19】Figma 17802:29422 */
+  { key: 'vfWrap',    sel: '#vfWrap',        name: '図（網目のドーム・位置だけ）',        sec: 'vis', text: 0, font: 0 },   /* 【2026-09-19】Figma 18004:38228 */
+  { key: 'vfLab',     sel: '.vf-lab b',      name: '図の機能名（コネクタ・SDK など）',       sec: 'vis', text: 0, multi: 1, move: 0 },   /* カンプ: Noto Medium 16px */
+  { key: 'vfSub',     sel: '.vf-lab span',   name: '図の機能名の補足（外部サービスをつなぐ など）', sec: 'vis', text: 0, multi: 1, move: 0 },   /* カンプ: Noto Regular 8px */
   { key: 'p1tag',     sel: '#valP1 .vp-tag', name: 'Point 01 ラベル',                    sec: 'vis', text: 1 },
   { key: 'p1h',       sel: '#valP1 h3',      name: 'Point 01 見出し',                    sec: 'vis', text: 1 },
   { key: 'p1p',       sel: '#valP1 p',       name: 'Point 01 本文',                      sec: 'vis', text: 1 },
@@ -18160,8 +18220,17 @@ function buildPanel() {
 
   /* 【2026-09-19 ヒデさん依頼】図を Figma 17802:29422 の SVG 書き出しに差し替え。旧図(軌道・ドット・役割名・輪の色・位置と大きさ・
      玉の出方・回って止まる・出現パターン)のつまみは全削除。残すのは出現ブラーの時間(ここ)と強さ(上の「基本」) */
-  sub(catVis, '③ 図（SVG）の出現');
-  note('メッセージの下にブラーで出る図(Figma 17802:29422 の書き出し)。出るタイミングは上の「表示タイミング」、ぼけの強さは「基本」の「ぼかしの強さ」。位置は ✏️編集モードでドラッグ。');
+  sub(catVis, '③ 図（網目のドーム）');
+  note('Figma 18004:38228 の図を KV のケージと同じくコードで描画(正二十面体を分割した球)。出るタイミングは上の「表示タイミング」、ぼけの強さは「基本」の「ぼかしの強さ」。位置は ✏️編集でドラッグ。');
+  const vfS = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => vfCfg()[key], v => { vfSet(key, v); markDirty(); }, fmt, tip, { fixedMax: true }));
+  vfS('大きさ（半径）', 'r', 150, 360, 2, v => Math.round(v) + 'px', 'ドームの半径。カンプは 262px。');
+  vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '0で止まる。0.35 で約2分半で1周。');
+  vfS('傾き', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
+  vfS('線の濃さ', 'lineAlpha', 0.05, 0.8, 0.01, v => Math.round(v * 100) + '%', '手前の線の濃さ。奥ほど自動で薄く。');
+  vfS('点の大きさ', 'dot', 1, 5, 0.1, v => v.toFixed(1) + 'px', '節目の点(ピンク/シアン/紺/薄い青灰)の大きさ。');
+  vfS('細かさ', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '球の分割数。3=カンプと同じ密度(点92・線270)。');
+  vfS('下のフェード 始まり', 'fadeA', 0, 1, 0.02, v => Math.round(v * 100) + '%', 'ここから下が薄くなり始める(図の高さに対する%)。カンプの「地色のレイヤーブラー」の代わり。');
+  vfS('下のフェード 終わり', 'fadeB', 0, 1, 0.02, v => Math.round(v * 100) + '%', 'ここで完全に消える。');
   rows.push(slider('出きるまで', 0.4, 3, 0.1, () => sv().vision.miniDur, v => sv().vision.miniDur = v, v => v.toFixed(1) + '秒',
     'ぼけた状態からくっきり出るまでの時間。'));
 
