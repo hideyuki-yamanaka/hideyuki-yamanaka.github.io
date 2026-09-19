@@ -2945,11 +2945,11 @@
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
     /* 【2026-09-09 カンプ node16534:22139 準拠】グラフィックは幅~414・上端~81・中央(左に少しはみ出し)。
        gx/gy(17,-52)ぶんを見込んで top/margin を調整(top=133-52=81 / left=195-218+17≈-6)。 */
-    .orbit { right: auto; left: 50%; top: 120px; transform-origin: 0 0; margin-left: -243px; }   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
+    .orbit { right: auto; left: 50%; top: 168px; transform-origin: 0 0; margin-left: -243px; }   /* 【2026-09-20 ヒデさん依頼】SP は KV 全体を下げてヘッダーに被らないように(120→168) */   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
     /* コピーはグラフィックの下へ。幅を制限して折り返し可にし、右はみ出しを解消 */
     /* 【2026-09-08 カンプ node16534:22195 準拠】KVコピーは中央寄せ。メイン46px Thin/行間1.4・中央、
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
-    .headline { left: 24px; right: 24px; top: 400px; white-space: normal; gap: var(--space-12);   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
+    .headline { left: 24px; right: 24px; top: 448px; white-space: normal; gap: var(--space-12);   /* 【2026-09-20】KV下げ 400→448 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
                 align-items: center; text-align: center; }
     .hl-main { font-size: var(--fs-hero); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース) */
     .hl-main .hl-line:last-child { font-size: var(--fs-hero-jump); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例) */
@@ -2966,7 +2966,7 @@
        iOS Safari は scroll/レイヤー再構成のたびに遅延付き animation を再生し直すことがあり、その瞬間に
        opacity が 0 に戻って「一瞬消える」原因になっていた。常時表示(opacity 1)＋GPU固定で安定させる。
        出現の演出より“消えない”を優先(必要なら後で transition ベースの1回だけフェードに戻す)。 */
-    .logos { top: 624px; height: 42px; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }
+    .logos { top: 672px; height: 42px; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }   /* 【2026-09-20】KV下げ 624→672 */
     /* 帯の流れは CSS アニメ(marquee)に戻す＝コンポジタ側で滑らか＆くっきり。JS 毎フレーム駆動は重い KV 描画
        ループと同フレームで translate を計算するためカクつき(ガタガタ)＋非GPU化で画質低下していた(2026-09-09)。
        速度は applyMarquee がモバイルだけ 8s(約90px/s)に。iOS で消える件は rv() の blur を止めて解消済み。 */
@@ -14814,7 +14814,7 @@ function applyMarquee() {
   /* 【2026-09-09】モバイルは 1セット幅≒720px を 8s ≒ 90px/s で流す(CSSアニメ・滑らか)。
      JS駆動時代に書いた inline transform が残っていると CSS アニメの transform を上書きするので消す。 */
   if (isMobile) marqueeTrack.style.transform = '';
-  marqueeTrack.style.animationDuration = (isMobile ? 14 : params.marquee.duration) + 's';   /* モバイル 11→14s にさらに減速(720px/14s≒51px/s・ヒデさん指定「やや速い」2026-09-09) */
+  marqueeTrack.style.animationDuration = (isMobile ? 20 : params.marquee.duration) + 's';   /* 【2026-09-20 ヒデさん依頼】SP のロゴティッカーをさらに減速(14→20s・720px/20s≒36px/s) */   /* モバイル 11→14s にさらに減速(720px/14s≒51px/s・ヒデさん指定「やや速い」2026-09-09) */
   marqueeTrack.style.animationDirection = params.marquee.direction === 1 ? 'normal' : 'reverse';
   /* 【2026-09-09】静的モバイルでは KV 以下の演出を止めているが、ロゴティッカーだけは常に流す。
      params.running は調整パネル/古いlocalStorage由来で false のことがあり、それに引きずられて
