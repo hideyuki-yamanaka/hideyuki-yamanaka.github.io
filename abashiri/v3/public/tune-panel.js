@@ -135,8 +135,12 @@
     '.tp-foot{flex:0 0 auto;padding:8px 10px 10px;border-top:1px solid #ececec;background:rgba(255,255,255,.6);}',
     /* 大カテゴリ */
     /* 枠・地・余白は anyflow の .cat の実測に合わせた */
-    '.tp-cat{border:1px solid #ececec;border-radius:8px;margin-top:10px;overflow:hidden;background:#fff;}',
-    '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;',
+    /* ── カテゴリ（H1）。anyflow のミニマル指定にそろえる（2026-09-20）
+       ・絵文字なし ・左のインデント縦線なし
+       ・階層は文字サイズ／太さ／余白で表す。区切り線は H1 だけ */
+    '.tp-cat{margin-top:18px;background:transparent;border:0;border-top:1px solid #e8e8e8;padding-top:2px;}',
+    '.tp-cat:first-child{border-top:0;margin-top:4px;}',
+    '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 5px;',
     '  font-weight:500;background:#f2f2f2;cursor:pointer;user-select:none;}',
     '.tp-cat-head:hover{background:#ececec;}',
     '.tp-cat-chev{font-size:10px;color:#888;transition:transform .2s;}',
@@ -790,6 +794,63 @@
     var root = document.createElement('div');
     root.dataset.okey = (cat.cat || '') + '|_top';
     this.body.appendChild(root);
+
+    /* ── カテゴリ（第1階層）──────────────────────────────
+       【2026-09-20 ヒデさん指示】anyflow と同じ構成・同じ並びにそろえる。
+       ルールの本体は settings/docs/anyflow/ANYFLOW-PANEL-STRUCTURE.md。
+         バリエーション → 基本 → フォント → エフェクト＆テクスチャ
+         → アニメーション → その他
+       各節（item.sub）に grp: 'basic' などを書くと、その名前の
+       カテゴリの下に入る。書かなければ言葉から自動で振り分ける。
+       ⚠️ バリエーションだけは開閉しないプレーンな大見出し（anyflow と同じ）。 */
+    var GRP_ORDER = ['variation', 'basic', 'font', 'fxtex', 'anim', 'other'];
+    var GRP_LABEL = {
+      variation: 'バリエーション',
+      basic: '基本',
+      font: 'フォント',
+      fxtex: 'エフェクト＆テクスチャ',
+      anim: 'アニメーション',
+      other: 'その他',
+    };
+    /* 節の名前から行き先を推測する（grp を書き忘れた時の保険） */
+    var grpFromLabel = function (t) {
+      if (/案|バリエーション|パターン/.test(t)) return 'variation';
+      if (/文字|フォント|見出し|書体|サイズ/.test(t)) return 'font';
+      if (/色|配色|濃さ|ブラー|ぼか|影|光|質感|線|不透明|テクスチャ|慣性/.test(t)) return 'fxtex';
+      if (/アニメ|登場|出現|遷移|ディレイ|タイミング|速度|速さ|再生|時間|ループ|間隔/.test(t)) return 'anim';
+      if (/位置|大きさ|余白|幅|高さ|間|距離|傾き|ずれ|パディング|ギャップ/.test(t)) return 'basic';
+      return 'other';
+    };
+    var catBoxes = {};
+    var catBodyOf = function (g) {
+      if (catBoxes[g]) return catBoxes[g];
+      var box = document.createElement('div');
+      var isVar = g === 'variation';
+      box.className = 'tp-cat' + (isVar ? ' plain' : '');
+      var head = document.createElement('div');
+      head.className = 'tp-cat-head';
+      head.innerHTML = '<span></span>' + (isVar ? '' : '<span class="tp-cat-chev">▾</span>');
+      head.firstChild.textContent = GRP_LABEL[g] || g;
+      head.firstChild.style.flex = '1 1 auto';
+      var cbody = document.createElement('div');
+      cbody.className = 'tp-cat-body';
+      if (!isVar) {
+        /* 既定は全部ひらく（anyflow と同じ） */
+        var ckey = (cat.cat || '') + '|@' + g;
+        if (self.catOpen[ckey] === false) box.classList.add('closed');
+        head.addEventListener('click', function () {
+          self.catOpen[ckey] = !box.classList.toggle('closed');
+          self._saveUI();
+        });
+      }
+      box.append(head, cbody);
+      root.appendChild(box);
+      catBoxes[g] = cbody;
+      return cbody;
+    };
+    /* 並び順どおりに器を先に作っておく（中身が無い器はあとで消す） */
+    GRP_ORDER.forEach(function (g) { catBodyOf(g); });
+
     var currentBody = root;
     this._mount = root;
     (cat.items || []).forEach(function (item) {
@@ -817,7 +878,7 @@
           self._saveUI();
         });
         sec.append(head, secBody);
-        root.appendChild(sec);
+        catBodyOf(item.grp || grpFromLabel(title)).appendChild(sec);
         currentBody = secBody;
         self._mount = secBody;
         return;
@@ -826,6 +887,13 @@
       if (!(item.sub !== undefined && item.deep)) {
         /* deep見出しは _renderItem が _mount を切り替える。それ以外は現セクションへ戻す */
         if (item.sub === undefined) return;
+      }
+    });
+    /* 中身が入らなかったカテゴリの器は片づける */
+    GRP_ORDER.forEach(function (g) {
+      var bodyEl = catBoxes[g];
+      if (bodyEl && !bodyEl.children.length && bodyEl.parentElement) {
+        bodyEl.parentElement.remove();
       }
     });
   };
