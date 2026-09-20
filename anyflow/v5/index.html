@@ -1914,7 +1914,7 @@
   html.mb #results.rfx-24 .r2v-h, html.mb #results.rfx-25 .r2v-h { font-size: var(--fs-title); line-height: var(--lh-normal); text-align: center; }   /* 【2026-09-19】中央 */   /* 【2026-09-16】V3.0: 22px(--fs-title)左・lh1.6=--lh-normal */
   html.mb #results.rfx-24 .r2v-p, html.mb #results.rfx-25 .r2v-p { font-size: var(--fs-caption); line-height: var(--lh-body); }   /* 【2026-09-16】V3.0: 12px=--fs-caption・lh1.8=--lh-body */
   html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 220px; transform-origin: center; }   /* 【2026-09-16】300→220(V3.0) */
-  html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: 288px; height: 196px; }   /* 【2026-09-16】300→220→高さ150。【2026-09-21 ヒデさん依頼】ピクトのボックスをもう少し大きく(220×150→288×196・stroke非スケールで歪まない) */
+  html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: min(288px, calc(100vw - 56px)); height: 196px; position: relative; left: 50%; transform: translateX(-50%); }   /* 【2026-09-16】300→220。【2026-09-21 ヒデさん依頼】ピクトを大きく(288)しつつ、ディスプレイ幅にクランプ(100vw-56)＋中央寄せ(親列220より広くて右にはみ出していたのを是正) */
   html.mb #results.rfx-24 .r2v-big, html.mb #results.rfx-25 .r2v-big { font-size: var(--fs-xl); }
   /* --- 案26(SP): 上段は見出し(29px・2行)と数値(40px)を縦に。線 → 下段は図235×145 上/言葉 下の面が横に動く。数値の拡大は 1.1倍 --- */
   html.mb #results.rfx-26 .res2 { width: 100%; padding: 22px 0 12px; }
@@ -2851,7 +2851,7 @@
   /* --- fst-1 リキッドグラス(明): 磨りガラスの白カード。背景グラデが透ける(既定) --- */
   /* 【2026-09-17 ヒデさん依頼】フォームカードの地色の白さ・ぼかし・彩度をパネルから調整可能に(--cvf-bg-a/--cvf-blur/--cvf-sat)。
      背景に白が来た時の白飛び対策として、白さを下げたり彩度を上げたりできる。 */
-  #conversion.fst-1 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(255,255,255, var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); border: var(--cvf-bw, 1px) solid var(--cvf-bc, var(--glass-72)); box-shadow: var(--shadow-form); }
+  #conversion.fst-1 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(var(--cvf-bg-rgb, 255,255,255), var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 22px)) saturate(var(--cvf-sat, 1.5)); border: var(--cvf-bw, 1px) solid var(--cvf-bc, var(--glass-72)); box-shadow: var(--shadow-form); }
   #conversion.fst-1 .cvf-in { background: rgba(255,255,255, var(--cvf-in-a, .56)); border-color: var(--cvf-in-bc, var(--glass-72)); }
   /* --- fst-2 リキッドグラス(濃): スモークガラス。文字は白 --- */
   #conversion.fst-2 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(18,22,34,.34); -webkit-backdrop-filter: blur(20px) saturate(1.3); backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 24px 60px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.22); }
@@ -4379,14 +4379,20 @@
           <label class="cvf-field"><span class="cvf-lab">姓<em>*</em></span><input class="cvf-in" type="text" placeholder="田中" autocomplete="family-name"></label>
           <label class="cvf-field"><span class="cvf-lab">名<em>*</em></span><input class="cvf-in" type="text" placeholder="太郎" autocomplete="given-name"></label>
         </div>
-        <label class="cvf-field"><span class="cvf-lab">メールアドレス<em>*</em></span><input class="cvf-in" type="email" placeholder="taro@anyflow.co.jp" autocomplete="email"></label>
-        <label class="cvf-field"><span class="cvf-lab">電話番号<em>*</em></span><input class="cvf-in" type="tel" placeholder="03-0000-0000" autocomplete="tel"></label>
-        <label class="cvf-field"><span class="cvf-lab">職種</span>
-          <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>エンジニア</option><option>プロダクトマネージャー</option><option>経営・役員</option><option>営業・マーケティング</option><option>その他</option></select></span>
-        </label>
-        <label class="cvf-field"><span class="cvf-lab">役職</span>
-          <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>経営者・役員</option><option>部長・マネージャー</option><option>リーダー</option><option>担当者</option><option>その他</option></select></span>
-        </label>
+        <!-- 【2026-09-21 ヒデさん依頼】縦幅コンパクト化: メール+電話 を2カラム -->
+        <div class="cvf-2col">
+          <label class="cvf-field"><span class="cvf-lab">メールアドレス<em>*</em></span><input class="cvf-in" type="email" placeholder="taro@anyflow.co.jp" autocomplete="email"></label>
+          <label class="cvf-field"><span class="cvf-lab">電話番号<em>*</em></span><input class="cvf-in" type="tel" placeholder="03-0000-0000" autocomplete="tel"></label>
+        </div>
+        <!-- 【2026-09-21 ヒデさん依頼】職種+役職 を2カラム -->
+        <div class="cvf-2col">
+          <label class="cvf-field"><span class="cvf-lab">職種</span>
+            <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>エンジニア</option><option>プロダクトマネージャー</option><option>経営・役員</option><option>営業・マーケティング</option><option>その他</option></select></span>
+          </label>
+          <label class="cvf-field"><span class="cvf-lab">役職</span>
+            <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>経営者・役員</option><option>部長・マネージャー</option><option>リーダー</option><option>担当者</option><option>その他</option></select></span>
+          </label>
+        </div>
         <label class="cvf-field"><span class="cvf-lab">貴社ではITプロダクトを開発していますか<em>*</em></span>
           <span class="cvf-note">Anyflow Embed はITプロダクトを開発/運営する方のためのAPI連携基盤です</span>
           <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>はい</option><option>いいえ</option><option>検討中</option></select></span>
@@ -7078,6 +7084,9 @@ function applyCvfGlass() {
   const g = params.cvfGlass || {};
   const set = (k, v, u) => sec.style.setProperty(k, (v != null ? v : '') + (u || ''));
   set('--cvf-bg-a', g.bgA != null ? g.bgA : 0.5, '');
+  /* 【2026-09-21 ヒデさん依頼】フォームカードの色味(tint)。既定は白。色コード→RGB */
+  var _bc = g.bgColor || '#ffffff', _bm = /^#?([0-9a-fA-F]{6})$/.exec(_bc);
+  set('--cvf-bg-rgb', _bm ? (parseInt(_bm[1].slice(0, 2), 16) + ',' + parseInt(_bm[1].slice(2, 4), 16) + ',' + parseInt(_bm[1].slice(4, 6), 16)) : '255,255,255', '');
   set('--cvf-blur', g.blur != null ? g.blur : 22, 'px');
   set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
   set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
@@ -19310,6 +19319,11 @@ function buildPanel() {
   rows.push(slider('波の強さ', 0, 0.6, 0.01, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; markDirty(); }, v => v.toFixed(2), '大きなうねりの振幅。大きいほど波打ちます。', { mbKey: 'cv.wave', fixedMax: true }));
   rows.push(slider('うねりの長さ', 0.1, 2, 0.05, () => (cvv().waveLen != null ? cvv().waveLen : 0.85), v => { cvv().waveLen = v; markDirty(); }, v => v.toFixed(2), 'うねりの波長。小さいほど細かく波打ちます。', { mbKey: 'cv.waveLen', fixedMax: true }));
   rows.push(slider('うねり（ふくらみ）', 0, 0.4, 0.01, () => (cvv().swell != null ? cvv().swell : 0.12), v => { cvv().swell = v; markDirty(); }, v => v.toFixed(2), '色のふくらみ(swell)。', { mbKey: 'cv.swell', fixedMax: true }));
+  /* 【2026-09-21 ヒデさん依頼】フォームの磨りガラス(バックドロップ・ぼかし/彩度)は「エフェクト」節へ */
+  sub(catCv, 'フォーム（磨りガラス）', null, { fixed: true, grp: 'fxtex' });
+  const _cg = () => (params.cvfGlass = params.cvfGlass || {});
+  rows.push(slider('フォームのぼかし（バックドロップ）', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 22), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'フォームの磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
+  rows.push(slider('フォームの彩度', 1, 2.2, 0.05, () => (_cg().sat != null ? _cg().sat : 1.5), v => { _cg().sat = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(2), 'フォームの磨りガラスの彩度。上げると背景の色が残ります。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
   /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
      案を選ぶ項目はパネルから削除し、既定値として固定した。
      ⚠️ CV_STYLES の他の案(0/11/12/13)の定義と CSS は残してあるので、
@@ -19340,9 +19354,9 @@ function buildPanel() {
       rows.push(slider('入力欄の枠線の太さ', 0, 4, 0.5, () => (_g().inBw != null ? _g().inBw : 1), v => { _g().inBw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', '入力欄・セレクトの枠線の太さ。0で線なし。', { mbKey: 'cvfGlass.inBw', fixedMax: true }));
       rows.push(slider('入力欄の枠線の濃さ', 0, 1, 0.02, () => (_g().inBa != null ? _g().inBa : 0.72), v => { _g().inBa = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の枠線の不透明度。', { mbKey: 'cvfGlass.inBa', fixedMax: true }));
       optRow('cvfPh', 'プレースホルダーの色', [['黒系', 'k'], ['白系', 'w']], () => (_g().phDark === false ? 'w' : 'k'), v => { _g().phDark = v !== 'w'; applyCvfGlass(); });
-      rows.push(slider('カードの白さ（白飛び対策）', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの地色の白さ。背景に白が来て白飛びする時は下げる。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
-      rows.push(slider('カードのぼかし（バックドロップ）', 0, 40, 1, () => (_g().blur != null ? _g().blur : 22), v => { _g().blur = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
-      rows.push(slider('カードの彩度', 1, 2.2, 0.05, () => (_g().sat != null ? _g().sat : 1.5), v => { _g().sat = v; applyCvfGlass(); }, v => v.toFixed(2), '磨りガラスの彩度。上げると背景の色が残って白飛びしにくい。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
+      rows.push(slider('カードの色の透過率', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの色の濃さ(透過率)。下げるほど背景が透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
+      colorRow('カードの色', () => (_g().bgColor || '#ffffff'), v => { _g().bgColor = v; applyCvfGlass(); markDirty(); }, 'フォームカードの色そのもの。既定は白。透過率は上のつまみで。');   /* 【2026-09-21 ヒデさん依頼】色自体を変えられるように */
+      /* 【2026-09-21 ヒデさん依頼】ぼかし(バックドロップ)と彩度は「エフェクト」節へ移動(下の別 sub フォーム(磨りガラス)) */
       rows.push(slider('入力欄の白さ', 0, 0.9, 0.02, () => (_g().inA != null ? _g().inA : 0.56), v => { _g().inA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の地色の白さ。', { mbKey: 'cvfGlass.inA', fixedMax: true }));
       rows.push(slider('プレースホルダーの濃さ', 0.1, 0.6, 0.02, () => (_g().phA != null ? _g().phA : 0.32), v => { _g().phA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '「Anyflow株式会社」等の見本文字の濃さ。白飛びで見えにくい時は上げる。', { mbKey: 'cvfGlass.phA', fixedMax: true }));
       note('セクション自体の色味・グラデーションは、下の「背景グラデーション」「色の移ろい」「粒（ディザ）」で調整できます。');
