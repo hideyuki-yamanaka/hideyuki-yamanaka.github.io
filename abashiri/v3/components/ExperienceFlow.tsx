@@ -59,16 +59,18 @@ export type Spot = {
       能取岬 → さんご草 → 流氷クルーズ → ひまわり にそろえた。
    ⚠️ 以前は id と中身がずれていた（能取岬の写真なのに id が "himawari"、
       網走駅が "tento"）。改名を重ねた名残なので、ここで中身に合わせて直した。
-      この id は このファイルの中だけで使う（他から参照されていないことを確認済み）。 */
+      この id は このファイルの中だけで使う（他から参照されていないことを確認済み）。
+   ⚠️ label はトップ（SpotShowcase）の呼び方に統一する
+      （2026-09-20 ヒデさん指示「表記は統一してあげてください」）。 */
 const SPOTS: Spot[] = [
   { id: "notoro", label: "能取岬", src: "/img/scene-notoro.jpg" },
-  { id: "sango", label: "さんご草", src: "/img/scene-sango.jpg" },
+  { id: "sango", label: "能取湖サンゴ草群落地", src: "/img/scene-sango.jpg" },
   /* 静止画は動画と同じ「流氷の海」を使う。
      scene-ryuhyo.jpg は船が写っていて動画と絵が違うため、遷移の途中で
      船の写真が挟まって見えてしまう。ice.jpg なら動画の絵とつながる */
   { id: "ryuhyo", label: "流氷クルーズ", src: "/img/ice.jpg", video: "/video/ryuhyo.mp4" },
   /* トップのひまわり畑と同じ写真にそろえる（2026-09-20） */
-  { id: "himawari", label: "ひまわり畑", src: "/img/spot/himawari-1.jpg" },
+  { id: "himawari", label: "大曲湖畔園地ひまわり畑", src: "/img/spot/himawari-1.jpg" },
 ];
 
 const STAGE_W = 1512;

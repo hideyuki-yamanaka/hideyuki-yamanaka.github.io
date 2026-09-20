@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_JP, Inter, Zen_Kaku_Gothic_New, M_PLUS_Rounded_1c } from "next/font/google";
+import { Noto_Sans_JP, Inter } from "next/font/google";
 import SoundUi from "@/components/SoundUi";
 import PageTransition from "@/components/PageTransition";
 import "./globals.css";
@@ -21,21 +21,14 @@ const inter = Inter({
   display: "swap",
 });
 
-/* v1.0 の書体。まだ差し替えていないセクション（スポット/グルメ/プロモ）が参照している。
-   カンプが揃った時点で外す。 */
-const zen = Zen_Kaku_Gothic_New({
-  weight: ["500", "700", "900"],
-  subsets: ["latin"],
-  variable: "--font-zen",
-  display: "swap",
-});
-
-const rounded = M_PLUS_Rounded_1c({
-  weight: ["100", "500", "700", "800"],
-  subsets: ["latin"],
-  variable: "--font-rounded",
-  display: "swap",
-});
+/* ⚠️ Zen Kaku Gothic New と M PLUS Rounded 1c は 2026-09-20 に読み込みをやめた。
+   v1.0 の名残で残っていたが、実装を全文検索しても【使っている場所が1つも無かった】
+   （globals.css の --font-zen-body / --font-rounded-num という定義があるだけで、
+     その変数を参照している要素がゼロ）。
+   日本語フォントは next/font が1ウェイトにつき20前後のサブセットに割るため、
+   この2つだけで woff2 が約140ファイルあった。
+   実測（本番・トップページ）: フォント 245ファイル / 3.06MB。
+   ヒデさん「サイトがのっそり重い」の主因はここ。 */
 
 export const metadata: Metadata = {
   title: "網走観光サイト｜な〜んにもない たまらない",
@@ -51,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${noto.variable} ${inter.variable} ${zen.variable} ${rounded.variable}`}
+      className={`${noto.variable} ${inter.variable}`}
     >
       <body>
         {children}

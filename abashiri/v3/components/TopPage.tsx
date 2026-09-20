@@ -877,13 +877,19 @@ export default function TopPage({
               <img
                 src="/img/text-kanko-site.svg"
                 alt="網走市観光サイト"
-                /* 出るタイミングは吹き出しと同じ（duration 900ms / blur 16px も揃えてある） */
+                /* 吹き出しと【同時に・同じ見え方で】出す。
+                   ⚠️ 2026-09-20 ヒデさん指摘「網走市観光サイトの文字が先に出てきちゃってる」。
+                      原因は出だしのブラーの強さ違い。吹き出し（HeroBlurSeq）は
+                      timing.kotoba.blur＝16px なのに、ここだけ HE.blur＝9px を使っていた。
+                      ブラーが弱いぶんこちらだけ早くくっきりし、先に現れて見えていた
+                      （実測: 600ms 時点で吹き出しはまだぼやけ、この文字だけ読めていた）。
+                      時間・ブラー・イージングを吹き出しとそろえる */
                 className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px] transition-all ease-standard"
                 style={{
-                  transitionDuration: `${HE.duration}ms`,
+                  transitionDuration: `${timing2.kotoba.duration}ms`,
                   opacity: animated && !kankoIn ? 0 : 1,
                   /* 出たあとはフィルターを外す（blur(0px)残しはにじみの元） */
-                  filter: animated && !kankoIn ? `blur(${HE.blur}px)` : "none",
+                  filter: animated && !kankoIn ? `blur(${timing2.kotoba.blur}px)` : "none",
                 }}
               />
               <div className="absolute left-[-28px] top-[13.1px]">

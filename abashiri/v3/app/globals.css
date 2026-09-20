@@ -22,8 +22,11 @@
     sans-serif;
   --font-num: var(--font-inter), "Inter", "SF Pro Text", sans-serif;
   /* v1.0 の書体。まだ差し替えていないセクションが参照している */
+  /* ⚠️ 2026-09-20: 参照ゼロだったので next/font の読み込みを外した。
+     使う時は app/layout.tsx で Zen_Kaku_Gothic_New を読み直すこと */
   --font-zen-body: var(--font-zen), "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN",
     sans-serif;
+  /* ⚠️ 2026-09-20: 同上（M PLUS Rounded 1c） */
   --font-rounded-num: var(--font-rounded), "M PLUS Rounded 1c", sans-serif;
 }
 
