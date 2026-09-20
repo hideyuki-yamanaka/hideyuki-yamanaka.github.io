@@ -12364,6 +12364,11 @@ const VIS_MESHES = [
 function vfVarKey() { const v = String(vfCfg().variant || 'dome'); return (VIS_MESHES.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visMesh', v))) ? v : 'dome'; }
 function vfApplyVariant(key) { const m = VIS_MESHES.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.variant = key; vfMesh = null; applyVfFade(); }   /* scale=メッシュの大きさ(2026-09-19 ヒデさん指定で 1.15・仮置き)。機能名の文字サイズは変えず位置だけ中心から外へ */
 const VF_CX = 291, VF_CY = 315;   /* 球の中心(容器座標。カンプ: ケージ(29,49)＋(262,266)) */
+/* 【2026-09-21 ヒデさん依頼】PC の機能名5つは「メッシュ中心 VF_CX を軸に左右対称・円弧に沿う」中心アンカー。
+   x=水平の中心アンカー(ラベルを中央寄せ＝幅が違っても左右対称) / y=上端アンカー(高さは全ラベル同じなので上端でも対称)。
+   ペア(1↔5, 2↔4)は VF_CX=291 を軸に等距離(±262 / ±156)、y は対で同じ＝SDK を頂点に左右へ下る弧。
+   ※SP は従来どおり data-x/data-y(カンプ手置き)。この配列は PC のみ差し替える。 */
+const VF_LAB_PC = [ { x: 29, y: 105 }, { x: 135, y: 33 }, { x: 291, y: 0 }, { x: 447, y: 33 }, { x: 553, y: 105 } ];
 /* 【2026-09-20 ヒデさん依頼・#3 PC/SP独立】ビジョンのメッシュの設定を PC(dome) と SP(domeMb) で分ける。
    描画: SP(isMobile)の時だけ domeMb を dome に重ねる＝PCは domeMb を一切見ない(SPの調整がPCに出ない)。 */
 function _vfPhoneOn() { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } }
@@ -12389,7 +12394,16 @@ function applyVfFade() {
   const ld = _mb ? 0.78 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる(0.6→0.78)。円の形に沿って外側へ(はみ出さない範囲で) */
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
   const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -22) : 0;   /* 【2026-09-20 #5】SP の持ち上げを控えめに(-95→-22)＝球の上の弧に沿って載せる */
-  w.querySelectorAll('.vf-lab').forEach((el, i) => { const x = +el.dataset.x, y = +el.dataset.y; const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0; el.style.left = (VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + oy).toFixed(1) + 'px'; if (_mb) { el.style.left = (parseFloat(el.style.left) - el.offsetWidth / 2).toFixed(1) + 'px'; }   /* 【2026-09-20 #5】SP は各機能名を円周の点に対して中央寄せ＝円の形に沿う＆はみ出し軽減 */ });
+  w.querySelectorAll('.vf-lab').forEach((el, i) => {
+    const _a = (!_mb && VF_LAB_PC[i]) ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC は左右対称の弧アンカー(中心基準)。SP は従来の data-x/data-y */
+    const x = _a ? _a.x : +el.dataset.x, y = _a ? _a.y : +el.dataset.y;
+    const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0;
+    let lx = VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox;
+    const ly = VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + oy;
+    if (_a || _mb) { lx -= el.offsetWidth / 2; }   /* 【2026-09-21】PC/SP とも中心アンカーは幅の半分だけ左へ＝幅が違っても左右対称・円周に沿う */
+    el.style.left = lx.toFixed(1) + 'px';
+    el.style.top = ly.toFixed(1) + 'px';
+  });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
   const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 50; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)より50px上に置く(独立)。動かしたい時は logoDx/logoDy のつまみで。SPはさらに上へ(#6 -20→-50=30px上) */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
