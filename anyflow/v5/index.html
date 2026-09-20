@@ -19871,7 +19871,9 @@ document.getElementById('panelBody').addEventListener('click', () => {
     document.body.appendChild(badge);
     /* リロードをまたいでスクロール位置を保つ */
     try { var sv = sessionStorage.getItem('anyflow-live-scroll'); if (sv != null) { var y = +sv; requestAnimationFrame(function () { window.scrollTo(0, y); setTimeout(function () { window.scrollTo(0, y); }, 60); }); } } catch (e) {}
-    var reloadT = null, firstMsg = true;
+    var reloadT = null;
+    /* firstMsg はリロードすると再実行で毎回 true に戻ってしまうので、sessionStorage で「初回リロード済み」を持つ(以降はリロードせずソフト適用) */
+    var firstDone = false; try { firstDone = sessionStorage.getItem('anyflow-pm-firstdone') === '1'; } catch (e) {}
     function applyIncoming(text) {
       var d; try { d = JSON.parse(text); } catch (e) { return; }
       if (!(d && typeof d === 'object' && 'main' in d)) return;
@@ -19888,11 +19890,38 @@ document.getElementById('panelBody').addEventListener('click', () => {
         try { localStorage.setItem('anyflow-shipped-gen', '99999999999999'); } catch (e) {}
       } catch (e) { return; }
       clearTimeout(reloadT);
+      /* 【2026-09-20 ヒデさん依頼】スマホモードの調整をリロードせずリアルタイム反映(チカチカ解消)。
+         スマホ側はパネルが無い(閉じている)ので、params を差し替えて apply 関数群を直接呼ぶ＝ソフト再適用。
+         初回だけは確実さ優先でリロード、以降はリロード無しで即反映。失敗時はリロードに退避。 */
       reloadT = setTimeout(function () {
-        try { sessionStorage.setItem('anyflow-live-scroll', String(window.scrollY || window.pageYOffset || 0)); } catch (e) {}
-        location.reload();
-      }, firstMsg ? 120 : 260);
-      firstMsg = false;
+        if (!firstDone) { firstDone = true; try { sessionStorage.setItem('anyflow-pm-firstdone', '1'); sessionStorage.setItem('anyflow-live-scroll', String(window.scrollY || window.pageYOffset || 0)); } catch (e) {} location.reload(); return; }
+        try { liveApplyNoReload(d.main, d.preset); } catch (e) { try { location.reload(); } catch (e2) {} }
+      }, firstDone ? 40 : 120);
+    }
+    /* リロードせずに params を差し替えて描画系を全部呼び直す(KV・文字・メッシュ・実績・CV・ビジョン) */
+    function liveApplyNoReload(mainText, presetText) {
+      var newP; try { newP = JSON.parse(mainText); } catch (e) { location.reload(); return; }
+      if (!newP || typeof newP !== 'object') { location.reload(); return; }
+      try { for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; } } catch (e) {}
+      try { Object.assign(params, newP); } catch (e) {}
+      if (presetText) { try { var stp = JSON.parse(presetText); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } catch (e) {} }
+      var call = function (fn) { try { fn(); } catch (e) {} };
+      try { vfMesh = null; } catch (e) {}
+      call(function () { if (typeof applyKvVariant === 'function') applyKvVariant(kvVarKey(), true); });
+      call(function () { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); });
+      call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
+      call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
+      call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
+      call(function () { if (typeof applySway === 'function') applySway(); });
+      call(function () { if (typeof applyVisBelow === 'function') applyVisBelow(); });
+      call(function () { if (typeof applyVisPointsX === 'function') applyVisPointsX(); });
+      call(function () { if (typeof resApplySlotFx === 'function' && typeof resSlotFxKey === 'function') resApplySlotFx(resSlotFxKey()); });
+      call(function () { if (typeof applyResSlotFade === 'function') applyResSlotFade(); });
+      call(function () { if (typeof cvApplySway === 'function' && typeof cvSwayKey === 'function') cvApplySway(cvSwayKey()); });
+      call(function () { if (typeof visApplyGrad === 'function' && typeof visGradKey === 'function') { visApplyGrad(visGradKey()); if (typeof applyVisGrad === 'function') applyVisGrad(); } });
+      call(function () { if (typeof applyMarquee === 'function') applyMarquee(); });
+      call(function () { if (typeof fit === 'function') fit(); });
+      call(function () { if (typeof renderFrame === 'function') renderFrame(); });
     }
     function connect() {
       var es;
