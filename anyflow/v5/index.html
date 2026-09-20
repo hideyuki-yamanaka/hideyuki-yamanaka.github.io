@@ -41,6 +41,29 @@
     overflow-x: clip;
   }
 
+  /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)テクスチャ。html.grid-on の時だけ、地色(--surface)を塗る
+     各面に「画面固定(background-attachment:fixed)」で同じ方眼を重ねる=全セクションで目が揃う(継ぎ目でズレない)。
+     線色/太さ/細かさは applyGrid() が CSS変数で流し込む(パネル: 全体 › エフェクト＆テクスチャ › グリッド)。
+     ⚠️ background-attachment:fixed は transform を持つ祖先の中では要素基準になる(実績のアニメ層は要実測)＋iOS実機は挙動が弱い(仮置き)。 */
+  html.grid-on {
+    --grid-cell: 44px; --grid-w: 1px; --grid-line: rgba(172,172,172,.45);
+    --grid-img:
+      linear-gradient(to right, var(--grid-line) var(--grid-w), transparent var(--grid-w)),
+      linear-gradient(to bottom, var(--grid-line) var(--grid-w), transparent var(--grid-w));
+  }
+  html.grid-on body,
+  html.grid-on .stage-wrap,
+  html.grid-on .pin-vp,
+  html.grid-on .np-vp,
+  html.grid-on #results.rfx-12 .res2-top,
+  html.grid-on #results.rfx-12 .r2v,
+  html.grid-on #conversion.cvs-10 {
+    background-image: var(--grid-img);
+    background-size: var(--grid-cell) var(--grid-cell);
+    background-attachment: fixed;
+    background-position: 0 0;
+  }
+
   /* ---- ステージ: 高さ921pxのカンプ座標系のまま、幅だけ画面いっぱいに広げる（フィル） ----
      左右の要素は left:120px / right:120px でアンカーするので、幅が変わっても余白は120pxのまま */
   .stage-wrap { width: 100%; overflow: visible; background: var(--surface); }  /* KVの地色を全幅で。【2026-09-17 ヒデさん指定】以前は overflow:hidden で、KVグラフィックを下/右へ動かすと器(高さ921/幅1440)の縁で切れていた(実測: 球体下端1084px・右端1558px)。html/body は overflow-x:clip 済みなので横スクロールは出ない */
@@ -4935,6 +4958,7 @@ const DEFAULTS = {
   edits: {},
   editsMb: {},   /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホモードで付けた文字設定の上書き(スマホの時だけ base に重なる) */
   mb: {},        /* 【2026-09-20 ヒデさん依頼・PC/SP独立(全つまみ)】スマホ専用の値。{ "dotパス": 値 }。スマホ(isMobile)の時だけ applyMbToParams で本体へ流し込む */
+  grid: { on: false, cell: 44, w: 1, op: 0.45, color: '#ACACAC' },   /* 【2026-09-21 ヒデさん依頼】背景の方眼グリッド。on=表示 / cell=マスの大きさ(px) / w=線の太さ(px) / op=線の濃さ(0〜1) / color=線色。applyGrid() が html.grid-on と CSS変数に反映 */
   sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
   swayAmp: 0,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる。【2026-09-19 ヒデさん指定】軸は固定で回すだけ→0(KVタブ「揺らぎの強さ」で戻せる)
   swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
@@ -14625,6 +14649,21 @@ function applyVpSize() {
   r.setProperty('--vis-msg-size', eff('msgSize', 50, 26) + 'px');
 }
 applyVpSize();
+/* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)。params.grid → html.grid-on と CSS変数(--grid-cell/-w/-line)へ。 */
+function applyGrid() {
+  const g = (params && params.grid) || {};
+  const el = document.documentElement;
+  try { el.classList.toggle('grid-on', !!g.on); } catch (e) {}
+  const s = el.style;
+  s.setProperty('--grid-cell', (g.cell != null ? g.cell : 44) + 'px');
+  s.setProperty('--grid-w', (g.w != null ? g.w : 1) + 'px');
+  const op = (g.op != null ? g.op : 0.45);
+  let rgb = '172,172,172';
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(g.color || '#ACACAC');
+  if (m) { const n = parseInt(m[1], 16); rgb = ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255); }
+  s.setProperty('--grid-line', 'rgba(' + rgb + ',' + op + ')');
+}
+applyGrid();
 /* 【2026-09-01】実績: Anyflowと「が」の間(px)をCSS変数へ */
 function applyResSlotGap() {
   const v = params.sections && params.sections.results ? params.sections.results.slotGap : 4;
@@ -17972,6 +18011,21 @@ function buildPanel() {
     v => sv().common.smooth = Math.min(12, Math.max(1, 13 - v)),   /* ⚠️ 範囲が広がってもマイナスにしない */
     v => '×' + v.toFixed(1),
     '右へ動かすほど、指を離しても長く流れ続けます。左でピタッと止まります。'));
+
+  /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)テクスチャ。オン/オフ＋オンの時だけ細かさ等のつまみを出す(動的) */
+  sub(catAll, 'グリッド（背景の方眼）', null, { fixed: true, grp: 'fxtex' });
+  segRow('グリッド', [['オン', 1], ['オフ', 0]],
+    () => (params.grid && params.grid.on ? 1 : 0),
+    v => { if (!params.grid) params.grid = {}; params.grid.on = !!v; applyGrid(); markDirty(); buildPanel(); });
+  if (params.grid && params.grid.on) {
+    rows.push(slider('細かさ（マスの大きさ）', 8, 120, 1, () => (params.grid.cell != null ? params.grid.cell : 44),
+      v => { params.grid.cell = v; applyGrid(); markDirty(); }, v => Math.round(v) + 'px',
+      '方眼1マスの大きさ。小さいほど細かい方眼になります。'));
+    rows.push(slider('線の太さ', 0.5, 4, 0.5, () => (params.grid.w != null ? params.grid.w : 1),
+      v => { params.grid.w = v; applyGrid(); markDirty(); }, v => v.toFixed(1) + 'px', '方眼の線の太さ。'));
+    rows.push(slider('線の濃さ', 0.05, 1, 0.05, () => (params.grid.op != null ? params.grid.op : 0.45),
+      v => { params.grid.op = v; applyGrid(); markDirty(); }, v => Math.round(v * 100) + '%', '方眼の線の濃さ(透明度)。うすいほど背景になじみます。'));
+  }
 
   /* くり返しは慣性とは別の話なので独立させる(ヒデさん指定 2026-08-27) */
   sub(catAll, 'くり返し再生', null, { fixed: true, grp: 'anim' });   /* 再生＝アニメーション扱い(ヒデさん指定) */
