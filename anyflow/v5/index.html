@@ -4909,7 +4909,7 @@ const DEFAULTS = {
   net3d: { mode: '3d', frontW: 5, backW: 1, phys: 0.7, flatW: 2, spd: 0.7, dots: 1, spin: 0, spinDots: true, showDots: true },   /* dots=1本の軌道に流すドット数(2026-08-29) / spin=軌道の回転・spinDots=粒も連動・showDots=粒表示(2026-08-30) */
   /* 【2026-08-29 ヒデさん指定】コンバージョン背景(流れるグラデ+Bayerディザ)。
      既定はカンプのディザ設定(Bayer16×16 / Size1 / Levels3 / Brightness104% / Contrast1.38)に合わせる */
-  cv: { cell: 1, levels: 3, spread: 1.0, grain: 0.35, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38,
+  cv: { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38,
         colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, ramp: 0, addT: 0, addB: 0 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
   cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
   cvSway: '0',         // 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。0=現行 / 1〜5。URL ?sway=N
@@ -7296,7 +7296,6 @@ const cvBg = (function () {
 precision mediump float;
 uniform vec2 uRes; uniform float uTime;
 uniform float uCell, uLevels, uSpread, uSpeed, uSwell, uFlowScale, uBright, uContrast;
-uniform float uGrain;   /* 【2026-09-20 ヒデさん依頼】時間で点滅する粒(パラパラのチリ)の強さ */
 uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラー案・パネルで変更可) */
 uniform float uCompRamp;   /* 【2026-09-16 ヒデさん依頼】1=デザインカンプ(17383:21430)の13段ランプを忠実に使う */
 uniform vec3 uTopCol;   /* 【2026-09-15 ヒデさん指定】いちばん明るい所(カンプでは右上)の色。既定は薄い水色 */
@@ -7436,9 +7435,7 @@ void main(){
     if (fm > 0.0 && mx > capF) col = mix(col, col * (capF / mx), fm); }
   col = mix(col, mix(uDarkCol, col, 0.42), uDark);   /* 暗さ: 黒ベースに寄せる(色は残り火のように残る) */
   float dith = bayer16(cellId);
-  /* 【2026-09-20 ヒデさん依頼】時間で点滅する粒(パラパラのチリ)。粒(セル)ごとに時間で乱数がゆらぎ、量子化の境目がパラパラ入れ替わる */
-  float gn = (uGrain > 0.001) ? (hash(cellId + floor(uTime * 14.0) * 7.13) - 0.5) * uGrain : 0.0;
-  vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread + gn) + 0.5) / uLevels, 0.0, 1.0);
+  vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread) + 0.5) / uLevels, 0.0, 1.0);
   gl_FragColor = vec4(q, 1.0);
 }`;
   function compile(type, src) {
@@ -7460,7 +7457,7 @@ void main(){
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     const loc = gl.getAttribLocation(p, 'aP');
     gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uGrain', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uS', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uRise', 'uCompRamp', 'uWaveAmp', 'uWaveLen', 'uWaveSpd', 'uSwayDeg', 'uSwaySec', 'uSwayMode'])
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uS', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uRise', 'uCompRamp', 'uWaveAmp', 'uWaveLen', 'uWaveSpd', 'uSwayDeg', 'uSwaySec', 'uSwayMode'])
       uni[k] = gl.getUniformLocation(p, k);
     uni.uFormRect = gl.getUniformLocation(p, 'uFormRect'); uni.uFormCeil = gl.getUniformLocation(p, 'uFormCeil');   /* 2026-09-18 */
     uni.uSwayPivot = gl.getUniformLocation(p, 'uSwayPivot'); uni.uWaveAnchor = gl.getUniformLocation(p, 'uWaveAnchor'); uni.uCore = gl.getUniformLocation(p, 'uCore'); uni.uCoreSoft = gl.getUniformLocation(p, 'uCoreSoft'); uni.uCoreSkip = gl.getUniformLocation(p, 'uCoreSkip');
@@ -7479,7 +7476,6 @@ void main(){
     gl.uniform1f(uni.uCell, Math.max(1, (c.cell != null ? c.cell : 1)) * dpr);
     gl.uniform1f(uni.uLevels, Math.max(2, c.levels != null ? c.levels : 3));
     gl.uniform1f(uni.uSpread, c.spread != null ? c.spread : 1.0);
-    gl.uniform1f(uni.uGrain, c.grain != null ? c.grain : 0.35);   /* 【2026-09-20】パラパラの粒(既定で少し強め) */
     gl.uniform1f(uni.uSpeed, c.speed != null ? c.speed : 0.25);
     gl.uniform1f(uni.uSwell, c.swell != null ? c.swell : 0.12);
     gl.uniform1f(uni.uFlowScale, c.flowScale != null ? c.flowScale : 3.0);
@@ -19034,7 +19030,6 @@ function buildPanel() {
       rows.push(slider('粗さ（ドット）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px', '大きいほど粗い。1でカンプ。'));
       rows.push(slider('階調（レベル）', 2, 12, 1, () => cvv().levels, v => { cvv().levels = v; }, v => Math.round(v) + '段', '少ないほどディザが強く。カンプは3段。'));
       rows.push(slider('ディザの散り', 0, 2, 0.05, () => cvv().spread, v => { cvv().spread = v; }, v => '×' + v.toFixed(2), '大きいほど粒感。'));
-      rows.push(slider('パラパラの粒（チリ）', 0, 1.2, 0.05, () => (cvv().grain != null ? cvv().grain : 0.35), v => { cvv().grain = v; }, v => '×' + v.toFixed(2), '【2026-09-20】時間で点滅する粒(チリ)の強さ。大きいほどパラパラがはっきり。0で止まる。', { fixedMax: true }));
     },
     flow() {
       /* 【2026-09-18 ヒデさん依頼】白い光の居場所(右上を漂う)の案。⋯で削除/上書き可 */
