@@ -46,23 +46,29 @@
      線色/太さ/細かさは applyGrid() が CSS変数で流し込む(パネル: 全体 › エフェクト＆テクスチャ › グリッド)。
      ⚠️ background-attachment:fixed は transform を持つ祖先の中では要素基準になる(実績のアニメ層は要実測)＋iOS実機は挙動が弱い(仮置き)。 */
   html.grid-on {
-    --grid-cell: 44px; --grid-w: 1px; --grid-line: rgba(172,172,172,.45);
+    --grid-cell: 40px; --grid-w: 1px; --grid-line: rgba(172,172,172,.45);   /* 既定40px=中央仕切り(720)・左右余白(120)がマス目に乗る(Option A 数値合わせ) */
     --grid-img:
       linear-gradient(to right, var(--grid-line) var(--grid-w), transparent var(--grid-w)),
       linear-gradient(to bottom, var(--grid-line) var(--grid-w), transparent var(--grid-w));
   }
-  html.grid-on body,
-  html.grid-on .stage-wrap,
-  html.grid-on .pin-vp,
-  html.grid-on .np-vp,
-  html.grid-on #results.rfx-12 .res2-top,
-  html.grid-on #results.rfx-12 .r2v,
-  html.grid-on #conversion.cvs-10 {
+  /* PC/タブレット(html:not(.mb)): 地色を塗る各面に画面固定で重ねる=背景として content の後ろに出て、全セクションで目が揃う */
+  html:not(.mb).grid-on body,
+  html:not(.mb).grid-on .stage-wrap,
+  html:not(.mb).grid-on .pin-vp,
+  html:not(.mb).grid-on .np-vp,
+  html:not(.mb).grid-on #results.rfx-12 .res2-top,
+  html:not(.mb).grid-on #results.rfx-12 .r2v,
+  html:not(.mb).grid-on #conversion.cvs-10 {
     background-image: var(--grid-img);
     background-size: var(--grid-cell) var(--grid-cell);
     background-attachment: fixed;
     background-position: 0 0;
   }
+  /* スマホ(html.mb): iOS Safari は background-attachment:fixed が不安定＋SPは pin-stage が transform:scale で fixed が効かない。
+     そこで画面固定のオーバーレイ1枚(#gridBg)で確実に敷く(全端末同挙動・継ぎ目なし)。ヘッダー(z60)/パネル(z100000)より下・本文より上。 */
+  #gridBg { position: fixed; inset: 0; pointer-events: none; z-index: 11; display: none;
+    background-image: var(--grid-img); background-size: var(--grid-cell) var(--grid-cell); background-position: 0 0; }
+  html.mb.grid-on #gridBg { display: block; }
 
   /* ---- ステージ: 高さ921pxのカンプ座標系のまま、幅だけ画面いっぱいに広げる（フィル） ----
      左右の要素は left:120px / right:120px でアンカーするので、幅が変わっても余白は120pxのまま */
@@ -3838,6 +3844,7 @@
   <script>(function(){try{var m=(location.search+location.hash).match(/ds=(low|mid|high)/);if(m)document.documentElement.setAttribute("data-ds",m[1]);}catch(e){}})();</script>
 </head>
 <body>
+<div id="gridBg" aria-hidden="true"></div><!-- 【2026-09-21】背景グリッド(スマホ用の画面固定オーバーレイ)。PC/タブレットは各セクション地色に重ねるので非表示 -->
 
 <div class="stage-wrap">
   <div class="stage" id="stage">
@@ -4958,7 +4965,7 @@ const DEFAULTS = {
   edits: {},
   editsMb: {},   /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホモードで付けた文字設定の上書き(スマホの時だけ base に重なる) */
   mb: {},        /* 【2026-09-20 ヒデさん依頼・PC/SP独立(全つまみ)】スマホ専用の値。{ "dotパス": 値 }。スマホ(isMobile)の時だけ applyMbToParams で本体へ流し込む */
-  grid: { on: false, cell: 44, w: 1, op: 0.45, color: '#ACACAC' },   /* 【2026-09-21 ヒデさん依頼】背景の方眼グリッド。on=表示 / cell=マスの大きさ(px) / w=線の太さ(px) / op=線の濃さ(0〜1) / color=線色。applyGrid() が html.grid-on と CSS変数に反映 */
+  grid: { on: false, cell: 40, w: 1, op: 0.45, color: '#ACACAC' },   /* 【2026-09-21 ヒデさん依頼】背景の方眼グリッド。on=表示 / cell=マスの大きさ(px・既定40=中央仕切り720/余白120がマス目に乗る) / w=線の太さ(px) / op=線の濃さ(0〜1) / color=線色。applyGrid() が html.grid-on と CSS変数に反映 */
   sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
   swayAmp: 0,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる。【2026-09-19 ヒデさん指定】軸は固定で回すだけ→0(KVタブ「揺らぎの強さ」で戻せる)
   swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
@@ -14655,7 +14662,7 @@ function applyGrid() {
   const el = document.documentElement;
   try { el.classList.toggle('grid-on', !!g.on); } catch (e) {}
   const s = el.style;
-  s.setProperty('--grid-cell', (g.cell != null ? g.cell : 44) + 'px');
+  s.setProperty('--grid-cell', (g.cell != null ? g.cell : 40) + 'px');
   s.setProperty('--grid-w', (g.w != null ? g.w : 1) + 'px');
   const op = (g.op != null ? g.op : 0.45);
   let rgb = '172,172,172';
@@ -18018,7 +18025,7 @@ function buildPanel() {
     () => (params.grid && params.grid.on ? 1 : 0),
     v => { if (!params.grid) params.grid = {}; params.grid.on = !!v; applyGrid(); markDirty(); buildPanel(); });
   if (params.grid && params.grid.on) {
-    rows.push(slider('細かさ（マスの大きさ）', 8, 120, 1, () => (params.grid.cell != null ? params.grid.cell : 44),
+    rows.push(slider('細かさ（マスの大きさ）', 8, 120, 1, () => (params.grid.cell != null ? params.grid.cell : 40),
       v => { params.grid.cell = v; applyGrid(); markDirty(); }, v => Math.round(v) + 'px',
       '方眼1マスの大きさ。小さいほど細かい方眼になります。'));
     rows.push(slider('線の太さ', 0.5, 4, 0.5, () => (params.grid.w != null ? params.grid.w : 1),
