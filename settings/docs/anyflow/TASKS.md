@@ -19,7 +19,9 @@
 | P | 背景グリッドがコンテンツの前面に出てる→後ろへ | ✅ SPのオーバーレイ(#gridBg z11)を廃止し、地色面(body/.stage-wrap/.pin-vp/.np-vp/#conversion.cvs-10)に background-attachment:scroll で重ね=content の後ろ・iOS安全。実測: 導入事例の写真の上に出ず余白だけに出る |
 | L | Visionメッセージの行間が広すぎ→詰める | ✅ SP `.vis-line` line-height loose(1.7)→tight(1.4)＋`.vis-l2` top 160→140。実測 行top間 64→44px |
 | R | 開発者体験1モックの「AI Assistant」前アイコン削除 | ✅ sparkles.svg の img を削除。実測 残存false |
-| M | メッシュを中央＋上部5テキストが画面幅からはみ出るのを収める(SP) | ⏳ 未着手(実機で見切れ・Playwright390では辛うじて収まる=要実機調整) |
+| M | メッシュ上部5テキストを左右対称(線対称)に＋はみ出さない(SP) | ✅ SPも PC の対称配列 VF_LAB_PC を使用(中心VF_CX軸・sc*ldで内側へ)。実測: pair04/pair13とも±11でほぼ対称・minLeft29/maxRight355で390内に収まる |
+| L' | Vision行間 詰めすぎ→少し戻す＋見出し↔メッシュもう少し詰める | ✅ line-height 1.4→1.5・.vis-l2 top140→146・.vf-wrap top255→235。実測 行top間 44→約50 |
+| U | 調整パネルのタブ帯にきつめの背景ブラー(透けるので) | ✅ `.pan-tabs` に backdrop-filter:blur(14px)(白塗りは足さず透明地のまま)。実測 blur(14px) |
 | N | 実績ピクトのアニメの線を細く | ⏳ 未着手 |
 | O | ピクトのボックスサイズを上げる | ⏳ 未着手 |
 | S | スマホモード時に本体を390×844のスマホ枠で表示、抜けると通常に戻る | ⏳ 未着手(新機能・中規模) |

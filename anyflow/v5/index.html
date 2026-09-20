@@ -3072,14 +3072,14 @@
     html.mb #results .pin-stage { align-items: flex-start; }   /* 中身は上から流す(縦中央寄せ解除) */
     #vision { margin-top: 0; }   /* PC用の 200px 余白を撤去(KV→ビジョンが空きすぎていた) */
     .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 600; letter-spacing: 0; text-align: center; }   /* カンプSP: 16px → y741。【2026-09-19】太さは共通部品(600)に(旧SPカンプ Light300 は仮置きで上書き) */
-    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, 30px); line-height: var(--lh-tight); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)。【2026-09-20 #3】メッセージを少し大きく(26→30・SP独立の未設定時)。【2026-09-21 ヒデさん依頼】行間を詰める(loose1.7→tight1.4) */
+    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, 30px); line-height: 1.5; font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)。【2026-09-20 #3】メッセージを少し大きく(26→30)。【2026-09-21 ヒデさん依頼】行間 1.7→1.4 は詰めすぎ→1.5 に戻す */
     /* 【2026-09-09 ヒデさん指定】SP でも「つなぐ/強み」のギラギラのグラデ揺らぎを PC と同じく出す。
        (以前カンプが単色だったため SP で無効化したが、ヒデさんの意向で PC 同様に復活。base の
        .vl-nagu / .vis-line.str-live .vl-strong がそのまま適用される＝ここでは上書きしない) */
     .vis-l1 { top: 96px; }    /* 【2026-09-20 #2】Our Vision↔メッセージの間隔を他セクションに合わせて詰める(106→96・約10px) */
-    .vis-l2 { top: 140px; }   /* 【2026-09-21 ヒデさん依頼】1行目との間隔を詰める(160→140) */
+    .vis-l2 { top: 146px; }   /* 【2026-09-21 ヒデさん依頼】1行目との間隔を詰める(160→140は詰めすぎ→146に少し戻す) */
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
-    .vf-wrap { left: 28px; top: 255px; width: 640px; height: 600px; transform: scale(0.555); transform-origin: 0 0; }   /* 【2026-09-20 ヒデさん依頼#4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に(left=196.5−300×0.555)。上の余白は255維持 */
+    .vf-wrap { left: 28px; top: 235px; width: 640px; height: 600px; transform: scale(0.555); transform-origin: 0 0; }   /* 【2026-09-20 #4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に。【2026-09-21 ヒデさん依頼】見出し↔メッシュをもう少し詰める(255→235) */
     .vf-wrap .vf-lab b { font-size: 21px; }        /* 【2026-09-20 #5】5つの機能名をSPで大きく(16→21・scale0.555で≈12px) */
     .vf-wrap .vf-lab span { font-size: 11px; }     /* 補足も少し大きく(8→11) */
     /* 右カラムはPCでは右アンカーだが、スマホは画面いっぱいの1カラムにする */
@@ -3556,7 +3556,7 @@
   /* 【2026-09-15 ヒデさん指定】大カテゴリはアコーディオンからタブへ: 上のタブで選ぶと、そのカテゴリの中身だけが下に出る(選んだタブはブラウザに記憶) */
   /* 【2026-09-20 ヒデさん依頼】タブは2段組(flex-wrap)をやめ、横1列＋横スクロールに。選択タブは中央へ寄せる(showTab) */
   .pan-tabs { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: nowrap; gap: 16px; margin: 0 -10px; padding: 6px 10px 0;
-              background: transparent; border-bottom: 1px solid #dcdcdc;   /* 【2026-09-21 ヒデさん依頼】タブ帯の白塗り(浮いて見える)は撤去。ただしタブ全体の下にグレーの下線を1本引く */
+              background: transparent; border-bottom: 1px solid #dcdcdc; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);   /* 【2026-09-21 ヒデさん依頼】白塗りは撤去＋下にグレー下線。後ろのコンテンツが透けるので、きつめの背景ブラーで隠す(塗りは足さない) */
               overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .pan-tabs::-webkit-scrollbar { height: 6px; }
   .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
@@ -12440,7 +12440,7 @@ function applyVfFade() {
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
   const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -22) : 0;   /* 【2026-09-20 #5】SP の持ち上げを控えめに(-95→-22)＝球の上の弧に沿って載せる */
   w.querySelectorAll('.vf-lab').forEach((el, i) => {
-    const _a = (!_mb && VF_LAB_PC[i]) ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC は左右対称の弧アンカー(中心基準)。SP は従来の data-x/data-y */
+    const _a = VF_LAB_PC[i] ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC/SP とも左右対称の弧アンカー(中心 VF_CX 基準)。SP も PC 同様に線対称(ヒデさん依頼)。SPは sc*ld で内側へ縮んで収まる */
     const x = _a ? _a.x : +el.dataset.x, y = _a ? _a.y : +el.dataset.y;
     const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0;
     let lx = VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox;
