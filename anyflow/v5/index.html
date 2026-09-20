@@ -20038,11 +20038,15 @@ document.getElementById('panelBody').addEventListener('click', () => {
       try { for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; } } catch (e) {}
       try { Object.assign(params, newP); } catch (e) {}
       if (presetText) { try { var stp = JSON.parse(presetText); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } catch (e) {} }
-      try { if (typeof applyMbToParams === 'function') applyMbToParams(); } catch (e) {}   /* 【2026-09-20】スマホ(SP)専用の値を本体へ流し込む */
       var call = function (fn) { try { fn(); } catch (e) {} };
       try { vfMesh = null; } catch (e) {}
       call(function () { if (typeof applyKvVariant === 'function') applyKvVariant(kvVarKey(), true); });
       call(function () { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); });
+      /* 【2026-09-20 ヒデさん報告・実機プレビューで線幅等をいじると惑星/カゴが変わる不具合の根治】
+         SP専用の値(mb)は、案の再適用(applyKvVariant/varApply=案の焼き込み値で base を上書き)より「後」に流し込む。
+         以前は前に流していたため、案の再適用が SP 値を上書きして戻してしまい、リロードするまで正しく見えなかった
+         (リロード時は varApply→applyMb の順で正しかった。ここも同じ順に揃える)。 */
+      call(function () { if (typeof applyMbToParams === 'function') applyMbToParams(); });
       call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
       call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
