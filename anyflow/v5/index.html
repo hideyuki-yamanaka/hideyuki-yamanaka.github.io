@@ -5752,6 +5752,18 @@ try {
     localStorage.setItem('anyflow-kv-pos-pervariant-20260920', '1');
   }
 } catch (e) {}
+/* 【2026-09-20 ヒデさん依頼】ビジョンのロゴを一度だけ「平面(傾き0・変形なし)・ど真ん中」へ戻す(古い −14° 傾き/位置ズレを解消) */
+try {
+  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vislogo-flat-20260920')) {
+    const setFlat = (o) => { if (!o || !o.sections || !o.sections.vision) return; const d = o.sections.vision.dome; if (d) { d.logoTiltX = 0; d.logoAngle = 0; d.logoTiltY = 0; d.logoDx = 0; d.logoDy = 0; } const m = o.sections.vision.domeMb; if (m) { ['logoTiltX', 'logoAngle', 'logoTiltY', 'logoDx', 'logoDy'].forEach(k => delete m[k]); } };
+    setFlat(params);
+    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    setFlat(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
+    if (params.gfxVarOverride) delete params.gfxVarOverride.visLogo;
+    try { const st = JSON.parse(localStorage.getItem(PRESET_KEY)) || {}; if (st.over && st.over.visLogo) { delete st.over.visLogo; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); } } catch (e) {}
+    localStorage.setItem('anyflow-vislogo-flat-20260920', '1');
+  }
+} catch (e) {}
 /* 【2026-09-18 ヒデさん指摘「コンプとの照合が100%でない・特にビジョン」】全277文字ノードを機械照合した差分: ビジョンの図の役割名(コネクタ等)・プラットフォーム＝Noto Regular(400)、
    開発者体験の見出しスロット CLI/SDK/API＝SF Pro Medium(500)。「Platform」(英字)はコンプに無いので据え置き。 */
 try {
@@ -12231,11 +12243,11 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: -14, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 const VIS_LOGOS = [
-  { key: 'flat',   name: '案1 現状（奥行き −14°）', fixed: true, tip: 'メッシュの傾きと同じ −14° だけ奥行きを付けた平らなロゴ。', cfg: { logoTiltX: -14, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
+  { key: 'flat',   name: '案1 平面（傾き0・ど真ん中）', fixed: true, tip: '【2026-09-20】メッシュのど真ん中に、平面(2D)・傾き0・変形なしで置く。傾けたい時は下の「奥行きの傾き」等のつまみで。', cfg: { logoTiltX: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
   { key: 'sphere', name: '案2 球面に貼る（位置に合わせたパース）', tip: 'ロゴがある位置(球の中心より左)の球面の向きに合わせて、左右にも傾ける(左右 −16°・奥行き −6°)。球に貼り付いて見える。', cfg: { logoTiltX: -6, logoTiltY: -16, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
   { key: 'float',  name: '案3 手前に浮かせる（影で奥行き）', tip: 'メッシュの手前に浮いているように、やわらかい影を落とす(左右 −8°・奥行き −14°)。', cfg: { logoTiltX: -14, logoTiltY: -8, logoOpacity: 1, logoShadow: 18, logoPlate: 0, logoStick: 0 } },
   { key: 'plate',  name: '案4 ガラスの板に乗せる', tip: 'すりガラスの角丸板の上にロゴを置き、板ごと傾ける(左右 −10°・奥行き −14°)。板の後ろの網目はぼける。', cfg: { logoTiltX: -14, logoTiltY: -10, logoOpacity: 1, logoShadow: 10, logoPlate: 1, logoStick: 0 } },
@@ -12288,7 +12300,7 @@ function applyVfFade() {
   w.querySelectorAll('.vf-lab').forEach((el, i) => { const x = +el.dataset.x, y = +el.dataset.y; const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0; el.style.left = (VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + oy).toFixed(1) + 'px'; });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
-  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (127 + 102 - VF_CX) * sc + (c.logoDx || 0), lcy = VF_CY + (288 + 18.5 - VF_CY) * sc + (c.logoDy || 0); if (_mb) { lcx = VF_CX + (c.logoDx || 0); lcy = VF_CY + (c.logoDy || 0) - 20; }   /* SP: ロゴを球の中央に */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0); if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 20; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)に置く。動かしたい時は logoDx/logoDy のつまみで。SPは従来どおり少し上へ */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
     const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
     const tf3 = _mb ? '' : ((ang || tx || ty) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateY(' + ty.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : '');   /* SP: 平らにまっすぐ */ lg.style.transform = tf3;
     lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
