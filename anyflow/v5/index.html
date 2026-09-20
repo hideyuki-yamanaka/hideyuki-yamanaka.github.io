@@ -231,7 +231,7 @@
   .hdr-drawer.is-open .hdr-drawer-nav a { opacity: 1; transform: none; }
   .hdr-drawer.is-open .hdr-drawer-nav a:nth-child(1){transition-delay: .05s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(2){transition-delay: .1s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(3){transition-delay: .15s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(4){transition-delay: .2s}.hdr-drawer.is-open .hdr-drawer-nav a:nth-child(5){transition-delay: .3s}
   /* 【2026-09-18 ヒデさん指定】メニューのお問い合わせ＝ヘッダーと同じマーキーCTA(.cta)。暗い地に溶けないよう白黒反転(白地・黒文字)、ホバーはヘッダーと同じシアン */
-  .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-24); font-family: var(--font-jp); font-size: var(--fs-body); line-height: 1; gap: 0; align-items: center; background: var(--surface-white); color: var(--ink-strong); }   /* 特異性を .drw-3 の a より上げる */
+  .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-24); font-family: var(--font-jp); font-size: 22px; line-height: 1; gap: 0; align-items: center; background: var(--surface-white); color: var(--ink-strong); width: 400px; height: 60px; transition: background-color var(--t-move) var(--e-out), color var(--t-move) var(--e-out); }   /* 特異性を .drw-3 の a より上げる。【2026-09-21 ヒデさん依頼】提供できること(424px)くらいの幅＋サイズUP。色はなめらかに切替(ホバー戻りのちらつき対策) */
   .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta:hover { background: var(--brand-cyan); color: var(--ink-on-dark); }
   .cvf-in option { font-weight: inherit; }   /* 2026-09-18: セレクトの選択肢も入力欄と同じ太さ(300) */
   /* ===== 【V5.0 2026-09-17 ヒデさん依頼】ハンバーガーを押した先の画面 3案(drw-1/2/3) ===== */
@@ -329,6 +329,10 @@
   html:not(.mb).hm-12 .header.hdr-on-dark .cta,
   html:not(.mb).hm-12 .header.hdr-on-dark .cta:hover { background: var(--surface-white); box-shadow: none; }
   html:not(.mb).hm-12 .header.hdr-on-dark .cta .cta-burg i { background: var(--surface-cta); }
+  /* 【2026-09-21 ヒデさん依頼】メニューを開いた時の×は、スクロール状態に関係なく常に「白いベタ箱＋黒い×」に固定 */
+  html:not(.mb).hm-12 .header .cta.is-open,
+  html:not(.mb).hm-12 .header .cta.is-open:hover { background: var(--surface-white); box-shadow: none; }
+  html:not(.mb).hm-12 .header .cta.is-open .cta-burg i { background: var(--surface-cta); }
   /* 13: ロゴマークのみ＋バーガー(全幅ガラス)。ロゴを t で 42px 幅にクリップ */
   html:not(.mb).hm-13 .header .logo { overflow: hidden; width: calc(255px - 213px * var(--hdr-t, 0)); }
   /* 14: 縮む＋バーガー(全幅ガラス・小さめ) */
@@ -431,7 +435,7 @@
     -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
             mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
   }
-  .cta .cta-reel, .cv-btn .cta-reel { transition: transform var(--t-move) var(--e-out); display: block; }
+  .cta .cta-reel, .cv-btn .cta-reel { transition: transform var(--t-move) var(--e-out); display: block; will-change: transform; }   /* 【2026-09-21】will-change でレイヤーを常設=ホバー解除時の再ラスタライズによるちらつきを防ぐ */
   .cta .cta-row,  .cv-btn .cta-row  { height: 1.4em; display: block; }
   .cta .cta-track,.cv-btn .cta-track{ width: max-content; animation: cta-marquee 9s linear infinite; display: flex; }
   .cta .cta-group,.cv-btn .cta-group{ flex: 0 0 auto; display: flex; }
@@ -3000,7 +3004,7 @@
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav { padding: 0 var(--space-24); gap: var(--space-14); }
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: var(--fs-stat); }
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a .hdr-drawer-num { font-size: var(--fs-caption); }
-    html.mb .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-16); width: 200px; height: 44px; font-size: var(--fs-body); }
+    html.mb .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-16); width: 268px; height: 54px; font-size: 18px; }   /* 【2026-09-21 ヒデさん依頼】SP は 提供できること(268px)くらいの幅＋サイズUP */
 
     /* --- キービジュアル (2026-09-02 ヒデさん指定: モバイルは【グラフィックが上・コピーが下】) --- */
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
