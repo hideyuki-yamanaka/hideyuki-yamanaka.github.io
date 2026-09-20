@@ -843,8 +843,11 @@
   .vis-line .vl-in { display: inline-block; }
   .vis-line .vl-ch { display: inline-block; }   /* 案C 文字ごとカスケード用 */
   /* 【2026-09-20 ヒデさん依頼】ビジョン強調案(strong): 見出し・メッセージを左揃え／文字サイズ +20px／左位置は KV コピーの左(--kv-copy-base=50px)に合わせる。2行(visL1/visL2)＝既存のマスク出現で1行目→2行目。PC/タブレットのみ(スマホは別レイアウト) */
-  html:not(.mb) #vision.vis-emph .vis-label { left: var(--kv-copy-base, 50px); right: auto; text-align: left; }
-  html:not(.mb) #vision.vis-emph .vis-line { left: var(--kv-copy-base, 50px); right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
+  html:not(.mb) #vision.vis-emph .vis-label { left: 120px; right: auto; text-align: left; }   /* 【2026-09-20 修正】見出しは左から120px */
+  html:not(.mb) #vision.vis-emph .vis-line { left: 120px; right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
+  /* 【2026-09-20 ヒデさん依頼】強調案の時は KV 以下(ビジョン)を上に150px詰める(既存のKVノーマル-100/強調+100 にさらに-150)。PC/タブレットのみ */
+  html:not(.kv-strong):not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 250px); }   /* KVノーマル(100) − 150 = −50px */
+  html.kv-strong:not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 50px); }          /* KV強調(300) − 150 = 150px */
 
   /* 【2026-08-30 ヒデさん指定】メッセージの「強み」強調は【グラデ揺らぎ(live)】で確定。
      他の9案(チカチカ/上下ずれ/色差/ぼけ/グラデ→黒…)と選択パネルは削除した。 */
@@ -11539,6 +11542,11 @@ const VIS_TEXT = {
   default: ['データをつなぐことが、強みになる時代へ。', ''],
   strong:  ['データをつなぐことが、', '強みになる時代へ'],
 };
+/* 【2026-09-20 ヒデさん依頼】バリエーションのUIは他パネルと同じ「ピル型(varRowX)」で統一。案の定義はこの配列 */
+const VIS_EMPH_VARIANTS = [
+  { key: 'default', name: 'デフォルト', fixed: true, tip: '現状(1行・中央そろえ)。' },
+  { key: 'strong',  name: '強調',       fixed: true, tip: '2行(データをつなぐことが、／強みになる時代へ)・左揃え・文字+20px・見出しの左をKVコピー基準に・1行目→2行目のマスク出現。' },
+];
 function visEmphMode() { const v = params.sections && params.sections.vision; return (v && v.emph === 'strong') ? 'strong' : 'default'; }
 function rebuildVisChars(mode) {
   const src = VIS_TEXT[mode] || VIS_TEXT.default;
@@ -11590,6 +11598,8 @@ function applyVisEmph() {
   const mode = visEmphMode();
   try { const sec = document.getElementById('vision'); if (sec) sec.classList.toggle('vis-emph', mode === 'strong'); } catch (e) {}
   rebuildVisChars(mode);
+  try { if (typeof applyVisBelow === 'function') applyVisBelow(); } catch (e) {}   /* 強調案の下コンテンツ間隔(+100)を反映 */
+  try { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); } catch (e) {}   /* 2行目にも太さ等を当て直す */
 }
 applyVisEmph();   /* 初期化(起動時のモードで組む) */
 
@@ -12342,7 +12352,7 @@ function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; c
 function vfCfgVal(k) { const v = params.sections.vision; if (_vfPhoneOn() && v.domeMb && v.domeMb[k] != null) return v.domeMb[k]; if (v.dome && v.dome[k] != null) return v.dome[k]; return VF_DEF[k]; }
 function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; if (_vfPhoneOn()) { if (!v.domeMb) v.domeMb = {}; v.domeMb[k] = val; } else { v.dome[k] = val; } applyVfFade(); }
 /* 【2026-09-19 ヒデさん依頼】メッセージの下の余白: 図(ドーム)と Point 01/02 を同じ量だけ下へ(PC。既定 50px は仮置き) */
-function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-below', (v.belowGap != null ? v.belowGap : 50) + 'px'); }
+function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; const emphExtra = (typeof visEmphMode === 'function' && visEmphMode() === 'strong' && !(typeof isMobile !== 'undefined' && isMobile)) ? 100 : 0;   /* 【2026-09-20】強調案は見出しメッセージ↔下コンテンツ(図・ポイント)を100px離す(下も連動して下がる)。PC/タブレットのみ */ sec.style.setProperty('--vis-below', ((v.belowGap != null ? v.belowGap : 50) + emphExtra) + 'px'); }
 applyVisBelow();
 /* 【2026-09-19 ヒデさん依頼】ビジョンの図と Point 01/02 の左右の間隔(PCのみ)。+で Point を右へ(間隔を広げる) */
 function applyVisPointsX() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-points-x', (v.pointsX != null ? v.pointsX : 0) + 'px'); }
@@ -16641,7 +16651,7 @@ const TEXT_SPEC = [
   { key: 'kvLogos',   sel: '.logos',     name: 'KVロゴ帯（位置だけ）',                      sec: 'kv',  text: 0, font: 0 },
   // --- ビジョン ---
   { key: 'visLabel',  sel: '#visLabel',      name: 'Our Vision',                         sec: 'vis', text: 1 },
-  { key: 'visMsg',    sel: '.vis-l1',        name: 'メッセージ（データをつなぐことが〜）', sec: 'vis', text: 0 },
+  { key: 'visMsg',    sel: '.vis-l1, .vis-l2', name: 'メッセージ（データをつなぐことが〜）', sec: 'vis', text: 0, multi: 1 },   /* 【2026-09-20】太さ等を1行目・2行目の両方に当てる(強調案の2行対応) */
   { key: 'vfWrap',    sel: '#vfWrap',        name: '図（網目のドーム・位置だけ）',        sec: 'vis', text: 0, font: 0 },   /* 【2026-09-19】Figma 18004:38228 */
   /* 【2026-09-19 ヒデさん依頼】図の機能名と補足は1つずつ(太さ・行間・字間・サイズ・文字・位置)。カンプ: 機能名 Noto Medium 16px / 補足 Regular 8px */
   { key: 'vfLab1',    sel: '#vfLab1',       name: '図の機能名①（コネクタ・組ごと位置）', sec: 'vis', text: 0, font: 0 },
@@ -18543,7 +18553,7 @@ function buildPanel() {
 
   /* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション(デフォルト/強調)。強調＝2行・左揃え・大きめ */
   sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation' });
-  segRow('案', [['デフォルト', 'default'], ['強調', 'strong']], () => visEmphMode(), v => { params.sections.vision.emph = String(v); applyVisEmph(); markDirty(); });
+  varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => { params.sections.vision.emph = String(k); applyVisEmph(); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('強調＝メッセージを2行(データをつなぐことが、／強みになる時代へ)に・左揃え・文字+20px・見出しの左をKVコピーに合わせる・1行目→2行目のマスク出現。デフォルト＝現状(1行・中央)。');
 
   /* 【2026-08-30 ヒデさん指定】「強み」の強調はグラデ揺らぎで確定。他の案とこのセクション自体を削除した */
