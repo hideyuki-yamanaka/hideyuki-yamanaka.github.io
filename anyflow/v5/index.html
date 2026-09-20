@@ -4040,7 +4040,7 @@
           <div class="r2s"><b>導入企業</b><span id="cntMain">100+</span></div>
           <div class="r2s"><b>連携実績</b><span id="cntSub1">20,000+</span></div>
           <div class="r2s"><b>連携アプリ数</b><span id="cntSub2">200+</span></div>
-          <div class="r2s r2s-static"><b>iPaasサービス</b><span id="cntSub3">No.1</span></div>   <!-- 【2026-09-20 ヒデさん依頼・Figma 17950:34275】4つ目。No.1 は数えない=静的 -->
+          <div class="r2s"><b>iPaasサービス</b><span id="cntSub3">No.1</span></div>   <!-- 【2026-09-20 ヒデさん依頼】4つ目。「No.」は固定・「1」だけ 1〜9 でスロット回転(Figma 17950:34275) -->
         </div>
       </div>
       <!-- 【2026-09-20 ヒデさん依頼】for SaaS/AI の上にも、下段と同じ横線を引く -->
@@ -11836,6 +11836,7 @@ let resT = -1;   // 実際に進んだ再生位置(秒)。時間とスクロー�
    桁ごとに少し遅らせて止めるので、左から順に確定していく。 */
 const SLOT_TARGETS = [
   ['cntMain', '100+'], ['cntSub1', '20,000+'], ['cntSub2', '200+'],   /* 2026-08-31 カンプ15900:38712 の数値へ */
+  ['cntSub3', 'No.1', { min1: true }],   /* 【2026-09-20 ヒデさん依頼】No. は固定・1 だけ 1〜9 でスロット回転 */
 ];
 let slots = [];
 let slotBuiltCycles = -1;
@@ -11847,6 +11848,7 @@ const SLOT_ORIG = {
   main: (document.getElementById('cntMain') || {}).textContent,
   sub1: (document.getElementById('cntSub1') || {}).textContent,
   sub2: (document.getElementById('cntSub2') || {}).textContent,
+  sub3: (document.getElementById('cntSub3') || {}).textContent,
 };
 
 function buildSlots() {
@@ -11855,7 +11857,7 @@ function buildSlots() {
   if (slotBuiltCycles === cy && slots.length) return;
   slotBuiltCycles = cy;
   slots = [];
-  for (const [id, text] of SLOT_TARGETS) {
+  for (const [id, text, opt] of SLOT_TARGETS) {
     const host = document.getElementById(id);
     if (!host) continue;
     host.textContent = '';
@@ -11870,7 +11872,8 @@ function buildSlots() {
         stp.className = 'stp';
         /* cy 周ぶんの 0〜9 を並べ、最後に目的の数字を置く */
         const seq = [];
-        for (let c = 0; c < cy; c++) for (let d = 0; d < 10; d++) seq.push(d);
+        const lo = (opt && opt.min1) ? 1 : 0;   /* 【2026-09-20】min1: 0 を飛ばし 1〜9 で回す(No.1 用) */
+        for (let c = 0; c < cy; c++) for (let d = lo; d < 10; d++) seq.push(d);
         seq.push(Number(ch));
         for (const d of seq) {
           const em = document.createElement('em');
