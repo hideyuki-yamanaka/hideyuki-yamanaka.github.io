@@ -6264,6 +6264,11 @@ function load() {
    その状態のまま保存すると【次に開いた時に何も動かず＝画面が真っ白】になる(実際に発生)。
    一時停止は"今だけの状態"なので、保存には必ず再生中として書き出す。 */
 function save() {
+  /* 【2026-09-20 ヒデさん依頼・PC/SP独立の要】スマホ(実機/スマホ幅=isMobile)は「閲覧専用」。
+     起動時 applyMbToParams が SP専用の値(params.mb)を本体 params に流し込んで描画しているため、
+     ここで保存すると PC の基準値まで SP の値で上書きされてしまう(＝SPがPCに漏れる)。
+     編集・保存は PC 側(スマホモードのトグルは PC 上のクラス切替で isMobile=false のまま)だけで行う。 */
+  if (typeof isMobile !== 'undefined' && isMobile) return;
   /* いま画面に出ている形を、いまの案の引き出しへ入れてから保存する
      (2026-08-27 ヒデさん指定・案ごとに形を分ける) */
   if (typeof gfxStash === 'function') gfxStash();
@@ -15894,6 +15899,8 @@ window.__anim = {
   },
   step(dt) { elapsed += dt; renderFrame(); drawValueIcons(); },
   setElapsed(v) { elapsed = v; renderFrame(); },
+  _params() { return params; },   /* 検証用: 現在の params を返す(PC/SP独立の実測・青印の確認に使う) */
+  mb() { return params.mb ? JSON.parse(JSON.stringify(params.mb)) : {}; },   /* 検証用: SP専用の上書き一覧(mbKey→値) */
   /* 各セクションの自動再生を頭からやり直す (通常はリプレイしないので検証用) */
   replay() { elapsed = 0; resetSectionClocks(); renderFrame(); },
   setSway(n) { params.sway = n; renderFrame(); },
@@ -17727,13 +17734,13 @@ function buildPanel() {
         () => sv()[key].driveLen, v => { sv()[key].driveLen = v; fit(); },
         v => '×' + v.toFixed(2),
         '見終わるのに必要なスクロール量。大きいほどゆっくり、じっくり見せます。',
-        { fixedMax: true }));
+        { fixedMax: true, mbKey: 'sections.' + key + '.driveLen' }));
     } else {
       rows.push(slider('表示時間', 110, maxVh, 10,
         () => sv()[key].lenVh, v => { sv()[key].lenVh = v; fit(); },
         v => (v / 100).toFixed(1) + '画面',
         'モーションが終わってから次へ抜けるまでの長さ。大きいほど余韻が残ります。',
-        { fixedMax: true }));
+        { fixedMax: true, mbKey: 'sections.' + key + '.lenVh' }));
     }
   };
 
@@ -17763,7 +17770,7 @@ function buildPanel() {
 
   /* 【2026-09-19 ヒデさん依頼】見出し部品(英字ラベル＋見出し)の共通つまみ。4か所(Our Vision/Use Case/Contact/Strength)を一括で */
   sub(catAll, 'セクション見出し（共通の部品）', null, { fixed: true });
-  rows.push(slider('ラベル→見出しの間隔', 0, 30, 1, () => (params.secHeadGap != null ? params.secHeadGap : 6), v => { params.secHeadGap = v; applySecHeadGap(); markDirty(); }, v => Math.round(v) + 'px', 'Our Vision / Use Case / Contact / Strength 01・02 の英字ラベルと、その下の見出しの間。4か所いっしょに変わります(既定 6px は仮置き)。', { fixedMax: true }));
+  rows.push(slider('ラベル→見出しの間隔', 0, 30, 1, () => (params.secHeadGap != null ? params.secHeadGap : 6), v => { params.secHeadGap = v; applySecHeadGap(); markDirty(); }, v => Math.round(v) + 'px', 'Our Vision / Use Case / Contact / Strength 01・02 の英字ラベルと、その下の見出しの間。4か所いっしょに変わります(既定 6px は仮置き)。', { mbKey: 'secHeadGap', fixedMax: true }));
 
   /* 【2026-09-17 大掃除・ヒデさん指定】ヘッダー(案12 分離型・なめらか・1.65秒)/ハンバーガー(2本線・クロス)/浮くピルの質感(標準)/
      押した先の画面(左寄せ大) は【今の値で固定＝焼き込み】。選択UIは削除(DEFAULTS/SHIPPED/移行で値を固定)。 */
@@ -17790,7 +17797,7 @@ function buildPanel() {
   sub(catKv, '🎨 グラフィック');
   /* 【2026-09-19 ヒデさん依頼】右グラフィック(惑星＋カゴ)を XYZ で動かす。真ん中(0)＝いまの位置。Z は手前(+)/奥(−)＝大きく/小さく(PCのみ) */
   note('▼ 右グラフィック全体（惑星＋カゴ）の位置。真ん中(0)＝いまの位置。カゴの傾き・向きは下の「カゴ」の組');
-  { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true });
+  { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true, mbKey: 'kvGfx.' + key });
     const px = v => (v > 0 ? '+' : '') + Math.round(v) + 'px', pc = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
     ks('グラフィックの位置 X', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋カゴ)を左右に。0＝いまの位置。');
     ks('グラフィックの位置 Y', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋カゴ)を上下に。0＝いまの位置。');
@@ -17800,7 +17807,7 @@ function buildPanel() {
      見つけにくいので、ここ(グラフィック直下)にも同じスライダーを置く(同じ params.kv.graphicGap)。 */
   liveEdit = true;
   slider('この右グラフィックが出るタイミング', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v,
-    v => v.toFixed(2) + '秒', 'マイナスにすると早く（タイピング中に）出ます。0で小ラベルと同時。', { signed: true });
+    v => v.toFixed(2) + '秒', 'マイナスにすると早く（タイピング中に）出ます。0で小ラベルと同時。', { mbKey: 'kv.graphicGap', signed: true });
   note('※ 同じ設定は「左側コピー > タイミング」にもあります。');
 
   /* ═══ ① アニメーションを選ぶ ── いちばん上の考え方 (2026-08-27 ヒデさん指定) ═══
@@ -18101,7 +18108,7 @@ function buildPanel() {
   note('輪を消すと、その輪のドットも消えます。粒の渦・網の案では自動で隠れます。軌道の回転は案ごとなので「動き（この案）」にあります。');
   slider('漂う量', -3, 3, 0.05, () => params.conv.orbitDrift, v => params.conv.orbitDrift = v,
     v => '×' + v.toFixed(2),
-    '真ん中(0)で固定。右へ動かすほど大きく漂い、左へ動かすと逆向きに漂います。', { signed: true });
+    '真ん中(0)で固定。右へ動かすほど大きく漂い、左へ動かすと逆向きに漂います。', { mbKey: 'conv.orbitDrift', signed: true });
   /* 【2026-08-29 ヒデさん指定・フォーマット統一】「揺らぎ」「軌道の回転」の ON/OFF は
      案ごとに独立させたので「グラフィック > 動き（この案）」へ移動した。ここには置かない。 */
   note('揺らぎ・軌道の回転の ON/OFF は、案ごとに「グラフィック」タブの「動き（この案）」にあります（既定は 揺らぎON・回転OFF）。');
@@ -18110,7 +18117,7 @@ function buildPanel() {
   slider('軌道の本数', 0, 12, 1, () => params.conv.ringCount || 0,
     v => { params.conv.ringCount = v; markDirty(); renderFrame(); fillRingSub(); },
     v => (v < 2 ? '通常(2本)' : Math.round(v) + '本'),
-    '0〜1で通常の2本のまま。2以上にすると、惑星の中心に複数の軌道を張ります（アトム型など）。', { fixedMax: true });
+    '0〜1で通常の2本のまま。2以上にすると、惑星の中心に複数の軌道を張ります（アトム型など）。', { mbKey: 'conv.ringCount', fixedMax: true });
   const ringSubBox = document.createElement('div');
   (mount || body).appendChild(ringSubBox);
   var fillRingSub = function () {
@@ -18125,11 +18132,11 @@ function buildPanel() {
       segRow('回転', [['する', 1], ['しない', 0]], () => (params.conv.ringRotate === false ? 0 : 1),
         v => { params.conv.ringRotate = !!v; markDirty(); renderFrame(); });
       note('「しない」にすると、輪が回らず・奥行きも動かず、その向きでぴたっと止まります（下の「回る速さ」「奥行きの動き」は回転オンの時だけ効きます）。');
-      slider('回る速さ', 0, 2, 0.05, () => params.conv.ringSpin, v => params.conv.ringSpin = v, v => '×' + v.toFixed(2), '軌道全体の回る速さ。');
-      slider('奥行きの動き', 0, 1.5, 0.05, () => params.conv.ringTumble, v => params.conv.ringTumble = v, v => '×' + v.toFixed(2), 'アトム型・地球儀型で、奥行きの伸び縮みの速さ。');
-      slider('つぶし', 0.15, 0.8, 0.02, () => params.conv.ringFlat, v => params.conv.ringFlat = v, v => v.toFixed(2), '軌道の縦のつぶし具合。小さいほど細長い輪。');
-      slider('大きさ', 0.5, 1.6, 0.02, () => params.conv.ringSize, v => params.conv.ringSize = v, v => '×' + v.toFixed(2), '軌道全体の大きさ。');
-      slider('線の太さ', 0.5, 8, 0.1, () => params.conv.ringWidth, v => params.conv.ringWidth = v, v => v.toFixed(1) + 'px', '複数軌道の線の太さ。');
+      slider('回る速さ', 0, 2, 0.05, () => params.conv.ringSpin, v => params.conv.ringSpin = v, v => '×' + v.toFixed(2), '軌道全体の回る速さ。', { mbKey: 'conv.ringSpin' });
+      slider('奥行きの動き', 0, 1.5, 0.05, () => params.conv.ringTumble, v => params.conv.ringTumble = v, v => '×' + v.toFixed(2), 'アトム型・地球儀型で、奥行きの伸び縮みの速さ。', { mbKey: 'conv.ringTumble' });
+      slider('つぶし', 0.15, 0.8, 0.02, () => params.conv.ringFlat, v => params.conv.ringFlat = v, v => v.toFixed(2), '軌道の縦のつぶし具合。小さいほど細長い輪。', { mbKey: 'conv.ringFlat' });
+      slider('大きさ', 0.5, 1.6, 0.02, () => params.conv.ringSize, v => params.conv.ringSize = v, v => '×' + v.toFixed(2), '軌道全体の大きさ。', { mbKey: 'conv.ringSize' });
+      slider('線の太さ', 0.5, 8, 0.1, () => params.conv.ringWidth, v => params.conv.ringWidth = v, v => v.toFixed(1) + 'px', '複数軌道の線の太さ。', { mbKey: 'conv.ringWidth' });
     }
     mount = keep;
   };
@@ -18139,7 +18146,7 @@ function buildPanel() {
   sub(gRoot, 'ドット（粒）', true);
   addDynGroup(orbitsUsed);   /* 2026-08-29: ドットが自動で隠れる案(net3d/mesh/beads/accre)では汎用ドット調整が効かないので隠す */
   slider('大きさ', 0.1, 4, 0.02, () => params.conv.dotSize, v => params.conv.dotSize = v,
-    v => '×' + v.toFixed(2), 'すべての案のドット・粒にまとめて効きます。');
+    v => '×' + v.toFixed(2), 'すべての案のドット・粒にまとめて効きます。', { mbKey: 'conv.dotSize' });
   {
     /* もとは「🎨 グラフィック」の見出しの右にあったアイコン。
        モノごとの整理にあわせて、ドットの持ちものとしてここへ移した */
@@ -18157,7 +18164,7 @@ function buildPanel() {
       const keep = mount; mount = perspBox;
       if ((params.conv.dotPersp || 'flat') === 'persp') {
         slider('遠近の強さ', 0, 0.9, 0.02, () => params.conv.perspK, v => params.conv.perspK = v, v => v.toFixed(2),
-          '手前と奥の大きさ・太さの差。大きいほど立体感が強くなります。');
+          '手前と奥の大きさ・太さの差。大きいほど立体感が強くなります。', { mbKey: 'conv.perspK' });
         /* 【2026-08-29 ヒデさん指定】遠近を効かせる対象を選べる（ドット/軌道の線/両方）。
            軌道は「手前(下)の線を太く・奥(上)を細く」で遠近を出す。 */
         segRow('対象', [['ドット', 'dots'], ['軌道', 'orbit'], ['両方', 'both']],
@@ -18199,7 +18206,7 @@ function buildPanel() {
     fillPersp();
   }
   slider('ランダムさ', -3, 3, 0.05, () => params.conv.dotRandom, v => params.conv.dotRandom = v, v => v.toFixed(2),
-    '真ん中(0)できっちり等間隔。左右どちらへ動かしてもばらつきます（向きが逆になります）。', { signed: true });
+    '真ん中(0)できっちり等間隔。左右どちらへ動かしてもばらつきます（向きが逆になります）。', { mbKey: 'conv.dotRandom', signed: true });
   note('「軌道にそって回るかどうか」は案ごとの設定なので、① の中にあります。');
 
   /* ---------- ⑤ 惑星 ---------- */
@@ -18229,11 +18236,11 @@ function buildPanel() {
       if (m === 'count') {
         slider('何回に1回', 1, 30, 1, () => params.conv.fxCount, v => params.conv.fxCount = v,
           v => Math.round(v) + '回に1回',
-          '取り込みが何回起きるごとに1回エフェクトを出すか。大きいほど間引かれます。');
+          '取り込みが何回起きるごとに1回エフェクトを出すか。大きいほど間引かれます。', { mbKey: 'conv.fxCount' });
       } else if (m === 'time') {
         slider('何秒に1回', 0.5, 15, 0.5, () => params.conv.fxEvery, v => params.conv.fxEvery = v,
           v => v.toFixed(1) + '秒に1回',
-          '前に出してからこの秒数がたつまで、次のエフェクトを出しません。');
+          '前に出してからこの秒数がたつまで、次のエフェクトを出しません。', { mbKey: 'conv.fxEvery' });
       }
       mount = keep;
     };
@@ -18241,7 +18248,7 @@ function buildPanel() {
     /* 【2026-08-28 ヒデさん指定】広がりの慣性(波紋・エコー共通)。水面の波紋のように、勢いよく広がってスッと落ち着く */
     slider('広がりの慣性', 0, 1, 0.05, () => params.conv.fxInertia, v => params.conv.fxInertia = v,
       v => v.toFixed(2),
-      '0＝一定の速さ（機械的）。右へ動かすほど、最初は勢いよく広がってだんだん減速します（自然な波紋）。波紋・エコーに効きます。');
+      '0＝一定の速さ（機械的）。右へ動かすほど、最初は勢いよく広がってだんだん減速します（自然な波紋）。波紋・エコーに効きます。', { mbKey: 'conv.fxInertia' });
 
     /* エコーを選んだ時だけ、下に「バリエーション」の番号ピルと細かいつまみを出す */
     const echoBox = document.createElement('div');
@@ -18266,9 +18273,9 @@ function buildPanel() {
     fillGlowSub();
   }
   slider('光の強さ', 0, 1, 0.05, () => params.conv.glow, v => params.conv.glow = v, v => v.toFixed(2),
-    '右へ動かすほど強く光ります。0で光りません。');
+    '右へ動かすほど強く光ります。0で光りません。', { mbKey: 'conv.glow' });
   slider('溜まりの残り方', 1, 20, 0.5, () => params.conv.glowHold, v => params.conv.glowHold = v, v => v.toFixed(1) + '秒',
-    '取り込んだぶんが半分に戻るまでの時間。右へ動かすほど、強くなった状態が長く残ります（Aパルス以外で効きます）。');
+    '取り込んだぶんが半分に戻るまでの時間。右へ動かすほど、強くなった状態が長く残ります（Aパルス以外で効きます）。', { mbKey: 'conv.glowHold' });
 
   /* 【2026-09-17 大掃除・ヒデさん指定】「自由回転」(XYZ回転の枠・開始地点ボタン)は削除。メッシュ案では使っていない。 */
   /* 【2026-09-19 ヒデさん依頼】「惑星（模様）」の案の欄は削除(使わないため)。惑星スキンは現在の params.design のまま固定。 */
@@ -18293,60 +18300,60 @@ function buildPanel() {
     v => { params.kv.copyOrder = v; applyKvCopy(); markDirty(); });
   rows.push(slider('位置 横', -120, 300, 2, () => (params.kv.copyX || 0),
     v => { params.kv.copyX = v; applyKvCopy(); }, v => v + 'px',
-    'コピー全体（メイン＋サブ）を左右にずらします。0でヘッダーのロゴの左端と同じ位置(窓幅が変わっても揃います)。', { signed: true }));
+    'コピー全体（メイン＋サブ）を左右にずらします。0でヘッダーのロゴの左端と同じ位置(窓幅が変わっても揃います)。', { mbKey: 'kv.copyX', signed: true }));
   rows.push(slider('位置 縦', -200, 300, 2, () => (params.kv.copyY || 0),
     v => { params.kv.copyY = v; applyKvCopy(); }, v => v + 'px',
-    'コピー全体を上下にずらします。0で調整版(Figma)の位置。', { signed: true }));
+    'コピー全体を上下にずらします。0で調整版(Figma)の位置。', { mbKey: 'kv.copyY', signed: true }));
   rows.push(slider('メインの文字サイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
     v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間はこのタブの「🔤 文字」で。'));
+    '「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間はこのタブの「🔤 文字」で。', { mbKey: 'kv.mainSize' }));
   rows.push(slider('最終行「競争力を」のサイズ', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
     v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '最終行だけ大きくするジャンプ率。調整版は120px(行間1.2)。'));
+    '最終行だけ大きくするジャンプ率。調整版は120px(行間1.2)。', { mbKey: 'kv.jumpSize' }));
   segRow('サブの罫線（—）', [['あり', 1], ['なし', 0]],
     () => (params.kv.eyebrowDash === false ? 0 : 1),
     v => { params.kv.eyebrowDash = !!v; applyKvCopy(); markDirty(); fillAnimBody && 0; buildPanel(); });
   if (params.kv.eyebrowDash !== false) {
     rows.push(slider('罫線の長さ', 8, 80, 1, () => (params.kv.eyebrowDashW != null ? params.kv.eyebrowDashW : 26),
       v => { params.kv.eyebrowDashW = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-      'サブコピー先頭の罫線(—)の長さ。カンプは26px。'));
+      'サブコピー先頭の罫線(—)の長さ。カンプは26px。', { mbKey: 'kv.eyebrowDashW' }));
     rows.push(slider('罫線と文字の間', 0, 40, 1, () => (params.kv.dashGap != null ? params.kv.dashGap : 10),
       v => { params.kv.dashGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-      '罫線(—)とサブコピー文字の間隔。'));
+      '罫線(—)とサブコピー文字の間隔。', { mbKey: 'kv.dashGap' }));
   }
   rows.push(slider('メインとサブの間', 0, 60, 1, () => (params.kv.copyGap != null ? params.kv.copyGap : 16),
     v => { params.kv.copyGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    'メインコピーとサブコピーの縦の間隔。'));
+    'メインコピーとサブコピーの縦の間隔。', { mbKey: 'kv.copyGap' }));
   rows.push(slider('サブの文字サイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
     v => { params.kv.eyebrowSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「🔤 文字」で。'));
+    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「🔤 文字」で。', { mbKey: 'kv.eyebrowSize' }));
   sub(copyRoot, '順番', true);
   note('数字はページを開いてから何秒後か。上から出る順です。');
   /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
      選択パネル(5案ずつ)は削除。実装は header の data-navhover="roll" / data-btnhover="arrow" 固定(下のJS)。 */
   rows.push(slider('ナビ項目の間隔', 12, 64, 1, () => (params.kv.navGap != null ? params.kv.navGap : 32),
     v => { params.kv.navGap = v; applyNavGap(); }, v => Math.round(v) + 'px',
-    'ヘッダーのナビ(ビジョン/提供できること…)の左右の間隔。'));
+    'ヘッダーのナビ(ビジョン/提供できること…)の左右の間隔。', { mbKey: 'kv.navGap' }));
   rows.push(slider('ヘッダーが出る', 0, 3, 0.05, () => params.kv.headerAt, v => params.kv.headerAt = v, v => v.toFixed(2) + '秒後',
-    'いちばん上のロゴとメニューが、ぼけた状態から現れるまで。'));
+    'いちばん上のロゴとメニューが、ぼけた状態から現れるまで。', { mbKey: 'kv.headerAt' }));
   rows.push(slider('文字を打ち始める', 0, 6, 0.05, () => params.kv.typeAt, v => params.kv.typeAt = v, v => v.toFixed(2) + '秒後',
-    '「AIと事業を強くする」を1文字ずつ打ち始めるまで。'));
+    '「AIと事業を強くする」を1文字ずつ打ち始めるまで。', { mbKey: 'kv.typeAt' }));
   sub(copyRoot, 'タイミング', true);
   note('打つ速さと間の取り方。触ると先頭から流し直します。');
   rows.push(slider('1行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur, v => params.kv.charDur = v, v => v.toFixed(2) + 's/字',
-    '1文字あたりの時間。小さいほどタタタッと速く打ちます。'));
+    '1文字あたりの時間。小さいほどタタタッと速く打ちます。', { mbKey: 'kv.charDur' }));
   rows.push(slider('2行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur2, v => params.kv.charDur2 = v, v => v.toFixed(2) + 's/字',
-    'ゆっくりにすると、最後の一言が印象に残ります。'));
+    'ゆっくりにすると、最後の一言が印象に残ります。', { mbKey: 'kv.charDur2' }));
   rows.push(slider('タイピング速度の変化', 0, 1, 0.05, () => params.kv.typeEase, v => params.kv.typeEase = v, v => Math.round(v * 100) + '%',
-    '大きいほど「最初は速く、最後はゆっくり」に。0で一定。'));
+    '大きいほど「最初は速く、最後はゆっくり」に。0で一定。', { mbKey: 'kv.typeEase' }));
   rows.push(slider('行と行の間', 0, 1.5, 0.05, () => params.kv.lineGap, v => params.kv.lineGap = v, v => v.toFixed(2) + '秒',
-    '1行目を打ち終わってから、2行目を打ち始めるまでの間。'));
+    '1行目を打ち終わってから、2行目を打ち始めるまでの間。', { mbKey: 'kv.lineGap' }));
   rows.push(slider('打ち終わり→一言', 0, 3, 0.05, () => params.kv.eyebrowGap, v => params.kv.eyebrowGap = v, v => v.toFixed(2) + '秒',
-    '打ち終わってから、上の「APIでデータを繋ぐ〜」が出るまで。'));
+    '打ち終わってから、上の「APIでデータを繋ぐ〜」が出るまで。', { mbKey: 'kv.eyebrowGap' }));
   rows.push(slider('→ 右のグラフィックが出る', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v, v => v.toFixed(2) + '秒',
-    '小ラベル基準で、右のモック→アイコン→軌道が出るタイミング。マイナスにすると小ラベルより前（タイピング中）に前倒しできます。', { signed: true }));
+    '小ラベル基準で、右のモック→アイコン→軌道が出るタイミング。マイナスにすると小ラベルより前（タイピング中）に前倒しできます。', { mbKey: 'kv.graphicGap', signed: true }));
   rows.push(slider('ブラー解除の時間', 0.4, 3, 0.05, () => params.kv.revealDur, v => params.kv.revealDur = v, v => v.toFixed(2) + '秒',
-    'ぼやけた状態からくっきりするまで。大きいほどゆったり。'));
+    'ぼやけた状態からくっきりするまで。大きいほどゆったり。', { mbKey: 'kv.revealDur' }));
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
 
@@ -18365,16 +18372,16 @@ function buildPanel() {
   sub(catVis, '基本（長さ・ぼけ具合）');
   sectionLenSlider('vision', 800);
   rows.push(slider('ぼかしの強さ', 0, 30, 1, () => sv().vision.blur, v => sv().vision.blur = v, v => v + 'px',
-    '文字が出る時・消える時のぼやけの強さ。'));
+    '文字が出る時・消える時のぼやけの強さ。', { mbKey: 'sections.vision.blur' }));
   /* 【2026-09-19 ヒデさん依頼】図の差し替えで実績までの空白が空きすぎ → 実績を上へ引き上げる量 */
   rows.push(slider('実績との間隔（詰める）', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
-    'ビジョンの図が過ぎてから実績(for SaaS / for AI)が出るまでの空白を、この分だけ詰めます(実績のセクションを上へ引き上げる)。PCのみ。既定 260px は仮置き。'));
+    'ビジョンの図が過ぎてから実績(for SaaS / for AI)が出るまでの空白を、この分だけ詰めます(実績のセクションを上へ引き上げる)。PCのみ。既定 260px は仮置き。', { mbKey: 'visResPull' }));
   /* 【2026-09-19 ヒデさん依頼】見出し(メッセージ)→コンテンツ(図・ポイント)の上下の間隔。②から「基本」へ移動(ヒデさん「基本に入れといて」) */
   rows.push(slider('見出し→図・ポイントの間隔（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
-    'メッセージの下にどれだけ余白を取るか。図(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px は仮置き。', { fixedMax: true }));
+    'メッセージの下にどれだけ余白を取るか。図(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px は仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
   /* 【2026-09-19 ヒデさん依頼】図と Point 01/02 の左右の間隔 */
   rows.push(slider('図とポイントの左右の間隔', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-    '左のグラフィックと Point 01/02 の横の間隔。＋で Point を右へ(間隔を広げる)・−で左へ(詰める)。0＝いまの位置(PCのみ)。', { signed: true }));
+    '左のグラフィックと Point 01/02 の横の間隔。＋で Point を右へ(間隔を広げる)・−で左へ(詰める)。0＝いまの位置(PCのみ)。', { mbKey: 'sections.vision.pointsX', signed: true }));
 
   /* 【2026-08-29 ヒデさん指定】固定追従なし(時間再生)の「ブロックの表示タイミング」を細かく調整。
      塊＝メッセージ / グラフィック / ポイント1 / ポイント2。メッセージ自体は上の「1行目が出るまで」。 */
@@ -18382,23 +18389,23 @@ function buildPanel() {
   note('実装の時系列: ②メッセージ開始 →(出現時間×下の発火%＋間)→ グラフィック →(③「出きるまで」で出きる)→(＋ポイント1/2の間)→ ポイント。');
   rows.push(slider('グラフィック発火（メッセージの何割で）', 0, 1, 0.05, () => (sv().vision.npFireK != null ? sv().vision.npFireK : 0.70),
     v => sv().vision.npFireK = v, v => Math.round(v * 100) + '%',
-    'メッセージがどこまで出た時点でグラフィックが動き出すか。100%=出きってから / 70%=途中で先行発火(既定)。実装に元々あった隠れ係数をパネルへ公開(2026-09-02)。'));
+    'メッセージがどこまで出た時点でグラフィックが動き出すか。100%=出きってから / 70%=途中で先行発火(既定)。実装に元々あった隠れ係数をパネルへ公開(2026-09-02)。', { mbKey: 'sections.vision.npFireK' }));
   rows.push(slider('メッセージ→グラフィック', 0, 3, 0.05, () => sv().vision.npGap, v => sv().vision.npGap = v, v => v.toFixed(2) + '秒',
-    '上の発火タイミングから、さらに追加で待つ間。0=発火と同時(既定)。'));
+    '上の発火タイミングから、さらに追加で待つ間。0=発火と同時(既定)。', { mbKey: 'sections.vision.npGap' }));
   rows.push(slider('グラフィック→ポイント1', 0, 4, 0.05, () => sv().vision.npP1, v => sv().vision.npP1 = v, v => v.toFixed(2) + '秒',
-    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 01 が出るまでの間。0=出きったと同時。'));
+    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 01 が出るまでの間。0=出きったと同時。', { mbKey: 'sections.vision.npP1' }));
   rows.push(slider('グラフィック→ポイント2', 0, 5, 0.05, () => sv().vision.npP2, v => sv().vision.npP2 = v, v => v.toFixed(2) + '秒',
-    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 02 が出るまでの間。'));
+    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 02 が出るまでの間。', { mbKey: 'sections.vision.npP2' }));
   rows.push(slider('ポイントの出現時間', 0.2, 3, 0.05, () => (sv().vision.npPointDur != null ? sv().vision.npPointDur : 0.8),
     v => sv().vision.npPointDur = v, v => v.toFixed(2) + '秒',
-    'Point 01/02(と見出し)がブラーから出きるまでの長さ。大きいほどゆったり。'));
+    'Point 01/02(と見出し)がブラーから出きるまでの長さ。大きいほどゆったり。', { mbKey: 'sections.vision.npPointDur' }));
 
   sub(catVis, '① 「Our Vision」の小さい文字');
   note('メッセージの上に出る小さいラベル。いまは消えず出しっぱなしです。');
   rows.push(slider('出るまで', 0, 3, 0.05, () => sv().vision.labelAt, v => sv().vision.labelAt = v, v => v.toFixed(2) + '秒後',
-    'セクションに入って(発火して)から「Our Vision」が出るまでの時間。'));
+    'セクションに入って(発火して)から「Our Vision」が出るまでの時間。', { mbKey: 'sections.vision.labelAt' }));
   rows.push(slider('出きるまで', 0.4, 4, 0.1, () => sv().vision.labelDur, v => sv().vision.labelDur = v, v => v.toFixed(1) + '秒',
-    'ぼやけた状態からくっきりするまで。大きいほどゆったり。'));
+    'ぼやけた状態からくっきりするまで。大きいほどゆったり。', { mbKey: 'sections.vision.labelDur' }));
 
   /* 【2026-08-29 ヒデさん指定・整理】いまは「1行・分裂なし・その場で出す(固定追従なし)」なので、
      旧「2行/消える・分裂/左下へ移動」の節は廃止。塊は メッセージ / 左グラフィック / ポイント1・2 だけ。 */
@@ -18406,32 +18413,32 @@ function buildPanel() {
   note('「データをつなぐことが、強みになる時代へ。」がマスクで出ます。出る“間隔”は下の「表示タイミング」で。');
   rows.push(slider('メッセージの文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
     v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。'));
+    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize' }));
   /* 【2026-09-03 ヒデさん指定】Our Vision / メッセージ の位置をパネルでも(編集モードの端ドラッグと同じedits) */
   const editPos = (key) => { if (!params.edits) params.edits = {}; return params.edits[key] || (params.edits[key] = {}); };
   rows.push(slider('Our Vision 位置 横', -400, 600, 2, () => (editPos('visLabel').dx || 0),
     v => { editPos('visLabel').dx = v; textTools.applyAll(); }, v => v + 'px',
-    'Our Vision の左右位置。編集モードで枠の端をドラッグしても動きます。', { signed: true }));
+    'Our Vision の左右位置。編集モードで枠の端をドラッグしても動きます。', { mbKey: 'edits.visLabel.dx', signed: true }));
   rows.push(slider('Our Vision 位置 縦', -400, 600, 2, () => (editPos('visLabel').dy || 0),
-    v => { editPos('visLabel').dy = v; textTools.applyAll(); }, v => v + 'px', 'Our Vision の上下位置。', { signed: true }));
+    v => { editPos('visLabel').dy = v; textTools.applyAll(); }, v => v + 'px', 'Our Vision の上下位置。', { mbKey: 'edits.visLabel.dy', signed: true }));
   rows.push(slider('メッセージ 位置 横', -400, 600, 2, () => (editPos('visMsg').dx || 0),
-    v => { editPos('visMsg').dx = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの左右位置。', { signed: true }));
+    v => { editPos('visMsg').dx = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの左右位置。', { mbKey: 'edits.visMsg.dx', signed: true }));
   rows.push(slider('メッセージ 位置 縦', -400, 600, 2, () => (editPos('visMsg').dy || 0),
-    v => { editPos('visMsg').dy = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの上下位置。', { signed: true }));
+    v => { editPos('visMsg').dy = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの上下位置。', { mbKey: 'edits.visMsg.dy', signed: true }));
   rows.push(slider('メッセージが出るまで', 0.2, 5, 0.05, () => sv().vision.line1At, v => sv().vision.line1At = v, v => v.toFixed(2) + '秒後',
-    'セクションに入って(発火して)からメッセージが出るまでの時間。'));
+    'セクションに入って(発火して)からメッセージが出るまでの時間。', { mbKey: 'sections.vision.line1At' }));
   rows.push(slider('メッセージが出きるまで', 0.4, 3, 0.05, () => sv().vision.revealDur, v => sv().vision.revealDur = v, v => v.toFixed(2) + '秒',
-    'ぼけた状態から出きるまでの時間。'));
+    'ぼけた状態から出きるまでの時間。', { mbKey: 'sections.vision.revealDur' }));
   rows.push(slider('1文字ずつずらす', -0.9, 0.9, 0.05, () => sv().vision.charLag, v => sv().vision.charLag = v, v => Math.round(v * 100) + '%',
-    '真ん中(0)で行まるごと同時。左右どちらへ動かしても1文字ずつバラバラに出ます。', { signed: true }));
+    '真ん中(0)で行まるごと同時。左右どちらへ動かしても1文字ずつバラバラに出ます。', { mbKey: 'sections.vision.charLag', signed: true }));
   /* 【2026-09-15 ヒデさん指定】「つなぐ／強み」の揺らぎのグラデ: くすまない鮮やかな配色 3案(色味はブランド色のまま)＋つまみ */
   sub(catVis, '揺らぎのグラデ（つなぐ／強み）の配色', true, { fixed: true });
   varRowX('visGrad', VIS_GRADS, () => visGradKey(), v => { visApplyGrad(String(v)); }, { autosave: true, snap: VAR_SNAP.visGrad, after: () => { applyVisGrad(); } });
   note('選ぶとその案の彩度・明るさが下のつまみに入ります。細かく変えたら ⋯「いまの設定で上書き」でその案に保存できます。');
-  rows.push(slider('彩度', 0.6, 2.2, 0.02, () => (sv().vision.gradSat != null ? sv().vision.gradSat : 1), v => { sv().vision.gradSat = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の彩度。100%が元の色。'));
-  rows.push(slider('明るさ', 0.8, 1.3, 0.01, () => (sv().vision.gradBri != null ? sv().vision.gradBri : 1), v => { sv().vision.gradBri = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の明るさ。'));
-  rows.push(slider('流れる速さ', 3, 14, 0.5, () => (sv().vision.gradDur != null ? sv().vision.gradDur : 7), v => { sv().vision.gradDur = v; applyVisGrad(); }, v => v.toFixed(1) + '秒/往復', 'グラデが往復する時間。短いほど速い。'));
-  rows.push(slider('角度', 0, 180, 1, () => (sv().vision.gradAng != null ? sv().vision.gradAng : 67), v => { sv().vision.gradAng = v; applyVisGrad(); }, v => Math.round(v) + '°', 'グラデの向き。カンプは 67°。'));
+  rows.push(slider('彩度', 0.6, 2.2, 0.02, () => (sv().vision.gradSat != null ? sv().vision.gradSat : 1), v => { sv().vision.gradSat = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の彩度。100%が元の色。', { mbKey: 'sections.vision.gradSat' }));
+  rows.push(slider('明るさ', 0.8, 1.3, 0.01, () => (sv().vision.gradBri != null ? sv().vision.gradBri : 1), v => { sv().vision.gradBri = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の明るさ。', { mbKey: 'sections.vision.gradBri' }));
+  rows.push(slider('流れる速さ', 3, 14, 0.5, () => (sv().vision.gradDur != null ? sv().vision.gradDur : 7), v => { sv().vision.gradDur = v; applyVisGrad(); }, v => v.toFixed(1) + '秒/往復', 'グラデが往復する時間。短いほど速い。', { mbKey: 'sections.vision.gradDur' }));
+  rows.push(slider('角度', 0, 180, 1, () => (sv().vision.gradAng != null ? sv().vision.gradAng : 67), v => { sv().vision.gradAng = v; applyVisGrad(); }, v => Math.round(v) + '°', 'グラデの向き。カンプは 67°。', { mbKey: 'sections.vision.gradAng' }));
 
   /* 【2026-09-19 ヒデさん依頼】図を Figma 17802:29422 の SVG 書き出しに差し替え。旧図(軌道・ドット・役割名・輪の色・位置と大きさ・
      玉の出方・回って止まる・出現パターン)のつまみは全削除。残すのは出現ブラーの時間(ここ)と強さ(上の「基本」) */
@@ -18513,18 +18520,18 @@ function buildPanel() {
   vfS('ロゴ背景: 横の広さ', 'bgW', 1, 3.5, 0.05, v => '×' + v.toFixed(2), 'ロゴの幅の何倍まで楕円を広げるか。');
   vfS('ロゴ背景: 縦の広さ', 'bgH', 1, 6, 0.1, v => '×' + v.toFixed(1), 'ロゴの高さの何倍まで楕円を広げるか。');
   rows.push(slider('出きるまで', 0.4, 3, 0.1, () => sv().vision.miniDur, v => sv().vision.miniDur = v, v => v.toFixed(1) + '秒',
-    'ぼけた状態からくっきり出るまでの時間。'));
+    'ぼけた状態からくっきり出るまでの時間。', { mbKey: 'sections.vision.miniDur' }));
 
   sub(catVis, '⑥ ポイント1・2の文字', true);
   rows.push(slider('見出しサイズ', 16, 44, 1, () => (sv().vision.pHSize != null ? sv().vision.pHSize : 26),
     v => { sv().vision.pHSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。'));
+    '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。', { mbKey: 'sections.vision.pHSize' }));
   rows.push(slider('本文サイズ', 10, 24, 0.5, () => (sv().vision.pPSize != null ? sv().vision.pPSize : 14),
     v => { sv().vision.pPSize = v; applyVpSize(); }, v => v.toFixed(1) + 'px',
-    'ポイントの説明文の文字サイズ。カンプは14px。'));
+    'ポイントの説明文の文字サイズ。カンプは14px。', { mbKey: 'sections.vision.pPSize' }));
   rows.push(slider('横幅', 220, 560, 4, () => (sv().vision.pWidth != null ? sv().vision.pWidth : 328),
     v => { sv().vision.pWidth = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    'ポイント1・2のブロックの横幅。狭いほど本文の折り返しが増えます。カンプは328px。'));
+    'ポイント1・2のブロックの横幅。狭いほど本文の折り返しが増えます。カンプは328px。', { mbKey: 'sections.vision.pWidth' }));
 
   /* 【2026-08-26 整理】見出しだけが空で、中身(見出し/Point01/Point02)が同じ階層に並んでいたので入れ子に直した */
   sub(catVis, '⑦ 「2つの価値」の文字の位置');
@@ -18534,8 +18541,8 @@ function buildPanel() {
   [['Point 01 のかたまり', 'p1X', 'p1Y'], ['Point 02 のかたまり', 'p2X', 'p2Y']]
     .forEach(([label, kx, ky]) => {
       sub(vpRoot, label, true);
-      rows.push(slider('左右の位置', -400, 400, 2, () => sv().vision[kx], v => sv().vision[kx] = v, v => v + 'px', 'プラスで右へ、マイナスで左へ。'));
-      rows.push(slider('上下の位置', -400, 400, 2, () => sv().vision[ky], v => sv().vision[ky] = v, v => v + 'px', 'プラスで下へ、マイナスで上へ。'));
+      rows.push(slider('左右の位置', -400, 400, 2, () => sv().vision[kx], v => sv().vision[kx] = v, v => v + 'px', 'プラスで右へ、マイナスで左へ。', { mbKey: 'sections.vision.' + kx }));
+      rows.push(slider('上下の位置', -400, 400, 2, () => sv().vision[ky], v => sv().vision[ky] = v, v => v + 'px', 'プラスで下へ、マイナスで上へ。', { mbKey: 'sections.vision.' + ky }));
     });
 
   sub(catVis, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
@@ -18608,7 +18615,7 @@ function buildPanel() {
     const _heroGrp = catRes.lastElementChild;
     const heroP = () => { const r = params.sections.results; r.hero = r.hero || {}; return r.hero; };
     const hv = key => { const v = heroP()[key]; return v != null ? v : RFX_HERO_DEF[key]; };
-    const hs = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => hv(key), v => { heroP()[key] = v; markDirty(); }, fmt, tip));
+    const hs = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => hv(key), v => { heroP()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.hero.' + key }));
     const pct = v => Math.round(v * 100) + '%';
     hs('数値が消え始める位置', 'introOutAt', 0.05, 0.3, 0.005, pct, '固定区間のどこから導入(見出し+数値)が薄く上へ抜けるか(固定区間全体=100%)。');
     hs('数値が消える長さ', 'introOutLen', 0.01, 0.2, 0.005, pct, '抜けきるまでにかける長さ。長いほど滑らか。');
@@ -18626,7 +18633,7 @@ function buildPanel() {
     const _g14 = catRes.lastElementChild;
     const f14 = () => { const r = params.sections.results; r.fx14 = r.fx14 || {}; return r.fx14; };
     const F14 = { drawLen: 0.55, drift: 12, settleLen: 0.2 };
-    const s14 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f14()[key] != null ? f14()[key] : F14[key]), v => { f14()[key] = v; markDirty(); }, fmt, tip));
+    const s14 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f14()[key] != null ? f14()[key] : F14[key]), v => { f14()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx14.' + key }));
     s14('描き上がりにかける長さ', 'drawLen', 0.3, 0.8, 0.01, pct, '各場面のうち、ピクトの描き上がり(アニメ1周)をスクロールで進める長さ。長いほどゆったり。');
     s14('描きながら上がる距離', 'drift', 0, 30, 1, v => v + 'vh', '描いている間に下からゆっくり上がってくる距離(画面の高さに対する%)。0で動かない。');
     s14('収まる長さ', 'settleLen', 0.1, 0.5, 0.01, pct, '描き切ってから左へ収まり文章が出るまでの長さ。');
@@ -18636,7 +18643,7 @@ function buildPanel() {
     const _g20 = catRes.lastElementChild;
     const f20 = () => { const r = params.sections.results; r.fx20 = r.fx20 || {}; return r.fx20; };
     const F20 = { labelRise: 120, heroScale: 1.55 };
-    const s20 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f20()[key] != null ? f20()[key] : F20[key]), v => { f20()[key] = v; markDirty(); }, fmt, tip));
+    const s20 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f20()[key] != null ? f20()[key] : F20[key]), v => { f20()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx20.' + key }));
     s20('大見出しが上へ抜ける距離', 'labelRise', 40, 240, 5, v => v + 'px', '「for SaaS」が中央から上へ抜ける距離(絵コンテは120px)。');
     s20('ピクトの主役の大きさ', 'heroScale', 1, 2.2, 0.05, v => '×' + v.toFixed(2), '中央に大きく出る時の倍率(終点の枠 340px に対して。1.55 ≒ 527px)。');
     rfxDyn(_g20, ['20']);
@@ -18645,7 +18652,7 @@ function buildPanel() {
     const _g21 = catRes.lastElementChild;
     const f21 = () => { const r = params.sections.results; r.fx21 = r.fx21 || {}; return r.fx21; };
     const F21 = { numScale: 3.0, settleAt: 0.06, settleLen: 0.20, panAt: 0.50, panLen: 0.22 };
-    const s21 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f21()[key] != null ? f21()[key] : F21[key]), v => { f21()[key] = v; markDirty(); }, fmt, tip));
+    const s21 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f21()[key] != null ? f21()[key] : F21[key]), v => { f21()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx21.' + key }));
     s21('数値の大きさ', 'numScale', 1.5, 4, 0.1, v => '×' + v.toFixed(1), '最初に画面中央へ大きく出す時の倍率(帯の 44px に対して。3倍=132px)。');
     s21('数値が収まり始める位置', 'settleAt', 0, 0.3, 0.01, pct, '固定区間のどこから数値が小さくなって上の帯へ動き始めるか。');
     s21('収まる長さ', 'settleLen', 0.05, 0.5, 0.01, pct, '帯に収まり切るまでにかける長さ。for SaaS はこの 8割時点から右から入ってくる。');
@@ -18657,23 +18664,23 @@ function buildPanel() {
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
     const F24 = { heroScale: 1.7, labelUp: 190, prodSize: 38 };
-    const s24 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip));
+    const s24 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key }));
     s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。');
     s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
     rows.push(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
-      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「🔤 文字」で。', { fixedMax: true }));
+      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「🔤 文字」で。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true }));
     rows.push(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
-      '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。', { fixedMax: true }));
+      '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。', { mbKey: 'sections.results.hrGap', fixedMax: true }));
     rows.push(slider('区切り線の下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
-      '区切り線と「事業の推進力を、Anyflowが支えます。」＋数値との間隔。0 でいままで(上段の padding 28px ぶんだけ空いています)。', { fixedMax: true }));
+      '区切り線と「事業の推進力を、Anyflowが支えます。」＋数値との間隔。0 でいままで(上段の padding 28px ぶんだけ空いています)。', { mbKey: 'sections.results.hrGap2', fixedMax: true }));
     rfxDyn(_g24, ['24', '24-2', '24-3', '24-4', '24-5', '25']);
     /* 案26: 数値の大きさ・線・横移動(その案の時だけ出す) */
     subT(catRes, () => '案' + rfxNo('26') + '：数値の大きさ・線・横移動');
     const _g26 = catRes.lastElementChild;
     const f26 = () => { const r = params.sections.results; r.fx26 = r.fx26 || {}; return r.fx26; };
     const F26 = { numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 };
-    const s26 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f26()[key] != null ? f26()[key] : F26[key]), v => { f26()[key] = v; markDirty(); }, fmt, tip));
+    const s26 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f26()[key] != null ? f26()[key] : F26[key]), v => { f26()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx26.' + key }));
     s26('数値の大きさ', 'numScale', 1.2, 3, 0.05, v => '×' + v.toFixed(2), '最初に中央へ大きく出す倍率(70px に対して。絵コンテは 120px=1.71倍)。');
     s26('数値が収まり始める位置', 'settleAt', 0, 0.3, 0.01, pct, '固定区間のどこから上段の終点へ動き始めるか。');
     s26('収まる長さ', 'settleLen', 0.05, 0.5, 0.01, pct, '終点に収まり切るまでの長さ。');
@@ -18691,48 +18698,48 @@ function buildPanel() {
   sub(catRes, '基本（長さ・ぼけ具合）');
   sectionLenSlider('results', 600);
   rows.push(slider('ぼかしの強さ', 0, 40, 1, () => sv().results.imgBlur, v => sv().results.imgBlur = v, v => v + 'px',
-    '大きいほど、写真がぼんやりした状態から現れます。'));
+    '大きいほど、写真がぼんやりした状態から現れます。', { mbKey: 'sections.results.imgBlur' }));
 
   /* 【2026-09-19 ヒデさん依頼】for SaaS / for AI の大きな文字は、画面の下に見えている間はぼけていて、上がってくるにつれてはっきり */
   sub(catRes, '入場のぼかし（for SaaS / for AI が下から上がる間）');
   note('セクションが画面下から入ってくる進み具合(0%=下端に顔を出す / 50%=大きな文字が画面の下端に出る / 100%=所定の位置)に連動。所定の位置に着いたら効きません。');
-  rows.push(slider('24-4 のぼかしの強さ（強め）', 0, 60, 1, () => (sv().results.entryBlur44 != null ? sv().results.entryBlur44 : 26), v => sv().results.entryBlur44 = v, v => Math.round(v) + 'px', '演出の案が 24-4 の時の、入ってきた直後のぼけ(強め)。0でぼかし無し。'));
-  rows.push(slider('24-5 のぼかしの強さ', 0, 60, 1, () => (sv().results.entryBlur != null ? sv().results.entryBlur : 16), v => sv().results.entryBlur = v, v => Math.round(v) + 'px', '演出の案が 24-5(と 24/24-2/24-3)の時の、入ってきた直後のぼけ。0でぼかし無し。'));
-  rows.push(slider('はっきりし始める', 0, 1, 0.05, () => (sv().results.entryFrom != null ? sv().results.entryFrom : 0.4), v => sv().results.entryFrom = v, v => Math.round(v * 100) + '%', 'ここまでは最大のぼけのまま。「出だしの高さ」と同じ%＝文字が画面の下端に出た時。', { fixedMax: true }));
-  rows.push(slider('はっきりしきる', 0.05, 1, 0.05, () => (sv().results.entryTo != null ? sv().results.entryTo : 0.95), v => sv().results.entryTo = v, v => Math.round(v * 100) + '%', 'ここで完全にくっきり。100%=所定の位置に着いた時。', { fixedMax: true }));
-  rows.push(slider('出だしの薄さ', 0, 1, 0.05, () => (sv().results.entryOp != null ? sv().results.entryOp : 1), v => sv().results.entryOp = v, v => Math.round(v * 100) + '%', '入ってきた直後の不透明度。100%=薄くしない(ぼかしだけ)。', { fixedMax: true }));
-  rows.push(slider('出だしの高さ', 0.2, 0.6, 0.02, () => (sv().results.bigStartY != null ? sv().results.bigStartY : 0.4), v => sv().results.bigStartY = v, v => Math.round(v * 100) + '%', '着地前の for SaaS / for AI の中心を、画面の上から何%の位置に置くか。50%=ど真ん中(旧)。小さいほど上＝ビジョンとの空白が詰まる。着地の位置(タグ)は変わりません。', { fixedMax: true }));
+  rows.push(slider('24-4 のぼかしの強さ（強め）', 0, 60, 1, () => (sv().results.entryBlur44 != null ? sv().results.entryBlur44 : 26), v => sv().results.entryBlur44 = v, v => Math.round(v) + 'px', '演出の案が 24-4 の時の、入ってきた直後のぼけ(強め)。0でぼかし無し。', { mbKey: 'sections.results.entryBlur44' }));
+  rows.push(slider('24-5 のぼかしの強さ', 0, 60, 1, () => (sv().results.entryBlur != null ? sv().results.entryBlur : 16), v => sv().results.entryBlur = v, v => Math.round(v) + 'px', '演出の案が 24-5(と 24/24-2/24-3)の時の、入ってきた直後のぼけ。0でぼかし無し。', { mbKey: 'sections.results.entryBlur' }));
+  rows.push(slider('はっきりし始める', 0, 1, 0.05, () => (sv().results.entryFrom != null ? sv().results.entryFrom : 0.4), v => sv().results.entryFrom = v, v => Math.round(v * 100) + '%', 'ここまでは最大のぼけのまま。「出だしの高さ」と同じ%＝文字が画面の下端に出た時。', { mbKey: 'sections.results.entryFrom', fixedMax: true }));
+  rows.push(slider('はっきりしきる', 0.05, 1, 0.05, () => (sv().results.entryTo != null ? sv().results.entryTo : 0.95), v => sv().results.entryTo = v, v => Math.round(v * 100) + '%', 'ここで完全にくっきり。100%=所定の位置に着いた時。', { mbKey: 'sections.results.entryTo', fixedMax: true }));
+  rows.push(slider('出だしの薄さ', 0, 1, 0.05, () => (sv().results.entryOp != null ? sv().results.entryOp : 1), v => sv().results.entryOp = v, v => Math.round(v * 100) + '%', '入ってきた直後の不透明度。100%=薄くしない(ぼかしだけ)。', { mbKey: 'sections.results.entryOp', fixedMax: true }));
+  rows.push(slider('出だしの高さ', 0.2, 0.6, 0.02, () => (sv().results.bigStartY != null ? sv().results.bigStartY : 0.4), v => sv().results.bigStartY = v, v => Math.round(v * 100) + '%', '着地前の for SaaS / for AI の中心を、画面の上から何%の位置に置くか。50%=ど真ん中(旧)。小さいほど上＝ビジョンとの空白が詰まる。着地の位置(タグ)は変わりません。', { mbKey: 'sections.results.bigStartY', fixedMax: true }));
 
   sub(catRes, '出てくる順番とタイミング');
   note('「事業の推進力を、」(見出し1行目) → タイピング「Anyflow」→「が支えます。」 → その他(区切り線・3数値・2つの価値)。それぞれの間隔を分けて調整できます。');
   /* 【2026-09-09 ヒデさん指定】「Anyflowの見せ方」(下線に打ち込む/押し広げる)の選択UIは削除。
      下線に打ち込む(slot)に固定＝焼き込み。実装は (c.typeStyle || 'slot') が既定 slot なので挙動不変。 */
   rows.push(slider('見出し1行目が出るまで', 0, 2, 0.05, () => sv().results.typeAt, v => sv().results.typeAt = v, v => v.toFixed(2) + '秒後',
-    'セクションに入って(発火して)から「事業の推進力を、」が出るまで。'));
+    'セクションに入って(発火して)から「事業の推進力を、」が出るまで。', { mbKey: 'sections.results.typeAt' }));
   rows.push(slider('→ タイピングが始まる', 0, 2.5, 0.05, () => (sv().results.typeGap != null ? sv().results.typeGap : 0.55), v => sv().results.typeGap = v, v => v.toFixed(2) + '秒',
-    '見出し1行目からタイピング「Anyflowが支えます。」が始まるまでの間。'));
+    '見出し1行目からタイピング「Anyflowが支えます。」が始まるまでの間。', { mbKey: 'sections.results.typeGap' }));
   rows.push(slider('Anyflowと「が」の間', 0, 24, 1,
     () => (sv().results.slotGap != null ? sv().results.slotGap : 4),
     v => { sv().results.slotGap = v; applyResSlotGap(); }, v => Math.round(v) + 'px',
-    'タイピングされる「Anyflow」と、続く「が支えます。」の間隔。'));
+    'タイピングされる「Anyflow」と、続く「が支えます。」の間隔。', { mbKey: 'sections.results.slotGap' }));
   rows.push(slider('ピクトグラムの線の太さ', 0.5, 4, 0.1,
     () => (sv().results.pictoW != null ? sv().results.pictoW : 1),
     v => { sv().results.pictoW = v; drawValueIcons(); }, v => (1 * v).toFixed(1) + 'px',
-    'for SaaS / for AI の図(リング・カード等)の線の太さ。基準は1.0px。'));
+    'for SaaS / for AI の図(リング・カード等)の線の太さ。基準は1.0px。', { mbKey: 'sections.results.pictoW' }));
   /* 【2026-09-08 ヒデさん指定】ピクトの再生速度(SaaS/AI共通・全案に一律適用) */
   optRow('pictoSpeed', 'ピクトの速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
     () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
     v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
   /* 【2026-09-18 ヒデさん依頼】ピクトグラムの線の太さ(全ての線幅×倍率) */
-  rows.push(slider('ピクトの線の太さ', 0.5, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。', { fixedMax: true }));
+  rows.push(slider('ピクトの線の太さ', 0.5, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。', { mbKey: 'sections.results.pictoW', fixedMax: true }));
   rows.push(slider('→ その他の要素が出る', -0.5, 3, 0.05, () => (sv().results.restGap != null ? sv().results.restGap : 0.1), v => sv().results.restGap = v, v => v.toFixed(2) + '秒',
-    'タイピング開始から、区切り線・3数値・2つの価値が出るまでの間。マイナスでタイピングより前に。', { signed: true }));
+    'タイピング開始から、区切り線・3数値・2つの価値が出るまでの間。マイナスでタイピングより前に。', { mbKey: 'sections.results.restGap', signed: true }));
   rows.push(slider('見出しの1文字の時間', 0.02, 0.2, 0.005, () => sv().results.charDur, v => sv().results.charDur = v, v => v.toFixed(3) + 's/字',
-    '案Bのみ。1文字あたりの時間。小さいほど速く打ちます。'));
+    '案Bのみ。1文字あたりの時間。小さいほど速く打ちます。', { mbKey: 'sections.results.charDur' }));
   rows.push(slider('数字が出るまで', 0, 1.2, 0.05, () => sv().results.numsGap, v => sv().results.numsGap = v, v => Math.round(v * 100) + '%',
-    '見出しが何割出たら数字が出るか。大きいほど後から出ます。'));
+    '見出しが何割出たら数字が出るか。大きいほど後から出ます。', { mbKey: 'sections.results.numsGap' }));
   rows.push(slider('数字と本文が出る', 0.4, 4, 0.1, () => sv().results.softDur, v => sv().results.softDur = v, v => v.toFixed(1) + '秒',
-    '線・数字・本文がぼけから出きるまで。'));
+    '線・数字・本文がぼけから出きるまで。', { mbKey: 'sections.results.softDur' }));
   /* 【2026-08-30 ヒデさん指定】「写真が出るまで」「写真の奥行き」は、いま写真を置いていないので廃止。 */
 
   sub(catRes, '数字が回って止まる演出');
@@ -18741,30 +18748,30 @@ function buildPanel() {
   varRowX('resSlotFx', RES_SLOT_FX, () => resSlotFxKey(), v => { resApplySlotFx(String(v)); markDirty(); }, { autosave: true, snap: VAR_SNAP.resSlotFx, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('案を選ぶと「上下のなじませ・ぼかしの強さ・ぼかしの範囲・窓の高さ」に値が入ります。細かく変えたら ⋯「この設定で上書き」。');
   rows.push(slider('回り出すまで', 0, 2, 0.05, () => sv().results.slotAt, v => sv().results.slotAt = v, v => v.toFixed(2) + '秒後',
-    'セクションが始まってから回り出すまで。0で即。'));
+    'セクションが始まってから回り出すまで。0で即。', { mbKey: 'sections.results.slotAt' }));
   rows.push(slider('1桁が止まるまで', 0.3, 3, 0.05, () => sv().results.slotDur, v => sv().results.slotDur = v, v => v.toFixed(2) + '秒',
-    '長いほどゆっくり回って止まります。'));
+    '長いほどゆっくり回って止まります。', { mbKey: 'sections.results.slotDur' }));
   rows.push(slider('次の桁のディレイ', 0, 0.4, 0.01, () => sv().results.slotStagger, v => sv().results.slotStagger = v, v => v.toFixed(2) + '秒',
-    '大きいほど「左からパタパタ」に。0で全桁同時。'));
+    '大きいほど「左からパタパタ」に。0で全桁同時。', { mbKey: 'sections.results.slotStagger' }));
   rows.push(slider('何周まわすか', 1, 6, 1, () => sv().results.slotCycles, v => sv().results.slotCycles = v, v => v + '周',
-    '0〜9 を何回流すか。多いほど勢いよく見えます。'));
-  rows.push(slider('スロットの上下のなじませ', 0, 30, 1, () => (sv().results.slotFade != null ? sv().results.slotFade : 14), v => { sv().results.slotFade = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%', '数字の窓の上下を透明へグラデで消す幅(窓の高さに対する%)。0でパツッと切れる(従来)。', { fixedMax: true }));
+    '0〜9 を何回流すか。多いほど勢いよく見えます。', { mbKey: 'sections.results.slotCycles' }));
+  rows.push(slider('スロットの上下のなじませ', 0, 30, 1, () => (sv().results.slotFade != null ? sv().results.slotFade : 14), v => { sv().results.slotFade = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%', '数字の窓の上下を透明へグラデで消す幅(窓の高さに対する%)。0でパツッと切れる(従来)。', { mbKey: 'sections.results.slotFade', fixedMax: true }));
   rows.push(slider('上下のぼかしの強さ', 0, 8, 0.5, () => (sv().results.slotBlur != null ? sv().results.slotBlur : 0), v => { sv().results.slotBlur = v; applyResSlotFade(); markDirty(); }, v => v === 0 ? 'なし' : v.toFixed(1) + 'px',
-    '案2/3用。窓の上下に重ねるぼかしの強さ(端ほど強い)。0でぼかし無し。'));
+    '案2/3用。窓の上下に重ねるぼかしの強さ(端ほど強い)。0でぼかし無し。', { mbKey: 'sections.results.slotBlur' }));
   rows.push(slider('上下のぼかしの範囲', 10, 60, 1, () => (sv().results.slotBlurZone != null ? sv().results.slotBlurZone : 45), v => { sv().results.slotBlurZone = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%',
-    '案2/3用。窓の高さの何%までぼかしを重ねるか(上下それぞれ)。'));
+    '案2/3用。窓の高さの何%までぼかしを重ねるか(上下それぞれ)。', { mbKey: 'sections.results.slotBlurZone' }));
   rows.push(slider('窓の高さ', 1, 2, 0.02, () => (sv().results.slotWin != null ? sv().results.slotWin : 1.6), v => { sv().results.slotWin = v; applyResSlotFade(); markDirty(); }, v => v.toFixed(2) + '文字分',
-    '案2/3用。回っている間だけ広がる窓の高さ(1＝数字ぴったり)。高いほど前後の数字がのぞく。止まると 1.24 に戻ります。行の高さは変わりません。'));
+    '案2/3用。回っている間だけ広がる窓の高さ(1＝数字ぴったり)。高いほど前後の数字がのぞく。止まると 1.24 に戻ります。行の高さは変わりません。', { mbKey: 'sections.results.slotWin' }));
   rows.push(slider('消える長さ', 0.6, 2, 0.05, () => (sv().results.slotRamp != null ? sv().results.slotRamp : 1), v => { sv().results.slotRamp = v; applyResSlotFade(); markDirty(); }, v => '×' + v.toFixed(2),
-    '案2/3/4用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける(止まった時の数字には影響しない範囲で自動で縮む)。'));
+    '案2/3/4用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける(止まった時の数字には影響しない範囲で自動で縮む)。', { mbKey: 'sections.results.slotRamp' }));
   rows.push(slider('ドラムの丸み（分割数）', 8, 20, 1, () => (sv().results.slotDrumN != null ? sv().results.slotDrumN : 12), v => { sv().results.slotDrumN = v; markDirty(); }, v => Math.round(v) + '分割',
-    '案4用。円筒を何分割して数字を貼るか。少ないほど丸みが強く(前後の数字が大きく傾く)、多いほど平らに近づく。'));
+    '案4用。円筒を何分割して数字を貼るか。少ないほど丸みが強く(前後の数字が大きく傾く)、多いほど平らに近づく。', { mbKey: 'sections.results.slotDrumN' }));
   rows.push(slider('ドラムの端の薄さ', 0.5, 3, 0.1, () => (sv().results.slotDrumFade != null ? sv().results.slotDrumFade : 1.3), v => { sv().results.slotDrumFade = v; markDirty(); }, v => '×' + v.toFixed(1),
-    '案4用。端(傾いた数字)をどれだけ薄くするか。大きいほど早く薄くなる。'));
+    '案4用。端(傾いた数字)をどれだけ薄くするか。大きいほど早く薄くなる。', { mbKey: 'sections.results.slotDrumFade' }));
   rows.push(slider('回り出す位置', 0.4, 1, 0.05, () => sv().results.slotEnterAt, v => sv().results.slotEnterAt = v, v => Math.round(v * 100) + '%',
-    '100%＝画面の下に出た瞬間 / 50%＝真ん中まで来てから。'));
+    '100%＝画面の下に出た瞬間 / 50%＝真ん中まで来てから。', { mbKey: 'sections.results.slotEnterAt' }));
   rows.push(slider('止まり際の粘り', 2, 9, 0.5, () => sv().results.slotEase, v => sv().results.slotEase = v, v => '×' + v.toFixed(1),
-    '大きいほど「最初は勢いよく、最後はじりじり」に。'));
+    '大きいほど「最初は勢いよく、最後はじりじり」に。', { mbKey: 'sections.results.slotEase' }));
 
   /* 【2026-08-28 ヒデさん指定】2つの価値の右側ピクトグラム(各5案) */
   liveEdit = true;
@@ -18848,19 +18855,19 @@ function buildPanel() {
   note('暗転カーブ: なめらか=全体を等しくふわっと／ためて一気に=しばらく明るいまま→後半でグッと黒（ヒデさん既定）／早めにゆっくり=最初にサッと暗くなり後半ゆっくり／直線=一定速度。');
   rows.push(slider('明るいままの範囲', 0, 0.6, 0.02, () => (sv().results.darkFrom != null ? sv().results.darkFrom : 0.18),
     v => { sv().results.darkFrom = v; renderFrame(); }, v => Math.round(v * 100) + '%',
-    '開発者体験がここまで画面に入るまでは明るいまま（暗転しない）。右へ動かすほど、明るい状態が長く続いてから黒へ切り替わります。0%=すぐ暗くなり始める。'));
+    '開発者体験がここまで画面に入るまでは明るいまま（暗転しない）。右へ動かすほど、明るい状態が長く続いてから黒へ切り替わります。0%=すぐ暗くなり始める。', { mbKey: 'sections.results.darkFrom' }));
   rows.push(slider('黒くなりきる位置', 0.3, 1, 0.02, () => (sv().results.darkTo != null ? sv().results.darkTo : 0.82),
     v => { sv().results.darkTo = v; renderFrame(); }, v => Math.round(v * 100) + '%',
-    '開発者体験がここまで入ると真っ黒になりきります。「明るいまま」との差が小さいほどパッと、大きいほどゆっくり暗くなります。'));
+    '開発者体験がここまで入ると真っ黒になりきります。「明るいまま」との差が小さいほどパッと、大きいほどゆっくり暗くなります。', { mbKey: 'sections.results.darkTo' }));
   /* 黒レクタングル案(scrollHold=固定/resTrans=black)専用スライダーは、その案の時だけ出す(紛らわしさ回避・2026-09-08) */
   if ((params.patterns && params.patterns.resTrans) === 'black') {
     note('↓は黒レクタングル案専用のスライダーです。');
     rows.push(slider('暗くなり始める', 0, 0.9, 0.02, () => sv().results.outFrom, v => sv().results.outFrom = v, v => Math.round(v * 100) + '%',
-      '何割スクロールしたら黒矩形が出始めるか。'));
+      '何割スクロールしたら黒矩形が出始めるか。', { mbKey: 'sections.results.outFrom' }));
     rows.push(slider('暗くなりきる', 0.2, 1, 0.02, () => sv().results.outTo, v => sv().results.outTo = v, v => Math.round(v * 100) + '%',
-      'ここで黒矩形が全面を覆います。上との差が小さいほどパッと切り替わります。'));
+      'ここで黒矩形が全面を覆います。上との差が小さいほどパッと切り替わります。', { mbKey: 'sections.results.outTo' }));
     rows.push(slider('消える時のぼかし', 0, 40, 1, () => sv().results.outBlur, v => sv().results.outBlur = v, v => v + 'px',
-      '大きいほど強くぼけながら消えます。'));
+      '大きいほど強くぼけながら消えます。', { mbKey: 'sections.results.outBlur' }));
   }
 
   sub(catRes, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
@@ -18883,24 +18890,24 @@ function buildPanel() {
     DEV_DYN[g] = catDev.lastElementChild;
     if (g === 'glass') {
       note('ガラス案は、後ろのカードを実際にぼかして「すりガラス越し」に見せています(ブラウザの仕様で backdrop-filter だけでは後ろのカードがぼけないため)。');
-      rows.push(slider('ガラスのぼかし', 0, 48, 1, () => (sv().dev.mockBlur != null ? sv().dev.mockBlur : 24), v => { sv().dev.mockBlur = v; applyDevStyle(); }, v => Math.round(v) + 'px', '板ごしの地のぼけ具合(効く環境では backdrop-filter も併用)。', { fixedMax: true }));
+      rows.push(slider('ガラスのぼかし', 0, 48, 1, () => (sv().dev.mockBlur != null ? sv().dev.mockBlur : 24), v => { sv().dev.mockBlur = v; applyDevStyle(); }, v => Math.round(v) + 'px', '板ごしの地のぼけ具合(効く環境では backdrop-filter も併用)。', { mbKey: 'sections.dev.mockBlur', fixedMax: true }));
     }
     sp.rows.forEach(r => {
       if (r.seg) { segRow(r.label, r.seg, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); markDirty(); renderFrame(); }); return; }
-      rows.push(slider(r.label, r.min, r.max, r.step, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); }, r.fmt, r.hint, { fixedMax: true }));
+      rows.push(slider(r.label, r.min, r.max, r.step, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); }, r.fmt, r.hint, { fixedMax: true, mbKey: 'sections.dev.stv.' + g + '.' + r.k }));
     });
   });
   syncDevDyn();
   sub(catDev, '全部の案に効く調整', true, { fixed: true });
-  rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。', { fixedMax: true }));
-  rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。', { fixedMax: true }));
+  rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。', { mbKey: 'sections.dev.mockInner', fixedMax: true }));
+  rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。', { mbKey: 'sections.dev.mockShadow', fixedMax: true }));
 
   /* 【2026-09-20 ヒデさん依頼・#10】①②それぞれ 見出し↔モックの間隔・モックの大きさ(PCのみ。SPは別スケール) */
   sub(catDev, '①② 見出しとモックの間隔・大きさ（PC）');
-  rows.push(slider('① 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev1Gap != null ? sv().dev.dev1Gap : 36), v => { sv().dev.dev1Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験①の見出しとモックの上下の間隔。', { fixedMax: true }));
-  rows.push(slider('① モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev1Scale != null ? sv().dev.dev1Scale : 1.1), v => { sv().dev.dev1Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験①のモックの拡大率。', { fixedMax: true }));
-  rows.push(slider('② 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev2Gap != null ? sv().dev.dev2Gap : 36), v => { sv().dev.dev2Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験②の見出しとモックの上下の間隔。', { fixedMax: true }));
-  rows.push(slider('② モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev2Scale != null ? sv().dev.dev2Scale : 1.1), v => { sv().dev.dev2Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験②のモックの拡大率。', { fixedMax: true }));
+  rows.push(slider('① 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev1Gap != null ? sv().dev.dev1Gap : 36), v => { sv().dev.dev1Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験①の見出しとモックの上下の間隔。', { mbKey: 'sections.dev.dev1Gap', fixedMax: true }));
+  rows.push(slider('① モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev1Scale != null ? sv().dev.dev1Scale : 1.1), v => { sv().dev.dev1Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験①のモックの拡大率。', { mbKey: 'sections.dev.dev1Scale', fixedMax: true }));
+  rows.push(slider('② 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev2Gap != null ? sv().dev.dev2Gap : 36), v => { sv().dev.dev2Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験②の見出しとモックの上下の間隔。', { mbKey: 'sections.dev.dev2Gap', fixedMax: true }));
+  rows.push(slider('② モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev2Scale != null ? sv().dev.dev2Scale : 1.1), v => { sv().dev.dev2Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験②のモックの拡大率。', { mbKey: 'sections.dev.dev2Scale', fixedMax: true }));
 
   sub(catDev, '基本（長さ）');
   sectionLenSlider('dev', 1600);
@@ -18912,14 +18919,14 @@ function buildPanel() {
     () => ((sv().dev.pinStops !== 'off') ? 'on' : 'off'),
     v => { sv().dev.pinStops = v; fit(); renderFrame(); });
   rows.push(slider('止まっている長さ', 30, 160, 5, () => (sv().dev.devDwell != null ? sv().dev.devDwell : 90), v => { sv().dev.devDwell = v; fit(); }, v => Math.round(v) + 'vh',
-    '各章が中央で止まっている距離。長いほど、しっかり止まって見えます。', { fixedMax: true }));
+    '各章が中央で止まっている距離。長いほど、しっかり止まって見えます。', { mbKey: 'sections.dev.devDwell', fixedMax: true }));
 
   /* 【2026-08-30 ヒデさん指定】② はテキストスライド固定(既定)。リスト/スライドの選択UIは廃止。 */
   sub(catDev, '② の見出しのスロット（API / CLI / SDK の箱）', true, { fixed: true });
   rows.push(slider('箱の上下の位置', -30, 30, 1, () => (sv().dev.slotBoxY != null ? sv().dev.slotBoxY : 0), v => { sv().dev.slotBoxY = v; applyDsBox(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-    'マイナスで上へ、プラスで下へ。文字の並びには影響しません(見た目だけ動かします)。', { signed: true, fixedMax: true }));
+    'マイナスで上へ、プラスで下へ。文字の並びには影響しません(見た目だけ動かします)。', { mbKey: 'sections.dev.slotBoxY', signed: true, fixedMax: true }));
   rows.push(slider('箱の高さ', 24, 64, 1, () => (sv().dev.slotBoxH != null ? sv().dev.slotBoxH : 42), v => { sv().dev.slotBoxH = v; applyDsBox(); }, v => Math.round(v) + 'px',
-    'グレーの箱の高さ。文字(34px)より少し大きいと収まりがよくなります。', { fixedMax: true }));
+    'グレーの箱の高さ。文字(34px)より少し大きいと収まりがよくなります。', { mbKey: 'sections.dev.slotBoxH', fixedMax: true }));
 
   sub(catDev, '② の出入り（スクロール位置）');
   note('② は dev1 と同じくスクロール位置で出入りします（時間再生ではないので上に戻っても急に消えません）。');
@@ -18930,19 +18937,19 @@ function buildPanel() {
     v => { sv().dev.vpMode = v; dsVpNote(); renderFrame(); });
   note('↓ CLI/SDK/API の箱が「左右に割れて開く」動きは時間再生（ゆったり）。登場後に自動で開きます。');
   rows.push(slider('割れ始めるまでの間', 0, 2, 0.05, () => sv().dev.splitDelay, v => sv().dev.splitDelay = v, v => v.toFixed(2) + '秒',
-    '② が登場してから、箱が左右に割れ始めるまでの待ち時間。'));
+    '② が登場してから、箱が左右に割れ始めるまでの待ち時間。', { mbKey: 'sections.dev.splitDelay' }));
   rows.push(slider('割れきる時間（ゆったり）', 0.2, 3, 0.05, () => sv().dev.splitDur, v => sv().dev.splitDur = v, v => v.toFixed(2) + '秒',
-    '箱が完全に開ききるまでの時間。大きいほどゆったり開きます。'));
+    '箱が完全に開ききるまでの時間。大きいほどゆったり開きます。', { mbKey: 'sections.dev.splitDur' }));
 
   sub(catDev, 'スロット（切替タイミング）');
   /* 【2026-09-09 ヒデさん指定】切替モーションは「スナップ」に固定＝焼き込み。フリップ/ブラー/横押し/ズーム/キューブと
      選択UIは削除。実装は applyDsMotion(d.slideMotion || 'snap') が既定 snap なので挙動不変。 */
   rows.push(slider('スナップのキレ', 1, 6, 0.2, () => sv().dev.slideSnapK, v => sv().dev.slideSnapK = v, v => '×' + v.toFixed(1),
-    'スナップの切替の急さ。大きいほどメリハリが強く（スナップ選択時）。'));
+    'スナップの切替の急さ。大きいほどメリハリが強く（スナップ選択時）。', { mbKey: 'sections.dev.slideSnapK' }));
   rows.push(slider('自動で切り替わる間隔', 1.5, 8, 0.1, () => sv().dev.slideEvery, v => sv().dev.slideEvery = v, v => v.toFixed(1) + '秒',
-    'CLI→SDK→API が自動で次へ進む間隔。'));
+    'CLI→SDK→API が自動で次へ進む間隔。', { mbKey: 'sections.dev.slideEvery' }));
   rows.push(slider('切り替えにかける時間', 0.2, 1.5, 0.05, () => sv().dev.slideDur, v => sv().dev.slideDur = v, v => v.toFixed(2) + '秒',
-    '1回の切替アニメの長さ。短いほどパキッと。'));
+    '1回の切替アニメの長さ。短いほどパキッと。', { mbKey: 'sections.dev.slideDur' }));
 
   /* 【2026-08-30 ヒデさん指定】リスト案用の「画面が切り替わる見え方 / 後ろに重なるカード / コードの見せ方」は廃止
      (② はテキストスライド固定のため)。関連パラメータは既定のまま残るが、パネルからは出さない。 */
@@ -18959,25 +18966,25 @@ function buildPanel() {
   sub(catCase, '基本（長さ・ぼけ具合）');
   sectionLenSlider('cases', 1000);
   rows.push(slider('全体の再生時間', 3, 20, 0.5, () => sv().cases.playSec, v => sv().cases.playSec = v, v => v.toFixed(1) + '秒',
-    '見出し〜カードまで出そろうのにかける時間。小さいほどキビキビ。'));
+    '見出し〜カードまで出そろうのにかける時間。小さいほどキビキビ。', { mbKey: 'sections.cases.playSec' }));
   rows.push(slider('ぼかしの強さ', 0, 40, 1, () => sv().cases.inBlur, v => sv().cases.inBlur = v, v => v + 'px',
-    '大きいほど強くぼけた状態から現れます。※貼りつけない時は無効。'));
+    '大きいほど強くぼけた状態から現れます。※貼りつけない時は無効。', { mbKey: 'sections.cases.inBlur' }));
 
   sub(catCase, '① 見出し「導入事例」');
   note('「%」は、前の暗い画面が明るく戻る動きの進み具合です。');
   rows.push(slider('見出しが出る', 0, 1, 0.02, () => sv().cases.introAt, v => sv().cases.introAt = v, v => Math.round(v * 100) + '%',
-    '何割進んだら見出しが出はじめるか。小さいほど早く見えます。'));
+    '何割進んだら見出しが出はじめるか。小さいほど早く見えます。', { mbKey: 'sections.cases.introAt' }));
   rows.push(slider('見出しが出きるまで', 0.05, 1, 0.02, () => sv().cases.introDur, v => sv().cases.introDur = v, v => v.toFixed(2) + '秒',
-    '「導入事例」の文字がぼけから出きるまでの時間。'));
+    '「導入事例」の文字がぼけから出きるまでの時間。', { mbKey: 'sections.cases.introDur' }));
 
   /* 【2026-09-17 大掃除】「② 罫線が引かれる」のつまみは削除(罫線なしに固定したので効かない) */
   sub(catCase, '② カードが1枚ずつブラーで登場');
   /* 【2026-09-19 ヒデさん依頼】4枚同時(2026-08-30 確定)→ 1枚ずつに変更。起点は再生進捗ではなく「カード自身が画面に入った時点」 */
   note('カードはそれぞれ「自分が画面に入った時点」を起点に、1枚目→2枚目→3枚目→4枚目の順にディレイしてブラーで出ます(旧: 4枚同時)。ぼけの強さは上の「基本」。');
   rows.push(slider('次のカードのディレイ', 0, 0.6, 0.02, () => (sv().cases.cardStagger != null ? sv().cases.cardStagger : 0.18), v => sv().cases.cardStagger = v, v => v.toFixed(2) + '秒',
-    '1枚目が出はじめてから次のカードが出はじめるまでの間。同じ行の2枚はこの間隔で前後します。下の行が遅れて画面に入った分は差し引かれます。'));
+    '1枚目が出はじめてから次のカードが出はじめるまでの間。同じ行の2枚はこの間隔で前後します。下の行が遅れて画面に入った分は差し引かれます。', { mbKey: 'sections.cases.cardStagger' }));
   rows.push(slider('1枚が出きるまで', 0.05, 1, 0.02, () => sv().cases.cardDur, v => sv().cases.cardDur = v, v => v.toFixed(2),
-    '1枚がぼけから出きるまでの長さ。'));
+    '1枚がぼけから出きるまでの長さ。', { mbKey: 'sections.cases.cardDur' }));
 
   /* 【2026-08-30 ヒデさん指定】カードのホバーは「パスのトリミング(trim)」固定(既定)。選択UIは廃止。
      ホバーは case-grid の data-hover(= params.patterns.caseHover)で常に適用される。 */
@@ -19007,25 +19014,25 @@ function buildPanel() {
     },
     formStyle() {
       /* 【2026-09-17 大掃除・ヒデさん指定】リキッドグラス5案の選択は削除。「リキッドグラス（明）」(formStyle=1) に固定＝焼き込み。横幅と細かい調整だけ残す */
-      rows.push(slider('フォームの横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { fixedMax: true }));
+      rows.push(slider('フォームの横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { mbKey: 'formWidth', fixedMax: true }));
       /* 【2026-09-17 ヒデさん依頼】背景・バックドロップフィルター・プレースホルダーの色味を後から個別調整できるように(白飛び対策) */
       const _g = () => (params.cvfGlass = params.cvfGlass || {});
       /* 【2026-09-18 ヒデさん指定】「フォーム裏の明るさ上限」は見た目が想像と違うため取り下げ(既定 100%=効かない)。代わりに上の「流れ・ゆらゆら」の白い光の案(7〜9)で対応 */
-      rows.push(slider('フォームの角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 22), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { fixedMax: true }));
-      rows.push(slider('入力欄の角丸', 0, 30, 1, () => (_g().inR != null ? _g().inR : 10), v => { _g().inR = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '入力欄・セレクトの角の丸さ。', { fixedMax: true }));
+      rows.push(slider('フォームの角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 22), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { mbKey: 'cvfGlass.radius', fixedMax: true }));
+      rows.push(slider('入力欄の角丸', 0, 30, 1, () => (_g().inR != null ? _g().inR : 10), v => { _g().inR = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '入力欄・セレクトの角の丸さ。', { mbKey: 'cvfGlass.inR', fixedMax: true }));
       /* 【2026-09-18 ヒデさん依頼】外枠の線とプレースホルダーも変えられるように */
       optRow('cvfCardBorder', 'カードの枠線の色', [['白系', 'w'], ['黒系', 'k']], () => (_g().bDark ? 'k' : 'w'), v => { _g().bDark = v === 'k'; applyCvfGlass(); });
-      rows.push(slider('カードの枠線の太さ', 0, 4, 0.5, () => (_g().bw != null ? _g().bw : 1), v => { _g().bw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', 'フォームのカードの外枠の線の太さ。0で線なし。', { fixedMax: true }));
-      rows.push(slider('カードの枠線の濃さ', 0, 1, 0.02, () => (_g().ba != null ? _g().ba : 0.66), v => { _g().ba = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '外枠の線の不透明度。', { fixedMax: true }));
+      rows.push(slider('カードの枠線の太さ', 0, 4, 0.5, () => (_g().bw != null ? _g().bw : 1), v => { _g().bw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', 'フォームのカードの外枠の線の太さ。0で線なし。', { mbKey: 'cvfGlass.bw', fixedMax: true }));
+      rows.push(slider('カードの枠線の濃さ', 0, 1, 0.02, () => (_g().ba != null ? _g().ba : 0.66), v => { _g().ba = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '外枠の線の不透明度。', { mbKey: 'cvfGlass.ba', fixedMax: true }));
       optRow('cvfInBorder', '入力欄の枠線の色', [['白系', 'w'], ['黒系', 'k']], () => (_g().inBDark ? 'k' : 'w'), v => { _g().inBDark = v === 'k'; applyCvfGlass(); });
-      rows.push(slider('入力欄の枠線の太さ', 0, 4, 0.5, () => (_g().inBw != null ? _g().inBw : 1), v => { _g().inBw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', '入力欄・セレクトの枠線の太さ。0で線なし。', { fixedMax: true }));
-      rows.push(slider('入力欄の枠線の濃さ', 0, 1, 0.02, () => (_g().inBa != null ? _g().inBa : 0.72), v => { _g().inBa = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の枠線の不透明度。', { fixedMax: true }));
+      rows.push(slider('入力欄の枠線の太さ', 0, 4, 0.5, () => (_g().inBw != null ? _g().inBw : 1), v => { _g().inBw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', '入力欄・セレクトの枠線の太さ。0で線なし。', { mbKey: 'cvfGlass.inBw', fixedMax: true }));
+      rows.push(slider('入力欄の枠線の濃さ', 0, 1, 0.02, () => (_g().inBa != null ? _g().inBa : 0.72), v => { _g().inBa = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の枠線の不透明度。', { mbKey: 'cvfGlass.inBa', fixedMax: true }));
       optRow('cvfPh', 'プレースホルダーの色', [['黒系', 'k'], ['白系', 'w']], () => (_g().phDark === false ? 'w' : 'k'), v => { _g().phDark = v !== 'w'; applyCvfGlass(); });
-      rows.push(slider('カードの白さ（白飛び対策）', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの地色の白さ。背景に白が来て白飛びする時は下げる。', { fixedMax: true }));
-      rows.push(slider('カードのぼかし（バックドロップ）', 0, 40, 1, () => (_g().blur != null ? _g().blur : 22), v => { _g().blur = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '磨りガラスのぼかし量(backdrop-filter)。', { fixedMax: true }));
-      rows.push(slider('カードの彩度', 1, 2.2, 0.05, () => (_g().sat != null ? _g().sat : 1.5), v => { _g().sat = v; applyCvfGlass(); }, v => v.toFixed(2), '磨りガラスの彩度。上げると背景の色が残って白飛びしにくい。', { fixedMax: true }));
-      rows.push(slider('入力欄の白さ', 0, 0.9, 0.02, () => (_g().inA != null ? _g().inA : 0.56), v => { _g().inA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の地色の白さ。', { fixedMax: true }));
-      rows.push(slider('プレースホルダーの濃さ', 0.1, 0.6, 0.02, () => (_g().phA != null ? _g().phA : 0.32), v => { _g().phA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '「Anyflow株式会社」等の見本文字の濃さ。白飛びで見えにくい時は上げる。', { fixedMax: true }));
+      rows.push(slider('カードの白さ（白飛び対策）', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの地色の白さ。背景に白が来て白飛びする時は下げる。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
+      rows.push(slider('カードのぼかし（バックドロップ）', 0, 40, 1, () => (_g().blur != null ? _g().blur : 22), v => { _g().blur = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
+      rows.push(slider('カードの彩度', 1, 2.2, 0.05, () => (_g().sat != null ? _g().sat : 1.5), v => { _g().sat = v; applyCvfGlass(); }, v => v.toFixed(2), '磨りガラスの彩度。上げると背景の色が残って白飛びしにくい。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
+      rows.push(slider('入力欄の白さ', 0, 0.9, 0.02, () => (_g().inA != null ? _g().inA : 0.56), v => { _g().inA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の地色の白さ。', { mbKey: 'cvfGlass.inA', fixedMax: true }));
+      rows.push(slider('プレースホルダーの濃さ', 0.1, 0.6, 0.02, () => (_g().phA != null ? _g().phA : 0.32), v => { _g().phA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '「Anyflow株式会社」等の見本文字の濃さ。白飛びで見えにくい時は上げる。', { mbKey: 'cvfGlass.phA', fixedMax: true }));
       note('セクション自体の色味・グラデーションは、下の「背景グラデーション」「色の移ろい」「粒（ディザ）」で調整できます。');
     },
     gradForm() {
@@ -19036,45 +19043,45 @@ function buildPanel() {
       segRow('形（詳細）', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
       gizmoBtn();
       note('棒編集: 両端で角度・広がり、途中で中心。下の数値と連動します。');
-      rows.push(slider('中心 横', 0, 1, 0.01, () => (cvv().gcx != null ? cvv().gcx : 0.60), v => { cvv().gcx = v; }, v => Math.round(v * 100) + '%', '明るい中心の横位置。0=左端 / 100%=右端。'));
-      rows.push(slider('中心 縦', 0, 1, 0.01, () => (cvv().gcy != null ? cvv().gcy : 0.00), v => { cvv().gcy = v; }, v => Math.round(v * 100) + '%', '明るい中心の縦位置。0=上端 / 100%=下端。'));
-      rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり、大きいほどゆるやか。'));
-      rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。'));
-      rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。'));
+      rows.push(slider('中心 横', 0, 1, 0.01, () => (cvv().gcx != null ? cvv().gcx : 0.60), v => { cvv().gcx = v; }, v => Math.round(v * 100) + '%', '明るい中心の横位置。0=左端 / 100%=右端。', { mbKey: 'cv.gcx' }));
+      rows.push(slider('中心 縦', 0, 1, 0.01, () => (cvv().gcy != null ? cvv().gcy : 0.00), v => { cvv().gcy = v; }, v => Math.round(v * 100) + '%', '明るい中心の縦位置。0=上端 / 100%=下端。', { mbKey: 'cv.gcy' }));
+      rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり、大きいほどゆるやか。', { mbKey: 'cv.gr' }));
+      rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。', { mbKey: 'cv.gAspect' }));
+      rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。', { mbKey: 'cv.gAng' }));
     },
     dither() {
-      rows.push(slider('粗さ（ドット）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px', '大きいほど粗い。1でカンプ。'));
-      rows.push(slider('階調（レベル）', 2, 12, 1, () => cvv().levels, v => { cvv().levels = v; }, v => Math.round(v) + '段', '少ないほどディザが強く。カンプは3段。'));
-      rows.push(slider('ディザの散り', 0, 2, 0.05, () => cvv().spread, v => { cvv().spread = v; }, v => '×' + v.toFixed(2), '大きいほど粒感。'));
+      rows.push(slider('粗さ（ドット）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px', '大きいほど粗い。1でカンプ。', { mbKey: 'cv.cell' }));
+      rows.push(slider('階調（レベル）', 2, 12, 1, () => cvv().levels, v => { cvv().levels = v; }, v => Math.round(v) + '段', '少ないほどディザが強く。カンプは3段。', { mbKey: 'cv.levels' }));
+      rows.push(slider('ディザの散り', 0, 2, 0.05, () => cvv().spread, v => { cvv().spread = v; }, v => '×' + v.toFixed(2), '大きいほど粒感。', { mbKey: 'cv.spread' }));
     },
     flow() {
       /* 【2026-09-18 ヒデさん依頼】白い光の居場所(右上を漂う)の案。⋯で削除/上書き可 */
       varRowX('cvSway', CV_SWAYS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { autosave: true, snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
       note('現行＝今の動き。案1〜3＝白い光が右上のあたりを漂い、フォームまで流れ込まないようにした案。案4＝白を軸に揺らす。案5・6＝案4の動き＋色の入れ替わり(白はそのまま)。どの案も「動き」と「色」を丸ごと決めるので、案を切り替えれば前の案の色設定は残らない。選んでから下のつまみで微調整→⋯「この設定で上書き」。');
       /* 【2026-09-19】色の入れ替わり(案5・6)の細かい調整。案1〜4では効かない(hueMode=off) */
-      rows.push(slider('色の入れ替わり: 1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '案5・6で色が一周する時間。長いほどゆっくり。案1〜4では効きません。', { fixedMax: true }));
-      rows.push(slider('色の入れ替わり: 留まる割合', 0, 0.9, 0.05, () => (cvv().swapHold != null ? cvv().swapHold : 0.45), v => { cvv().swapHold = v; }, v => Math.round(v * 100) + '%', '案5・6で、各状態に留まる時間の割合(1区間のうち)。0で常に移り変わり続ける。', { fixedMax: true }));
-      rows.push(slider('揺らぎの軸（画面中心 ↔ 白い光）', 0, 1, 0.05, () => (cvv().swayPivot != null ? cvv().swayPivot : 0), v => { cvv().swayPivot = v; }, v => Math.round(v * 100) + '%', '0%=画面の中心を軸に傾ける(白い光は弧を描いて動く)／100%=白い光の中心を軸に(白は動かず周りだけ揺れる)。', { fixedMax: true }));
-      rows.push(slider('白を取る（中心の開始色）', 0, 0.6, 0.01, () => (cvv().coreSkip != null ? cvv().coreSkip : 0), v => { cvv().coreSkip = v; }, v => v === 0 ? '白から' : '×' + v.toFixed(2), 'いちばん明るい中心を、白ではなく色の途中から始める(0.26=淡ブルー / 0.34=案7 / 0.59=シアン)。白い領域が無くなる。', { fixedMax: true }));
-      rows.push(slider('白の縁のぼかし', 0, 0.25, 0.01, () => (cvv().coreSoft != null ? cvv().coreSoft : 0), v => { cvv().coreSoft = v; }, v => '×' + v.toFixed(2), '白い光の周りの色の切り替わりをやわらかく(白の大きさは変えない)。0=くっきり / 案7 は 0.12。', { fixedMax: true }));
-      rows.push(slider('白の絞り', 0, 3, 0.1, () => (cvv().core != null ? cvv().core : 0), v => { cvv().core = v; }, v => '×' + v.toFixed(1), '白い光の芯だけを小さくする(周りの色の広がりは変えない)。0=そのまま / 案7 は 1.2。', { fixedMax: true }));
-      rows.push(slider('白い光の近くのうねりを弱める', 0, 1, 0.05, () => (cvv().waveAnchor != null ? cvv().waveAnchor : 0), v => { cvv().waveAnchor = v; }, v => Math.round(v * 100) + '%', '白い光の周り(半径15〜55%)だけ「うねり」を弱めて、白がフォームへ流れ込まないようにする。', { fixedMax: true }));
-      rows.push(slider('流れる速さ', 0, 1, 0.02, () => cvv().speed, v => { cvv().speed = v; }, v => '×' + v.toFixed(2), 'グラデが流れる速さ。0で停止。'));
-      rows.push(slider('うねりの強さ', 0, 0.6, 0.02, () => cvv().swell, v => { cvv().swell = v; }, v => '×' + v.toFixed(2), '流れのゆらぎ。'));
-      rows.push(slider('流れの細かさ', 0.3, 8, 0.1, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1), '大きいほど細かい流れ。'));
-      rows.push(slider('大きなうねり', 0, 0.35, 0.005, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; }, v => '×' + v.toFixed(3), 'なめらかな大波。粒っぽくなりません。', { fixedMax: true }));
-      rows.push(slider('ゆらゆら（傾き）', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; }, v => v.toFixed(1) + '°', '全体がゆっくり左右に傾く。0で停止。', { fixedMax: true }));
-      rows.push(slider('ゆらゆらの周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。', { fixedMax: true }));
+      rows.push(slider('色の入れ替わり: 1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '案5・6で色が一周する時間。長いほどゆっくり。案1〜4では効きません。', { mbKey: 'cv.moodSec', fixedMax: true }));
+      rows.push(slider('色の入れ替わり: 留まる割合', 0, 0.9, 0.05, () => (cvv().swapHold != null ? cvv().swapHold : 0.45), v => { cvv().swapHold = v; }, v => Math.round(v * 100) + '%', '案5・6で、各状態に留まる時間の割合(1区間のうち)。0で常に移り変わり続ける。', { mbKey: 'cv.swapHold', fixedMax: true }));
+      rows.push(slider('揺らぎの軸（画面中心 ↔ 白い光）', 0, 1, 0.05, () => (cvv().swayPivot != null ? cvv().swayPivot : 0), v => { cvv().swayPivot = v; }, v => Math.round(v * 100) + '%', '0%=画面の中心を軸に傾ける(白い光は弧を描いて動く)／100%=白い光の中心を軸に(白は動かず周りだけ揺れる)。', { mbKey: 'cv.swayPivot', fixedMax: true }));
+      rows.push(slider('白を取る（中心の開始色）', 0, 0.6, 0.01, () => (cvv().coreSkip != null ? cvv().coreSkip : 0), v => { cvv().coreSkip = v; }, v => v === 0 ? '白から' : '×' + v.toFixed(2), 'いちばん明るい中心を、白ではなく色の途中から始める(0.26=淡ブルー / 0.34=案7 / 0.59=シアン)。白い領域が無くなる。', { mbKey: 'cv.coreSkip', fixedMax: true }));
+      rows.push(slider('白の縁のぼかし', 0, 0.25, 0.01, () => (cvv().coreSoft != null ? cvv().coreSoft : 0), v => { cvv().coreSoft = v; }, v => '×' + v.toFixed(2), '白い光の周りの色の切り替わりをやわらかく(白の大きさは変えない)。0=くっきり / 案7 は 0.12。', { mbKey: 'cv.coreSoft', fixedMax: true }));
+      rows.push(slider('白の絞り', 0, 3, 0.1, () => (cvv().core != null ? cvv().core : 0), v => { cvv().core = v; }, v => '×' + v.toFixed(1), '白い光の芯だけを小さくする(周りの色の広がりは変えない)。0=そのまま / 案7 は 1.2。', { mbKey: 'cv.core', fixedMax: true }));
+      rows.push(slider('白い光の近くのうねりを弱める', 0, 1, 0.05, () => (cvv().waveAnchor != null ? cvv().waveAnchor : 0), v => { cvv().waveAnchor = v; }, v => Math.round(v * 100) + '%', '白い光の周り(半径15〜55%)だけ「うねり」を弱めて、白がフォームへ流れ込まないようにする。', { mbKey: 'cv.waveAnchor', fixedMax: true }));
+      rows.push(slider('流れる速さ', 0, 1, 0.02, () => cvv().speed, v => { cvv().speed = v; }, v => '×' + v.toFixed(2), 'グラデが流れる速さ。0で停止。', { mbKey: 'cv.speed' }));
+      rows.push(slider('うねりの強さ', 0, 0.6, 0.02, () => cvv().swell, v => { cvv().swell = v; }, v => '×' + v.toFixed(2), '流れのゆらぎ。', { mbKey: 'cv.swell' }));
+      rows.push(slider('流れの細かさ', 0.3, 8, 0.1, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1), '大きいほど細かい流れ。', { mbKey: 'cv.flowScale' }));
+      rows.push(slider('大きなうねり', 0, 0.35, 0.005, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; }, v => '×' + v.toFixed(3), 'なめらかな大波。粒っぽくなりません。', { mbKey: 'cv.wave', fixedMax: true }));
+      rows.push(slider('ゆらゆら（傾き）', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; }, v => v.toFixed(1) + '°', '全体がゆっくり左右に傾く。0で停止。', { mbKey: 'cv.swayDeg', fixedMax: true }));
+      rows.push(slider('ゆらゆらの周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。', { mbKey: 'cv.swaySec', fixedMax: true }));
     },
     edge() {
       varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-      rows.push(slider('溶け込みの深さ', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', '色が満色になるまでの距離。大きいほど徐々に溶け、境目の線が出ません。', { fixedMax: true }));
+      rows.push(slider('溶け込みの深さ', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', '色が満色になるまでの距離。大きいほど徐々に溶け、境目の線が出ません。', { mbKey: 'cv.blend', fixedMax: true }));
     },
     spacing() {
-      rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px', '減らすほど導入事例との間が詰まります。', { fixedMax: true }));
-      rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '見出しの上に色の面を足す。', { fixedMax: true }));
-      rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ボタンの下(フッターとの間)に足す。', { fixedMax: true }));
-      rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'あいだの余白。マイナスは導入事例の下の空きを詰めます(カードが切れない所で自動停止)。', { signed: true }));
+      rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px', '減らすほど導入事例との間が詰まります。', { mbKey: 'cv.headTop', fixedMax: true }));
+      rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '見出しの上に色の面を足す。', { mbKey: 'cv.addT', fixedMax: true }));
+      rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ボタンの下(フッターとの間)に足す。', { mbKey: 'cv.addB', fixedMax: true }));
+      rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'あいだの余白。マイナスは導入事例の下の空きを詰めます(カードが切れない所で自動停止)。', { mbKey: 'cv.gapTop', signed: true }));
     },
   };
   /* 【V5.0 2026-09-16 ヒデさん依頼】要素別に固定。CTAの中に「フォーム」が入る等の“包含関係”を入れ子(cv-subg)で見せる。
@@ -19102,7 +19109,7 @@ function buildPanel() {
   sub(catMenu, '余白・間隔・大きさ', null, { fixed: true });
   { const D = () => (params.drawer = params.drawer || {});
     const dv = (k, def) => (D()[k] != null ? D()[k] : def);
-    const ds = (label, k, def, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => dv(k, def), v => { D()[k] = v; applyDrawerTune(); markDirty(); }, fmt, tip, { fixedMax: true, signed: min < 0 }));
+    const ds = (label, k, def, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => dv(k, def), v => { D()[k] = v; applyDrawerTune(); markDirty(); }, fmt, tip, { fixedMax: true, signed: min < 0, mbKey: 'drawer.' + k }));
     ds('上の余白', 'padT', 0, -200, 400, 4, v => Math.round(v) + 'px', 'メニュー全体の上の余白。マイナスで上へ寄せます。');
     ds('下の余白', 'padB', 0, -200, 400, 4, v => Math.round(v) + 'px', 'メニュー全体の下の余白。');
     ds('左の余白', 'padL', 130, 0, 600, 4, v => Math.round(v) + 'px', '左端からメニューまでの余白(以前は 9vw≒130px)。');
