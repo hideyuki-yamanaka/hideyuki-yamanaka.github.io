@@ -79,6 +79,17 @@
   }
   #gridBg { display: none !important; }   /* オーバーレイは撤去(前面に出る問題)。要素は残すが常に非表示 */
 
+  /* 【2026-09-21 ヒデさん依頼】スマホモードの実機プレビュー枠(390×844のデバイスに実画面を iframe で埋め込み・実スクロール) */
+  #phonePreview { position: fixed; z-index: 90000; right: 20px; bottom: 20px; display: none; flex-direction: column; width: 390px; transform-origin: right bottom; }   /* QR(左上)と重ならないよう右下に。パネルと重なる時はパネルを移動 */
+  html.phone-mode #phonePreview.on { display: flex; }
+  #phonePreview .pp-bar { display: flex; align-items: center; gap: 8px; background: #111; color: #fff; border-radius: 12px 12px 0 0; padding: 7px 12px; font: 600 12px/1.2 -apple-system, system-ui, sans-serif; }
+  #phonePreview .pp-ttl { flex: 1; }
+  #phonePreview .pp-bar button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: #333; color: #fff; cursor: pointer; font-size: 15px; line-height: 1; }
+  #phonePreview .pp-bar button:hover { background: #4a4a4a; }
+  #phonePreview .pp-frame { width: 390px; height: 844px; background: #000; border-radius: 0 0 28px 28px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.4); border: 1px solid #222; }
+  #phonePreview iframe { width: 390px; height: 844px; border: 0; background: #fff; display: block; }
+  html.pp-inner #panel, html.pp-inner #panelLiveBtn, html.pp-inner #phonePreview { display: none !important; }   /* プレビューiframeの中ではパネル/ボタン/入れ子プレビューを隠す */
+
   /* ---- ステージ: 高さ921pxのカンプ座標系のまま、幅だけ画面いっぱいに広げる（フィル） ----
      左右の要素は left:120px / right:120px でアンカーするので、幅が変わっても余白は120pxのまま */
   .stage-wrap { width: 100%; overflow: visible; background: var(--surface); }  /* KVの地色を全幅で。【2026-09-17 ヒデさん指定】以前は overflow:hidden で、KVグラフィックを下/右へ動かすと器(高さ921/幅1440)の縁で切れていた(実測: 球体下端1084px・右端1558px)。html/body は overflow-x:clip 済みなので横スクロールは出ない */
@@ -3858,6 +3869,11 @@
 </head>
 <body>
 <div id="gridBg" aria-hidden="true"></div><!-- 【2026-09-21】背景グリッド(スマホ用の画面固定オーバーレイ)。PC/タブレットは各セクション地色に重ねるので非表示 -->
+<script>try{if(new URLSearchParams(location.search).get('preview')==='1')document.documentElement.classList.add('pp-inner');}catch(e){}</script><!-- 【2026-09-21 ヒデさん依頼】スマホモードの実機プレビュー枠(iframe)。?preview=1 の中身側はパネル等を隠す -->
+<div id="phonePreview" aria-hidden="true">
+  <div class="pp-bar"><span class="pp-ttl">スマホプレビュー 390×844</span><button id="ppReload" type="button" title="再読み込み">↻</button><button id="ppClose" type="button" title="閉じる">×</button></div>
+  <div class="pp-frame"><iframe id="ppFrame" title="スマホプレビュー" src="about:blank" loading="lazy"></iframe></div>
+</div>
 
 <div class="stage-wrap">
   <div class="stage" id="stage">
@@ -20441,6 +20457,24 @@ document.getElementById('panelBody').addEventListener('click', () => {
   }
   function clearMbOverrides() { var r = document.querySelectorAll('.txt-row.mb-override, .txt-row .mb-diff'); for (var i = 0; i < r.length; i++) { r[i].classList.remove('mb-override'); r[i].classList.remove('mb-diff'); } }
   window.__markMbOverrides = markMbOverrides;
+  /* 【2026-09-21 ヒデさん依頼】スマホモードON時に「390×844のデバイス枠に実画面(iframe ?preview=1)」を出す。実スクロールできる。OFFで消す */
+  function ppSync(on) {
+    var pp = document.getElementById('phonePreview'), ppf = document.getElementById('ppFrame');
+    if (!pp || !ppf) return;
+    if (document.documentElement.classList.contains('pp-inner')) return;   /* プレビューiframeの中では出さない(再帰回避) */
+    if (on) {
+      var u = location.pathname + '?preview=1';
+      if ((ppf.getAttribute('src') || '') !== u) ppf.setAttribute('src', u);
+      pp.classList.add('on');
+      var sc = Math.min(1, (window.innerHeight - 32) / 892);   /* 画面が低い時は枠ごと縮めて収める(bar36+frame844+余白) */
+      pp.style.transform = sc < 1 ? ('scale(' + sc.toFixed(3) + ')') : '';
+    } else { pp.classList.remove('on'); ppf.setAttribute('src', 'about:blank'); }
+  }
+  (function () {
+    var rl = document.getElementById('ppReload'), cl = document.getElementById('ppClose'), ppf = document.getElementById('ppFrame');
+    if (rl) rl.addEventListener('click', function () { if (ppf) ppf.setAttribute('src', location.pathname + '?preview=1&_t=' + Date.now()); });
+    if (cl) cl.addEventListener('click', function () { setActive(false); try { hidePop(); } catch (e) {} });
+  })();
   function setActive(on) {
     window.__liveSyncOn = !!on;
     try { document.documentElement.classList.toggle('phone-mode', !!on); } catch (e) {}   /* 帯・青枠はこのクラスで出す */
@@ -20448,6 +20482,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
     try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {}   /* パネルの値を読み直す */
     if (on) { setTimeout(markMbOverrides, 60); } else { clearMbOverrides(); }
     if (on) liveSyncPush();
+    try { ppSync(!!on); } catch (e) {}   /* 実機プレビュー枠の表示/非表示 */
   }
   if (trigger) {
     trigger.addEventListener('click', function (e) { e.stopPropagation();
