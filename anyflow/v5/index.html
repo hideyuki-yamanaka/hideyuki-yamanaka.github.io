@@ -842,6 +842,9 @@
   }
   .vis-line .vl-in { display: inline-block; }
   .vis-line .vl-ch { display: inline-block; }   /* 案C 文字ごとカスケード用 */
+  /* 【2026-09-20 ヒデさん依頼】ビジョン強調案(strong): 見出し・メッセージを左揃え／文字サイズ +20px／左位置は KV コピーの左(--kv-copy-base=50px)に合わせる。2行(visL1/visL2)＝既存のマスク出現で1行目→2行目。PC/タブレットのみ(スマホは別レイアウト) */
+  html:not(.mb) #vision.vis-emph .vis-label { left: var(--kv-copy-base, 50px); right: auto; text-align: left; }
+  html:not(.mb) #vision.vis-emph .vis-line { left: var(--kv-copy-base, 50px); right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
 
   /* 【2026-08-30 ヒデさん指定】メッセージの「強み」強調は【グラデ揺らぎ(live)】で確定。
      他の9案(チカチカ/上下ずれ/色差/ぼけ/グラデ→黒…)と選択パネルは削除した。 */
@@ -5058,6 +5061,7 @@ const DEFAULTS = {
     /* ビジョンは「ピン留めされたら自動再生 → ワンスクロールで軌道が左下へ」。
        自動パートの時間はすべて秒で指定する */
     vision:  {
+      emph: 'default',   // 【2026-09-20】ビジョンのバリエーション。'default'=現状(1行・中央) / 'strong'=強調(2行・左揃え・大きめ)
       driveLen: 3.0,     // スクロール駆動の時、尺を何倍に伸ばすか（大きいほどゆったり）
       /* ⚠️ 再生中はスクロールを止めているので、lenVh はまるごと「再生後の空スクロール」になる。
          長いと「終わったのに何度もスクロールしないと次へ行けない」になるので短くする */
@@ -11529,11 +11533,21 @@ const visStrongEls = [];   // 「強み」を包む .vl-strong 要素(l1/l2 ぶ�
    2行を明示改行。幅任せだと iPhone(402px)では「強みになる」の後で折れてカンプと違った。
    isMobile は fit() より前なので、CSS の @media と同じ matchMedia で判定する。 */
 const VIS_MB_BREAK = !!(window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches);
-(function buildVisChars() {
+/* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション。
+   default=現状(1行・visL1に全文/visL2は空・中央) / strong=強調案(2行・visL1「データをつなぐことが、」/visL2「強みになる時代へ」・左揃え・大きめ) */
+const VIS_TEXT = {
+  default: ['データをつなぐことが、強みになる時代へ。', ''],
+  strong:  ['データをつなぐことが、', '強みになる時代へ'],
+};
+function visEmphMode() { const v = params.sections && params.sections.vision; return (v && v.emph === 'strong') ? 'strong' : 'default'; }
+function rebuildVisChars(mode) {
+  const src = VIS_TEXT[mode] || VIS_TEXT.default;
+  visStrongEls.length = 0;
   [visEls.l1, visEls.l2].forEach((line, i) => {
     const inner = line.firstElementChild;
-    const text = inner.textContent;
-    inner.textContent = '';
+    inner.innerHTML = '';
+    visEls.chars[i].length = 0;
+    const text = src[i] || '';
     const strongStart = text.indexOf('強み');
     const naguStart = text.indexOf('つなぐ');   /* 【2026-08-29 ヒデさん指定】「つなぐ」に常時グラデ揺らぎ */
     let strongWrap = null, naguWrap = null;
@@ -11544,7 +11558,7 @@ const VIS_MB_BREAK = !!(window.matchMedia && window.matchMedia('(max-width: ' + 
       visEls.chars[i].push(s);
       const isStrong = strongStart >= 0 && idx >= strongStart && idx < strongStart + 2;
       const isNagu = naguStart >= 0 && idx >= naguStart && idx < naguStart + 3;
-      if (VIS_MB_BREAK && ch === '、') {
+      if (VIS_MB_BREAK && mode !== 'strong' && ch === '、') {   /* SP は '、' で改行(strong は既に2要素なので不要) */
         inner.appendChild(s);
         const br = document.createElement('br');
         br.className = 'vl-br-mb';
@@ -11571,7 +11585,13 @@ const VIS_MB_BREAK = !!(window.matchMedia && window.matchMedia('(max-width: ' + 
       }
     });
   });
-})();
+}
+function applyVisEmph() {
+  const mode = visEmphMode();
+  try { const sec = document.getElementById('vision'); if (sec) sec.classList.toggle('vis-emph', mode === 'strong'); } catch (e) {}
+  rebuildVisChars(mode);
+}
+applyVisEmph();   /* 初期化(起動時のモードで組む) */
 
 
 /* ビジョンのフェーズ境界: 調整パネルの値から組み立てる (絵コンテ準拠)
@@ -14617,7 +14637,7 @@ setTimeout(function applyOverrideOnBoot() {
 }, 0);
 /* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
 setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
-setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof applyVisEmph === 'function') applyVisEmph(); } catch (e) {}   /* 【2026-09-20】ビジョンのバリエーション(強調/デフォルト)を焼き込み/保存値で組み直す */ try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
 function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
@@ -18521,6 +18541,11 @@ function buildPanel() {
   const catVis = category('ビジョン（つなぐことが、強みになる時代へ）', false);
   catNote(catVis, 'Our Vision(ブラー) → メッセージがマスクで出る → 下に図(SVG書き出し)がブラーで出る → 右に Point 01/02。');
 
+  /* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション(デフォルト/強調)。強調＝2行・左揃え・大きめ */
+  sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation' });
+  segRow('案', [['デフォルト', 'default'], ['強調', 'strong']], () => visEmphMode(), v => { params.sections.vision.emph = String(v); applyVisEmph(); markDirty(); });
+  note('強調＝メッセージを2行(データをつなぐことが、／強みになる時代へ)に・左揃え・文字+20px・見出しの左をKVコピーに合わせる・1行目→2行目のマスク出現。デフォルト＝現状(1行・中央)。');
+
   /* 【2026-08-30 ヒデさん指定】「強み」の強調はグラデ揺らぎで確定。他の案とこのセクション自体を削除した */
 
   /* 【2026-08-26 整理】1項目だけの見出しが並んで冗長だったので「基本」にまとめた */
@@ -20125,6 +20150,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
          (リロード時は varApply→applyMb の順で正しかった。ここも同じ順に揃える)。 */
       call(function () { if (typeof applyMbToParams === 'function') applyMbToParams(); });
       call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
+      call(function () { if (typeof applyVisEmph === 'function') applyVisEmph(); });   /* 【2026-09-20】ビジョンのバリエーションもライブ反映 */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
       call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
       call(function () { if (typeof applySway === 'function') applySway(); });
