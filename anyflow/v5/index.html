@@ -3547,16 +3547,16 @@
   /* 【2026-09-15 ヒデさん指定】大カテゴリはアコーディオンからタブへ: 上のタブで選ぶと、そのカテゴリの中身だけが下に出る(選んだタブはブラウザに記憶) */
   /* 【2026-09-20 ヒデさん依頼】タブは2段組(flex-wrap)をやめ、横1列＋横スクロールに。選択タブは中央へ寄せる(showTab) */
   .pan-tabs { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: nowrap; gap: 16px; margin: 0 -10px; padding: 6px 10px 0;
-              background: rgba(255,255,255,.96); backdrop-filter: blur(6px); border-bottom: 1px solid #ececec;
+              background: transparent;   /* 【2026-09-21 ヒデさん依頼】タブ帯の白塗り(浮いて見える)を撤去。地色はパネル本体に任せる */
               overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .pan-tabs::-webkit-scrollbar { height: 6px; }
   .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
   .pan-tabs::-webkit-scrollbar-track { background: transparent; }
   /* 【2026-09-20 ヒデさん依頼】タブはピル型→アンダーライン型(X風): 透明地・選択は下線＋濃い文字 */
   .pan-tab { flex: 0 0 auto; height: 34px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #8a8a8a;
-             font-size: 12.5px; font-weight: 600; line-height: 34px; cursor: pointer; white-space: nowrap; transition: color .15s, border-color .15s; }
+             font-size: 12.5px; font-weight: 500; line-height: 34px; cursor: pointer; white-space: nowrap; transition: color .15s, border-color .15s, font-weight .15s; }   /* 【2026-09-21】非アクティブは軽め(500) */
   .pan-tab:hover { color: #333; }
-  .pan-tab.on { color: #111; border-bottom-color: #111; background: transparent; }
+  .pan-tab.on { color: #111; border-bottom-color: #111; background: transparent; font-weight: 700; }   /* 【2026-09-21 ヒデさん依頼】アクティブは太字 */
   .panel-body.tabbed > .cat { display: none; margin-top: 6px; border: 0; border-radius: 0; background: transparent; }
   .panel-body.tabbed > .cat.tab-on { display: block; }
   .panel-body.tabbed > .cat > .cat-head { display: none; }
@@ -18659,7 +18659,7 @@ function buildPanel() {
   catNote(catVis, 'Our Vision(ブラー) → メッセージがマスクで出る → 下に図(SVG書き出し)がブラーで出る → 右に Point 01/02。');
 
   /* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション(デフォルト/強調)。強調＝2行・左揃え・大きめ */
-  sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation' });
+  sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation', bare: true });   /* 【2026-09-21 ヒデさん依頼】カテゴリ節「バリエーション」と重複する小見出しは出さず、案の選択だけ見せる(KVと統一) */
   varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => { params.sections.vision.emph = String(k); applyVisEmph(); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   note('強調＝メッセージを2行(データをつなぐことが、／強みになる時代へ)に・左揃え・文字+20px・見出しの左をKVコピーに合わせる・1行目→2行目のマスク出現。デフォルト＝現状(1行・中央)。');
 
