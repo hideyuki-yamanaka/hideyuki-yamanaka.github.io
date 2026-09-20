@@ -147,7 +147,12 @@
     '.tp-cat-head:hover{color:#000;}',
     /* バリエーションは開閉なしのプレーン大見出し（▾なし・塗りなし） */
     '.tp-cat.plain>.tp-cat-head{cursor:default;}',
-    '.tp-cat-chev{font-size:10px;color:#888;transition:transform .2s;}',
+    /* 開閉アイコンは anyflow と同じマテリアル(expand_more)。文字は透明にして mask で描く
+       （2026-09-20 ヒデさん指示「アイコンも含めて anyflow を真似る」） */
+    '.tp-cat-chev{position:relative;width:22px;height:22px;color:transparent;flex:0 0 auto;transition:transform .2s;}',
+    '.tp-cat-chev::before{content:\'\';position:absolute;inset:0;margin:auto;width:22px;height:22px;'+
+    '  background:#8a8a8a;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z\'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z\'/%3E%3C/svg%3E") center/contain no-repeat;}',
+    '.tp-cat-head:hover .tp-cat-chev::before{background:#333;}',
     '.tp-cat.closed .tp-cat-chev{transform:rotate(-90deg);}',
     '.tp-cat-body{padding:0 0 6px;}',
     '.tp-cat.closed .tp-cat-body{display:none;}',
@@ -183,7 +188,10 @@
     '  font-weight:600;font-size:12px;color:#333;margin:12px 0 5px;min-height:22px;',
     '  background:transparent;cursor:pointer;user-select:none;}',
     '.tp-sec-head:hover{color:#000;}',
-    '.tp-sec-chev{font-size:10px;color:#888;transition:transform .2s;}',
+    '.tp-sec-chev{position:relative;width:18px;height:18px;color:transparent;flex:0 0 auto;transition:transform .2s;}',
+    '.tp-sec-chev::before{content:\'\';position:absolute;inset:0;margin:auto;width:18px;height:18px;'+
+    '  background:#9a9a9a;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z\'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z\'/%3E%3C/svg%3E") center/contain no-repeat;}',
+    '.tp-sec-head:hover .tp-sec-chev::before{background:#333;}',
     '.tp-sec.closed .tp-sec-chev{transform:rotate(-90deg);}',
     '.tp-sec-body{padding:0;}',
     '.tp-sec.closed .tp-sec-body{display:none;}',
@@ -229,8 +237,14 @@
     '.tp-z-r{right:-3px;top:10px;bottom:16px;width:8px;cursor:ew-resize;}',
     '.tp.closed .tp-z{display:none;}',
     /* 行ごとの↺リセット（その項目だけ既定値に戻す） */
-    '.tp-item-rst{border:none;background:none;cursor:pointer;font-size:10px;opacity:.5;padding:2px 3px;line-height:1;}',
-    '.tp-item-rst:hover{opacity:1;}',
+    /* リセットは anyflow と同じマテリアル(refresh)。文字は透明にして mask で描く */
+    '.tp-item-rst{position:relative;flex:0 0 22px;width:22px;height:22px;padding:0;border:1px solid transparent;'+
+    '  border-radius:7px;background:transparent;color:transparent;cursor:pointer;'+
+    '  transition:background .15s,border-color .15s;}',
+    '.tp-item-rst::after{content:\'\';position:absolute;inset:0;margin:auto;width:14px;height:14px;'+
+    '  background:#aeaeae;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z\'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z\'/%3E%3C/svg%3E") center/contain no-repeat;}',
+    '.tp-item-rst:hover{background:#f0f0f0;border-color:#e0e0e0;}',
+    '.tp-item-rst:hover::after{background:#333;}',
     /* プリセット（いまの値に名前を付けて保存し、あとで呼び戻す） */
     '.tp-pset{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px;}',
     '.tp-pset-lab{flex:0 0 auto;font-size:11px;line-height:22px;color:#999;}',
@@ -278,7 +292,14 @@
     '  padding:0 3px;box-shadow:0 1px 4px rgba(0,0,0,.08);}',
     '.tp-gbtn{flex:0 0 auto;border:1px solid #e2e2e2;border-radius:6px;background:#fff;color:#888;',
     '  font:inherit;font-size:10px;line-height:1.4;padding:2px 6px;cursor:pointer;}',
-    '.tp-gbtn:hover{background:#f3f3f3;color:#111;}',
+    '.tp-gbtn{position:relative;color:transparent;}',
+    '.tp-gbtn::after{content:\'\';position:absolute;inset:0;margin:auto;width:15px;height:15px;'+
+    '  background:#8a8a8a;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z\'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z\'/%3E%3C/svg%3E") center/contain no-repeat;}',
+    '.tp-gbtn:hover{background:#f3f3f3;}',
+    '.tp-gbtn:hover::after{background:#333;}',
+    /* 「✓ 戻しました」の文字を出す時はアイコンを消す */
+    '.tp-gbtn.done{color:#111;}',
+    '.tp-gbtn.done::after{display:none;}',
     '.tp.dark .tp-gbtn{background:#1b1b1e;border-color:#3a3a3f;color:#bbb;}',
     '.tp-modal{position:absolute;inset:0;background:rgba(20,22,30,.35);display:flex;align-items:center;justify-content:center;z-index:60;border-radius:14px;}',
     '.tp-modal-box{background:#fff;border:1px solid #e4e4e4;border-radius:10px;padding:14px;max-width:86%;box-shadow:0 10px 34px rgba(0,0,0,.22);}',
