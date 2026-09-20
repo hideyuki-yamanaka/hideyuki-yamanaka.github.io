@@ -2989,12 +2989,12 @@
     /* 【2026-09-20 ヒデさん報告・SP実機でロゴが上下に見切れる】枠(.logos 42px)より中身(.mq-set 48px)が高く、
        iOS Safari はこの数pxのはみ出しを合成レイヤーのクリップで切ってしまう。枠を広げ(56px)・中身と高さを揃え・
        縦中央に置いて、ロゴの上下に十分な余白(≈17px)を確保する。位置は中心を保つよう top を少し上げる。 */
-    .logos { top: 639px; height: 56px; display: flex; align-items: center; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }
+    .logos { top: 642px; height: 50px; display: flex; align-items: center; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }
     /* 帯の流れは CSS アニメ(marquee)に戻す＝コンポジタ側で滑らか＆くっきり。JS 毎フレーム駆動は重い KV 描画
        ループと同フレームで translate を計算するためカクつき(ガタガタ)＋非GPU化で画質低下していた(2026-09-09)。
        速度は applyMarquee がモバイルだけ 8s(約90px/s)に。iOS で消える件は rv() の blur を止めて解消済み。 */
     .marquee-track { will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; flex: none; align-items: center; }   /* 【2026-09-20】.logos を flex 中央にしたので、帯は縮ませない＋縦中央 */
-    .mq-set { gap: 30px; padding-right: 30px; height: 56px; }   /* 【2026-09-20】枠(.logos)と同じ高さ＝縦はみ出しゼロ。imgは align-items:center で中央 */
+    .mq-set { gap: 30px; padding-right: 30px; height: 50px; }   /* 【2026-09-20】枠(.logos)と同じ高さ＝縦はみ出しゼロ。imgは align-items:center で中央 */
     .mq-set img { height: calc(var(--lh, 32) * 0.6px); image-rendering: auto; }   /* 【2026-09-18】SPは Figma 実寸の0.6倍(スマレジ38→23px。旧一律20px相当。仮置き: SPカンプ未確認) */
 
     /* --- ビジョン (カンプ node16534:22141 準拠: Our Vision 16px / メッセージ 26px 行間1.7) --- */
@@ -15993,7 +15993,10 @@ function fit() {
   /* 【2026-09-09 カンプSP 準拠】スマホの KV は次セクション(Our Vision y741 = section 667 + label 74)の
      直前で切る。設計フレーム DH=780 のままだと下に空白が残り、KV→ビジョンが空きすぎていた。
      .stage-wrap は overflow:hidden なので、はみ出す分(ロゴ帯 664 より下の空白)は見えない。 */
-  const KV_MB_H = 667;
+  /* 【2026-09-20 ヒデさん報告・ロゴが下半分見切れる】KV高さ667だと、器の下端(667)がロゴ帯(≈642–692)の途中に来て、
+     次セクションがロゴの下半分を覆っていた(.stage-wrap は 2026-09-17 に overflow:visible 化済み＝クリップでなく被さり)。
+     ロゴ帯の下端＋余白まで器を伸ばし、ロゴが必ず全部見えるようにする(その分 KV→ビジョンの間が少し空く)。 */
+  const KV_MB_H = 704;
   stage.parentElement.style.height = ((isMobile ? KV_MB_H : DH) * s) + 'px';
   /* スクロール尺 (調整パネルから変えられる) */
   /* 固定追従なしの時は 100vh（貼りつけないので余分な尺は要らない）。
