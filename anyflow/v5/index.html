@@ -64,11 +64,20 @@
     background-attachment: fixed;
     background-position: var(--grid-pos-x, 0px) 0;
   }
-  /* スマホ(html.mb): iOS Safari は background-attachment:fixed が不安定＋SPは pin-stage が transform:scale で fixed が効かない。
-     そこで画面固定のオーバーレイ1枚(#gridBg)で確実に敷く(全端末同挙動・継ぎ目なし)。ヘッダー(z60)/パネル(z100000)より下・本文より上。 */
-  #gridBg { position: fixed; inset: 0; pointer-events: none; z-index: 11; display: none;
-    background-image: var(--grid-img); background-size: var(--grid-cell) var(--grid-cell); background-position: var(--grid-pos-x, 0px) 0; }
-  html.mb.grid-on #gridBg { display: block; }
+  /* スマホ(html.mb): 【2026-09-21 ヒデさん指摘】オーバーレイ(#gridBg)は content の前面に出てしまうので廃止。
+     iOS では background-attachment:fixed が不安定なので scroll で地色面に重ねる=背景として content の後ろに出る。
+     継ぎ目のマス目の僅かなズレは faint なので許容(z-index問題の解消を優先)。 */
+  html.mb.grid-on body,
+  html.mb.grid-on .stage-wrap,
+  html.mb.grid-on .pin-vp,
+  html.mb.grid-on .np-vp,
+  html.mb.grid-on #conversion.cvs-10 {
+    background-image: var(--grid-img);
+    background-size: var(--grid-cell) var(--grid-cell);
+    background-attachment: scroll;
+    background-position: var(--grid-pos-x, 0px) 0;
+  }
+  #gridBg { display: none !important; }   /* オーバーレイは撤去(前面に出る問題)。要素は残すが常に非表示 */
 
   /* ---- ステージ: 高さ921pxのカンプ座標系のまま、幅だけ画面いっぱいに広げる（フィル） ----
      左右の要素は left:120px / right:120px でアンカーするので、幅が変わっても余白は120pxのまま */
@@ -3063,12 +3072,12 @@
     html.mb #results .pin-stage { align-items: flex-start; }   /* 中身は上から流す(縦中央寄せ解除) */
     #vision { margin-top: 0; }   /* PC用の 200px 余白を撤去(KV→ビジョンが空きすぎていた) */
     .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 600; letter-spacing: 0; text-align: center; }   /* カンプSP: 16px → y741。【2026-09-19】太さは共通部品(600)に(旧SPカンプ Light300 は仮置きで上書き) */
-    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, 30px); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)。【2026-09-20 #3】メッセージを少し大きく(26→30・SP独立の未設定時)。パネルの値があればそちら優先 */
+    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, 30px); line-height: var(--lh-tight); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)。【2026-09-20 #3】メッセージを少し大きく(26→30・SP独立の未設定時)。【2026-09-21 ヒデさん依頼】行間を詰める(loose1.7→tight1.4) */
     /* 【2026-09-09 ヒデさん指定】SP でも「つなぐ/強み」のギラギラのグラデ揺らぎを PC と同じく出す。
        (以前カンプが単色だったため SP で無効化したが、ヒデさんの意向で PC 同様に復活。base の
        .vl-nagu / .vis-line.str-live .vl-strong がそのまま適用される＝ここでは上書きしない) */
     .vis-l1 { top: 96px; }    /* 【2026-09-20 #2】Our Vision↔メッセージの間隔を他セクションに合わせて詰める(106→96・約10px) */
-    .vis-l2 { top: 160px; }
+    .vis-l2 { top: 140px; }   /* 【2026-09-21 ヒデさん依頼】1行目との間隔を詰める(160→140) */
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
     .vf-wrap { left: 28px; top: 255px; width: 640px; height: 600px; transform: scale(0.555); transform-origin: 0 0; }   /* 【2026-09-20 ヒデさん依頼#4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に(left=196.5−300×0.555)。上の余白は255維持 */
     .vf-wrap .vf-lab b { font-size: 21px; }        /* 【2026-09-20 #5】5つの機能名をSPで大きく(16→21・scale0.555で≈12px) */
@@ -4212,7 +4221,7 @@
             </div>
             <div class="dm-chat">
               <div class="dm-chat-head">
-                <span class="ttl"><img src="assets/mock/sparkles.svg" alt="">AI Assistant</span>
+                <span class="ttl">AI Assistant</span><!-- 【2026-09-21 ヒデさん依頼】AI Assistant 前のアイコン(sparkles)を削除 -->
                 <img src="assets/mock/ellipsis.svg" alt="">
               </div>
               <div class="dm-history">
