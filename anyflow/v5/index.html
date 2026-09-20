@@ -4902,6 +4902,7 @@ const DEFAULTS = {
      キー→{fs,fw,lh,ls,pt,pr,pb,pl,text}。トップ全体で共有(案・KV非依存)。 */
   edits: {},
   editsMb: {},   /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホモードで付けた文字設定の上書き(スマホの時だけ base に重なる) */
+  mb: {},        /* 【2026-09-20 ヒデさん依頼・PC/SP独立(全つまみ)】スマホ専用の値。{ "dotパス": 値 }。スマホ(isMobile)の時だけ applyMbToParams で本体へ流し込む */
   sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
   swayAmp: 0,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる。【2026-09-19 ヒデさん指定】軸は固定で回すだけ→0(KVタブ「揺らぎの強さ」で戻せる)
   swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
@@ -14552,7 +14553,10 @@ setTimeout(function applyOverrideOnBoot() {
 }, 0);
 /* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
 setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
-setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁(varCaptureReady) */
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
+/* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
+function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } }
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -16609,6 +16613,18 @@ const TEXT_SPEC = [
 ];
 
 function slider(label, min, max, step, get, set, fmt, hint, opts) {
+  opts = opts || {};
+  /* 【2026-09-20 ヒデさん依頼・PC/SP独立】mbKey を持つつまみは、スマホモード中は params.mb[mbKey](スマホ専用の値)だけを読み書きする。
+     PCの値(_rawSet の書き込み先)は触らない＝スマホでいじってもPCに出ない。スマホ実機(isMobile)は起動時に applyMbToParams で
+     params.mb を本体 params の該当パスへ流し込むので、SPだけがスマホ用の値で描画される。青印/リセットも mbKey から自動で用意。 */
+  if (opts.mbKey) {
+    const _mbk = opts.mbKey, _g = get, _s = set;
+    const _pon = () => { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } };
+    get = () => (_pon() && params.mb && params.mb[_mbk] != null) ? params.mb[_mbk] : _g();
+    set = (v) => { if (_pon()) { if (!params.mb) params.mb = {}; params.mb[_mbk] = v; } else { _s(v); } };
+    if (!opts.mbActive) opts.mbActive = () => !!(params.mb && params.mb[_mbk] != null);
+    if (!opts.mbClear) opts.mbClear = () => { if (params.mb) delete params.mb[_mbk]; };
+  }
   /* ⚠️ 既定値が左端だと、そこから下げられない。既定がツマミの真ん中に来るよう上限を取り直す
      (2026-08-15 指定)。既定が最小と同じもの(0など)は中央に置けないのでそのまま。
 
@@ -17939,7 +17955,7 @@ function buildPanel() {
         v => v + '個', '「散らばり（フィボナッチ）」の時の点の数。「整った網（測地線）」では下の「面の数」で決まります。', { fixedMax: true });
       /* 【2026-09-17 ヒデさん指定】惑星の大きさは「カゴの大きさ」のすぐ上に置く(旧「惑星」節から移動) */
       slider('惑星の大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
-        v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。');
+        v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。', { mbKey: 'planet.scale' });
       /* 【2026-08-27 ヒデさん指定】包囲ケージ専用のつまみ */
       if ((M.style || 'organic') === 'cage') {
         slider('カゴの大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
@@ -19948,6 +19964,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       try { for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; } } catch (e) {}
       try { Object.assign(params, newP); } catch (e) {}
       if (presetText) { try { var stp = JSON.parse(presetText); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } catch (e) {} }
+      try { if (typeof applyMbToParams === 'function') applyMbToParams(); } catch (e) {}   /* 【2026-09-20】スマホ(SP)専用の値を本体へ流し込む */
       var call = function (fn) { try { fn(); } catch (e) {} };
       try { vfMesh = null; } catch (e) {}
       call(function () { if (typeof applyKvVariant === 'function') applyKvVariant(kvVarKey(), true); });
