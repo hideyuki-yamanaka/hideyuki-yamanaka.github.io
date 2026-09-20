@@ -18773,9 +18773,11 @@ function buildPanel() {
   /* 【2026-08-30 ヒデさん指定】実績→開発者体験の切替は「スムーズフェード」固定(既定)。選択UIは廃止。 */
 
   /* ⚠️【2026-08-26 ヒデさん指定】「レイアウトを選ぶ」(案A/B/C)は削除。実績は新デザイン1本に統一。 */
-  sub(catRes, '基本（長さ・ぼけ具合）');
+  /* 【2026-09-20 大改修】長さ→アニメ(再生)・ぼかし→エフェクト に分割(ビジョンと統一) */
+  sub(catRes, 'セクション（再生）', false, { grp: 'anim' });
   sectionLenSlider('results', 600);
-  rows.push(slider('ぼかしの強さ', 0, 40, 1, () => sv().results.imgBlur, v => sv().results.imgBlur = v, v => v + 'px',
+  sub(catRes, '画像のぼかし', false, { grp: 'fxtex' });
+  rows.push(slider('強さ', 0, 40, 1, () => sv().results.imgBlur, v => sv().results.imgBlur = v, v => v + 'px',
     '大きいほど、写真がぼんやりした状態から現れます。', { mbKey: 'sections.results.imgBlur' }));
 
   /* 【2026-09-19 ヒデさん依頼】for SaaS / for AI の大きな文字は、画面の下に見えている間はぼけていて、上がってくるにつれてはっきり */
@@ -19041,11 +19043,13 @@ function buildPanel() {
   catNote(catCase, '見出し → 水平線が左から3本 → 中央の縦線 → カードが画面に入った順に1枚ずつブラーで登場。');
 
   /* 【2026-09-17 大掃除・ヒデさん指定】罫線(あり/なし)とホバーの動きの選択UIは削除。罫線なし(caseLayout=1)・影でふわっと浮く(ct-lift)に固定＝焼き込み。 */
-  sub(catCase, '基本（長さ・ぼけ具合）');
+  /* 【2026-09-20 大改修】再生時間→アニメ・ぼかし→エフェクト に分割(ビジョンと統一) */
+  sub(catCase, 'セクション（再生）', false, { grp: 'anim' });
   sectionLenSlider('cases', 1000);
   rows.push(slider('全体の再生時間', 3, 20, 0.5, () => sv().cases.playSec, v => sv().cases.playSec = v, v => v.toFixed(1) + '秒',
     '見出し〜カードまで出そろうのにかける時間。小さいほどキビキビ。', { mbKey: 'sections.cases.playSec' }));
-  rows.push(slider('ぼかしの強さ', 0, 40, 1, () => sv().cases.inBlur, v => sv().cases.inBlur = v, v => v + 'px',
+  sub(catCase, '出現のぼかし', false, { grp: 'fxtex' });
+  rows.push(slider('強さ', 0, 40, 1, () => sv().cases.inBlur, v => sv().cases.inBlur = v, v => v + 'px',
     '大きいほど強くぼけた状態から現れます。※貼りつけない時は無効。', { mbKey: 'sections.cases.inBlur' }));
 
   sub(catCase, '① 見出し「導入事例」', null, { grp: 'anim' });   /* 中身は出現タイミングのみ＝アニメーション */
