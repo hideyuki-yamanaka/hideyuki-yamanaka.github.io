@@ -15,6 +15,7 @@
 | [anyflow/LIVE-SYNC.md](anyflow/LIVE-SYNC.md) | スマホ実機ライブ同期(QR・PC調整→スマホ即反映)の使い方と仕組み |
 | [anyflow/ANYFLOW-PC-SP-INDEPENDENCE.md](anyflow/ANYFLOW-PC-SP-INDEPENDENCE.md) | 調整パネルの PC/SP 独立(mbKey・params.mb・applyMbToParams)の絶対ルールと住み分け・対象外 |
 | [anyflow/ANYFLOW-PANEL-STRUCTURE.md](anyflow/ANYFLOW-PANEL-STRUCTURE.md) | 調整パネルの並び順・グループ(バリエ→基本→フォント→カラー→テクスチャ→アニメ)の統一ルールと自動整列の仕組み |
+| [anyflow/HANDOFF-20260920.md](anyflow/HANDOFF-20260920.md) | 【引き継ぎ】別Claudeが anyflow V5.0 の作業を続けるための現状・仕組み・動かし方・進め方ルール・未対応(2026-09-20) |
 
 - フォルダ名は**プロダクトのフォルダ名とそろえる**（`abashiri/` の資料 → `settings/docs/abashiri/`）
 - 新しいプロダクトの資料が出てきたら、`settings/docs/` に同じ名前のフォルダを作って入れる
