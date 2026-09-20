@@ -3705,7 +3705,7 @@
   .rst.off { visibility: hidden; }
   /* 【2026-09-20 ヒデさん依頼】リセット(↺)をマテリアル(refresh)に。glyphは透明にして mask で描画(JSは触らず「✓戻しました」も維持) */
   .rst, .gbtn { position: relative; color: transparent; }
-  .rst::after, .gbtn::after { content: ''; position: absolute; inset: 0; margin: auto; width: 15px; height: 15px; background: #8a8a8a; pointer-events: none; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.65 6.35A7.958 7.958 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.65 6.35A7.958 7.958 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .rst::after, .gbtn::after { content: ''; position: absolute; inset: 0; margin: auto; width: 15px; height: 15px; background: #8a8a8a; pointer-events: none; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") center/contain no-repeat; }
   .rst:hover::after, .gbtn:hover::after { background: #333; }
   .gbtn.done::after { display: none; }   /* 「✓ 戻しました」テキストを見せる */
   /* 小見出しの右に置く「リセット / 保存」(セクション単位) */
@@ -14491,13 +14491,19 @@ function applyKvCopy() {
   r.setProperty('--kv-eyebrow-weight', String(k.eyebrowWeight != null ? k.eyebrowWeight : 500));
   r.setProperty('--kv-eyebrow-lh', (k.eyebrowLh ? String(k.eyebrowLh) : 'normal'));
   document.documentElement.classList.toggle('kvv-eyebrow-col', k.eyebrowLayout === 'col');
-  /* ロゴ左端 − ステージ左端(ステージは 1440px 固定で中央寄せなので、窓幅で変わる)。ロゴが測れない時は 50px(=ロゴの左余白)。 */
+  /* 【2026-09-20 ヒデさん依頼】KVを中央配置に。コピーは #stage(1440px・中央寄せ) の中にあるので、
+     ステージが中央に寄る幅(ウィンドウ>1440＝stage.left>0)では base を設計値(50px・ステージ基準)に固定する。
+     こうするとグラフィック(同じ #stage 内)と同じだけ中央へ寄り、コピー↔グラフィックの余白を保ったまま全体が中央に集まる。
+     1440以下は従来どおりロゴ左端に合わせる(ステージが幅いっぱいなので見た目は不変)。 */
   try {
     const logo = document.querySelector('.logo'), st = document.getElementById('stage');
     let base = 50;
-    if (logo && st) {
-      const lr = logo.getBoundingClientRect(), sr = st.getBoundingClientRect();
+    const sr = st ? st.getBoundingClientRect() : null;
+    if (sr && sr.left > 1) {
+      base = 50;   /* 広い画面: ステージが中央寄せ → コピーもステージ基準の設計値で中央へ */
+    } else if (logo && sr) {
       const sc = sr.width > 0 ? (sr.width / 1440) : 1;
+      const lr = logo.getBoundingClientRect();
       if (lr.width > 0 && sr.width > 0) base = Math.round((lr.left - sr.left) / sc);
     }
     r.setProperty('--kv-copy-base', base + 'px');
@@ -19236,7 +19242,7 @@ function buildPanel() {
   saveBtn.className = 'primary';
   /* 【2026-08-26 ヒデさん指定】いまの値を「最初に出る状態」として確定させるボタン */
   syncSaveBtn = () => {
-    saveBtn.textContent = dirty ? 'これをデフォルトに設定（未保存あり）' : 'これをデフォルトに設定';
+    saveBtn.textContent = dirty ? 'デフォルトに設定（未保存）' : 'デフォルトに設定';
     saveBtn.classList.toggle('dirty', dirty);
   };
   saveBtn.onclick = () => {
@@ -19253,7 +19259,7 @@ function buildPanel() {
      本番に載せるには 書き出し→Claudeに渡す→焼き込みデプロイ が必要。
      いままでコンソールで打っていたワンライナーをボタン1つにした(中身は同じダンプ形式)。 */
   const exportBtn = document.createElement('button');
-  exportBtn.textContent = '⬇ 設定を書き出す（本番反映用）';
+  exportBtn.textContent = '設定書き出し';
   exportBtn.title = 'いまのブラウザの設定ぜんぶを anyflow-settings.json としてダウンロードします。これをClaudeに渡すと、同じ見た目を本番に焼き込めます。';
   exportBtn.onclick = () => {
     try { save(); } catch (e) {}
@@ -19270,13 +19276,13 @@ function buildPanel() {
     URL.revokeObjectURL(aEl.href);
     try { if (typeof exitEditMode === 'function') exitEditMode(); } catch (e) {}   /* 【2026-09-19】書き出し=保存なので編集モードを抜ける */
     exportBtn.textContent = '✅ 書き出しました（Claudeに渡してください）';
-    setTimeout(() => { exportBtn.textContent = '⬇ 設定を書き出す（本番反映用）'; }, 2200);
+    setTimeout(() => { exportBtn.textContent = '設定書き出し'; }, 2200);
   };
   /* 【2026-09-02 ヒデさん指定】案の完全削除リストのコピー。
      パネルの「🗑削除」は隠すだけ(=「消した案を戻す」で復活できる)。コードから恒久的に消す(完全削除)には
      Claudeに焼き込んでもらう必要があるので、いま隠している案の一覧をワンタップでコピーできるようにする。 */
   const purgeBtn = document.createElement('button');
-  purgeBtn.textContent = '📋 完全削除リストをコピー（Claude用）';
+  purgeBtn.textContent = 'バリエーション削除';
   purgeBtn.title = 'いま「削除」で隠している案の一覧をコピーします。Claudeに貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。';
   purgeBtn.onclick = () => {
     try { save(); } catch (e) {}
@@ -19292,7 +19298,7 @@ function buildPanel() {
       + JSON.stringify(payload, null, 1);
     const done = () => {
       purgeBtn.textContent = '✅ コピーしました（Claudeに貼ってください）';
-      setTimeout(() => { purgeBtn.textContent = '📋 完全削除リストをコピー（Claude用）'; }, 2600);
+      setTimeout(() => { purgeBtn.textContent = 'バリエーション削除'; }, 2600);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
