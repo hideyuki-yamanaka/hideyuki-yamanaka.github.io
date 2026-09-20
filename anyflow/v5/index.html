@@ -2080,7 +2080,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-56);                 /* 見出しと本体の間(カンプ 24777 は 59) */
+    gap: var(--dev-blk-gap, var(--space-56));                 /* 見出しと本体の間(カンプ 24777 は 59)。【2026-09-20】--dev-blk-gap(案別)で詰められる */
     padding: var(--space-90) var(--space-120);
     box-sizing: border-box;
     color: var(--ink-on-dark);
@@ -2098,8 +2098,12 @@
   html:not(.mb) #dev.dev-pin .dev-blk-in {
     display: flex; position: sticky; top: 0; height: 100vh;
     flex-direction: column; align-items: center; justify-content: center;
-    gap: var(--space-56); padding: var(--space-90) var(--space-120); box-sizing: border-box;
+    gap: var(--dev-blk-gap, var(--space-56)); padding: var(--space-90) var(--space-120); box-sizing: border-box;
   }
+  /* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②それぞれ 見出し↔モックの間隔(--devN-gap)とモックの拡大(--devN-scale)。PCのみ(SPは別scale) */
+  html:not(.mb) #devBlock1 { --dev-blk-gap: var(--dev1-gap, 36px); }
+  html:not(.mb) #devBlock2 { --dev-blk-gap: var(--dev2-gap, 36px); }
+  html:not(.mb) .dev1-mock { transform: scale(var(--dev1-scale, 1)); transform-origin: center top; }
   /* 見出し(中央): ラベル SF Pro Thin 20px var(--brand-cyan) / 本文 Noto Sans JP Thin 40px 白 (カンプ 24778) */
   .dev-center { text-align: center; color: var(--ink-on-dark); }
   .dev-center .dc-label {
@@ -2137,7 +2141,7 @@
   #dev.ds2-slide .dev-list { display: none; }
   #dev.ds2-slide .dev2-wrap { background: none; max-width: none; height: auto; justify-content: center; overflow: visible; }
   #dev.ds2-slide .dev2-stack { flex: 0 0 auto; width: 840px; height: 520px; margin: 0 auto; align-self: center; perspective: 1600px; overflow: visible;
-    transform: scale(var(--dev2-fit, 1)); transform-origin: center center; }   /* 2026-09-09: 幅に応じて縮小(fit()が--dev2-fitを算出)＝dev1と同様に左右余白を保つ */
+    transform: scale(calc(var(--dev2-fit, 1) * var(--dev2-scale, 1))); transform-origin: center center; }   /* 2026-09-09: 幅に応じて縮小(fit()が--dev2-fitを算出)。【2026-09-20】--dev2-scale(案別のモック拡大)を掛ける */
 
   /* ---- dev1: 単体パネル(エディタ+チャット) 840×504 を中央に (カンプ 24718) ---- */
   .dev1-mock { position: relative; width: 840px; height: 504px; max-width: 100%; }
@@ -7104,6 +7108,14 @@ const DEV_TONES = [
 ];
 function devStyleKey() { const v = String((params && params.devStyle) || '0'); return (DEV_STYLES.some(s => s.key === v) && !variantRemovedKey('devStyle', v)) ? v : '0'; }
 function devToneKey() { const v = String((params && params.devTone) || 'dark'); return (DEV_TONES.some(s => s.key === v) && !variantRemovedKey('devTone', v)) ? v : 'dark'; }
+/* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②の 見出し↔モックの間隔 とモックの拡大を CSS 変数へ(PCのみ) */
+function applyDevTune() {
+  const sec = document.getElementById('dev'); if (!sec) return; const d = (params.sections && params.sections.dev) || {};
+  sec.style.setProperty('--dev1-gap', (d.dev1Gap != null ? d.dev1Gap : 36) + 'px');
+  sec.style.setProperty('--dev2-gap', (d.dev2Gap != null ? d.dev2Gap : 36) + 'px');
+  sec.style.setProperty('--dev1-scale', String(d.dev1Scale != null ? d.dev1Scale : 1.1));
+  sec.style.setProperty('--dev2-scale', String(d.dev2Scale != null ? d.dev2Scale : 1.1));
+}
 function applyDevStyle() {
   const sec = (typeof SECS !== 'undefined' && SECS.dev) || document.getElementById('dev'); if (!sec) return;
   const sk = devStyleKey(), tk = devToneKey();
@@ -18846,6 +18858,13 @@ function buildPanel() {
   rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。', { fixedMax: true }));
   rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。', { fixedMax: true }));
 
+  /* 【2026-09-20 ヒデさん依頼・#10】①②それぞれ 見出し↔モックの間隔・モックの大きさ(PCのみ。SPは別スケール) */
+  sub(catDev, '①② 見出しとモックの間隔・大きさ（PC）');
+  rows.push(slider('① 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev1Gap != null ? sv().dev.dev1Gap : 36), v => { sv().dev.dev1Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験①の見出しとモックの上下の間隔。', { fixedMax: true }));
+  rows.push(slider('① モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev1Scale != null ? sv().dev.dev1Scale : 1.1), v => { sv().dev.dev1Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験①のモックの拡大率。', { fixedMax: true }));
+  rows.push(slider('② 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev2Gap != null ? sv().dev.dev2Gap : 36), v => { sv().dev.dev2Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験②の見出しとモックの上下の間隔。', { fixedMax: true }));
+  rows.push(slider('② モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev2Scale != null ? sv().dev.dev2Scale : 1.1), v => { sv().dev.dev2Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験②のモックの拡大率。', { fixedMax: true }));
+
   sub(catDev, '基本（長さ）');
   sectionLenSlider('dev', 1600);
 
@@ -19201,6 +19220,7 @@ bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール�
 bindDrawer();                /* 【V5.0】ハンバーガーのドロワー開閉を設置 */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
 applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */
+try { applyDevTune(); } catch (e) {}   /* 【2026-09-20 #10】見出し↔モック間隔・モック拡大 */
 applyDevStyle();    /* 開発者体験モックのスタイル案を初期反映 (2026-09-15) */
 
 /* パネル開閉 */
