@@ -1146,6 +1146,8 @@
   html.tab #results.rfx-pin .pin-vp { height: 100vh; }
   /* 自然に流れる案(4/7): 固定なし・中身なりの高さ */
   html:not(.mb) #results.rfx-flow .pin-vp { position: relative; height: auto; overflow: visible; }
+  /* 【2026-09-20 ヒデさん依頼】固定せず流す(flow)時は、次のセクションへ移る「黒く覆う演出」は使わない(そのまま普通にスクロールで繋ぐ) */
+  html:not(.mb) #results.rfx-flow .res-dark, html:not(.mb) #results.rfx-flow .res-grow { display: none !important; }
   html.tab #results.rfx-flow .pin-vp { height: auto; }
   html:not(.mb) #results.rfx-flow:not(.rfx-12):not(.rfx-30):not(.rfx-39):not(.rfx-41) .pin-stage { position: relative; height: auto; display: block; }   /* 縦流れ: 高さは中身。縮んだ分の余白は JS が margin-bottom で詰める */
   html:not(.mb) #results.rfx-flow:not(.rfx-12):not(.rfx-30):not(.rfx-39):not(.rfx-41) .pin-vp { overflow: hidden; }   /* ステージのレイアウト幅(--swp)は画面より広い(縮めて表示)ので横にはみ出させない */
@@ -11946,7 +11948,7 @@ const RES_FX = {
   '23': { vh: 520 },             // ピクト先行(面より先に着く)
   '24-2': { vh: 220, mobileFlow: true },   // 案24 の「場面を重ねて滑らかに繋ぐ」版(2026-09-15 ヒデさん指定。CSS は rfx-24 を共用)。2026-09-16: 480→220 スクロールを短縮(4.8→2.2画面)。「ワンスクロールで終点まで・くどくない」。尺はパネル「固定の長さ」で可変
   '24-3': { vh: 260, mobileFlow: true },   // 【2026-09-17】案24-2 のもっと滑らか版: 区間を重ね終点(数値)を固定の終わり近く(0.94)まで引っ張り、空スクロールを無くして一続きで着地。CSS は rfx-24 共用
-  '24-5': { vh: 200, mobileFlow: true },   // 【2026-09-18 ヒデさん指定】案24-2 のシンプル版: 大きい文字から終点へ直接つなぐ(中央にピクトが大きく出る場面を省く)
+  '24-5': { vh: 200, mobileFlow: true, flow: true },   // 【2026-09-18 ヒデさん指定】案24-2 のシンプル版。【2026-09-20 ヒデさん依頼】PCでも固定せず流す(flow・完成状態で表示)(中央にピクトが大きく出る場面を省く)
   '24-4': { vh: 240, mobileFlow: true },   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
   '24': { vh: 480, mobileFlow: true },   // for SaaS/for AI から入る(絵コンテ Figma 17271:23392)。SP は2列を縦に積むと1画面に収まらないので縦流れ
   '25': { vh: 240, mobileFlow: true },   // 案24 の短い版: 大見出しが画面の中央に来た所で固定が始まり、短いスクロールで一気に終点へ(2026-09-15)
@@ -12688,7 +12690,8 @@ function resFxFrame(t) {
       if (tx) { tf(tx, `translateX(${tx0.toFixed(2)}px)`); setStyle(tx, 'opacity', '1'); }
     });
   } else if (k === '24' || k === '24-2' || k === '24-3' || k === '24-4' || k === '24-5') {
-    const p = resFxPin(), H = rfxHero(), vh = rfxVH();
+    /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
+    const p = resFxFlowMode(k) ? 1 : resFxPin(), H = rfxHero(), vh = rfxVH();
     const F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-2 滑らかに繋ぐ版(2026-09-15 ヒデさん指定)】案24-1 は場面ごとに区間が離れていて「止まってから次」に見える。24-2 は前の動きの途中から次を始めて重ねる:
        文字の縮小 0.04〜0.34 / ピクトの登場 0.10〜0.40(1.4→1.7倍に育ちながら) / 終点へ 0.30〜0.70 / 線 0.56〜0.72 / 下段 0.62〜0.82 ＝ どこにも止まる区間がない */
