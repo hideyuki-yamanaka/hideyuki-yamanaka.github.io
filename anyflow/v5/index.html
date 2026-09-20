@@ -17014,6 +17014,32 @@ const subOpen = {};
 /* いま組み立て中のセクションに属する項目(リセット用)。sub() のたびに新しくする */
 let subItems = null;
 let subDefaultOpen = false;   /* true の間に作る小見出しは、既定で開いた状態にする */
+/* 【2026-09-20 ヒデさん依頼・パネル整理】小見出しを「グループ」に分類し、タブが切り替わっても
+   いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)で並ぶようにする。
+   分類は見出しの言葉から自動判定。合わない所は sub(..., { grp:'basic' }) のように明示で上書きできる。 */
+const GRP_ORDER = { variation: 1, basic: 2, font: 3, color: 4, texture: 5, anim: 6 };
+let _grpSeq = 0;   /* 同じグループ内は元の順を保つための連番(安定ソート) */
+function grpFromLabel(k) {
+  if (/🔤|文字（太/.test(k)) return 'font';
+  if (/バリエーション|演出の案|案.*：/.test(k)) return 'variation';
+  if (/配色|カラー/.test(k)) return 'color';
+  if (/ディザ|ガラス|立体感|網目|質感|テクスチャ|マテリアル/.test(k)) return 'texture';
+  if (/タイミング|アニメ|演出|順番|登場|揺らぎ|つなぎ|一旦止まる|出入り|入場/.test(k)) return 'anim';
+  return 'basic';
+}
+/* パネルを組み終わったら呼ぶ。各カテゴリ(.cat-body)直下の小見出し(.grp)をグループ順に並べ替える。
+   入れ子の小見出しは親ごと動くので触らない。 */
+function applyPanelGroupOrder() {
+  try {
+    document.querySelectorAll('.cat-body').forEach(bodyEl => {
+      const grps = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('grp'));
+      if (grps.length < 2) return;
+      const keyed = grps.map((el, i) => ({ el, o: (GRP_ORDER[el.dataset.grp] || 2), i: +(el.dataset.seq || i) }));
+      keyed.sort((a, b) => (a.o - b.o) || (a.i - b.i));
+      keyed.forEach(k => bodyEl.appendChild(k.el));   /* 並べ替え順に付け直す(.cat-body直下は.grpだけの想定) */
+    });
+  } catch (e) {}
+}
 function sub(target, html, deep, opts) {
   const key = String(html).replace(/<[^>]*>/g, '').trim();
   const fixed = !!(opts && opts.fixed);   /* たためない＝常に開いたコンパクト表示 */
@@ -17033,6 +17059,8 @@ function sub(target, html, deep, opts) {
   const bare = !!(opts && opts.bare);   /* 見出しそのものを出さない(中身だけ並べる) */
   const g = document.createElement('div');
   g.className = (deep ? 'grp sub2' : 'grp') + (open ? '' : ' closed') + (fixed ? ' fixed' : '') + (bare ? ' bare' : '');
+  g.dataset.grp = String((opts && opts.grp) || grpFromLabel(key));   /* 【2026-09-20】並べ替え用のグループ印 */
+  g.dataset.seq = String(_grpSeq++);
   const title = document.createElement('div');
   title.className = 'grp-title';
   const lab = document.createElement('span');
@@ -18880,7 +18908,7 @@ function buildPanel() {
   const catDev = category('🖥 開発者体験（暗い画面のコード紹介）', false);
   catNote(catDev, '暗い背景で CLI / SDK の画面が順に切り替わります。');
   /* 【2026-09-15 ヒデさん指定】モックのスタイル案(立体感 5案・リキッドグラス含む)と配色。★ピン留め／上書き／削除は他のバリエーションと同じ */
-  sub(catDev, 'モックのスタイル（立体感）', true, { fixed: true });
+  sub(catDev, 'モックのスタイル（立体感）', true, { fixed: true, grp: 'variation' });   /* スタイルの選択＝案の切替なのでバリエーション扱い(先頭へ) */
   varRowX('devStyle', DEV_STYLES, () => devStyleKey(), v => { params.devStyle = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); syncDevDyn(); } });
   note('正面のまま(傾け・重ねなし)で立体感を出す10案(1〜10)と、AI らしい5案(11〜15: 光が縁を走る／オーロラ／スキャン／粒／脈)。案を選ぶと下の「この案の調整」が入れ替わります。配色とも組み合わせられます。');
   sub(catDev, 'モックの配色（スタイル案のすぐ下で選ぶ）', true, { fixed: true });
@@ -18888,7 +18916,7 @@ function buildPanel() {
   /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
   Object.keys(DEV_DYN_SPEC).forEach(g => {
     const sp = DEV_DYN_SPEC[g];
-    sub(catDev, sp.title, true, { fixed: true });
+    sub(catDev, sp.title, true, { fixed: true, grp: 'variation' });   /* 各スタイル案の調整＝案に紐づくのでバリエーション扱い(選択のすぐ下) */
     DEV_DYN[g] = catDev.lastElementChild;
     if (g === 'glass') {
       note('ガラス案は、後ろのカードを実際にぼかして「すりガラス越し」に見せています(ブラウザの仕様で backdrop-filter だけでは後ろのカードがぼけないため)。');
@@ -19097,7 +19125,7 @@ function buildPanel() {
   catCv.classList.add('hier-1');   /* 見せ方＝インデント固定(焼き込み) */
   /* 【2026-09-17 大掃除・ヒデさん指定】見せ方(5案)/CTA案(ボタン↔フォーム)/リキッドグラス5案/背景グラデ案(0〜3)/形の詳細(中心・広がり・回転・棒で編集)/
      境界(溶け込み)/余白・高さ の選択UIは削除。今の値(フォーム直置き・明るいリキッドグラス・放射グラデ・標準の溶け込み・余白120/0/0/60)に固定＝焼き込み。 */
-  sub(catCv, 'フォーム（横幅・磨りガラスの細かい調整）'); B.formStyle();
+  sub(catCv, 'フォーム（横幅・磨りガラスの細かい調整）', false, { grp: 'basic' }); B.formStyle();   /* 横幅などフォームの基本設定なので基本扱い(文字より前へ) */
   sub(catCv, '粒（ディザ）と流れ'); B.dither();
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
@@ -19128,6 +19156,10 @@ function buildPanel() {
   sub(catMenu, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
   note('メニューの項目・番号・お問い合わせボタンの 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['menu']);
+
+  /* 【2026-09-20 ヒデさん依頼・パネル整理】全カテゴリを組み終えたので、各タブの小見出しを
+     いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)に並べ替える。 */
+  applyPanelGroupOrder();
 
   /* ボタン。
      ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。
