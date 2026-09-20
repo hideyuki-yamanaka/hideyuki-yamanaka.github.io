@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SPOT_DETAILS } from "./spotDetailData";
+import { GOURMET_DETAILS } from "./gourmetDetailData";
 import {
   V1Parallax,
   V3Editorial,
@@ -83,7 +84,10 @@ export const SPOT_DETAIL_PATTERNS: Record<
 };
 
 export default function SpotDetailPage({ slug }: { slug: string }) {
-  const spot = SPOT_DETAILS[slug];
+  /* ぼーっとスポット／体験と、素朴なグルメを同じテンプレで出す
+     （2026-09-20 ヒデさん指示「グルメも同じテンプレのフォーマットの詳細ページでOK」）。
+     slug は両方あわせて重複が無いので、まとめて引ける */
+  const spot = SPOT_DETAILS[slug] ?? GOURMET_DETAILS[slug];
   const [pattern, setPattern] = useState(1);
   const madeRef = useRef(false);
 

@@ -70,10 +70,10 @@ const SPOTS = [
 ];
 
 const GOURMET = [
-  { no: "01", title: "横山蒲鉾店", img: "/img/gourmet-new-1.jpg" },
-  { no: "02", title: "松尾ジンギスカン 呼人支店", img: "/img/gourmet-new-2.jpg" },
-  { no: "03", title: "ラーメンだるまや", img: "/img/gourmet-new-3.jpg" },
-  { no: "04", title: "酒縁酒場 屯々", img: "/img/gourmet-new-4.jpg" },
+  { no: "01", title: "横山蒲鉾店", img: "/img/gourmet-new-1.jpg", slug: "yokoyama" },
+  { no: "02", title: "松尾ジンギスカン 呼人支店", img: "/img/gourmet-new-2.jpg", slug: "matsuo" },
+  { no: "03", title: "ラーメンだるまや", img: "/img/gourmet-new-3.jpg", slug: "darumaya" },
+  { no: "04", title: "酒縁酒場 屯々", img: "/img/gourmet-new-4.jpg", slug: "tonton" },
 ];
 
 /* 体験セクション（PC版 EventSection と同じ4件・同じ詳細ページへつなぐ） */
@@ -371,9 +371,12 @@ export default function MobileTop() {
             style={{ ["--gourmet-speed" as string]: "28s" }}
           >
             {[...GOURMET, ...GOURMET].map((card, idx) => (
+              /* タップで詳細ページへ（2026-09-20 ヒデさん指示でグルメにも詳細を新設）。
+                 流れている最中でも押せるよう、カードごと押せる形にしてある */
               <div
                 key={idx}
-                className="relative w-[230px] shrink-0 overflow-hidden tab:w-[330px]"
+                onClick={() => router.push(`/gourmet/${card.slug}`)}
+                className="relative w-[230px] shrink-0 cursor-pointer overflow-hidden tab:w-[330px]"
               >
                 <img
                   src={card.img}

@@ -55,11 +55,14 @@ export const SITEMAP: {
   {
     title: "素朴なグルメ",
     jump: "gourmetAt",
+    /* ⚠️ 2026-09-20 まで「わかさぎの唐揚げ」等の料理名が並んでいて、
+       押してもグルメの場面へ飛ぶだけだった。実際のセクションは【お店】が4件なので、
+       店名にそろえて、新設した詳細ページへつなぐ */
     items: [
-      { label: "わかさぎの唐揚げ", jump: "gourmetAt" },
-      { label: "浜の海鮮焼き", jump: "gourmetAt" },
-      { label: "地魚の御膳", jump: "gourmetAt" },
-      { label: "浜のちゃんこ鍋", jump: "gourmetAt" },
+      { label: "横山蒲鉾店", href: "/gourmet/yokoyama" },
+      { label: "松尾ジンギスカン 呼人支店", href: "/gourmet/matsuo" },
+      { label: "ラーメンだるまや", href: "/gourmet/darumaya" },
+      { label: "酒縁酒場 屯々", href: "/gourmet/tonton" },
     ],
   },
   {
