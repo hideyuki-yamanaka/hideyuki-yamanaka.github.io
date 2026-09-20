@@ -456,7 +456,7 @@
   }
   /* 【2026-08-31 ヒデさん指定】コピーのサイズは調整パネル(キービジュアル>左側コピー)から変えられる。
      既定値は下の DEFAULTS.kv (mainSize/jumpSize/eyebrowSize/eyebrowDash)。
-     【2026-09-17 大掃除】太さ・字間・行間は「🔤 文字」(textTools/params.edits)が唯一の置き場。ここは調整版の焼き込み値
+     【2026-09-17 大掃除】太さ・字間・行間は「文字」(textTools/params.edits)が唯一の置き場。ここは調整版の焼き込み値
      (Figma 17435:22386: メイン 70px/1.4/ExtraBold800、最終行「競争力を」120px/1.2、サブ 20px/Regular400)。 */
   .hl-eyebrow {
     display: flex;
@@ -1431,7 +1431,7 @@
   #results.rfx-24 .r2v-big, #results.rfx-25 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: var(--fs-stat-lg); line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-24 .r2v-big-ai, #results.rfx-25 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
   /* 【2026-09-18 ヒデさん依頼】for SaaS/AI の「Product」: 登場の大きい文字では下の行(サイズはパネルの --r2v-prod-size、既定38px≒70pxの55%)、
-     終点の小さいタグでは改行せず1行「for SaaS Product」。太さ等は「🔤 文字」(r2vBigProd / r2vTagProd) */
+     終点の小さいタグでは改行せず1行「for SaaS Product」。太さ等は「文字」(r2vBigProd / r2vTagProd) */
   .r2v-big { text-align: center; }
   .r2v-big .r2v-big-w { display: block; }
   .r2v-big .r2v-big-prod { display: block; font-size: var(--r2v-prod-size, 38px); line-height: var(--lh-snug); margin-top: 0.12em; }
@@ -3513,55 +3513,40 @@
   .panel-body.tabbed > .cat.tab-on { display: block; }
   .panel-body.tabbed > .cat > .cat-head { display: none; }
   .panel-body.tabbed > .cat > .cat-body { display: block; padding: 0; }
-  /* 【2026-09-20 大改修】カテゴリ(基本/フォント/エフェクト＆テクスチャ/アニメ)の見出し付きアコーディオン節 */
-  .cat-section { border-top: 1px solid #e6e6e6; }
+  /* 【2026-09-20 大改修・ヒデさん依頼】階層を H1(カテゴリ)/H2(オブジェクト)/H3(入れ子) でパッと分かるように。装飾は最小・左の縦線は全廃・絵文字なし。 */
+  /* H1: カテゴリ節。開閉アコーディオンは 基本/フォント/エフェクト＆テクスチャ/アニメ のみ。区切り線はここだけ */
+  .cat-section { border-top: 1px solid #e4e4e4; }
   .cat-section:first-of-type { border-top: none; }
-  .cat-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 10px 2px 7px; font-size: 12px; font-weight: 700; color: #2b2b2b; letter-spacing: .04em; user-select: none; }
+  .cat-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 13px 2px 7px; font-size: 13px; font-weight: 700; color: #111; letter-spacing: .03em; user-select: none; }
   .cat-section-head:hover { color: #000; }
-  .cat-section-head .cs-chev { font-size: 10px; color: #aaa; transition: transform .2s; flex: 0 0 auto; }
+  .cat-section-head .cs-chev { font-size: 10px; color: #bbb; font-weight: 400; transition: transform .2s; flex: 0 0 auto; }
   .cat-section.closed .cs-chev { transform: rotate(-90deg); }
   .cat-section.closed .cat-section-body { display: none; }
-  .cat-section-body { padding: 0 0 6px; }
-  .cat-section-body > .grp:first-child { border-top: none; margin-top: 2px; padding-top: 0; }
-  /* バリエーションは大見出し(引用インデント風にしない) */
-  .cat-section.cs-variation { border-top: none; margin-bottom: 4px; }
-  .cat-section.cs-variation .cat-section-head { font-size: 14px; font-weight: 800; color: #0b4bd6; background: #eef4ff; border: 1px solid #d8e6ff; border-radius: 9px; padding: 10px 11px; margin: 6px 0 2px; letter-spacing: .02em; }
-  .cat-section.cs-variation .cs-chev { color: #6b93e6; }
-  /* 【2026-08-26 整理】セクションの区切りと余白をはっきりさせて読みやすく */
-  .grp { margin-top: 9px; padding-top: var(--space-8); border-top: 1px solid #e8e8e8; }
-  /* 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン: 情報の階層(入れ子=cv-subg)の見せ方5案(catCv.hier-1〜5) */
+  .cat-section-body { padding: 0 0 4px; }
+  /* バリエーション: 開閉なし・青塗りなし・プレーンなH1(区切り線だけ) */
+  .cat-section.cs-variation .cat-section-head { cursor: default; }
+  .cat-section.cs-variation .cat-section-head:hover { color: #111; }
+
+  /* H2: オブジェクト小見出し(メッシュ/コピー/ロゴ 等)。開閉なし・区切り線なし・左線なし。余白だけで区切る */
+  .grp { margin-top: 4px; }
   .cv-subg { margin: 2px 0 6px; }
   .cv-subg-lab { font-size: var(--fs-caption); font-weight: 600; color: #8a8a8a; margin: 4px 0 6px; }
-  .hier-1 .cv-subg { margin: 2px 0 8px 8px; padding-left: var(--space-12); border-left: 2px solid #e3e3e3; }
-  .hier-2 .grp { border-top: 0; margin-top: var(--space-20); padding-top: 0; }
-  .hier-2 .cv-subg { margin: 2px 0 8px 12px; }
-  .hier-2 .cv-subg-lab { color: #9a9a9a; margin: 6px 0 6px; }
-  .hier-3 .grp { border-top: 0; margin-top: var(--space-12); padding-left: var(--space-10); border-left: 3px solid var(--brand-cyan); }
-  .hier-3 .cv-subg { margin: 2px 0 8px 4px; padding-left: var(--space-10); border-left: 2px solid #dcdcdc; }
-  .hier-4 .grp { border-top: 0; margin-top: var(--space-10); background: #f5f5f6; border-radius: var(--radius-input); padding: 9px 11px; }
-  .hier-4 .cv-subg { margin: 7px 0 2px; padding: var(--space-8) var(--space-10); background: var(--surface-white); border: 1px solid #ececec; border-radius: 8px; }
-  .hier-4 .cv-subg-lab { color: #808080; margin: 0 0 6px; }
-  .hier-5 .grp { border-top: 0; margin-top: var(--space-16); }
-  .hier-5 .grp-title { font-size: 13.5px; }
-  .hier-5 .cv-subg { margin: 2px 0 8px 12px; padding-left: var(--space-12); border-left: 1px dotted #cfcfcf; }
-  .hier-5 .cv-subg-lab { font-size: 10.5px; font-weight: 700; color: #a6a6a6; }
-  .cat-body .grp:first-child { border-top: none; margin-top: 8px; padding-top: 0; }
-  .grp-title { font-weight: 600; font-size: 12.5px; color: #1a1a1a; margin-bottom: var(--space-8);
-               display: flex; align-items: center; gap: var(--space-6); min-height: 22px; }
-  /* 見出しは1行に収める(長い時は…)。ボタンと取り合って折り返さないように */
+  /* コンバージョンの階層見せ方(hier-*)も左の縦線・背景ボックスは使わない(ミニマル・左線全廃) */
+  .hier-1 .cv-subg, .hier-3 .cv-subg, .hier-5 .cv-subg { margin-left: 0; padding-left: 0; border-left: none; }
+  .hier-2 .grp, .hier-3 .grp, .hier-4 .grp, .hier-5 .grp { border-top: 0; padding-left: 0; border-left: none; background: transparent; border-radius: 0; padding-top: 0; }
+  .cat-section-body > .grp:first-child > .grp-title { margin-top: 4px; }
+  .grp-title { font-weight: 600; font-size: 12px; color: #333; margin: 12px 0 5px;
+               display: flex; align-items: center; gap: var(--space-6); min-height: 20px; }
   .grp-title > span:first-child { flex: 1 1 auto; min-width: 0; overflow: hidden;
                text-overflow: ellipsis; white-space: nowrap; }
-
-  /* たためない小見出し(全体カテゴリ)。コンパクトに詰める */
-  .grp.fixed { margin-top: var(--space-8); padding-top: var(--space-6); }
-  .grp.bare { margin-top: var(--space-4); padding-top: var(--space-4); border-top: none; }
-  .grp.fixed .grp-title { font-size: 11.5px; font-weight: 500; color: #666; margin-bottom: var(--space-4); min-height: 0; }
+  .grp.fixed { margin-top: 4px; }
+  .grp.fixed .grp-title { font-size: 12px; font-weight: 600; color: #333; margin: 12px 0 5px; min-height: 20px; }
   .grp.fixed .grp-acts { transform: scale(.86); transform-origin: right center; }
-  /* 入れ子の小見出し: 左の罫線でぶら下がりを示す */
-  .grp.sub2 { margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px dashed #ededed;
-              padding-left: var(--space-8); border-left: 2px solid #ededed; }
-  .grp.sub2 .grp-title { font-size: 11.5px; font-weight: 500; color: #555; }
-  .grp.sub2 .grp.sub2 { border-left-color: #f2f2f2; }
+  .grp.bare { margin-top: 2px; }
+  .grp.bare > .grp-title { display: none; }
+  /* H3: 入れ子の小見出し(例: 2つの価値 > ポイント1/2)。左線なし・小さめ・muted */
+  .grp.sub2 { margin-top: 8px; padding-top: 0; border-top: none; padding-left: 0; border-left: none; }
+  .grp.sub2 > .grp-title { font-size: 11px; font-weight: 600; color: #777; margin: 8px 0 4px; }
   /* 補足文は読めれば十分なのでもう一段小さく (2026-08-27 ヒデさん指定) */
   /* 【2026-08-27 ヒデさん指定】グレーの補足説明は一旦すべて出さない。
      必要な所だけ後から keep クラスを付けて出す。
@@ -4990,7 +4975,7 @@ const DEFAULTS = {
     jumpSize: 120,      // 【2026-09-17】最終行「競争力を」のサイズ(px)。調整版＝120(行間1.2はCSS固定)
     mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row',   // 【2026-09-18】案が入れ替える書体(PCのみ・CSS変数経由。eyebrowLh 0=auto / eyebrowLayout col=罫線を上に置く2行組)
     eyebrowSize: 20,    // サブコピーの文字サイズ(px)。調整版＝20
-    /* (mainWeight/eyebrowWeight/eyebrowLs/mainThin は 2026-09-17 の大掃除で撤去。太さ・字間は「🔤 文字」(params.edits)が唯一の置き場) */
+    /* (mainWeight/eyebrowWeight/eyebrowLs/mainThin は 2026-09-17 の大掃除で撤去。太さ・字間は「文字」(params.edits)が唯一の置き場) */
     copyX: 0, copyY: 0,   // コピー全体の位置ずらし(px・カンプ位置基準) 2026-09-02        // 【2026-09-01】メインを縁取りで細く見せる量(px)。背景色の縁で線を削る
     hlOff: 0,             // 【2026-09-20】ヘッダー↔コピーの距離。コピー(.headline)の基準top(PC208/SP434)に足すオフセット(px)。PC/SP独立(mbKey)
     gfxY: 0,              // 【2026-09-20】グラフィック(惑星)↔コピーの距離。右グラフィックの縦位置オフセット(px・+で下/−で上)。PC/SP独立(mbKey)
@@ -14464,7 +14449,7 @@ function applyNavGap() {
 }
 applyNavGap();
 /* 【2026-08-31 ヒデさん指定】KVコピーの文字設定(サイズ/サブの罫線)をCSS変数へ反映。
-   【2026-09-17 大掃除】太さ・字間は「🔤 文字」(params.edits)へ一本化したのでここでは扱わない。
+   【2026-09-17 大掃除】太さ・字間は「文字」(params.edits)へ一本化したのでここでは扱わない。
    コピー左端は「ヘッダーロゴの左端」が基準(--kv-copy-base を実測で入れる)。copyX はそこからのずらし。 */
 /* 【2026-09-18 ヒデさん依頼】ハンバーガーメニュー(左寄せ大)の余白・間隔・文字サイズ → CSS 変数 */
 const LOGO_KEYS = ['hennge', 'upsider', 'np', 'akerun', 'smaregi', 'andpad', 'icare', 'contracts', 'sweeep'];
@@ -16574,9 +16559,9 @@ function mkReset(get, set, sync, isLive) {
   return b;
 }
 /* ===== 【2026-09-17 大掃除・ヒデさん依頼】ページ上の全テキストの台帳(文字システム) =====
-   sec=どのタブの「🔤 文字」に出すか(kv/vis/res/dev/case/cv) / multi=同じ見た目の要素が複数(まとめて同じ値を当てる) /
+   sec=どのタブの「文字」に出すか(kv/vis/res/dev/case/cv) / multi=同じ見た目の要素が複数(まとめて同じ値を当てる) /
    text=打ち替え可 / font=太さ・行間・字間を変えられる(0=位置だけ) / move=端をつかんで位置移動(0=不可)。
-   値の置き場は params.edits[key]={fw,lh,ls,fs,dx,dy,pt…} の一つだけ。パネルの「🔤 文字」と ✏️編集(クリック→浮きバー)は同じ値を触る。 */
+   値の置き場は params.edits[key]={fw,lh,ls,fs,dx,dy,pt…} の一つだけ。パネルの「文字」と ✏️編集(クリック→浮きバー)は同じ値を触る。 */
 const TEXT_SPEC = [
   // --- ヘッダー(KVタブに出す) ---
   { key: 'navLogo',   sel: '.logo',                  name: 'ロゴ',                          sec: 'kv',  text: 0, font: 0 },
@@ -17071,7 +17056,7 @@ let subDefaultOpen = false;   /* true の間に作る小見出しは、既定で
 /* 【2026-09-20 大改修・ヒデさん依頼】新5カテゴリに統一: バリエーション→基本→フォント→エフェクト＆テクスチャ→アニメーション→その他。
    旧 color/texture は fxtex(エフェクト＆テクスチャ)に統合。ルールは settings/docs/anyflow/ANYFLOW-PANEL-STRUCTURE.md。 */
 const GRP_ORDER = { variation: 0, basic: 1, font: 2, fxtex: 3, anim: 4, other: 5 };
-const GRP_LABEL = { variation: 'バリエーション（案）', basic: '基本', font: 'フォント', fxtex: 'エフェクト＆テクスチャ', anim: 'アニメーション', other: 'その他' };
+const GRP_LABEL = { variation: 'バリエーション', basic: '基本', font: 'フォント', fxtex: 'エフェクト＆テクスチャ', anim: 'アニメーション', other: 'その他' };
 let _grpSeq = 0;   /* 同じグループ内は元の順を保つための連番(安定ソート) */
 function grpFromLabel(k) {
   if (/🔤|文字（太/.test(k)) return 'font';
@@ -17109,8 +17094,9 @@ function applyPanelGroupOrder() {
           if (!open) sec.classList.add('closed');
           const head = document.createElement('div');
           head.className = 'cat-section-head';
-          head.innerHTML = '<span>' + (GRP_LABEL[curCat] || curCat) + '</span><span class="cs-chev">▾</span>';
-          head.onclick = () => { catSecOpen[openKey] = !sec.classList.toggle('closed'); };
+          const isVar = (curCat === 'variation');   /* 【2026-09-20】バリエーションは開閉しない・▾なし */
+          head.innerHTML = '<span>' + (GRP_LABEL[curCat] || curCat) + '</span>' + (isVar ? '' : '<span class="cs-chev">▾</span>');
+          if (!isVar) head.onclick = () => { catSecOpen[openKey] = !sec.classList.toggle('closed'); };
           secBody = document.createElement('div');
           secBody.className = 'cat-section-body';
           sec.append(head, secBody);
@@ -17126,9 +17112,9 @@ function applyPanelGroupOrder() {
 function sub(target, html, deep, opts) {
   const key = String(html).replace(/<[^>]*>/g, '').trim();
   const fixed = !!(opts && opts.fixed);   /* たためない＝常に開いたコンパクト表示 */
-  /* 既定はたたむ。ただし「🎨 グラフィック」とその中の小見出しは開いた状態で始める
+  /* 既定はたたむ。ただし「グラフィック」とその中の小見出しは開いた状態で始める
      (2026-08-27 ヒデさん指定) */
-  const GRAPHIC_OPEN = ['🎨 グラフィック', '',
+  const GRAPHIC_OPEN = ['グラフィック', '',
                         '軌道（輪）', 'ドット（粒）', '惑星',
                         '表示', '表示・大きさ', '模様',
                         'この案の調整（輪が縮んで吸収）', 'この案の調整（粒が渦で吸収）',
@@ -17136,9 +17122,8 @@ function sub(target, html, deep, opts) {
                         'この案の調整（点が並ぶ軌道）', 'この案の調整（線で行き来）',
                         'この案の調整（ジャイロ回転）', '動き（この案）'];
   /* 【2026-08-27 ヒデさん指定】グラフィックのセクションは、たためる所も既定で開いておく */
-  const open = fixed ? true
-    : (subOpen[key] === undefined ? (subDefaultOpen || GRAPHIC_OPEN.includes(key)) : subOpen[key]);
-  subOpen[key] = open;
+  /* 【2026-09-20 ヒデさん依頼】オブジェクト小見出し(.grp)は開閉なし＝常に全開き。開閉できるのはカテゴリ節(.cat-section)だけ */
+  const open = true;
   const bare = !!(opts && opts.bare);   /* 見出しそのものを出さない(中身だけ並べる) */
   const g = document.createElement('div');
   g.className = (deep ? 'grp sub2' : 'grp') + (open ? '' : ' closed') + (fixed ? ' fixed' : '') + (bare ? ' bare' : '');
@@ -17172,20 +17157,11 @@ function sub(target, html, deep, opts) {
   title.append(lab, acts, chev);   /* [タイトル][リセット・保存][開閉] の順 */
   /* 【2026-08-27 ヒデさん指定】戻す値を持たないセクション(プリセットなど)にはボタンを出さない。
      組み立てが終わってから項目の有無で判断する */
-  setTimeout(() => {
-    if (!items.length) acts.remove();
-    /* 【2026-08-27 ヒデさん指定】つまみが1つしかない小見出しは、たたむ意味がないので
-       開いたまま固定する(▾も消す)。組み立てが終わってから中身の数で判断する */
-    const ctrl = inner.querySelectorAll(':scope > .row, :scope > .sw-row, :scope > .grp, :scope > .pset').length;
-    if (!fixed && ctrl <= 1) {
-      g.classList.remove('closed'); g.classList.add('fixed');
-      chev.style.display = 'none'; title.onclick = null; title.style.cursor = 'default';
-    }
-  }, 0);
+  setTimeout(() => { if (!items.length) acts.remove(); }, 0);
   const inner = document.createElement('div');
   inner.className = 'grp-body';
-  if (fixed) { chev.style.display = 'none'; title.style.cursor = 'default'; }
-  else title.onclick = () => { subOpen[key] = !g.classList.toggle('closed'); };
+  /* 【2026-09-20 ヒデさん依頼】小見出しは開閉しない: ▾を消し、タイトルは非クリックに */
+  chev.style.display = 'none'; title.style.cursor = 'default';
   if (bare) title.style.display = 'none';
   g.append(title, inner);
   target.appendChild(g);
@@ -17259,7 +17235,7 @@ function segRow(label, opts, getDir, setDir) {
   mount.appendChild(row);
 }
 
-/* ===== 【2026-09-17 大掃除・ヒデさん依頼】「🔤 文字」の1行: 太さ(プルダウン)・行間・字間 =====
+/* ===== 【2026-09-17 大掃除・ヒデさん依頼】「文字」の1行: 太さ(プルダウン)・行間・字間 =====
    TEXT_SPEC の1項目につき1行。値は params.edits[key] (✏️編集の浮きバーと同じ置き場)。
    空欄＝今のCSSの値をそのまま使う(カッコ内に実測値を出して「今いくつか」が読めるようにする)。 */
 function textRow(sp) {
@@ -17866,9 +17842,9 @@ function buildPanel() {
   };
 
   /* ========== 🌊 全体 ========== */
-  const catAll = category('🌊 全体（サイト全体のモーション）', false);
+  const catAll = category('全体（サイト全体のモーション）', false);
 
-  /* 【2026-09-17 大掃除】「文字の太さ(一括±)」は削除。太さは各タブの「🔤 文字」か ✏️編集 で個別に。 */
+  /* 【2026-09-17 大掃除】「文字の太さ(一括±)」は削除。太さは各タブの「文字」か ✏️編集 で個別に。 */
 
   /* 【2026-08-30 ヒデさん指定・パネル整理】「モーションの進み方(時間/スクロール駆動)」と
      「スクロールの固定(固定/固定追従なし)」の項目は削除。
@@ -17897,17 +17873,17 @@ function buildPanel() {
      押した先の画面(左寄せ大) は【今の値で固定＝焼き込み】。選択UIは削除(DEFAULTS/SHIPPED/移行で値を固定)。 */
 
   /* ========== 🖼 キービジュアル ========== */
-  /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「🎨 グラフィック」を見せる */
-  /* (旧「🔤 フォントテスト」タブは 2026-09-17 の大掃除で撤去。⑪調整版を正として基本値へ焼き込み、
-     代わりに各タブの「🔤 文字（太さ・行間・字間）」で全テキストを個別に変えられるようにした) */
+  /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「グラフィック」を見せる */
+  /* (旧「フォントテスト」タブは 2026-09-17 の大掃除で撤去。⑪調整版を正として基本値へ焼き込み、
+     代わりに各タブの「文字（太さ・行間・字間）」で全テキストを個別に変えられるようにした) */
 
-  const catKv = category('🖼 キービジュアル（いちばん上の画面）', true);
+  const catKv = category('キービジュアル（いちばん上の画面）', true);
 
   /* 【2026-09-18 ヒデさん依頼】KVのバリエーション(ノーマル/強調)。★ピン留めは上の別セクション、⋯で「この設定で上書き」「解除」「削除」 */
-  sub(catKv, 'バリエーション（案）', true, { fixed: true });
+  sub(catKv, 'バリエーション（案）', true, { fixed: true, bare: true });   /* 【2026-09-20 ヒデさん依頼】カテゴリ節「バリエーション」と重複する小見出しは出さず、案の選択だけ見せる */
   varRowX('kvVar', KV_VARIANTS, () => kvVarKey(), k => { params.kvVar = String(k); applyKvVariant(String(k)); },
     { snap: VAR_SNAP.kvVar, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); if (typeof fillAnimBody === 'function') fillAnimBody(); } });
-  note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・メッシュ)や「🔤 文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
+  note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・メッシュ)や「文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
   note('⚠️【調整パネルの絶対ルール】値は①バリエーション別（案ごと）②PC/SP別 で独立します。強調でいじった位置・数値はノーマルに出ません。スマホモード中に変えた値はPCに出ず、その項目はブルーで印が付きます（案を作り直す時もこの2軸の独立を必ず残すこと）。');
 
   /* 【2026-09-20 ヒデさん依頼】KVの余白: ヘッダー↔コピー / グラフィック↔コピー の距離。PC/SP独立(mbKey)。既存の「位置 縦/横」は別に残す */
@@ -17918,12 +17894,12 @@ function buildPanel() {
   slider('グラフィック↔コピーのギャップ', -200, 200, 2, () => (params.kv.gfxY || 0), v => { params.kv.gfxY = v; try { applySway(); } catch (e) {} markDirty(); },
     v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '右グラフィック(惑星)を上下にずらして、コピーとの間隔を変えます。0＝いまの位置。プラスで下へ、マイナスで上へ(離す)。PC・スマホは別々に持てます。', { signed: true, mbKey: 'kv.gfxY' });
 
-  /* ===== 🎨 グラフィック (2026-08-26 ヒデさん指定・整理) =====
+  /* ===== グラフィック (2026-08-26 ヒデさん指定・整理) =====
      右側のグラフィックの設定をここに集約する。いちばん上が「直接編集」。
      以下は全部この中の入れ子: 案を選ぶ / 出てくるタイミング / 惑星のアニメーション / 軌道 */
   liveEdit = true;
   subDefaultOpen = true;      /* ここから下(グラフィック)は既定で開く */
-  sub(catKv, '🎨 グラフィック');
+  sub(catKv, 'グラフィック');
   /* 【2026-09-19 ヒデさん依頼】右グラフィック(惑星＋カゴ)を XYZ で動かす。真ん中(0)＝いまの位置。Z は手前(+)/奥(−)＝大きく/小さく(PCのみ) */
   note('▼ 右グラフィック全体（惑星＋メッシュ）の位置。真ん中(0)＝いまの位置。傾き・向きは下の「メッシュ」の組');
   { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true, mbKey: 'kvGfx.' + key });
@@ -18280,7 +18256,7 @@ function buildPanel() {
   slider('大きさ', 0.1, 4, 0.02, () => params.conv.dotSize, v => params.conv.dotSize = v,
     v => '×' + v.toFixed(2), 'すべての案のドット・粒にまとめて効きます。', { mbKey: 'conv.dotSize' });
   {
-    /* もとは「🎨 グラフィック」の見出しの右にあったアイコン。
+    /* もとは「グラフィック」の見出しの右にあったアイコン。
        モノごとの整理にあわせて、ドットの持ちものとしてここへ移した */
     const wrap = document.createElement('div');
     wrap.className = 'gmode gmode-row';
@@ -18450,13 +18426,13 @@ function buildPanel() {
   sub(copyRoot, 'コピー', false, { grp: 'font' });   /* フォント: 文字サイズ(太さ/行間/字間は🔤文字) */
   rows.push(slider('1〜2行目のサイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
     v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「🔤 文字」で。', { mbKey: 'kv.mainSize' }));
+    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「文字」で。', { mbKey: 'kv.mainSize' }));
   rows.push(slider('最終行「競争力を」のサイズ', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
     v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
     '見出し3行目「競争力を」だけのサイズ。1〜2行目とは別の独立した値(ここだけ大きくできる)。調整版は120px。', { mbKey: 'kv.jumpSize' }));
   rows.push(slider('サブのサイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
     v => { params.kv.eyebrowSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「🔤 文字」で。', { mbKey: 'kv.eyebrowSize' }));
+    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「文字」で。', { mbKey: 'kv.eyebrowSize' }));
   sub(copyRoot, 'コピー（出現）', false, { grp: 'anim' });
   note('数字はページを開いてから何秒後か。上から出る順です。');
   /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
@@ -18488,12 +18464,12 @@ function buildPanel() {
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
 
   /* 【2026-09-17 大掃除・ヒデさん依頼】このセクションの全テキストの 太さ／行間／字間(値の置き場は params.edits＝✏️編集と共通) */
-  sub(catKv, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catKv, '文字（太さ・行間・字間）', null, { fixed: true });
   note('ヘッダーとキービジュアルの文字ごとに 太さ(100〜900)・行間(倍)・字間(px) を変えます。空欄＝今のCSSの値(カッコ内)。位置や打ち替えは右上の ✏️編集 で文字をクリック。');
   textRowsFor(['kv']);
 
   /* ========== 📖 ビジョン ========== */
-  const catVis = category('📖 ビジョン（つなぐことが、強みになる時代へ）', false);
+  const catVis = category('ビジョン（つなぐことが、強みになる時代へ）', false);
   catNote(catVis, 'Our Vision(ブラー) → メッセージがマスクで出る → 下に図(SVG書き出し)がブラーで出る → 右に Point 01/02。');
 
   /* 【2026-08-30 ヒデさん指定】「強み」の強調はグラデ揺らぎで確定。他の案とこのセクション自体を削除した */
@@ -18647,12 +18623,12 @@ function buildPanel() {
       rows.push(slider('位置 Y', -400, 400, 2, () => sv().vision[ky], v => sv().vision[ky] = v, v => v + 'px', 'プラスで下へ、マイナスで上へ。', { mbKey: 'sections.vision.' + ky }));
     });
 
-  sub(catVis, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catVis, '文字（太さ・行間・字間）', null, { fixed: true });
   note('ビジョンの文字ごとに 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。位置や打ち替えは ✏️編集 で文字をクリック。');
   textRowsFor(['vis']);
 
   /* ========== 📈 実績 ========== */
-  const catRes = category('📈 実績（導入企業◯◯社などの数字）', false);
+  const catRes = category('実績（導入企業◯◯社などの数字）', false);
   RFX_DYN.length = 0;   /* 案ごとの動的パネルの登録をやり直す(組み立てのたび) */
   RFX_TITLES.length = 0;
   try { Object.keys(DEV_DYN).forEach(k => { delete DEV_DYN[k]; }); } catch (e) {}   /* 2026-09-15: モックの案ごとのつまみも作り直す */
@@ -18771,7 +18747,7 @@ function buildPanel() {
     s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
     rows.push(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
-      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「🔤 文字」で。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true }));
+      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true }));
     rows.push(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
       '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。', { mbKey: 'sections.results.hrGap', fixedMax: true }));
     rows.push(slider('区切り線の下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
@@ -18972,12 +18948,12 @@ function buildPanel() {
       '大きいほど強くぼけながら消えます。', { mbKey: 'sections.results.outBlur' }));
   }
 
-  sub(catRes, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catRes, '文字（太さ・行間・字間）', null, { fixed: true });
   note('実績の文字ごとに 太さ・行間・字間(for SaaS/AI・価値の見出し・本文・数字も)。空欄＝今のCSSの値(カッコ内)。位置や打ち替えは ✏️編集 で文字をクリック。');
   textRowsFor(['res']);
 
   /* ========== 🖥 開発者体験 ========== */
-  const catDev = category('🖥 開発者体験（暗い画面のコード紹介）', false);
+  const catDev = category('開発者体験（暗い画面のコード紹介）', false);
   catNote(catDev, '暗い背景で CLI / SDK の画面が順に切り替わります。');
   /* 【2026-09-15 ヒデさん指定】モックのスタイル案(立体感 5案・リキッドグラス含む)と配色。★ピン留め／上書き／削除は他のバリエーションと同じ */
   sub(catDev, 'モックのスタイル（立体感）', true, { fixed: true, grp: 'variation' });   /* スタイルの選択＝案の切替なのでバリエーション扱い(先頭へ) */
@@ -19056,12 +19032,12 @@ function buildPanel() {
   /* 【2026-08-30 ヒデさん指定】リスト案用の「画面が切り替わる見え方 / 後ろに重なるカード / コードの見せ方」は廃止
      (② はテキストスライド固定のため)。関連パラメータは既定のまま残るが、パネルからは出さない。 */
 
-  sub(catDev, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catDev, '文字（太さ・行間・字間）', null, { fixed: true });
   note('開発者体験の文字ごとに 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['dev']);
 
   /* ========== 🗂 導入事例 ========== */
-  const catCase = category('🗂 導入事例（2×2グリッド）', false);
+  const catCase = category('導入事例（2×2グリッド）', false);
   catNote(catCase, '見出し → 水平線が左から3本 → 中央の縦線 → カードが画面に入った順に1枚ずつブラーで登場。');
 
   /* 【2026-09-17 大掃除・ヒデさん指定】罫線(あり/なし)とホバーの動きの選択UIは削除。罫線なし(caseLayout=1)・影でふわっと浮く(ct-lift)に固定＝焼き込み。 */
@@ -19093,11 +19069,11 @@ function buildPanel() {
   liveEdit = false;
 
   /* 【2026-08-30 ヒデさん指定】コンバージョンは導入事例の下（ページ順と同じ並び）に置く。 */
-  sub(catCase, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catCase, '文字（太さ・行間・字間）', null, { fixed: true });
   note('導入事例の文字ごとに 太さ・行間・字間(見出し・Use Case・カードの一言/タグ/会社名)。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['case']);
 
-  const catCv = category('💠 コンバージョン（お問い合わせの流れる背景）', false);
+  const catCv = category('コンバージョン（お問い合わせの流れる背景）', false);
   catNote(catCv, 'カンプのラジアルグラデを、惑星と同じ発想で流れさせ、Bayerディザで粒立たせています。');
   const cvv = () => (params.cv || (params.cv = {}));
   /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
@@ -19201,13 +19177,13 @@ function buildPanel() {
   sub(catCv, '粒（ディザ）と流れ'); B.dither();
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
-  sub(catCv, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catCv, '文字（太さ・行間・字間）', null, { fixed: true });
   note('お問い合わせとフッターの文字ごとに 太さ・行間・字間(Contact・見出し・本文・フォームの項目名/入力欄・送信ボタン・フッター)。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['cv']);
 
   /* ========== 🍔 ハンバーガーメニュー (2026-09-18 ヒデさん依頼) ========== */
-  const catMenu = category('🍔 ハンバーガーメニュー（右上を押した先の画面）', false);
-  catNote(catMenu, '左寄せ大の暗いメニュー。余白・項目の間隔・文字サイズはここ、太さ/行間/字間は下の「🔤 文字」。右上の✏️編集でも触れます。');
+  const catMenu = category('ハンバーガーメニュー（右上を押した先の画面）', false);
+  catNote(catMenu, '左寄せ大の暗いメニュー。余白・項目の間隔・文字サイズはここ、太さ/行間/字間は下の「文字」。右上の✏️編集でも触れます。');
   sub(catMenu, '余白・間隔・大きさ', null, { fixed: true });
   { const D = () => (params.drawer = params.drawer || {});
     const dv = (k, def) => (D()[k] != null ? D()[k] : def);
@@ -19225,7 +19201,7 @@ function buildPanel() {
     ds('アイコンの線の間隔', 'barGap', 7, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
     ds('スクロール時のナビのぼかし', 'navBlur', 8, 0, 24, 1, v => Math.round(v) + 'px', 'スクロールでナビ(ビジョン〜導入事例)が右へ格納される時、徐々にかかるぼかしの最大量。0でぼかし無し。');
   }
-  sub(catMenu, '🔤 文字（太さ・行間・字間）', null, { fixed: true });
+  sub(catMenu, '文字（太さ・行間・字間）', null, { fixed: true });
   note('メニューの項目・番号・お問い合わせボタンの 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['menu']);
 
@@ -19713,7 +19689,7 @@ const textTools = (() => {
   /* key=保存キー / sel=要素セレクタ / name=表示名 / text=打ち替え可(子が純テキストのみ)
      move=位置移動可(端ドラッグ。既定1) / font=font系編集可(既定1)。
      【2026-09-03 ヒデさん指定】可能な限りページ全体の要素を対象にする。 */
-  /* 【2026-09-17 大掃除】対象の台帳は TEXT_SPEC(パネルの「🔤 文字」と共用)。multi の要素は同じ値をまとめて当てる。 */
+  /* 【2026-09-17 大掃除】対象の台帳は TEXT_SPEC(パネルの「文字」と共用)。multi の要素は同じ値をまとめて当てる。 */
   const SPEC = TEXT_SPEC;
   const specEls = sp => { try { return sp.multi ? Array.from(document.querySelectorAll(sp.sel)) : [document.querySelector(sp.sel)].filter(Boolean); } catch (e) { return []; } };
   const specEl = sp => specEls(sp)[0] || null;
