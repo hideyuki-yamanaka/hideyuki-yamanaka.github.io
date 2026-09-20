@@ -3018,14 +3018,14 @@
     html.mb #results .pin-stage { align-items: flex-start; }   /* 中身は上から流す(縦中央寄せ解除) */
     #vision { margin-top: 0; }   /* PC用の 200px 余白を撤去(KV→ビジョンが空きすぎていた) */
     .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 600; letter-spacing: 0; text-align: center; }   /* カンプSP: 16px → y741。【2026-09-19】太さは共通部品(600)に(旧SPカンプ Light300 は仮置きで上書き) */
-    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--fs-display); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)/26px/1.7 */
+    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, var(--fs-display)); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)/26px/1.7。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-display(26) */
     /* 【2026-09-09 ヒデさん指定】SP でも「つなぐ/強み」のギラギラのグラデ揺らぎを PC と同じく出す。
        (以前カンプが単色だったため SP で無効化したが、ヒデさんの意向で PC 同様に復活。base の
        .vl-nagu / .vis-line.str-live .vl-strong がそのまま適用される＝ここでは上書きしない) */
     .vis-l1 { top: 106px; }   /* → y773 */
     .vis-l2 { top: 170px; }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
-    .vf-wrap { left: 20px; top: 285px; width: 640px; height: 600px; transform: scale(0.6); transform-origin: 0 0; }   /* 【2026-09-20 ヒデさん依頼】SP はメッシュを中央に(球の中心を画面中央へ) */   /* 【2026-09-19 仮置き・SPカンプ未取得】ドームごと 0.62 倍(600→372px)で中央に */
+    .vf-wrap { left: 20px; top: 255px; width: 640px; height: 600px; transform: scale(0.6); transform-origin: 0 0; }   /* 【2026-09-20 ヒデさん依頼#4】メッセージとメッシュの上の余白を「少し」詰める(285→255・上へ30)。ポイントは565/671維持なので、その分だけ下側(メッシュ↔ポイント)も少し空く */   /* SP はメッシュを中央に(球の中心を画面中央へ) */
     /* 右カラムはPCでは右アンカーだが、スマホは画面いっぱいの1カラムにする */
     .val-group { left: 0; right: auto; width: 100%; }
     .val-head { left: 24px; right: 24px; top: 372px; width: auto; }
@@ -3038,8 +3038,8 @@
     .val-point { display: flex; flex-direction: column; gap: var(--space-4); }   /* カンプSP: タグ→見出し 4 / 見出し→本文 8(本文側の margin 4 と合算) */
     .val-point .vp-tag { font-size: var(--fs-caption); line-height: 1; }
     .val-point .vp-tag i { width: 7px; height: 7px; }
-    .val-point h3 { font-size: var(--fs-lead); margin-top: 0; }
-    .val-point p { font-size: var(--fs-caption); line-height: normal; margin-top: var(--space-4); }   /* カンプSP node16534:22151: Light 12px / leading normal / 見出しとの間 8 */
+    .val-point h3 { font-size: var(--vp-h-size, var(--fs-lead)); margin-top: 0; }   /* 【2026-09-20 #3】パネルの見出しサイズ(SP独立)を読む。未設定は --fs-lead(20) */
+    .val-point p { font-size: var(--vp-p-size, var(--fs-caption)); line-height: normal; margin-top: var(--space-4); }   /* カンプSP node16534:22151: Light 12px / leading normal / 見出しとの間 8。【2026-09-20 #3】パネルの本文サイズ(SP独立)を読む。未設定は --fs-caption(12) */
 
     /* --- 実績 --- */
     /* スマホは案A/案Bとも同じ縦積みにする */
@@ -14533,10 +14533,18 @@ applyLogoTune();
 function applyVpSize() {
   const v = (params.sections && params.sections.vision) || {};
   const r = document.documentElement.style;
-  r.setProperty('--vp-h-size', (v.pHSize != null ? v.pHSize : 26) + 'px');
-  r.setProperty('--vp-p-size', (v.pPSize != null ? v.pPSize : 14) + 'px');
+  const mb = (params && params.mb) || {};
+  const isMb = (typeof isMobile !== 'undefined' && isMobile);   /* 実機SP(幅≤600) */
+  /* 【2026-09-20 ヒデさん#3】SPは既定トークン(msg26/見出し20/本文12)を基準にし、SP上書き(params.mb)があればそれを使う。
+     PCは従来どおり(50/26/14)。SP CSS 側もこの変数を読むよう変更済み＝パネルの数値と実機の見た目が一致する。
+     ※実機では PC値が v.* に流れ込んでいる(applyMbToParams)が、SPは params.mb を直接見るので PC値は漏れない。 */
+  const eff = (field, pcDef, spDef) => isMb
+    ? (mb['sections.vision.' + field] != null ? mb['sections.vision.' + field] : spDef)
+    : (v[field] != null ? v[field] : pcDef);
+  r.setProperty('--vp-h-size', eff('pHSize', 26, 20) + 'px');
+  r.setProperty('--vp-p-size', eff('pPSize', 14, 12) + 'px');
   r.setProperty('--vp-width', (v.pWidth != null ? v.pWidth : 328) + 'px');
-  r.setProperty('--vis-msg-size', (v.msgSize != null ? v.msgSize : 50) + 'px');
+  r.setProperty('--vis-msg-size', eff('msgSize', 50, 26) + 'px');
 }
 applyVpSize();
 /* 【2026-09-01】実績: Anyflowと「が」の間(px)をCSS変数へ */
@@ -14599,7 +14607,7 @@ setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
 setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
-function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } }
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョンの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -15986,6 +15994,7 @@ function fit() {
   DH = isMobile ? 780 : 921;
   document.documentElement.classList.toggle('mb', isMobile);
   try { applyVfFade(); } catch (e) {}   /* 【2026-09-20】SP/PC 確定後にビジョンの図の位置を取り直す(スマホ専用の見た目) */
+  try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】isMobile 確定後にビジョンの文字サイズを取り直す(SP は SP 既定/上書きで、PC は PC 値で) */
   /* 【2026-09-09】isMobile が確定したこの時点でロゴティッカーの再生を再アサート。
      初回に applyMarquee が isMobile 未確定(=false)＋params.running=false で走ると
      ティッカーが止まったままになるため、モバイル確定後に必ず running へ戻す。 */
@@ -16682,7 +16691,7 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
   if (opts.mbKey) {
     const _mbk = opts.mbKey, _g = get, _s = set;
     const _pon = () => { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } };
-    get = () => (_pon() && params.mb && params.mb[_mbk] != null) ? params.mb[_mbk] : _g();
+    get = () => (_pon() && params.mb && params.mb[_mbk] != null) ? params.mb[_mbk] : ((_pon() && opts.mbDefault != null) ? opts.mbDefault : _g());   /* 【2026-09-20 #3】opts.mbDefault があれば、スマホモードで上書き未設定の時は SP 既定値を表示(フォントサイズ等・SP既定≠PC既定の項目用) */
     set = (v) => { if (_pon()) { if (!params.mb) params.mb = {}; params.mb[_mbk] = v; } else { _s(v); } };
     if (!opts.mbActive) opts.mbActive = () => !!(params.mb && params.mb[_mbk] != null);
     if (!opts.mbClear) opts.mbClear = () => { if (params.mb) delete params.mb[_mbk]; };
@@ -18551,7 +18560,7 @@ function buildPanel() {
   sub(catVis, 'メッセージ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
   rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
     v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize' }));
+    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize', mbDefault: 26 }));
   sub(catVis, 'Our Vision', false);
   rows.push(slider('位置 X', -400, 600, 2, () => (editPos('visLabel').dx || 0),
     v => { editPos('visLabel').dx = v; textTools.applyAll(); }, v => v + 'px',
@@ -18635,10 +18644,10 @@ function buildPanel() {
   sub(catVis, 'ポイント1・2', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
   rows.push(slider('見出しサイズ', 16, 44, 1, () => (sv().vision.pHSize != null ? sv().vision.pHSize : 26),
     v => { sv().vision.pHSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。', { mbKey: 'sections.vision.pHSize' }));
+    '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。', { mbKey: 'sections.vision.pHSize', mbDefault: 20 }));
   rows.push(slider('本文サイズ', 10, 24, 0.5, () => (sv().vision.pPSize != null ? sv().vision.pPSize : 14),
     v => { sv().vision.pPSize = v; applyVpSize(); }, v => v.toFixed(1) + 'px',
-    'ポイントの説明文の文字サイズ。カンプは14px。', { mbKey: 'sections.vision.pPSize' }));
+    'ポイントの説明文の文字サイズ。カンプは14px。', { mbKey: 'sections.vision.pPSize', mbDefault: 12 }));
 
   /* 【2026-08-26 整理】見出しだけが空で、中身(見出し/Point01/Point02)が同じ階層に並んでいたので入れ子に直した */
   sub(catVis, '2つの価値', false);
