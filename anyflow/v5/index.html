@@ -445,7 +445,7 @@
        「ロゴの左端 − ステージの左端」を実測して入れる(ウィンドウ幅が変わっても常にロゴと同じ位置)。
        縦 208px = 調整版(Figma 17435:22386 実測 y208)を焼き込み(旧 263−55)。 */
     left: calc(var(--kv-copy-base, 50px) + var(--kv-copy-x, 0px));
-    top: calc(208px + var(--kv-copy-y, 0px));
+    top: calc(208px + var(--kv-hl-off, 0px) + var(--kv-copy-y, 0px));   /* 【2026-09-20】--kv-hl-off = ヘッダー↔コピーの距離(基準208にオフセット) */
     color: var(--ink);
     white-space: nowrap;
     /* 【2026-09-02 ヒデさん指定】メイン/サブの上下並びをパネルで入替。column=メイン上 / column-reverse=サブ上 */
@@ -2969,7 +2969,7 @@
     /* コピーはグラフィックの下へ。幅を制限して折り返し可にし、右はみ出しを解消 */
     /* 【2026-09-08 カンプ node16534:22195 準拠】KVコピーは中央寄せ。メイン46px Thin/行間1.4・中央、
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
-    .headline { left: 24px; right: 24px; top: 434px; white-space: normal; gap: var(--space-12);   /* 【2026-09-20】グラフィックと見出しの間隔を詰める(524→434・メッシュ最下端420の約14px下)。ヒデさん「離しすぎ→10pxほど」 */   /* 旧: KV下げ 400→448→524 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
+    .headline { left: 24px; right: 24px; top: calc(434px + var(--kv-hl-off, 0px)); white-space: normal; gap: var(--space-12);   /* 【2026-09-20】グラフィックと見出しの間隔を詰める(524→434・メッシュ最下端420の約14px下)。ヒデさん「離しすぎ→10pxほど」 */   /* 旧: KV下げ 400→448→524 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
                 align-items: center; text-align: center; }
     .hl-main { font-size: var(--fs-hero); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース) */
     .hl-main .hl-line:last-child { font-size: var(--fs-hero-jump); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例) */
@@ -4973,6 +4973,8 @@ const DEFAULTS = {
     eyebrowSize: 20,    // サブコピーの文字サイズ(px)。調整版＝20
     /* (mainWeight/eyebrowWeight/eyebrowLs/mainThin は 2026-09-17 の大掃除で撤去。太さ・字間は「🔤 文字」(params.edits)が唯一の置き場) */
     copyX: 0, copyY: 0,   // コピー全体の位置ずらし(px・カンプ位置基準) 2026-09-02        // 【2026-09-01】メインを縁取りで細く見せる量(px)。背景色の縁で線を削る
+    hlOff: 0,             // 【2026-09-20】ヘッダー↔コピーの距離。コピー(.headline)の基準top(PC208/SP434)に足すオフセット(px)。PC/SP独立(mbKey)
+    gfxY: 0,              // 【2026-09-20】グラフィック(惑星)↔コピーの距離。右グラフィックの縦位置オフセット(px・+で下/−で上)。PC/SP独立(mbKey)
     copyOrder: 'main',  // 【2026-09-02】KVコピーの上下並び 'main'=メイン上/サブ下 'sub'=サブ上/メイン下
     eyebrowDash: true,  // サブコピー先頭の罫線(ハイフン)あり/なし
     eyebrowDashW: 26,   // 罫線の長さ(px)
@@ -10749,7 +10751,7 @@ function applySway() {
      値は Figma 17547:21430 の球の見た目(中心/直径)に実測で合わせたもの。スマホは 9/9 のSPトレース値のまま(仮置き: SPカンプ未確認)。
      ⚠️ .orbit にはビジョンの惑星図(.pf-wrap)は入っていない(兄弟)ので、ここを変えてもビジョンの図は動かない(実測で確認済み)。 */
   const KV_GFX = isMobile ? { scale: 1, dx: 0, dy: 0 } : (params.kvGfx || { scale: 1.21, dx: 148, dy: 184 });   /* 【2026-09-18】案(KV_VARIANTS)で入れ替わる */
-  swayEls.orbit.style.transform = `translate(${gx + KV_GFX.dx + (KV_GFX.ox || 0)}px, ${kv.gy + KV_GFX.dy + (KV_GFX.oy || 0)}px)${ob} ${swayOrbit} scale(${KV_GFX.scale * (1 + (KV_GFX.oz || 0) / 100)})`.trim();   /* ox/oy/oz=【2026-09-19】XYZのずらし */
+  swayEls.orbit.style.transform = `translate(${gx + KV_GFX.dx + (KV_GFX.ox || 0)}px, ${kv.gy + KV_GFX.dy + (KV_GFX.oy || 0) + ((params.kv && params.kv.gfxY) || 0)}px)${ob} ${swayOrbit} scale(${KV_GFX.scale * (1 + (KV_GFX.oz || 0) / 100)})`.trim();   /* ox/oy/oz=【2026-09-19】XYZのずらし / gfxY=【2026-09-20】グラフィック↔コピーの距離(縦・PC/SP独立)。モバイルでも効く */
   swayEls.svgs.forEach(s => s.style.transform = isMobile ? '' : svg);
   /* 惑星の位置・サイズ (パネル設定) を ゆらぎ の上に合成。惑星は固定(回転させない) */
   const pl = params.planet;
@@ -14463,6 +14465,8 @@ function applyKvCopy() {
   r.setProperty('--kv-main-size', (k.mainSize != null ? k.mainSize : 70) + 'px');
   r.setProperty('--kv-jump-size', (k.jumpSize != null ? k.jumpSize : 120) + 'px');   /* 最終行「競争力を」(調整版 120px) */
   r.setProperty('--kv-eyebrow-size', (k.eyebrowSize != null ? k.eyebrowSize : 20) + 'px');
+  /* 【2026-09-20 ヒデさん依頼】ヘッダー↔コピーの距離。基準top(PC208/SP434)に足すオフセット。PC/SP独立(mbKey)。 */
+  r.setProperty('--kv-hl-off', (k.hlOff != null ? k.hlOff : 0) + 'px');
   /* 【2026-09-18】案ごとの書体(太さ/行間)。PC だけ CSS 変数で効かせる(スマホは 9/9 トレースのまま) */
   r.setProperty('--kv-main-weight', String(k.mainWeight != null ? k.mainWeight : 800));
   r.setProperty('--kv-main-lh', String(k.mainLh != null ? k.mainLh : 1.4));
@@ -17851,6 +17855,14 @@ function buildPanel() {
     { snap: VAR_SNAP.kvVar, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); if (typeof fillAnimBody === 'function') fillAnimBody(); } });
   note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・カゴ)や「🔤 文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
   note('⚠️【調整パネルの絶対ルール】値は①バリエーション別（案ごと）②PC/SP別 で独立します。強調でいじった位置・数値はノーマルに出ません。スマホモード中に変えた値はPCに出ず、その項目はブルーで印が付きます（案を作り直す時もこの2軸の独立を必ず残すこと）。');
+
+  /* 【2026-09-20 ヒデさん依頼】KVの余白: ヘッダー↔コピー / グラフィック↔コピー の距離。PC/SP独立(mbKey)。既存の「位置 縦/横」は別に残す */
+  liveEdit = true;
+  sub(catKv, '余白（ヘッダー・グラフィックとの距離）');
+  slider('ヘッダー↔コピーの距離', -160, 300, 2, () => (params.kv.hlOff || 0), v => { params.kv.hlOff = v; applyKvCopy(); markDirty(); },
+    v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'コピー(見出し)をヘッダーから上下にずらします。0＝いまの位置。プラスで下へ。PC・スマホは別々に持てます(スマホモード中に変えるとスマホだけに効く)。', { signed: true, mbKey: 'kv.hlOff' });
+  slider('グラフィック↔コピーの距離', -200, 200, 2, () => (params.kv.gfxY || 0), v => { params.kv.gfxY = v; try { applySway(); } catch (e) {} markDirty(); },
+    v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '右グラフィック(惑星)を上下にずらして、コピーとの間隔を変えます。0＝いまの位置。プラスで下へ、マイナスで上へ(離す)。PC・スマホは別々に持てます。', { signed: true, mbKey: 'kv.gfxY' });
 
   /* ===== 🎨 グラフィック (2026-08-26 ヒデさん指定・整理) =====
      右側のグラフィックの設定をここに集約する。いちばん上が「直接編集」。
