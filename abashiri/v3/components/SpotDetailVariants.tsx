@@ -60,6 +60,14 @@ export function DetailHeader() {
     /* ⚠️ 2026-09-20 ヒデさん指示「上部にシャドウがかかっていますが、それは要りません」
        → 足場として敷いていた黒のグラデを撤去。ナビだけを置く */
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50">
+      {/* サウンドON/OFFの置き場。トップページと同じ【左上】に出す
+          （2026-09-20 ヒデさん指示「詳細ページもトップと同じく左上に」）。
+          ⚠️ この置き場が無いと SoundUi は左下（fixed bottom-4 left-4）に出る。
+             実際そうなっていた。トップの置き場（left:34 / top:32）と同じ座標。 */}
+      <div
+        id="abashiri-sound-slot"
+        className="pointer-events-auto absolute left-[34px] top-[32px] z-50 flex h-[19px] items-center"
+      />
       <div className="pointer-events-auto relative flex justify-center pt-[26px]">
         <GlobalNav theme="light" />
       </div>
