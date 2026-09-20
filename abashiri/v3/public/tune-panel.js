@@ -238,10 +238,12 @@
     '.tp.closed .tp-z{display:none;}',
     /* 行ごとの↺リセット（その項目だけ既定値に戻す） */
     /* リセットは anyflow と同じマテリアル(refresh)。文字は透明にして mask で描く */
-    '.tp-item-rst{position:relative;flex:0 0 22px;width:22px;height:22px;padding:0;border:1px solid transparent;'+
+    /* ⚠️ 行のリセットは【ホバー時だけ右端に浮く】作り。22px だと値の数字に
+       かぶるので 18px に抑える（2026-09-20 実測で被りを確認して調整） */
+    '.tp-item-rst{position:relative;flex:0 0 18px;width:18px;height:18px;padding:0;border:1px solid transparent;'+
     '  border-radius:7px;background:transparent;color:transparent;cursor:pointer;'+
     '  transition:background .15s,border-color .15s;}',
-    '.tp-item-rst::after{content:\'\';position:absolute;inset:0;margin:auto;width:14px;height:14px;'+
+    '.tp-item-rst::after{content:\'\';position:absolute;inset:0;margin:auto;width:12px;height:12px;'+
     '  background:#aeaeae;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z\'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z\'/%3E%3C/svg%3E") center/contain no-repeat;}',
     '.tp-item-rst:hover{background:#f0f0f0;border-color:#e0e0e0;}',
     '.tp-item-rst:hover::after{background:#333;}',
