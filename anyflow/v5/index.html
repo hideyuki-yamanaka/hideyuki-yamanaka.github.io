@@ -14561,7 +14561,7 @@ setTimeout(function applyOverrideOnBoot() {
 }, 0);
 /* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
 setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
-setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
 function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } }
@@ -16514,6 +16514,18 @@ function defaultOf(get) {
   catch (e) { return null; }
   finally { params = keep; }
 }
+/* 【2026-09-20 ヒデさん依頼】リセット(↺)は「このブラウザでページを開いた時の値」に戻す。
+   起動時(load＋案の適用＋SP流し込みが済んだ直後)の params を丸ごと控えておき、
+   defaultOf と同じ手(params を一時的に控えへ差し替えて get() を呼ぶ)で、パス無しでも各つまみの開始値を引く。
+   反転式(13-v など)や sv()/kg()/editPos() 経由のつまみも、get がそのまま控えを読むので正しく戻る。 */
+let SESSION_START = null;
+function sessionOf(get) {
+  if (!SESSION_START) return defaultOf(get);
+  const keep = params;
+  try { params = SESSION_START; return get(); }
+  catch (e) { return null; }
+  finally { params = keep; }
+}
 /* 各項目のリセット(↺)。既定値は defaultOf() で DEFAULTS から引く。
    2026-08-26 ヒデさん指定: 行ごとに戻せるようにし、下の「元に戻す」は廃止 */
 function mkReset(get, set, sync, isLive) {
@@ -16521,12 +16533,14 @@ function mkReset(get, set, sync, isLive) {
   b.type = 'button';
   b.className = 'rst';
   b.textContent = '↺';
-  b.title = '既定に戻す';
+  b.title = 'このセッションを開いた時の値に戻す';
   const d = defaultOf(get);
-  if (d === undefined || d === null) { b.classList.add('off'); return b; }
+  if (d === undefined || d === null) { b.classList.add('off'); return b; }   /* 既定が無い項目はリセット対象外(ボタンを無効に) */
   b.onclick = (e) => {
     e.stopPropagation();
-    set(typeof d === 'object' ? structuredClone(d) : d);
+    let t = sessionOf(get);                       /* このセッションを開いた時の値 */
+    if (t === undefined || t === null) t = d;     /* 無ければ焼き込み既定へフォールバック */
+    set(typeof t === 'object' ? structuredClone(t) : t);
     markDirty();
     if (sync) sync();
     applyEdit(!!isLive, true);
@@ -16733,10 +16747,15 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
     try { row.classList.toggle('mb-override', !!_mbOn()); } catch (e) {}
   };
   const _rst = mkReset(get, set, () => row._sync(), isLive);
-  if (opts && typeof opts.mbClear === 'function') { const _oc = _rst.onclick; _rst.onclick = (e) => { if (_mbOn()) { if (e) e.stopPropagation(); opts.mbClear(); markDirty(); row._sync(); } else if (_oc) _oc(e); }; }
+  /* 【2026-09-20 ヒデさん依頼・リセット統一】スマホモード中は必ず「SP専用の上書きを解除(PC値に戻す)」＝base(PC値)は触らない。
+     通常モードは mkReset が「このセッションを開いた時の値」に戻す。 */
+  if (opts && typeof opts.mbClear === 'function') { const _oc = _rst.onclick; _rst.onclick = (e) => { if (typeof _vfPhoneOn === 'function' && _vfPhoneOn()) { if (e) e.stopPropagation(); opts.mbClear(); markDirty(); row._sync(); } else if (_oc) _oc(e); }; }
   row.append(lab, input, val, _rst);
   /* セクション単位のリセット対象に登録 */
-  if (subItems) subItems.push({ reset: () => { if (_mbOn() && opts.mbClear) { opts.mbClear(); row._sync(); } else { const d = defaultOf(get); if (d != null) { set(d); row._sync(); } } } });
+  if (subItems) subItems.push({ reset: () => {
+    if (typeof _vfPhoneOn === 'function' && _vfPhoneOn()) { if (opts.mbClear) opts.mbClear(); row._sync(); }   /* スマホモード=SP上書きだけ解除 */
+    else { let t = sessionOf(get); if (t == null) t = defaultOf(get); if (t != null) { set(typeof t === 'object' ? structuredClone(t) : t); row._sync(); } }   /* 通常=開いた時の値へ */
+  } });
   mount.appendChild(row);
   if (hint) {
     lab.title = hint;          /* 出さない代わりに、項目名にマウスを乗せれば読める */
@@ -17080,7 +17099,7 @@ function sub(target, html, deep, opts) {
   const items = [];
   const rs = document.createElement('button');
   rs.className = 'gbtn'; rs.type = 'button'; rs.textContent = '↺';
-  rs.title = 'このまとまりの値を既定に戻す';
+  rs.title = 'このまとまりを、このセッションを開いた時の値に戻す（スマホモード中はスマホ用の上書きを解除）';
   rs.onclick = (e) => {
     e.stopPropagation();
     for (const it of items) { if (it.reset) it.reset(); }
@@ -17257,13 +17276,21 @@ st.textContent = '.txt-row{align-items:flex-start}'
      文字設定(サイズ・太さ・行間・字間)だけを消す。位置(dx/dy)やパディングは触らない。
      ＝スマホモードでいじってPCに移ってしまった値も、通常モードで↺を押せば既定へ戻せる。 */
   const resetFont = () => {
-    const store = phoneOn() ? (params.editsMb && params.editsMb[sp.key]) : (params.edits && params.edits[sp.key]);
-    if (store) ['fs', 'fw', 'lh', 'ls'].forEach(k => { delete store[k]; });
+    /* 【2026-09-20 ヒデさん依頼・リセット統一】スマホモード中はSP専用の上書き(editsMb)だけ解除＝PC(共有)の文字設定に戻す。
+       通常モードは「このセッションを開いた時の値」(SESSION_START.edits)に戻す(無ければ未設定=CSSのまま)。 */
+    if (phoneOn()) {
+      const store = params.editsMb && params.editsMb[sp.key];
+      if (store) ['fs', 'fw', 'lh', 'ls'].forEach(k => { delete store[k]; });
+    } else {
+      const start = SESSION_START && SESSION_START.edits && SESSION_START.edits[sp.key];
+      const store = (params.edits[sp.key] || (params.edits[sp.key] = {}));
+      ['fs', 'fw', 'lh', 'ls'].forEach(k => { if (start && start[k] != null) store[k] = start[k]; else delete store[k]; });
+    }
     apply(); sync();
     try { if (typeof window.__markMbOverrides === 'function') window.__markMbOverrides(); } catch (e) {}
   };
   const rst = document.createElement('button'); rst.type = 'button'; rst.className = 'rst'; rst.textContent = '↺';
-  rst.title = '文字の設定（サイズ・太さ・行間・字間）を既定に戻す';
+  rst.title = 'このセッションを開いた時の文字設定に戻す（スマホモード中はスマホ用の上書きを解除）';
   rst.onpointerdown = ev => ev.stopPropagation();
   rst.onclick = ev => { ev.stopPropagation(); resetFont(); };
   row.appendChild(rst);
