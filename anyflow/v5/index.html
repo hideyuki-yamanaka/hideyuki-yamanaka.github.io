@@ -845,9 +845,9 @@
   /* 【2026-09-20 ヒデさん依頼】ビジョン強調案(strong): 見出し・メッセージを左揃え／文字サイズ +20px／左位置は KV コピーの左(--kv-copy-base=50px)に合わせる。2行(visL1/visL2)＝既存のマスク出現で1行目→2行目。PC/タブレットのみ(スマホは別レイアウト) */
   html:not(.mb) #vision.vis-emph .vis-label { left: 120px; right: auto; text-align: left; }   /* 【2026-09-20 修正】見出しは左から120px */
   html:not(.mb) #vision.vis-emph .vis-line { left: 120px; right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
-  /* 【2026-09-20 ヒデさん依頼】強調案の時は KV 以下(ビジョン)を上に150px詰める(既存のKVノーマル-100/強調+100 にさらに-150)。PC/タブレットのみ */
-  html:not(.kv-strong):not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 250px); }   /* KVノーマル(100) − 150 = −50px */
-  html.kv-strong:not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 50px); }          /* KV強調(300) − 150 = 150px */
+  /* 【2026-09-20 ヒデさん依頼】強調案の時は KV 以下(ビジョン)を上に100px詰める(既存のKVノーマル-100/強調+100 にさらに-100)。PC/タブレットのみ。※当初-150は上げすぎだったので-100に */
+  html:not(.kv-strong):not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 200px); }   /* KVノーマル(100) − 100 = 0px */
+  html.kv-strong:not(.mb):not(.tab) #vision.vis-emph { margin-top: var(--space-200); }                       /* KV強調(300) − 100 = 200px */
 
   /* 【2026-08-30 ヒデさん指定】メッセージの「強み」強調は【グラデ揺らぎ(live)】で確定。
      他の9案(チカチカ/上下ずれ/色差/ぼけ/グラデ→黒…)と選択パネルは削除した。 */
