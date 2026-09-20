@@ -57,8 +57,9 @@ export const reveal = {
       乗り上げてくると読みにくくなるため、上端に薄い黒のグラデで足場を作る。 */
 export function DetailHeader() {
   return (
+    /* ⚠️ 2026-09-20 ヒデさん指示「上部にシャドウがかかっていますが、それは要りません」
+       → 足場として敷いていた黒のグラデを撤去。ナビだけを置く */
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50">
-      <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-b from-black/30 to-transparent" />
       <div className="pointer-events-auto relative flex justify-center pt-[26px]">
         <GlobalNav theme="light" />
       </div>
@@ -82,7 +83,10 @@ export function InfoTable({
         <div
           /* 「関連サイト」のように同じ見出しが2行あるので index も混ぜる */
           key={`${row.label}-${i}`}
-          className={`flex gap-4 border-b py-4 first:border-t sm:gap-6 ${line}`}
+          /* 【罫線のルール（2026-09-20 ヒデさん指示）】
+             表は「行と行の区切り」だけ。一番上の線（first:border-t）と
+             一番下の線（最後の行の border-b）は入れない */
+          className={`flex gap-4 py-4 [&:not(:last-child)]:border-b sm:gap-6 ${line}`}
         >
           <dt
             className={`w-[72px] shrink-0 text-body-14 font-light leading-[2] sm:w-[96px] ${label}`}

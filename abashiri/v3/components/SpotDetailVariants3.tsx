@@ -229,15 +229,18 @@ function QuietBlocks({
     "text-[length:var(--dt-head)] font-thin leading-[1.6] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]";
   return (
     <>
-      {/* 【2026-09-16 ヒデさん指示】「担当者からのおすすめポイント、この見出しの
-          上の罫線は要りません」→ ここだけ罫線なし。下の2つの区切りは残す */}
+      {/* 【罫線のルール（2026-09-20 ヒデさん指示）】
+            ・見出しの上下には罫線を入れない
+              （担当者からのおすすめポイント／基本情報／周辺マップ すべて）
+            ・基本情報の表は「行と行の区切り」だけ。表の一番上と一番下の線は入れない
+          → 区切りは罫線ではなく【余白】でつける（pt-10 → pt-[88px]） */}
       <motion.section data-sec={from} className="flex flex-col gap-7" {...V}>
         <h2 className={head}>担当者からのおすすめポイント</h2>
         <Points spot={spot} />
       </motion.section>
       <motion.section
         data-sec={from + 1}
-        className="flex flex-col gap-7 border-t border-ink/12 pt-10"
+        className="flex flex-col gap-7 pt-[88px]"
         {...V}
       >
         <h2 className={head}>基本情報</h2>
@@ -245,7 +248,7 @@ function QuietBlocks({
       </motion.section>
       <motion.section
         data-sec={from + 2}
-        className="flex flex-col gap-7 border-t border-ink/12 pt-10"
+        className="flex flex-col gap-7 pt-[88px]"
         {...V}
       >
         <h2 className={head}>周辺マップ</h2>

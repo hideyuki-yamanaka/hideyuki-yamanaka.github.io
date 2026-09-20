@@ -138,21 +138,19 @@ export default function SpotShowcase({
     v > t.spotFrom + (t.spotTo - t.spotFrom) * 0.75 ? "auto" : "none"
   );
 
-  /* サムネイルを押したら、その写真の位置までスクロールを送る */
+  /* サムネイルを押したら、そのスポットの位置までスクロールを送る。
+     ⚠️ 2026-09-20 ヒデさん指摘「左下の3枚が破綻している」の正体はここ。
+        自前の rAF ループで scrollTop を書いていたが、TopPage の慣性スクロールも
+        毎フレーム scrollTop を書いているため取り合いになり、【押しても切り替わらない】
+        （実測: サンゴ草を押しても写真は能取岬のまま、スクロールは180pxしか動かず）。
+        GlobalNav の「ホーム」で同じ事故を 2026-08-23 に直してあり、そこでは
+        「行き先をイベントで渡して、動かすのは TopPage 一本にする」形にしていた。
+        ここも同じやり方にそろえる。 */
   const jumpTo = (i: number) => {
-    const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
-    if (!sc) return;
     const target = i === 0 ? t.spotTo : t.spotTo + t.stepLen * i + 1;
-    const step = () => {
-      const dy = target - sc.scrollTop;
-      if (Math.abs(dy) < 0.5) {
-        sc.scrollTop = target;
-        return;
-      }
-      sc.scrollTop += dy * 0.14;
-      requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+    window.dispatchEvent(
+      new CustomEvent("abashiri:scroll-to", { detail: { y: target } })
+    );
   };
 
   return (
