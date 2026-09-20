@@ -17116,9 +17116,10 @@ function textRow(sp) {
     const st = document.createElement('style'); st.id = 'txtRowCss';
 st.textContent = '.txt-row{align-items:flex-start}'
       + '.txt-row > label{flex:0 0 86px;font-size:10px;line-height:1.25;padding-top:3px}'   /* 名前は詰めて折り返し可。つまみは1行に収める */
-      + '.txt-row .txt-ctl{display:flex;gap:3px;align-items:center;flex-wrap:nowrap;flex:1;min-width:0}'
-      + '.txt-row select.txt-w{font-size:11px;padding:2px 18px 2px 4px;max-width:none;width:88px;flex:0 0 auto;text-overflow:clip}'
-      + '.txt-row input.txt-n{width:44px;font-size:11px;padding:2px 4px;flex:0 0 auto}'
+      + '.txt-row .txt-ctl{display:flex;gap:4px 6px;align-items:center;flex-wrap:wrap;flex:1;min-width:0}'   /* 【2026-09-20】収まらない時は折り返して欠けさせない */
+      + '.txt-row .txt-pair{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto}'                  /* ラベル＋入力は必ずセットで折り返す */
+      + '.txt-row select.txt-w{font-size:11px;padding:2px 18px 2px 4px;max-width:none;width:82px;flex:0 0 auto;text-overflow:clip}'
+      + '.txt-row input.txt-n{width:50px;font-size:11px;padding:2px 3px;flex:0 0 auto;box-sizing:border-box}'   /* 【2026-09-20】1.20 や -0.5 が欠けないよう少し広げる */
       + '.txt-row .txt-lab{font-size:10px;opacity:.6;margin-left:0;flex:0 0 auto;white-space:nowrap}'
       + '.txt-row input.txt-n.is-auto{color:#9aa0a6}'   /* 自動(いまの大きさのまま)は薄いグレー、変えると黒 */
       + '.txt-row{gap:2px}'                              /* 【2026-09-20】↺の分を詰める */
@@ -17153,8 +17154,8 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const lh = numIn('行間(倍)。空欄＝CSSのまま', '0.05', '0.8', '3', 'lh');
   const ls = numIn('字間(px)。空欄＝CSSのまま', '0.1', '-5', '20', 'ls');
   fsz.dataset.prop = 'font-size'; wSel.dataset.prop = 'font-weight'; lh.dataset.prop = 'line-height'; ls.dataset.prop = 'letter-spacing';   /* 【2026-09-19】スマホモードで「モバイルで値が変わる」ものをオレンジに */
-  const mkLab = (t, el, title) => { const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; box.append(l, el); };
-  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('行', lh, '行間(倍)'); mkLab('字', ls, '字間(px)');   /* 1文字ラベル＋ホバーで説明。1行に収めるため */
+  const mkLab = (t, el, title) => { const pair = document.createElement('span'); pair.className = 'txt-pair'; const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; pair.append(l, el); box.append(pair); };
+  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(px)');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に */
   function sync() {
     /* スマホモード中は「共有(base)＋スマホ上書き(mb)」を表示。通常は共有だけ */
     const _base = (params.edits && params.edits[sp.key]) || {};
@@ -17166,10 +17167,15 @@ st.textContent = '.txt-row{align-items:flex-start}'
     fsz.classList.toggle('is-auto', e.fs == null);   /* 自動(未変更)は薄く */
     wSel.value = e.fw != null ? String(e.fw) : '';
     wSel.options[0].textContent = c ? `自動(${c.fontWeight})` : '自動';
-    lh.value = e.lh != null ? e.lh : '';
-    lh.placeholder = c ? (parseFloat(c.lineHeight) && parseFloat(c.fontSize) ? (parseFloat(c.lineHeight) / parseFloat(c.fontSize)).toFixed(2) : '自動') : '';
-    ls.value = e.ls != null ? e.ls : '';
-    ls.placeholder = c ? (c.letterSpacing === 'normal' ? '0' : parseFloat(c.letterSpacing).toFixed(1)) : '';
+    /* 【2026-09-20 ヒデさん依頼・#12】lh/ls も「いまの値」を入れておく → そこから上下できる(空欄起点で変な値へ飛ぶのを防ぐ)。触っていない間は e.lh/e.ls 未設定(=CSSのまま)で薄く表示 */
+    const _lhCur = c ? ((parseFloat(c.lineHeight) && parseFloat(c.fontSize)) ? +(parseFloat(c.lineHeight) / parseFloat(c.fontSize)).toFixed(2) : '') : '';
+    lh.value = e.lh != null ? e.lh : _lhCur;
+    lh.placeholder = _lhCur + '';
+    lh.classList.toggle('is-auto', e.lh == null);
+    const _lsCur = c ? (c.letterSpacing === 'normal' ? 0 : +parseFloat(c.letterSpacing).toFixed(1)) : '';
+    ls.value = e.ls != null ? e.ls : _lsCur;
+    ls.placeholder = _lsCur + '';
+    ls.classList.toggle('is-auto', e.ls == null);
   }
   sync();
   row.appendChild(box);
