@@ -3547,7 +3547,7 @@
   /* 【2026-09-15 ヒデさん指定】大カテゴリはアコーディオンからタブへ: 上のタブで選ぶと、そのカテゴリの中身だけが下に出る(選んだタブはブラウザに記憶) */
   /* 【2026-09-20 ヒデさん依頼】タブは2段組(flex-wrap)をやめ、横1列＋横スクロールに。選択タブは中央へ寄せる(showTab) */
   .pan-tabs { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: nowrap; gap: 16px; margin: 0 -10px; padding: 6px 10px 0;
-              background: transparent;   /* 【2026-09-21 ヒデさん依頼】タブ帯の白塗り(浮いて見える)を撤去。地色はパネル本体に任せる */
+              background: transparent; border-bottom: 1px solid #dcdcdc;   /* 【2026-09-21 ヒデさん依頼】タブ帯の白塗り(浮いて見える)は撤去。ただしタブ全体の下にグレーの下線を1本引く */
               overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .pan-tabs::-webkit-scrollbar { height: 6px; }
   .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
@@ -17624,6 +17624,10 @@ const VAR_SNAP = {
   /* 【2026-09-19】揺らぎのグラデは「グラデに関わるキーだけ」を控える(dome や余白を巻き込まない) */
   visGrad: { get: () => { const v = params.sections.vision, o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (v[k] != null) o[k] = v[k]; }); return o; },
              set: s => Object.assign(params.sections.vision, s), reset: () => { visApplyGrad(visGradKey()); applyVisGrad(); } },
+  /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調=emph)ごとに、メッセージ/ポイントの文字サイズを独立させる。
+     dome(メッシュ)や grad は別バケット管理なので巻き込まない=サイズ系だけ控える。 */
+  visEmph: { get: () => { const v = params.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (v[k] != null) o[k] = v[k]; }); return o; },
+             set: s => { Object.assign(params.sections.vision, s); applyVpSize(); }, reset: () => {} },
   cv:      { get: () => params.cv, set: s => Object.assign(params.cv, s), reset: () => Object.assign(params.cv, structuredClone(DEFAULTS_PRISTINE.cv)) },
   /* 【2026-09-15】揺らぎの案は「動きに関わるキーだけ」を控える(余白や色の設定を巻き込まない) */
   cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; }); return o; },
@@ -17649,6 +17653,8 @@ const VAR_AUTOSAVE = [
   { bucket: 'visMesh',   sel: () => vfVarKey(),     snap: () => VAR_SNAP.visMesh,   base: (key) => { const m = (VIS_MESHES.find(x => x.key === key) || VIS_MESHES[0]); const g = Object.assign({}, VF_DEF, m.cfg || {}), o = {}; VF_VAR_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
   { bucket: 'visLogo',   sel: () => vfLogoKey(),    snap: () => VAR_SNAP.visLogo,   base: (key) => { const m = (VIS_LOGOS.find(x => x.key === key) || VIS_LOGOS[0]); const o = {}; VF_LOGO_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'visGrad',   sel: () => visGradKey(),   snap: () => VAR_SNAP.visGrad,   base: (key) => { const g = (VIS_GRADS.find(x => x.key === key) || VIS_GRADS[0]); const m = Object.assign({ gradVar: key, gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v || {}), o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (m[k] != null) o[k] = m[k]; }); return o; } },
+  /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調)ごとにメッセージ/ポイントの文字サイズを独立(案別に控える) */
+  { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: () => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
@@ -18660,7 +18666,7 @@ function buildPanel() {
 
   /* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション(デフォルト/強調)。強調＝2行・左揃え・大きめ */
   sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation', bare: true });   /* 【2026-09-21 ヒデさん依頼】カテゴリ節「バリエーション」と重複する小見出しは出さず、案の選択だけ見せる(KVと統一) */
-  varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => { params.sections.vision.emph = String(k); applyVisEmph(); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => { params.sections.vision.emph = String(k); applyVisEmph(); }, { snap: VAR_SNAP.visEmph, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });   /* 【2026-09-21 ヒデさん依頼】案(デフォルト/強調)を切り替えたら、離れる案の文字サイズを控え→選んだ案の控えを適用=それぞれ独立 */
   note('強調＝メッセージを2行(データをつなぐことが、／強みになる時代へ)に・左揃え・文字+20px・見出しの左をKVコピーに合わせる・1行目→2行目のマスク出現。デフォルト＝現状(1行・中央)。');
 
   /* 【2026-08-30 ヒデさん指定】「強み」の強調はグラデ揺らぎで確定。他の案とこのセクション自体を削除した */

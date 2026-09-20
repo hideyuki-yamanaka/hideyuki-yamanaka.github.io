@@ -19,9 +19,11 @@
 | E | パネルのタブ帯の白塗り(浮いてる)を撤去 | ✅ `.pan-tabs` の `background: rgba(255,255,255,.96)`＋border＋blur を撤去→`transparent`(地色はパネル本体.92に任せる)。実測 backgroundColor=rgba(0,0,0,0) |
 | F | タブ アクティブ=太字／他=細く | ✅ `.pan-tab` 600→500、`.pan-tab.on` に font-weight:700。実測 アクティブ700/他500 |
 | G | ビジョンの「バリエーション（案）」小見出しを削除 | ✅ `sub(catVis,…)` に `bare:true`(KVと統一)。実測 display:none |
-| A(継続) | 案ごとにパネル値を独立（ビジョンのメッセージ「データを繋ぐ〜」がデフォルト/強調で連動する件を最優先） | 🔴 対応中。強調案=`params.sections.vision.emph`(default/strong)は VAR_AUTOSAVE 未登録＝案別に捕捉されていないのが真因。emph バケット新設で vision のパネル値(msgSize/pH/pP/文字編集)を案別化する方針 |
+| A(ビジョン) | 案ごとにパネル値を独立（ビジョンのメッセージ「データを繋ぐ〜」がデフォルト/強調で連動） | ✅ 真因=強調案`vision.emph`(default/strong)が VAR_AUTOSAVE 未登録で案別に捕捉されず。`visEmph`バケット新設(msgSize/pHSize/pPSize/pWidth を案別に控える)＋varRowXにsnap付与。実測: default45→strong70→戻すと45→再strong70で独立・エラー0。🟡 強調のメッセージは既存CSSで msgSize+20 描画(スライダー値と+20ズレ)＝要否をヒデさんに確認。🟡 他セクション/SP側の全面独立は継続 |
+| K | タブ帯の下にグレーの下線 | ✅ `.pan-tabs` に border-bottom:1px #dcdcdc(白塗りは撤去のまま) |
 | H | KV/ビジョンのメッシュ形状・面の数を「基本のメッシュ」節で調整 | ⏳ 未着手 |
 | I | メッシュのバリエーション5案ずつ(丸み/横長/ひし形…/現状=ノーマル) | ⏳ 未着手 |
+| J | 開発者体験1/2の見出し↔モックの上下ギャップ統一(開発者体験1=40pxに揃える)＋導入事例と下コンテンツも揃える(少し詰める) | ⏳ 未着手 |
 
 ## 2026-09-21 ハンバーガー ドロワーの調整（×反転・CTA拡大・ちらつき）（ローカル検証済み・未デプロイ）
 
