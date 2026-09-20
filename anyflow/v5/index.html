@@ -10,7 +10,11 @@
 <title>Anyflow Embed — API連携でAIと事業を強くする</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"><!-- 【2026-09-17】太いウェイト(500〜900)を追加。以前は100〜400のみで、フォントテスト/調整版の 600/700/800(ExtraBold) 等を指定しても実体が無く偽ボールド/フォールバックになり「太さが当たらない」状態だった(カンプは Noto Sans JP ExtraBold=800)。 -->
+<!-- 【2026-09-20 軽量化・ヒデさん依頼】日本語フォント(Noto Sans JP)の読み込みを最適化:
+     (1) 実際に本番で使う 6ウェイト(300/400/500/600/700/800)だけに絞る。100/200/900 は焼き込み・CSS 実測で未使用だったので外す(カンプは ExtraBold=800 まで)。
+     (2) render-blocking をやめて非同期読み込みに(preload as=style → onload で stylesheet 化)。フォント CSS の取得を待たずにページが即描画され、display=swap で到着前は代替フォントで表示→到着後に差し替え。 -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap"></noscript>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
