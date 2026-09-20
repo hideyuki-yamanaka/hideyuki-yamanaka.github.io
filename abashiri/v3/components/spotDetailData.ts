@@ -43,7 +43,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "能取岬",
     kana: "のとろみさき",
     lead: "網走市美岬のオホーツク海に突き出た能取岬",
-    hero: "/img/spot/notoro-1.jpg",
+    hero: "/img/spot/notoro-1.webp",
     photos: ["/img/spot/notoro-2.jpg", "/img/spot/notoro-3.jpg"],
     sections: [
       {
@@ -153,7 +153,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "大曲湖畔園地ひまわり畑",
     kana: "おおまがりこはんえんちひまわりばたけ",
     lead: "網走刑務所の旧農地跡地を利用したひまわり畑",
-    hero: "/img/spot/himawari-1.jpg",
+    hero: "/img/spot/himawari-1.webp",
     photos: ["/img/spot/himawari-2.jpg", "/img/spot/himawari-3.jpg"],
     sections: [
       {
@@ -185,7 +185,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "博物館 網走監獄",
     kana: "はくぶつかんあばしりかんごく",
     lead: "「北海道開拓と監獄受刑者」をテーマとした野外歴史博物館",
-    hero: "/img/spot/kangoku-1.jpg",
+    hero: "/img/spot/kangoku-1.webp",
     photos: ["/img/spot/kangoku-2.jpg", "/img/spot/kangoku-3.jpg"],
     sections: [
       {
@@ -220,7 +220,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "オホーツク流氷館",
     kana: "おほーつくりゅうひょうかん",
     lead: "流氷とオホーツク海の生き物をテーマとした観光施設",
-    hero: "/img/spot/ryuhyokan-1.jpg",
+    hero: "/img/spot/ryuhyokan-1.webp",
     photos: ["/img/spot/ryuhyokan-2.jpg", "/img/spot/ryuhyokan-3.jpg"],
     sections: [
       {
@@ -253,7 +253,7 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "カヌー体験",
     kana: "かぬーたいけん",
     lead: "アイヌ語地名の解説を聞きながら、古代の人々が見た景色に浸る",
-    hero: "/img/spot/canoe-1.jpg",
+    hero: "/img/spot/canoe-1.webp",
     photos: ["/img/spot/canoe-2.jpg", "/img/spot/canoe-3.jpg"],
     sections: [
       {
@@ -291,8 +291,8 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "オジロワシ・オオワシウォッチング",
     kana: "おおわしうぉっちんぐ",
     lead: "天然記念物のオジロワシ・オオワシを網走市内周辺で観察します。",
-    hero: "/img/spot/washi-1.jpg",
-    photos: ["/img/spot/washi-1.jpg"],
+    hero: "/img/spot/washi-1.webp",
+    photos: ["/img/spot/washi-1.webp"],
     sections: [
       {
         text: "翼開長2m〜2.5mにもなるオジロワシとオオワシは希少種で天然記念物に指定されています。網走市内周辺の観察スポットを車で周りながら生態系の頂点に立つ彼らの姿を通して網走の自然を感じていただきます。",

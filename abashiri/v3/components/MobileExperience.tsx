@@ -12,11 +12,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import BoTips, { DEFAULT_BO_TIPS } from "./BoTips";
 
+/* 【2026-09-20】PC版（ExperienceFlow）と同じ中身・同じ並びにそろえる。
+   網走駅は削除済みなのにここだけ残っていた。ひまわりも追加し、
+   並びはトップ（能取岬→さんご草→流氷クルーズ→ひまわり）に合わせる */
 const PICKS = [
-  { id: "notoro", label: "能取岬", no: "01", img: "/img/spot-notoro.jpg" },
-  { id: "sangoso", label: "能取湖サンゴ草群落地", no: "02", img: "/img/spot-sangoso.jpg" },
-  { id: "eki", label: "網走駅", no: "03", img: "/img/spot-eki.jpg" },
-  { id: "ryuhyo", label: "流氷クルーズ", no: "04", img: "/img/ice.jpg", video: "/video/ryuhyo.mp4" },
+  { id: "notoro", label: "能取岬", no: "01", img: "/img/spot-notoro.webp" },
+  { id: "sangoso", label: "能取湖サンゴ草群落地", no: "02", img: "/img/spot-sangoso.webp" },
+  { id: "ryuhyo", label: "流氷クルーズ", no: "03", img: "/img/ice.jpg", video: "/video/ryuhyo.mp4" },
+  { id: "himawari", label: "大曲湖畔園地ひまわり畑", no: "04", img: "/img/spot/himawari-1.webp" },
 ];
 const VIDEO_IDX = PICKS.findIndex((p) => p.video);
 const CARD_W = 300; // カード幅（PC 902 のレスポンシブ縮小）

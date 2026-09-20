@@ -40,21 +40,21 @@ const SPOTS = [
     no: "01",
     slug: "notoro",
     title: "能取岬",
-    img: "/img/spot-notoro.jpg",
+    img: "/img/spot-notoro.webp",
     body: "オホーツク海に突き出た岬で、突端には灯台と管理事務所があるだけ。ここから西方は能取湖と常呂町の海岸、北方はすべてオホーツク海、東方は遠く知床連山が眺められます。",
   },
   {
     no: "02",
     slug: "sango",
     title: "能取湖サンゴ草群落地",
-    img: "/img/spot-sangoso.jpg",
+    img: "/img/spot-sangoso.webp",
     body: "能取湖の南岸、卯原内に位置する「能取湖サンゴ草群生地」は、別名アッケシソウと呼ばれるサンゴ草の日本一を誇る群落地です。",
   },
   {
     no: "03",
     slug: "ryuhyo",
     title: "流氷クルーズ",
-    img: "/img/spot-ryuhyo.jpg",
+    img: "/img/spot-ryuhyo.webp",
     body: "冬のオホーツク海を埋め尽くす流氷は、はるかアムール川から流れ着く自然の贈りもの。砕氷船に乗れば、白い海原を割って進む音と揺れを全身で感じられます。",
   },
   {
@@ -64,24 +64,24 @@ const SPOTS = [
     no: "04",
     slug: "himawari",
     title: "大曲湖畔園地ひまわり畑",
-    img: "/img/spot/himawari-1.jpg",
+    img: "/img/spot/himawari-1.webp",
     body: "網走刑務所の旧農場跡地を整備した広大な園地。秋には約260万本のひまわりが咲きそろい、展望台から一面の黄色を見渡せます。",
   },
 ];
 
 const GOURMET = [
-  { no: "01", title: "横山蒲鉾店", img: "/img/gourmet-new-1.jpg", slug: "yokoyama" },
-  { no: "02", title: "松尾ジンギスカン 呼人支店", img: "/img/gourmet-new-2.jpg", slug: "matsuo" },
-  { no: "03", title: "ラーメンだるまや", img: "/img/gourmet-new-3.jpg", slug: "darumaya" },
-  { no: "04", title: "酒縁酒場 屯々", img: "/img/gourmet-new-4.jpg", slug: "tonton" },
+  { no: "01", title: "横山蒲鉾店", img: "/img/gourmet-new-1.webp", slug: "yokoyama" },
+  { no: "02", title: "松尾ジンギスカン 呼人支店", img: "/img/gourmet-new-2.webp", slug: "matsuo" },
+  { no: "03", title: "ラーメンだるまや", img: "/img/gourmet-new-3.webp", slug: "darumaya" },
+  { no: "04", title: "酒縁酒場 屯々", img: "/img/gourmet-new-4.webp", slug: "tonton" },
 ];
 
 /* 体験セクション（PC版 EventSection と同じ4件・同じ詳細ページへつなぐ） */
 const EVENTS = [
-  { no: "01", slug: "kangoku", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg" },
-  { no: "02", slug: "ryuhyokan", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg" },
-  { no: "03", slug: "canoe", title: "カヌー体験", img: "/img/spot/canoe-1.jpg" },
-  { no: "04", slug: "washi", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg" },
+  { no: "01", slug: "kangoku", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.webp" },
+  { no: "02", slug: "ryuhyokan", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.webp" },
+  { no: "03", slug: "canoe", title: "カヌー体験", img: "/img/spot/canoe-1.webp" },
+  { no: "04", slug: "washi", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.webp" },
 ];
 
 /* KV / メッセージ / スポット×4 / グルメ / 体験 / フッター

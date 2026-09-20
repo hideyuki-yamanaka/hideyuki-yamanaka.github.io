@@ -70,7 +70,7 @@ const SPOTS: Spot[] = [
      船の写真が挟まって見えてしまう。ice.jpg なら動画の絵とつながる */
   { id: "ryuhyo", label: "流氷クルーズ", src: "/img/ice.jpg", video: "/video/ryuhyo.mp4" },
   /* トップのひまわり畑と同じ写真にそろえる（2026-09-20） */
-  { id: "himawari", label: "大曲湖畔園地ひまわり畑", src: "/img/spot/himawari-1.jpg" },
+  { id: "himawari", label: "大曲湖畔園地ひまわり畑", src: "/img/spot/himawari-1.webp" },
 ];
 
 const STAGE_W = 1512;

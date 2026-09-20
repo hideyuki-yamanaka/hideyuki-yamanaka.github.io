@@ -68,13 +68,13 @@ export type CarouselItem = {
 };
 type Item = CarouselItem;
 const DEFAULT_ITEMS: Item[] = [
-  { no: "01", tag: "体験", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.jpg", href: "/spot/kangoku",
+  { no: "01", tag: "体験", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.webp", href: "/spot/kangoku",
     body: "実際に使われていた監獄の建物を移築・復原した野外博物館。重要文化財の舎房や、受刑者が食べている「監獄食」を味わえる食堂もあります。" },
-  { no: "02", tag: "体験", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.jpg", href: "/spot/ryuhyokan",
+  { no: "02", tag: "体験", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.webp", href: "/spot/ryuhyokan",
     body: "天都山の頂上にある、流氷を一年中体感できる施設。マイナス15度の流氷体感テラスや、クリオネなど流氷の生きものに会えます。" },
-  { no: "03", tag: "体験", title: "カヌー体験", img: "/img/spot/canoe-1.jpg", href: "/spot/canoe",
+  { no: "03", tag: "体験", title: "カヌー体験", img: "/img/spot/canoe-1.webp", href: "/spot/canoe",
     body: "網走川や網走湖を、ガイドと一緒にゆっくり漕ぎ出す水の上のさんぽ。鳥の声と水の音だけの静かな時間が待っています。" },
-  { no: "04", tag: "体験", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.jpg", href: "/spot/washi",
+  { no: "04", tag: "体験", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.webp", href: "/spot/washi",
     body: "冬の網走に渡ってくる大型のワシを、ガイドと探しにいくツアー。流氷の上や河口の木々にとまる姿は迫力満点です。" },
 ];
 

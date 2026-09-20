@@ -35,7 +35,7 @@ export const GOURMET_DETAILS: Record<string, SpotDetail> = {
     name: "横山蒲鉾店",
     kana: "よこやまかまぼこてん",
     lead: "手作りにこだわる小さなかまぼこ工場",
-    hero: "/img/gourmet-new-1.jpg",
+    hero: "/img/gourmet-new-1.webp",
     photos: [],
     sections: [
       {
@@ -63,7 +63,7 @@ export const GOURMET_DETAILS: Record<string, SpotDetail> = {
     name: "松尾ジンギスカン 呼人支店",
     kana: "まつおじんぎすかん よびとしてん",
     lead: "地域に愛され続ける味。創業50年の極上ジンギスカン",
-    hero: "/img/gourmet-new-2.jpg",
+    hero: "/img/gourmet-new-2.webp",
     photos: [
       "/img/gourmet/matsuo-1.jpg",
       "/img/gourmet/matsuo-2.jpg",
@@ -107,7 +107,7 @@ export const GOURMET_DETAILS: Record<string, SpotDetail> = {
     name: "ラーメンだるまや",
     kana: "らーめんだるまや",
     lead: "「どろらーめん」が名物！みんなから愛される人気の名店",
-    hero: "/img/gourmet-new-3.jpg",
+    hero: "/img/gourmet-new-3.webp",
     photos: [
       "/img/gourmet/darumaya-4.jpg",
       "/img/gourmet/darumaya-2.jpg",
@@ -150,7 +150,7 @@ export const GOURMET_DETAILS: Record<string, SpotDetail> = {
     name: "酒縁酒場 屯々",
     kana: "しゅえんさかば とんとん",
     lead: "出汁料理とお酒で網走の魅力と縁を繋ぐパワースポット酒場",
-    hero: "/img/gourmet-new-4.jpg",
+    hero: "/img/gourmet-new-4.webp",
     photos: [
       "/img/gourmet/tonton-3.jpg",
       "/img/gourmet/tonton-2.jpg",

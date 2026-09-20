@@ -57,21 +57,21 @@ const SPOTS: Spot[] = [
     id: "notoro",
     no: "01",
     title: "能取岬",
-    img: "/img/spot-notoro.jpg",
+    img: "/img/spot-notoro.webp",
     body: "オホーツク海に突き出た岬で、突端には灯台と管理事務所があるだけ。ここから西方は能取湖と常呂町の海岸、北方はすべてオホーツク海、東方は遠く知床連山が眺められます。",
   },
   {
     id: "sango",
     no: "02",
     title: "能取湖サンゴ草群落地",
-    img: "/img/spot-sangoso.jpg",
+    img: "/img/spot-sangoso.webp",
     body: "能取湖の南岸、卯原内に位置する「能取湖サンゴ草群生地」は、別名アッケシソウと呼ばれるサンゴ草の日本一を誇る群落地です。",
   },
   {
     id: "ryuhyo",
     no: "03",
     title: "流氷クルーズ",
-    img: "/img/spot-ryuhyo.jpg",
+    img: "/img/spot-ryuhyo.webp",
     body: "冬のオホーツク海を埋め尽くす流氷は、はるかアムール川から流れ着く自然の贈りもの。砕氷船に乗れば、白い海原を割って進む音と揺れを全身で感じられます。",
   },
   {
@@ -79,7 +79,7 @@ const SPOTS: Spot[] = [
     id: "himawari",
     no: "04",
     title: "大曲湖畔園地ひまわり畑",
-    img: "/img/spot/himawari-1.jpg",
+    img: "/img/spot/himawari-1.webp",
     body: "網走刑務所の旧農場跡地を整備した広大な園地。秋には約260万本のひまわりが咲きそろい、展望台から一面の黄色を見渡せます。",
   },
 ];
