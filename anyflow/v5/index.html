@@ -17051,14 +17051,16 @@ let subDefaultOpen = false;   /* true の間に作る小見出しは、既定で
 /* 【2026-09-20 ヒデさん依頼・パネル整理】小見出しを「グループ」に分類し、タブが切り替わっても
    いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)で並ぶようにする。
    分類は見出しの言葉から自動判定。合わない所は sub(..., { grp:'basic' }) のように明示で上書きできる。 */
-const GRP_ORDER = { variation: 1, basic: 2, font: 3, color: 4, texture: 5, anim: 6 };
+/* 【2026-09-20 大改修・ヒデさん依頼】新5カテゴリに統一: バリエーション→基本→フォント→エフェクト＆テクスチャ→アニメーション→その他。
+   旧 color/texture は fxtex(エフェクト＆テクスチャ)に統合。ルールは settings/docs/anyflow/ANYFLOW-PANEL-STRUCTURE.md。 */
+const GRP_ORDER = { variation: 0, basic: 1, font: 2, fxtex: 3, anim: 4, other: 5 };
+const GRP_LABEL = { variation: 'バリエーション（案）', basic: '基本', font: 'フォント', fxtex: 'エフェクト＆テクスチャ', anim: 'アニメーション', other: 'その他' };
 let _grpSeq = 0;   /* 同じグループ内は元の順を保つための連番(安定ソート) */
 function grpFromLabel(k) {
   if (/🔤|文字（太/.test(k)) return 'font';
-  if (/バリエーション|演出の案|案.*：/.test(k)) return 'variation';
-  if (/配色|カラー/.test(k)) return 'color';
-  if (/ディザ|ガラス|立体感|網目|質感|テクスチャ|マテリアル/.test(k)) return 'texture';
-  if (/タイミング|アニメ|演出|順番|登場|揺らぎ|つなぎ|一旦止まる|出入り|入場/.test(k)) return 'anim';
+  if (/バリエーション|演出の案|スタイル|案.*：/.test(k)) return 'variation';
+  if (/配色|カラー|色の移ろい|ディザ|ガラス|立体感|網目|質感|テクスチャ|マテリアル|エフェクト/.test(k)) return 'fxtex';
+  if (/タイミング|アニメ|演出|順番|登場|揺らぎ|つなぎ|一旦止まる|出入り|入場|切替|ディレイ|出てくる|回って/.test(k)) return 'anim';
   return 'basic';
 }
 /* パネルを組み終わったら呼ぶ。各カテゴリ(.cat-body)直下の小見出し(.grp)をグループ順に並べ替える。
@@ -17068,7 +17070,7 @@ function applyPanelGroupOrder() {
     document.querySelectorAll('.cat-body').forEach(bodyEl => {
       const grps = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('grp'));
       if (grps.length < 2) return;
-      const keyed = grps.map((el, i) => ({ el, o: (GRP_ORDER[el.dataset.grp] || 2), i: +(el.dataset.seq || i) }));
+      const keyed = grps.map((el, i) => ({ el, o: (GRP_ORDER[el.dataset.grp] != null ? GRP_ORDER[el.dataset.grp] : GRP_ORDER.basic), i: +(el.dataset.seq || i) }));
       keyed.sort((a, b) => (a.o - b.o) || (a.i - b.i));
       keyed.forEach(k => bodyEl.appendChild(k.el));   /* 並べ替え順に付け直す(.cat-body直下は.grpだけの想定) */
     });
@@ -17876,17 +17878,17 @@ function buildPanel() {
   subDefaultOpen = true;      /* ここから下(グラフィック)は既定で開く */
   sub(catKv, '🎨 グラフィック');
   /* 【2026-09-19 ヒデさん依頼】右グラフィック(惑星＋カゴ)を XYZ で動かす。真ん中(0)＝いまの位置。Z は手前(+)/奥(−)＝大きく/小さく(PCのみ) */
-  note('▼ 右グラフィック全体（惑星＋カゴ）の位置。真ん中(0)＝いまの位置。カゴの傾き・向きは下の「カゴ」の組');
+  note('▼ 右グラフィック全体（惑星＋メッシュ）の位置。真ん中(0)＝いまの位置。傾き・向きは下の「メッシュ」の組');
   { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true, mbKey: 'kvGfx.' + key });
     const px = v => (v > 0 ? '+' : '') + Math.round(v) + 'px', pc = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
-    ks('グラフィックの位置 X', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋カゴ)を左右に。0＝いまの位置。');
-    ks('グラフィックの位置 Y', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋カゴ)を上下に。0＝いまの位置。');
-    ks('グラフィックの奥行き Z', 'oz', -60, 60, 1, pc, '手前(+)に寄せると大きく、奥(−)に下げると小さく。0＝いまの大きさ。'); }
+    ks('位置 左右', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を左右に。0＝いまの位置。');
+    ks('位置 上下', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を上下に。0＝いまの位置。');
+    ks('位置 奥行き', 'oz', -60, 60, 1, pc, '手前(+)に寄せると大きく、奥(−)に下げると小さく。0＝いまの大きさ。'); }
   const gRoot = mount;
   /* 【2026-08-29 ヒデさん指定】右グラフィックの登場タイミングは「左側コピー>タイミング」だと
      見つけにくいので、ここ(グラフィック直下)にも同じスライダーを置く(同じ params.kv.graphicGap)。 */
   liveEdit = true;
-  slider('この右グラフィックが出るタイミング', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v,
+  slider('出るタイミング', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v,
     v => v.toFixed(2) + '秒', 'マイナスにすると早く（タイピング中に）出ます。0で小ラベルと同時。', { mbKey: 'kv.graphicGap', signed: true });
   note('※ 同じ設定は「左側コピー > タイミング」にもあります。');
 
@@ -18035,30 +18037,34 @@ function buildPanel() {
         '粒の明滅の強さ。0で一定の明るさ。', { mbKey: 'conv.accre.twinkle', fixedMax: true });
     } else if (cvMode === 'mesh') {
       const M = params.conv.mesh;
-      sub(animModeBox, 'メッシュ（網）の形', true);   /* 【2026-09-17 大掃除】旧「この案の調整（網でつながる）」 */
+      /* 【2026-09-20 大改修・ヒデさん依頼】惑星はメッシュと別パラメータ→別見出し「惑星」に分離。旧「メッシュ（網）の形」→「メッシュ（網）」。カゴ→メッシュに命名統一・見出しにモノ名があるので子は短縮。 */
+      sub(animModeBox, '惑星', true);
+      slider('大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
+        v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。', { mbKey: 'planet.scale' });
+      sub(animModeBox, 'メッシュ（網）', true);
       /* 【2026-09-17 大掃除・ヒデさん指定】「頂点は自動配置」ボタンと案内は削除(ケージは立体並びで手置き不可のため常に空振りだった) */
       slider('ノードの数', 3, 60, 1, () => params.conv.mesh.nodes,
         v => { M.nodes = v; if (M.pts && M.pts.length !== Math.round(v)) M.pts = null; },
         v => v + '個', '「散らばり（フィボナッチ）」の時の点の数。「整った網（測地線）」では下の「面の数」で決まります。', { mbKey: 'conv.mesh.nodes', fixedMax: true });
-      /* 【2026-09-17 ヒデさん指定】惑星の大きさは「カゴの大きさ」のすぐ上に置く(旧「惑星」節から移動) */
-      slider('惑星の大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
-        v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。', { mbKey: 'planet.scale' });
+      slider('ノードの大きさ', 0.1, 3, 0.02, () => params.conv.mesh.size, v => M.size = v, v => '×' + v.toFixed(2),
+        'この案のノードだけの大きさ（全体の「ドットの大きさ」に掛かります）。', { mbKey: 'conv.mesh.size', fixedMax: true });
+      /* 惑星の大きさは上の「惑星」見出しへ移動(2026-09-20 大改修) */
       /* 【2026-08-27 ヒデさん指定】包囲ケージ専用のつまみ */
       if ((M.style || 'organic') === 'cage') {
-        slider('カゴの大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
+        slider('大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
           '惑星の半径の何倍でカゴを組むか。大きいほど大きく取り囲みます。', { mbKey: 'conv.mesh.cageR' });
-        slider('カゴが回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
+        slider('回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
           v => '×' + v.toFixed(2), '右へ動かすほどカゴが速く回ります。0(左端)で止まります。', { mbKey: 'conv.mesh.cageSpin' });
-        slider('カゴの傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
+        slider('傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
           'カゴの軸を手前/奥へ倒す。0で真横から見た形になります。', { mbKey: 'conv.mesh.cageTilt' });
         /* 【2026-09-19 ヒデさん依頼】傾きを3軸に(前後・左右・向き) */
-        slider('カゴの傾き（左右）', -60, 60, 1, () => (params.conv.mesh.cageRoll || 0), v => M.cageRoll = v, v => (v > 0 ? '+' : '') + v + '°',
+        slider('傾き（左右）', -60, 60, 1, () => (params.conv.mesh.cageRoll || 0), v => M.cageRoll = v, v => (v > 0 ? '+' : '') + v + '°',
           'カゴの軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { mbKey: 'conv.mesh.cageRoll', signed: true });
-        slider('カゴの向き（回転の位置）', -180, 180, 1, () => (params.conv.mesh.cageYaw || 0), v => M.cageYaw = v, v => (v > 0 ? '+' : '') + v + '°',
+        slider('向き（回転の位置）', -180, 180, 1, () => (params.conv.mesh.cageYaw || 0), v => M.cageYaw = v, v => (v > 0 ? '+' : '') + v + '°',
           '縦軸まわりの向きをずらす。回っている時は「どこから回り始めるか」、止めている時は「どの面を見せるか」。', { mbKey: 'conv.mesh.cageYaw', signed: true });
         /* 【2026-09-18 ヒデさん依頼「メッシュの面の数などを変えられるように」】カゴの形(整った網/散らばり)を選べるようにし、
            整った網は「面の数」を段階スライダーに(旧: 粗い/ふつう/細かい の3択)。表示は実際の点・線の数。 */
-        optRow('cageShape', 'カゴの形', [['整った網（測地線）', 'geo'], ['散らばり（フィボナッチ）', 'fibo']],
+        optRow('cageShape', '形', [['整った網（測地線）', 'geo'], ['散らばり（フィボナッチ）', 'fibo']],
           () => (M.cageShape || 'fibo'), v => { M.cageShape = v; markDirty(); renderFrame(); fillAnimBody(); });
         if (M.cageShape === 'geo') {
           /* 【2026-09-02 ヒデさん指定】整った網(測地線)は面の細かさで密度を決める */
@@ -18071,9 +18077,7 @@ function buildPanel() {
             '多いほど骨が増えて、密なカゴになります。', { mbKey: 'conv.mesh.cageLinks' });
         }
       }
-      slider('ノードの大きさ', 0.1, 3, 0.02, () => params.conv.mesh.size, v => M.size = v, v => '×' + v.toFixed(2),
-        'この案のノードだけの大きさ（全体の「ドットの大きさ」に掛かります）。', { mbKey: 'conv.mesh.size', fixedMax: true });
-      slider('メッシュ全体の大きさ', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
+      slider('全体の広がり', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
         v => '×' + v.toFixed(2), '網ぜんたいの広がり。大きいほどノードが外へ広がって大きな網になります。', { mbKey: 'conv.mesh.spread', fixedMax: true });
       slider('線の濃さ', 0, 1, 0.01, () => params.conv.mesh.lineAlpha, v => M.lineAlpha = v, v => v.toFixed(2), null, { mbKey: 'conv.mesh.lineAlpha', fixedMax: true });
       slider('線の太さ', 0.3, 6, 0.1, () => params.conv.mesh.lineWidth, v => M.lineWidth = v, v => v.toFixed(1) + 'px', null, { mbKey: 'conv.mesh.lineWidth', fixedMax: true });
@@ -18371,17 +18375,17 @@ function buildPanel() {
   subDefaultOpen = false;     /* グラフィックはここまで */
   /* 【2026-09-19 ヒデさん依頼】「ロゴ帯（目視の微調整）」の欄は削除(使わないため)。位置は現在の params.logoTune のまま固定。 */
   /* 【2026-08-27 ヒデさん指定】「左側コピー」に改名し、順番 / タイミング に分ける */
-  sub(catKv, '左側コピー');
-  const copyRoot = mount;
+  /* 【2026-09-20 大改修・ヒデさん依頼】「左側コピー」の器を廃止し、コピー(基本)＋コピー(順番)/コピー(打つ速さ)=アニメに分割。 */
+  const copyRoot = catKv;
   /* 【2026-08-31 ヒデさん指定】コピーの文字設定(メインのサイズ/太さ・サブの罫線あり/なし など) */
-  sub(copyRoot, 'コピー（文字）', true);
+  sub(copyRoot, 'コピー', false);
   optRow('copyOrder', '上下の並び', [['メインが上', 'main'], ['サブが上', 'sub']],
     () => (params.kv.copyOrder === 'sub' ? 'sub' : 'main'),
     v => { params.kv.copyOrder = v; applyKvCopy(); markDirty(); });
-  rows.push(slider('位置 横', -120, 300, 2, () => (params.kv.copyX || 0),
+  rows.push(slider('位置 左右', -120, 300, 2, () => (params.kv.copyX || 0),
     v => { params.kv.copyX = v; applyKvCopy(); }, v => v + 'px',
     'コピー全体（メイン＋サブ）を左右にずらします。0でヘッダーのロゴの左端と同じ位置(窓幅が変わっても揃います)。', { mbKey: 'kv.copyX', signed: true }));
-  rows.push(slider('位置 縦', -200, 300, 2, () => (params.kv.copyY || 0),
+  rows.push(slider('位置 上下', -200, 300, 2, () => (params.kv.copyY || 0),
     v => { params.kv.copyY = v; applyKvCopy(); }, v => v + 'px',
     'コピー全体を上下にずらします。0で調整版(Figma)の位置。', { mbKey: 'kv.copyY', signed: true }));
   rows.push(slider('メインの文字サイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
@@ -18407,7 +18411,7 @@ function buildPanel() {
   rows.push(slider('サブの文字サイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
     v => { params.kv.eyebrowSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
     '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「🔤 文字」で。', { mbKey: 'kv.eyebrowSize' }));
-  sub(copyRoot, '順番', true);
+  sub(copyRoot, 'コピー（順番）', false, { grp: 'anim' });
   note('数字はページを開いてから何秒後か。上から出る順です。');
   /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
      選択パネル(5案ずつ)は削除。実装は header の data-navhover="roll" / data-btnhover="arrow" 固定(下のJS)。 */
@@ -18418,7 +18422,7 @@ function buildPanel() {
     'いちばん上のロゴとメニューが、ぼけた状態から現れるまで。', { mbKey: 'kv.headerAt' }));
   rows.push(slider('文字を打ち始める', 0, 6, 0.05, () => params.kv.typeAt, v => params.kv.typeAt = v, v => v.toFixed(2) + '秒後',
     '「AIと事業を強くする」を1文字ずつ打ち始めるまで。', { mbKey: 'kv.typeAt' }));
-  sub(copyRoot, 'タイミング', true);
+  sub(copyRoot, 'コピー（打つ速さ）', false, { grp: 'anim' });
   note('打つ速さと間の取り方。触ると先頭から流し直します。');
   rows.push(slider('1行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur, v => params.kv.charDur = v, v => v.toFixed(2) + 's/字',
     '1文字あたりの時間。小さいほどタタタッと速く打ちます。', { mbKey: 'kv.charDur' }));
