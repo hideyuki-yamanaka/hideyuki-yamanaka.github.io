@@ -26,11 +26,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
-  BackPill,
   InfoTable,
   MapEmbed,
   Points,
   HeroTitle,
+  DetailHeader,
   EASE,
   type VProps,
 } from "./SpotDetailVariants";
@@ -77,6 +77,8 @@ function Shell({
       ref={refEl}
       className="h-dvh overflow-y-auto overflow-x-hidden overscroll-contain bg-white"
     >
+      {/* 共通ヘッダー（部品は SpotDetailVariants.tsx の DetailHeader） */}
+      <DetailHeader />
       {children}
       <SiteFooter />
     </main>
@@ -379,27 +381,99 @@ function Toc({
   );
 }
 
-/** 目次5案で共通の枠組み（左に目次・右に本文） */
+/** 目次5案で共通の枠組み（左に目次・右に本文）
+    pinnedHero: 写真を画面いっぱいに貼りつけたまま、白い面が上にかぶさってくる形にする
+      【2026-09-20 ヒデさん指示】
+        「最初は画像がVH100で表示されていて、スクロールするとグラデーションの
+          白色の背景が出てきて、写真は固定でずっと動かずに、
+          白背景のものが上にかぶさってスクロールされていくようなイメージ」
+      ⚠️ 案37（ぼかして白へ）と違い、写真は【ぼかさない・動かさない】。
+         貼りついたまま一切変化せず、白い面だけが乗り上げる */
 function TocLayout({
   spot,
   kind,
   heroH = "h-[86dvh]",
+  pinnedHero = false,
 }: {
   spot: SpotDetail;
   kind: TocKind;
   heroH?: string;
+  pinnedHero?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const heads = headsOf(spot);
   const items = tocOf(spot);
   const active = useSpy(ref, items.length);
   const jump = useJump(ref);
 
+  /* 貼りつく写真の上をどれだけ進んだか 0→1。白い面が乗り上げるのに合わせて
+     左下の名前だけを消す（写真そのものには一切さわらない） */
+  /* ⚠️ target には【実際に描かれている要素】しか渡せない。
+     pinnedHero が false の案（32・35）ではステージを描かないので、
+     そのまま渡すと "Target ref is defined but not hydrated" が出る
+     （2026-09-20 実測。案32・35 でだけ1件ずつ発生していた）。
+     貼りつく形のときだけ target を渡す */
+  const { scrollYProgress } = useScroll({
+    container: ref,
+    target: pinnedHero ? stage : undefined,
+    offset: ["start start", "end start"],
+  });
+  const titleO = useTransform(scrollYProgress, [0, 0.24, 0.42], [1, 1, 0]);
+
   return (
     <Shell refEl={ref}>
-      <BackPill />
-      <QuietHero spot={spot} h={heroH} />
-      <div className="px-6 py-[110px] md:px-[56px] lg:px-[100px]">
+      {pinnedHero ? (
+        <>
+          {/* 写真が貼りつくステージ。
+              ⚠️ 高さの決め方（2026-09-20 実測して直した）:
+                 貼りつき(sticky)が切れるのは「ステージ高 − 画面1つ」を過ぎたとき。
+                 白い面は 100dvh 進んだ所から乗り上げ、そこから 70dvh のグラデを
+                 かけて白くなりきる。つまり画面が完全に白で覆われるのは 170dvh 地点。
+                 200dvh にしていた時は 100dvh で貼りつきが切れてしまい、
+                 【まだ写真が見えているのに動き出した】（実測: 写真top 0 → -462px）。
+                 170dvh + 画面1つ = 270dvh 必要なので、余裕をみて 280dvh にする */}
+          <div ref={stage} className="relative h-[280dvh]">
+            <div className="sticky top-0 h-dvh w-full overflow-hidden">
+              <img
+                src={spot.hero}
+                alt={spot.name}
+                className="size-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20" />
+              <motion.div
+                className="absolute inset-x-0 bottom-0 px-6 pb-[80px] lg:px-[120px] lg:pb-[120px]"
+                style={{ opacity: titleO }}
+              >
+                <HeroTitle spot={spot} size="sm" />
+              </motion.div>
+            </div>
+          </div>
+          {/* 白い面。ステージの半分（100dvh）の位置から乗り上げる。
+              先頭のグラデで、写真がだんだん白へ変わって見える */}
+          <div className="relative z-[2] -mt-[100dvh]">
+            {/* ⚠️ 2026-09-20 ヒデさん指摘「上部の部分は白を多めに。急に空が来すぎ」
+                → 変化が急だったので、丈を 46dvh → 70dvh に伸ばし、
+                  白の立ち上がりを早めて刻みも細かくした（上に行くほど写真が
+                  すこしずつ顔を出す形にする） */}
+            <div
+              className="h-[70dvh] w-full"
+              style={{
+                background:
+                  "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 12%, rgba(255,255,255,0.34) 26%, rgba(255,255,255,0.54) 40%, rgba(255,255,255,0.72) 54%, rgba(255,255,255,0.86) 68%, rgba(255,255,255,0.95) 82%, rgba(255,255,255,0.99) 92%, #fff 100%)",
+              }}
+            />
+            <div className="-mt-px bg-white" />
+          </div>
+        </>
+      ) : (
+        <QuietHero spot={spot} h={heroH} />
+      )}
+      <div
+        className={`px-6 py-[110px] md:px-[56px] lg:px-[100px] ${
+          pinnedHero ? "relative z-[2] -mt-px bg-white pt-0" : ""
+        }`}
+      >
         <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[110px]">
           {/* 左カラム：目次。本文を読んでいる間ずっと画面に残る */}
           <aside className="shrink-0 lg:w-[230px]">
@@ -452,9 +526,12 @@ export function V32TocSlide({ spot }: VProps) {
 export function V35TocDot({ spot }: VProps) {
   return <TocLayout spot={spot} kind="dot" />;
 }
-/** 案36 目次の番号が大きくなる */
+/** 案36 目次の番号が大きくなる
+    【2026-09-20 ヒデさん指示】この案のスクロールだけ案37 の方式に。
+      最初は写真が画面いっぱい（100dvh）、スクロールすると写真は貼りついたまま
+      動かず、白いグラデの面が上にかぶさって流れていく */
 export function V36TocNum({ spot }: VProps) {
-  return <TocLayout spot={spot} kind="num" heroH="h-[80dvh]" />;
+  return <TocLayout spot={spot} kind="num" pinnedHero />;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -486,7 +563,6 @@ export function V37PinnedBlur({ spot }: VProps) {
 
   return (
     <Shell refEl={ref}>
-      <BackPill dark={false} />
       {/* 200dvh のステージ。この中で写真が貼りつく */}
       <div ref={stage} className="relative h-[200dvh]">
         <div className="sticky top-0 h-dvh w-full overflow-hidden">
@@ -584,7 +660,6 @@ export function V38Grid({ spot }: VProps) {
   ];
   return (
     <Shell refEl={ref}>
-      <BackPill />
       <QuietHero spot={spot} h="h-[88dvh]" />
 
       <div className="px-6 py-[120px] md:px-[56px] lg:px-[80px]">
@@ -641,7 +716,6 @@ export function V39FarHead({ spot }: VProps) {
   const heads = headsOf(spot);
   return (
     <Shell refEl={ref}>
-      <BackPill />
       <QuietHero spot={spot} h="h-[90dvh]" />
 
       <div className="px-6 py-[120px] md:px-[56px] lg:px-[120px]">

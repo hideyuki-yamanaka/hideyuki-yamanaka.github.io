@@ -110,7 +110,10 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       sizes[k] = { ...SIZE0 };
     });
     const params = {
-      detail: { pattern: 1, headSize: SIZE0.head, bodySize: SIZE0.body, sizes },
+      /* 【2026-09-20 ヒデさん指示】「詳細ページに関しては案5のものにして」
+         → パネルの表示番号 案5 ＝ 値36（目次の番号が育つ／写真は貼りついたまま
+           白い面が乗り上げる）。既定をここに合わせる */
+      detail: { pattern: 36, headSize: SIZE0.head, bodySize: SIZE0.body, sizes },
     };
     const applyType = () => {
       const r = document.documentElement;
@@ -155,7 +158,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v12: ヒデさんの選定で 案11・16・18・20・22・23・31・34・40 を完全削除（2026-09-16）
            v13: 文字の大きさを案ごとに別々に持つようにした（2026-09-16）
            v14: ヒデさんの選定で 案12・26・33 を完全削除（2026-09-17） */
-        version: 14,
+        version: 15, /* 2026-09-20 既定を案5(値36)に変更。古い保存値を破棄する */
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,

@@ -17,7 +17,6 @@
  *    body-14 行間2 字間0.7px など）
  */
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import {
   motion,
   useAnimationFrame,
@@ -29,6 +28,7 @@ import {
 } from "framer-motion";
 import type { SpotDetail } from "./spotDetailData";
 import SiteFooter from "./SiteFooter";
+import GlobalNav from "./GlobalNav";
 
 /* ゆったり共通のイージング（既存サイトと同じ緩急） */
 export const EASE = [0.22, 1, 0.36, 1] as const;
@@ -45,25 +45,24 @@ export const reveal = {
 
 /* ───────────────────────── 共通の部品 ───────────────────────── */
 
-export function BackPill({ dark = false }: { dark?: boolean }) {
+/* 詳細ページの共通ヘッダー。
+   【2026-09-20 ヒデさん指示】「トップへ戻るボタンはなくして、
+     ヘッダーが消えてしまっているのでヘッダーを入れてあげてください」
+   → 旧 BackPill（左上の「トップへ戻る」）を廃止し、トップと同じナビを出す。
+     「ホーム」を押せばトップへ戻れるので、戻る導線は失われない。
+
+   ⚠️ 詳細ページは main が自前でスクロールする箱。fixed はその外（画面）に
+      貼りつくので、スクロールしても位置は動かない。
+   ⚠️ 文字は白。どの案も先頭は写真なのでその上で読めるが、白い本文の面が
+      乗り上げてくると読みにくくなるため、上端に薄い黒のグラデで足場を作る。 */
+export function DetailHeader() {
   return (
-    <Link
-      href="/"
-      className={`fixed left-8 top-8 z-50 flex items-center gap-2 rounded-full px-5 py-2.5 text-body-14 font-light backdrop-blur-65 transition-colors duration-300 ease-standard ${
-        dark
-          ? "bg-ink/10 text-ink hover:bg-ink/20"
-          : "bg-white/20 text-white hover:bg-white/35"
-      }`}
-    >
-      <span className="inline-block rotate-180">
-        <img
-          src={dark ? "/img/icon-view-more-black.svg" : "/img/icon-view-more.svg"}
-          alt=""
-          className="size-[16px]"
-        />
-      </span>
-      トップへ戻る
-    </Link>
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-50">
+      <div className="absolute inset-x-0 top-0 h-[120px] bg-gradient-to-b from-black/30 to-transparent" />
+      <div className="pointer-events-auto relative flex justify-center pt-[26px]">
+        <GlobalNav theme="light" />
+      </div>
+    </div>
   );
 }
 
@@ -320,7 +319,7 @@ export function V1Parallax({ spot }: VProps) {
       ref={ref}
       className="h-dvh overflow-y-auto overscroll-contain bg-white"
     >
-      <BackPill />
+      <DetailHeader />
       {/* ヒーロー：写真は固定気味にゆっくり動く */}
       <div className="relative h-dvh w-full overflow-hidden">
         <motion.img
@@ -436,7 +435,7 @@ export function V3Editorial({ spot }: VProps) {
       ref={ref}
       className="relative h-dvh overflow-y-auto overscroll-contain bg-white"
     >
-      <BackPill dark />
+      <DetailHeader />
 
       {/* ── 記事本体。最初から見えていて、上の写真にかぶられている ── */}
       <div className="relative z-0">

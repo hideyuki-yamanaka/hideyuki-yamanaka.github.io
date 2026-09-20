@@ -317,7 +317,7 @@ export default function TopPage({
     if (leaving) return;
     setLeaving(true);
     router.prefetch("/experience");
-    window.setTimeout(() => router.push("/experience"), 800);
+    window.setTimeout(() => router.push("/experience"), 600); /* 幕の 0.6 秒に合わせる（2026-09-20） */
   };
 
   /* ディゾルブ中は KV の演出（カモメ＝CSSアニメ／人物イラスト＝WAAPIループ）を
@@ -1000,14 +1000,24 @@ export default function TopPage({
       {leaving && (
         <motion.div
           data-dissolve-veil
-          /* ブラーは固定（backdrop-blur-22）。透明度だけをアニメする。
-             以前は blur を 0→22px と毎フレーム変えていて、それ自体が最も重い処理だった。
-             背景は上の useEffect で静止させてあるので、固定ブラーは一度だけ合成され軽い */
-          className="absolute inset-0 z-40 bg-gradient-to-b from-brand via-brand/70 to-sky-bottom backdrop-blur-22"
+          /* 【2026-09-20 ヒデさん指示】
+               「キービジュアルの『ぼーっとしてみる』を押した後のトランジションが不自然。
+                 ぼーっと体験の【導入メッセージ → 場面選択】と同じにしてほしい」
+             あちらは《同じ青い背景は動かさず、中身だけを 0.6 秒でふわっと入れ替える》形。
+             ここは①ブラーで一度ぼかす ②幕の色が体験ページと別物（via-brand/70 →
+             to-sky-bottom）だったので、幕が晴れた先で色が変わって見えていた。
+             → ブラーをやめ、幕の色を体験ページの背景（Stage の brandOverlay＝
+               from-brand via-brand/45 to-transparent）と同じ重ね方にそろえ、
+               秒数も 0.6 に合わせた。これで幕がそのまま次のページの背景になる。 */
+          className="absolute inset-0 z-40 bg-sky-bottom"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        />
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* 体験ページの空にかぶる青（Stage の brandOverlay）と同じもの。
+              これを重ねておくと、遷移した瞬間に同じ絵が続いて見える */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand via-brand/45 to-transparent" />
+        </motion.div>
       )}
 
       {/* 追従ヘッダー：スクロールの外に置いて常に表示 */}
