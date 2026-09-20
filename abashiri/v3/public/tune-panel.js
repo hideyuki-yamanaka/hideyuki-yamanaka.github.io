@@ -141,11 +141,14 @@
     '.tp-cat{margin-top:18px;background:transparent;border:0;border-top:1px solid #e8e8e8;padding-top:2px;}',
     '.tp-cat:first-child{border-top:0;margin-top:4px;}',
     '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 5px;',
-    '  font-weight:500;background:#f2f2f2;cursor:pointer;user-select:none;}',
-    '.tp-cat-head:hover{background:#ececec;}',
+    '  font-size:13px;font-weight:700;letter-spacing:.02em;color:#1e1e1e;' +
+    '  background:transparent;cursor:pointer;user-select:none;}',
+    '.tp-cat-head:hover{color:#000;}',
+    /* バリエーションは開閉なしのプレーン大見出し（▾なし・塗りなし） */
+    '.tp-cat.plain>.tp-cat-head{cursor:default;}',
     '.tp-cat-chev{font-size:10px;color:#888;transition:transform .2s;}',
     '.tp-cat.closed .tp-cat-chev{transform:rotate(-90deg);}',
-    '.tp-cat-body{padding:0 10px 10px;}',
+    '.tp-cat-body{padding:0 0 6px;}',
     '.tp-cat.closed .tp-cat-body{display:none;}',
     '.tp-hidden{display:none !important;}',
     /* タブ（ページ切替。cfg.tabs:true で cat がタブになる）
@@ -163,9 +166,10 @@
        2026-09-16：anyflow と同じ「箱で囲まない・区切り線だけ」の見せ方に変更。
        白い箱が入れ子になると、中の小見出しとの階層が読み取りづらかったため */
     '.tp-sec{margin-top:9px;padding-top:8px;border-top:1px solid #e8e8e8;background:transparent;}',
-    '.tp-cat-body>.tp-sec:first-child{border-top:none;margin-top:8px;padding-top:0;}',
+    '.tp-cat-body>.tp-sec:first-child{border-top:none;margin-top:4px;padding-top:0;}',
     '.tp-sec-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0;',
-    '  font-weight:600;font-size:12.5px;color:#1a1a1a;margin-bottom:7px;min-height:22px;',
+    /* H2＝オブジェクト。H1(13px/700)より一段控えめにして階層差を出す（2026-09-20） */
+    '  font-weight:600;font-size:12px;color:#333;margin-bottom:7px;min-height:22px;',
     '  background:transparent;cursor:pointer;user-select:none;}',
     '.tp-sec-head:hover{color:#000;}',
     '.tp-sec-chev{font-size:10px;color:#888;transition:transform .2s;}',
@@ -175,7 +179,7 @@
     /* 隠しスイッチ（画面右上の透明ボックス）。見た目は何もないが、クリックでパネルが出る */
     /* 調整パネルを出す透明の四角（見た目は何もない）。
        2026-09-16 ヒデさん指示で、PC・スマホとも【右下】に統一した（anyflow のスマホと同じ置き方）。
-       ⚠️ パネル自体も右下に出るので、表示中はこの四角を右上へ逃がす。
+       ⚠パネル自体も右下に出るので、表示中はこの四角を右上へ逃がす。
           そうしないと、パネル右下の「書き出す」ボタンやサイズ変更のつまみの上に
           透明な四角がかぶさって、押したつもりがパネルが閉じてしまう */
     '.tp-secret-hot{position:fixed;bottom:0;right:0;width:72px;height:72px;z-index:2147483001;background:transparent;}',
@@ -190,9 +194,11 @@
     '.tp-grp-title{font-weight:500;font-size:11.5px;color:#666;margin-bottom:4px;',
     '  display:flex;align-items:center;gap:6px;min-height:22px;}',
     /* 入れ子は「破線の上罫線＋左の縦線」でぶら下がりを示す */
-    '.tp-grp.deep{margin-top:7px;padding-top:6px;border-top:1px dashed #ededed;padding-left:8px;border-left:2px solid #ededed;}',
+    /* ⚠2026-09-20: anyflow のルールで【左のインデント縦線は禁止】。
+       階層は文字サイズ・太さ・余白で表す */
+    '.tp-grp.deep{margin-top:9px;padding-top:2px;padding-left:0;border-left:0;border-top:0;}',
     '.tp-grp.deep .tp-grp-title{font-size:11.5px;font-weight:500;color:#666;}',
-    '.tp-grp.deep .tp-grp.deep{border-left-color:#f2f2f2;}',
+    '.tp-grp.deep .tp-grp.deep{border-left:0;}',
     /* グレーの補足文は既定で出さない（anyflow と同じ）。
        文面は消していないので、見出しにマウスを乗せれば吹き出しで読める。
        どうしても出したい所は item.keep:true を付ける */
@@ -251,7 +257,7 @@
     '  .tp-z{display:none;}',
     '}',
     /* 項目ツール：anyflow 準拠で ↺（この項目だけ元の値に戻す）だけ。
-       2026-09-16 に 🗑（項目を消す）・⠿（並び替え）は撤去した。
+       2026-09-16 に （項目を消す）・⠿（並び替え）は撤去した。
        消せるのは「デザイン案」だけ＝ピルの ⋯ メニュー。
        ↺のぶんだけ右に場所を空けておく（値の文字と重ならないように） */
     '.tp-item{position:relative;padding-right:18px;}',
@@ -425,7 +431,7 @@
   Panel.prototype._loadParams = function () {
     if (!this.storageKey) return;
     /* 古いバージョンの保存値は掃除する（＝バージョンを上げれば必ず新しい初期値で出る）
-       ⚠️ 2026-09-16 の不具合：'tp:<キー>:v' で前方一致させていたため、
+       ⚠2026-09-16 の不具合：'tp:<キー>:v' で前方一致させていたため、
           案の隠し／ピン留めを入れている 'tp:<キー>:variants' まで毎回消えていた
           （保存はされるのにリロードで戻る、という症状）。
           数字つきのバージョン鍵だけを対象にする */
@@ -528,7 +534,7 @@
     head.className = 'tp-head';
     var title = document.createElement('span');
     title.className = 'tp-title';
-    title.textContent = this.cfg.title || '⚙️ 調整パネル';
+    title.textContent = this.cfg.title || '調整パネル';
     var sub = document.createElement('span');
     sub.className = 'tp-head-sub';
     sub.textContent = 'クリックで開く';
@@ -802,7 +808,7 @@
          → アニメーション → その他
        各節（item.sub）に grp: 'basic' などを書くと、その名前の
        カテゴリの下に入る。書かなければ言葉から自動で振り分ける。
-       ⚠️ バリエーションだけは開閉しないプレーンな大見出し（anyflow と同じ）。 */
+       ⚠バリエーションだけは開閉しないプレーンな大見出し（anyflow と同じ）。 */
     var GRP_ORDER = ['variation', 'basic', 'font', 'fxtex', 'anim', 'other'];
     var GRP_LABEL = {
       variation: 'バリエーション',
@@ -1059,8 +1065,8 @@
   /* 【2026-09-16 ヒデさん指示・anyflow に合わせた】
      anyflow では「デザイン案（バリエーション）」だけが ⋯ メニューから
      削除・上書きでき、スライダーなどの【indicator 的な行】は ↺ で戻すだけ。
-     網走はどの行でも 🗑 で消せてしまっていたので、🗑 と ⠿ を撤去した。
-     ・案 1粒ずつ → ピルの ⋯（★ピン留め／⤓上書き／↺解除／🗑削除）
+     網走はどの行でも で消せてしまっていたので、と ⠿ を撤去した。
+     ・案 1粒ずつ → ピルの ⋯（★ピン留め／⤓上書き／↺解除／削除）
      ・行（スライダー・ON/OFF・選択・文字）→ ↺ だけ */
   Panel.prototype._itemTools = function (wrap, item, row) {
     var self = this;
@@ -1244,7 +1250,7 @@
      バリエーション行と同じ仕様へ作り替えた。
        ・★ ピン留め ……… よく使う案を上の別セクションへ出す
        ・⤓ 上書き ……… その案を選んだ時に、いまのつまみの値ごと再現する
-       ・🗑 削除 ………… 一覧から隠す（確認モーダル。あとで戻せる）
+       ・削除 ………… 一覧から隠す（確認モーダル。あとで戻せる）
        ・↺ 消した案を戻す … 隠した案を1つずつ選んで戻す
      隠し／ピン／上書きの控えは params とは別の保存場所に置く
      （つまみの値そのものではなく「見せ方」なので、混ぜると焼き込みが濁る）
@@ -1403,7 +1409,7 @@
           fill();
         }]);
       }
-      items.push(['🗑 削除', function () {
+      items.push(['削除', function () {
         self._ask('削除しますか？', '「' + label + '」を一覧から消します。あとで「↺ 消した案を戻す」で戻せます。',
           '削除する', function () {
             B.hidden.push(K(o.value));
@@ -1859,7 +1865,7 @@
     /* 下のボタンは anyflow と同じ3つ（2026-09-16 ヒデさん指示で全面的に合わせた）。
          ① これをデフォルトに設定 …… いまの状態を「最初に出る形」として確定する
          ② ⬇ 設定を書き出す ………… このブラウザの設定をファイルに落とす（本番へ焼き込む用）
-         ③ 📋 完全削除リストをコピー … 隠している案の一覧をコピー（コードから恒久的に消す用）
+         ③ 完全削除リストをコピー … 隠している案の一覧をコピー（コードから恒久的に消す用）
        「↺ 全部リセット」は anyflow にならって廃止。戻すのは各行と各まとまりの ↺ で行う */
     var defs = [];
 
@@ -1914,11 +1920,11 @@
       }
     });
 
-    /* ③ 📋 完全削除リストをコピー（Claude用）
-       パネルの「🗑 削除」は隠しているだけ（戻せる）。コードから恒久的に消すには
+    /* ③ 完全削除リストをコピー（Claude用）
+       パネルの「削除」は隠しているだけ（戻せる）。コードから恒久的に消すには
        Claude に焼き込んでもらう必要があるので、いま隠しているものを一括でコピーする */
     defs.push({
-      label: '📋 完全削除リストをコピー（Claude用）',
+      label: '完全削除リストをコピー（Claude用）',
       title: 'いま「削除」で隠している案と項目の一覧をコピーします。Claude に貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。',
       onClick: function (pnl, el) {
         try { self.save(); self._saveVars(); } catch (e) {}
@@ -1934,7 +1940,7 @@
           : '【完全削除の依頼】新しく消したものはありません。\n') + JSON.stringify(payload, null, 1);
         self._copy(text, function (ok) {
           el.textContent = ok ? '✅ コピーしました（Claudeに貼ってください）' : 'コピーできませんでした';
-          setTimeout(function () { el.textContent = '📋 完全削除リストをコピー（Claude用）'; }, 2600);
+          setTimeout(function () { el.textContent = '完全削除リストをコピー（Claude用）'; }, 2600);
         });
       }
     });

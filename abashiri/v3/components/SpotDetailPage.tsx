@@ -36,7 +36,7 @@ export const SPOT_DETAIL_PATTERNS: Record<
   /* 2026-09-15 ヒデさん選定で 案1 / 案8 / 案10 を残し、
      最初に作った3案（全画面ヒーロー・白エディトリアル・空グラデ没入）を
      案2〜4 として復活。それ以外は削除。
-     ⚠️ 番号は選定時の呼び方に合わせて 1・8・10 をそのまま維持している */
+     ⚠番号は選定時の呼び方に合わせて 1・8・10 をそのまま維持している */
   1: {
     name: "案1",
     note: "パララックス没入。写真がゆっくり奥へ引き、白い本文の面がせり上がる",
@@ -142,9 +142,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       if (!lib || madeRef.current) return;
       madeRef.current = true;
       panel = lib.create({
-        title: "⚙️ スポット詳細 調整パネル",
+        title: "スポット詳細 調整パネル",
         storageKey: "abashiri-spot-detail-tune",
-        /* ⚠️ 案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
+        /* ⚠案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 旧3案 → 5案に作り直し
            v3: 写真主体の案6〜10を追加・案1の視差を弱めた
            v4: 案1/8/10 を残して初期3案を復活、他は削除（2026-09-15）

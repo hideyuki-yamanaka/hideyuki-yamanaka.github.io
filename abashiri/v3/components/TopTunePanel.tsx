@@ -15,7 +15,7 @@
  *      ドラッグ中もカクつかない）
  *   ② 案の切り替え・スクロール連動の値 … 手が止まってから React 側へ渡す（onSettle）
  *
- * ⚠️ 公開前にこのパネルは外すこと（本番の見た目に出てしまうため）
+ * ⚠公開前にこのパネルは外すこと（本番の見た目に出てしまうため）
  */
 import { useEffect, useRef } from "react";
 import { DEFAULT_BO } from "./boPatterns";
@@ -404,9 +404,9 @@ export default function TopTunePanel({
       } catch {}
 
       panel = lib.create({
-        title: "⚙️ 網走サイト 調整パネル",
+        title: "網走サイト 調整パネル",
         storageKey: "abashiri-top-tune",
-        /* ⚠️ 既定値の意味を変えたら必ず上げる（古い保存値が自動で捨てられる）。
+        /* ⚠既定値の意味を変えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 「ぼーっ」の採用案を 案1 → 案4 に変更（2026-08-18）
            v3: カンプ更新でイラストが差し替わり、キラキラの項目が無くなった（2026-08-19）
            v4: 環境音の音量を追加（2026-08-19）
@@ -461,7 +461,7 @@ export default function TopTunePanel({
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
         version: 40, /* 2026-09-20 剥がれる速さの既定を変更。古い保存値を破棄する */
-        /* ⚠️ autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
+        /* ⚠autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
         autoCenter: false,
@@ -473,10 +473,10 @@ export default function TopTunePanel({
         defaults: DEFAULTS,
         schema: [
           {
-            cat: "🌐 サイト共通",
+            cat: "サイト共通",
             open: false,
             items: [
-              { sub: "環境音（BGM）" },
+              { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
                 path: "sound.volume",
@@ -489,7 +489,7 @@ export default function TopTunePanel({
               {
                 note: "その場で反映されます。",
               },
-              { sub: "ヘッダーのアンカー移動" },
+              { sub: "ヘッダーのアンカー移動", grp: "anim" },
               {
                 note: "ヘッダーの「ぼーっとスポット」「グルメ」「体験」を押した時の移り方。上下にスクロールしている途中は見せず、幕がふわっとかぶって、見えない間に場面が入れ替わります（ホイールや画面を触ると途中でも止まって操作が返ります）。",
               },
@@ -511,7 +511,7 @@ export default function TopTunePanel({
                 unit: "ms",
                 immediate: true,
               },
-              { sub: "ページ遷移の演出" },
+              { sub: "ページ遷移の演出", grp: "anim" },
               {
                 note: "ページを移る時にかぶせる幕の5案。どれもサイトの雰囲気に合わせてブラー主体にしてあります。選ぶとその場で一度再生して見せます（実際の遷移でも同じ動きになります）。",
               },
@@ -527,9 +527,9 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
-              { sub: "カモメの見た目（全ページ共通）" },
+              { sub: "カモメの見た目（全ページ共通）", grp: "fxtex" },
               {
-                note: "ここは色や濃さなど「見た目」だけ。位置・大きさ・傾きは 🏠トップ／🎬体験 の各タブにある「カモメ」で調整します。",
+                note: "ここは色や濃さなど「見た目」だけ。位置・大きさ・傾きは トップ／体験 の各タブにある「カモメ」で調整します。",
               },
               {
                 slider: "不透明度",
@@ -554,7 +554,7 @@ export default function TopTunePanel({
                 fmt: "%",
                 hint: "線の太さの倍率（100%が今まで）。上げるほど太く濃く見え、下げるほど細く繊細になります。",
               },
-              { sub: "フッター（全ページ共通）" },
+              { sub: "フッター（全ページ共通）", grp: "basic" },
               {
                 note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここでは「組み（左右の余白とカラムの幅）」と「親子の階層の見せ方」を選べます。トップと各詳細ページの一番下で確認できます。",
               },
@@ -577,10 +577,10 @@ export default function TopTunePanel({
                 max: 240,
                 step: 4,
                 fmt: "px",
-                hint: "中身と画面の下端の間",
+                hint: "下のパディング",
               },
               {
-                slider: "左右カラムの間",
+                slider: "カラムのギャップ",
                 path: "footer.colGap",
                 min: 24,
                 max: 360,
@@ -589,7 +589,7 @@ export default function TopTunePanel({
                 hint: "作字（左）とサイトマップ（右）の間。組みBでは上下の間隔になります",
               },
               {
-                slider: "親どうしの左右の間",
+                slider: "列のギャップ",
                 path: "footer.mapGapX",
                 min: 8,
                 max: 160,
@@ -598,7 +598,7 @@ export default function TopTunePanel({
                 hint: "「ぼーっとスポット」「素朴なグルメ」…の列どうしの間",
               },
               {
-                slider: "親どうしの上下の間",
+                slider: "行のギャップ",
                 path: "footer.mapGapY",
                 min: 8,
                 max: 160,
@@ -607,7 +607,7 @@ export default function TopTunePanel({
                 hint: "列が2段になった時（組みC・スマホ）の上下の間",
               },
               {
-                slider: "親と子の間",
+                slider: "見出しと項目のギャップ",
                 path: "footer.headGap",
                 min: 0,
                 max: 64,
@@ -687,9 +687,9 @@ export default function TopTunePanel({
             ],
           },
           {
-            cat: "🏠 トップページ",
+            cat: "トップページ",
             items: [
-              { sub: "セクションの大見出し（全セクション共通）" },
+              { sub: "セクションの大見出し（全セクション共通）", grp: "font" },
               {
                 note: "グルメ「なーんにもない、道東の土地、網走。」と体験「意外とオモロい、網走。」の大きさ。ひとつの値を共有しているので、ここを変えると両方そろって変わります。",
               },
@@ -702,7 +702,7 @@ export default function TopTunePanel({
                 unit: "px",
                 immediate: true,
               },
-              { sub: "人物イラスト" },
+              { sub: "人物イラスト", grp: "basic" },
               { sub: "登場のタイミング", deep: true },
               {
                 slider: "人物の登場ディレイ",
@@ -755,7 +755,7 @@ export default function TopTunePanel({
               },
               { sub: "置き場所｜枠ごと動かす", deep: true },
               {
-                slider: "右端からの距離",
+                slider: "位置 X（右基準）",
                 path: "pos.frameRight",
                 min: -100,
                 max: 400,
@@ -764,7 +764,7 @@ export default function TopTunePanel({
                 hint: "大きくすると左へ寄ります。人物と文字がまとめて動きます。",
               },
               {
-                slider: "上からの距離",
+                slider: "位置 Y",
                 path: "pos.frameTop",
                 min: 400,
                 max: 980,
@@ -773,7 +773,7 @@ export default function TopTunePanel({
               },
               { sub: "置き場所｜人物そのもの", deep: true },
               {
-                slider: "横ずれ",
+                slider: "位置 X（ずらし）",
                 path: "pos.personX",
                 min: -120,
                 max: 120,
@@ -781,7 +781,7 @@ export default function TopTunePanel({
                 fmt: "px",
               },
               {
-                slider: "縦ずれ",
+                slider: "位置 Y（ずらし）",
                 path: "pos.personY",
                 min: -120,
                 max: 120,
@@ -815,7 +815,7 @@ export default function TopTunePanel({
                 hint: "0 で動かなくなります。",
               },
               {
-                slider: "横ずれ",
+                slider: "位置 X（ずらし）",
                 path: "face.browX",
                 min: -20,
                 max: 20,
@@ -824,7 +824,7 @@ export default function TopTunePanel({
                 hint: "＋で右へ。",
               },
               {
-                slider: "縦ずれ",
+                slider: "位置 Y（ずらし）",
                 path: "face.browY",
                 min: -20,
                 max: 20,
@@ -843,7 +843,7 @@ export default function TopTunePanel({
               },
               { sub: "表情｜口", deep: true },
               {
-                slider: "横ずれ",
+                slider: "位置 X（ずらし）",
                 path: "face.mouthX",
                 min: 30,
                 max: 70,
@@ -851,7 +851,7 @@ export default function TopTunePanel({
                 fmt: "px",
               },
               {
-                slider: "縦ずれ",
+                slider: "位置 Y（ずらし）",
                 path: "face.mouthY",
                 min: 60,
                 max: 100,
@@ -890,7 +890,7 @@ export default function TopTunePanel({
                  パターン本体は tamaraneePatterns.ts） */
               { sub: "たまらねー｜位置と大きさ", deep: true },
               {
-                slider: "横ずれ",
+                slider: "位置 X（ずらし）",
                 path: "pos.tamaraneeX",
                 min: -60,
                 max: 260,
@@ -898,7 +898,7 @@ export default function TopTunePanel({
                 fmt: "px",
               },
               {
-                slider: "縦ずれ",
+                slider: "位置 Y（ずらし）",
                 path: "pos.tamaraneeY",
                 min: -120,
                 max: 160,
@@ -934,7 +934,7 @@ export default function TopTunePanel({
               /* ── キラキラ ─────────────────────── */
               { sub: "キラキラ｜1コマ目（基準の位置）", deep: true },
               {
-                slider: "横ずれ",
+                slider: "位置 X（ずらし）",
                 path: "pos.sparkleX",
                 min: -40,
                 max: 160,
@@ -942,7 +942,7 @@ export default function TopTunePanel({
                 fmt: "px",
               },
               {
-                slider: "縦ずれ",
+                slider: "位置 Y（ずらし）",
                 path: "pos.sparkleY",
                 min: -40,
                 max: 240,
@@ -988,13 +988,13 @@ export default function TopTunePanel({
               /* 登場のしかたは案3「ポンッ→プルン」で確定（2026-08-21 ヒデさん指示。
                  案ピルは撤去。パターン本体は illustEnterPatterns.ts） */
 
-              { sub: "カモメ（このページの2匹）" },
+              { sub: "カモメ（このページの2匹）", grp: "basic" },
               {
-                note: "このページのカモメは「左上」「右」の2匹。色や濃さは 🌐サイト共通 の「カモメの見た目」にあります。",
+                note: "このページのカモメは「左上」「右」の2匹。色や濃さは サイト共通 の「カモメの見た目」にあります。",
               },
               { sub: "左上のカモメ", deep: true },
               {
-                slider: "左からの距離",
+                slider: "位置 X",
                 path: "pos.birdTopSky1X",
                 min: -100,
                 max: 1400,
@@ -1003,7 +1003,7 @@ export default function TopTunePanel({
                 hint: "左上のカモメの横位置。上げると右へ動きます。",
               },
               {
-                slider: "上からの距離",
+                slider: "位置 Y",
                 path: "pos.birdTopSky1Y",
                 min: -50,
                 max: 900,
@@ -1031,7 +1031,7 @@ export default function TopTunePanel({
               },
               { sub: "右のカモメ", deep: true },
               {
-                slider: "右からの距離",
+                slider: "位置 X（右基準）",
                 path: "pos.birdTopSky2X",
                 min: -100,
                 max: 1400,
@@ -1040,7 +1040,7 @@ export default function TopTunePanel({
                 hint: "右のカモメの横位置。上げると左へ動きます（右端からの距離のため）。",
               },
               {
-                slider: "上からの距離",
+                slider: "位置 Y",
                 path: "pos.birdTopSky2Y",
                 min: -50,
                 max: 900,
@@ -1072,7 +1072,7 @@ export default function TopTunePanel({
                  長いのでアコーディオン（タブ内の小見出しは折りたたみ・既定で閉じる） ── */
               /* ── メッセージ（KV直下・カンプ 15480:22896）。
                  文言・出方・見た目を1セクションに統合（2026-08-30 ヒデさん指示） ── */
-              { sub: "メッセージ（作字のあと）" },
+              { sub: "メッセージ（作字のあと）", grp: "anim" },
               { sub: "文言（テキスト編集）", deep: true },
               {
                 note: "ここで文章そのものを差し替えられます。本文は「空行で段落を分け、段落内は改行で行を分ける」書き方です。入力するとその場で反映されます。",
@@ -1213,7 +1213,7 @@ export default function TopTunePanel({
                 step: 0.1,
               },
               /* ── KV → ぼーっとスポット ─────────── */
-              { sub: "ぼーっとスポット" },
+              { sub: "ぼーっとスポット", grp: "anim" },
               { sub: "入り（キービジュアルから）", deep: true },
               {
                 note: "作字の消え方は上の「作字｜スクロールでの消え方」にまとめました（同じ項目が2つあったため統合。2026-08-21）。",
@@ -1293,7 +1293,7 @@ export default function TopTunePanel({
                 hint: "このぶんスクロールするごとに次の写真へ。982でちょうど1画面ぶんです。",
               },
               /* ── グルメ｜カルーセル（2026-08-22 ヒデさん依頼） ── */
-              { sub: "グルメ｜カルーセル" },
+              { sub: "グルメ｜カルーセル", grp: "anim" },
               {
                 slider: "1周の時間",
                 path: "gourmet.speed",
@@ -1308,7 +1308,7 @@ export default function TopTunePanel({
                 path: "gourmet.pauseOnHover",
                 hint: "ONだと、カードにカーソルを乗せている間は流れが止まり、ホバーの文字をゆっくり読めます。",
               },
-              { sub: "体験セクション（グルメの下）" },
+              { sub: "体験セクション（グルメの下）", grp: "anim" },
               {
                 note: "「意外とオモロい、網走。」の見せ方10案。どれも白地・余白多め・ミニマルで、トップの他のセクションと同じ書体づかいにしてあります（ホバーで開く仕掛けは廃止）。",
               },
@@ -1360,9 +1360,9 @@ export default function TopTunePanel({
             ],
           },
           {
-            cat: "🎬 ぼーっと体験ページ",
+            cat: "ぼーっと体験ページ",
             items: [
-              { sub: "導入メッセージ（1画面目）" },
+              { sub: "導入メッセージ（1画面目）", grp: "anim" },
               {
                 note: "見出しとボタンは最初から出ていて、本文の段落4つが順にブラーで出てきます。値を変えると、その場で最初から再生し直します。",
               },
@@ -1376,7 +1376,7 @@ export default function TopTunePanel({
                 hint: "ページが出てから、最初の段落が出はじめるまでの待ち。",
               },
               {
-                slider: "段落の間隔",
+                slider: "段落のギャップ",
                 path: "expIntro.stagger",
                 min: 0.1,
                 max: 3,
@@ -1401,13 +1401,13 @@ export default function TopTunePanel({
                 fmt: "px",
                 hint: "出はじめのにじみ具合。0でフェードだけ。",
               },
-              { sub: "カモメ（このページの2匹）" },
+              { sub: "カモメ（このページの2匹）", grp: "basic" },
               {
-                note: "このページのカモメは「右」「左」の2匹（左上は多かったので廃止・2026-08-23）。色や濃さは 🌐サイト共通 の「カモメの見た目」にあります。",
+                note: "このページのカモメは「右」「左」の2匹（左上は多かったので廃止・2026-08-23）。色や濃さは サイト共通 の「カモメの見た目」にあります。",
               },
               { sub: "右のカモメ", deep: true },
               {
-                slider: "右からの距離",
+                slider: "位置 X（右基準）",
                 path: "pos.birdExpSky2X",
                 min: -100,
                 max: 1400,
@@ -1416,7 +1416,7 @@ export default function TopTunePanel({
                 hint: "右のカモメの横位置。上げると左へ動きます（右端からの距離のため）。",
               },
               {
-                slider: "上からの距離",
+                slider: "位置 Y",
                 path: "pos.birdExpSky2Y",
                 min: -50,
                 max: 900,
@@ -1444,7 +1444,7 @@ export default function TopTunePanel({
               },
               { sub: "左のカモメ", deep: true },
               {
-                slider: "左からの距離",
+                slider: "位置 X",
                 path: "pos.birdExpX",
                 min: 0,
                 max: 700,
@@ -1452,7 +1452,7 @@ export default function TopTunePanel({
                 fmt: "px",
               },
               {
-                slider: "上からの距離",
+                slider: "位置 Y",
                 path: "pos.birdExpY",
                 min: 0,
                 max: 950,
@@ -1475,7 +1475,7 @@ export default function TopTunePanel({
                 step: 1,
                 fmt: "°",
               },
-              { sub: "場所えらび｜カルーセルの登場" },
+              { sub: "場所えらび｜カルーセルの登場", grp: "anim" },
               {
                 pills: "案",
                 path: "expPick.pattern",
@@ -1492,13 +1492,13 @@ export default function TopTunePanel({
               {
                 note: "案を押すと、その場で場所えらびの画面から登場を再生し直します。",
               },
-              { sub: "動画まわり（遷移と再生画面）" },
+              { sub: "動画まわり（遷移と再生画面）", grp: "anim" },
               { sub: "「ぼーっ」の吹き出し", deep: true },
               /* 出方は現状の案で確定（2026-08-21 ヒデさん指示。案ピルは撤去。
                  パターン本体は boPatterns.ts の DEFAULT_BO） */
               { sub: "「ぼーっ」｜位置と大きさ", deep: true },
               {
-                slider: "横ずれ",
+                slider: "位置 X（ずらし）",
                 path: "pos.boX",
                 min: -60,
                 max: 260,
@@ -1506,7 +1506,7 @@ export default function TopTunePanel({
                 fmt: "px",
               },
               {
-                slider: "縦ずれ",
+                slider: "位置 Y（ずらし）",
                 path: "pos.boY",
                 min: -120,
                 max: 160,
