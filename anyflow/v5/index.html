@@ -747,6 +747,7 @@
   #vision { margin-top: var(--space-200); }
   /* 【2026-09-20 ヒデさん依頼】KVの「強調」案の時だけ、惑星ビジュアルが大きくビジョンとぶつかるので、ビジョン以下を+100px下げる(PC/タブレットのみ。SP・ノーマルはそのまま) */
   html.kv-strong:not(.mb):not(.tab) #vision { margin-top: calc(var(--space-200) + 100px); }
+  html:not(.kv-strong):not(.mb):not(.tab) #vision { margin-top: calc(var(--space-200) - 100px); }   /* 【2026-09-20 ヒデさん依頼】ノーマル案の時だけ、PCでビジョン以下を上に約100px詰める(200→100px)。強調・スマホ・タブレットは対象外 */
   html.kv-strong.tab #vision { margin-top: calc(var(--space-80) + 100px); }
   /* 【2026-08-29】実績→開発者体験「スムーズフェード」時は実績も固定追従なし。 */
   #results.res-smooth .pin-vp { position: relative; }
