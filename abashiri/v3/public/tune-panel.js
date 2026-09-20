@@ -123,7 +123,10 @@
     '.tp-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 12px;',
     '  cursor:grab;user-select:none;flex:0 0 auto;}',
     '.tp-head:active{cursor:grabbing;}',
-    '.tp-title{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    /* タイトルの字は anyflow の .panel-head-title と同じ（2026-09-20 実測移植）
+       15px / 700 / 字送り .02em / #1a1a1a。歯車アイコンは付けない */
+    '.tp-title{font-size:15px;font-weight:700;letter-spacing:.02em;color:#1a1a1a;'+
+    '  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
     /* たたんでいる時だけ「押せば開く」と分かるように添える（anyflow 準拠） */
     '.tp-head-sub{font-size:10px;color:#999;margin-left:8px;font-weight:300;}',
     '.tp:not(.closed) .tp-head-sub{display:none;}',
@@ -386,11 +389,15 @@
     '.tp-switch.on::after{transform:translateX(16px);}',
     /* ボタン */
     '.tp-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}',
-    '.tp-btns button{flex:1 1 auto;white-space:nowrap;font-family:inherit;font-size:11px;padding:0 10px;height:28px;',
+    /* 下部のボタン。anyflow の .panel-edit-btn にそろえる（2026-09-20 ヒデさん指示
+       「塗りはいらないので取る。並びも名称も全部揃えて」）。
+       11px・白地・1px の線・角丸6px。ホバーでブランド色の線に変わる */
+    '.tp-btns button{flex:1 1 auto;white-space:nowrap;font-family:inherit;font-size:11px;padding:4px 10px;height:28px;',
     '  border-radius:6px;border:1px solid #d8d8d8;background:#fff;cursor:pointer;transition:background .2s;color:#101828;}',
-    '.tp-btns button:hover{background:#f2f2f2;}',
-    '.tp-btns button.primary{background:#090909;color:#fff;border-color:#090909;}',
-    '.tp-btns button.primary:hover{background:#333;}',
+    '.tp-btns button:hover{border-color:#0EBBFF;color:#0aa2dd;background:#fff;}',
+    /* ⚠️ 塗りつぶし（黒地）はやめる。anyflow は下部ボタンを塗らない */
+    '.tp-btns button.primary{background:#fff;color:#444;border-color:#d5d5d5;}',
+    '.tp-btns button.primary:hover{border-color:#0EBBFF;color:#0aa2dd;background:#fff;}',
     /* 未保存の変更があることを目立たせる（Anyflow のパネルと同じピンク） */
     '.tp-btns button.primary.dirty{background:#FF5D97;border-color:#FF5D97;}',
     '.tp-btns button.primary.dirty:hover{background:#ff4487;}',
@@ -1906,7 +1913,7 @@
     /* ① これをデフォルトに設定 */
     if (this.storageKey) {
       defs.push({
-        label: this._dirty ? 'これをデフォルトに設定（未保存あり）' : 'これをデフォルトに設定',
+        label: this._dirty ? '💾 既定にする（未保存あり）' : '💾 既定にする',
         primary: true, isSave: true,
         onClick: function (pnl, el) {
           self.save();
@@ -1915,7 +1922,7 @@
           if (self.cfg.onSave) {
             try { self.cfg.onSave(self.params, self); } catch (e) {}
           }
-          el.textContent = '✅ デフォルトにしました';
+          el.textContent = '✅ 既定にしました';
           setTimeout(function () { self._syncSaveBtn(); }, 1600);
         }
       });
@@ -1925,7 +1932,7 @@
        ローカルで触った値はこのブラウザにしか残らない。本番へ載せるには
        書き出して Claude に渡し、tune-defaults.json へ焼き込む必要がある */
     defs.push({
-      label: '⬇ 設定を書き出す（本番反映用）',
+      label: '⬇️ 設定を書き出す（Claudeに渡す）',
       title: 'いまのブラウザの設定ぜんぶをファイルに落とします。これを Claude に渡すと、同じ見た目を本番に焼き込めます。',
       onClick: function (pnl, el) {
         try { self.save(); self._saveVars(); } catch (e) {}
@@ -1946,11 +1953,11 @@
           a.download = name;
           a.click();
           setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-          el.textContent = '✅ 書き出しました（Claudeに渡してください）';
+          el.textContent = '✅ コピーしました（Claudeに渡してください）';
         } catch (e) {
           el.textContent = '書き出せませんでした';
         }
-        setTimeout(function () { el.textContent = '⬇ 設定を書き出す（本番反映用）'; }, 2200);
+        setTimeout(function () { el.textContent = '⬇️ 設定を書き出す（Claudeに渡す）'; }, 2200);
       }
     });
 
@@ -1958,7 +1965,7 @@
        パネルの「削除」は隠しているだけ（戻せる）。コードから恒久的に消すには
        Claude に焼き込んでもらう必要があるので、いま隠しているものを一括でコピーする */
     defs.push({
-      label: '完全削除リストをコピー（Claude用）',
+      label: '📋 削除リストをコピー（Claudeに貼る）',
       title: 'いま「削除」で隠している案と項目の一覧をコピーします。Claude に貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。',
       onClick: function (pnl, el) {
         try { self.save(); self._saveVars(); } catch (e) {}

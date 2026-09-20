@@ -142,7 +142,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       if (!lib || madeRef.current) return;
       madeRef.current = true;
       panel = lib.create({
-        title: "スポット詳細 調整パネル",
+        title: "調整パネル", /* 2026-09-20 anyflow と同じ名称にそろえる */
         storageKey: "abashiri-spot-detail-tune",
         /* ⚠案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 旧3案 → 5案に作り直し
