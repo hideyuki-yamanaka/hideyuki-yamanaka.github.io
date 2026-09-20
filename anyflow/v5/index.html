@@ -16699,6 +16699,8 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
     val.textContent = f(parseFloat(input.value));
     markDirty();
     applyEdit(isLive);       /* 見た目だけの項目は即反映 / それ以外は手が止まってから流し直す */
+    /* 【2026-09-20 ヒデさん依頼】スマホモード中は、触った瞬間にSP上書きのブルー印を付け直す(STUDIO風)。触れば元と同じでも光る */
+    try { row.classList.toggle('mb-override', !!_mbOn()); } catch (e) {}
   });
   input.addEventListener('change', () => {
     applyEdit(isLive, true);
@@ -17181,10 +17183,10 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const apply = () => { try { textTools.applyAll(); textTools.refresh(); } catch (e) {} markDirty(); };
   const wSel = document.createElement('select'); wSel.className = 'txt-w'; wSel.title = '太さ(ウェイト)。自動＝CSSのまま';
   wSel.innerHTML = '<option value="">自動</option>' + [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => `<option value="${w}">${w}</option>`).join('');
-  wSel.onchange = () => { const e = ed(); if (wSel.value === '') delete e.fw; else e.fw = +wSel.value; apply(); sync(); };
+  wSel.onchange = () => { const e = ed(); if (wSel.value === '') delete e.fw; else e.fw = +wSel.value; apply(); sync(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
   const numIn = (title, step, min, max, key) => {
     const i = document.createElement('input'); i.type = 'number'; i.className = 'txt-n'; i.title = title; i.step = step; i.min = min; i.max = max;
-    i.oninput = () => { const e = ed(); const v = i.value === '' ? null : parseFloat(i.value); if (v == null || isNaN(v)) delete e[key]; else e[key] = v; apply(); };
+    i.oninput = () => { const e = ed(); const v = i.value === '' ? null : parseFloat(i.value); if (v == null || isNaN(v)) delete e[key]; else e[key] = v; i.classList.toggle('is-auto', v == null); apply(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
     i.onpointerdown = ev => ev.stopPropagation();
     return i;
   };
@@ -20032,12 +20034,14 @@ document.getElementById('panelBody').addEventListener('click', () => {
     + 'html.phone-mode .panel-head{background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.12))}'
     + 'html.phone-mode #panel{box-shadow:0 0 0 2px rgba(14,92,255,.45),0 14px 40px rgba(16,24,40,.22)}'
     + 'html.phone-mode #panelLiveBtn{background:#0e5cff;border-color:#0e5cff;color:#fff}'
-    /* 【2026-09-19 ヒデさん依頼】レスポンシブ用に設定した値をオレンジで示す(将来: コントロール側で is-mb-override を付ける想定) */
-    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{color:#0b4bd6}'
+    /* 【2026-09-19/09-20 ヒデさん依頼】スマホモード中に「SP専用に上書きした項目」を STUDIO 風にハイライト。
+       つまみも文字行も統一: 行の左に青いバー＋薄い青背景＋見出しに●。触った瞬間に付く(input/change で即更新)。 */
+    + 'html.phone-mode .row.mb-override,html.phone-mode .txt-row.mb-override{background:#eef8ff;box-shadow:inset 3px 0 0 #0EBBFF;border-radius:6px}'
+    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{color:#0b4bd6;font-weight:600}'
+    + 'html.phone-mode .row.mb-override > label::before,html.phone-mode .txt-row.mb-override > label::before{content:"● ";color:#0EBBFF;font-size:8px;vertical-align:middle}'
     + 'html.phone-mode .row.mb-override input[type=range]{accent-color:#0EBBFF}'
     + 'html.phone-mode .txt-row.mb-override > label{color:#0b4bd6;font-weight:600}'
-    + 'html.phone-mode .txt-row.mb-override > label::before{content:"● ";color:#0EBBFF;font-size:8px;vertical-align:middle}'
-    + 'html.phone-mode .txt-row .txt-n.mb-diff,html.phone-mode .txt-row .txt-w.mb-diff{border-color:#0EBBFF!important;background:#eef8ff;color:#0b4bd6;font-weight:600}';
+    + 'html.phone-mode .txt-row .txt-n.mb-diff,html.phone-mode .txt-row .txt-w.mb-diff{border-color:#0EBBFF!important;background:#dff0ff;color:#0b4bd6;font-weight:600}';
   document.head.appendChild(css);
 
   var trigger = document.getElementById('panelLiveBtn');
