@@ -1414,7 +1414,7 @@
   #results.rfx-24 .res2-top, #results.rfx-25 .res2-top { grid-area: 4 / 1 / 5 / 4; display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: var(--space-40); padding-top: var(--space-28); }
   #results.rfx-24 .res2-head, #results.rfx-25 .res2-head { flex-direction: column; align-items: flex-start; justify-content: flex-start; font-size: var(--fs-stat); line-height: var(--lh-loose); }   /* カンプ: Noto Sans JP Light 34px / 1.7 の2行 */
   #results.rfx-24 .res2-stats, #results.rfx-25 .res2-stats { gap: var(--space-28); align-items: flex-end; }   /* 【2026-09-20 ヒデさん依頼】数値の左右の間隔を詰める(44→28) */
-  #results.rfx-24 .res2-stats .r2s span, #results.rfx-25 .res2-stats .r2s span { font-size: var(--fs-stat-lg); line-height: 1; }
+  #results.rfx-24 .res2-stats .r2s span, #results.rfx-25 .res2-stats .r2s span { font-size: 60px; line-height: 1; }   /* 【2026-09-20 ヒデさん依頼・カンプ 17753:27952 実測】数字は 60px(旧 --fs-stat-lg 70px は10px大きかった)。行間1・ラベル16/24・+40 はカンプと一致済み */
   #results.rfx-24 .res2-stats .r2s, #results.rfx-25 .res2-stats .r2s { gap: var(--space-8); }
   #results.rfx-24 .res2-stats .r2s b, #results.rfx-25 .res2-stats .r2s b { font-size: var(--fs-base); line-height: 24px; }   /* カンプ: Noto Sans JP Thin 16px / 24px */
   #results.rfx-24 .slot .fx:last-child, #results.rfx-25 .slot .fx:last-child { font-size: var(--fs-xl); }   /* カンプ: 末尾の「+」は 40px(数字は 70px) */
