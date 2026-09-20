@@ -257,10 +257,19 @@ html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive:hover {
   color: rgba(30, 30, 30, 0.8);
 }
 html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive img {
-  /* 白い线のアイコンを黒に落とす */
-  filter: brightness(0);
-  opacity: 0.45;
+  /* 【2026-09-21 ヒデさん指示】
+       「オンがディスエイブルの時の見た目を変えてほしい。白背景の時の。
+         丸は白色で、なおかつ中のピクトグラムは青に」
+     もとの絵（icon-bgm-on-dim.svg）は【白い丸＋青い線】なのに、
+     全体に opacity .2 をかけて薄くしていたため、白背景では丸も線も消えていた。
+     → 白背景のときだけ、薄がけを外した専用の絵に差し替える。
+        丸＝白（不透明）／ピクト＝#0070C9。
+     ⚠️ 選んでいる側（塗られた丸）は前のままでよい、との指定なので触らない。 */
+  content: url("/img/icon-bgm-on-dim-light.svg");
+  filter: none;
+  opacity: 1;
 }
+
 
 /* ===== BGM音量インジケーターのスライダー（2026-08-30 ヒデさん依頼） =====
    トラックは inline style のグラデ（進捗ぶんだけ白）で描くので、

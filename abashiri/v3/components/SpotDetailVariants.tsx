@@ -56,6 +56,48 @@ export const reveal = {
    ⚠️ 文字は白。どの案も先頭は写真なのでその上で読めるが、白い本文の面が
       乗り上げてくると読みにくくなるため、上端に薄い黒のグラデで足場を作る。 */
 export function DetailHeader() {
+  const [dark, setDark] = useState(false);
+  /* 【2026-09-21 ヒデさん指示】
+       「背景が白になった時に、トップページのように音声のオンオフのUIも変わってほしい」
+     → トップページと同じ仕掛け（html[data-header-dark]）を詳細ページでも立てる。
+       白い面が画面の上半分を覆ったら「白背景」とみなす。
+     ⚠️ ここは main が自前でスクロールする箱。window ではなく main を見る。 */
+  useEffect(() => {
+    const main = document.querySelector<HTMLElement>("main");
+    if (!main) return;
+    let raf = 0;
+    const read = () => {
+      raf = 0;
+      /* 画面の上から1/3の高さに、白い面（本文側）が来ているかで判定する */
+      const y = main.clientHeight * 0.33;
+      const el = document.elementFromPoint(window.innerWidth / 2, y);
+      let white = false;
+      let e: Element | null = el;
+      for (let i = 0; i < 6 && e; i++) {
+        const bg = getComputedStyle(e).backgroundColor;
+        const m = bg.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
+        if (m) {
+          const [r, g, b] = [+m[1], +m[2], +m[3]];
+          const a = m[4] === undefined ? 1 : +m[4];
+          if (a > 0.5 && r > 230 && g > 230 && b > 230) { white = true; break; }
+        }
+        e = e.parentElement;
+      }
+      document.documentElement.dataset.headerDark = white ? "1" : "";
+      setDark(white);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
+    read();
+    main.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      main.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+      document.documentElement.dataset.headerDark = "";
+    };
+  }, []);
+
   return (
     /* ⚠️ 2026-09-20 ヒデさん指示「上部にシャドウがかかっていますが、それは要りません」
        → 足場として敷いていた黒のグラデを撤去。ナビだけを置く */
@@ -69,7 +111,8 @@ export function DetailHeader() {
         className="pointer-events-auto absolute left-[34px] top-[32px] z-50 flex h-[19px] items-center"
       />
       <div className="pointer-events-auto relative flex justify-center pt-[26px]">
-        <GlobalNav theme="light" />
+        {/* 白背景になったらナビの字も黒へ（トップページと同じふるまい） */}
+        <GlobalNav theme={dark ? "dark" : "light"} />
       </div>
     </div>
   );

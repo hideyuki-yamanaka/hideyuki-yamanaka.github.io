@@ -337,7 +337,15 @@ export default function SoundUi({
                     : "bgm-seg-inactive text-white/50 hover:text-white/80"
                 }`}
               >
-                <img src={icon} alt="" className="size-[18px]" />
+                {/* ⚠️ 白背景では中のピクトを青にする（globals.css の
+                   html[data-header-dark] 側で mask を使って塗り替える）。
+                   そのために「どの絵か」を CSS 変数で渡しておく */}
+                <img
+                  src={icon}
+                  alt=""
+                  className="size-[18px]"
+                  style={{ ["--bgm-icon" as string]: `url(${icon})` } as React.CSSProperties}
+                />
                 {label}
               </button>
             );

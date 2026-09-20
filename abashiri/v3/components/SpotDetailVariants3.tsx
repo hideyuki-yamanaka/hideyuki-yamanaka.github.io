@@ -404,57 +404,63 @@ function TocLayout({
   pinnedHero?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const stage = useRef<HTMLDivElement>(null);
   const heads = headsOf(spot);
   const items = tocOf(spot);
   const active = useSpy(ref, items.length);
   const jump = useJump(ref);
 
-  /* 貼りつく写真の上をどれだけ進んだか 0→1。白い面が乗り上げるのに合わせて
-     左下の名前だけを消す（写真そのものには一切さわらない） */
-  /* ⚠️ target には【実際に描かれている要素】しか渡せない。
-     pinnedHero が false の案（32・35）ではステージを描かないので、
-     そのまま渡すと "Target ref is defined but not hydrated" が出る
-     （2026-09-20 実測。案32・35 でだけ1件ずつ発生していた）。
-     貼りつく形のときだけ target を渡す */
-  const { scrollYProgress } = useScroll({
-    container: ref,
-    target: pinnedHero ? stage : undefined,
-    offset: ["start start", "end start"],
-  });
-  const titleO = useTransform(scrollYProgress, [0, 0.24, 0.42], [1, 1, 0]);
+  /* 左下の名前は、白い面が上がってくるのに合わせて消す。
+     ⚠️ 写真そのものには一切さわらない（固定したまま）。消えるのは名前だけ。
+        目安は画面1つぶんのスクロール＝白い面の先頭が画面上端に来るころ。 */
+  const { scrollY } = useScroll({ container: ref });
+  const [vh, setVh] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    const read = () => setVh(el?.clientHeight || window.innerHeight || 0);
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, []);
+  const titleO = useTransform(
+    scrollY,
+    [0, Math.max(1, vh * 0.22), Math.max(2, vh * 0.55)],
+    [1, 1, 0]
+  );
 
   return (
     <Shell refEl={ref}>
       {pinnedHero ? (
         <>
-          {/* 写真が貼りつくステージ。
-              ⚠️ 高さの決め方（2026-09-20 実測して直した）:
-                 貼りつき(sticky)が切れるのは「ステージ高 − 画面1つ」を過ぎたとき。
-                 白い面は 100dvh 進んだ所から乗り上げ、そこから 70dvh のグラデを
-                 かけて白くなりきる。つまり画面が完全に白で覆われるのは 170dvh 地点。
-                 200dvh にしていた時は 100dvh で貼りつきが切れてしまい、
-                 【まだ写真が見えているのに動き出した】（実測: 写真top 0 → -462px）。
-                 170dvh + 画面1つ = 270dvh 必要なので、余裕をみて 280dvh にする */}
-          <div ref={stage} className="relative h-[280dvh]">
-            <div className="sticky top-0 h-dvh w-full overflow-hidden">
-              <img
-                src={spot.hero}
-                alt={spot.name}
-                className="size-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20" />
-              <motion.div
-                className="absolute inset-x-0 bottom-0 px-6 pb-[80px] lg:px-[120px] lg:pb-[120px]"
-                style={{ opacity: titleO }}
-              >
-                <HeroTitle spot={spot} size="sm" />
-              </motion.div>
-            </div>
+          {/* 【2026-09-20→21 ヒデさん指示】
+               「後ろに画像が固定であって、Zインデックスで上の白背景のセクションが
+                 スクロールで上がっていく。写真の位置などは一切変わらず」
+             → 写真は【画面に貼りつけたまま一切動かさない】。
+                以前は sticky で貼りつけていたが、その仕組みでは
+                「貼りつく区間」を抜けると写真が上へ流れてしまう。
+                position:fixed なら、区間という考え自体が無くなり、
+                最後まで1pxも動かない。
+
+             ⚠️ ここで fixed が使えるのは、詳細ページが【main を自前でスクロール
+                させている】から。トップページのように body ごと拡大している画面では
+                fixed は使えない（ズレる）。詳細ページ専用の手。
+             ⚠️ z-0（いちばん奥）。白い面は z-10 で手前に重なる。 */}
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+            <img
+              src={spot.hero}
+              alt={spot.name}
+              className="size-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20" />
+            <motion.div
+              className="absolute inset-x-0 bottom-0 px-6 pb-[80px] lg:px-[120px] lg:pb-[120px]"
+              style={{ opacity: titleO }}
+            >
+              <HeroTitle spot={spot} size="sm" />
+            </motion.div>
           </div>
-          {/* 白い面。ステージの半分（100dvh）の位置から乗り上げる。
-              先頭のグラデで、写真がだんだん白へ変わって見える */}
-          <div className="relative z-[2] -mt-[100dvh]">
+          {/* 白い面。最初は画面の1つ下に置いておき、スクロールすると
+              写真の手前を上がってくる（写真そのものは動かない） */}
+          <div className="relative z-10 pt-[100dvh]">
             {/* ⚠️ 2026-09-20 ヒデさん指摘「上部の部分は白を多めに。急に空が来すぎ」
                 → 変化が急だったので、丈を 46dvh → 70dvh に伸ばし、
                   白の立ち上がりを早めて刻みも細かくした（上に行くほど写真が
@@ -474,7 +480,8 @@ function TocLayout({
       )}
       <div
         className={`px-6 py-[110px] md:px-[56px] lg:px-[100px] ${
-          pinnedHero ? "relative z-[2] -mt-px bg-white pt-0" : ""
+          /* 白い面の続き。写真(z-0)より手前に置く */
+          pinnedHero ? "relative z-10 -mt-px bg-white pt-0" : ""
         }`}
       >
         <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[110px]">
