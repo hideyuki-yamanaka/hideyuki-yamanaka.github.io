@@ -843,8 +843,8 @@
   .vis-line .vl-in { display: inline-block; }
   .vis-line .vl-ch { display: inline-block; }   /* 案C 文字ごとカスケード用 */
   /* 【2026-09-20 ヒデさん依頼】ビジョン強調案(strong): 見出し・メッセージを左揃え／文字サイズ +20px／左位置は KV コピーの左(--kv-copy-base=50px)に合わせる。2行(visL1/visL2)＝既存のマスク出現で1行目→2行目。PC/タブレットのみ(スマホは別レイアウト) */
-  html:not(.mb) #vision.vis-emph .vis-label { left: 120px; right: auto; text-align: left; }   /* 【2026-09-20 修正】見出しは左から120px */
-  html:not(.mb) #vision.vis-emph .vis-line { left: 120px; right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
+  html:not(.mb) #vision.vis-emph .vis-label { left: var(--vis-emph-left, 120px); right: auto; text-align: left; }   /* 【2026-09-21 修正】見出しは「画面左端から」120px。--vis-emph-left は applyVisEmphLeft() がステージ左端/スケールから逆算して入れる(幅が変わっても左120px) */
+  html:not(.mb) #vision.vis-emph .vis-line { left: var(--vis-emph-left, 120px); right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
   /* 【2026-09-20 ヒデさん依頼】強調案の時は KV 以下(ビジョン)を上に100px詰める(既存のKVノーマル-100/強調+100 にさらに-100)。PC/タブレットのみ。※当初-150は上げすぎだったので-100に */
   html:not(.kv-strong):not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 200px); }   /* KVノーマル(100) − 100 = 0px */
   html.kv-strong:not(.mb):not(.tab) #vision.vis-emph { margin-top: var(--space-200); }                       /* KV強調(300) − 100 = 200px */
@@ -11594,12 +11594,32 @@ function rebuildVisChars(mode) {
     });
   });
 }
+/* 強調案の見出し(Our Vision＋メッセージ)を「画面左端から120px」に置く。
+   .pin-stage は幅1440・左寄せ scale(--sp) なので、CSS left:120px だと
+   画面幅により右にずれる(1512px で実測170px)。画面左120px = ステージ左端 + CSS-left×スケール
+   なので、CSS-left = (120 − ステージ左端) ÷ スケール を逆算して --vis-emph-left に入れる。
+   ⚠️ PC のみ(SP はメッシュ横並びで別配置)。ウィンドウ幅が変わったら resize で呼び直す。 */
+function applyVisEmphLeft() {
+  try {
+    const sec = document.getElementById('vision'); if (!sec) return;
+    const isMb = (typeof isMobile !== 'undefined' && isMobile);
+    if (visEmphMode() !== 'strong' || isMb) { sec.style.removeProperty('--vis-emph-left'); return; }
+    const stage = sec.querySelector('.pin-stage'); if (!stage) return;
+    let sc = 1;
+    try { const m = new DOMMatrixReadOnly(getComputedStyle(stage).transform); if (m.a) sc = m.a; } catch (e) {}
+    if (!sc) sc = 1;
+    const sl = stage.getBoundingClientRect().left;   // ステージ左端の画面X(横は translateY/リビールに影響されない)
+    const cssLeft = (120 - sl) / sc;
+    sec.style.setProperty('--vis-emph-left', cssLeft.toFixed(1) + 'px');
+  } catch (e) {}
+}
 function applyVisEmph() {
   const mode = visEmphMode();
   try { const sec = document.getElementById('vision'); if (sec) sec.classList.toggle('vis-emph', mode === 'strong'); } catch (e) {}
   rebuildVisChars(mode);
   try { if (typeof applyVisBelow === 'function') applyVisBelow(); } catch (e) {}   /* 強調案の下コンテンツ間隔(+100)を反映 */
   try { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); } catch (e) {}   /* 2行目にも太さ等を当て直す */
+  try { applyVisEmphLeft(); } catch (e) {}   /* 見出しを画面左120pxへ(幅依存の逆算) */
 }
 applyVisEmph();   /* 初期化(起動時のモードで組む) */
 
@@ -16039,6 +16059,7 @@ function fit() {
   try { applyVfFade(); } catch (e) {}   /* 【2026-09-20】SP/PC 確定後にビジョンの図の位置を取り直す(スマホ専用の見た目) */
   try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】isMobile 確定後にビジョンの文字サイズを取り直す(SP は SP 既定/上書きで、PC は PC 値で) */
   try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】KV見出しの文字サイズも同様に isMobile 確定後に取り直す */
+  try { if (typeof applyVisEmphLeft === 'function') applyVisEmphLeft(); } catch (e) {}   /* 【2026-09-21】強調案の見出しを画面左120pxへ(幅が変わったら逆算し直す) */
   /* 【2026-09-09】isMobile が確定したこの時点でロゴティッカーの再生を再アサート。
      初回に applyMarquee が isMobile 未確定(=false)＋params.running=false で走ると
      ティッカーが止まったままになるため、モバイル確定後に必ず running へ戻す。 */
