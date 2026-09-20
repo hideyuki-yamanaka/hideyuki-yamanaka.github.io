@@ -1402,6 +1402,8 @@
   #results.rfx-24 .res2-vals, #results.rfx-24 .r2v-track, #results.rfx-25 .res2-vals, #results.rfx-25 .r2v-track { display: contents; }
   /* 【2026-09-20 ヒデさん依頼】for SaaS/AI の上の横線(下段と同じ見た目・同じ出現アニメ)。行1に置き、カード類は行2へ繰り下げ */
   #results.rfx-24 .res2-hr-top, #results.rfx-25 .res2-hr-top { display: block; grid-area: 1 / 1 / 2 / 4; height: 1px; background: var(--line-grid); margin: 0 0 var(--rfx-hr-gap-top, 56px); transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  /* 【2026-09-20 ヒデさん依頼】for SaaS/AI の上の横線は PC では非表示(SPのみ)。空いた行1は自動で高さ0になる */
+  html:not(.mb) #results.rfx-24 .res2-hr-top, html:not(.mb) #results.rfx-25 .res2-hr-top { display: none; }
   #results.rfx-24 .r2v-track > .r2v:nth-of-type(1), #results.rfx-25 .r2v-track > .r2v:nth-of-type(1) { grid-area: 2 / 1 / 3 / 2; }
   #results.rfx-24 .r2v-track > .r2v:nth-of-type(3), #results.rfx-25 .r2v-track > .r2v:nth-of-type(3) { grid-area: 2 / 3 / 3 / 4; }
   #results.rfx-24 .res2-vline, #results.rfx-25 .res2-vline { display: block; grid-area: 2 / 2 / 3 / 3; width: 1px; height: auto; align-self: stretch; margin: 0; background: var(--rfx-line); transform-origin: center top; transform: scaleY(var(--rfx-vline, 0)); }
