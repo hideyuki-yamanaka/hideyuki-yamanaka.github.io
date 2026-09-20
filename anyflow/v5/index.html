@@ -12330,9 +12330,9 @@ function applyVfFade() {
   w.querySelectorAll('.vf-lab').forEach((el, i) => { const x = +el.dataset.x, y = +el.dataset.y; const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0; el.style.left = (VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox).toFixed(1) + 'px'; el.style.top = (VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + oy).toFixed(1) + 'px'; });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
-  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0); if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 20; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)に置く。動かしたい時は logoDx/logoDy のつまみで。SPは従来どおり少し上へ */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 20; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)より50px上に置く(独立)。動かしたい時は logoDx/logoDy のつまみで。SPは従来どおり少し上へ */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
     const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
-    const tf3 = _mb ? '' : ((ang || tx || ty) ? 'perspective(900px) rotateX(' + tx.toFixed(1) + 'deg) rotateY(' + ty.toFixed(1) + 'deg) rotateZ(' + ang.toFixed(1) + 'deg)' : '');   /* SP: 平らにまっすぐ */ lg.style.transform = tf3;
+    const tf3 = '';   /* 【2026-09-20 ヒデさん依頼】ロゴはヘッダーのロゴと同じく常にフラット(傾き0)・メッシュの角度から独立。傾き系(logoTiltX/Y・角度)は無視する。 */ lg.style.transform = tf3;
     lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
     const sh = (c.logoShadow || 0); lg.style.filter = sh > 0.05 ? 'drop-shadow(0 ' + (sh * 0.7).toFixed(1) + 'px ' + sh.toFixed(1) + 'px rgba(16,24,40,.22))' : '';
     /* 案4 ガラスの板: ロゴより一回り大きく、同じ傾き */
@@ -12373,7 +12373,7 @@ function vfDraw(tSec) {
   const a = (spinOn ? tSec : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
   const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2]; });
   /* 【2026-09-19 ヒデさん依頼】案5: ロゴを球の表面に貼って網目と一緒に回す。貼る点＝今のロゴ中心を球の手前側に投影した点。向きは面の法線(回転→傾き→左右の傾きを網目と同じ順で) */
-  if (c.logoStick && !(c.logoOn === 0 || c.logoOn === false)) { const lg = document.getElementById('vfLogo'); if (lg) {
+  if (false && c.logoStick && !(c.logoOn === 0 || c.logoOn === false)) { const lg = document.getElementById('vfLogo'); if (lg) {   /* 【2026-09-20 ヒデさん依頼】ロゴは独立フラット化のため、球に貼り付いて回る(案5)処理は無効化 */
     const sc = (c.scale != null ? c.scale : 1); const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls;
     const ux = ((127 + 102 - VF_CX) * sc + (c.logoDx || 0)) / R, uy = -((288 + 18.5 - VF_CY) * sc + (c.logoDy || 0)) / R;
     const n0 = Math.hypot(ux, uy), rr = Math.min(0.9, n0); const x0 = n0 > 1e-6 ? ux / n0 * rr : 0, y0 = n0 > 1e-6 ? uy / n0 * rr : 0, z0 = Math.sqrt(Math.max(0, 1 - x0 * x0 - y0 * y0));
