@@ -3519,7 +3519,10 @@
   .cat-section:first-of-type { border-top: none; }
   .cat-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 13px 2px 7px; font-size: 13px; font-weight: 700; color: #111; letter-spacing: .03em; user-select: none; }
   .cat-section-head:hover { color: #000; }
-  .cat-section-head .cs-chev { font-size: 10px; color: #bbb; font-weight: 400; transition: transform .2s; flex: 0 0 auto; }
+  /* 【2026-09-20 ヒデさん依頼】開閉アイコンはマテリアル(expand_more)で大きく。glyphは透明にして mask で描画 */
+  .cat-section-head .cs-chev { position: relative; width: 22px; height: 22px; color: transparent; transition: transform .2s; flex: 0 0 auto; }
+  .cat-section-head .cs-chev::before { content: ''; position: absolute; inset: 0; margin: auto; width: 22px; height: 22px; background: #8a8a8a; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .cat-section-head:hover .cs-chev::before { background: #333; }
   .cat-section.closed .cs-chev { transform: rotate(-90deg); }
   .cat-section.closed .cat-section-body { display: none; }
   .cat-section-body { padding: 0 0 4px; }
@@ -3579,6 +3582,7 @@
   .grp-note.cat-note { margin: 10px 0 0; }
   /* たたまれている時に「押せる」と分かるようにする小さい添え書き */
   .panel-head-sub { font-size: 10px; color: #999; margin-left: 8px; font-weight: 300; }
+  .panel-head-title { font-size: 15px; font-weight: 700; letter-spacing: .02em; color: #1a1a1a; }   /* 【2026-09-20 ヒデさん依頼】歯車アイコンを外し、タイトルを大きく */
   .panel:not(.closed) .panel-head-sub { display: none; }
   .chip { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   /* 各項目のリセット(↺)。行の右端に置く (2026-08-26 ヒデさん指定・下の「元に戻す」は廃止) */
@@ -3699,6 +3703,11 @@
          transition: background .15s, color .15s, border-color .15s; }
   .rst:hover { background: #f0f0f0; color: #222; border-color: #e0e0e0; }
   .rst.off { visibility: hidden; }
+  /* 【2026-09-20 ヒデさん依頼】リセット(↺)をマテリアル(refresh)に。glyphは透明にして mask で描画(JSは触らず「✓戻しました」も維持) */
+  .rst, .gbtn { position: relative; color: transparent; }
+  .rst::after, .gbtn::after { content: ''; position: absolute; inset: 0; margin: auto; width: 15px; height: 15px; background: #8a8a8a; pointer-events: none; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.65 6.35A7.958 7.958 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.65 6.35A7.958 7.958 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .rst:hover::after, .gbtn:hover::after { background: #333; }
+  .gbtn.done::after { display: none; }   /* 「✓ 戻しました」テキストを見せる */
   /* 小見出しの右に置く「リセット / 保存」(セクション単位) */
   /* 見え方モード(等倍 / パース)のアイコン */
   .gmode { display: flex; align-items: center; gap: 2px; margin-left: auto; flex: 0 0 auto; }
@@ -4354,7 +4363,7 @@
 <div class="tools">
 <div class="panel closed" id="panel">
   <div class="panel-head" id="panelHead">
-    <span>⚙️ 調整パネル<span class="panel-head-sub">クリックで開く</span></span>
+    <span class="panel-head-title">調整パネル</span>
     <!-- 【2026-08-29 ヒデさん指定】タイトル横にコンパクトな「編集する」ボタン。クリックで直接編集モードのオン/オフ。 -->
     <span class="panel-head-btns">
       <button class="panel-edit-btn" id="panelLiveBtn" title="スマホモード（実機とライブ同期・QR）" hidden>📱 スマホモード</button>
@@ -18518,13 +18527,14 @@ function buildPanel() {
   /* 【2026-09-20 大改修】② メッセージ: 基本(メッセージ:サイズ/位置X/Y ・ Our Vision:位置X/Y)＋アニメ(メッセージ出現) に分割。文字サイズはビジョンでは基本のまま(ヒデさん指定)。 */
   const editPos = (key) => { if (!params.edits) params.edits = {}; return params.edits[key] || (params.edits[key] = {}); };
   sub(catVis, 'メッセージ', false);
-  rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
-    v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize' }));
   rows.push(slider('位置 X', -400, 600, 2, () => (editPos('visMsg').dx || 0),
     v => { editPos('visMsg').dx = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの左右位置。', { mbKey: 'edits.visMsg.dx', signed: true }));
   rows.push(slider('位置 Y', -400, 600, 2, () => (editPos('visMsg').dy || 0),
     v => { editPos('visMsg').dy = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの上下位置。', { mbKey: 'edits.visMsg.dy', signed: true }));
+  sub(catVis, 'メッセージ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
+  rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
+    v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize' }));
   sub(catVis, 'Our Vision', false);
   rows.push(slider('位置 X', -400, 600, 2, () => (editPos('visLabel').dx || 0),
     v => { editPos('visLabel').dx = v; textTools.applyAll(); }, v => v + 'px',
@@ -18602,15 +18612,16 @@ function buildPanel() {
     'ぼけた状態からくっきり出るまでの時間。', { mbKey: 'sections.vision.miniDur' }));
 
   sub(catVis, 'ポイント1・2', true);
+  rows.push(slider('横幅', 220, 560, 4, () => (sv().vision.pWidth != null ? sv().vision.pWidth : 328),
+    v => { sv().vision.pWidth = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    'ポイント1・2のブロックの横幅。狭いほど本文の折り返しが増えます。カンプは328px。', { mbKey: 'sections.vision.pWidth' }));
+  sub(catVis, 'ポイント1・2', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
   rows.push(slider('見出しサイズ', 16, 44, 1, () => (sv().vision.pHSize != null ? sv().vision.pHSize : 26),
     v => { sv().vision.pHSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
     '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。', { mbKey: 'sections.vision.pHSize' }));
   rows.push(slider('本文サイズ', 10, 24, 0.5, () => (sv().vision.pPSize != null ? sv().vision.pPSize : 14),
     v => { sv().vision.pPSize = v; applyVpSize(); }, v => v.toFixed(1) + 'px',
     'ポイントの説明文の文字サイズ。カンプは14px。', { mbKey: 'sections.vision.pPSize' }));
-  rows.push(slider('横幅', 220, 560, 4, () => (sv().vision.pWidth != null ? sv().vision.pWidth : 328),
-    v => { sv().vision.pWidth = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    'ポイント1・2のブロックの横幅。狭いほど本文の折り返しが増えます。カンプは328px。', { mbKey: 'sections.vision.pWidth' }));
 
   /* 【2026-08-26 整理】見出しだけが空で、中身(見出し/Point01/Point02)が同じ階層に並んでいたので入れ子に直した */
   sub(catVis, '2つの価値', false);
@@ -19188,7 +19199,7 @@ function buildPanel() {
   /* ========== 🍔 ハンバーガーメニュー (2026-09-18 ヒデさん依頼) ========== */
   const catMenu = category('ハンバーガーメニュー（右上を押した先の画面）', false);
   catNote(catMenu, '左寄せ大の暗いメニュー。余白・項目の間隔・文字サイズはここ、太さ/行間/字間は下の「文字」。右上の✏️編集でも触れます。');
-  sub(catMenu, '余白・間隔・大きさ', null, { fixed: true });
+  sub(catMenu, '余白・間隔', null, { fixed: true });
   { const D = () => (params.drawer = params.drawer || {});
     const dv = (k, def) => (D()[k] != null ? D()[k] : def);
     const ds = (label, k, def, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => dv(k, def), v => { D()[k] = v; applyDrawerTune(); markDirty(); }, fmt, tip, { fixedMax: true, signed: min < 0, mbKey: 'drawer.' + k }));
@@ -19197,9 +19208,11 @@ function buildPanel() {
     ds('左の余白', 'padL', 130, 0, 600, 4, v => Math.round(v) + 'px', '左端からメニューまでの余白(以前は 9vw≒130px)。');
     ds('右の余白', 'padR', 0, 0, 600, 4, v => Math.round(v) + 'px', 'メニューの右の余白。');
     ds('項目の間隔（上下）', 'gap', 24, 0, 120, 2, v => Math.round(v) + 'px', 'ビジョン／提供できること… の行と行の間。以前は10px。');
+    sub(catMenu, '文字サイズ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
     ds('項目の文字サイズ', 'fs', 56, 24, 120, 1, v => Math.round(v) + 'px', 'メニュー項目の文字サイズ。');
     ds('番号の文字サイズ', 'numFs', 14, 8, 40, 1, v => Math.round(v) + 'px', '01〜04 の番号の文字サイズ。');
     /* 【2026-09-18 ヒデさん依頼】右上のハンバーガー(横線2本)の 長さ/太さ/間隔 */
+    sub(catMenu, 'アイコン・その他', false);   /* 【2026-09-20】文字サイズ節のあと、アイコン寸法などは基本へ戻す */
     ds('アイコンの線の長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
     ds('アイコンの線の太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
     ds('アイコンの線の間隔', 'barGap', 7, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
