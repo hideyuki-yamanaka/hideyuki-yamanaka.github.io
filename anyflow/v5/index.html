@@ -2971,12 +2971,12 @@
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
     .headline { left: 24px; right: 24px; top: calc(434px + var(--kv-hl-off, 0px) + var(--kv-sp-top, 0px)); white-space: normal; gap: var(--space-12);   /* 【2026-09-20】グラフィックと見出しの間隔を詰める(524→434・メッシュ最下端420の約14px下)。ヒデさん「離しすぎ→10pxほど」 */   /* 旧: KV下げ 400→448→524 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
                 align-items: center; text-align: center; }
-    .hl-main { font-size: var(--fs-hero); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース) */
-    .hl-main .hl-line:last-child { font-size: var(--fs-hero-jump); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例) */
+    .hl-main { font-size: var(--kv-main-size, var(--fs-hero)); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-hero(34) */
+    .hl-main .hl-line:last-child { font-size: var(--kv-jump-size, var(--fs-hero-jump)); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-hero-jump(60) */
     .hl-main .hl-line:last-child .hl-caret { height: 50px; vertical-align: -6px; }   /* 46px / 1.4 中央。太さ100=9/9のSPトレースのまま(PCは調整版800。仮置き: SPカンプ未確認) */
-    .hl-eyebrow { font-size: var(--fs-caption); font-weight: 400; }   /* 【2026-09-17 大掃除】PCのサブコピーは20px/Medium500(Figma)に焼き込んだので、SPは従来の12px/400を明示して据え置き(仮置き) */
+    .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 400; }   /* 【2026-09-17 大掃除】PCのサブコピーは20px/Medium500(Figma)に焼き込んだので、SPは従来の12px/400を明示して据え置き(仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
     .hl-caret { height: 26px; vertical-align: -4px; }   /* 2026-09-19: 34px に合わせて */
-    .hl-eyebrow { font-size: var(--fs-caption); font-weight: 500; letter-spacing: 0.6px; gap: var(--space-4);   /* 2026-09-19: 太さ 300→500(PC サブコピー Medium と同じ・仮置き) */
+    .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 500; letter-spacing: 0.6px; gap: var(--space-4);   /* 2026-09-19: 太さ 300→500(PC サブコピー Medium と同じ・仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
                   flex-wrap: nowrap; justify-content: center; margin-top: 0; }   /* カンプSP node16534:22199: Noto Light(300) 12px / 字間0.6 (PCの --kv-eyebrow-weight=400 は使わない) */
     .hl-eyebrow i { width: 10px; flex: 0 0 auto; }   /* カンプの罫線10px */
     /* カンプSP node16534:22200: ロゴ帯は y624・高さ42.4、ロゴ1つは 13.5〜19px 高(→⚠️仮置き 16px)・間隔 24〜31px(→27px)。
@@ -14485,9 +14485,14 @@ function applyDrawerTune() {
 }
 function applyKvCopy() {
   const r = document.documentElement.style, k = params.kv;
-  r.setProperty('--kv-main-size', (k.mainSize != null ? k.mainSize : 70) + 'px');
-  r.setProperty('--kv-jump-size', (k.jumpSize != null ? k.jumpSize : 120) + 'px');   /* 最終行「競争力を」(調整版 120px) */
-  r.setProperty('--kv-eyebrow-size', (k.eyebrowSize != null ? k.eyebrowSize : 20) + 'px');
+  /* 【2026-09-20 #3】KV見出しの文字サイズもSP独立。実機SPは params.mb 直読み＋SP既定(main34/jump60/eyebrow12=SPカンプ由来の --fs-hero/--fs-hero-jump/--fs-caption)、PCは70/120/20。
+     SP CSS(.hl-main 等)もこの変数を読むよう変更済み＝スマホモードのパネル数値と実機が一致する。isMobile確定後(fit)にも再実行。 */
+  const _mbK = (params && params.mb) || {};
+  const _isMbK = (typeof isMobile !== 'undefined' && isMobile);
+  const effK = (f, pc, sp) => _isMbK ? (_mbK['kv.' + f] != null ? _mbK['kv.' + f] : sp) : (k[f] != null ? k[f] : pc);
+  r.setProperty('--kv-main-size', effK('mainSize', 70, 34) + 'px');
+  r.setProperty('--kv-jump-size', effK('jumpSize', 120, 60) + 'px');   /* 最終行「競争力を」(PC調整版 120px / SP 60px) */
+  r.setProperty('--kv-eyebrow-size', effK('eyebrowSize', 20, 12) + 'px');
   /* 【2026-09-20 ヒデさん依頼】ヘッダー↔コピーの距離。基準top(PC208/SP434)に足すオフセット。PC/SP独立(mbKey)。 */
   r.setProperty('--kv-hl-off', (k.hlOff != null ? k.hlOff : 0) + 'px');
   /* 【2026-09-20 ヒデさん依頼】スマホ版: ヘッダー↔コンテンツの距離(KV全体=グラフィック＋コピー＋ロゴ帯を下げる)。PCのレイアウトは未使用。 */
@@ -14607,7 +14612,7 @@ setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
 setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
-function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョンの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -15995,6 +16000,7 @@ function fit() {
   document.documentElement.classList.toggle('mb', isMobile);
   try { applyVfFade(); } catch (e) {}   /* 【2026-09-20】SP/PC 確定後にビジョンの図の位置を取り直す(スマホ専用の見た目) */
   try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】isMobile 確定後にビジョンの文字サイズを取り直す(SP は SP 既定/上書きで、PC は PC 値で) */
+  try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】KV見出しの文字サイズも同様に isMobile 確定後に取り直す */
   /* 【2026-09-09】isMobile が確定したこの時点でロゴティッカーの再生を再アサート。
      初回に applyMarquee が isMobile 未確定(=false)＋params.running=false で走ると
      ティッカーが止まったままになるため、モバイル確定後に必ず running へ戻す。 */
@@ -18461,13 +18467,13 @@ function buildPanel() {
   sub(copyRoot, 'コピー', false, { grp: 'font' });   /* フォント: 文字サイズ(太さ/行間/字間は🔤文字) */
   rows.push(slider('1〜2行目のサイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
     v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「文字」で。', { mbKey: 'kv.mainSize' }));
+    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「文字」で。', { mbKey: 'kv.mainSize', mbDefault: 34 }));
   rows.push(slider('最終行「競争力を」のサイズ', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
     v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '見出し3行目「競争力を」だけのサイズ。1〜2行目とは別の独立した値(ここだけ大きくできる)。調整版は120px。', { mbKey: 'kv.jumpSize' }));
+    '見出し3行目「競争力を」だけのサイズ。1〜2行目とは別の独立した値(ここだけ大きくできる)。調整版は120px。', { mbKey: 'kv.jumpSize', mbDefault: 60 }));
   rows.push(slider('サブのサイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
     v => { params.kv.eyebrowSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「文字」で。', { mbKey: 'kv.eyebrowSize' }));
+    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「文字」で。', { mbKey: 'kv.eyebrowSize', mbDefault: 12 }));
   sub(copyRoot, 'コピー（出現）', false, { grp: 'anim' });
   note('数字はページを開いてから何秒後か。上から出る順です。');
   /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
