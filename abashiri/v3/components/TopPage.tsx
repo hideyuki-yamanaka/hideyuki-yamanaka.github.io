@@ -559,6 +559,17 @@ export default function TopPage({
     const tick = () => {
       raf = 0;
       let busy = false;
+      /* 【2026-09-20】場面が「まだ見せ終わっていない」と言っている間は、
+         そこから先へ行かせない（体験セクションの重ね写真など）。
+         ⚠️ 以前は場面の側が直接 scrollTop を書いて止めようとしたが、
+            この慣性ループが毎フレーム上書きするため効かなかった。
+            止めたい側は window.__abashiriScrollGate に「ここまで」を書く。 */
+      const gate = (window as unknown as { __abashiriScrollGate?: number })
+        .__abashiriScrollGate;
+      if (typeof gate === "number" && targetY > gate) {
+        targetY = gate;
+        if (posY > gate) posY = gate;
+      }
       /* 縦の慣性 */
       const dy = targetY - posY;
       if (Math.abs(dy) > 0.5) {

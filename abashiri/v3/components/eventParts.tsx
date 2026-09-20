@@ -203,12 +203,65 @@ export function PinStage({
   /** 貼りつけておく長さ。画面の高さの何倍か */
   length = 2.6,
   children,
+  hold,
 }: {
   length?: number;
   children: (q: MotionValue<number>) => React.ReactNode;
+  /** 0〜1。1 になるまで【この場面から下へ抜けさせない】ための見張り。
+      中の場面が毎フレーム書き込む（1 に達したら解除）。
+      【2026-09-20 ヒデさん指示】
+        「今2枚目見終わったら下にスクロールできる感じになっているので、
+          ちゃんと4枚目まで見た後に、見終わったら下にスクロールできる感じに」
+      ⚠️ 写真が流れる速さは「一定」（＝スクロールの強さに関係なく一定）なので、
+         強くスクロールすると【写真が追いつく前に貼りつきが切れて】しまう。
+         位置で決まる貼りつきと、時間で進む流れは、そのままでは両立しない。
+         そこで「流れ終わるまでは、この場面の下端より先へ行かせない」。
+         上へ戻るのは自由（下向きだけ止める）。 */
+  hold?: React.RefObject<number>;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const q = usePinProgress(stage);
+
+  useAnimationFrame(() => {
+    if (!hold) return;
+    /* ⚠️ 0.999 だと、勢いよくスクロールした時に最後の1枚が
+       剥がれきる直前で関所が開いてしまうことがあった
+       （2026-09-20 実測: 案32を一気にスクロールすると2枚で抜けた）。
+       完全に剥がれ終わってから開ける */
+    if (hold.current >= 1) {
+      /* 見終わった。関所を開ける */
+      const w = window as unknown as { __abashiriScrollGate?: number };
+      if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
+      return;
+    }
+    const el = stage.current;
+    if (!el) return;
+    const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
+    if (!sc) return;
+    /* ステージ上端までの距離（縮小前のpx。scrollTop と同じものさし） */
+    let y = 0;
+    let e: HTMLElement | null = el;
+    while (e && e !== sc) {
+      y += e.offsetTop;
+      e = e.offsetParent as HTMLElement | null;
+    }
+    const limit = y + el.offsetHeight - sc.clientHeight;
+    /* まだ場面に入っていない（手前にいる）ときは関所を開けておく */
+    const w = window as unknown as { __abashiriScrollGate?: number };
+    /* ⚠️ 関所を張るのが遅いと、勢いよくスクロールした時に
+       【張る前に通り過ぎて】しまう（2026-09-20 実測: 一気にスクロールで2枚のまま抜けた）。
+       場面の3画面ぶん手前から構えておく */
+    if (sc.scrollTop <= y - sc.clientHeight * 3) {
+      if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
+      return;
+    }
+    /* ⚠️ ここで scrollTop を直接書いても、トップページの慣性スクロールが
+       毎フレーム上書きするので効かない（2026-09-20 実測）。
+       慣性側が見ている「関所」に、行ってよい上限を伝える */
+    w.__abashiriScrollGate = limit;
+    if (sc.scrollTop > limit) sc.scrollTop = limit;
+  });
+
   return (
     /* ⚠️ -mt-[180px]：体験セクションの上パディングを打ち消して、
        貼りついた場面がちょうど画面いっぱいになるようにする */
@@ -231,6 +284,16 @@ export function afterHold(
   end = 0.92
 ): MotionValue<number> {
   return useTransform(q, [hold, end], [0, 1], { clamp: true });
+}
+
+/** 進み具合を ref に毎フレーム写す。PinStage の hold（下へ行かせない見張り）へ渡す用 */
+export function useReportProgress(
+  p: MotionValue<number>,
+  ref: React.RefObject<number>
+) {
+  useAnimationFrame(() => {
+    ref.current = p.get();
+  });
 }
 
 /** 「一定の速さ」で追いかける進み具合を返す。

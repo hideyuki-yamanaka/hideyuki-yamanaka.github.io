@@ -30,12 +30,14 @@
  *   ホバーはグルメのカードと同じ言葉遣い（黒グラデ＋下から文字が上がる）にした
  */
 import Link from "next/link";
+import { useRef } from "react";
 import { cubicBezier, motion, useTransform, type MotionValue } from "framer-motion";
 import {
   ITEMS,
   PinStage,
   afterHold,
   useConstantSpeed,
+  useReportProgress,
   type EventItem,
 } from "./eventParts";
 
@@ -112,9 +114,18 @@ function StackCard({
      → 1枚あたりの区間を 0.2 → 0.3 に広げ、始まりの間隔も 0.2 → 0.22 に。
        あわせて PinStage の長さも 2.6 → 3.6画面ぶんに伸ばしてある。
        これで1枚が抜けきるまでのスクロール量が約2倍になる */
+  /* 【2026-09-20 ヒデさん指示】
+       「今2枚目見終わったら下にスクロールできる感じになっているので、
+         ちゃんと4枚目まで見た後に、見終わったら下にスクロールできる感じに」
+     実測すると、貼りついている間の前半5割で1枚も剥がれず（死に区間）、
+     残り5割に4枚ぶんを詰め込んでいたため、剥がれきる前に貼りつきが切れていた
+     （実測: 進み0.95 の時点で剥がれたのは2枚だけ）。
+     → 始まりを早め（0.08→0.03）、間隔と1枚あたりの区間を詰めて、
+       【進み 0.82 までに3枚とも剥がれ終わる】ようにする。
+       残りの 0.18 は「4枚目をゆっくり見る」ための余韻。 */
   const order = ITEMS.length - 1 - i;
-  const from = Math.min(0.7, 0.08 + order * 0.24);
-  const to = Math.min(1, from + 0.32);
+  const from = Math.min(0.46, 0.02 + order * 0.155);
+  const to = Math.min(0.96, from + 0.26);
   const last = i === 0; /* 台紙になる1枚は残す */
   /* 直線だと機械的に見えるので、出だしと終わりをやわらげる */
   const EASE_OUT = cubicBezier(0.32, 0, 0.2, 1);
@@ -190,12 +201,20 @@ function MarqueeStack() {
      セクションが見えた時点で進捗が 0.96 まで進んでいて
      【剥がれ終わった状態からしか見えない】（2026-09-17 実測）。
      貼りつけて“ため”を置くことで、束 → 1枚ずつ剥がれる、が見えるようになる */
-  return <PinStage length={3.6}>{(q) => <MarqueeScene q={q} />}</PinStage>;
+  /* 4枚めくり終わるまで下へ行かせない見張り（PinStage の hold）。
+     場面の側が毎フレーム「今どこまで流れたか」を書き込む */
+  const hold = useRef(0);
+  return (
+    <PinStage length={4.8} hold={hold}>
+      {(q) => <MarqueeScene q={q} hold={hold} />}
+    </PinStage>
+  );
 }
-function MarqueeScene({ q }: { q: MotionValue<number> }) {
+function MarqueeScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObject<number> }) {
   /* スクロールは「どこまで進んでよいか」を決めるだけ。
      実際の流れは一定の速さ（--ev-peel-speed）で追いかける */
-  const p = useConstantSpeed(afterHold(q, 0.18, 0.99));
+  const p = useConstantSpeed(afterHold(q, 0.05, 0.9));
+  useReportProgress(p, hold);
   return (
     <Frame
       full={
@@ -229,10 +248,16 @@ function MarqueeScene({ q }: { q: MotionValue<number> }) {
 
 /* ═══════════ 案32 左右に文字 ═══════════ */
 function SideTextStack() {
-  return <PinStage length={3.6}>{(q) => <SideTextScene q={q} />}</PinStage>;
+  const hold = useRef(0);
+  return (
+    <PinStage length={4.8} hold={hold}>
+      {(q) => <SideTextScene q={q} hold={hold} />}
+    </PinStage>
+  );
 }
-function SideTextScene({ q }: { q: MotionValue<number> }) {
-  const p = useConstantSpeed(afterHold(q, 0.18, 0.99));
+function SideTextScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObject<number> }) {
+  const p = useConstantSpeed(afterHold(q, 0.05, 0.9));
+  useReportProgress(p, hold);
   return (
     <Frame>
       <p
