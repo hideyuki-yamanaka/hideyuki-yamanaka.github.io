@@ -13,3 +13,4 @@ anyflow/.deploy-v2-v3.done
 
 # Vercel CLI のローカル設定(プロジェクトID等。追跡しない)
 .vercel
+anyflow/v5/_backup/
