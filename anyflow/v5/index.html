@@ -3513,6 +3513,20 @@
   .panel-body.tabbed > .cat.tab-on { display: block; }
   .panel-body.tabbed > .cat > .cat-head { display: none; }
   .panel-body.tabbed > .cat > .cat-body { display: block; padding: 0; }
+  /* 【2026-09-20 大改修】カテゴリ(基本/フォント/エフェクト＆テクスチャ/アニメ)の見出し付きアコーディオン節 */
+  .cat-section { border-top: 1px solid #e6e6e6; }
+  .cat-section:first-of-type { border-top: none; }
+  .cat-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 10px 2px 7px; font-size: 12px; font-weight: 700; color: #2b2b2b; letter-spacing: .04em; user-select: none; }
+  .cat-section-head:hover { color: #000; }
+  .cat-section-head .cs-chev { font-size: 10px; color: #aaa; transition: transform .2s; flex: 0 0 auto; }
+  .cat-section.closed .cs-chev { transform: rotate(-90deg); }
+  .cat-section.closed .cat-section-body { display: none; }
+  .cat-section-body { padding: 0 0 6px; }
+  .cat-section-body > .grp:first-child { border-top: none; margin-top: 2px; padding-top: 0; }
+  /* バリエーションは大見出し(引用インデント風にしない) */
+  .cat-section.cs-variation { border-top: none; margin-bottom: 4px; }
+  .cat-section.cs-variation .cat-section-head { font-size: 14px; font-weight: 800; color: #0b4bd6; background: #eef4ff; border: 1px solid #d8e6ff; border-radius: 9px; padding: 10px 11px; margin: 6px 0 2px; letter-spacing: .02em; }
+  .cat-section.cs-variation .cs-chev { color: #6b93e6; }
   /* 【2026-08-26 整理】セクションの区切りと余白をはっきりさせて読みやすく */
   .grp { margin-top: 9px; padding-top: var(--space-8); border-top: 1px solid #e8e8e8; }
   /* 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン: 情報の階層(入れ子=cv-subg)の見せ方5案(catCv.hier-1〜5) */
@@ -17063,16 +17077,46 @@ function grpFromLabel(k) {
   if (/タイミング|アニメ|演出|順番|登場|揺らぎ|つなぎ|一旦止まる|出入り|入場|切替|ディレイ|出てくる|回って/.test(k)) return 'anim';
   return 'basic';
 }
-/* パネルを組み終わったら呼ぶ。各カテゴリ(.cat-body)直下の小見出し(.grp)をグループ順に並べ替える。
-   入れ子の小見出しは親ごと動くので触らない。 */
+/* 【2026-09-20 大改修・ヒデさん依頼】各タブ(.cat-body)の中を、カテゴリ順(バリエ→基本→フォント→エフェクト＆テクスチャ→アニメ→その他)の
+   「見出し付きアコーディオン節(.cat-section)」に束ねる。各節の中はオブジェクト小見出し(.grp)。既定は全開き。開閉はタブ×カテゴリで記憶。
+   ※ buildPanel は毎回 body を作り直すので、この関数は毎回まっさらな .grp を束ね直す。 */
+const catSecOpen = {};
 function applyPanelGroupOrder() {
   try {
     document.querySelectorAll('.cat-body').forEach(bodyEl => {
+      const catEl = bodyEl.closest('.cat');
+      const tabTitle = (((catEl && catEl.querySelector('.cat-head > span')) || {}).textContent || '').trim();
+      const notes = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('cat-note'));
       const grps = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('grp'));
-      if (grps.length < 2) return;
-      const keyed = grps.map((el, i) => ({ el, o: (GRP_ORDER[el.dataset.grp] != null ? GRP_ORDER[el.dataset.grp] : GRP_ORDER.basic), i: +(el.dataset.seq || i) }));
+      if (!grps.length) return;
+      const keyed = grps.map((el, i) => {
+        const cat = (GRP_ORDER[el.dataset.grp] != null) ? el.dataset.grp : 'basic';
+        return { el, cat, o: GRP_ORDER[cat], i: +(el.dataset.seq || i) };
+      });
       keyed.sort((a, b) => (a.o - b.o) || (a.i - b.i));
-      keyed.forEach(k => bodyEl.appendChild(k.el));   /* 並べ替え順に付け直す(.cat-body直下は.grpだけの想定) */
+      let curCat = null, secBody = null;
+      keyed.forEach(k => {
+        if (k.cat !== curCat) {
+          curCat = k.cat;
+          const sec = document.createElement('div');
+          sec.className = 'cat-section cs-' + curCat + (curCat === 'variation' ? ' cs-variation' : '');
+          const openKey = tabTitle + '::' + curCat;
+          const open = (catSecOpen[openKey] === undefined) ? true : catSecOpen[openKey];   /* 既定は全開き */
+          catSecOpen[openKey] = open;
+          if (!open) sec.classList.add('closed');
+          const head = document.createElement('div');
+          head.className = 'cat-section-head';
+          head.innerHTML = '<span>' + (GRP_LABEL[curCat] || curCat) + '</span><span class="cs-chev">▾</span>';
+          head.onclick = () => { catSecOpen[openKey] = !sec.classList.toggle('closed'); };
+          secBody = document.createElement('div');
+          secBody.className = 'cat-section-body';
+          sec.append(head, secBody);
+          bodyEl.appendChild(sec);
+        }
+        secBody.appendChild(k.el);
+      });
+      /* タブの説明文(cat-note)は最上部に残す */
+      for (let n = notes.length - 1; n >= 0; n--) bodyEl.insertBefore(notes[n], bodyEl.firstChild);
     });
   } catch (e) {}
 }
