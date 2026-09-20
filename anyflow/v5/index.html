@@ -17860,7 +17860,7 @@ function buildPanel() {
   sub(catKv, 'バリエーション（案）', true, { fixed: true });
   varRowX('kvVar', KV_VARIANTS, () => kvVarKey(), k => { params.kvVar = String(k); applyKvVariant(String(k)); },
     { snap: VAR_SNAP.kvVar, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); if (typeof fillAnimBody === 'function') fillAnimBody(); } });
-  note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・カゴ)や「🔤 文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
+  note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・メッシュ)や「🔤 文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
   note('⚠️【調整パネルの絶対ルール】値は①バリエーション別（案ごと）②PC/SP別 で独立します。強調でいじった位置・数値はノーマルに出ません。スマホモード中に変えた値はPCに出ず、その項目はブルーで印が付きます（案を作り直す時もこの2軸の独立を必ず残すこと）。');
 
   /* 【2026-09-20 ヒデさん依頼】KVの余白: ヘッダー↔コピー / グラフィック↔コピー の距離。PC/SP独立(mbKey)。既存の「位置 縦/横」は別に残す */
@@ -18052,14 +18052,14 @@ function buildPanel() {
       /* 【2026-08-27 ヒデさん指定】包囲ケージ専用のつまみ */
       if ((M.style || 'organic') === 'cage') {
         slider('大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
-          '惑星の半径の何倍でカゴを組むか。大きいほど大きく取り囲みます。', { mbKey: 'conv.mesh.cageR' });
+          '惑星の半径の何倍でメッシュを組むか。大きいほど大きく取り囲みます。', { mbKey: 'conv.mesh.cageR' });
         slider('回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
-          v => '×' + v.toFixed(2), '右へ動かすほどカゴが速く回ります。0(左端)で止まります。', { mbKey: 'conv.mesh.cageSpin' });
+          v => '×' + v.toFixed(2), '右へ動かすほどメッシュが速く回ります。0(左端)で止まります。', { mbKey: 'conv.mesh.cageSpin' });
         slider('傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
-          'カゴの軸を手前/奥へ倒す。0で真横から見た形になります。', { mbKey: 'conv.mesh.cageTilt' });
+          'メッシュの軸を手前/奥へ倒す。0で真横から見た形になります。', { mbKey: 'conv.mesh.cageTilt' });
         /* 【2026-09-19 ヒデさん依頼】傾きを3軸に(前後・左右・向き) */
         slider('傾き（左右）', -60, 60, 1, () => (params.conv.mesh.cageRoll || 0), v => M.cageRoll = v, v => (v > 0 ? '+' : '') + v + '°',
-          'カゴの軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { mbKey: 'conv.mesh.cageRoll', signed: true });
+          'メッシュの軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { mbKey: 'conv.mesh.cageRoll', signed: true });
         slider('向き（回転の位置）', -180, 180, 1, () => (params.conv.mesh.cageYaw || 0), v => M.cageYaw = v, v => (v > 0 ? '+' : '') + v + '°',
           '縦軸まわりの向きをずらす。回っている時は「どこから回り始めるか」、止めている時は「どの面を見せるか」。', { mbKey: 'conv.mesh.cageYaw', signed: true });
         /* 【2026-09-18 ヒデさん依頼「メッシュの面の数などを変えられるように」】カゴの形(整った網/散らばり)を選べるようにし、
@@ -18074,7 +18074,7 @@ function buildPanel() {
             '惑星を覆う網(測地線球)の細かさ。1=20面 / 2=80面 / 3=320面 / 4=1280面。4は点が600を超えるので少し重くなります。', { fixedMax: true, mbKey: 'conv.mesh.cageFreq' });
         } else {
           slider('1点から出る骨', 1, 6, 1, () => params.conv.mesh.cageLinks, v => M.cageLinks = v, v => v + '本',
-            '多いほど骨が増えて、密なカゴになります。', { mbKey: 'conv.mesh.cageLinks' });
+            '多いほど骨が増えて、密なメッシュになります。', { mbKey: 'conv.mesh.cageLinks' });
         }
       }
       slider('全体の広がり', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
@@ -18853,7 +18853,7 @@ function buildPanel() {
 
   /* 【2026-08-28 ヒデさん指定】2つの価値の右側ピクトグラム(各5案) */
   liveEdit = true;
-  sub(catRes, 'ピクトグラム（2つの価値の右）', true, { fixed: true });
+  sub(catRes, 'ピクトグラム（2つの価値の右）', true, { fixed: true, grp: 'variation' });   /* For SaaS/For AI のピクト案選択＝バリエーション扱い */
   {
     const SAAS = [
       { key: 'S1', name: 'S1 同期して回る',   tip: '2つの輪の中のマーカーが同じ角度で回ります。片方が遅れ、すっと追いつく＝同期。' },
@@ -19048,7 +19048,7 @@ function buildPanel() {
   rows.push(slider('ぼかしの強さ', 0, 40, 1, () => sv().cases.inBlur, v => sv().cases.inBlur = v, v => v + 'px',
     '大きいほど強くぼけた状態から現れます。※貼りつけない時は無効。', { mbKey: 'sections.cases.inBlur' }));
 
-  sub(catCase, '① 見出し「導入事例」');
+  sub(catCase, '① 見出し「導入事例」', null, { grp: 'anim' });   /* 中身は出現タイミングのみ＝アニメーション */
   note('「%」は、前の暗い画面が明るく戻る動きの進み具合です。');
   rows.push(slider('見出しが出る', 0, 1, 0.02, () => sv().cases.introAt, v => sv().cases.introAt = v, v => Math.round(v * 100) + '%',
     '何割進んだら見出しが出はじめるか。小さいほど早く見えます。', { mbKey: 'sections.cases.introAt' }));
