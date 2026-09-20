@@ -17871,7 +17871,7 @@ function buildPanel() {
      「スクロールの固定(固定/固定追従なし)」の項目は削除。
      自動再生(時間)×固定追従なしで確定し、値もコード側で固定している。 */
 
-  sub(catAll, '慣性スクロール', null, { fixed: true });
+  sub(catAll, '慣性スクロール', null, { fixed: true, grp: 'fxtex' });   /* スクロールの効き＝エフェクト扱い(ヒデさん指定) */
   /* ⚠️【2026-08-28 ヒデさん指定】ここは「値が小さいほど慣性が強い」逆向きの作りで、
      右へ動かすほど弱くなっていた。表示も「強め/中/弱め」の言葉だけで向きが読めなかった。
      内部の値はそのまま(13 から引く)で、つまみだけ【右＝強い】に直し、数字を出す。 */
@@ -17882,7 +17882,7 @@ function buildPanel() {
     '右へ動かすほど、指を離しても長く流れ続けます。左でピタッと止まります。'));
 
   /* くり返しは慣性とは別の話なので独立させる(ヒデさん指定 2026-08-27) */
-  sub(catAll, 'くり返し再生', null, { fixed: true });
+  sub(catAll, 'くり返し再生', null, { fixed: true, grp: 'anim' });   /* 再生＝アニメーション扱い(ヒデさん指定) */
   segRow('くり返し', [['する', 1], ['しない', 0]], () => params.replay ? 1 : 0, v => { params.replay = !!v; markDirty(); });
   note('一度見たセクションも、戻ってくるともう一度流れます。');
 
@@ -17909,10 +17909,10 @@ function buildPanel() {
 
   /* 【2026-09-20 ヒデさん依頼】KVの余白: ヘッダー↔コピー / グラフィック↔コピー の距離。PC/SP独立(mbKey)。既存の「位置 縦/横」は別に残す */
   liveEdit = true;
-  sub(catKv, '余白（ヘッダー・グラフィックとの距離）');
-  slider('ヘッダー↔コピーの距離', -160, 300, 2, () => (params.kv.hlOff || 0), v => { params.kv.hlOff = v; applyKvCopy(); markDirty(); },
+  sub(catKv, '余白（ヘッダー・グラフィックとのギャップ）');
+  slider('ヘッダー↔コピーのギャップ', -160, 300, 2, () => (params.kv.hlOff || 0), v => { params.kv.hlOff = v; applyKvCopy(); markDirty(); },
     v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'コピー(見出し)をヘッダーから上下にずらします。0＝いまの位置。プラスで下へ。PC・スマホは別々に持てます(スマホモード中に変えるとスマホだけに効く)。', { signed: true, mbKey: 'kv.hlOff' });
-  slider('グラフィック↔コピーの距離', -200, 200, 2, () => (params.kv.gfxY || 0), v => { params.kv.gfxY = v; try { applySway(); } catch (e) {} markDirty(); },
+  slider('グラフィック↔コピーのギャップ', -200, 200, 2, () => (params.kv.gfxY || 0), v => { params.kv.gfxY = v; try { applySway(); } catch (e) {} markDirty(); },
     v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '右グラフィック(惑星)を上下にずらして、コピーとの間隔を変えます。0＝いまの位置。プラスで下へ、マイナスで上へ(離す)。PC・スマホは別々に持てます。', { signed: true, mbKey: 'kv.gfxY' });
 
   /* ===== 🎨 グラフィック (2026-08-26 ヒデさん指定・整理) =====
@@ -17925,13 +17925,14 @@ function buildPanel() {
   note('▼ 右グラフィック全体（惑星＋メッシュ）の位置。真ん中(0)＝いまの位置。傾き・向きは下の「メッシュ」の組');
   { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true, mbKey: 'kvGfx.' + key });
     const px = v => (v > 0 ? '+' : '') + Math.round(v) + 'px', pc = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
-    ks('位置 左右', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を左右に。0＝いまの位置。');
-    ks('位置 上下', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を上下に。0＝いまの位置。');
-    ks('位置 奥行き', 'oz', -60, 60, 1, pc, '手前(+)に寄せると大きく、奥(−)に下げると小さく。0＝いまの大きさ。'); }
+    ks('位置 X', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を左右(X)に。0＝いまの位置。');
+    ks('位置 Y', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を上下(Y)に。0＝いまの位置。');
+    ks('位置 Z', 'oz', -60, 60, 1, pc, '奥行き(Z)。手前(+)で大きく、奥(−)で小さく。0＝いまの大きさ。'); }
   const gRoot = mount;
   /* 【2026-08-29 ヒデさん指定】右グラフィックの登場タイミングは「左側コピー>タイミング」だと
      見つけにくいので、ここ(グラフィック直下)にも同じスライダーを置く(同じ params.kv.graphicGap)。 */
   liveEdit = true;
+  sub(catKv, 'グラフィック', false, { grp: 'anim' });   /* 【2026-09-20 大改修】出現アニメはアニメ節へ(基本の位置とは分ける) */
   slider('出るタイミング', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v,
     v => v.toFixed(2) + '秒', 'マイナスにすると早く（タイピング中に）出ます。0で小ラベルと同時。', { mbKey: 'kv.graphicGap', signed: true });
   note('※ 同じ設定は「左側コピー > タイミング」にもあります。');
@@ -18085,7 +18086,7 @@ function buildPanel() {
       sub(animModeBox, '惑星', true);
       slider('大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
         v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。', { mbKey: 'planet.scale' });
-      sub(animModeBox, 'メッシュ（網）', true);
+      sub(animModeBox, 'メッシュ', true);
       /* 【2026-09-17 大掃除・ヒデさん指定】「頂点は自動配置」ボタンと案内は削除(ケージは立体並びで手置き不可のため常に空振りだった) */
       slider('ノードの数', 3, 60, 1, () => params.conv.mesh.nodes,
         v => { M.nodes = v; if (M.pts && M.pts.length !== Math.round(v)) M.pts = null; },
@@ -18421,41 +18422,39 @@ function buildPanel() {
   /* 【2026-08-27 ヒデさん指定】「左側コピー」に改名し、順番 / タイミング に分ける */
   /* 【2026-09-20 大改修・ヒデさん依頼】「左側コピー」の器を廃止し、コピー(基本)＋コピー(順番)/コピー(打つ速さ)=アニメに分割。 */
   const copyRoot = catKv;
-  /* 【2026-08-31 ヒデさん指定】コピーの文字設定(メインのサイズ/太さ・サブの罫線あり/なし など) */
-  sub(copyRoot, 'コピー', false);
-  optRow('copyOrder', '上下の並び', [['メインが上', 'main'], ['サブが上', 'sub']],
-    () => (params.kv.copyOrder === 'sub' ? 'sub' : 'main'),
-    v => { params.kv.copyOrder = v; applyKvCopy(); markDirty(); });
-  rows.push(slider('位置 左右', -120, 300, 2, () => (params.kv.copyX || 0),
+  /* 【2026-09-20 大改修・ヒデさん依頼】コピー＝基本(位置・罫線・ギャップ)／フォント(サイズ)／アニメ(出現・タイピング)に分割。「上下の並び」は削除。位置はX/Y表記。 */
+  sub(copyRoot, 'コピー', false);   /* 基本: 位置・罫線・ギャップ */
+  rows.push(slider('位置 X', -120, 300, 2, () => (params.kv.copyX || 0),
     v => { params.kv.copyX = v; applyKvCopy(); }, v => v + 'px',
     'コピー全体（メイン＋サブ）を左右にずらします。0でヘッダーのロゴの左端と同じ位置(窓幅が変わっても揃います)。', { mbKey: 'kv.copyX', signed: true }));
-  rows.push(slider('位置 上下', -200, 300, 2, () => (params.kv.copyY || 0),
+  rows.push(slider('位置 Y', -200, 300, 2, () => (params.kv.copyY || 0),
     v => { params.kv.copyY = v; applyKvCopy(); }, v => v + 'px',
     'コピー全体を上下にずらします。0で調整版(Figma)の位置。', { mbKey: 'kv.copyY', signed: true }));
-  rows.push(slider('メインの文字サイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
-    v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間はこのタブの「🔤 文字」で。', { mbKey: 'kv.mainSize' }));
-  rows.push(slider('最終行「競争力を」のサイズ', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
-    v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '最終行だけ大きくするジャンプ率。調整版は120px(行間1.2)。', { mbKey: 'kv.jumpSize' }));
   segRow('サブの罫線（—）', [['あり', 1], ['なし', 0]],
     () => (params.kv.eyebrowDash === false ? 0 : 1),
-    v => { params.kv.eyebrowDash = !!v; applyKvCopy(); markDirty(); fillAnimBody && 0; buildPanel(); });
+    v => { params.kv.eyebrowDash = !!v; applyKvCopy(); markDirty(); buildPanel(); });
   if (params.kv.eyebrowDash !== false) {
     rows.push(slider('罫線の長さ', 8, 80, 1, () => (params.kv.eyebrowDashW != null ? params.kv.eyebrowDashW : 26),
       v => { params.kv.eyebrowDashW = v; applyKvCopy(); }, v => Math.round(v) + 'px',
       'サブコピー先頭の罫線(—)の長さ。カンプは26px。', { mbKey: 'kv.eyebrowDashW' }));
-    rows.push(slider('罫線と文字の間', 0, 40, 1, () => (params.kv.dashGap != null ? params.kv.dashGap : 10),
+    rows.push(slider('罫線と文字のギャップ', 0, 40, 1, () => (params.kv.dashGap != null ? params.kv.dashGap : 10),
       v => { params.kv.dashGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
       '罫線(—)とサブコピー文字の間隔。', { mbKey: 'kv.dashGap' }));
   }
-  rows.push(slider('メインとサブの間', 0, 60, 1, () => (params.kv.copyGap != null ? params.kv.copyGap : 16),
+  rows.push(slider('メイン↔サブのギャップ', 0, 60, 1, () => (params.kv.copyGap != null ? params.kv.copyGap : 16),
     v => { params.kv.copyGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
     'メインコピーとサブコピーの縦の間隔。', { mbKey: 'kv.copyGap' }));
-  rows.push(slider('サブの文字サイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
+  sub(copyRoot, 'コピー', false, { grp: 'font' });   /* フォント: 文字サイズ(太さ/行間/字間は🔤文字) */
+  rows.push(slider('1〜2行目のサイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
+    v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「🔤 文字」で。', { mbKey: 'kv.mainSize' }));
+  rows.push(slider('最終行「競争力を」のサイズ', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
+    v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+    '見出し3行目「競争力を」だけのサイズ。1〜2行目とは別の独立した値(ここだけ大きくできる)。調整版は120px。', { mbKey: 'kv.jumpSize' }));
+  rows.push(slider('サブのサイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
     v => { params.kv.eyebrowSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
     '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「🔤 文字」で。', { mbKey: 'kv.eyebrowSize' }));
-  sub(copyRoot, 'コピー（順番）', false, { grp: 'anim' });
+  sub(copyRoot, 'コピー（出現）', false, { grp: 'anim' });
   note('数字はページを開いてから何秒後か。上から出る順です。');
   /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
      選択パネル(5案ずつ)は削除。実装は header の data-navhover="roll" / data-btnhover="arrow" 固定(下のJS)。 */
@@ -18466,7 +18465,7 @@ function buildPanel() {
     'いちばん上のロゴとメニューが、ぼけた状態から現れるまで。', { mbKey: 'kv.headerAt' }));
   rows.push(slider('文字を打ち始める', 0, 6, 0.05, () => params.kv.typeAt, v => params.kv.typeAt = v, v => v.toFixed(2) + '秒後',
     '「AIと事業を強くする」を1文字ずつ打ち始めるまで。', { mbKey: 'kv.typeAt' }));
-  sub(copyRoot, 'コピー（打つ速さ）', false, { grp: 'anim' });
+  sub(copyRoot, 'コピー（タイピング）', false, { grp: 'anim' });
   note('打つ速さと間の取り方。触ると先頭から流し直します。');
   rows.push(slider('1行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur, v => params.kv.charDur = v, v => v.toFixed(2) + 's/字',
     '1文字あたりの時間。小さいほどタタタッと速く打ちます。', { mbKey: 'kv.charDur' }));
