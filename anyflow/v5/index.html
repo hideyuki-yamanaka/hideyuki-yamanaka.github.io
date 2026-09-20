@@ -62,12 +62,12 @@
     background-image: var(--grid-img);
     background-size: var(--grid-cell) var(--grid-cell);
     background-attachment: fixed;
-    background-position: 0 0;
+    background-position: var(--grid-pos-x, 0px) 0;
   }
   /* スマホ(html.mb): iOS Safari は background-attachment:fixed が不安定＋SPは pin-stage が transform:scale で fixed が効かない。
      そこで画面固定のオーバーレイ1枚(#gridBg)で確実に敷く(全端末同挙動・継ぎ目なし)。ヘッダー(z60)/パネル(z100000)より下・本文より上。 */
   #gridBg { position: fixed; inset: 0; pointer-events: none; z-index: 11; display: none;
-    background-image: var(--grid-img); background-size: var(--grid-cell) var(--grid-cell); background-position: 0 0; }
+    background-image: var(--grid-img); background-size: var(--grid-cell) var(--grid-cell); background-position: var(--grid-pos-x, 0px) 0; }
   html.mb.grid-on #gridBg { display: block; }
 
   /* ---- ステージ: 高さ921pxのカンプ座標系のまま、幅だけ画面いっぱいに広げる（フィル） ----
@@ -14669,6 +14669,11 @@ function applyGrid() {
   const m = /^#?([0-9a-fA-F]{6})$/.exec(g.color || '#ACACAC');
   if (m) { const n = parseInt(m[1], 16); rgb = ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255); }
   s.setProperty('--grid-line', 'rgba(' + rgb + ',' + op + ')');
+  /* 【2026-09-21 ヒデさん「もっと合わせたい」】方眼のタテ線を画面の中央に合わせる=中身の中央にある仕切り線(for SaaS/AI)が
+     どの画面幅(1440以外の1512等)でもマス目に乗る。中央にマス線が来るよう左オフセットを (画面幅/2)%マス で算出。 */
+  const cell = (g.cell != null ? g.cell : 40);
+  const vw = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1440;
+  s.setProperty('--grid-pos-x', (Math.round(((vw / 2) % cell) * 100) / 100) + 'px');
 }
 applyGrid();
 /* 【2026-09-01】実績: Anyflowと「が」の間(px)をCSS変数へ */
@@ -16120,6 +16125,7 @@ function fit() {
   try { applyVfFade(); } catch (e) {}   /* 【2026-09-20】SP/PC 確定後にビジョンの図の位置を取り直す(スマホ専用の見た目) */
   try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】isMobile 確定後にビジョンの文字サイズを取り直す(SP は SP 既定/上書きで、PC は PC 値で) */
   try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】KV見出しの文字サイズも同様に isMobile 確定後に取り直す */
+  try { applyGrid(); } catch (e) {}   /* 【2026-09-21】画面幅が変わったら方眼の中央合わせ(--grid-pos-x)を取り直す */
   try { if (typeof applyVisEmphLeft === 'function') applyVisEmphLeft(); } catch (e) {}   /* 【2026-09-21】強調案の見出しを画面左120pxへ(幅が変わったら逆算し直す) */
   /* 【2026-09-09】isMobile が確定したこの時点でロゴティッカーの再生を再アサート。
      初回に applyMarquee が isMobile 未確定(=false)＋params.running=false で走ると
@@ -19532,7 +19538,7 @@ try { if (!localStorage.getItem('anyflow-hdr-restore-v2')) { if (params.gfxVaria
 applyHdrMode(hdrModeKey());  /* 【V5.0】追従ヘッダーの案を初期反映＋固定化 */
 applyHdrMotion();            /* 【V5.0 2026-09-17】ヘッダー変形のイージング/速さを初期反映 */
 applyKvCopy();               /* 【2026-09-17】ヘッダーが固定(全幅)になった後にロゴ左端を測り直す(KVコピーの左端をロゴに揃える) */
-addEventListener('resize', () => { try { applyKvCopy(); } catch (e) {} });
+addEventListener('resize', () => { try { applyKvCopy(); } catch (e) {} try { applyGrid(); } catch (e) {} });
 addEventListener('load', () => { try { applyKvCopy(); } catch (e) {} });
 bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール監視を設置 */
 bindDrawer();                /* 【V5.0】ハンバーガーのドロワー開閉を設置 */
