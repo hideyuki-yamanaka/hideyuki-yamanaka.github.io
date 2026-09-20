@@ -1438,7 +1438,8 @@
   #results.rfx-24 .r2v-h, #results.rfx-25 .r2v-h { font-size: var(--fs-h2); line-height: var(--lh-normal); text-align: center; }   /* カンプ: 44px / 1.6 */
   #results.rfx-24 .r2v-p, #results.rfx-25 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
   #results.rfx-24 .r2v-fig, #results.rfx-25 .r2v-fig { display: block; order: 1; transform-origin: center; }
-  #results.rfx-24 .r2v-graphic, #results.rfx-25 .r2v-graphic { width: 390px; height: 390px; }   /* 【2026-09-20 ヒデさん依頼】ピクトのサイズ感を+30%(300→390) */
+  html:not(.mb) #results.rfx-24 .r2v-graphic, html:not(.mb) #results.rfx-25 .r2v-graphic { width: 390px; height: var(--r2v-figbox-h, 240px); overflow: visible; display: flex; align-items: center; justify-content: center; }   /* 【2026-09-21 ヒデさん依頼・PCのみ】ピクトの箱を短くして上下の余白を詰める。絵のサイズは 390 基準のまま(下の svg 固定)＝箱だけ縮む。#results の pin-stage は縦中央寄せ(1082)なので、詰めた分だけ中身が中央へ寄る。SP は 220×150 のまま(触らない) */
+  html:not(.mb) #results.rfx-24 .r2v-graphic svg, html:not(.mb) #results.rfx-25 .r2v-graphic svg { width: 390px; height: 390px; flex: 0 0 auto; }   /* 絵のスケールは箱の高さから独立(390固定)＝箱を縮めても絵は同じ大きさ。はみ出す上下は透明な余白なので重なりに見えない */
   #results.rfx-24 .r2v-big, #results.rfx-25 .r2v-big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--font-en); font-weight: 200; font-size: var(--fs-stat-lg); line-height: 1; white-space: nowrap; color: var(--rfx-tag-ink, var(--brand-pink)); pointer-events: none; opacity: 0; }
   #results.rfx-24 .r2v-big-ai, #results.rfx-25 .r2v-big-ai { color: var(--rfx-tag-ink, var(--brand-blue-deep)); }
   /* 【2026-09-18 ヒデさん依頼】for SaaS/AI の「Product」: 登場の大きい文字では下の行(サイズはパネルの --r2v-prod-size、既定38px≒70pxの55%)、
