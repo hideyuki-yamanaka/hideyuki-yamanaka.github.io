@@ -19304,6 +19304,12 @@ function buildPanel() {
   const catCv = category('コンバージョン（お問い合わせの流れる背景）', false);
   catNote(catCv, 'カンプのラジアルグラデを、惑星と同じ発想で流れさせ、Bayerディザで粒立たせています。');
   const cvv = () => (params.cv || (params.cv = {}));
+  /* 【2026-09-21 ヒデさん依頼】お問い合わせ背景グラデの「ウェーブ」調整(速さ/強さ/うねり)。エフェクト節に格納。値はシェーダのuniformで毎フレーム反映 */
+  sub(catCv, 'ウェーブ（流れる背景）', null, { fixed: true, grp: 'fxtex' });   /* ※「流れる速さ」は既存(下の別ブロック)にあるので重複させない */
+  rows.push(slider('波の速さ', 0, 0.4, 0.005, () => (cvv().waveSpd != null ? cvv().waveSpd : 0.11), v => { cvv().waveSpd = v; markDirty(); }, v => v.toFixed(3), 'うねり(波)が動く速さ。', { mbKey: 'cv.waveSpd', fixedMax: true }));
+  rows.push(slider('波の強さ', 0, 0.6, 0.01, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; markDirty(); }, v => v.toFixed(2), '大きなうねりの振幅。大きいほど波打ちます。', { mbKey: 'cv.wave', fixedMax: true }));
+  rows.push(slider('うねりの長さ', 0.1, 2, 0.05, () => (cvv().waveLen != null ? cvv().waveLen : 0.85), v => { cvv().waveLen = v; markDirty(); }, v => v.toFixed(2), 'うねりの波長。小さいほど細かく波打ちます。', { mbKey: 'cv.waveLen', fixedMax: true }));
+  rows.push(slider('うねり（ふくらみ）', 0, 0.4, 0.01, () => (cvv().swell != null ? cvv().swell : 0.12), v => { cvv().swell = v; markDirty(); }, v => v.toFixed(2), '色のふくらみ(swell)。', { mbKey: 'cv.swell', fixedMax: true }));
   /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
      案を選ぶ項目はパネルから削除し、既定値として固定した。
      ⚠️ CV_STYLES の他の案(0/11/12/13)の定義と CSS は残してあるので、
