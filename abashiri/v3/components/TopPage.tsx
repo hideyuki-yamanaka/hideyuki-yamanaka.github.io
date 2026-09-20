@@ -564,11 +564,24 @@ export default function TopPage({
          ⚠️ 以前は場面の側が直接 scrollTop を書いて止めようとしたが、
             この慣性ループが毎フレーム上書きするため効かなかった。
             止めたい側は window.__abashiriScrollGate に「ここまで」を書く。 */
-      const gate = (window as unknown as { __abashiriScrollGate?: number })
-        .__abashiriScrollGate;
+      const w = window as unknown as {
+        __abashiriScrollGate?: number;
+        __abashiriScrollGateMin?: number;
+      };
+      const gate = w.__abashiriScrollGate;
       if (typeof gate === "number" && targetY > gate) {
         targetY = gate;
         if (posY > gate) posY = gate;
+      }
+      /* 【2026-09-20 ヒデさん指示】
+         「スクロールバックした際はリプレイのような形で、
+           上から下にあった挙動の逆をできれば嬉しい」
+         → 戻す時も、巻き戻しきるまでは場面から上へ抜けさせない。
+           下向きの関所と同じ考え方の、上向き版。 */
+      const gateMin = w.__abashiriScrollGateMin;
+      if (typeof gateMin === "number" && targetY < gateMin) {
+        targetY = gateMin;
+        if (posY < gateMin) posY = gateMin;
       }
       /* 縦の慣性 */
       const dy = targetY - posY;

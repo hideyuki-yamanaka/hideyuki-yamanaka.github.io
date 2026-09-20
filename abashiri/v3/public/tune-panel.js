@@ -138,10 +138,11 @@
     /* ── カテゴリ（H1）。anyflow のミニマル指定にそろえる（2026-09-20）
        ・絵文字なし ・左のインデント縦線なし
        ・階層は文字サイズ／太さ／余白で表す。区切り線は H1 だけ */
-    '.tp-cat{margin-top:18px;background:transparent;border:0;border-top:1px solid #e8e8e8;padding-top:2px;}',
-    '.tp-cat:first-child{border-top:0;margin-top:4px;}',
-    '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 5px;',
-    '  font-size:13px;font-weight:700;letter-spacing:.02em;color:#1e1e1e;' +
+    /* ⚠️ anyflow 2026-09-20「カテゴリの上の横棒線は不要。区切りは見出しの
+       大きさ・余白で表す」に合わせ、横線は引かない */
+    '.tp-cat{margin-top:2px;background:transparent;border:0;}',
+    '.tp-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 2px 7px;',
+    '  font-size:13px;font-weight:700;letter-spacing:.03em;color:#111;' +
     '  background:transparent;cursor:pointer;user-select:none;}',
     '.tp-cat-head:hover{color:#000;}',
     /* バリエーションは開閉なしのプレーン大見出し（▾なし・塗りなし） */
@@ -154,14 +155,24 @@
     /* タブ（ページ切替。cfg.tabs:true で cat がタブになる）
        anyflow 実測に合わせた：高さ26px・角丸13px の丸いピル・文字11.5px／行送り24px・
        幅は内容ぶんだけ（均等割りにしない）・上に貼り付いてスクロールしても見える */
-    '.tp-tabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;flex-wrap:wrap;',
-    '  margin:0 -10px;padding:8px 10px 7px;background:rgba(255,255,255,.96);',
-    '  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px solid #ececec;}',
-    '.tp-tab{flex:0 1 auto;height:26px;padding:0 9px;border:1px solid #e2e2e2;border-radius:13px;background:#fff;',
-    '  cursor:pointer;font-family:inherit;font-size:11.5px;line-height:24px;color:#555;white-space:nowrap;',
-    '  transition:background .15s,color .15s,border-color .15s;}',
-    '.tp-tab:hover{background:#f3f3f3;color:#111;}',
-    '.tp-tab.on{background:#111;color:#fff;border-color:#111;}',
+    /* タブ。anyflow V5.0 の実装値をそのまま移植（2026-09-20 ヒデさん指示
+       「調整パネルの見た目も完全に寄せて」）。
+       ⚠️ ピル型ではなく【アンダーライン型（X風）】＝透明地・選択は下線＋濃い文字。
+          折り返さず横スクロールにする（タブが増えても高さが変わらない） */
+    '.tp-tabs{position:sticky;top:0;z-index:3;display:flex;flex-wrap:nowrap;gap:16px;',
+    '  margin:0 -10px;padding:6px 10px 0;background:rgba(255,255,255,.96);',
+    '  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px solid #ececec;',
+    '  overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch;',
+    '  overscroll-behavior-x:contain;}',
+    '.tp-tabs::-webkit-scrollbar{height:6px;}',
+    '.tp-tabs::-webkit-scrollbar-thumb{background:#d0d0d0;border-radius:3px;}',
+    '.tp-tabs::-webkit-scrollbar-track{background:transparent;}',
+    '.tp-tab{flex:0 0 auto;height:34px;padding:0 2px;border:0;border-bottom:2px solid transparent;',
+    '  border-radius:0;background:transparent;color:#8a8a8a;cursor:pointer;font-family:inherit;',
+    '  font-size:12.5px;font-weight:600;line-height:34px;white-space:nowrap;',
+    '  transition:color .15s,border-color .15s;}',
+    '.tp-tab:hover{color:#333;}',
+    '.tp-tab.on{color:#111;border-bottom-color:#111;background:transparent;}',
     /* セクション（タブの中の折りたたみ）
        2026-09-16：anyflow と同じ「箱で囲まない・区切り線だけ」の見せ方に変更。
        白い箱が入れ子になると、中の小見出しとの階層が読み取りづらかったため */
@@ -169,7 +180,7 @@
     '.tp-cat-body>.tp-sec:first-child{border-top:none;margin-top:4px;padding-top:0;}',
     '.tp-sec-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0;',
     /* H2＝オブジェクト。H1(13px/700)より一段控えめにして階層差を出す（2026-09-20） */
-    '  font-weight:600;font-size:12px;color:#333;margin-bottom:7px;min-height:22px;',
+    '  font-weight:600;font-size:12px;color:#333;margin:12px 0 5px;min-height:22px;',
     '  background:transparent;cursor:pointer;user-select:none;}',
     '.tp-sec-head:hover{color:#000;}',
     '.tp-sec-chev{font-size:10px;color:#888;transition:transform .2s;}',

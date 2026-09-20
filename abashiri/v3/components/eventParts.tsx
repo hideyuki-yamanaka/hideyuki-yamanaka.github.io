@@ -224,15 +224,22 @@ export function PinStage({
 
   useAnimationFrame(() => {
     if (!hold) return;
+    const w = window as unknown as {
+      __abashiriScrollGate?: number;
+      __abashiriScrollGateMin?: number;
+    };
+    const openGates = () => {
+      if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
+      if (w.__abashiriScrollGateMin !== undefined) delete w.__abashiriScrollGateMin;
+    };
     /* ⚠️ 0.999 だと、勢いよくスクロールした時に最後の1枚が
        剥がれきる直前で関所が開いてしまうことがあった
        （2026-09-20 実測: 案32を一気にスクロールすると2枚で抜けた）。
        完全に剥がれ終わってから開ける */
     if (hold.current >= 1) {
-      /* 見終わった。関所を開ける */
-      const w = window as unknown as { __abashiriScrollGate?: number };
+      /* 見終わった。下へ行ってよい。
+         ただし【巻き戻しの途中】は上へ抜けさせない（下の分岐で見る） */
       if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
-      return;
     }
     const el = stage.current;
     if (!el) return;
@@ -247,19 +254,27 @@ export function PinStage({
     }
     const limit = y + el.offsetHeight - sc.clientHeight;
     /* まだ場面に入っていない（手前にいる）ときは関所を開けておく */
-    const w = window as unknown as { __abashiriScrollGate?: number };
     /* ⚠️ 関所を張るのが遅いと、勢いよくスクロールした時に
        【張る前に通り過ぎて】しまう（2026-09-20 実測: 一気にスクロールで2枚のまま抜けた）。
        場面の3画面ぶん手前から構えておく */
     if (sc.scrollTop <= y - sc.clientHeight * 3) {
-      if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
+      openGates();
       return;
     }
     /* ⚠️ ここで scrollTop を直接書いても、トップページの慣性スクロールが
        毎フレーム上書きするので効かない（2026-09-20 実測）。
-       慣性側が見ている「関所」に、行ってよい上限を伝える */
-    w.__abashiriScrollGate = limit;
-    if (sc.scrollTop > limit) sc.scrollTop = limit;
+       慣性側が見ている「関所」に、行ってよい上限／下限を伝える */
+    if (hold.current < 1) {
+      w.__abashiriScrollGate = limit; /* 見せ終わるまで下へ行かせない */
+    }
+    /* 巻き戻しの途中（まだ最初の束に戻っていない）は、上へ抜けさせない。
+       これで、下りで見たのと同じ動きが逆回しで最後まで見える */
+    if (hold.current > 0.001) {
+      w.__abashiriScrollGateMin = y;
+    } else if (w.__abashiriScrollGateMin !== undefined) {
+      delete w.__abashiriScrollGateMin;
+    }
+    if (sc.scrollTop > limit && hold.current < 1) sc.scrollTop = limit;
   });
 
   return (
