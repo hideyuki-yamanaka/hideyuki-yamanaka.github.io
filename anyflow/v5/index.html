@@ -3022,12 +3022,12 @@
     html.mb #results .pin-stage { align-items: flex-start; }   /* 中身は上から流す(縦中央寄せ解除) */
     #vision { margin-top: 0; }   /* PC用の 200px 余白を撤去(KV→ビジョンが空きすぎていた) */
     .vis-label { left: 24px; right: 24px; top: 74px; font-size: var(--fs-base); font-weight: 600; letter-spacing: 0; text-align: center; }   /* カンプSP: 16px → y741。【2026-09-19】太さは共通部品(600)に(旧SPカンプ Light300 は仮置きで上書き) */
-    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, var(--fs-display)); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)/26px/1.7。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-display(26) */
+    .vis-line { left: 24px; right: 24px; width: auto; white-space: normal; font-size: var(--vis-msg-size, 30px); line-height: var(--lh-loose); font-weight: 300; }   /* カンプSP: Noto Sans JP Light(300)。【2026-09-20 #3】メッセージを少し大きく(26→30・SP独立の未設定時)。パネルの値があればそちら優先 */
     /* 【2026-09-09 ヒデさん指定】SP でも「つなぐ/強み」のギラギラのグラデ揺らぎを PC と同じく出す。
        (以前カンプが単色だったため SP で無効化したが、ヒデさんの意向で PC 同様に復活。base の
        .vl-nagu / .vis-line.str-live .vl-strong がそのまま適用される＝ここでは上書きしない) */
-    .vis-l1 { top: 106px; }   /* → y773 */
-    .vis-l2 { top: 170px; }
+    .vis-l1 { top: 96px; }    /* 【2026-09-20 #2】Our Vision↔メッセージの間隔を他セクションに合わせて詰める(106→96・約10px) */
+    .vis-l2 { top: 160px; }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
     .vf-wrap { left: 28px; top: 255px; width: 640px; height: 600px; transform: scale(0.555); transform-origin: 0 0; }   /* 【2026-09-20 ヒデさん依頼#4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に(left=196.5−300×0.555)。上の余白は255維持 */
     .vf-wrap .vf-lab b { font-size: 21px; }        /* 【2026-09-20 #5】5つの機能名をSPで大きく(16→21・scale0.555で≈12px) */
@@ -3136,7 +3136,7 @@
 
     /* --- 導入事例 (カンプ node16534:22646 準拠: 画像上・縦カード4枚を通常フローで縦積み) --- */
     .case-eyebrow { position: static; left: auto; right: auto; top: auto; text-align: center; margin: 0 var(--space-24) var(--sec-head-gap, 6px); font-size: var(--fs-base); }   /* 【2026-09-16】左→中央。【2026-09-19】間隔は共通変数 */
-    .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) 17px; font-weight: 600; font-size: var(--fs-heading); line-height: var(--lh-heading); }   /* 【2026-09-19】共通部品: 24px/600/1.45(旧SPカンプ Light 24px/行間64px は仮置きで上書き) */   /* カンプSP node16534:22644: Noto Light 24px / 行間64px、カード群まで 17px(3515−3498) */
+    .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) 17px; font-weight: 600; font-size: 20px; line-height: var(--lh-heading); }   /* 【2026-09-20 #10】導入事例タイトルをSPで少し小さく(24→20px) */
     .case-grid { position: static; left: auto; top: auto; width: 100%; height: auto;
                  display: flex; flex-direction: column; gap: 0; }   /* カンプSP node16534:22646: カードは隙間なく積む(余白はカード内 padding 40) */
     .cg-vline { display: none; }
