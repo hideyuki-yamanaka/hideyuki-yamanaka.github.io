@@ -3522,7 +3522,7 @@
   .panel-body.tabbed > .cat > .cat-body { display: block; padding: 0; }
   /* 【2026-09-20 大改修・ヒデさん依頼】階層を H1(カテゴリ)/H2(オブジェクト)/H3(入れ子) でパッと分かるように。装飾は最小・左の縦線は全廃・絵文字なし。 */
   /* H1: カテゴリ節。開閉アコーディオンは 基本/フォント/エフェクト＆テクスチャ/アニメ のみ。区切り線はここだけ */
-  .cat-section { border-top: 1px solid #e4e4e4; }
+  .cat-section { border-top: none; }   /* 【2026-09-20 ヒデさん依頼A】カテゴリ(基本など)の上の横棒線は不要。区切りは見出しの大きさ・余白で表す */
   .cat-section:first-of-type { border-top: none; }
   .cat-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 13px 2px 7px; font-size: 13px; font-weight: 700; color: #111; letter-spacing: .03em; user-select: none; }
   .cat-section-head:hover { color: #000; }
@@ -3733,11 +3733,12 @@
   .grp-acts { display: flex; align-items: center; gap: var(--space-5); margin-left: var(--space-6); flex: 0 0 auto; }
   /* リセット/保存: 押しやすい 28px 角 (2026-08-26 ヒデさん指定でサイズアップ) */
   .gbtn { width: 28px; height: 28px; padding: 0; border: 1px solid #e0e0e0; border-radius: 8px; background: var(--surface-white);
-          color: #666; font-size: var(--fs-body); line-height: 26px; text-align: center; cursor: pointer; white-space: nowrap;
-          transition: background .15s, color .15s, border-color .15s, width .15s; }
+          color: transparent; font-size: var(--fs-body); line-height: 26px; text-align: center; cursor: pointer; white-space: nowrap;
+          transition: background .15s, color .15s, border-color .15s, width .15s; }   /* 【2026-09-20 修正】↺文字は透明(::afterのSVGアイコンで描画)。以前 color:#666 が color:transparent を上書きして文字とアイコンが二重表示になっていた破綻を修正 */
   .gbtn:active { transform: translateY(1px); }
   .gbtn.done { width: auto; padding: 0 9px; font-size: var(--fs-caption); }
-  .gbtn:hover { background: #f4f4f4; color: var(--ink-strong); border-color: #d5d5d5; }
+  .gbtn:hover { background: #f4f4f4; border-color: #d5d5d5; }   /* hoverでも文字は透明のまま(アイコンは ::after が #333 に) */
+  .gbtn.done { color: var(--ink-on-dark); }   /* 「✓ 戻しました」テキストはこの done 状態だけ表示 */
   .gbtn.done { background: var(--surface-cta); color: var(--ink-on-dark); border-color: #111; }
   /* 小見出しのアコーディオン (既定は閉じる) */
   .grp-title { cursor: pointer; user-select: none; }
@@ -19249,11 +19250,12 @@ function buildPanel() {
     sub(catMenu, '文字サイズ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
     ds('項目の文字サイズ', 'fs', 56, 24, 120, 1, v => Math.round(v) + 'px', 'メニュー項目の文字サイズ。');
     ds('番号の文字サイズ', 'numFs', 14, 8, 40, 1, v => Math.round(v) + 'px', '01〜04 の番号の文字サイズ。');
-    /* 【2026-09-18 ヒデさん依頼】右上のハンバーガー(横線2本)の 長さ/太さ/間隔 */
-    sub(catMenu, 'アイコン・その他', false);   /* 【2026-09-20】文字サイズ節のあと、アイコン寸法などは基本へ戻す */
-    ds('アイコンの線の長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
-    ds('アイコンの線の太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
-    ds('アイコンの線の間隔', 'barGap', 7, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
+    /* 【2026-09-20 ヒデさん依頼C】重複する「アイコンの線の」を小見出し「アイコンの線」にまとめ、中は 長さ/太さ/間隔 に(冗長排除) */
+    sub(catMenu, 'アイコンの線', false);   /* 右上のハンバーガー(2本線) */
+    ds('長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
+    ds('太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
+    ds('間隔', 'barGap', 7, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
+    sub(catMenu, 'その他', false);
     ds('スクロール時のナビのぼかし', 'navBlur', 8, 0, 24, 1, v => Math.round(v) + 'px', 'スクロールでナビ(ビジョン〜導入事例)が右へ格納される時、徐々にかかるぼかしの最大量。0でぼかし無し。');
   }
   sub(catMenu, '文字（太さ・行間・字間）', null, { fixed: true });
