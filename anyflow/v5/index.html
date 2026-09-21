@@ -12515,12 +12515,13 @@ function applyVfFade() {
   const ld = _mb ? 0.64 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる。【2026-09-21 ヒデさん依頼】もっと内側へ(0.72→0.64＝実行エンジンが右端で切れないように) */
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
   const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -38) : 0;   /* 【2026-09-20 #5】SP の持ち上げ。【2026-09-21 ヒデさん依頼】5つの機能名をもう6px上へ(-22→-28)→さらに10px上へ円弧の外に(-28→-38) */
+  const _pcLabLift = _mb ? 0 : -24;   /* 【2026-09-21 ヒデさん依頼】PC/タブレットの機能名をもう少し上へ(-24px)。SPは _mbLabGY で別調整済みなので二重にしない。さらに動かす時はパネル「ぜんぶ Y」(labGY)で */
   w.querySelectorAll('.vf-lab').forEach((el, i) => {
     const _a = VF_LAB_PC[i] ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC/SP とも左右対称の弧アンカー(中心 VF_CX 基準)。SP も PC 同様に線対称(ヒデさん依頼)。SPは sc*ld で内側へ縮んで収まる */
     const x = _a ? _a.x : +el.dataset.x, y = _a ? _a.y : +el.dataset.y;
     const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0;
     let lx = VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox;
-    const ly = VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + oy;
+    const ly = VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + _pcLabLift + oy;
     if (_a || _mb) { lx -= el.offsetWidth / 2; }   /* 【2026-09-21】PC/SP とも中心アンカーは幅の半分だけ左へ＝幅が違っても左右対称・円周に沿う */
     el.style.left = lx.toFixed(1) + 'px';
     el.style.top = ly.toFixed(1) + 'px';
