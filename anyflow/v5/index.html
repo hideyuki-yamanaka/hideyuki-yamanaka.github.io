@@ -3218,7 +3218,7 @@
     .cg-img { flex: none; width: 100%; height: 228px; border-radius: 0; overflow: hidden; }   /* カンプSP: サムネに角丸なし(2026-09-09 ヒデさん指定) */
     .cg-img img { width: 100%; height: 100%; object-fit: cover; }
     .cg-body { gap: var(--space-16); }                                        /* カンプSP node16534:22650: 引用→メタ 16 */
-    .cg-quote { font-size: var(--fs-base); line-height: var(--lh-body); }      /* カンプSP node16534:22651: Noto Light 16px / 1.8 */
+    .cg-quote { font-size: 14px; line-height: var(--lh-body); }      /* 【2026-09-22 ヒデさん依頼】一言を今より小さく(カンプ16px→14px・仮置き)。SP(phone≤600)のみ。実描画も16→14になる(パネル表示も14。SPモードのfsで更に微調整可=editsMb.cgQuote.fs) */
     .cg-meta { display: flex; flex-direction: column; gap: var(--space-8); }   /* カンプSP node16534:22652: タグ→社名 8 */
     /* .cg-tag はスマホ用の上書きなし: PC の base(Light 10px / 枠 0.5px / padding 1×10)がそのままカンプSP node16534:22653 と一致 */
     .cg-company { font-size: var(--fs-subhead); line-height: normal; }       /* カンプSP node16534:22655: Noto Light 18px */
