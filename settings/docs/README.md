@@ -17,6 +17,7 @@
 | [anyflow/ANYFLOW-PANEL-STRUCTURE.md](anyflow/ANYFLOW-PANEL-STRUCTURE.md) | 調整パネルの構成ルール(新5カテゴリ: バリエ→基本→フォント→エフェクト＆テクスチャ→アニメ→その他＋オブジェクト束ね＋命名統一)。2026-09-20 大改修で改訂 |
 | [anyflow/PANEL-REORG-MAP.md](anyflow/PANEL-REORG-MAP.md) | 調整パネル大改修の対応表(現状→カテゴリ→オブジェクト→新名称→操作)。全タブ＋実装ステータス(済み/仮置き)つき |
 | [anyflow/HANDOFF-20260920.md](anyflow/HANDOFF-20260920.md) | 【引き継ぎ】別Claudeが anyflow V5.0 の作業を続けるための現状・仕組み・動かし方・進め方ルール・未対応(2026-09-20) |
+| [anyflow/HANDOFF-2026-09-22.md](anyflow/HANDOFF-2026-09-22.md) | 【引き継ぎ・最新】そのまま貼ればOK。SPのみのビジョンメッシュ(機能名の上げ/縮小/中央化/左右移動)＋実績の罫線余白60px化。applyVfFade vs vfDraw・ピクト透明余白・PC/SP独立・push rebase 手順つき(2026-09-22) |
 
 - フォルダ名は**プロダクトのフォルダ名とそろえる**（`abashiri/` の資料 → `settings/docs/abashiri/`）
 - 新しいプロダクトの資料が出てきたら、`settings/docs/` に同じ名前のフォルダを作って入れる
