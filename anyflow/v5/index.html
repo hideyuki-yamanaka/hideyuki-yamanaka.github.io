@@ -20516,6 +20516,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
   function clearMbOverrides() { var r = document.querySelectorAll('.txt-row.mb-override, .txt-row .mb-diff'); for (var i = 0; i < r.length; i++) { r[i].classList.remove('mb-override'); r[i].classList.remove('mb-diff'); } }
   window.__markMbOverrides = markMbOverrides;
   /* 【2026-09-21 ヒデさん依頼】スマホモードON時に「390×844のデバイス枠に実画面(iframe ?preview=1)」を出す。実スクロールできる。OFFで消す */
+  function ppApplyTransform() { var pp = document.getElementById('phonePreview'); if (!pp) return; pp.style.transform = 'translate(' + (pp._dx || 0) + 'px,' + (pp._dy || 0) + 'px) scale(' + (pp._sc != null ? pp._sc : 1) + ')'; }
   function ppSync(on) {
     var pp = document.getElementById('phonePreview'), ppf = document.getElementById('ppFrame');
     if (!pp || !ppf) return;
@@ -20524,14 +20525,29 @@ document.getElementById('panelBody').addEventListener('click', () => {
       var u = location.pathname + '?preview=1';
       if ((ppf.getAttribute('src') || '') !== u) ppf.setAttribute('src', u);
       pp.classList.add('on');
-      var sc = Math.min(1, (window.innerHeight - 32) / 892);   /* 画面が低い時は枠ごと縮めて収める(bar36+frame844+余白) */
-      pp.style.transform = sc < 1 ? ('scale(' + sc.toFixed(3) + ')') : '';
+      pp._sc = Math.min(1, (window.innerHeight - 32) / 892);   /* 画面が低い時は枠ごと縮めて収める(bar36+frame844+余白) */
+      ppApplyTransform();
     } else { pp.classList.remove('on'); ppf.setAttribute('src', 'about:blank'); }
   }
   (function () {
-    var rl = document.getElementById('ppReload'), cl = document.getElementById('ppClose'), ppf = document.getElementById('ppFrame');
+    var rl = document.getElementById('ppReload'), cl = document.getElementById('ppClose'), ppf = document.getElementById('ppFrame'), bar = document.querySelector('#phonePreview .pp-bar'), pp = document.getElementById('phonePreview');
     if (rl) rl.addEventListener('click', function () { if (ppf) ppf.setAttribute('src', location.pathname + '?preview=1&_t=' + Date.now()); });
     if (cl) cl.addEventListener('click', function () { setActive(false); try { hidePop(); } catch (e) {} });
+    /* 【2026-09-21 ヒデさん依頼】プレビュー枠をバーでドラッグ移動 */
+    if (bar && pp) {
+      bar.style.cursor = 'move'; bar.style.touchAction = 'none';
+      var drag = null;
+      bar.addEventListener('pointerdown', function (e) {
+        if (e.target.closest('button')) return;   /* ↻/× はドラッグしない */
+        drag = { x: e.clientX, y: e.clientY, dx: pp._dx || 0, dy: pp._dy || 0 };
+        try { bar.setPointerCapture(e.pointerId); } catch (er) {} e.preventDefault();
+      });
+      bar.addEventListener('pointermove', function (e) {
+        if (!drag) return; pp._dx = drag.dx + (e.clientX - drag.x); pp._dy = drag.dy + (e.clientY - drag.y); ppApplyTransform();
+      });
+      var end = function (e) { drag = null; try { bar.releasePointerCapture(e.pointerId); } catch (er) {} };
+      bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+    }
   })();
   function setActive(on) {
     window.__liveSyncOn = !!on;
