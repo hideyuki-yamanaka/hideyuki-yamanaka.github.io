@@ -1175,7 +1175,7 @@
   .r2v-tag-ai { color: var(--brand-blue-deep); }
   .r2v-h { font-family: var(--font-jp); font-weight: 300; font-size: var(--fs-display); line-height: var(--lh-normal); color: var(--ink-strong); }
   .r2v-p { font-family: var(--font-jp); font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); margin: 0; }
-  .r2v-graphic { width: 220px; height: 220px; flex: 0 0 auto; }
+  .r2v-graphic { width: 220px; height: 220px; flex: 0 0 auto; zoom: var(--r2v-disp, 1); }   /* 【2026-09-21 ヒデさん依頼】ピクトの表示サイズをパネルで拡縮(flowモードでも効く実サイズ。--r2v-disp は applyPictoDisp が #results に設定・PC/SP独立) */
   .r2v-graphic img { width: 100%; height: 100%; display: block; }
   /* 【2026-08-28 ヒデさん指定】仮置きの画像をやめ、枠線だけの幾何学図形で動くピクトグラムにする */
   .r2v-graphic svg { width: 100%; height: 100%; display: block; overflow: visible; }
@@ -5227,6 +5227,8 @@ const DEFAULTS = {
       hrGap: 100, hrGap2: 0,   /* 2026-09-15: 案24系 区切り線の上/下の余白(px) */
       pictoW: 1,         // 【2026-09-02 ヒデさん指定】for SaaS/for AI ピクトグラムの線幅倍率(1=1px基準)
       pictoSpeed: 1,     // 【2026-09-08 ヒデさん指定】ピクトの再生速度(SaaS/AI共通・全案に適用。1=標準)
+      pictoDisp: 1,      // 【2026-09-21 ヒデさん依頼】ピクトの表示サイズ倍率(実際に見えている大きさ。flowモードでも効く。1=現状)
+
       driveLen: 2.0,     // スクロール駆動の時、尺を何倍に伸ばすか（小さいほどスクロール量が減る。2026-08-25 3.0→2.0）
       lenVh: 200,   /* 固定される幅 = 200-100 = 100vh。この間に再生と暗転が収まる */
       numsGap: 0.55,   // 見出しが何割出たら、下の数字たちが出はじめるか
@@ -12597,6 +12599,9 @@ function vfDraw(tSec) {
     g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); }
 }
 applyVfFade();
+/* 【2026-09-21 ヒデさん依頼】実績ピクトの表示サイズ。#results に --r2v-disp を設定→ .r2v-graphic の zoom に反映。
+   params.sections.results.pictoDisp は mbKey でPC/SP独立(SPは applyMbToParams が SP値を流し込む)。 */
+function applyPictoDisp() { try { const r = (params.sections && params.sections.results) || {}; const el = document.getElementById('results'); if (el) el.style.setProperty('--r2v-disp', (r.pictoDisp != null ? r.pictoDisp : 1)); } catch (e) {} }
 function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
   /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
   d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win-n', String(r.slotWin != null ? r.slotWin : 1.6)); d.setProperty('--slot-ramp', String(r.slotRamp != null ? r.slotRamp : 1));
@@ -12612,6 +12617,7 @@ const RES_SLOT_FX = [
 function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'plain'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'plain'; }
 function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
 applyResSlotFade();
+applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを反映 */
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
 /* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
 function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px'); }
@@ -14821,7 +14827,7 @@ setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
 setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof applyVisEmph === 'function') applyVisEmph(); } catch (e) {}   /* 【2026-09-20】ビジョンのバリエーション(強調/デフォルト)を焼き込み/保存値で組み直す */ try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
-function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {}   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -19152,6 +19158,8 @@ function buildPanel() {
     v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
   /* 【2026-09-18 ヒデさん依頼】ピクトグラムの線の太さ(全ての線幅×倍率) */
   rows.push(slider('ピクトの線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
+  /* 【2026-09-21 ヒデさん依頼】実際に見えているピクトの大きさ(flowモードでも効く。旧「主役の大きさ」は登場演出専用でflowでは効かなかった) */
+  rows.push(slider('ピクトの大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
   rows.push(slider('→ その他の要素が出る', -0.5, 3, 0.05, () => (sv().results.restGap != null ? sv().results.restGap : 0.1), v => sv().results.restGap = v, v => v.toFixed(2) + '秒',
     'タイピング開始から、区切り線・3数値・2つの価値が出るまでの間。マイナスでタイピングより前に。', { mbKey: 'sections.results.restGap', signed: true }));
   rows.push(slider('見出しの1文字の時間', 0.02, 0.2, 0.005, () => sv().results.charDur, v => sv().results.charDur = v, v => v.toFixed(3) + 's/字',
@@ -20464,6 +20472,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       call(function () { if (typeof applyVisPointsX === 'function') applyVisPointsX(); });
       call(function () { if (typeof resApplySlotFx === 'function' && typeof resSlotFxKey === 'function') resApplySlotFx(resSlotFxKey()); });
       call(function () { if (typeof applyResSlotFade === 'function') applyResSlotFade(); });
+      call(function () { if (typeof applyPictoDisp === 'function') applyPictoDisp(); });
       call(function () { if (typeof cvApplySway === 'function' && typeof cvSwayKey === 'function') cvApplySway(cvSwayKey()); });
       call(function () { if (typeof visApplyGrad === 'function' && typeof visGradKey === 'function') { visApplyGrad(visGradKey()); if (typeof applyVisGrad === 'function') applyVisGrad(); } });
       call(function () { if (typeof applyMarquee === 'function') applyMarquee(); });
