@@ -1,5 +1,33 @@
 [
   {
+    "id": "55ca3d5c7c1b",
+    "title": "A Bite Coffee",
+    "url": "https://a-bite-coffee.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/abitecoffee_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-21T18:00:34.984Z"
+  },
+  {
+    "id": "38ea2d7718b2",
+    "title": "みんなの銀行（スマホ銀行） | デジタルバンクで価値あるつながりを",
+    "url": "https://www.minna-no-ginko.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/minnanoginko_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-21T18:00:34.984Z"
+  },
+  {
     "id": "669ee91dea97",
     "title": "ANA大阪空港株式会社",
     "url": "https://www.ana-osaap.co.jp/",
@@ -23443,6 +23471,20 @@
     "lastCheckedAt": "2026-08-02T05:28:51.511Z"
   },
   {
+    "id": "5ae588af0405",
+    "title": "Aspen Search",
+    "url": "https://www.aspensearch.com/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/18-768x576-1.png",
+    "source": "muuuuu",
+    "category": [
+      "topjs"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-21T18:00:34.984Z"
+  },
+  {
     "id": "e4725b871567",
     "title": "Mr.BLACK",
     "url": "https://mrblack-case.dolganev.com/",
@@ -24419,20 +24461,18 @@
     "lastCheckedAt": "2026-08-02T05:28:56.898Z"
   },
   {
-    "id": "a0c664bdd743",
-    "title": "BlueBank株式会社",
-    "url": "https://bluebank.co.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/06/1120.webp",
-    "source": "muuuuu",
+    "id": "151a507bff67",
+    "title": "Tanica",
+    "url": "https://tanica.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260921_02-498x328.jpg",
+    "source": "webdesignclip",
     "category": [
-      "technology"
+      "企業サイト・事務所・ビジネス"
     ],
     "taste": [],
-    "date": "2026-06",
+    "date": "2026-09",
     "starred": false,
-    "firstSeen": "2026-06-18T04:36:23.120Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:28:59.564Z"
+    "firstSeen": "2026-09-17T03:30:09.399Z"
   },
   {
     "id": "e7bfd85d141a",
@@ -28615,22 +28655,6 @@
     "firstSeen": "2026-06-13T04:08:32.368Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:29:19.982Z"
-  },
-  {
-    "id": "551d7e1b2d52",
-    "title": "株式会社ポジティブドリームパーソンズ | 採用サイト",
-    "url": "https://recruit.positive.co.jp/graduates/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/20251211_02-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "採用サイト・転職・求人"
-    ],
-    "taste": [],
-    "date": "2025-12",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:29:24.038Z"
   },
   {
     "id": "931c3ccddeda",
@@ -41781,6 +41805,26 @@
     "lastCheckedAt": "2026-08-02T05:34:30.118Z"
   },
   {
+    "id": "edf52e62a1d0",
+    "title": "BlueBank（ブルーバンク）株式会社",
+    "url": "https://bluebank.co.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2026/07/260727-1-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "コーポレートサイト",
+      "金融",
+      "証券",
+      "保険",
+      "法律"
+    ],
+    "taste": [],
+    "date": "2026-07",
+    "starred": false,
+    "firstSeen": "2026-06-18T04:36:23.120Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-08-02T05:28:59.564Z"
+  },
+  {
     "id": "654672ee3f15",
     "title": "Summer Internship 夏季インターンシップ | 新卒採用 | JR東日本",
     "url": "https://recruit.jreast.co.jp/internship/summer/",
@@ -48017,6 +48061,23 @@
     "firstSeen": "2026-09-19T15:30:07.693Z"
   },
   {
+    "id": "02a10c1579c7",
+    "title": "Piic Inc. | Recruit Produce Company",
+    "url": "https://piic.co.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ws2yu1rb0hzq-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "デザイン･制作･開発会社",
+      "HR･タレントマネジメント",
+      "その他"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-21T18:00:34.984Z"
+  },
+  {
     "id": "ffc73788fb80",
     "title": "Weppy.Co",
     "url": "https://weppy.co/",
@@ -48113,25 +48174,6 @@
     "taste": [
       "タイポグラフィー･文字",
       "和風"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-09-17T03:30:09.399Z"
-  },
-  {
-    "id": "bfdd862b0109",
-    "title": "Tanica",
-    "url": "https://tanica.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/knivftbymzo8-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoCコーポレートサイト",
-      "飲料･食品･メーカー"
-    ],
-    "taste": [
-      "スクロールエフェクト",
-      "パララックス",
-      "グリッドデザイン"
     ],
     "date": "2026-09",
     "starred": false,
