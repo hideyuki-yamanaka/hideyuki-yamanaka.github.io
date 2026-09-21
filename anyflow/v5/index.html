@@ -17678,6 +17678,15 @@ function applyKvVariant(key, quiet) {
   kvVarRefresh();
   if (!quiet) { try { markDirty(); } catch (e) {} }
 }
+/* 【2026-09-21 ヒデさん依頼・Y14】ビジョンのメッセージ(データをつなぐ〜)の「フォント行」で変えた
+   見た目(サイズ fs / 行間 lh / 字間 ls)を、案(デフォルト/強調)ごとに独立させるためのヘルパー。
+   太さ fw・位置 dx/dy は両案で共通なので巻き込まない(ここには入れない)。
+   なぜ必要か: これまで大きさは params.edits.visMsg(＝全案で共有の1つの入れ物)に入っていたため、
+   デフォルトで大きさを変えると強調にも移っていた(＝連動)。案ごとに控え(gfxVarOverride.visEmph)へ
+   grab して切替時に put で入れ替える。 */
+const VIS_MSG_ED_KEYS = ['fs', 'lh', 'ls'];
+function visEmphGrabMsg(store) { if (!store || !store.visMsg) return null; const o = {}; VIS_MSG_ED_KEYS.forEach(k => { if (store.visMsg[k] != null) o[k] = store.visMsg[k]; }); return Object.keys(o).length ? o : null; }
+function visEmphPutMsg(store, src) { if (!store) return; const t = store.visMsg || (store.visMsg = {}); VIS_MSG_ED_KEYS.forEach(k => { delete t[k]; }); if (src) VIS_MSG_ED_KEYS.forEach(k => { if (src[k] != null) t[k] = src[k]; }); }
 const VAR_SNAP = {
   kvVar:   { get: () => kvVarSnapshot(), set: sn => { kvVarAssign(sn); kvVarRefresh(); }, reset: () => applyKvVariant(kvVarKey()) },
   results: { get: () => ({ results: params.sections.results, valSaas: params.patterns.valSaas, valAi: params.patterns.valAi }),
@@ -17693,8 +17702,13 @@ const VAR_SNAP = {
              set: s => Object.assign(params.sections.vision, s), reset: () => { visApplyGrad(visGradKey()); applyVisGrad(); } },
   /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調=emph)ごとに、メッセージ/ポイントの文字サイズを独立させる。
      dome(メッシュ)や grad は別バケット管理なので巻き込まない=サイズ系だけ控える。 */
-  visEmph: { get: () => { const v = params.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (v[k] != null) o[k] = v[k]; }); return o; },
-             set: s => { Object.assign(params.sections.vision, s); applyVpSize(); }, reset: () => {} },
+  visEmph: { get: () => { const v = params.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (v[k] != null) o[k] = v[k]; });
+               /* 【2026-09-21 Y14】メッセージのフォント行(サイズ/行間/字間)も案ごとに控える。PC=edits / スマホ=editsMb を別々に。 */
+               o.__vm = visEmphGrabMsg(params.edits); o.__vmMb = visEmphGrabMsg(params.editsMb); return o; },
+             set: s => { if (!s) return; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (s[k] != null) params.sections.vision[k] = s[k]; });
+               if ('__vm' in s) visEmphPutMsg(params.edits || (params.edits = {}), s.__vm);
+               if ('__vmMb' in s) visEmphPutMsg(params.editsMb || (params.editsMb = {}), s.__vmMb);
+               applyVpSize(); try { textTools.applyAll(); } catch (e) {} try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} }, reset: () => {} },
   cv:      { get: () => params.cv, set: s => Object.assign(params.cv, s), reset: () => Object.assign(params.cv, structuredClone(DEFAULTS_PRISTINE.cv)) },
   /* 【2026-09-15】揺らぎの案は「動きに関わるキーだけ」を控える(余白や色の設定を巻き込まない) */
   cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; }); return o; },
@@ -17721,7 +17735,7 @@ const VAR_AUTOSAVE = [
   { bucket: 'visLogo',   sel: () => vfLogoKey(),    snap: () => VAR_SNAP.visLogo,   base: (key) => { const m = (VIS_LOGOS.find(x => x.key === key) || VIS_LOGOS[0]); const o = {}; VF_LOGO_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'visGrad',   sel: () => visGradKey(),   snap: () => VAR_SNAP.visGrad,   base: (key) => { const g = (VIS_GRADS.find(x => x.key === key) || VIS_GRADS[0]); const m = Object.assign({ gradVar: key, gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v || {}), o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (m[k] != null) o[k] = m[k]; }); return o; } },
   /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調)ごとにメッセージ/ポイントの文字サイズを独立(案別に控える) */
-  { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: () => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); return o; } },
+  { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: () => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
@@ -18739,7 +18753,17 @@ function buildPanel() {
 
   /* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション(デフォルト/強調)。強調＝2行・左揃え・大きめ */
   sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation', bare: true });   /* 【2026-09-21 ヒデさん依頼】カテゴリ節「バリエーション」と重複する小見出しは出さず、案の選択だけ見せる(KVと統一) */
-  varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => { params.sections.vision.emph = String(k); applyVisEmph(); }, { snap: VAR_SNAP.visEmph, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });   /* 【2026-09-21 ヒデさん依頼】案(デフォルト/強調)を切り替えたら、離れる案の文字サイズを控え→選んだ案の控えを適用=それぞれ独立 */
+  varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => {
+    params.sections.vision.emph = String(k);
+    /* 【2026-09-21 Y14・連動の根治】案を切り替える瞬間に、メッセージ等のサイズ系を「素の既定」へ戻す。
+       この直後に varRowX.choose が『その案の上書き控え』を重ねる(あれば)。
+       → 控えあり=その案だけの独立した大きさ / 控えなし=素の既定。どちらでも「離れた案でいじった大きさ」は残らない。
+       これが無いと、控えの無い案へ移った時に params.edits.visMsg(全案共有)へ残った大きさをそのまま表示していた(＝連動の正体)。 */
+    try { const d = DEFAULTS_PRISTINE.sections.vision; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(kk => { if (d[kk] != null) params.sections.vision[kk] = d[kk]; }); } catch (e) {}
+    visEmphPutMsg(params.edits || (params.edits = {}), null);
+    visEmphPutMsg(params.editsMb || (params.editsMb = {}), null);
+    applyVisEmph(); try { applyVpSize(); } catch (e) {} try { textTools.applyAll(); } catch (e) {}
+  }, { snap: VAR_SNAP.visEmph, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });   /* 【2026-09-21 ヒデさん依頼】案(デフォルト/強調)を切り替えたら、離れる案の文字サイズを控え→選んだ案の控えを適用=それぞれ独立 */
   note('強調＝メッセージを2行(データをつなぐことが、／強みになる時代へ)に・左揃え・文字+20px・見出しの左をKVコピーに合わせる・1行目→2行目のマスク出現。デフォルト＝現状(1行・中央)。');
 
   /* 【2026-08-30 ヒデさん指定】「強み」の強調はグラデ揺らぎで確定。他の案とこのセクション自体を削除した */

@@ -34,7 +34,7 @@
 | E | パネルのタブ帯の白塗り(浮いてる)を撤去 | ✅ `.pan-tabs` の `background: rgba(255,255,255,.96)`＋border＋blur を撤去→`transparent`(地色はパネル本体.92に任せる)。実測 backgroundColor=rgba(0,0,0,0) |
 | F | タブ アクティブ=太字／他=細く | ✅ `.pan-tab` 600→500、`.pan-tab.on` に font-weight:700。実測 アクティブ700/他500 |
 | G | ビジョンの「バリエーション（案）」小見出しを削除 | ✅ `sub(catVis,…)` に `bare:true`(KVと統一)。実測 display:none |
-| A(ビジョン) | 案ごとにパネル値を独立（ビジョンのメッセージ「データを繋ぐ〜」がデフォルト/強調で連動） | ✅ 真因=強調案`vision.emph`(default/strong)が VAR_AUTOSAVE 未登録で案別に捕捉されず。`visEmph`バケット新設(msgSize/pHSize/pPSize/pWidth を案別に控える)＋varRowXにsnap付与。実測: default45→strong70→戻すと45→再strong70で独立・エラー0。🟡 強調のメッセージは既存CSSで msgSize+20 描画(スライダー値と+20ズレ)＝要否をヒデさんに確認。🟡 他セクション/SP側の全面独立は継続 |
+| A(ビジョン) | 案ごとにパネル値を独立（ビジョンのメッセージ「データを繋ぐ〜」がデフォルト/強調で連動） | ✅✅ **Y14で根治完了(2026-09-21)**。1次対応は「文字サイズスライダー(msgSize)」だけ案別化していたが、ヒデさんが実際に触る**フォント行(🔤)**が書く `edits.visMsg.fs`(PC)／`editsMb.visMsg.fs`(SP)は全案共有のままで連動が残っていた(＝経路違いが真因)。→ `VAR_SNAP.visEmph` に `__vm`/`__vmMb`(メッセージのfs/lh/lsを案別に控える)を追加＋ヘルパー `visEmphGrabMsg`/`visEmphPutMsg`、案切替の setSel で msgSize系＋visMsgのfs/lh/lsを素の既定へ戻してから控えを重ねる。実測(実ボタンクリック): PC default96→strong未調整70(連動なら96)→default復帰96 ／ SP default40→strong26→往復維持・console error 0・保存状態汚染なし。太さ/位置(fw/dx/dy)は共通維持。詳細は FIXLOG 2026-09-21。🟡 ポイント等の他テキスト行のSP全面独立は必要になれば同方式で拡張 |
 | K | タブ帯の下にグレーの下線 | ✅ `.pan-tabs` に border-bottom:1px #dcdcdc(白塗りは撤去のまま) |
 | H | KV/ビジョンのメッシュ形状・面の数を「基本のメッシュ」節で調整 | ✅ 両メッシュの基本節に 形状セレクタ＋横/縦のふくらみ・尖り＋面の数(freq/cageFreq)。頂点ワープ(msx/msy/msz/mpinch)で投影 |
 | I | メッシュのバリエーション5案ずつ(丸み/横長/ひし形…/現状=ノーマル) | ✅ VIS_MESH_SHAPES=ノーマル/丸み/横長/ひし形/縦長。KV(kvMeshShape)・ビジョン(visMeshShape)にvarRowX。実測: 横長=オブレート/ひし形=尖り 確認・エラー0 |
