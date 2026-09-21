@@ -3030,11 +3030,11 @@
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
     /* 【2026-09-09 カンプ node16534:22139 準拠】グラフィックは幅~414・上端~81・中央(左に少しはみ出し)。
        gx/gy(17,-52)ぶんを見込んで top/margin を調整(top=133-52=81 / left=195-218+17≈-6)。 */
-    .orbit { right: auto; left: 50%; top: calc(168px + var(--kv-sp-top, 0px)); transform-origin: 0 0; margin-left: -243px; }   /* 【2026-09-20 ヒデさん依頼】--kv-sp-top = ヘッダー↔コンテンツの距離(スマホ・KV全体を下げる) */   /* 【2026-09-20 ヒデさん依頼】SP は KV 全体を下げてヘッダーに被らないように(120→168) */   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
+    .orbit { right: auto; left: 50%; top: calc(150px + var(--kv-sp-top, 0px)); transform-origin: 0 0; margin-left: -243px; }   /* 【2026-09-20 ヒデさん依頼】--kv-sp-top = ヘッダー↔コンテンツの距離(スマホ・KV全体を下げる) */   /* 【2026-09-20 ヒデさん依頼】SP は KV 全体を下げてヘッダーに被らないように(120→168) */   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
     /* コピーはグラフィックの下へ。幅を制限して折り返し可にし、右はみ出しを解消 */
     /* 【2026-09-08 カンプ node16534:22195 準拠】KVコピーは中央寄せ。メイン46px Thin/行間1.4・中央、
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
-    .headline { left: 24px; right: 24px; top: calc(434px + var(--kv-hl-off, 0px) + var(--kv-sp-top, 0px)); white-space: normal; gap: var(--space-12);   /* 【2026-09-20】グラフィックと見出しの間隔を詰める(524→434・メッシュ最下端420の約14px下)。ヒデさん「離しすぎ→10pxほど」 */   /* 旧: KV下げ 400→448→524 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
+    .headline { left: 24px; right: 24px; top: calc(442px + var(--kv-hl-off, 0px) + var(--kv-sp-top, 0px)); white-space: normal; gap: var(--space-12);   /* 【2026-09-20】グラフィックと見出しの間隔を詰める(524→434・メッシュ最下端420の約14px下)。ヒデさん「離しすぎ→10pxほど」 */   /* 旧: KV下げ 400→448→524 */   /* 2026-09-19: 416→400 / 16→12(ロゴ帯 624px の上に収める・仮置き) */   /* グラフィックとの間隔をほんの少し空ける 404→416(ヒデさん指定・2026-09-09) */
                 align-items: center; text-align: center; }
     .hl-main { font-size: var(--kv-main-size, var(--fs-hero)); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-hero(34) */
     .hl-main .hl-line:last-child { font-size: var(--kv-jump-size, var(--fs-hero-jump)); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-hero-jump(60) */
@@ -3054,7 +3054,7 @@
     /* 【2026-09-20 ヒデさん報告・SP実機でロゴが上下に見切れる】枠(.logos 42px)より中身(.mq-set 48px)が高く、
        iOS Safari はこの数pxのはみ出しを合成レイヤーのクリップで切ってしまう。枠を広げ(56px)・中身と高さを揃え・
        縦中央に置いて、ロゴの上下に十分な余白(≈17px)を確保する。位置は中心を保つよう top を少し上げる。 */
-    .logos { top: calc(642px + var(--kv-sp-top, 0px)); height: 50px; display: flex; align-items: center; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }
+    .logos { top: calc(650px + var(--kv-sp-top, 0px)); height: 50px; display: flex; align-items: center; opacity: 1; transform: translateZ(0); -webkit-backface-visibility: hidden; }
     /* 帯の流れは CSS アニメ(marquee)に戻す＝コンポジタ側で滑らか＆くっきり。JS 毎フレーム駆動は重い KV 描画
        ループと同フレームで translate を計算するためカクつき(ガタガタ)＋非GPU化で画質低下していた(2026-09-09)。
        速度は applyMarquee がモバイルだけ 8s(約90px/s)に。iOS で消える件は rv() の blur を止めて解消済み。 */
@@ -3099,8 +3099,8 @@
     .val-head .vh-s { font-size: var(--fs-body); }
     .val-head .vh-l { font-size: var(--fs-stat); }
     .val-point { width: calc(100% - 48px); }   /* カンプSP node16534:22144(Plugin API 実測): 枠 342 幅・子は Fill → 左右 24 の全幅(以前の 328 は更新前の値) */
-    .val-p1 { left: 24px; top: 565px; }   /* 【2026-09-20 ヒデさん依頼】メッシュとPoint01/02の上下の間隔を空ける(511→565)。旧カンプSP: y511 */
-    .val-p2 { left: 24px; top: 650px; }   /* 【2026-09-20 #7】Point01↔02の上下ギャップを詰める(671→650・106→85px) */
+    .val-p1 { left: 24px; top: 508px; }   /* 【2026-09-21 Y7】メッシュとPoint1/2の間を詰める(565→508) */   /* 【2026-09-20 ヒデさん依頼】メッシュとPoint01/02の上下の間隔を空ける(511→565)。旧カンプSP: y511 */
+    .val-p2 { left: 24px; top: 593px; }   /* 【2026-09-21 Y7】Point1と85px間隔維持(650→593) */   /* 【2026-09-20 #7】Point01↔02の上下ギャップを詰める(671→650・106→85px) */
     /* 【カンプ node16534:22144】Point見出し20px / 本文12px / タグ12px, gap 8/4 */
     .val-point { display: flex; flex-direction: column; gap: var(--space-4); }   /* カンプSP: タグ→見出し 4 / 見出し→本文 8(本文側の margin 4 と合算) */
     .val-point .vp-tag { font-size: var(--fs-caption); line-height: 1; }
@@ -7938,7 +7938,7 @@ const GFX_VARIANTS = {
     { name: 'E 細かいケージ', desc: '細かい骨のカゴが惑星を包んで速く回ります。手前の骨は惑星の前、奥は後ろを通って取り囲みます。',
       gfx: GFX_LOOKS.std,
       conv: { style: 'cage', nodes: 34, cageR: 1.7, cageSpin: 1.8, cageLinks: 3, cageTilt: -28,
-              lineAlpha: 0.6, lineWidth: 1.0, size: 0.4, random: 0.2, hop: 0.32, rate: 2.6 },
+              lineAlpha: 0.5, lineWidth: 1.0, size: 0.4, random: 0.2, hop: 0.32, rate: 2.6 },
       common: { orbitSpin: 0 } },
     { name: 'F 立ちクロスの網', desc: '起こして交差させた広い範囲に網を張ります。奥行きのあるネットになります。',
       gfx: GFX_LOOKS.upright,
@@ -12410,7 +12410,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 const VIS_LOGOS = [
@@ -12434,15 +12434,15 @@ const VIS_MESH_SHAPES = [
 ];
 function visMeshShapeKey() { const v = String((params.sections.vision && params.sections.vision.meshShape) || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === v) ? v : 'normal'; }
 function visApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, m.cfg); v.meshShape = m.key; try { applyVfFade(); } catch (e) {} }
-const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
+const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
-    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
+    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
   { key: 'kv', name: '案2 KV のメッシュをそのまま', tip: 'キービジュアルのケージと同じ描き方: 測地線球(頂点42)・線 #6B7690 を奥ほど薄く/細く・点はピンク/シアン交互で手前ほど大きく・骨の上を光(パケット)が走る。半径と回転の速さも KV と同じ比率。',
     cfg: { r: 251, spin: 1.4, tilt: -11, lineAlpha: 0.25, lineWidth: 1.5, dot: 2.9, freq: 2, lineColor: '#6B7690', nodeMode: 'alt', levels: 0, pk: 4, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
   /* 【2026-09-19 ヒデさん依頼】案3=案1＋ロゴの後ろをぼかす(楕円の中の網目をぼかし、地色で薄める) */
   { key: 'domeBlur', name: '案3 ブラーあり（ロゴの後ろをぼかす）', tip: '案1 の色味のまま、ロゴの後ろに楕円の領域を置いて中の網目をぼかし、地色で少し薄める。ぼかし・濃さ・広さは下のつまみ。',
-    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 10, bgAlpha: 0.55, bgW: 1.6, bgH: 2.8 } },
+    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 10, bgAlpha: 0.55, bgW: 1.6, bgH: 2.8 } },
   /* 【2026-09-19 ヒデさん依頼】案4: 奥側の線・点を薄く(遠近感)。depthFade=奥をどれだけ薄くするか */
   { key: 'domeDepth', name: '案4 奥の線を薄く（遠近感）', tip: '案1 と同じ図で、球の奥側の線と点を薄く・細く(75%減)。手前と奥の差がはっきりして立体に見える。', cfg: Object.assign({}, VIS_MESHES_DOME_CFG, { depthFade: 0.75 }) },
 ];
@@ -12476,7 +12476,7 @@ function applyVfFade() {
   const fy = (f) => (VF_CY + (c.my || 0) + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';   /* 網目を上下にずらしたらフェードも一緒に */
   w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
-  const ld = _mb ? 0.78 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる(0.6→0.78)。円の形に沿って外側へ(はみ出さない範囲で) */
+  const ld = _mb ? 0.72 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる(0.6→0.78)。円の形に沿って外側へ(はみ出さない範囲で) */
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
   const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -22) : 0;   /* 【2026-09-20 #5】SP の持ち上げを控えめに(-95→-22)＝球の上の弧に沿って載せる */
   w.querySelectorAll('.vf-lab').forEach((el, i) => {
@@ -12491,7 +12491,7 @@ function applyVfFade() {
   });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
-  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 50; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)より50px上に置く(独立)。動かしたい時は logoDx/logoDy のつまみで。SPはさらに上へ(#6 -20→-50=30px上) */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 72; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)より50px上に置く(独立)。動かしたい時は logoDx/logoDy のつまみで。SPはさらに上へ(#6 -20→-50=30px上) */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
     const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
     const tf3 = '';   /* 【2026-09-20 ヒデさん依頼】ロゴはヘッダーのロゴと同じく常にフラット(傾き0)・メッシュの角度から独立。傾き系(logoTiltX/Y・角度)は無視する。 */ lg.style.transform = tf3;
     lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
