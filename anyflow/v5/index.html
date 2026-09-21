@@ -7181,7 +7181,10 @@ function bindHdrScroll() {
     /* 【2026-09-17 ヒデさん指定】開発者体験(黒いセクション)の上にヘッダーが来たら、ロゴ/ハンバーガーの色だけ白へ反転。
        ヘッダーの地色は変えない。分離案(hm-12)などの透明ヘッダー用。 */
     const _dev = document.getElementById('dev');
-    if (_dev) { const dr = _dev.getBoundingClientRect(); hdr.classList.toggle('hdr-on-dark', dr.top <= 44 && dr.bottom >= 30); }
+    /* 【2026-09-22 ヒデさん依頼】反転が「ワンテンポ遅い」根治: #dev の上端が 44px に来る幾何条件だと、
+       背景(devDarkK)が先に暗転しきっても反転が devTop=0 まで待ち、実測で約480px遅れていた。
+       → 実際の背景の暗さ devDarkK が 0.5 を超えた瞬間に反転(＝見た目の暗転と同期)。退場は従来の幾何(dr.bottom≥30)を維持。PC/SP共通。 */
+    if (_dev) { const dr = _dev.getBoundingClientRect(); const _dk = (typeof devDarkK !== 'undefined' ? devDarkK : 0); hdr.classList.toggle('hdr-on-dark', _dk >= 0.5 && dr.bottom >= 30); }
     /* 【2026-09-17 ヒデさん指摘】hm-15(ミニピル)は「消える」をやめ常に表示。hm-3 のみ下スクロール隠し(現在削除済み) */
     if (document.documentElement.classList.contains('hm-3')) {
       if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
