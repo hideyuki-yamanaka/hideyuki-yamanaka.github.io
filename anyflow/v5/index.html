@@ -9652,8 +9652,13 @@ function convFrame(geoms) {
        状態だった。基準を固定の 130(=惑星スケール1相当)にし、ケージは cageR だけで大きさが決まるように。
        これで「大きさ」スライダーは惑星だけを大きくする。 */
     const Rc = 130 * (M.cageR == null ? 1.75 : M.cageR) * breathe;
+    /* 【2026-09-21 ヒデさん依頼】メッシュの形状(丸み/横長/ひし形/縦長)。頂点をワープしてから回転・投影 */
+    const _msx = M.msx != null ? M.msx : 1, _msy = M.msy != null ? M.msy : 1, _msz = M.msz != null ? M.msz : 1, _mpinch = M.mpinch || 0;
     const proj = q => {
-      const x1 = q.x * cy + q.z * sy, z1 = -q.x * sy + q.z * cy, y1 = q.y;      /* 縦軸まわりに回す */
+      let qx = q.x, qy = q.y, qz = q.z;
+      if (_mpinch) { const k = 1 - _mpinch * Math.abs(qy); qx *= k; qz *= k; }   /* 赤道は太く極は細く=ひし形 */
+      qx *= _msx; qy *= _msy; qz *= _msz;
+      const x1 = qx * cy + qz * sy, z1 = -qx * sy + qz * cy, y1 = qy;      /* 縦軸まわりに回す */
       const y2 = y1 * ct - z1 * st, z2 = y1 * st + z1 * ct;                      /* 少し傾ける(前後) */
       const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr;                      /* 左右に傾ける(cageRoll) */
       return { x: cc.x + x3 * Rc, y: cc.y + y3 * Rc * squish, z: z2 };           /* z>0 = 手前 */
@@ -17641,7 +17646,10 @@ const KV_VARIANTS = [
             mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
 ];
 const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
-const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread'];
+const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread', 'msx', 'msy', 'msz', 'mpinch', 'meshShape'];   /* msx/msy/msz/mpinch/meshShape=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
+/* 【2026-09-21 ヒデさん依頼】KVメッシュの形状(基本のメッシュ)。ビジョンと同じ5案(VIS_MESH_SHAPES を流用) */
+function kvMeshShapeKey() { const M = (params.conv && params.conv.mesh) || {}; const v = String(M.meshShape || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === v) ? v : 'normal'; }
+function kvApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const M = (params.conv.mesh = params.conv.mesh || {}); Object.assign(M, m.cfg); M.meshShape = m.key; try { renderFrame(); } catch (e) {} }
 /* 【2026-09-20 ヒデさん依頼・#7】KV要素の「位置移動(dx/dy)・パディング」も案別に独立させる(強調でずらした位置がノーマルに効かないように)。
    文字(fs/fw/lh/ls)は含めない=別系統(editsMb/共通)。対象要素は sec:'kv' の全て。 */
 const KV_VAR_EDIT_ELS = ['navLogo', 'navLinks', 'navCta', 'kvMain', 'kvMainLast', 'kvEyebrow', 'kvLogos'];
@@ -18321,6 +18329,12 @@ function buildPanel() {
       if ((M.style || 'organic') === 'cage') {
         slider('大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
           '惑星の半径の何倍でメッシュを組むか。大きいほど大きく取り囲みます。', { mbKey: 'conv.mesh.cageR' });
+        /* 【2026-09-21 ヒデさん依頼】メッシュの形状バリエーション(丸み/横長/ひし形/縦長・現状=ノーマル)＋手動微調整 */
+        note('▼ 形状（案）');
+        varRowX('kvMeshShape', VIS_MESH_SHAPES, () => kvMeshShapeKey(), k => { kvApplyMeshShape(String(k)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+        slider('横のふくらみ', 0.6, 1.6, 0.02, () => (params.conv.mesh.msx != null ? params.conv.mesh.msx : 1), v => M.msx = v, v => '×' + v.toFixed(2), 'メッシュの横幅。大きいほど横長。', { mbKey: 'conv.mesh.msx' });
+        slider('縦のふくらみ', 0.6, 1.6, 0.02, () => (params.conv.mesh.msy != null ? params.conv.mesh.msy : 1), v => M.msy = v, v => '×' + v.toFixed(2), 'メッシュの縦の高さ。大きいほど縦長。', { mbKey: 'conv.mesh.msy' });
+        slider('尖り（ひし形）', 0, 0.9, 0.02, () => (params.conv.mesh.mpinch || 0), v => M.mpinch = v, v => Math.round(v * 100) + '%', '上下の極を尖らせてひし形に。0で球。', { mbKey: 'conv.mesh.mpinch' });
         slider('回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
           v => '×' + v.toFixed(2), '右へ動かすほどメッシュが速く回ります。0(左端)で止まります。', { mbKey: 'conv.mesh.cageSpin' });
         slider('傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
