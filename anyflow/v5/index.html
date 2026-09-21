@@ -3604,6 +3604,14 @@
   /* バリエーション: 開閉なし・青塗りなし・プレーンなH1(区切り線だけ) */
   .cat-section.cs-variation .cat-section-head { cursor: default; }
   .cat-section.cs-variation .cat-section-head:hover { color: #111; }
+  /* 【2026-09-21 ヒデさん依頼】1タブに複数バリエーションセクション(演出/ピクトグラム等)がある時の入れ子。
+     H1=バリエーションセクション見出し(.vs-section) / H2=その中のカテゴリ(.cs-nested)。 */
+  .vs-section { border-top: 1px solid #e6e6e6; margin-top: 8px; }
+  .vs-section:first-of-type { border-top: none; margin-top: 0; }
+  .vs-section > .cat-section-head { font-size: 14px; font-weight: 800; color: #000; cursor: default; padding: 15px 2px 6px; }
+  .vs-section > .cat-section-head:hover { color: #000; }
+  .cat-section.cs-nested > .cat-section-head { font-size: 12px; font-weight: 600; color: #555; padding: 9px 2px 5px; letter-spacing: .02em; }
+  .cat-section.cs-nested > .cat-section-head:hover { color: #222; }
 
   /* H2: オブジェクト小見出し(メッシュ/コピー/ロゴ 等)。開閉なし・区切り線なし・左線なし。余白だけで区切る */
   .grp { margin-top: 4px; }
@@ -17324,6 +17332,12 @@ let subDefaultOpen = false;   /* true の間に作る小見出しは、既定で
    旧 color/texture は fxtex(エフェクト＆テクスチャ)に統合。ルールは settings/docs/anyflow/ANYFLOW-PANEL-STRUCTURE.md。 */
 const GRP_ORDER = { variation: 0, basic: 1, font: 2, fxtex: 3, anim: 4, other: 5 };
 const GRP_LABEL = { variation: 'バリエーション', basic: '基本', font: 'フォント', fxtex: 'エフェクト＆テクスチャ', anim: 'アニメーション', other: 'その他' };
+/* 【2026-09-21 ヒデさん依頼】1つのタブに複数のバリエーションセクション(例: 実績＝演出＋ピクトグラム案)がある時、
+   セクションごとに 基本/フォント/エフェクト＆テクスチャ/アニメーション を入れ子で分ける。
+   パネル構築中に panelVarsec('id','見出し') を呼ぶと、それ以降に作る .grp に dataset.varsec を刻む。
+   applyPanelGroupOrder が varsec ごとに束ね直す。null で解除(タブ共通=従来のタブ単位)。 */
+let PANEL_VARSEC = null;
+function panelVarsec(id, label) { PANEL_VARSEC = id ? { id: String(id), label: String(label || id) } : null; }
 let _grpSeq = 0;   /* 同じグループ内は元の順を保つための連番(安定ソート) */
 function grpFromLabel(k) {
   if (/🔤|文字（太/.test(k)) return 'font';
@@ -17338,24 +17352,23 @@ function grpFromLabel(k) {
 const catSecOpen = {};
 function applyPanelGroupOrder() {
   try {
-    document.querySelectorAll('.cat-body').forEach(bodyEl => {
-      const catEl = bodyEl.closest('.cat');
-      const tabTitle = (((catEl && catEl.querySelector('.cat-head > span')) || {}).textContent || '').trim();
-      const notes = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('cat-note'));
-      const grps = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('grp'));
-      if (!grps.length) return;
-      const keyed = grps.map((el, i) => {
+    /* カテゴリ節(基本/フォント/エフェクト/アニメーション/バリエーション)を container に組む共通処理。
+       nested=true(バリエーションセクションの中)の時は、選択UI(variation)は節を作らず見出し直下にそのまま置き、
+       残り4カテゴリは入れ子見出し(H2)の開閉節にする。 */
+    const buildCats = (container, list, keyPrefix, nested) => {
+      const keyed = list.map((el, i) => {
         const cat = (GRP_ORDER[el.dataset.grp] != null) ? el.dataset.grp : 'basic';
         return { el, cat, o: GRP_ORDER[cat], i: +(el.dataset.seq || i) };
       });
       keyed.sort((a, b) => (a.o - b.o) || (a.i - b.i));
       let curCat = null, secBody = null;
       keyed.forEach(k => {
+        if (nested && k.cat === 'variation') { container.appendChild(k.el); curCat = null; secBody = null; return; }   /* セクション見出し直下に選択UIをそのまま */
         if (k.cat !== curCat) {
           curCat = k.cat;
           const sec = document.createElement('div');
-          sec.className = 'cat-section cs-' + curCat + (curCat === 'variation' ? ' cs-variation' : '');
-          const openKey = tabTitle + '::' + curCat;
+          sec.className = 'cat-section cs-' + curCat + (curCat === 'variation' ? ' cs-variation' : '') + (nested ? ' cs-nested' : '');
+          const openKey = keyPrefix + '::' + curCat;
           const open = (catSecOpen[openKey] === undefined) ? true : catSecOpen[openKey];   /* 既定は全開き */
           catSecOpen[openKey] = open;
           if (!open) sec.classList.add('closed');
@@ -17367,10 +17380,39 @@ function applyPanelGroupOrder() {
           secBody = document.createElement('div');
           secBody.className = 'cat-section-body';
           sec.append(head, secBody);
-          bodyEl.appendChild(sec);
+          container.appendChild(sec);
         }
         secBody.appendChild(k.el);
       });
+    };
+    document.querySelectorAll('.cat-body').forEach(bodyEl => {
+      const catEl = bodyEl.closest('.cat');
+      const tabTitle = (((catEl && catEl.querySelector('.cat-head > span')) || {}).textContent || '').trim();
+      const notes = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('cat-note'));
+      const grps = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('grp'));
+      if (!grps.length) return;
+      const hasVarsec = grps.some(el => el.dataset.varsec);
+      if (!hasVarsec) {
+        buildCats(bodyEl, grps, tabTitle, false);   /* 従来: タブ単位で1組の4カテゴリ */
+      } else {
+        /* 【2026-09-21 ヒデさん依頼】varsec(演出/ピクトグラム等)ごとに束ね直し、各セクションの中に4カテゴリを入れ子で置く */
+        const order = [], byVs = {};
+        grps.forEach(el => { const vs = el.dataset.varsec || ''; if (!(vs in byVs)) { byVs[vs] = []; order.push(vs); } byVs[vs].push(el); });
+        order.forEach(vs => {
+          if (vs === '') { buildCats(bodyEl, byVs[vs], tabTitle, false); return; }   /* varsec無し=タブ共通は従来通り上に */
+          const label = (byVs[vs][0] && byVs[vs][0].dataset.varseclabel) || vs;
+          const secWrap = document.createElement('div');
+          secWrap.className = 'cat-section cs-variation vs-section';
+          const head = document.createElement('div');
+          head.className = 'cat-section-head';
+          head.innerHTML = '<span>' + label + '</span>';   /* バリエーションセクション見出し(H1・▾なし) */
+          const secBody = document.createElement('div');
+          secBody.className = 'cat-section-body vs-body';
+          secWrap.append(head, secBody);
+          bodyEl.appendChild(secWrap);
+          buildCats(secBody, byVs[vs], tabTitle + '::' + vs, true);   /* この中に4カテゴリを入れ子で */
+        });
+      }
       /* タブの説明文(cat-note)は最上部に残す */
       for (let n = notes.length - 1; n >= 0; n--) bodyEl.insertBefore(notes[n], bodyEl.firstChild);
     });
@@ -17396,6 +17438,7 @@ function sub(target, html, deep, opts) {
   g.className = (deep ? 'grp sub2' : 'grp') + (open ? '' : ' closed') + (fixed ? ' fixed' : '') + (bare ? ' bare' : '');
   g.dataset.grp = String((opts && opts.grp) || grpFromLabel(key));   /* 【2026-09-20】並べ替え用のグループ印 */
   g.dataset.seq = String(_grpSeq++);
+  if (PANEL_VARSEC) { g.dataset.varsec = PANEL_VARSEC.id; g.dataset.varseclabel = PANEL_VARSEC.label; }   /* 【2026-09-21】どのバリエーションセクションに属すか(実績の演出/ピクトグラム等) */
   const title = document.createElement('div');
   title.className = 'grp-title';
   const lab = document.createElement('span');
@@ -18983,6 +19026,7 @@ function buildPanel() {
   RFX_TITLES.length = 0;
   try { Object.keys(DEV_DYN).forEach(k => { delete DEV_DYN[k]; }); } catch (e) {}   /* 2026-09-15: モックの案ごとのつまみも作り直す */
   catNote(catRes, '見出し → 数字と本文 → 見終わると暗くなって次のセクションへ。');
+  panelVarsec('fx', '演出');   /* 【2026-09-21 ヒデさん依頼】ここから「演出」セクション(この中に 基本/フォント/エフェクト/アニメーションを入れ子で) */
 
   /* 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出案(Codex 1/4/5/6。7・9 は 2026-09-14 に削除)。既定=現行。
      各ボタンのツールチップ(title)に狙いを表示。?resFx=1 などURLでも指定可。 */
@@ -19158,18 +19202,8 @@ function buildPanel() {
     () => (sv().results.slotGap != null ? sv().results.slotGap : 4),
     v => { sv().results.slotGap = v; applyResSlotGap(); }, v => Math.round(v) + 'px',
     'タイピングされる「Anyflow」と、続く「が支えます。」の間隔。', { mbKey: 'sections.results.slotGap' }));
-  rows.push(slider('ピクトグラムの線の太さ', 0.5, 4, 0.1,
-    () => (sv().results.pictoW != null ? sv().results.pictoW : 1),
-    v => { sv().results.pictoW = v; drawValueIcons(); }, v => (1 * v).toFixed(1) + 'px',
-    'for SaaS / for AI の図(リング・カード等)の線の太さ。基準は1.0px。', { mbKey: 'sections.results.pictoW' }));
-  /* 【2026-09-08 ヒデさん指定】ピクトの再生速度(SaaS/AI共通・全案に一律適用) */
-  optRow('pictoSpeed', 'ピクトの速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
-    () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
-    v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
-  /* 【2026-09-18 ヒデさん依頼】ピクトグラムの線の太さ(全ての線幅×倍率) */
-  rows.push(slider('ピクトの線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
-  /* 【2026-09-21 ヒデさん依頼】実際に見えているピクトの大きさ(flowモードでも効く。旧「主役の大きさ」は登場演出専用でflowでは効かなかった) */
-  rows.push(slider('ピクトの大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
+  /* 【2026-09-21 ヒデさん依頼・構造整理】ピクトの線幅/速さ/大きさは「ピクトグラム」セクションへ移動(下の panelVarsec('picto') 配下)。
+     重複していた旧「ピクトグラムの線の太さ」(0.5〜4px版)はここで削除(新しい「ピクトの線の太さ」×倍率に一本化)。 */
   rows.push(slider('→ その他の要素が出る', -0.5, 3, 0.05, () => (sv().results.restGap != null ? sv().results.restGap : 0.1), v => sv().results.restGap = v, v => v.toFixed(2) + '秒',
     'タイピング開始から、区切り線・3数値・2つの価値が出るまでの間。マイナスでタイピングより前に。', { mbKey: 'sections.results.restGap', signed: true }));
   rows.push(slider('見出しの1文字の時間', 0.02, 0.2, 0.005, () => sv().results.charDur, v => sv().results.charDur = v, v => v.toFixed(3) + 's/字',
@@ -19213,6 +19247,7 @@ function buildPanel() {
 
   /* 【2026-08-28 ヒデさん指定】2つの価値の右側ピクトグラム(各5案) */
   liveEdit = true;
+  panelVarsec('picto', 'ピクトグラム');   /* 【2026-09-21 ヒデさん依頼】ここから「ピクトグラム」セクション(選択UI＋基本/エフェクト/アニメーションを入れ子で) */
   sub(catRes, 'ピクトグラム（2つの価値の右）', true, { fixed: true, grp: 'variation' });   /* For SaaS/For AI のピクト案選択＝バリエーション扱い */
   {
     const SAAS = [
@@ -19282,6 +19317,17 @@ function buildPanel() {
   }
   liveEdit = false;
 
+  /* 【2026-09-21 ヒデさん依頼・構造整理】ピクトの見た目つまみを「ピクトグラム」セクションの中へ(基本＝大きさ/線幅、アニメーション＝速さ) */
+  sub(catRes, 'ピクトの大きさ・線', true, { fixed: true, grp: 'basic' });
+  rows.push(slider('ピクトの大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
+  rows.push(slider('ピクトの線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
+  sub(catRes, 'ピクトの動き', true, { fixed: true, grp: 'anim' });
+  optRow('pictoSpeed', 'ピクトの速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
+    () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
+    v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
+
+  panelVarsec('fx', '演出');   /* 【2026-09-21】以降(つなぎ・文字)は「演出」セクションへ戻す */
+
   sub(catRes, '次のセクションへのつなぎ（明→黒）');
   note('実績セクションの背景が、下へスクロールするほど白→黒へ変わり、開発者体験(黒画面)へつながります。'
     + '「%」は“開発者体験セクションが画面の下から上へどれだけ入ってきたか”の割合です（0%=まだ画面外／100%=画面上端まで来た）。'
@@ -19313,6 +19359,7 @@ function buildPanel() {
   textRowsFor(['res']);
 
   /* ========== 🖥 開発者体験 ========== */
+  panelVarsec(null);   /* 【2026-09-21】実績タブ終わり。次タブへ持ち越さない */
   const catDev = category('開発者体験（暗い画面のコード紹介）', false);
   catNote(catDev, '暗い背景で CLI / SDK の画面が順に切り替わります。');
   /* 【2026-09-15 ヒデさん指定】モックのスタイル案(立体感 5案・リキッドグラス含む)と配色。★ピン留め／上書き／削除は他のバリエーションと同じ */
