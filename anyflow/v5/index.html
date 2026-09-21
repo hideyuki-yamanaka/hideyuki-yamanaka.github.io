@@ -1896,7 +1896,7 @@
   html.mb #results.rfx-21 .r2v-h, html.mb #results.rfx-23 .r2v-h { font-size: 25px; line-height: var(--lh-heading); }
   html.mb #results.rfx-21 .r2v-p, html.mb #results.rfx-23 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
   /* --- 案24(SP): 2列を縦積み(説明→ピクト300×220)。仕切り線なし。下段は見出し29px・2行と数値40px。大見出し 40px --- */
-  html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: var(--space-16); width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-16】左右24px(V3.0)/縦gap 28→16(--space-16)でスペーシングガイドラインに沿って詰める */
+  html.mb #results.rfx-24 .res2, html.mb #results.rfx-25 .res2 { display: flex; flex-direction: column; gap: var(--r2v-sp-gap, var(--space-16)); width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-21 ヒデさん依頼】縦の余白を「区切り線まわりの余白(スマホ)」で調整可能に(既定 --space-16=16px) */   /* 【2026-09-16】左右24px(V3.0)/縦gap 28→16(--space-16)でスペーシングガイドラインに沿って詰める */
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track, html.mb #results.rfx-25 .res2-vals, html.mb #results.rfx-25 .r2v-track { display: contents; }
   html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */
   html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: 1; /* 【2026-09-19 ヒデさん依頼】線は数値の上(ピクト→線→数値。PCと同じ並び) */ margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
@@ -5228,6 +5228,7 @@ const DEFAULTS = {
       pictoW: 1,         // 【2026-09-02 ヒデさん指定】for SaaS/for AI ピクトグラムの線幅倍率(1=1px基準)
       pictoSpeed: 1,     // 【2026-09-08 ヒデさん指定】ピクトの再生速度(SaaS/AI共通・全案に適用。1=標準)
       pictoDisp: 1,      // 【2026-09-21 ヒデさん依頼】ピクトの表示サイズ倍率(実際に見えている大きさ。flowモードでも効く。1=現状)
+      spGap: 16,         // 【2026-09-21 ヒデさん依頼】スマホの実績の縦の余白(各ブロック↔区切り線。既定16px=現状。SP専用)
 
       driveLen: 2.0,     // スクロール駆動の時、尺を何倍に伸ばすか（小さいほどスクロール量が減る。2026-08-25 3.0→2.0）
       lenVh: 200,   /* 固定される幅 = 200-100 = 100vh。この間に再生と暗転が収まる */
@@ -12602,6 +12603,8 @@ applyVfFade();
 /* 【2026-09-21 ヒデさん依頼】実績ピクトの表示サイズ。#results に --r2v-disp を設定→ .r2v-graphic の zoom に反映。
    params.sections.results.pictoDisp は mbKey でPC/SP独立(SPは applyMbToParams が SP値を流し込む)。 */
 function applyPictoDisp() { try { const r = (params.sections && params.sections.results) || {}; const el = document.getElementById('results'); if (el) el.style.setProperty('--r2v-disp', (r.pictoDisp != null ? r.pictoDisp : 1)); } catch (e) {} }
+/* 【2026-09-21 ヒデさん依頼】スマホの実績の縦余白(各ブロック↔区切り線)。#results に --r2v-sp-gap を設定→ SP の .res2 の gap に反映。 */
+function applyResSpGap() { try { const r = (params.sections && params.sections.results) || {}; const el = document.getElementById('results'); if (el) el.style.setProperty('--r2v-sp-gap', (r.spGap != null ? r.spGap : 16) + 'px'); } catch (e) {} }
 function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
   /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
   d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win-n', String(r.slotWin != null ? r.slotWin : 1.6)); d.setProperty('--slot-ramp', String(r.slotRamp != null ? r.slotRamp : 1));
@@ -12618,6 +12621,7 @@ function resSlotFxKey() { const r = (params.sections && params.sections.results)
 function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
 applyResSlotFade();
 applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを反映 */
+applyResSpGap();    /* 【2026-09-21】起動時にスマホの実績の縦余白を反映 */
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
 /* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
 function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px'); }
@@ -19088,16 +19092,22 @@ function buildPanel() {
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
     const F24 = { heroScale: 1.7, labelUp: 190, prodSize: 38 };
-    const s24 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key }));
-    s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。');
-    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。');
+    /* 【2026-09-21 ヒデさん依頼】主役の大きさ/文字が上へ/Product は PC のスクロール登場演出専用で、スマホ(flow)では効かない。
+       → スマホモード中は隠す(.pc-only-row)。PC編集時は今まで通り表示。区切り線の余白はスマホ用の効く版を下に用意。 */
+    const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
+    const s24 = (label, key, min, max, step, fmt, tip) => rows.push(pcOnly(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key })));
+    s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。※PCのスクロール登場演出専用(スマホでは効きません)。');
+    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
-    rows.push(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
-      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true }));
-    rows.push(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
-      '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。', { mbKey: 'sections.results.hrGap', fixedMax: true }));
-    rows.push(slider('区切り線の下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
-      '区切り線と「事業の推進力を、Anyflowが支えます。」＋数値との間隔。0 でいままで(上段の padding 28px ぶんだけ空いています)。', { mbKey: 'sections.results.hrGap2', fixedMax: true }));
+    rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
+      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
+    rows.push(pcOnly(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
+      '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。※PCのみ(スマホは下の「区切り線まわりの余白(スマホ)」で)。', { mbKey: 'sections.results.hrGap', fixedMax: true })));
+    rows.push(pcOnly(slider('区切り線の下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
+      '区切り線と「事業の推進力を、Anyflowが支えます。」＋数値との間隔。0 でいままで(上段の padding 28px ぶんだけ空いています)。※PCのみ。', { mbKey: 'sections.results.hrGap2', fixedMax: true })));
+    /* 【2026-09-21 ヒデさん依頼】スマホ用に効く「区切り線まわりの余白」。SP は縦積みなので、各ブロック↔線の間隔をまとめて調整(既定16px＝現状) */
+    const _spGap = slider('区切り線まわりの余白（スマホ）', 8, 40, 1, () => (sv().results.spGap != null ? sv().results.spGap : 16), v => { sv().results.spGap = v; applyResSpGap(); markDirty(); }, v => Math.round(v) + 'px', 'スマホの実績で、for SaaS / for AI / 数値の各ブロックと区切り線との上下の間隔をまとめて調整します。既定16px。', { fixedMax: true });
+    try { _spGap.classList.add('sp-only-row'); } catch (e) {} rows.push(_spGap);
     rfxDyn(_g24, ['24', '24-2', '24-3', '24-4', '24-5', '25']);
     /* 案26: 数値の大きさ・線・横移動(その案の時だけ出す) */
     subT(catRes, () => '案' + rfxNo('26') + '：数値の大きさ・線・横移動');
@@ -20473,6 +20483,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       call(function () { if (typeof resApplySlotFx === 'function' && typeof resSlotFxKey === 'function') resApplySlotFx(resSlotFxKey()); });
       call(function () { if (typeof applyResSlotFade === 'function') applyResSlotFade(); });
       call(function () { if (typeof applyPictoDisp === 'function') applyPictoDisp(); });
+      call(function () { if (typeof applyResSpGap === 'function') applyResSpGap(); });
       call(function () { if (typeof cvApplySway === 'function' && typeof cvSwayKey === 'function') cvApplySway(cvSwayKey()); });
       call(function () { if (typeof visApplyGrad === 'function' && typeof visGradKey === 'function') { visApplyGrad(visGradKey()); if (typeof applyVisGrad === 'function') applyVisGrad(); } });
       call(function () { if (typeof applyMarquee === 'function') applyMarquee(); });
@@ -20523,11 +20534,11 @@ document.getElementById('panelBody').addEventListener('click', () => {
     + 'html.phone-mode #panelLiveBtn{background:#0e5cff;border-color:#0e5cff;color:#fff}'
     /* 【2026-09-19/09-20 ヒデさん依頼】スマホモード中に「SP専用に上書きした項目」を STUDIO 風にハイライト。
        つまみも文字行も統一: 行の左に青いバー＋薄い青背景＋見出しに●。触った瞬間に付く(input/change で即更新)。 */
-    + 'html.phone-mode .row.mb-override,html.phone-mode .txt-row.mb-override{background:#eef8ff;box-shadow:inset 3px 0 0 #0EBBFF;border-radius:6px}'
-    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{color:#0b4bd6;font-weight:600}'
-    + 'html.phone-mode .row.mb-override > label::before,html.phone-mode .txt-row.mb-override > label::before{content:"● ";color:#0EBBFF;font-size:8px;vertical-align:middle}'
-    + 'html.phone-mode .row.mb-override input[type=range]{accent-color:#0EBBFF}'
-    + 'html.phone-mode .txt-row.mb-override > label{color:#0b4bd6;font-weight:600}'
+    + '/* 【2026-09-21 ヒデさん依頼】スマホ上書きの左側の濃い青の装飾(背景＋左バー)は撤去。印は下の●と文字色だけの控えめ表示に */'
+    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{font-weight:600}'
+    + 'html.phone-mode .txt-row.mb-override > label{font-weight:600}'
+    + 'html.phone-mode .pc-only-row{display:none!important}'   /* 【2026-09-21】PC演出専用のつまみはスマホモード中は隠す */
+    + 'html:not(.phone-mode) .sp-only-row{display:none!important}'   /* スマホ専用のつまみはPC編集時は隠す */
     + 'html.phone-mode .txt-row .txt-n.mb-diff,html.phone-mode .txt-row .txt-w.mb-diff{border-color:#0EBBFF!important;background:#dff0ff;color:#0b4bd6;font-weight:600}';
   document.head.appendChild(css);
 
