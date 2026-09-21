@@ -2586,7 +2586,7 @@
   .case-grid {
     position: absolute;
     left: 0;
-    top: 227px;                /* 見出し(93+64) + gap60 = 227 */
+    top: 202px;                /* 見出し(93+64) + gap ≈36 = 202。【2026-09-21 ヒデさん依頼】開発者体験(36)に合わせて見出し↔グリッドを詰める(gap60→36) */
     width: 100%;
     height: 589px;             /* 2行 295+294 */
   }
@@ -7242,7 +7242,7 @@ function devToneKey() { const v = String((params && params.devTone) || 'dark'); 
 function applyDevTune() {
   const sec = document.getElementById('dev'); if (!sec) return; const d = (params.sections && params.sections.dev) || {};
   sec.style.setProperty('--dev1-gap', (d.dev1Gap != null ? d.dev1Gap : 36) + 'px');
-  sec.style.setProperty('--dev2-gap', (d.dev2Gap != null ? d.dev2Gap : 36) + 'px');
+  sec.style.setProperty('--dev2-gap', (d.dev2Gap != null ? d.dev2Gap : 77) + 'px');   /* 【2026-09-21 ヒデさん依頼】②はスタックが上に約41px張り出して見出しに被る(実測パネル間隔−5)ため、既定を36→77にして dev1(36)と見た目の間隔を揃える */
   sec.style.setProperty('--dev1-scale', String(d.dev1Scale != null ? d.dev1Scale : 1.1));
   sec.style.setProperty('--dev2-scale', String(d.dev2Scale != null ? d.dev2Scale : 1.1));
 }
@@ -19219,7 +19219,7 @@ function buildPanel() {
   sub(catDev, '①② 見出しとモックの間隔・大きさ（PC）');
   rows.push(slider('① 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev1Gap != null ? sv().dev.dev1Gap : 36), v => { sv().dev.dev1Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験①の見出しとモックの上下の間隔。', { mbKey: 'sections.dev.dev1Gap', fixedMax: true }));
   rows.push(slider('① モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev1Scale != null ? sv().dev.dev1Scale : 1.1), v => { sv().dev.dev1Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験①のモックの拡大率。', { mbKey: 'sections.dev.dev1Scale', fixedMax: true }));
-  rows.push(slider('② 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev2Gap != null ? sv().dev.dev2Gap : 36), v => { sv().dev.dev2Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験②の見出しとモックの上下の間隔。', { mbKey: 'sections.dev.dev2Gap', fixedMax: true }));
+  rows.push(slider('② 見出し↔モックの間隔', 0, 120, 2, () => (sv().dev.dev2Gap != null ? sv().dev.dev2Gap : 77), v => { sv().dev.dev2Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験②の見出しとモックの上下の間隔。②はスタックが上に張り出すため既定77(dev1と見た目を揃える)。', { mbKey: 'sections.dev.dev2Gap', fixedMax: true }));
   rows.push(slider('② モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev2Scale != null ? sv().dev.dev2Scale : 1.1), v => { sv().dev.dev2Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験②のモックの拡大率。', { mbKey: 'sections.dev.dev2Scale', fixedMax: true }));
 
   sub(catDev, '基本（長さ）');
