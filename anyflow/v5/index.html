@@ -17134,6 +17134,7 @@ const rows = [];
 function syncPanelRows() {
   for (const r of rows) { if (r && r._sync) r._sync(); }
   body.querySelectorAll('.row').forEach(r => { if (r._sync) r._sync(); });
+  body.querySelectorAll('.txt-row').forEach(r => { if (r._sync) r._sync(); });   /* 【2026-09-21 Y11】フォント行も再sync(スマホモードでSP実サイズを表示し直す) */
 }
 
 /* ===== 【2026-09-15 ヒデさん依頼】グラデーション編集ギズモ(Figma風の棒＋両端ハンドル) =====
@@ -17492,7 +17493,12 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const edBase = () => { if (!params.edits) params.edits = {}; return params.edits[sp.key] || (params.edits[sp.key] = {}); };
   const edMob  = () => { if (!params.editsMb) params.editsMb = {}; return params.editsMb[sp.key] || (params.editsMb[sp.key] = {}); };
   const ed = () => phoneOn() ? edMob() : edBase();
-  const cs = () => { const el = document.querySelector(sp.sel); return el ? getComputedStyle(el) : null; };
+  /* 【2026-09-21 ヒデさん指摘・Y11】スマホモード中は「見えている実サイズ」をプレビュー枠(iframe=SP文脈)から測る。
+     パネルは PC ページなので getComputedStyle は PC サイズを返し、SP プレビューの見た目と食い違っていた。 */
+  const cs = () => {
+    try { if (phoneOn()) { const f = document.getElementById('ppFrame'); if (f && f.contentDocument && f.contentWindow) { const el2 = f.contentDocument.querySelector(sp.sel); if (el2) return f.contentWindow.getComputedStyle(el2); } } } catch (e) {}
+    const el = document.querySelector(sp.sel); return el ? getComputedStyle(el) : null;
+  };
   const apply = () => { try { textTools.applyAll(); textTools.refresh(); } catch (e) {} markDirty(); };
   const wSel = document.createElement('select'); wSel.className = 'txt-w'; wSel.title = '太さ(ウェイト)。自動＝CSSのまま';
   wSel.innerHTML = '<option value="">自動</option>' + [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => `<option value="${w}">${w}</option>`).join('');
@@ -17531,6 +17537,7 @@ st.textContent = '.txt-row{align-items:flex-start}'
     ls.classList.toggle('is-auto', e.ls == null);
   }
   sync();
+  row._sync = sync;   /* 【2026-09-21 Y11】syncPanelRows から再syncできるように(スマホモードでSP実サイズを表示) */
   row.appendChild(box);
   /* 【2026-09-20 ヒデさん依頼】各フォント行に↺リセット。押した時のモードのストア(通常=共有/スマホモード=スマホ上書き)の
      文字設定(サイズ・太さ・行間・字間)だけを消す。位置(dx/dy)やパディングは触らない。
@@ -19633,6 +19640,37 @@ applyHdrMotion();            /* 【V5.0 2026-09-17】ヘッダー変形のイー
 applyKvCopy();               /* 【2026-09-17】ヘッダーが固定(全幅)になった後にロゴ左端を測り直す(KVコピーの左端をロゴに揃える) */
 addEventListener('resize', () => { try { applyKvCopy(); } catch (e) {} try { applyGrid(); } catch (e) {} });
 addEventListener('load', () => { try { applyKvCopy(); } catch (e) {} });
+/* 【2026-09-21 ヒデさん依頼・Y12】スマホプレビュー枠(iframe ?preview=1)を、親の保存(localStorage)に合わせてリアルタイム再適用。
+   同 origin なので storage イベントで受けられる(実機の別origin/SSEとは別経路)。パネルで数値を変える→親が save→iframe が即再描画。 */
+function __previewReapply() {
+  try {
+    var mainText = localStorage.getItem(STORAGE_KEY); if (!mainText) return;
+    var newP = JSON.parse(mainText); if (!newP || typeof newP !== 'object') return;
+    for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; }
+    Object.assign(params, newP);
+    try { var ps = localStorage.getItem('anyflow-gfx-presets'); if (ps) { var stp = JSON.parse(ps); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } } catch (e) {}
+    var C = function (fn) { try { fn(); } catch (e) {} };
+    try { vfMesh = null; } catch (e) {}
+    C(function () { applyKvVariant(kvVarKey(), true); });
+    C(function () { varApplyOverridesAtStartup(); });
+    C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
+    C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
+    C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
+    C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
+    C(function () { if (typeof applySway === 'function') applySway(); });
+    C(function () { if (typeof visApplyGrad === 'function') { visApplyGrad(visGradKey()); if (typeof applyVisGrad === 'function') applyVisGrad(); } });
+    C(function () { if (typeof resApplySlotFx === 'function') resApplySlotFx(resSlotFxKey()); });
+    C(function () { if (typeof applyResProd === 'function') applyResProd(); });
+    C(function () { if (typeof applyMarquee === 'function') applyMarquee(); });
+    C(function () { if (typeof fit === 'function') fit(); });
+    C(function () { renderFrame(); });
+  } catch (e) {}
+}
+window.__previewReapply = __previewReapply;
+addEventListener('storage', function (e) {
+  if (!document.documentElement.classList.contains('pp-inner')) return;   /* プレビューiframeの中だけ反応 */
+  if (e.key === STORAGE_KEY || e.key === 'anyflow-gfx-presets') { try { __previewReapply(); } catch (er) {} }
+});
 bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール監視を設置 */
 bindDrawer();                /* 【V5.0】ハンバーガーのドロワー開閉を設置 */
 applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
@@ -20523,7 +20561,9 @@ document.getElementById('panelBody').addEventListener('click', () => {
     if (document.documentElement.classList.contains('pp-inner')) return;   /* プレビューiframeの中では出さない(再帰回避) */
     if (on) {
       var u = location.pathname + '?preview=1';
-      if ((ppf.getAttribute('src') || '') !== u) ppf.setAttribute('src', u);
+      /* 【2026-09-21 Y11】iframe(SP)読み込み完了後にパネルを再sync＝フォント行の「サイズ」がSP実サイズ(プレビューと一致)を表示するように */
+      ppf.onload = function () { setTimeout(function () { try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e) {} }, 350); };
+      if ((ppf.getAttribute('src') || '') !== u) ppf.setAttribute('src', u); else ppf.onload();
       pp.classList.add('on');
       pp._sc = Math.min(1, (window.innerHeight - 32) / 892);   /* 画面が低い時は枠ごと縮めて収める(bar36+frame844+余白) */
       ppApplyTransform();
