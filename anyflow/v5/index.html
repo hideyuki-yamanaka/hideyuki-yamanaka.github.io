@@ -12562,7 +12562,7 @@ function vfDraw(tSec) {
   const sec = SECS && SECS.vision; if (sec) { const r = sec.getBoundingClientRect(); if (r.bottom < -50 || r.top > (window.innerHeight || 1) + 50) return; }   /* 画面外では描かない */
   const c = vfCfg(); const f = Math.max(1, Math.min(4, Math.round(c.freq)));
   if (!vfMesh || vfMeshFreq !== f) { vfMesh = vfBuild(f); vfMeshFreq = f; }
-  const W = 900, H = 900, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = 900, H = 900, dpr = Math.min((typeof isMobile !== 'undefined' && isMobile) ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】スマホはドームcanvasの解像度を2→1.5に(座標系はdprでスケール＝見た目ほぼ同じ・約44%省ピクセル) */
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
   const cx = VF_CX + 150 + (c.mx || 0), cy = VF_CY + 150 + (c.my || 0), R = c.r * (c.scale != null ? c.scale : 1) * (1 + (c.mz || 0) / 100);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ。mx/my/mz=【2026-09-19】網目だけの XYZ ずらし(Z は %) */
@@ -15030,7 +15030,8 @@ void main(){
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
 
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const _spSP = !!(window.matchMedia && window.matchMedia('(max-width: 600px)').matches);   /* 【2026-09-21】isMobile確定前でも判定できるよう matchMedia で直接。惑星は初期化時に一度サイズ決定→echo-canがそれを基準に作られるため timing 非依存にする */
+  const dpr = Math.min(_spSP ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】惑星canvasの解像度を2→1.5に。残像(echo-can)も惑星幅×2なので連鎖で軽く(1040→780=約44%省) */
   sphereCanvas.width = 260 * dpr;
   sphereCanvas.height = 260 * dpr;
   gl.viewport(0, 0, sphereCanvas.width, sphereCanvas.height);
