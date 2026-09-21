@@ -1901,7 +1901,7 @@
   html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */
   html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: 1; /* 【2026-09-19 ヒデさん依頼】線は数値の上(ピクト→線→数値。PCと同じ並び) */ margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
   html.mb #results.rfx-24 .res2-hr-top, html.mb #results.rfx-25 .res2-hr-top { margin: var(--space-4) 0; }   /* 【2026-09-21 Y9】for SaaS 上の線の下余白(既定56px)を他の線(vline/res2-hr=4px)と統一＝各ボックス上下の余白を揃える(SPのみ・PCは非表示) */
-  html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: var(--space-4); }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
+  html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: 0; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に。【2026-09-21 ヒデさん依頼】線→事業の推進力見出しの余白を他の線と統一(24px→20px。padding-top 4px を除去) */
   html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: row; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: baseline; align-self: stretch; font-size: 18px; line-height: var(--lh-loose); }   /* 【2026-09-20 ヒデさん依頼】「事業の推進力を、Anyflowが支えます。」を1行に(折り返さないようフォントを18pxへ縮小)。旧: 22px 2行 */
   html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: wrap; gap: var(--space-20) var(--space-14); justify-content: flex-start; width: 100%; }   /* 【2026-09-20 ヒデさん依頼】4項目は 2×2 で */
   html.mb #results.rfx-24 .res2-stats .r2s, html.mb #results.rfx-25 .res2-stats .r2s { flex: 0 0 calc(50% - var(--space-14) / 2); box-sizing: border-box; align-items: center; text-align: center; }   /* 【2026-09-20 ヒデさん依頼】SP は見出し＋数値を中央揃え */   /* 2列 */   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
@@ -1914,7 +1914,7 @@
   html.mb #results.rfx-24 .r2v-tag, html.mb #results.rfx-25 .r2v-tag { font-size: var(--fs-base); }
   html.mb #results.rfx-24 .r2v-h, html.mb #results.rfx-25 .r2v-h { font-size: var(--fs-title); line-height: var(--lh-normal); text-align: center; }   /* 【2026-09-19】中央 */   /* 【2026-09-16】V3.0: 22px(--fs-title)左・lh1.6=--lh-normal */
   html.mb #results.rfx-24 .r2v-p, html.mb #results.rfx-25 .r2v-p { font-size: var(--fs-caption); line-height: var(--lh-body); }   /* 【2026-09-16】V3.0: 12px=--fs-caption・lh1.8=--lh-body */
-  html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 220px; transform-origin: center; margin-top: calc(-1 * var(--space-8)); }   /* 【2026-09-16】300→220(V3.0) 【2026-09-21 Y8】ピクト上の余白を少し詰める(-8px) */
+  html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 220px; transform-origin: center; margin-top: calc(-1 * var(--space-12)); }   /* 【2026-09-16】300→220(V3.0) 【2026-09-21 Y8＋ヒデさん依頼】ピクト上(本文→ピクト=青)の余白を詰める(-8px→-12px＝8px→4px) */
   html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: min(300px, calc(100vw - 48px)); height: 224px; position: relative; left: 50%; transform: translateX(-50%); }   /* 【2026-09-16】300→220。【2026-09-21 ヒデさん依頼】ピクトを大きく＋ディスプレイ幅にクランプ＋中央寄せ。【2026-09-21 Y8】もう少し大きく(高さ196→224＝絵は高さ基準でスケールするので約14%大／幅も300/100vw-48へ) */
   html.mb #results.rfx-24 .r2v-big, html.mb #results.rfx-25 .r2v-big { font-size: var(--fs-xl); }
   /* --- 案26(SP): 上段は見出し(29px・2行)と数値(40px)を縦に。線 → 下段は図235×145 上/言葉 下の面が横に動く。数値の拡大は 1.1倍 --- */
@@ -3358,6 +3358,12 @@
   .switcher.closed .sw-head .chev { transform: rotate(180deg); }
   .sw-body { overflow-y: auto; padding: 0 var(--space-12) var(--space-12); flex: 1 1 auto; }
   .switcher.closed .sw-body { display: none; }
+  /* 【2026-09-21 ヒデさん依頼】調整パネルのスクロールバーをコンパクトに(既定の太いバーが値・文字に被って見づらい)。タブ(.pan-tabs)と同じ 6px の細バーに揃える。 */
+  .sw-body, .panel-body { scrollbar-width: thin; scrollbar-color: #cfcfcf transparent; }
+  .sw-body::-webkit-scrollbar, .panel-body::-webkit-scrollbar { width: 6px; }
+  .sw-body::-webkit-scrollbar-thumb, .panel-body::-webkit-scrollbar-thumb { background: #cfcfcf; border-radius: 3px; }
+  .sw-body::-webkit-scrollbar-thumb:hover, .panel-body::-webkit-scrollbar-thumb:hover { background: #b8b8b8; }
+  .sw-body::-webkit-scrollbar-track, .panel-body::-webkit-scrollbar-track { background: transparent; }
   .switcher.closed { resize: none; height: auto !important; width: auto !important; min-width: 200px; }
   .sw-sec {
     border: 1px solid #ececec;
@@ -5890,6 +5896,20 @@ try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-se
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cases-fw-20260918')) { const FW = { cgQuote: 500, cgTag: 400, cgCompany: 400 }; const fx = (o) => { if (!o) return; o.edits = o.edits || {}; for (const k in FW) { o.edits[k] = o.edits[k] || {}; o.edits[k].fw = FW[k]; } }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cases-fw-20260918', '1'); } } catch (e) {}
 /* 【2026-09-19 ヒデさん依頼】ビジョンの図を SVG 書き出しに差し替え: Point の位置ずらしを 0 に(位置は CSS でカンプ座標)、旧図の文字(edits)を掃除 */
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vision-svg-20260919')) { const fx = (o) => { if (!o) return; o.sections = o.sections || {}; o.sections.vision = o.sections.vision || {}; for (const k of ['p1X', 'p1Y', 'p2X', 'p2Y']) o.sections.vision[k] = 0; if (o.edits) for (const k of ['pfTitle', 'pfSub', 'pfNames']) delete o.edits[k]; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-vision-svg-20260919', '1'); } } catch (e) {}
+/* 【2026-09-21 ヒデさん報告・メッシュの濃さ/回転が「効かない」根治】以前の保存値 vision.dome / gfxVarOverride.visMesh が
+   コード既定(VF_DEF)を隠していた(＝lineColor/lineAlpha/spin を変えても保存値が勝って反映されない)。
+   この4キーを保存値から一度だけ剥がして、VF_DEF の新しい値(濃い #5F5F5F・0.85・回転 0.6)が効くようにする。個別の位置(labOff/logoDy等)は残す。 */
+try {
+  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-mesh-dark-spin-20260921')) {
+    const MK = ['lineColor', 'lineAlpha', 'spin', 'spinOn'];
+    const stripDome = (o) => { if (!o || !o.sections || !o.sections.vision) return; const v = o.sections.vision; if (v.dome) MK.forEach(k => delete v.dome[k]); if (v.domeMb) MK.forEach(k => delete v.domeMb[k]); };
+    const stripOver = (ov) => { if (ov && ov.visMesh) { for (const key in ov.visMesh) { const snap = ov.visMesh[key]; if (snap) MK.forEach(k => delete snap[k]); } } };
+    stripDome(params); if (params.gfxVarOverride) stripOver(params.gfxVarOverride);
+    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; stripDome(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
+    try { const ps = JSON.parse(localStorage.getItem('anyflow-gfx-presets')) || {}; if (ps.over) { stripOver(ps.over); localStorage.setItem('anyflow-gfx-presets', JSON.stringify(ps)); } } catch (e) {}
+    localStorage.setItem('anyflow-mesh-dark-spin-20260921', '1');
+  }
+} catch (e) {}
 /* 【2026-09-19 ヒデさん依頼】お問い合わせのグラデの案を1欄に統合: 案が色を持たない(現行/案1〜4)のに色の移ろいだけ残っている保存値は off に */
 try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-onerow-20260919')) { const fx = (o) => { if (!o || !o.cv) return; const sw = String(o.cvSway || '0'); if (['0', '7', '8', '9', '10'].includes(sw) && o.cv.hueMode && o.cv.hueMode !== 'off') o.cv.hueMode = 'off'; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-onerow-20260919', '1'); } } catch (e) {}
 /* 【2026-09-19】ビジョン→実績の詰め幅の既定 200→260(旧既定のままの保存値だけ更新。手で変えた値は触らない) */
@@ -12411,7 +12431,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 const VIS_LOGOS = [
@@ -12477,9 +12497,9 @@ function applyVfFade() {
   const fy = (f) => (VF_CY + (c.my || 0) + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';   /* 網目を上下にずらしたらフェードも一緒に */
   w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
-  const ld = _mb ? 0.72 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる(0.6→0.78)。円の形に沿って外側へ(はみ出さない範囲で) */
+  const ld = _mb ? 0.64 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる。【2026-09-21 ヒデさん依頼】もっと内側へ(0.72→0.64＝実行エンジンが右端で切れないように) */
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
-  const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -22) : 0;   /* 【2026-09-20 #5】SP の持ち上げを控えめに(-95→-22)＝球の上の弧に沿って載せる */
+  const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -28) : 0;   /* 【2026-09-20 #5】SP の持ち上げ。【2026-09-21 ヒデさん依頼】5つの機能名をもう6px上へ(-22→-28) */
   w.querySelectorAll('.vf-lab').forEach((el, i) => {
     const _a = VF_LAB_PC[i] ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC/SP とも左右対称の弧アンカー(中心 VF_CX 基準)。SP も PC 同様に線対称(ヒデさん依頼)。SPは sc*ld で内側へ縮んで収まる */
     const x = _a ? _a.x : +el.dataset.x, y = _a ? _a.y : +el.dataset.y;
@@ -12492,7 +12512,7 @@ function applyVfFade() {
   });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
-  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 72; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中(VF_CX/VF_CY)より50px上に置く(独立)。動かしたい時は logoDx/logoDy のつまみで。SPはさらに上へ(#6 -20→-50=30px上) */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 80; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中より上に(独立)。【2026-09-21 ヒデさん依頼】SPはもう少し上へ(-72→-80) */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
     const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
     const tf3 = '';   /* 【2026-09-20 ヒデさん依頼】ロゴはヘッダーのロゴと同じく常にフラット(傾き0)・メッシュの角度から独立。傾き系(logoTiltX/Y・角度)は無視する。 */ lg.style.transform = tf3;
     lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
@@ -17528,9 +17548,14 @@ st.textContent = '.txt-row{align-items:flex-start}'
     const _mob = (params.editsMb && params.editsMb[sp.key]) || {};
     const e = phoneOn() ? Object.assign({}, _base, _mob) : _base, c = cs();
     const _eff = c ? Math.round(parseFloat(c.fontSize)) : '';
-    fsz.value = e.fs != null ? e.fs : _eff;   /* 【2026-09-19】いまの大きさを入れておく → そこから上下。触っていない間は e.fs 未設定(=CSSのまま) */
+    /* 【2026-09-21 ヒデさん報告・導入事例で「40pxと出るのに見た目が違う」】文字サイズ(fs)は SP(実機 isMobile＝狭幅／スマホモード)では
+       PC(base=edits)の fs を無視して描く(applyAll と同じ)。なのでパネルの表示も SP では base.fs を出さず、SP専用(editsMb.fs)か
+       実際の描画サイズ(_eff)を出す＝「表示値＝見た目」を一致させる。太さ/行間/字間(fw/lh/ls)は共通なので従来どおり e を使う。 */
+    const _isMbRow = (typeof isMobile !== 'undefined' && isMobile) || phoneOn();
+    const _fsShown = _isMbRow ? (_mob.fs != null ? _mob.fs : null) : (e.fs != null ? e.fs : null);
+    fsz.value = _fsShown != null ? _fsShown : _eff;   /* 【2026-09-19】いまの大きさを入れておく → そこから上下。触っていない間は未設定(=CSSのまま) */
     fsz.placeholder = _eff + '';
-    fsz.classList.toggle('is-auto', e.fs == null);   /* 自動(未変更)は薄く */
+    fsz.classList.toggle('is-auto', _fsShown == null);   /* 自動(未変更)は薄く */
     wSel.value = e.fw != null ? String(e.fw) : '';
     wSel.options[0].textContent = c ? `自動(${c.fontWeight})` : '自動';
     /* 【2026-09-20 ヒデさん依頼・#12】lh/ls も「いまの値」を入れておく → そこから上下できる(空欄起点で変な値へ飛ぶのを防ぐ)。触っていない間は e.lh/e.ls 未設定(=CSSのまま)で薄く表示 */
