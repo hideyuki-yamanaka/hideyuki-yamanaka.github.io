@@ -12453,8 +12453,11 @@ const VIS_MESH_SHAPES = [
   { key: 'diamond', name: 'ひし形',            cfg: { msx: 1.12, msy: 1.14, msz: 1.12, mpinch: 0.62 } },
   { key: 'tall',    name: '縦長（プロレート）', cfg: { msx: 0.84, msy: 1.28, msz: 0.84, mpinch: 0 } },
 ];
-function visMeshShapeKey() { const v = String((params.sections.vision && params.sections.vision.meshShape) || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === v) ? v : 'normal'; }
-function visApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, m.cfg); v.meshShape = m.key; try { applyVfFade(); } catch (e) {} }
+/* 【2026-09-21 ヒデさん依頼】ビジョンのメッシュ形状(ノーマル/丸み/横長/ひし形/縦長)を PC/SP で独立に。
+   選んだ形状キー: PC=vision.meshShape / SP(スマホモード)=vision.meshShapeMb。
+   形状の中身(msx/msy/msz/mpinch)は vfSet 経由で書く(PC=dome / SP=domeMb)＝メッシュ調整スライダーと同じ住み家＝連動しない。 */
+function visMeshShapeKey() { const v = params.sections.vision || {}; const sp = (typeof _vfPhoneOn === 'function' && _vfPhoneOn()); const raw = String((sp && v.meshShapeMb != null ? v.meshShapeMb : v.meshShape) || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === raw) ? raw : 'normal'; }
+function visApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.keys(m.cfg).forEach(k => { if (typeof vfSet === 'function') vfSet(k, m.cfg[k]); else v.dome[k] = m.cfg[k]; }); if (typeof _vfPhoneOn === 'function' && _vfPhoneOn()) v.meshShapeMb = m.key; else v.meshShape = m.key; try { applyVfFade(); } catch (e) {} }
 const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
@@ -17687,8 +17690,11 @@ const KV_VARIANTS = [
 const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
 const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread', 'msx', 'msy', 'msz', 'mpinch', 'meshShape'];   /* msx/msy/msz/mpinch/meshShape=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
 /* 【2026-09-21 ヒデさん依頼】KVメッシュの形状(基本のメッシュ)。ビジョンと同じ5案(VIS_MESH_SHAPES を流用) */
-function kvMeshShapeKey() { const M = (params.conv && params.conv.mesh) || {}; const v = String(M.meshShape || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === v) ? v : 'normal'; }
-function kvApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const M = (params.conv.mesh = params.conv.mesh || {}); Object.assign(M, m.cfg); M.meshShape = m.key; try { renderFrame(); } catch (e) {} }
+/* 【2026-09-21 ヒデさん依頼】KVメッシュの形状も PC/SP 独立に。
+   KVメッシュの調整は params.mb['conv.mesh.*']＋applyMbToParams でSPへ流す仕組みなので、形状も同じ経路に乗せる。
+   選んだ形状キー: PC=conv.mesh.meshShape / SP=params.mb['conv.mesh.meshShape']。 */
+function kvMeshShapeKey() { const sp = (typeof _vfPhoneOn === 'function' && _vfPhoneOn()); const mbv = sp && params.mb && params.mb['conv.mesh.meshShape']; const M = (params.conv && params.conv.mesh) || {}; const raw = String((mbv != null ? mbv : M.meshShape) || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === raw) ? raw : 'normal'; }
+function kvApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const M = (params.conv.mesh = params.conv.mesh || {}); const sp = (typeof _vfPhoneOn === 'function' && _vfPhoneOn()); if (sp) { if (!params.mb) params.mb = {}; Object.keys(m.cfg).forEach(k => { params.mb['conv.mesh.' + k] = m.cfg[k]; }); params.mb['conv.mesh.meshShape'] = m.key; try { if (typeof applyMbToParams === 'function') applyMbToParams(); } catch (e) {} } else { Object.assign(M, m.cfg); M.meshShape = m.key; } try { renderFrame(); } catch (e) {} }
 /* 【2026-09-20 ヒデさん依頼・#7】KV要素の「位置移動(dx/dy)・パディング」も案別に独立させる(強調でずらした位置がノーマルに効かないように)。
    文字(fs/fw/lh/ls)は含めない=別系統(editsMb/共通)。対象要素は sec:'kv' の全て。 */
 const KV_VAR_EDIT_ELS = ['navLogo', 'navLinks', 'navCta', 'kvMain', 'kvMainLast', 'kvEyebrow', 'kvLogos'];
