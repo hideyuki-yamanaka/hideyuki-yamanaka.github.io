@@ -1900,6 +1900,7 @@
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track, html.mb #results.rfx-25 .res2-vals, html.mb #results.rfx-25 .r2v-track { display: contents; }
   html.mb #results.rfx-24 .res2-vline, html.mb #results.rfx-25 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */
   html.mb #results.rfx-24 .res2-hr, html.mb #results.rfx-25 .res2-hr { display: block; order: 1; /* 【2026-09-19 ヒデさん依頼】線は数値の上(ピクト→線→数値。PCと同じ並び) */ margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
+  html.mb #results.rfx-24 .res2-hr-top, html.mb #results.rfx-25 .res2-hr-top { margin: var(--space-4) 0; }   /* 【2026-09-21 Y9】for SaaS 上の線の下余白(既定56px)を他の線(vline/res2-hr=4px)と統一＝各ボックス上下の余白を揃える(SPのみ・PCは非表示) */
   html.mb #results.rfx-24 .res2-top, html.mb #results.rfx-25 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: var(--space-4); }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に */
   html.mb #results.rfx-24 .res2-head, html.mb #results.rfx-25 .res2-head { flex-direction: row; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: baseline; align-self: stretch; font-size: 18px; line-height: var(--lh-loose); }   /* 【2026-09-20 ヒデさん依頼】「事業の推進力を、Anyflowが支えます。」を1行に(折り返さないようフォントを18pxへ縮小)。旧: 22px 2行 */
   html.mb #results.rfx-24 .res2-stats, html.mb #results.rfx-25 .res2-stats { flex-wrap: wrap; gap: var(--space-20) var(--space-14); justify-content: flex-start; width: 100%; }   /* 【2026-09-20 ヒデさん依頼】4項目は 2×2 で */
@@ -1913,8 +1914,8 @@
   html.mb #results.rfx-24 .r2v-tag, html.mb #results.rfx-25 .r2v-tag { font-size: var(--fs-base); }
   html.mb #results.rfx-24 .r2v-h, html.mb #results.rfx-25 .r2v-h { font-size: var(--fs-title); line-height: var(--lh-normal); text-align: center; }   /* 【2026-09-19】中央 */   /* 【2026-09-16】V3.0: 22px(--fs-title)左・lh1.6=--lh-normal */
   html.mb #results.rfx-24 .r2v-p, html.mb #results.rfx-25 .r2v-p { font-size: var(--fs-caption); line-height: var(--lh-body); }   /* 【2026-09-16】V3.0: 12px=--fs-caption・lh1.8=--lh-body */
-  html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 220px; transform-origin: center; }   /* 【2026-09-16】300→220(V3.0) */
-  html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: min(288px, calc(100vw - 56px)); height: 196px; position: relative; left: 50%; transform: translateX(-50%); }   /* 【2026-09-16】300→220。【2026-09-21 ヒデさん依頼】ピクトを大きく(288)しつつ、ディスプレイ幅にクランプ(100vw-56)＋中央寄せ(親列220より広くて右にはみ出していたのを是正) */
+  html.mb #results.rfx-24 .r2v-fig, html.mb #results.rfx-25 .r2v-fig { order: 1; align-self: center; width: 220px; transform-origin: center; margin-top: calc(-1 * var(--space-8)); }   /* 【2026-09-16】300→220(V3.0) 【2026-09-21 Y8】ピクト上の余白を少し詰める(-8px) */
+  html.mb #results.rfx-24 .r2v-graphic, html.mb #results.rfx-25 .r2v-graphic { width: min(300px, calc(100vw - 48px)); height: 224px; position: relative; left: 50%; transform: translateX(-50%); }   /* 【2026-09-16】300→220。【2026-09-21 ヒデさん依頼】ピクトを大きく＋ディスプレイ幅にクランプ＋中央寄せ。【2026-09-21 Y8】もう少し大きく(高さ196→224＝絵は高さ基準でスケールするので約14%大／幅も300/100vw-48へ) */
   html.mb #results.rfx-24 .r2v-big, html.mb #results.rfx-25 .r2v-big { font-size: var(--fs-xl); }
   /* --- 案26(SP): 上段は見出し(29px・2行)と数値(40px)を縦に。線 → 下段は図235×145 上/言葉 下の面が横に動く。数値の拡大は 1.1倍 --- */
   html.mb #results.rfx-26 .res2 { width: 100%; padding: 22px 0 12px; }
@@ -16076,7 +16077,13 @@ const VAL_AI = {
 function drawValueIcons() {
   const p = params.patterns || {};
   const _rs = params.sections && params.sections.results;
-  valStrokeMul = (_rs && _rs.pictoW != null) ? _rs.pictoW : 1;   /* 【2026-09-02】ピクト線幅の倍率 */
+  /* 【2026-09-02】ピクト線幅の倍率。【2026-09-21 Y10】スマホは既定を細く(0.6px)。
+     SP専用の上書き(params.mb['sections.results.pictoW'])があればそれを優先＝パネルのSP調整は効いたまま。PCは従来通り(pictoW/1)。 */
+  {
+    const _isMbSw = (typeof isMobile !== 'undefined' && isMobile) || (typeof _vfPhoneOn === 'function' && _vfPhoneOn());
+    const _mbPw = params.mb && params.mb['sections.results.pictoW'];
+    valStrokeMul = _isMbSw ? ((_mbPw != null) ? _mbPw : 0.6) : ((_rs && _rs.pictoW != null) ? _rs.pictoW : 1);
+  }
   /* 【2026-09-08 ヒデさん指定】ピクトの速度をSaaS/AI共通で調整(全バリエーションに適用)。
      時間を一律で伸縮＝どの案も同じテンポ感になる。 */
   const _sp = (_rs && _rs.pictoSpeed != null) ? _rs.pictoSpeed : 1;
@@ -19113,7 +19120,7 @@ function buildPanel() {
     () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
     v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
   /* 【2026-09-18 ヒデさん依頼】ピクトグラムの線の太さ(全ての線幅×倍率) */
-  rows.push(slider('ピクトの線の太さ', 0.5, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。', { mbKey: 'sections.results.pictoW', fixedMax: true }));
+  rows.push(slider('ピクトの線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
   rows.push(slider('→ その他の要素が出る', -0.5, 3, 0.05, () => (sv().results.restGap != null ? sv().results.restGap : 0.1), v => sv().results.restGap = v, v => v.toFixed(2) + '秒',
     'タイピング開始から、区切り線・3数値・2つの価値が出るまでの間。マイナスでタイピングより前に。', { mbKey: 'sections.results.restGap', signed: true }));
   rows.push(slider('見出しの1文字の時間', 0.02, 0.2, 0.005, () => sv().results.charDur, v => sv().results.charDur = v, v => v.toFixed(3) + 's/字',
