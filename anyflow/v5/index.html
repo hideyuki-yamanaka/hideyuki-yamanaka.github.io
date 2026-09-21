@@ -12514,14 +12514,18 @@ function applyVfFade() {
   /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
   const ld = _mb ? 0.64 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる。【2026-09-21 ヒデさん依頼】もっと内側へ(0.72→0.64＝実行エンジンが右端で切れないように) */
   const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
-  const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -38) : 0;   /* 【2026-09-20 #5】SP の持ち上げ。【2026-09-21 ヒデさん依頼】5つの機能名をもう6px上へ(-22→-28)→さらに10px上へ円弧の外に(-28→-38) */
-  const _pcLabLift = _mb ? 0 : -60;   /* 【2026-09-21 ヒデさん依頼】PC/タブレットの機能名を上へ。※ステージが約0.71倍に縮小されるので、ローカル-24では画面上17pxしか動かず「変わってない」に見えた→-60(画面約43px)にして明確に。SPは _mbLabGY で別調整済み。さらに動かす時はパネル「全機能 Y」(labGY)で */
+  const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -120) : 0;   /* 【2026-09-21 ヒデさん依頼】SP のみ機能名セットを矢印(SDK上面が矢印先端)まで上げる。-38→-120(内部scale0.56で画面約-67px＝メッセージ直下)。位置移動はSPのみ・PCには持ち上げを入れない＝PC/SP独立 */
+  /* 【2026-09-21 ヒデさん依頼】位置移動はSPのみ・普通のスケール(画面px)で。PCは元のまま(縮小座標・持ち上げなし)＝PC/SP独立。
+     SPは #vfWrap が pin-stage で縮小(scale)されるので、手動offset(全機能X/Y・個別labOff・SP持ち上げ)に 1/scale を掛けて
+     「値=実際の画面移動px」に換算する。PCは _invSp=1(従来どおり・連動させない)。 */
+  let _invSp = 1;
+  if (_mb) { try { const _st = w.closest && w.closest('.pin-stage'); if (_st) { const _m = new DOMMatrixReadOnly(getComputedStyle(_st).transform); if (_m && _m.a > 0) _invSp = 1 / _m.a; } } catch (e) {} }
   w.querySelectorAll('.vf-lab').forEach((el, i) => {
     const _a = VF_LAB_PC[i] ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC/SP とも左右対称の弧アンカー(中心 VF_CX 基準)。SP も PC 同様に線対称(ヒデさん依頼)。SPは sc*ld で内側へ縮んで収まる */
     const x = _a ? _a.x : +el.dataset.x, y = _a ? _a.y : +el.dataset.y;
     const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0;
-    let lx = VF_CX + (x - VF_CX) * sc * ld + (c.labGX || 0) + ox;
-    const ly = VF_CY + (y - VF_CY) * sc * ld + (c.labGY || 0) + _mbLabGY + _pcLabLift + oy;
+    let lx = VF_CX + (x - VF_CX) * sc * ld + ((c.labGX || 0) + ox) * _invSp;
+    const ly = VF_CY + (y - VF_CY) * sc * ld + ((c.labGY || 0) + _mbLabGY + oy) * _invSp;
     if (_a || _mb) { lx -= el.offsetWidth / 2; }   /* 【2026-09-21】PC/SP とも中心アンカーは幅の半分だけ左へ＝幅が違っても左右対称・円周に沿う */
     el.style.left = lx.toFixed(1) + 'px';
     el.style.top = ly.toFixed(1) + 'px';
