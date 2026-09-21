@@ -16356,9 +16356,43 @@ function fit() {
     fixH('vision', '#valP1, #valP2', 16);   /* 【2026-09-16 ヒデさん依頼】ビジョン末尾の余白=実績「事業の推進力を」の上。85→16(=--space-16。スペーシングガイドライン準拠)。ビジョン上部は意図的なので不変 */
     if (resFxActive() === 'default') fixH('results', '#resVals, .r2v:last-child', 56);   /* 【2026-09-14】案の時は案の CSS/JS が高さを決める */
     fixH('cases', '.cg-cell', 64);
+    try { initSpResultLines(); } catch (e) {}   /* 【2026-09-22】SP: 実績の罫線3本を入場アニメ(左→右トリム・ディレイ)にする */
   });
 }
 fitReady = true;
+/* 【2026-09-22 ヒデさん依頼】SP のみ: 実績の罫線(res2-hr-top / res2-vline / res2-hr の3本)を
+   「ビューポートに入った段階で左→右にパスのトリミング＋3本ディレイ」で出す。
+   軽量化で SP は --rfx-hr/--rfx-vline=1 固定＋rfx-flow で transform:none となり最初から全部表示だった。
+   PC はスクロール駆動(--rfx-hr)のまま＝一切触らない。inline!important で CSS の transform:none !important に勝つ。 */
+let _spLineIO = null;
+function initSpResultLines() {
+  const on = (typeof isMobile !== 'undefined' && isMobile);
+  const res = document.getElementById('results'); if (!res) return;
+  if (_spLineIO) { _spLineIO.disconnect(); _spLineIO = null; }
+  let lines = [].slice.call(res.querySelectorAll('.res2-hr-top, .res2-vline, .res2-hr'))
+    .filter(el => getComputedStyle(el).display !== 'none');
+  if (!on) {   /* PC: 何もしない(万一 inline が付いていたら剥がして従来のスクロール駆動へ) */
+    lines.forEach(el => { ['transform', 'transform-origin', 'transition', 'transition-delay'].forEach(k => el.style.removeProperty(k)); delete el.dataset.lnShown; });
+    return;
+  }
+  lines.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);   /* 上から順にディレイ */
+  lines.forEach((el, i) => {
+    if (el.dataset.lnShown === '1') return;   /* 既に出したものは触らない(リサイズで戻さない) */
+    el.style.setProperty('transform', 'scaleX(0)', 'important');
+    el.style.transformOrigin = 'left center';
+    el.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
+    el.style.transitionDelay = (i * 0.12).toFixed(2) + 's';
+  });
+  _spLineIO = new IntersectionObserver((ents) => {
+    ents.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.style.setProperty('transform', 'scaleX(1)', 'important');   /* 左→右トリム */
+      e.target.dataset.lnShown = '1';
+      _spLineIO.unobserve(e.target);
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -22% 0px' });   /* ビューポートの上寄り78%に入ったら描く */
+  lines.forEach(el => { if (el.dataset.lnShown !== '1') _spLineIO.observe(el); });
+}
 window.addEventListener('resize', fit);
 window.addEventListener('load', fit);
 /* リロードしたら必ずキービジュアルの先頭から。
