@@ -12405,7 +12405,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat' };   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 const VIS_LOGOS = [
@@ -12418,7 +12418,17 @@ const VIS_LOGOS = [
 function vfLogoKey() { const v = String(vfCfg().logoVar || 'flat'); return (VIS_LOGOS.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visLogo', v))) ? v : 'flat'; }
 function vfApplyLogoVariant(key) { const m = VIS_LOGOS.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.logoVar = key; applyVfFade(); }   /* logoOn=ロゴの表示/非表示(2026-09-19 ヒデさん依頼。非表示なら後ろのぼかしも消す) */   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
-const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'depthFade', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH'];
+const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'depthFade', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH', 'msx', 'msy', 'msz', 'mpinch'];   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
+/* 【2026-09-21 ヒデさん依頼】メッシュの形状(基本のメッシュ節)。頂点ワープでシルエットを変える。現状=ノーマル */
+const VIS_MESH_SHAPES = [
+  { key: 'normal',  name: 'ノーマル（現状）',   cfg: { msx: 1,    msy: 1,    msz: 1,    mpinch: 0 } },
+  { key: 'round',   name: '丸み（まるい）',     cfg: { msx: 1.06, msy: 1.02, msz: 1.06, mpinch: 0 } },
+  { key: 'wide',    name: '横長（オブレート）', cfg: { msx: 1.32, msy: 0.78, msz: 1,    mpinch: 0 } },
+  { key: 'diamond', name: 'ひし形',            cfg: { msx: 1.12, msy: 1.14, msz: 1.12, mpinch: 0.62 } },
+  { key: 'tall',    name: '縦長（プロレート）', cfg: { msx: 0.84, msy: 1.28, msz: 0.84, mpinch: 0 } },
+];
+function visMeshShapeKey() { const v = String((params.sections.vision && params.sections.vision.meshShape) || 'normal'); return VIS_MESH_SHAPES.some(m => m.key === v) ? v : 'normal'; }
+function visApplyMeshShape(key) { const m = VIS_MESH_SHAPES.find(x => x.key === key) || VIS_MESH_SHAPES[0]; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, m.cfg); v.meshShape = m.key; try { applyVfFade(); } catch (e) {} }
 const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.5, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#A6A6A6', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
@@ -12517,7 +12527,15 @@ function vfDraw(tSec) {
   const cx = VF_CX + 150 + (c.mx || 0), cy = VF_CY + 150 + (c.my || 0), R = c.r * (c.scale != null ? c.scale : 1) * (1 + (c.mz || 0) / 100);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ。mx/my/mz=【2026-09-19】網目だけの XYZ ずらし(Z は %) */
   const spinOn = !(c.spinOn === 0 || c.spinOn === false);   /* 回転 あり/なし(速さの値は保持) */
   const a = (spinOn ? tSec : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
-  const P = vfMesh.verts.map(v => { const x1 = v[0] * ca + v[2] * sa, z1 = -v[0] * sa + v[2] * ca; const y2 = v[1] * ct - z1 * st, z2 = v[1] * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2]; });
+  /* 【2026-09-21 ヒデさん依頼】メッシュの形状(丸み/横長/ひし形/縦長)。頂点をワープしてから回転・投影する。
+     msx/msy/msz=XYZの伸縮、mpinch=中心をふくらませ極を尖らせる(ひし形) */
+  const _msx = c.msx != null ? c.msx : 1, _msy = c.msy != null ? c.msy : 1, _msz = c.msz != null ? c.msz : 1, _mpinch = c.mpinch || 0;
+  const P = vfMesh.verts.map(v => {
+    let wx = v[0], wy = v[1], wz = v[2];
+    if (_mpinch) { const k = 1 - _mpinch * Math.abs(wy); wx *= k; wz *= k; }   /* 赤道は太く極は細く=ひし形シルエット */
+    wx *= _msx; wy *= _msy; wz *= _msz;
+    const x1 = wx * ca + wz * sa, z1 = -wx * sa + wz * ca; const y2 = wy * ct - z1 * st, z2 = wy * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2];
+  });
   /* 【2026-09-19 ヒデさん依頼】案5: ロゴを球の表面に貼って網目と一緒に回す。貼る点＝今のロゴ中心を球の手前側に投影した点。向きは面の法線(回転→傾き→左右の傾きを網目と同じ順で) */
   if (false && c.logoStick && !(c.logoOn === 0 || c.logoOn === false)) { const lg = document.getElementById('vfLogo'); if (lg) {   /* 【2026-09-20 ヒデさん依頼】ロゴは独立フラット化のため、球に貼り付いて回る(案5)処理は無効化 */
     const sc = (c.scale != null ? c.scale : 1); const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls;
@@ -18783,6 +18801,12 @@ function buildPanel() {
   sub(catVis, 'メッシュ', false);
   note('Figma 18004:38228 のグラフィックをコードで描画(正二十面体を分割した球)。位置は ✏️編集でもドラッグ可。');
   const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfgVal(key), v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true, mbActive: () => { const _v = params.sections.vision; return !!(_v && _v.domeMb && _v.domeMb[key] != null); }, mbClear: () => { const _v = params.sections.vision; if (_v && _v.domeMb) { delete _v.domeMb[key]; applyVfFade(); } } }, o || {})));
+  /* 【2026-09-21 ヒデさん依頼】メッシュの形状バリエーション(丸み/横長/ひし形/縦長・現状=ノーマル)。下の手動つまみで微調整も可 */
+  note('▼ 形状（案）');
+  varRowX('visMeshShape', VIS_MESH_SHAPES, () => visMeshShapeKey(), k => { visApplyMeshShape(String(k)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  vfS('横のふくらみ', 'msx', 0.6, 1.6, 0.02, v => '×' + v.toFixed(2), 'メッシュの横幅。大きいほど横長。');
+  vfS('縦のふくらみ', 'msy', 0.6, 1.6, 0.02, v => '×' + v.toFixed(2), 'メッシュの縦の高さ。大きいほど縦長。');
+  vfS('尖り（ひし形）', 'mpinch', 0, 0.9, 0.02, v => Math.round(v * 100) + '%', '上下の極を尖らせてひし形に。0で球。');
   note('▼ セット（メッシュ＋ロゴ＋機能名）');
   vfS('セットの位置 X', 'dx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セット(メッシュ・ロゴ・機能名)を左右に。Point 01/02 は動きません。PCのみ。0＝いまの位置。', { signed: true });
   vfS('セットの位置 Y', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セットを上下に。Point 01/02 は動きません。既定 +30px 仮置き。');
