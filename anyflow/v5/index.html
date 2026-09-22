@@ -2295,8 +2295,10 @@
        濃い下地を敷いた上に、カンプの白10%を重ねる（見た目はほぼ同じで、後ろは透けない） */
     background: linear-gradient(var(--glass-10), var(--glass-10)),
       linear-gradient(160deg, var(--surface-dark-top) 0%, var(--surface-dark-top) 55%, var(--surface-dark-top) 100%);   /* 2026-09-09: mock-1/2/3→dark-top 統合(high で既にフラット#161616) */
-    backdrop-filter: blur(var(--blur-panel));
-    -webkit-backdrop-filter: blur(var(--blur-panel));
+    /* 【2026-09-22 軽量化】backdrop-filter: blur(75px) を撤去。地色 #161616(不透明)＋白10% を敷いていて後ろは
+       一切透けない＝ぼかしは見えないのに、GPUが毎フレーム75pxのブラーを計算していた(発熱/カクつきの一因)。
+       開発者体験のモックパネルは画面いっぱいで dev 入場時に必ず出るため効果大。すりガラス案(dev-glass)は
+       別要素(.dm-back の filter:blur)で作っており、ここのbackdrop-filterには依存しない=見た目不変。 */
     box-shadow: var(--shadow-mock-panel);
     overflow: hidden;
   }
