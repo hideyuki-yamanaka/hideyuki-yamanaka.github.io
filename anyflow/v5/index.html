@@ -16161,6 +16161,7 @@ function drawValueIcons() {
   if (b) { const f = VAL_AI[p.valAi] || VAL_AI.A1; try { f(b, rfxValT(valTOv.ai, _et)); } catch (e) {} valDone(b); }
 }
 
+let _rafPaused = false;   /* 【2026-09-22】タブ非表示で描画ループを止めているか */
 function frame(ts) {
   try {
     if (lenis) {
@@ -16184,9 +16185,16 @@ function frame(ts) {
     if (!frameErrLogged) { frameErrLogged = true; console.error('[anyflow] 描画中の例外:', e); }
   }
   frameCount++;
-  requestAnimationFrame(frame);   /* ← try の外。絶対に止めない */
+  /* 【2026-09-22 ヒデさん依頼】タブが見えていない時(別タブ/最小化/アプリ切替)は描画ループを止める＝
+     放置中の連続レンダリング(canvas×3＋WebGL＋毎フレーム更新)による発熱・電力の無駄を断つ。
+     復帰は visibilitychange で。時間(elapsed)は止めている間は進めず、戻った瞬間の dt 飛びは lastTs リセットで吸収。 */
+  if (document.hidden) { _rafPaused = true; return; }
+  requestAnimationFrame(frame);   /* ← try の外。絶対に止めない(表示中は) */
 }
 requestAnimationFrame(frame);
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden && _rafPaused) { _rafPaused = false; lastTs = null; requestAnimationFrame(frame); }   /* 復帰: lastTs=null で時間の飛びを防いでから再開 */
+});
 renderFrame();
 
 /* デバッグ用フック（rAFが動かない環境で手動で時間を進める） */
