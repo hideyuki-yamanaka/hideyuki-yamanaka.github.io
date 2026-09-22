@@ -24461,6 +24461,20 @@
     "lastCheckedAt": "2026-08-02T05:28:56.898Z"
   },
   {
+    "id": "307cf096cc87",
+    "title": "日東紅茶100周年特設サイト | NITTOH 100 PICNIC",
+    "url": "https://100th.nittoh-tea.com/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260922_01-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "食品・飲料"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-22T03:22:34.493Z"
+  },
+  {
     "id": "151a507bff67",
     "title": "Tanica",
     "url": "https://tanica.jp/",
@@ -28639,22 +28653,6 @@
     "firstSeen": "2026-06-13T04:08:32.368Z",
     "isDead": true,
     "lastCheckedAt": "2026-08-02T05:29:20.589Z"
-  },
-  {
-    "id": "2515e61a7c59",
-    "title": "株式会社LITS",
-    "url": "https://lits-jp.com/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/20251212_01-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "企業サイト・事務所・ビジネス"
-    ],
-    "taste": [],
-    "date": "2025-12",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:29:19.982Z"
   },
   {
     "id": "931c3ccddeda",
@@ -43293,6 +43291,24 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:31:36.155Z"
+  },
+  {
+    "id": "9103c0c3bfb2",
+    "title": "株式会社LITS",
+    "url": "https://lits-jp.com/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/12/251222-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "コーポレートサイト",
+      "人材"
+    ],
+    "taste": [],
+    "agency": "Will Style",
+    "date": "2025-12",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-08-02T05:29:19.982Z"
   },
   {
     "id": "f4a40ad78122",
