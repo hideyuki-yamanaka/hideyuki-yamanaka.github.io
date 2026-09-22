@@ -17647,7 +17647,7 @@ st.textContent = '.txt-row{align-items:flex-start}'
   /* 【2026-09-21 ヒデさん指摘・Y11】スマホモード中は「見えている実サイズ」をプレビュー枠(iframe=SP文脈)から測る。
      パネルは PC ページなので getComputedStyle は PC サイズを返し、SP プレビューの見た目と食い違っていた。 */
   const cs = () => {
-    try { if (phoneOn()) { const f = document.getElementById('ppFrame'); if (f && f.contentDocument && f.contentWindow) { const el2 = f.contentDocument.querySelector(sp.sel); if (el2) return f.contentWindow.getComputedStyle(el2); } } } catch (e) {}
+    try { if (phoneOn()) { const f = document.getElementById('ppFrame'); if (f && f.contentDocument && f.contentWindow) { const el2 = f.contentDocument.querySelector(sp.sel); if (el2) return f.contentWindow.getComputedStyle(el2); } return null; /* 【2026-09-22】スマホモード中はSPプレビュー(iframe)からのみ読む。iframe未ロード時に親(=PC表示)の値を誤って拾わない(拾うと入力がPC値へ飛ぶ) */ } } catch (e) {}
     const el = document.querySelector(sp.sel); return el ? getComputedStyle(el) : null;
   };
   const apply = () => { try { textTools.applyAll(); textTools.refresh(); } catch (e) {} markDirty(); };
@@ -17677,18 +17677,18 @@ st.textContent = '.txt-row{align-items:flex-start}'
        実際の描画サイズ(_eff)を出す＝「表示値＝見た目」を一致させる。太さ/行間/字間(fw/lh/ls)は共通なので従来どおり e を使う。 */
     const _isMbRow = (typeof isMobile !== 'undefined' && isMobile) || phoneOn();
     const _fsShown = _isMbRow ? (_mob.fs != null ? _mob.fs : null) : (e.fs != null ? e.fs : null);
-    fsz.value = _fsShown != null ? _fsShown : _eff;   /* 【2026-09-19】いまの大きさを入れておく → そこから上下。触っていない間は未設定(=CSSのまま) */
+    fsz.value = _fsShown != null ? _fsShown : (c ? _eff : fsz.value);   /* 【2026-09-19】いまの大きさを入れておく → そこから上下。触っていない間は未設定(=CSSのまま)。【2026-09-22】cs()がnull(スマホモードでiframe未ロード)なら現在値を保持=PC値へ飛ばさない */
     fsz.placeholder = _eff + '';
     fsz.classList.toggle('is-auto', _fsShown == null);   /* 自動(未変更)は薄く */
     wSel.value = e.fw != null ? String(e.fw) : '';
     wSel.options[0].textContent = c ? `自動(${c.fontWeight})` : '自動';
     /* 【2026-09-20 ヒデさん依頼・#12】lh/ls も「いまの値」を入れておく → そこから上下できる(空欄起点で変な値へ飛ぶのを防ぐ)。触っていない間は e.lh/e.ls 未設定(=CSSのまま)で薄く表示 */
     const _lhCur = c ? ((parseFloat(c.lineHeight) && parseFloat(c.fontSize)) ? +(parseFloat(c.lineHeight) / parseFloat(c.fontSize)).toFixed(2) : '') : '';
-    lh.value = e.lh != null ? e.lh : _lhCur;
+    lh.value = e.lh != null ? e.lh : (c ? _lhCur : lh.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
     lh.placeholder = _lhCur + '';
     lh.classList.toggle('is-auto', e.lh == null);
     const _lsCur = c ? (c.letterSpacing === 'normal' ? 0 : +parseFloat(c.letterSpacing).toFixed(1)) : '';
-    ls.value = e.ls != null ? e.ls : _lsCur;
+    ls.value = e.ls != null ? e.ls : (c ? _lsCur : ls.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
     ls.placeholder = _lsCur + '';
     ls.classList.toggle('is-auto', e.ls == null);
   }
@@ -20233,9 +20233,11 @@ const textTools = (() => {
     if (!params.edits) params.edits = {};
     /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ「スマホ上書き(editsMb)」を共有(edits)に重ねる。
        PCでは editsMb を一切見ない＝スマホモードでいじった値がPCに出ない。 */
-    /* 【2026-09-20 ヒデさん報告修正】スマホモード(phone-mode)中も editsMb を重ねる＝いじった値がその場でプレビューに反映され、実機にも同期される。
-       (旧: 実機 isMobile の時だけ重ねていたので、スマホモードでいじっても画面が変わらなかった) */
-    const _isMb = (typeof isMobile !== 'undefined' && isMobile) || (typeof _vfPhoneOn === 'function' && _vfPhoneOn());
+    /* 【2026-09-22 ヒデさん報告・PC/SP連動の根治】スマホモード(phone-mode)中は editsMb を「この親ページ(=PC表示)」には重ねない。
+       重ねると PC ページの文字が SP の値に化けて「PCとSPが連動して見える」＋パネル入力(SP値)と食い違う原因になっていた。
+       SP のプレビューは右下の実機プレビュー枠(#phonePreview の iframe＝?preview=1・isMobile=true でSPとして描画)と、
+       ライブ同期した実機が担う。よって適用は「実機 isMobile の時だけ」に戻す＝PCページは常に PC(edits)のまま。 */
+    const _isMb = (typeof isMobile !== 'undefined' && isMobile);
     const _mb = (_isMb && params.editsMb) ? params.editsMb : null;
     for (const sp of SPEC) {
       const _base = params.edits[sp.key] || {};
