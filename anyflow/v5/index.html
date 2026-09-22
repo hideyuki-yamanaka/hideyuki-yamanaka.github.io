@@ -10782,12 +10782,23 @@ function patternDeg(d, i, p) {
   return orbitEase(d.angle + p.offset + base * p.speed * wt + jitter);
 }
 
+let _kvPrevVis = true;   /* 【2026-09-22】KVグラフィックが前フレーム画面内だったか(復帰時の dt リセット判定) */
 function renderFrame() {
   frameSeq++;   /* このフレームぶんの矩形キャッシュを新しくする */
   /* resize イベントを取りこぼす環境があるので、寸法が変わっていたら組み直す
      (fit() の準備が済むまでは呼ばない) */
   if (fitReady && window.innerWidth > 0 &&
       (window.innerWidth !== lastFitW || window.innerHeight !== lastFitH)) fit();
+  /* 【2026-09-22 ヒデさん依頼・軽量化】KVグラフィック(WebGLのsphere描画＋軌道SVG＋ドット毎フレームsetAttribute＋net3d物理)は
+     重い。ヒーローが画面外(vision以降=実績・開発者体験・お問い合わせ)では丸ごと省く＝SPの発熱/カクつきの主因を断つ。
+     時間(elapsed)駆動なので、戻ってきたら即正しい状態に復帰。積算(convGlow/charge)の dt 飛びだけ convLastT リセットで吸収。
+     ビジョンのメッシュ(vfDome)・お問い合わせ(cvCanvas)は既に各自で画面外ゲート済み。 */
+  if (typeof sphereCanvas !== 'undefined' && sphereCanvas) {
+    const _kr = rectOf(sphereCanvas), _vh = window.innerHeight || 0;
+    const _kvVis = !(_kr.bottom < -120 || _kr.top > _vh + 120);
+    if (!_kvVis) { _kvPrevVis = false; updateSections(); if (editHandles.on) editHandles.place(); return; }
+    if (!_kvPrevVis) { convLastT = elapsed; _kvPrevVis = true; }   /* 画面内へ復帰: dt をリセットしてグロー等の飛びを防ぐ */
+  }
   const geoms = { outer: orbitGeom('outer'), inner: orbitGeom('inner') };
   convFrame(geoms);   /* 惑星への集約アニメ (①②④⑩)。geoms・convDotF/A を書き換える */
   /* 輪の表示オンオフ(パネル) × reelの吸収の濃さを合成して書く (2026-08-26 ヒデさん指定) */
