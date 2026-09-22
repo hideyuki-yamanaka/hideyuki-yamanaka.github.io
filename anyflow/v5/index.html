@@ -3211,15 +3211,16 @@
     /* カンプSP node16534:22648: カードは padding 40/24・写真→文章 16・上下 1px #acacac の罫線。
        カード同士は隙間なく積む(452+450)。2枚目以降は上罫線を持たない(罫線の二重化を避ける＝カンプの 452/450 差) */
     .cg-cell { position: static; left: auto; top: auto; width: 100%; height: auto;
-               display: flex; flex-direction: column; gap: var(--space-16); padding: var(--space-40) var(--space-24);
-               border-bottom: 1px solid var(--line-grid); }   /* --line-grid = #ACACAC(カンプの罫線色と同値) */
+               display: flex; flex-direction: column; gap: var(--space-16); padding: var(--cg-pad-y, 24px) var(--space-24);
+               border-bottom: 1px solid var(--line-grid); }   /* --line-grid = #ACACAC。【2026-09-22 ヒデさん依頼】カード上下パディングを詰める＋調整パネルで可変に(既定 40→24px。--cg-pad-y は applyCasesPad が設定) */
     /* 1枚目の上罫線: .case-grid の先頭には隠し罫線要素(#cgH0〜/.cg-vline)があり :first-child が効かないので、グリッド自体の上辺に引く */
     .case-grid { border-top: 1px solid var(--line-grid); }
     html.mb #cases.cl-1 .case-grid { border-top: none; }   /* 【2026-09-16 ヒデさん依頼】罫線なしのスマホでは上の線を出さない */
     html.mb #cases.cl-1 .cg-cell { border-bottom: none; }   /* 同・カード下の線も出さない */
     .cg-img { flex: none; width: 100%; height: 228px; border-radius: 0; overflow: hidden; }   /* カンプSP: サムネに角丸なし(2026-09-09 ヒデさん指定) */
     .cg-img img { width: 100%; height: 100%; object-fit: cover; }
-    .cg-body { gap: var(--space-16); }                                        /* カンプSP node16534:22650: 引用→メタ 16 */
+    .cg-body { gap: 14px; }                                                   /* 【2026-09-22 ヒデさん依頼】一言→タグ/社名の余白を詰める(実効24→14。旧 var(--space-16)=16は下の data-ds=high 24px に負けて死んでいた) */
+    html[data-ds="high"] .cg-body { gap: 14px; }                              /* 772行 html[data-ds=high]{gap:24px} を SP で上書き(同特異度・後勝ち) */
     .cg-quote { font-size: 14px; line-height: var(--lh-body); }      /* 【2026-09-22 ヒデさん依頼】一言を今より小さく(カンプ16px→14px・仮置き)。SP(phone≤600)のみ。実描画も16→14になる(パネル表示も14。SPモードのfsで更に微調整可=editsMb.cgQuote.fs) */
     .cg-meta { display: flex; flex-direction: column; gap: var(--space-8); }   /* カンプSP node16534:22652: タグ→社名 8 */
     /* .cg-tag はスマホ用の上書きなし: PC の base(Light 10px / 枠 0.5px / padding 1×10)がそのままカンプSP node16534:22653 と一致 */
@@ -14864,7 +14865,18 @@ setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
 setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof applyVisEmph === 'function') applyVisEmph(); } catch (e) {}   /* 【2026-09-20】ビジョンのバリエーション(強調/デフォルト)を焼き込み/保存値で組み直す */ try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
-function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {}   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+/* 【2026-09-22 ヒデさん依頼】導入事例カードの上下パディング(スマホ)を調整パネルから可変に。--cg-pad-y を設定。
+   SP の .cg-cell だけが読む(PCのカードは別レイアウトで未使用)ので PC の見た目には影響しない。値は
+   params.sections.cases.cardPadY(SPは params.mb 経由で applyMbToParams が流し込む)。既定24px。 */
+function applyCasesPad() {
+  try {
+    const c = params.sections && params.sections.cases;
+    const v = (c && c.cardPadY != null) ? c.cardPadY : 24;
+    document.documentElement.style.setProperty('--cg-pad-y', Math.round(v) + 'px');
+  } catch (e) {}
+}
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {} try { applyCasesPad(); } catch (e) {}   /* 【2026-09-22】SP上書き後、カードの上下パディングも取り直す */   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+applyCasesPad();   /* 【2026-09-22】起動時に --cg-pad-y の既定を入れる(PC/SP共通・PCは未使用) */
 
 function updateKV() {
   const c = params.kv, t = elapsed;
@@ -19546,6 +19558,11 @@ function buildPanel() {
     '1枚目が出はじめてから次のカードが出はじめるまでの間。同じ行の2枚はこの間隔で前後します。下の行が遅れて画面に入った分は差し引かれます。', { mbKey: 'sections.cases.cardStagger' }));
   rows.push(slider('1枚が出きるまで', 0.05, 1, 0.02, () => sv().cases.cardDur, v => sv().cases.cardDur = v, v => v.toFixed(2),
     '1枚がぼけから出きるまでの長さ。', { mbKey: 'sections.cases.cardDur' }));
+
+  /* 【2026-09-22 ヒデさん依頼】カードの上下パディング(スマホ)。カードが縦積みなので、この値×2＝カード間の余白。詰めるとカードが近づく。--cg-pad-y へ */
+  sub(catCase, 'カード（スマホ）', null, { grp: 'basic' });
+  rows.push(slider('上下パディング', 4, 48, 2, () => (sv().cases.cardPadY != null ? sv().cases.cardPadY : 24), v => { sv().cases.cardPadY = v; applyCasesPad(); markDirty(); }, v => Math.round(v) + 'px',
+    'スマホの導入事例カードの上下の余白。カードは縦積みなので、この値×2 がカード同士の隙間になります。詰めるとカードが近づきます。既定24px。', { mbKey: 'sections.cases.cardPadY', grp: 'basic' }));
 
   /* 【2026-08-30 ヒデさん指定】カードのホバーは「パスのトリミング(trim)」固定(既定)。選択UIは廃止。
      ホバーは case-grid の data-hover(= params.patterns.caseHover)で常に適用される。 */
