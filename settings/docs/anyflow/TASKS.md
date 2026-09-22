@@ -9,8 +9,10 @@
 | A | 実績の罫線アニメがSPで消えて最初から全表示→PC同様「ビューポート入場で左→右トリム・3本ディレイ」に | ✅ commit 2ec5560c。SPだけ IntersectionObserver で scaleX(0→1・左origin)、0/0.12/0.24s ディレイ。inline!importantで rfx-flow の transform:none!important に勝つ。PCはスクロール駆動のまま(inline未設定=無傷)。実測: 入場前scaleX0/入場後scaleX1・エラー0 |
 | B | 導入事例カードの一言が調整パネル16pxだが「多分そうではない」＝再調査＋もう少し小さく | ✅ commit 0081d680。**再調査結果: 実際に16pxだった(パネルと一致・ズレ無し)**。その上で SP(phone≤600)の .cg-quote を 16→14px(仮置き)。タブレット/PCは16px不変。SPモードのfsで微調整可。実測: SP390=14/タブ900=16/PC1440=16 |
 | C | 開発者体験(黒背景)入場でヘッダー白反転が「ワンテンポ遅い」 | ✅ commit 9e85a857。真因=幾何条件 dr.top<=44(背景が暗転しきっても devTop=0 まで待ち約480px遅れ)。→ 背景の暗さ devDarkK>=0.5 で反転(暗転と同期)。PC/SP共通。実測: 遅れ 480→**0px**・logoW=1・エラー0。FIXLOG追記 |
+| D | SPで開発者体験(黒)あたりから動作が「のっそり」→軽量化 | ✅ commit 613c21dd/d16bc920。①renderFrameのKVグラフィック(WebGL sphere+軌道SVG+ドット毎フレームsetAttribute+net3d)が画面外(vision以降)でも回っていた→#sphereの画面位置で丸ごとスキップ ②開発者体験モックパネルの無駄な backdrop-filter:blur(75px)(不透明パネルで見えない)撤去。実測: devの最悪フレーム 19.8→**10.4ms**(スパイク消滅)・エラー0。FIXLOG追記 |
+| E | 最近の実装活動をグラフ化(クレジット消費/PC発熱の分析・サイトとは別) | ✅ アーティファクト「開発負荷カルテ」公開 https://claude.ai/artifact/FPqgq6xGoeStDPBqDwj7qG 。git履歴+ps実測: 本体20,834行/1.8MB(1読≈48万tok)=クレジット主因、Chrome~100%CPU+SkyLight46%=発熱主因(サイト連続描画)。改善候補: タブ非表示で描画停止/1ファイル分割/不要タブ整理/検証束ね |
 
-→ 3件とも main に push。**未デプロイ**(ヒデさんの「デプロイ」待ち)。
+→ A〜D は main に push。**未デプロイ**(ヒデさんの「デプロイ」待ち)。E はリポジトリ外の成果物(アーティファクト)。
 
 ## 2026-09-21 SP微調整＋「、」重なり根治＋SP軽量化（T1〜T8・デプロイ済み）
 
