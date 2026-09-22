@@ -1,5 +1,47 @@
 [
   {
+    "id": "4314fc1395e9",
+    "title": "大妻女子大学 受験生サイト",
+    "url": "https://www.owu-style.otsuma.ac.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/owustyle_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-22T16:24:17.557Z"
+  },
+  {
+    "id": "030157d2aeb2",
+    "title": "採用サイト | 越前信用金庫",
+    "url": "https://www.shinkin.co.jp/echishin/recruit/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/echishinrecruit_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-08-05T02:51:18.906Z"
+  },
+  {
+    "id": "9902992ff1cf",
+    "title": "越前信用金庫 えちしん",
+    "url": "https://www.shinkin.co.jp/echishin/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/echishin_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-08-05T02:51:18.906Z"
+  },
+  {
     "id": "55ca3d5c7c1b",
     "title": "A Bite Coffee",
     "url": "https://a-bite-coffee.com/",
@@ -10441,9 +10483,9 @@
     "lastCheckedAt": "2026-08-02T05:26:00.805Z"
   },
   {
-    "id": "80e09804ebee",
+    "id": "69f57b39f3c0",
     "title": "ソフトウェア採用サイト | 株式会社デンソー – DENSO",
-    "url": "https://careers.denso.com/software/",
+    "url": "https://www.denso.com/jp/ja/careers/software/",
     "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/densosoftware_t-400x350.jpg",
     "source": "sankou",
     "category": [
@@ -10452,9 +10494,7 @@
     "taste": [],
     "date": "2025-06",
     "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:26:01.707Z"
+    "firstSeen": "2026-09-22T16:24:17.557Z"
   },
   {
     "id": "9e2ae624473b",
@@ -14988,22 +15028,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-04-29T14:49:33.354Z"
-  },
-  {
-    "id": "0d83c0cb1526",
-    "title": "brand | kyu",
-    "url": "https://kyu-core.com/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/kyu_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2024-12",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:27:05.949Z"
   },
   {
     "id": "ec035c29cb8d",
@@ -19575,9 +19599,9 @@
     "lastCheckedAt": "2026-08-02T05:28:02.420Z"
   },
   {
-    "id": "196a6af3df18",
+    "id": "b59d21008835",
     "title": "スロー就活サイト【CareerPod】",
-    "url": "https://careerpod.jp/",
+    "url": "https://career.concord-academy.co.jp/",
     "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/CareerPod_t-400x350.jpg",
     "source": "sankou",
     "category": [
@@ -19586,9 +19610,7 @@
     "taste": [],
     "date": "2024-06",
     "starred": false,
-    "firstSeen": "2026-06-07T04:20:55.700Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:28:01.659Z"
+    "firstSeen": "2026-09-22T16:24:17.557Z"
   },
   {
     "id": "740a9a999438",
@@ -20412,22 +20434,6 @@
     "firstSeen": "2026-06-07T04:20:55.700Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:28:12.393Z"
-  },
-  {
-    "id": "34e8f8766e29",
-    "title": "コタエル信託",
-    "url": "https://trust.kotaeru.co.jp/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/kotaeru_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2024-05",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:28:14.256Z"
   },
   {
     "id": "bda73abddd0c",
@@ -23471,6 +23477,20 @@
     "lastCheckedAt": "2026-08-02T05:28:51.511Z"
   },
   {
+    "id": "0f918135ebd5",
+    "title": "SCRAMBLE LABEL",
+    "url": "https://scramblelabel.jp/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/19-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "music"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-22T16:24:17.557Z"
+  },
+  {
     "id": "5ae588af0405",
     "title": "Aspen Search",
     "url": "https://www.aspensearch.com/",
@@ -23837,20 +23857,6 @@
     "date": "2026-08",
     "starred": false,
     "firstSeen": "2026-08-19T01:27:23.017Z"
-  },
-  {
-    "id": "85280bcbd241",
-    "title": "採用サイト｜越前信用金庫",
-    "url": "https://www.shinkin.co.jp/echishin/recruit/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/08/12-768x576.webp",
-    "source": "muuuuu",
-    "category": [
-      "finance"
-    ],
-    "taste": [],
-    "date": "2026-08",
-    "starred": false,
-    "firstSeen": "2026-08-05T02:51:18.906Z"
   },
   {
     "id": "596dd57604b1",
@@ -24445,20 +24451,18 @@
     "lastCheckedAt": "2026-08-02T05:28:58.375Z"
   },
   {
-    "id": "d8a54fe755df",
-    "title": "/zeroz（ゼロズ）公式サイト",
-    "url": "https://otsuka-air.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/06/19.webp",
-    "source": "muuuuu",
+    "id": "cf2d0920996f",
+    "title": "ねこふる",
+    "url": "https://necofuru.com/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260922_02-498x328.jpg",
+    "source": "webdesignclip",
     "category": [
-      "black"
+      "動物・ペット"
     ],
     "taste": [],
-    "date": "2026-06",
+    "date": "2026-09",
     "starred": false,
-    "firstSeen": "2026-06-19T04:49:38.362Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:28:56.898Z"
+    "firstSeen": "2026-09-22T16:24:17.557Z"
   },
   {
     "id": "307cf096cc87",
@@ -25563,6 +25567,22 @@
     "firstSeen": "2026-06-26T04:07:03.517Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:30:58.402Z"
+  },
+  {
+    "id": "08742db8dab7",
+    "title": "/zeroz（ゼロズ） | 大塚製薬",
+    "url": "https://otsuka-air.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260625_03-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "美容・健康・化粧品"
+    ],
+    "taste": [],
+    "date": "2026-06",
+    "starred": false,
+    "firstSeen": "2026-06-19T04:49:38.362Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-08-02T05:28:56.898Z"
   },
   {
     "id": "e3accb306cdb",
@@ -28637,22 +28657,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:31:35.268Z"
-  },
-  {
-    "id": "5a8a0771de64",
-    "title": "塚地建築",
-    "url": "https://tsukaji-kenchiku.com/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/20251212_02-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "建築・住宅・不動産・オフィス"
-    ],
-    "taste": [],
-    "date": "2025-12",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": true,
-    "lastCheckedAt": "2026-08-02T05:29:20.589Z"
   },
   {
     "id": "931c3ccddeda",
@@ -45655,6 +45659,26 @@
     "firstSeen": "2026-09-19T15:30:07.693Z"
   },
   {
+    "id": "6fc7a6679d0f",
+    "title": "brand｜kyu",
+    "url": "https://kyu-core.com/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/02/250217-1-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "家電",
+      "電子機器",
+      "通信"
+    ],
+    "taste": [],
+    "date": "2025-02",
+    "starred": false,
+    "firstSeen": "2026-04-19T11:40:43.578Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-08-02T05:27:05.949Z"
+  },
+  {
     "id": "b173708b10e4",
     "title": "株式会社Canvas｜VUCA時代に求められるのはチームビルディング力",
     "url": "https://buildoor.net/",
@@ -49736,23 +49760,6 @@
     "date": "2026-09",
     "starred": false,
     "firstSeen": "2026-08-09T02:07:16.152Z"
-  },
-  {
-    "id": "8c2fa61ee80e",
-    "title": "越前信用金庫",
-    "url": "https://www.shinkin.co.jp/echishin/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ns7e1coqb59g-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "BtoCコーポレートサイト",
-      "金融･証券･保険･流通"
-    ],
-    "taste": [
-      "アイコン･ピクトグラム"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-08-05T02:51:18.906Z"
   },
   {
     "id": "81bd56d7383d",
