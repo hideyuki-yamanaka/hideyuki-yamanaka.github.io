@@ -10900,7 +10900,7 @@ function applySway() {
      中央合わせは margin-left = −(915.483×scale)/2 を JS で同期。コピーとの間隔は .headline top で別途拡大。 */
   const KV_MB_SCALE = 0.53;
   const ob = isMobile ? ` scale(${KV_MB_SCALE})` : '';
-  if (isMobile) swayEls.orbit.style.marginLeft = (-(915.483 * KV_MB_SCALE) / 2).toFixed(1) + 'px';
+  if (isMobile) swayEls.orbit.style.marginLeft = (-(915.483 * KV_MB_SCALE) / 2 - 4.9).toFixed(1) + 'px';   /* 【2026-09-23 ヒデさん指摘】SPでメッシュ(ケージ＋惑星)が画面中央より約+4.9px右にズレていた(設計フレーム915.483の中心と、実際のケージ描画中心がズレているため)。実測に基づき左へ4.9px補正して中央に。実測: 惑星中心199.9→195 */
   /* 【2026-09-09 ヒデさん指定】静的モバイル: ゆらぎ(sway)も止める＝KVグラフィックが揺れて動くのを解消。 */
   const swayOrbit = isMobile ? '' : orbit;
   swayEls.orbit.style.transformStyle = '';
