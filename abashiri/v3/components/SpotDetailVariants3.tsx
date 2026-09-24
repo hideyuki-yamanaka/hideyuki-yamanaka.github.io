@@ -464,6 +464,18 @@ function TocLayout({
   const heroWhite = useTransform(scrollY, [0, fadeIn, fadeOut], [0, 0, 1]);
   /* ぼかすと縁が透けるので、わずかに拡大して縁を画面の外へ逃がす */
   const heroScale = useTransform(scrollY, [0, fadeOut], [1, 1.06]);
+  /* 【2026-09-25 ヒデさん指示】
+       「最初は前面に写真が見えていて、一スクロールするともう白い画面に
+         切り替わる。スクロールで（本文が）上がってくる感じではなくす」
+     → 写真レイヤーを【前面(z-20)】に置き、白くしてから【その場で消す】。
+       裏では本文が定位置に控えていて、写真が消えた瞬間に切り替わって現れる。
+       消すのは白くなりきったあと（0.82→1.0）にして、本文が動く様子は
+       前面の写真で隠す。＝「上がってくる」ではなく「切り替わる」。 */
+  const heroOpacity = useTransform(
+    scrollY,
+    [0, span * 0.82, span * 1.0],
+    [1, 1, 0]
+  );
 
   /* ヘッダー（ナビ・サウンド）の色を、この案が自分で決めて知らせる。
      【2026-09-24 実測で判明した不具合】
@@ -517,7 +529,14 @@ function TocLayout({
                 させている】から。トップページのように body ごと拡大している画面では
                 fixed は使えない（ズレる）。詳細ページ専用の手。
              ⚠️ z-0（いちばん奥）。白い面は z-10 で手前に重なる。 */}
-          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+          <motion.div
+            className={`pointer-events-none fixed inset-0 overflow-hidden ${
+              /* blur案は写真を【前面】に置いて、白化→消滅で裏の本文へ切り替える。
+                 案36 は写真が奥(z-0)で、白い面が手前(z-10)に乗り上げる */
+              blurHero ? "z-20" : "z-0"
+            }`}
+            style={blurHero ? { opacity: heroOpacity } : undefined}
+          >
             {/* blur モードのときだけ、写真そのものをぼかして白へ寄せる。
                 【2026-09-24 ヒデさん指示】
                   「ファーストビュー自体がブラーで白に変化していくことで、
@@ -558,10 +577,13 @@ function TocLayout({
             <div
               className={
                 blurHero
-                  ? "absolute inset-x-0 h-[46dvh] bg-gradient-to-t from-transparent via-black/45 to-transparent"
+                  ? /* 写真が fixed で全面に見えているので、地名は画面の下部に置く。
+                       影も下部（下ほど濃く・上は透明）にして、地名を読ませる。
+                       下端は画面の端なので切れ目は出ない（2026-09-25 スマホの
+                       地名が中央に来ていたのを、写真フル前提の下部固定に） */
+                    "absolute inset-x-0 bottom-0 h-[42dvh] bg-gradient-to-t from-black/50 via-black/18 to-transparent"
                   : "absolute inset-x-0 bottom-[40dvh] h-[26dvh] bg-gradient-to-t from-black/55 via-black/28 to-transparent lg:hidden"
               }
-              style={blurHero ? { top: "calc(var(--dt-fv) - 23dvh)" } : undefined}
             />
             {blurHero && (
               /* 白の膜。写真の上に重ねて、だんだん真っ白にする */
@@ -578,17 +600,14 @@ function TocLayout({
             <motion.div
               className={
                 blurHero
-                  ? "absolute inset-x-0 px-6 pb-[28px] lg:px-[120px] lg:pb-[120px]"
+                  ? "absolute inset-x-0 bottom-[9dvh] px-6 lg:bottom-[10dvh] lg:px-[120px]"
                   : "absolute inset-x-0 bottom-[40dvh] px-6 pb-[28px] lg:bottom-0 lg:px-[120px] lg:pb-[120px]"
               }
-              style={{
-                opacity: titleO,
-                ...(blurHero ? { bottom: "calc(100dvh - var(--dt-fv))" } : null),
-              }}
+              style={{ opacity: titleO }}
             >
               <HeroTitle spot={spot} size="sm" />
             </motion.div>
-          </div>
+          </motion.div>
           {/* 白い面。最初は画面の1つ下に置いておき、スクロールすると
               写真の手前を上がってくる（写真そのものは動かない） */}
           {/* 【2026-09-24 ヒデさん指示】
@@ -611,7 +630,9 @@ function TocLayout({
               ref={grad}
               className={blurHero ? "w-full" : "h-[34dvh] w-full lg:h-[70dvh]"}
               style={{
-                ...(blurHero ? { height: "var(--dt-fade)" } : null),
+                /* blur案は写真が前面で白化→消滅するので、下から出す白グラデは不要。
+                   高さ0にして継ぎ目だけ bg-white に任せる（2026-09-25） */
+                ...(blurHero ? { height: 0 } : null),
                 background: blurHero
                   ? /* blur モード：写真側がもう白いので、継ぎ目を消すだけの短いグラデ */
                     "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,0.92) 78%, #fff 100%)"
@@ -629,7 +650,14 @@ function TocLayout({
           /* 白い面の続き。写真(z-0)より手前に置く */
           /* ⚠️ lg:py-[110px] はメディアクエリのぶん pt-0 より強い。
              lg: を付けないと PC だけ 110px の余白が残る（実測で発覚） */
-          pinnedHero ? "relative z-10 -mt-px bg-white pt-0 lg:pt-[32px]" : ""
+          blurHero
+            ? /* blur案：写真が消えた地点で本文が現れるので、本文の頭に
+                 ヘッダー分の余白を持たせて、見出しがナビと重ならないようにする
+                 （2026-09-25 実測で重なりを確認） */
+              "relative z-10 bg-white pt-[92px] lg:pt-[104px]"
+            : pinnedHero
+              ? "relative z-10 -mt-px bg-white pt-0 lg:pt-[32px]"
+              : ""
         }`}
       >
         <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[110px]">
