@@ -101,7 +101,13 @@ export function DetailHeader() {
         }
         e = e.parentElement;
       }
-      document.documentElement.dataset.headerDark = white ? "1" : "";
+      /* ⚠️ 同じ値でも代入すると MutationObserver は必ず鳴る。
+            ここで無条件に書くと「書く→鳴る→また書く」の無限ループになり、
+            画面がまるごと固まる（2026-09-24 本番で実際に固まった）。
+            値が変わった時だけ書くこと。 */
+      const next = white ? "1" : "";
+      if (document.documentElement.dataset.headerDark !== next)
+        document.documentElement.dataset.headerDark = next;
       setDark(white);
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
@@ -109,8 +115,14 @@ export function DetailHeader() {
     /* 写真やフォントが入ると位置が変わるので、少し経ってから読み直す
        （初回だけ判定して、スクロールするまで直らない状態を防ぐ） */
     const again = [60, 300, 900, 1600].map((ms) => window.setTimeout(read, ms));
-    /* 案の側（data-header-dark）が書き換わったら、その場で色を合わせる */
-    const mo = new MutationObserver(read);
+    /* 案の側（data-header-dark）が書き換わったら、その場で色を合わせる。
+       ⚠️ 見るのは【案の側が持ち主になっている時だけ】。持ち主でない時は
+          read() 自身がこの印を書くので、鳴らすと自分の書き込みで
+          呼び戻されて止まらなくなる */
+    const mo = new MutationObserver(() => {
+      if (document.documentElement.dataset.hdrOwned !== "1") return;
+      setDark(document.documentElement.dataset.headerDark === "1");
+    });
     mo.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-header-dark", "data-hdr-owned"],
