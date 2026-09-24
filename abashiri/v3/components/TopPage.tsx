@@ -626,20 +626,18 @@ export default function TopPage({
     const setVeil = (v: number) => {
       const el = stage();
       const veil = document.querySelector<HTMLElement>("[data-nav-veil]");
+      /* Stage 自体のブラー／opacity はもう触らない。覆うのは白い幕にまかせる
+         （Stage をぼかすと四隅が薄れて青が出るため。2026-09-25） */
+      if (el) {
+        el.style.filter = "";
+        el.style.opacity = "";
+      }
       if (v <= 0.002) {
-        if (el) {
-          el.style.filter = "";
-          el.style.opacity = "";
-        }
         if (veil) veil.style.opacity = "0";
         return;
       }
-      /* 【2026-09-25 ヒデさん指摘】これまでは Stage を opacity で薄くして
-         「覆った」つもりだったが、裏の水色（bg-sky-bottom）が透けて
-         青い幕に見えていた。→ 白い幕（data-nav-veil）でしっかり覆う。
-         裏の場面は軽くぼかすだけ（Stage の opacity は触らない）。 */
+      /* 白い幕（backdrop-blur＋拡大は style で固定）を opacity だけで濃くして覆う */
       if (veil) veil.style.opacity = String(v);
-      if (el) el.style.filter = `blur(${(v * 6).toFixed(1)}px)`;
     };
     const onJump = (e: Event) => {
       const d = (e as CustomEvent<{ y: number; instant?: boolean }>).detail;
@@ -830,7 +828,17 @@ export default function TopPage({
       <div
         data-nav-veil
         className="pointer-events-none fixed inset-0 z-[80] bg-white"
-        style={{ opacity: 0 }}
+        /* 【2026-09-25 ヒデさん提案】ブラーをかけると四隅が薄れて裏の青が
+           透ける → 幕を少し拡大（scale 1.12）して、薄くなった四隅を画面の
+           外へ逃がす。backdrop-blur で裏（青い場面）をぼかしつつ、白で覆う。
+           opacity だけを動かして軽くする（ブラー量・拡大は固定）。 */
+        style={{
+          opacity: 0,
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          transform: "scale(1.12)",
+          transformOrigin: "center",
+        }}
       />
       <div
         ref={scrollerRef}
