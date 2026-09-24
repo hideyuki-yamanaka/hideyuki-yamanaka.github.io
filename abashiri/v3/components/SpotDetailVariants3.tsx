@@ -451,7 +451,10 @@ function TocLayout({
   }, [heroMode]);
   const span = panelTop || Math.max(1, vh);
   const fadeIn = Math.max(1, span * 0.12);
-  const fadeOut = Math.max(2, span * 0.9);
+  /* 【2026-09-24 ヒデさん指示】「ストロークが長い。すぐコンテンツに行けるように」
+     → 白くなりきるのを 0.9 → 0.75 に前倒し。本文が画面に入ってくる前に
+       写真の白化を終わらせて、読み始めまでの空白を減らす */
+  const fadeOut = Math.max(2, span * 0.75);
   const heroBlur = useTransform(
     scrollY,
     [0, fadeIn, fadeOut],
@@ -532,14 +535,34 @@ function TocLayout({
                   : undefined
               }
             />
-            {/* 地名を読ませるための影。⚠️ 下端は【写真が見えている範囲の下端】に
-                合わせる。画面いっぱい（inset-0）にすると、スマホでは一番濃い所が
-                白い面の裏に隠れてしまい、地名が白い船体の上に白抜きで乗って
-                読めなかった（2026-09-24 実測） */}
-            <div className="absolute inset-x-0 bottom-[40dvh] top-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20 lg:bottom-0" />
-            {/* スマホだけ、地名のうしろをもう一段だけ暗くする。
-                写真が明るい（白い船体・雪）と白抜きの字が沈むため */}
-            <div className="absolute inset-x-0 bottom-[40dvh] h-[26dvh] bg-gradient-to-t from-black/55 via-black/28 to-transparent lg:hidden" />
+            {/* 地名を読ませるための影。
+                【2026-09-24 ヒデさん指摘】「黒のシャドウが途中で見切れている」
+                → 案36（白い面が乗り上げる）では、写真の見える範囲の下端で影を
+                   切っていた（白い面の裏に地名が隠れるのを避けるため）。
+                   だが案40（ブラーで白へ）は写真が画面いっぱいに貼りついたまま
+                   なので、影を途中で切ると【切った下端が黒い線になって見切れる】。
+                → 案40 では影を写真と同じ全面（inset-0）にして、下端の線を無くす。
+                   上だけほんのり締めてナビ（白文字）を読ませる。 */}
+            <div
+              className={
+                blurHero
+                  ? "absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent"
+                  : "absolute inset-x-0 bottom-[40dvh] top-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20 lg:bottom-0"
+              }
+            />
+            {/* 地名のうしろを締める帯。
+                案40 は【上下とも透明にフェードする帯】にして、どちらの端にも
+                線が出ないようにする。帯の中心＝地名の位置（--dt-fv）に合わせて
+                動かすので、PC でもスマホでも地名の真後ろがいちばん濃くなる。
+                案36 はこれまでどおりスマホだけの下寄せ帯。 */}
+            <div
+              className={
+                blurHero
+                  ? "absolute inset-x-0 h-[46dvh] bg-gradient-to-t from-transparent via-black/45 to-transparent"
+                  : "absolute inset-x-0 bottom-[40dvh] h-[26dvh] bg-gradient-to-t from-black/55 via-black/28 to-transparent lg:hidden"
+              }
+              style={blurHero ? { top: "calc(var(--dt-fv) - 23dvh)" } : undefined}
+            />
             {blurHero && (
               /* 白の膜。写真の上に重ねて、だんだん真っ白にする */
               <motion.div
@@ -553,8 +576,15 @@ function TocLayout({
                    地名がまったく見えていなかった。PC は写真が1画面ぶんなので
                    今までどおり一番下でよい。 */}
             <motion.div
-              className="absolute inset-x-0 bottom-[40dvh] px-6 pb-[28px] lg:bottom-0 lg:px-[120px] lg:pb-[120px]"
-              style={{ opacity: titleO }}
+              className={
+                blurHero
+                  ? "absolute inset-x-0 px-6 pb-[28px] lg:px-[120px] lg:pb-[120px]"
+                  : "absolute inset-x-0 bottom-[40dvh] px-6 pb-[28px] lg:bottom-0 lg:px-[120px] lg:pb-[120px]"
+              }
+              style={{
+                opacity: titleO,
+                ...(blurHero ? { bottom: "calc(100dvh - var(--dt-fv))" } : null),
+              }}
             >
               <HeroTitle spot={spot} size="sm" />
             </motion.div>
@@ -566,7 +596,11 @@ function TocLayout({
                 「白セクションが出てくるのも余白が多くて、無駄にスクロールする印象」
               → スマホは写真を 60dvh ぶん見せてから白い面が来る。
                  PC は今までどおり1画面ぶん見せる（大きい画面では余白が気にならない） */}
-          <div className="relative z-10 pt-[60dvh] lg:pt-[100dvh]">
+          <div
+            className={blurHero ? "relative z-10" : "relative z-10 pt-[60dvh] lg:pt-[100dvh]"}
+            /* 案40 は写真を見せる高さを CSS 変数で持つ（調整パネルから動かせる） */
+            style={blurHero ? { paddingTop: "var(--dt-fv)" } : undefined}
+          >
             {/* 白い面の上端。ここが画面の上まで来る量を上で実測している */}
             <div ref={panel} className="h-0 w-full" />
             {/* ⚠️ 2026-09-20 ヒデさん指摘「上部の部分は白を多めに。急に空が来すぎ」
@@ -575,12 +609,9 @@ function TocLayout({
                   すこしずつ顔を出す形にする） */}
             <div
               ref={grad}
-              className={
-                blurHero
-                  ? "h-[16dvh] w-full lg:h-[22dvh]"
-                  : "h-[34dvh] w-full lg:h-[70dvh]"
-              }
+              className={blurHero ? "w-full" : "h-[34dvh] w-full lg:h-[70dvh]"}
               style={{
+                ...(blurHero ? { height: "var(--dt-fade)" } : null),
                 background: blurHero
                   ? /* blur モード：写真側がもう白いので、継ぎ目を消すだけの短いグラデ */
                     "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,0.92) 78%, #fff 100%)"
@@ -596,7 +627,9 @@ function TocLayout({
       <div
         className={`px-6 py-[56px] md:px-[56px] md:py-[80px] lg:px-[100px] lg:py-[110px] ${
           /* 白い面の続き。写真(z-0)より手前に置く */
-          pinnedHero ? "relative z-10 -mt-px bg-white pt-0" : ""
+          /* ⚠️ lg:py-[110px] はメディアクエリのぶん pt-0 より強い。
+             lg: を付けないと PC だけ 110px の余白が残る（実測で発覚） */
+          pinnedHero ? "relative z-10 -mt-px bg-white pt-0 lg:pt-[32px]" : ""
         }`}
       >
         <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[110px]">

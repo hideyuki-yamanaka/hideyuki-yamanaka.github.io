@@ -84,7 +84,7 @@ export const SPOT_DETAIL_PATTERNS: Record<
   },
   40: {
     name: "案40 写真がぼけて白になじむ",
-    note: "案36 の写真の渡り方ちがい。白い面をかぶせるのではなく、貼りついた写真そのものがぼけながら白くなって、白い本文の面へそのまま溶ける",
+    note: "写真から白への渡り方ちがい。白い面をかぶせるのではなく、貼りついた写真そのものがぼけながら白くなって、白い本文の面へそのまま溶ける",
   },
 };
 
@@ -115,15 +115,32 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       sizes[k] = { ...SIZE0 };
     });
     const params = {
-      /* 【2026-09-20 ヒデさん指示】「詳細ページに関しては案5のものにして」
-         → パネルの表示番号 案5 ＝ 値36（目次の番号が育つ／写真は貼りついたまま
-           白い面が乗り上げる）。既定をここに合わせる */
-      detail: { pattern: 36, headSize: SIZE0.head, bodySize: SIZE0.body, sizes },
+      /* 【2026-09-24 ヒデさん指示】「ブラーで白くなる案を採用していきたい」
+         → 既定を値40（写真そのものがぼけて白くなり、白い本文へ溶ける）に。
+           それまでの既定は値36（白い面が写真の手前に乗り上げる）。
+         ⚠️ 既定を変えたら version も上げる。上げないと、前の案を
+            おぼえているブラウザ（＝ヒデさんの手元）では変わらない */
+      detail: {
+        pattern: 40,
+        headSize: SIZE0.head,
+        bodySize: SIZE0.body,
+        sizes,
+        /* 写真から本文への渡り。単位は「画面の高さの何%」。
+           住み家は globals.css の :root とここの2つ（同じ数にしておくこと） */
+        fv: { pc: 88, sp: 52 },
+        fade: { pc: 12, sp: 8 },
+      },
     };
     const applyType = () => {
       const r = document.documentElement;
       r.style.setProperty("--dt-head", params.detail.headSize + "px");
       r.style.setProperty("--dt-body", params.detail.bodySize + "px");
+      /* 写真から本文への渡り。PC とスマホで別々に持つ
+         （画面の広さで気持ちのいい長さが違うため） */
+      r.style.setProperty("--dt-fv-pc", String(params.detail.fv.pc));
+      r.style.setProperty("--dt-fade-pc", String(params.detail.fade.pc));
+      r.style.setProperty("--dt-fv-sp", String(params.detail.fv.sp));
+      r.style.setProperty("--dt-fade-sp", String(params.detail.fade.sp));
     };
     /* つまみ → その案の欄へ書き戻す */
     const rememberSize = () => {
@@ -162,8 +179,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v11: 案11 の系統をもう3案（案38〜40）追加（2026-09-16）
            v12: ヒデさんの選定で 案11・16・18・20・22・23・31・34・40 を完全削除（2026-09-16）
            v13: 文字の大きさを案ごとに別々に持つようにした（2026-09-16）
-           v14: ヒデさんの選定で 案12・26・33 を完全削除（2026-09-17） */
-        version: 15, /* 2026-09-20 既定を案5(値36)に変更。古い保存値を破棄する */
+           v14: ヒデさんの選定で 案12・26・33 を完全削除（2026-09-17）
+           v15: 既定を案5(値36)に変更（2026-09-20） */
+        version: 16, /* 2026-09-24 既定をブラー案(値40)に変更＋渡りのつまみを追加。古い保存値を破棄する */
         startClosed: true,
         position: { right: 20, bottom: 20 },
         params,
@@ -188,6 +206,53 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                   swatch: "#0070c9",
                   desc: p.note,
                 })),
+              },
+            ],
+          },
+          {
+            cat: "📐 写真から本文への渡り",
+            open: true,
+            items: [
+              {
+                note: "ファーストビューの写真から、白い本文へ移るまでの長さ。【ブラー案（写真がぼけて白になじむ）だけに効きます】。短くするほど早く本文が読めます。⚠️「写真の高さ」＋「渡る長さ」が 100 を下回ると、止まっている時点で画面の下に白い帯が見えます。",
+              },
+              { sub: "パソコン", deep: true },
+              {
+                slider: "写真の高さ",
+                path: "detail.fv.pc",
+                min: 70,
+                max: 100,
+                step: 1,
+                unit: "%",
+                immediate: true,
+              },
+              {
+                slider: "渡る長さ",
+                path: "detail.fade.pc",
+                min: 4,
+                max: 40,
+                step: 1,
+                unit: "%",
+                immediate: true,
+              },
+              { sub: "スマホ", deep: true },
+              {
+                slider: "写真の高さ",
+                path: "detail.fv.sp",
+                min: 40,
+                max: 100,
+                step: 1,
+                unit: "%",
+                immediate: true,
+              },
+              {
+                slider: "渡る長さ",
+                path: "detail.fade.sp",
+                min: 4,
+                max: 40,
+                step: 1,
+                unit: "%",
+                immediate: true,
               },
             ],
           },
