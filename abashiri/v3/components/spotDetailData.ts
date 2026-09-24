@@ -43,8 +43,18 @@ export const SPOT_DETAILS: Record<string, SpotDetail> = {
     name: "能取岬",
     kana: "のとろみさき",
     lead: "網走市美岬のオホーツク海に突き出た能取岬",
-    hero: "/img/spot/notoro-1.webp",
-    photos: ["/img/spot/notoro-2.jpg", "/img/spot/notoro-3.jpg"],
+    /* 【2026-09-24 ヒデさん指示】
+         「能取岬の画像は、キービジュアルの写真ではなくて、
+           このスポットで使われている灯台がアップで表示されている写真を詳細ページで」
+       → ヒーローは灯台が主役の写真（トップのスポット一覧と同じもの）に。
+          もとの notoro-1 は海と崖だけで灯台が写っておらず、KV と絵が似ていた。
+          外した notoro-1 は下の写真の1枚目に回す（絵としては良いので捨てない）。 */
+    hero: "/img/spot-notoro.webp",
+    photos: [
+      "/img/spot/notoro-1.webp",
+      "/img/spot/notoro-2.jpg",
+      "/img/spot/notoro-3.jpg",
+    ],
     sections: [
       {
         text: "オホーツク海に突き出た岬で、突端には灯台と管理事務所があるだけ。ここから西方は能取湖と常呂町の海岸、北方はすべてオホーツク海、東方は遠く知床連山が眺められます。冬は網走市で最も早く流氷を見ることができ、眺望は最高です。冬は防寒対策を忘れずに。",
