@@ -625,15 +625,21 @@ export default function TopPage({
     /* v=0 で素通し、v=1 で完全に覆い隠す */
     const setVeil = (v: number) => {
       const el = stage();
-      if (!el) return;
+      const veil = document.querySelector<HTMLElement>("[data-nav-veil]");
       if (v <= 0.002) {
-        el.style.filter = "";
-        el.style.opacity = "";
+        if (el) {
+          el.style.filter = "";
+          el.style.opacity = "";
+        }
+        if (veil) veil.style.opacity = "0";
         return;
       }
-      el.style.filter = `blur(${(v * 26).toFixed(1)}px)`;
-      /* 白へ飛ばしきらず、少し残して「場面が入れ替わった」感じにする */
-      el.style.opacity = String(1 - v * 0.88);
+      /* 【2026-09-25 ヒデさん指摘】これまでは Stage を opacity で薄くして
+         「覆った」つもりだったが、裏の水色（bg-sky-bottom）が透けて
+         青い幕に見えていた。→ 白い幕（data-nav-veil）でしっかり覆う。
+         裏の場面は軽くぼかすだけ（Stage の opacity は触らない）。 */
+      if (veil) veil.style.opacity = String(v);
+      if (el) el.style.filter = `blur(${(v * 6).toFixed(1)}px)`;
     };
     const onJump = (e: Event) => {
       const d = (e as CustomEvent<{ y: number; instant?: boolean }>).detail;
@@ -817,6 +823,15 @@ export default function TopPage({
          白ベゼル30px・角丸60px・浮遊シャドウはカンプ 15071:24641 から無くなった */
       className="absolute inset-0"
     >
+      {/* ナビでセクション移動する時にかぶせる白い幕。
+          【2026-09-25 ヒデさん指摘】これまでは Stage（青い空・海）を薄くするだけで、
+          裏の水色（bg-sky-bottom）が透けて「白い幕」のつもりが青い幕になっていた。
+          白でしっかり覆えば、移動中に青がぼけて見えることがなくなる。 */}
+      <div
+        data-nav-veil
+        className="pointer-events-none fixed inset-0 z-[80] bg-white"
+        style={{ opacity: 0 }}
+      />
       <div
         ref={scrollerRef}
         /* data-abashiri-scroller: ヘッダーの「ホーム」がここを探して一番上へ戻す。
