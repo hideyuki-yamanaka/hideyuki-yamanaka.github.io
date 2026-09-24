@@ -19,6 +19,7 @@ import {
   V32TocSlide,
   V35TocDot,
   V36TocNum,
+  V40HeroDissolve,
   V37PinnedBlur,
   V38Grid,
   V39FarHead,
@@ -80,6 +81,10 @@ export const SPOT_DETAIL_PATTERNS: Record<
   39: {
     name: "案39 見出しをうんと離す",
     note: "見出しと本文の間を変更。見出しを先に大きく置いて、画面の半分ぶん空けてから本文が来る。間そのものが息を吸う場所になる",
+  },
+  40: {
+    name: "案40 写真がぼけて白になじむ",
+    note: "案36 の写真の渡り方ちがい。白い面をかぶせるのではなく、貼りついた写真そのものがぼけながら白くなって、白い本文の面へそのまま溶ける",
   },
 };
 
@@ -263,6 +268,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
     32: V32TocSlide,
     35: V35TocDot,
     36: V36TocNum,
+    40: V40HeroDissolve,
     37: V37PinnedBlur,
     38: V38Grid,
     39: V39FarHead,

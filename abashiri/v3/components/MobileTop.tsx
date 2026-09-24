@@ -13,15 +13,9 @@
  * コピー・写真はデスクトップ実装と同じ実データ。
  */
 import { useRouter } from "next/navigation";
+import MobileHeader, { MOBILE_GOTO_KEY, MOBILE_NAV } from "./MobileHeader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
-
-const NAV: { label: string; href?: string; scene?: number }[] = [
-  { label: "ホーム", scene: 0 },
-  { label: "ぼーっとスポット", scene: 2 },
-  { label: "グルメ", scene: 6 },
-  { label: "体験", scene: 7 },
-];
 
 const MSG_TITLE = "網走は何もない。";
 const MSG_BLOCKS: string[][] = [
@@ -106,7 +100,6 @@ const DUR = 800; // トランジション時間(ms)
 
 export default function MobileTop() {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState(0);
   const lockRef = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -161,11 +154,17 @@ export default function MobileTop() {
     step(dy < 0 ? 1 : -1); // 上へスワイプ＝次へ
   };
 
-  const go = (item: (typeof NAV)[number]) => {
-    setMenuOpen(false);
-    if (item.href) router.push(item.href);
-    else if (typeof item.scene === "number") goTo(item.scene);
-  };
+  /* 別ページ（詳細ページなど）のメニューから飛んできた時、
+     預かった場面をそのまま開く（2026-09-24 ヒデさん指摘の対応で追加）。
+     ⚠️ 読んだら消す。消さないと次にトップへ来た時もまた飛ぶ */
+  useEffect(() => {
+    let n: string | null = null;
+    try {
+      n = sessionStorage.getItem(MOBILE_GOTO_KEY);
+      if (n) sessionStorage.removeItem(MOBILE_GOTO_KEY);
+    } catch {}
+    if (n) setActive(Math.max(0, Math.min(SCENE_COUNT - 1, Number(n) || 0)));
+  }, []);
 
   /* その場でブラーのクロスフェード（動かさない） */
   /* グルメ（白背景）のときはヘッダーを黒に切り替える */
@@ -192,28 +191,7 @@ export default function MobileTop() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* 固定追従ヘッダー：左=環境音ON/OFF、右=ハンバーガー（全シーン共通。2026-08-28 ヒデさん指示） */}
-      <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between px-6 pt-5">
-        <div
-          id="abashiri-sound-slot"
-          className="pointer-events-auto flex h-[22px] origin-left scale-[0.72] items-center"
-        />
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-label="メニューを開く"
-          className="pointer-events-auto flex size-9 items-center justify-center"
-        >
-          <span className="relative block h-[11px] w-[24px]">
-            <span
-              className={`absolute left-0 top-0 h-[1.5px] w-full rounded-full ${headerDark ? "bg-ink" : "bg-white"}`}
-            />
-            <span
-              className={`absolute bottom-0 left-0 h-[1.5px] w-full rounded-full ${headerDark ? "bg-ink" : "bg-white"}`}
-            />
-          </span>
-        </button>
-      </header>
+      <MobileHeader dark={headerDark} onScene={goTo} />
 
       {/* ── 0: KV ───────────────────────── */}
       <section
@@ -473,11 +451,11 @@ export default function MobileTop() {
           </div>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 tab:gap-x-8">
-          {NAV.map((n) => (
+          {MOBILE_NAV.map((n) => (
             <button
               key={n.label}
               type="button"
-              onClick={() => (n.href ? router.push(n.href) : goTo(n.scene ?? 0))}
+              onClick={() => goTo(n.scene)}
               className="text-body-13 font-light leading-[1.2] text-ink/70 tab:text-body-16"
             >
               {n.label}
@@ -506,36 +484,6 @@ export default function MobileTop() {
       {/* 右端の進行ドットは 2026-09-16 ヒデさん指示で撤去。
          場面移動はスワイプとメニューで足りるため */}
 
-      {/* ── ハンバーガーメニュー ─────────────── */}
-      {menuOpen && (
-        <nav className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-9 bg-brand/95 text-white backdrop-blur-lg">
-          <button
-            type="button"
-            onClick={() => setMenuOpen(false)}
-            aria-label="閉じる"
-            className="absolute right-6 top-6 flex size-9 items-center justify-center text-white"
-          >
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M2 2L14 14M14 2L2 14"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-          {NAV.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => go(item)}
-              className="text-body-18 font-light leading-none text-white"
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      )}
     </main>
   );
 }

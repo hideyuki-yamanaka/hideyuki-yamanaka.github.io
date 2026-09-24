@@ -13,6 +13,7 @@ import { DEFAULT_BIRDS, type BirdsConfig } from "./birdConfig";
 import { mergeFace, type FaceConfig } from "./faceConfig";
 import { mergeLayout, type LayoutTune } from "./layoutConfig";
 import { findTamaranee } from "./tamaraneePatterns";
+import { stageScaleOf } from "./useStageScale";
 /* バウンス5案（2026-08-23 ヒデさん依頼で復活）。ホバーもループも同じ動きを使う。
    強さ k は 1 が基準で、跳ぶ高さ・つぶれ方がそのまま倍率で効く */
 type BounceAnim = { keyframes: Keyframe[]; options: KeyframeAnimationOptions };
@@ -423,7 +424,7 @@ export default function Stage({
     const calc = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const scale = Math.min(vh / 982, vw / 1512);
+      const scale = stageScaleOf(vw, vh);
       const stageW = Math.max(1512, vw / scale);
       const top = Math.max(0, (vh - 982 * scale) / 2);
       setFit({ scale, stageW, top });

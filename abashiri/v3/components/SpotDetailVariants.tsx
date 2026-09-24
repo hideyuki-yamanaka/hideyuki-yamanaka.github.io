@@ -29,6 +29,9 @@ import {
 import type { SpotDetail } from "./spotDetailData";
 import SiteFooter from "./SiteFooter";
 import GlobalNav from "./GlobalNav";
+import { useStageScale } from "./useStageScale";
+import MobileHeader from "./MobileHeader";
+import { useIsMobile } from "./useIsMobile";
 
 /* ゆったり共通のイージング（既存サイトと同じ緩急） */
 export const EASE = [0.22, 1, 0.36, 1] as const;
@@ -57,6 +60,13 @@ export const reveal = {
       乗り上げてくると読みにくくなるため、上端に薄い黒のグラデで足場を作る。 */
 export function DetailHeader() {
   const [dark, setDark] = useState(false);
+  /* トップページの土台と同じ縮尺。等倍のままだとナビが一回り大きく出る */
+  const scale = useStageScale();
+  /* トップページはスマホ幅だと PC のナビではなく、
+     左=環境音・右=ハンバーガーのヘッダーを出している（MobileTop）。
+     詳細ページも同じ部品に切り替える（2026-09-24 ヒデさん指摘）。
+     ⚠️ 判定は useIsMobile。app/page.tsx がトップの出し分けに使っている式と同じ */
+  const isMobile = useIsMobile();
   /* 【2026-09-21 ヒデさん指示】
        「背景が白になった時に、トップページのように音声のオンオフのUIも変わってほしい」
      → トップページと同じ仕掛け（html[data-header-dark]）を詳細ページでも立てる。
@@ -68,6 +78,14 @@ export function DetailHeader() {
     let raf = 0;
     const read = () => {
       raf = 0;
+      /* 案の側が自分で決めている時は、こちらは判定しない
+         （2026-09-24。elementFromPoint は pointer-events:none の写真を
+           素通りして奥の白い main に当たるため、写真の上でも「白」と
+           誤判定していた。位置が分かる案の側に任せる） */
+      if (document.documentElement.dataset.hdrOwned === "1") {
+        setDark(document.documentElement.dataset.headerDark === "1");
+        return;
+      }
       /* 画面の上から1/3の高さに、白い面（本文側）が来ているかで判定する */
       const y = main.clientHeight * 0.33;
       const el = document.elementFromPoint(window.innerWidth / 2, y);
@@ -88,31 +106,67 @@ export function DetailHeader() {
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
     read();
+    /* 写真やフォントが入ると位置が変わるので、少し経ってから読み直す
+       （初回だけ判定して、スクロールするまで直らない状態を防ぐ） */
+    const again = [60, 300, 900, 1600].map((ms) => window.setTimeout(read, ms));
+    /* 案の側（data-header-dark）が書き換わったら、その場で色を合わせる */
+    const mo = new MutationObserver(read);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-header-dark", "data-hdr-owned"],
+    });
     main.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
       main.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      again.forEach((t) => window.clearTimeout(t));
+      mo.disconnect();
       if (raf) cancelAnimationFrame(raf);
-      document.documentElement.dataset.headerDark = "";
+      if (document.documentElement.dataset.hdrOwned !== "1")
+        document.documentElement.dataset.headerDark = "";
     };
   }, []);
+
+  /* スマホ：トップと同じハンバーガー式のヘッダー */
+  if (isMobile) return <MobileHeader dark={dark} />;
 
   return (
     /* ⚠️ 2026-09-20 ヒデさん指示「上部にシャドウがかかっていますが、それは要りません」
        → 足場として敷いていた黒のグラデを撤去。ナビだけを置く */
     <div className="pointer-events-none fixed inset-x-0 top-0 z-50">
-      {/* サウンドON/OFFの置き場。トップページと同じ【左上】に出す
-          （2026-09-20 ヒデさん指示「詳細ページもトップと同じく左上に」）。
-          ⚠️ この置き場が無いと SoundUi は左下（fixed bottom-4 left-4）に出る。
-             実際そうなっていた。トップの置き場（left:34 / top:32）と同じ座標。 */}
+      {/* 【2026-09-24 ヒデさん指摘】
+            「詳細ページのヘッダーなどのパーツが微妙に違うので、
+              トップで使われているものにしてください」
+          → 部品（GlobalNav・サウンド）は元々トップと同じもの。違っていたのは
+            【縮尺】で、トップは 1512×982 の土台ごと縮まるぶんナビも縮む。
+            ここでも同じ倍率で縮めて、見え方を一致させる。
+          ⚠️ 横幅を 100/scale % にしているのは、縮めたあとに画面いっぱいへ
+             戻すため。こうするとナビの left-1/2（中央ぞろえ）も画面中央に来る。
+             トップの土台（stageW = vw / scale）と同じ考え方。 */}
       <div
-        id="abashiri-sound-slot"
-        className="pointer-events-auto absolute left-[34px] top-[32px] z-50 flex h-[19px] items-center"
-      />
-      <div className="pointer-events-auto relative flex justify-center pt-[26px]">
-        {/* 白背景になったらナビの字も黒へ（トップページと同じふるまい） */}
-        <GlobalNav theme={dark ? "dark" : "light"} />
+        className="relative"
+        style={{
+          width: scale ? `${100 / scale}%` : "100%",
+          height: 120,
+          transform: scale ? `scale(${scale})` : undefined,
+          transformOrigin: "top left",
+          opacity: scale ? 1 : 0,
+        }}
+      >
+        {/* サウンドON/OFFの置き場。トップページと同じ【左上】に出す
+            （2026-09-20 ヒデさん指示「詳細ページもトップと同じく左上に」）。
+            ⚠️ この置き場が無いと SoundUi は左下（fixed bottom-4 left-4）に出る。
+               実際そうなっていた。トップの置き場（left:34 / top:32）と同じ座標。 */}
+        <div
+          id="abashiri-sound-slot"
+          className="pointer-events-auto absolute left-[34px] top-[32px] z-50 flex h-[19px] items-center"
+        />
+        {/* 白背景になったらナビの字も黒へ（トップページと同じふるまい）。
+            ⚠️ GlobalNav の nav は absolute なので、この relative が位置の基準になる */}
+        <div className="pointer-events-auto">
+          <GlobalNav theme={dark ? "dark" : "light"} />
+        </div>
       </div>
     </div>
   );

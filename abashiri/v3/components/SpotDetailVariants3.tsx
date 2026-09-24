@@ -24,7 +24,7 @@
  *   （Noto Thin/ExtraLight・本文 body-16 行間2.4 字間0.5px・罫線は ink/12）
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useAnimationFrame, useScroll, useTransform } from "framer-motion";
 import {
   InfoTable,
   MapEmbed,
@@ -397,13 +397,20 @@ function TocLayout({
   kind,
   heroH = "h-[86dvh]",
   pinnedHero = false,
+  heroMode = "gradient",
 }: {
   spot: SpotDetail;
   kind: TocKind;
   heroH?: string;
   pinnedHero?: boolean;
+  /** 写真から白へ渡す方法
+      gradient … 白いグラデの面が手前に乗り上げてくる（写真はそのまま）
+      blur     … 写真そのものがぼけながら白くなって、白い面へ溶ける
+                 （2026-09-24 ヒデさん依頼で追加） */
+  heroMode?: "gradient" | "blur";
 }) {
   const ref = useRef<HTMLElement>(null);
+  const blurHero = pinnedHero && heroMode === "blur";
   const heads = headsOf(spot);
   const items = tocOf(spot);
   const active = useSpy(ref, items.length);
@@ -426,6 +433,69 @@ function TocLayout({
     [0, Math.max(1, vh * 0.22), Math.max(2, vh * 0.55)],
     [1, 1, 0]
   );
+  /* blur モード用。写真が「ぼけながら白くなる」進み具合。
+     ⚠️ 終わる位置は決め打ちにしない。白い面の上端が画面の上まで来る
+        スクロール量を【実測】して、そこより少し手前で白くなりきるようにする。
+        （スマホは写真を 60dvh、PC は 100dvh 見せるので、決め打ちだとどちらかがズレる） */
+  const panel = useRef<HTMLDivElement>(null);
+  const [panelTop, setPanelTop] = useState(0);
+  useEffect(() => {
+    const read = () => setPanelTop(panel.current?.offsetTop || 0);
+    read();
+    const t = setTimeout(read, 60); /* フォント読み込み後にもう一度測る */
+    window.addEventListener("resize", read);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", read);
+    };
+  }, [heroMode]);
+  const span = panelTop || Math.max(1, vh);
+  const fadeIn = Math.max(1, span * 0.12);
+  const fadeOut = Math.max(2, span * 0.9);
+  const heroBlur = useTransform(
+    scrollY,
+    [0, fadeIn, fadeOut],
+    ["blur(0px)", "blur(0px)", "blur(26px)"]
+  );
+  /* 白くなる度合い。写真の上に白を重ねる（写真自体は動かさない） */
+  const heroWhite = useTransform(scrollY, [0, fadeIn, fadeOut], [0, 0, 1]);
+  /* ぼかすと縁が透けるので、わずかに拡大して縁を画面の外へ逃がす */
+  const heroScale = useTransform(scrollY, [0, fadeOut], [1, 1.06]);
+
+  /* ヘッダー（ナビ・サウンド）の色を、この案が自分で決めて知らせる。
+     【2026-09-24 実測で判明した不具合】
+       これまでは DetailHeader 側が「画面の上から1/3の点に白い物があるか」を
+       elementFromPoint で調べていたが、写真の層は pointer-events:none なので
+       この調べ方では【素通り】して、いつも奥の白い main に当たってしまう。
+       その結果、写真の上なのにナビが黒くなることがあった（案36 でも再現）。
+     → 位置が分かっているこちら側で決める。白グラデの箱の位置を実測し、
+        画面の上1/3が白に覆われたら黒へ。blur 案は写真自体が白くなるので、
+        その白さ（heroWhite）が半分を超えた時点でも黒へ。
+     ⚠️ data-hdr-owned を立てている間、DetailHeader は自分で判定しない。 */
+  const grad = useRef<HTMLDivElement>(null);
+  useAnimationFrame(() => {
+    if (!pinnedHero) return;
+    const el = ref.current;
+    const g = grad.current;
+    if (!el || !g) return;
+    const line = el.clientHeight * 0.33; /* この高さまで白が来たら白背景とみなす */
+    const r = g.getBoundingClientRect();
+    /* グラデは上が透明・下が白なので、真ん中あたりで「白」と見なす */
+    const covered = r.top + r.height * 0.55 <= line;
+    const whitened = blurHero && heroWhite.get() >= 0.5;
+    const white = covered || whitened;
+    const root = document.documentElement;
+    const now = white ? "1" : "";
+    if (root.dataset.headerDark !== now) root.dataset.headerDark = now;
+    if (root.dataset.hdrOwned !== "1") root.dataset.hdrOwned = "1";
+  });
+  useEffect(() => {
+    if (!pinnedHero) return;
+    return () => {
+      document.documentElement.dataset.hdrOwned = "";
+      document.documentElement.dataset.headerDark = "";
+    };
+  }, [pinnedHero]);
 
   return (
     <Shell refEl={ref}>
@@ -445,14 +515,45 @@ function TocLayout({
                 fixed は使えない（ズレる）。詳細ページ専用の手。
              ⚠️ z-0（いちばん奥）。白い面は z-10 で手前に重なる。 */}
           <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-            <img
+            {/* blur モードのときだけ、写真そのものをぼかして白へ寄せる。
+                【2026-09-24 ヒデさん指示】
+                  「ファーストビュー自体がブラーで白に変化していくことで、
+                    スクロールしていくと白いセクションにきれいになじんでいく」
+                ⚠️ 位置は動かさない（貼りついたまま）。変えるのは見え方だけ。
+                ⚠️ ぼかすと写真の縁が薄くなって下地が透けるので、
+                   ほんの少し拡大して縁を画面の外へ逃がす。 */}
+            <motion.img
               src={spot.hero}
               alt={spot.name}
               className="size-full object-cover"
+              style={
+                blurHero
+                  ? { filter: heroBlur, scale: heroScale, willChange: "filter" }
+                  : undefined
+              }
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20" />
+            {/* 地名を読ませるための影。⚠️ 下端は【写真が見えている範囲の下端】に
+                合わせる。画面いっぱい（inset-0）にすると、スマホでは一番濃い所が
+                白い面の裏に隠れてしまい、地名が白い船体の上に白抜きで乗って
+                読めなかった（2026-09-24 実測） */}
+            <div className="absolute inset-x-0 bottom-[40dvh] top-0 bg-gradient-to-t from-black/50 via-black/5 to-black/20 lg:bottom-0" />
+            {/* スマホだけ、地名のうしろをもう一段だけ暗くする。
+                写真が明るい（白い船体・雪）と白抜きの字が沈むため */}
+            <div className="absolute inset-x-0 bottom-[40dvh] h-[26dvh] bg-gradient-to-t from-black/55 via-black/28 to-transparent lg:hidden" />
+            {blurHero && (
+              /* 白の膜。写真の上に重ねて、だんだん真っ白にする */
+              <motion.div
+                className="absolute inset-0 bg-white"
+                style={{ opacity: heroWhite }}
+              />
+            )}
+            {/* 地名は【写真が見えている範囲の下】に置く。
+                ⚠️ 2026-09-24 実測で判明：画面の一番下（bottom-0）に置いていたため、
+                   スマホ（写真は 60dvh まで）では白い面の裏に入って
+                   地名がまったく見えていなかった。PC は写真が1画面ぶんなので
+                   今までどおり一番下でよい。 */}
             <motion.div
-              className="absolute inset-x-0 bottom-0 px-6 pb-[80px] lg:px-[120px] lg:pb-[120px]"
+              className="absolute inset-x-0 bottom-[40dvh] px-6 pb-[28px] lg:bottom-0 lg:px-[120px] lg:pb-[120px]"
               style={{ opacity: titleO }}
             >
               <HeroTitle spot={spot} size="sm" />
@@ -466,15 +567,24 @@ function TocLayout({
               → スマホは写真を 60dvh ぶん見せてから白い面が来る。
                  PC は今までどおり1画面ぶん見せる（大きい画面では余白が気にならない） */}
           <div className="relative z-10 pt-[60dvh] lg:pt-[100dvh]">
+            {/* 白い面の上端。ここが画面の上まで来る量を上で実測している */}
+            <div ref={panel} className="h-0 w-full" />
             {/* ⚠️ 2026-09-20 ヒデさん指摘「上部の部分は白を多めに。急に空が来すぎ」
                 → 変化が急だったので、丈を 46dvh → 70dvh に伸ばし、
                   白の立ち上がりを早めて刻みも細かくした（上に行くほど写真が
                   すこしずつ顔を出す形にする） */}
             <div
-              className="h-[34dvh] w-full lg:h-[70dvh]"
+              ref={grad}
+              className={
+                blurHero
+                  ? "h-[16dvh] w-full lg:h-[22dvh]"
+                  : "h-[34dvh] w-full lg:h-[70dvh]"
+              }
               style={{
-                background:
-                  "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 12%, rgba(255,255,255,0.34) 26%, rgba(255,255,255,0.54) 40%, rgba(255,255,255,0.72) 54%, rgba(255,255,255,0.86) 68%, rgba(255,255,255,0.95) 82%, rgba(255,255,255,0.99) 92%, #fff 100%)",
+                background: blurHero
+                  ? /* blur モード：写真側がもう白いので、継ぎ目を消すだけの短いグラデ */
+                    "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,0.92) 78%, #fff 100%)"
+                  : "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 12%, rgba(255,255,255,0.34) 26%, rgba(255,255,255,0.54) 40%, rgba(255,255,255,0.72) 54%, rgba(255,255,255,0.86) 68%, rgba(255,255,255,0.95) 82%, rgba(255,255,255,0.99) 92%, #fff 100%)",
               }}
             />
             <div className="-mt-px bg-white" />
@@ -547,6 +657,18 @@ export function V35TocDot({ spot }: VProps) {
       動かず、白いグラデの面が上にかぶさって流れていく */
 export function V36TocNum({ spot }: VProps) {
   return <TocLayout spot={spot} kind="num" pinnedHero />;
+}
+
+/** 案40 写真がぼけて白になじむ（案36 の写真の渡り方ちがい）
+    【2026-09-24 ヒデさん依頼】
+      「今は白いグラデのオブジェクトが上に重なっていく感じだが、そうではなく
+        ファーストビュー自体がブラーで白に変化していくことで、
+        スクロールしていくと白いセクションにきれいになじんでいく形にしたい」
+    → 中身（目次の番号が育つ・本文の並び）は案36 とまったく同じ。
+       ちがうのは写真から白への【渡り方】だけ。
+       案36＝白い面が写真の手前に乗り上げる／案40＝写真そのものがぼけて白くなる */
+export function V40HeroDissolve({ spot }: VProps) {
+  return <TocLayout spot={spot} kind="num" pinnedHero heroMode="blur" />;
 }
 
 /* ═══════════════════════════════════════════════════
