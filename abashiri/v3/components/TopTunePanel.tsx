@@ -259,7 +259,7 @@ export default function TopTunePanel({
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62 } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
-      pageTrans: { pattern: 1 }, /* ページ遷移の演出（案1「溶ける」が既定） */
+      pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
@@ -513,7 +513,7 @@ export default function TopTunePanel({
               },
               { sub: "ページ遷移の演出", grp: "anim" },
               {
-                note: "ページを移る時にかぶせる幕の5案。どれもサイトの雰囲気に合わせてブラー主体にしてあります。選ぶとその場で一度再生して見せます（実際の遷移でも同じ動きになります）。",
+                note: "ページを移る時にかぶせる幕。既定は案6「ディゾルブ」（ブラーも色の幕も使わず、うっすら白を挟んで前の画面と次の画面がすっと入れ替わる）。ほかにブラーや色の幕を使う案も選べます。選ぶとその場で一度再生して見せます（実際の遷移でも同じ動きになります）。",
               },
               {
                 pills: "案",

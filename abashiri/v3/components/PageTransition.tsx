@@ -30,12 +30,27 @@ export type PageTransitionPattern = {
   veil: string;
   /** 幕自体の動き方 */
   motion: "fade" | "rise" | "zoom" | "wipe";
+  /** 幕がいちばん濃くなった時の不透明度（1未満にすると向こうが透けて
+      「色を挟みきらないディゾルブ」になる）。省略時は 1（完全に覆う） */
+  peak?: number;
 };
 
 export const PAGE_TRANSITION_PATTERNS: Record<number, PageTransitionPattern> = {
+  /* 【2026-09-24 ヒデさん指示】「ブラーでの切り替えをやめて、ディゾルブみたいに」
+     → ブラーも色の幕も使わず、うっすら白を挟んですっと入れ替わるだけにする。
+        白基調の詳細・グルメページに移っても浮かない。これを既定にする。 */
+  6: {
+    name: "案6",
+    note: "ディゾルブ（既定）。ブラーも色の幕も使わず、うっすら白を挟んで前の画面と次の画面がすっと入れ替わる。白基調のページに馴染む",
+    dur: 620,
+    blur: 0,
+    veil: "bg-white",
+    motion: "fade",
+    peak: 0.6,
+  },
   1: {
     name: "案1",
-    note: "溶ける（既定）。空の色の膜がブラーごとふわっと覆って、すっと引く",
+    note: "溶ける。空の色の膜がブラーごとふわっと覆って、すっと引く",
     dur: 900,
     blur: 20,
     veil: "bg-gradient-to-b from-brand/85 via-brand/70 to-sky-bottom/85",
@@ -79,29 +94,30 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 /** 案ごとの「入り」と「抜け」 */
 function variantsOf(p: PageTransitionPattern) {
+  const peak = p.peak ?? 1;
   switch (p.motion) {
     case "rise":
       return {
         initial: { opacity: 0, y: "35%" },
-        animate: { opacity: 1, y: "0%" },
+        animate: { opacity: peak, y: "0%" },
         exit: { opacity: 0, y: "-35%" },
       };
     case "zoom":
       return {
         initial: { opacity: 0, scale: 1.08 },
-        animate: { opacity: 1, scale: 1 },
+        animate: { opacity: peak, scale: 1 },
         exit: { opacity: 0, scale: 0.98 },
       };
     case "wipe":
       return {
         initial: { opacity: 0, x: "-25%" },
-        animate: { opacity: 1, x: "0%" },
+        animate: { opacity: peak, x: "0%" },
         exit: { opacity: 0, x: "25%" },
       };
     default:
       return {
         initial: { opacity: 0 },
-        animate: { opacity: 1 },
+        animate: { opacity: peak },
         exit: { opacity: 0 },
       };
   }
@@ -109,7 +125,7 @@ function variantsOf(p: PageTransitionPattern) {
 
 export default function PageTransition() {
   const pathname = usePathname();
-  const [pat, setPat] = useState(1);
+  const [pat, setPat] = useState(6);
   const [show, setShow] = useState(false);
   const first = useRef(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,7 +167,7 @@ export default function PageTransition() {
       first.current = false; /* 最初の表示では出さない */
       return;
     }
-    const p = PAGE_TRANSITION_PATTERNS[pat] ?? PAGE_TRANSITION_PATTERNS[1];
+    const p = PAGE_TRANSITION_PATTERNS[pat] ?? PAGE_TRANSITION_PATTERNS[6];
     setShow(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setShow(false), p.dur * 0.45);
@@ -161,7 +177,7 @@ export default function PageTransition() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  const p = PAGE_TRANSITION_PATTERNS[pat] ?? PAGE_TRANSITION_PATTERNS[1];
+  const p = PAGE_TRANSITION_PATTERNS[pat] ?? PAGE_TRANSITION_PATTERNS[6];
   const v = variantsOf(p);
   const half = p.dur / 1000 / 2;
 
