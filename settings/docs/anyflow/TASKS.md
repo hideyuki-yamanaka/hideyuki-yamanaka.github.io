@@ -1203,6 +1203,7 @@
 - [x] **リセット(↺)を『このセッションを開いた時の値に戻す』に統一**（`SESSION_START`＋`sessionOf`。つまみ/セクション/文字行に適用。スマホモード中は必ずSP上書きだけ解除しPC値は不変）。
 - [x] **SP実機のロゴ帯 下半分見切れ 根治**：`.stage-wrap` を overflow:visible 化(9/17)した後もKV高さ667がロゴ帯の途中で切れ、次セクションが下半分を覆っていた → `KV_MB_H` を 704 に広げロゴを器内へ。
 - [x] **KVに距離つまみ2つ追加**（新サブ「余白（ヘッダー・グラフィックとの距離）」）。①ヘッダー↔コピー(`kv.hlOff`)②グラフィック↔コピー(`kv.gfxY`)。既存の「位置 縦/横」は残す。PC/SP独立。PCで見出し+60/グラフィック+40、実機で見出し+70/グラフィック+45 実測PASS。
+- [x] **Desktopの`anyflow-settings.json`を焼き込みデプロイ（2026-09-25）**：`anim-v81`→`SHIPPED_SETTINGS`、`gfx-presets`→`SHIPPED_PRESET_STATE`、`SHIPPED_FLAGS`は現行∪exportの60フラグ、世代`20260925120000`にバンプ。`vision-sig`/`panel-tab`は自己修復・UI記憶なので焼かず。`?prodsim=1`でガード発火・JSエラー0件・kvVar=strong/resFx24-4/vision emph 実測PASS。本番 anyflow-embed-v5 に反映(200・世代マーカー確認)。
 
 ## 保留・次の判断待ち
 - プリセットのチップ削除（昇格の確認が取れたら）
