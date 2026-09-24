@@ -127,7 +127,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
         sizes,
         /* 写真から本文への渡り。単位は「画面の高さの何%」。
            住み家は globals.css の :root とここの2つ（同じ数にしておくこと） */
-        fv: { pc: 88, sp: 52 },
+        fv: { pc: 100, sp: 52 },
         fade: { pc: 12, sp: 8 },
       },
     };
