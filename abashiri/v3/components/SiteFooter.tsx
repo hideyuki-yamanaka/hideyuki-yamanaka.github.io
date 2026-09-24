@@ -235,6 +235,15 @@ function PhotoStage({
 
   /* 高さが測れるまでは 1画面ぶんを仮に置く（描画のちらつき防止） */
   const H = vh || 900;
+  /* スマホ幅かどうか。フッターの組み方を変えるのに使う（2026-09-24） */
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () => setIsNarrow(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   const stageH = cfg.stageH / 100;
   const fadeH = cfg.fadeH / 100;
   const solid = cfg.solid;
@@ -243,14 +252,15 @@ function PhotoStage({
     <div
       ref={ref}
       className="relative w-full"
-      /* 高さ＝スクロール量。短くすると体験セクションからフッターまでが早く終わる */
-      style={{ height: H * stageH }}
+      /* 高さ＝スクロール量。短くすると体験セクションからフッターまでが早く終わる。
+         ⚠️ スマホは中身が1画面に入りきらないので、高さを決めない（中身なりに伸ばす） */
+      style={{ height: isNarrow ? undefined : H * stageH }}
     >
       {/* ① 後ろの写真。画面に止まったまま、コンテンツだけが流れていく。
          1枚を画面いっぱいに引き延ばす（object-cover なので繰り返さない） */}
       <div
-        className="sticky top-0 w-full overflow-hidden"
-        style={{ height: H }}
+        className={`w-full overflow-hidden ${isNarrow ? "absolute inset-0" : "sticky top-0"}`}
+        style={{ height: isNarrow ? undefined : H }}
       >
         <img
           src="/img/bg-hero.jpg"
@@ -272,7 +282,9 @@ function PhotoStage({
         className="pointer-events-none absolute inset-x-0"
         style={{
           top: -3,
-          height: H * fadeH + 3,
+          /* ⚠️ スマホは中身なりの高さになるので、1画面基準で伸ばすと
+             作字までグラデが覆ってしまう。短めに抑える（2026-09-24） */
+          height: (isNarrow ? Math.min(H * fadeH, 110) : H * fadeH) + 3,
           /* 白のまま保つ割合（solid）から先を、少しずつ透明にしていく。
              solid を小さくすると早く写真が出る＝境目がやわらかくなる */
           background: `linear-gradient(to bottom, #ffffff 0%, #ffffff ${solid}%, rgba(255,255,255,0.96) ${solid + (100 - solid) * 0.2}%, rgba(255,255,255,0.86) ${solid + (100 - solid) * 0.38}%, rgba(255,255,255,0.68) ${solid + (100 - solid) * 0.55}%, rgba(255,255,255,0.44) ${solid + (100 - solid) * 0.72}%, rgba(255,255,255,0.2) ${solid + (100 - solid) * 0.87}%, rgba(255,255,255,0) 100%)`,
@@ -280,13 +292,35 @@ function PhotoStage({
       />
 
       {/* ③ フッターの中身は写真の上 */}
+      {/* 【2026-09-24 ヒデさん指摘】
+           「フッターの白セクションのグラデーションと被って、作字の部分が
+             見えていない感じでデザインが破綻している」
+         実測すると、スマホでは中身（作字260px＋サイトマップ3カテゴリ＋SNS）が
+         1画面に収まらず、上へあふれて作字が画面外に出ていた（実測: 作字 -216〜52）。
+         → スマホでは高さを固定せず【中身の分だけ伸ばす】。
+            PC は今までどおり1画面にぴったり収める。 */}
+      {/* ⚠️ スマホでは absolute をやめる。absolute のままだと中身が
+         親の高さに数えられず、フッターの高さが 0 になって
+         前のセクションと重なってしまう（2026-09-24 実測: 高さ0・作字 -459）。 */}
       <div
-        className={`absolute inset-x-0 bottom-0 flex flex-col ${
-          pad === "wide"
-            ? "px-6 sm:px-[var(--ft-pad-x)]"
-            : "px-6 sm:px-[120px]"
-        } ${align === "end" ? "justify-end pb-[72px] sm:pb-[var(--ft-pad-bottom)]" : "justify-center"}`}
-        style={{ height: H }}
+        className={`flex flex-col ${
+          isNarrow
+            ? "relative z-10 px-6 pb-[56px] pt-[128px]"  /* 作字がグラデに埋もれないよう上を空ける */
+            : "absolute inset-x-0 bottom-0"
+        } ${
+          isNarrow
+            ? ""
+            : pad === "wide"
+              ? "px-6 sm:px-[var(--ft-pad-x)]"
+              : "px-6 sm:px-[120px]"
+        } ${
+          isNarrow
+            ? ""
+            : align === "end"
+              ? "justify-end pb-[56px] sm:pb-[var(--ft-pad-bottom)]"
+              : "justify-center"
+        }`}
+        style={{ height: isNarrow ? undefined : H }}
       >
         {children}
       </div>

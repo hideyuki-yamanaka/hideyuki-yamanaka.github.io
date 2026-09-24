@@ -449,3 +449,14 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
 @media (prefers-reduced-motion: reduce) {
   .tp-marquee { animation: none; }
 }
+
+/* 【2026-09-24 ヒデさん指摘】スマホのフッターで作字が画面の外へあふれていた。
+   1画面に収まるよう、狭い画面では作字を小さくする（実測で 260→150px が収まる） */
+@media (max-width: 639px) {
+  :root {
+    --ft-logo-h: 150px;
+    /* ⚠️ 倍率は --ft-logo-h ÷ 379。高さを変えたらこちらも必ず一緒に変える
+       （片方だけだと、中身と枠がずれる） */
+    --ft-logo-scale: 0.396;
+  }
+}

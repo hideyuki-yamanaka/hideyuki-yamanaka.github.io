@@ -199,6 +199,12 @@ export function usePinProgress(stage: React.RefObject<HTMLElement | null>) {
 
 /** 画面いっぱい（1512×982）の場面を、指定した長さぶん貼りつけておく箱。
     hold で「貼りついてから動き出すまでの“ため”」を作れる（0.18＝最初の18%は静止） */
+/** 4枚目が出たとみなす進み具合。ここまで来たら関所をあける
+    （1.0 まで待つと「見終わったのに下へ行けない」になる。2026-09-24 ヒデさん報告） */
+const PEEL_DONE = 0.96;
+/** 関所で止めておく上限の時間(ms)。保険。これを過ぎたら必ず通す */
+const GATE_MAX_MS = 6000;
+
 export function PinStage({
   /** 貼りつけておく長さ。画面の高さの何倍か */
   length = 2.6,
@@ -222,30 +228,22 @@ export function PinStage({
   const stage = useRef<HTMLDivElement>(null);
   const q = usePinProgress(stage);
 
+  /* 直前のスクロール位置。上へ動いたか下へ動いたかを見るのに使う */
+  const lastTop = useRef(-1);
+  /* 関所を張り始めた時刻。長く止めすぎないための保険 */
+  const gateSince = useRef(0);
+
   useAnimationFrame(() => {
     if (!hold) return;
-    const w = window as unknown as {
-      __abashiriScrollGate?: number;
-      __abashiriScrollGateMin?: number;
-    };
-    const openGates = () => {
+    const w = window as unknown as { __abashiriScrollGate?: number };
+    const openGate = () => {
       if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
-      if (w.__abashiriScrollGateMin !== undefined) delete w.__abashiriScrollGateMin;
+      gateSince.current = 0;
     };
-    /* ⚠️ 0.999 だと、勢いよくスクロールした時に最後の1枚が
-       剥がれきる直前で関所が開いてしまうことがあった
-       （2026-09-20 実測: 案32を一気にスクロールすると2枚で抜けた）。
-       完全に剥がれ終わってから開ける */
-    if (hold.current >= 1) {
-      /* 見終わった。下へ行ってよい。
-         ただし【巻き戻しの途中】は上へ抜けさせない（下の分岐で見る） */
-      if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
-    }
     const el = stage.current;
-    if (!el) return;
     const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
-    if (!sc) return;
-    /* ステージ上端までの距離（縮小前のpx。scrollTop と同じものさし） */
+    if (!el || !sc) return;
+
     let y = 0;
     let e: HTMLElement | null = el;
     while (e && e !== sc) {
@@ -253,28 +251,32 @@ export function PinStage({
       e = e.offsetParent as HTMLElement | null;
     }
     const limit = y + el.offsetHeight - sc.clientHeight;
-    /* まだ場面に入っていない（手前にいる）ときは関所を開けておく */
-    /* ⚠️ 関所を張るのが遅いと、勢いよくスクロールした時に
-       【張る前に通り過ぎて】しまう（2026-09-20 実測: 一気にスクロールで2枚のまま抜けた）。
-       場面の3画面ぶん手前から構えておく */
-    if (sc.scrollTop <= y - sc.clientHeight * 3) {
-      openGates();
+    const now = sc.scrollTop;
+    const goingUp = lastTop.current >= 0 && now < lastTop.current - 0.5;
+    lastTop.current = now;
+
+    /* まだ場面の手前にいる／もう通り過ぎた → 何もしない */
+    if (now <= y - sc.clientHeight * 3 || now > limit + sc.clientHeight) {
+      openGate();
       return;
     }
-    /* ⚠️ ここで scrollTop を直接書いても、トップページの慣性スクロールが
-       毎フレーム上書きするので効かない（2026-09-20 実測）。
-       慣性側が見ている「関所」に、行ってよい上限／下限を伝える */
-    if (hold.current < 1) {
-      w.__abashiriScrollGate = limit; /* 見せ終わるまで下へ行かせない */
+
+    /* 【2026-09-21→24 ヒデさん報告の修正】
+         「下の方にスムーズに行けない」「スクロールバックで上に行けない」
+         「4枚目を見てもすぐ下に行けない」
+       原因は、この関所が強すぎたこと。3つ直す：
+         ① 上へ戻る時は【一切止めない】（前は上向きにも通せんぼしていた）
+         ② 4枚目が出たら即あける（前は進み具合が 1.0 になるまで閉じていた）
+         ③ 保険の時間切れ。万一あかない状態になっても数秒で必ず通す */
+    if (goingUp) { openGate(); return; }                      /* ① */
+    if (hold.current >= PEEL_DONE) { openGate(); return; }    /* ② */
+
+    if (!gateSince.current) gateSince.current = performance.now();
+    if (performance.now() - gateSince.current > GATE_MAX_MS) { /* ③ */
+      openGate();
+      return;
     }
-    /* 巻き戻しの途中（まだ最初の束に戻っていない）は、上へ抜けさせない。
-       これで、下りで見たのと同じ動きが逆回しで最後まで見える */
-    if (hold.current > 0.001) {
-      w.__abashiriScrollGateMin = y;
-    } else if (w.__abashiriScrollGateMin !== undefined) {
-      delete w.__abashiriScrollGateMin;
-    }
-    if (sc.scrollTop > limit && hold.current < 1) sc.scrollTop = limit;
+    w.__abashiriScrollGate = limit;
   });
 
   return (

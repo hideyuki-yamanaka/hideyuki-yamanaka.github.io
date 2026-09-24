@@ -460,13 +460,18 @@ function TocLayout({
           </div>
           {/* 白い面。最初は画面の1つ下に置いておき、スクロールすると
               写真の手前を上がってくる（写真そのものは動かない） */}
-          <div className="relative z-10 pt-[100dvh]">
+          {/* 【2026-09-24 ヒデさん指示】
+                「ファーストビューは100VHにする必要はなくて、画面縦幅の60%ぐらい」
+                「白セクションが出てくるのも余白が多くて、無駄にスクロールする印象」
+              → スマホは写真を 60dvh ぶん見せてから白い面が来る。
+                 PC は今までどおり1画面ぶん見せる（大きい画面では余白が気にならない） */}
+          <div className="relative z-10 pt-[60dvh] lg:pt-[100dvh]">
             {/* ⚠️ 2026-09-20 ヒデさん指摘「上部の部分は白を多めに。急に空が来すぎ」
                 → 変化が急だったので、丈を 46dvh → 70dvh に伸ばし、
                   白の立ち上がりを早めて刻みも細かくした（上に行くほど写真が
                   すこしずつ顔を出す形にする） */}
             <div
-              className="h-[70dvh] w-full"
+              className="h-[34dvh] w-full lg:h-[70dvh]"
               style={{
                 background:
                   "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.14) 12%, rgba(255,255,255,0.34) 26%, rgba(255,255,255,0.54) 40%, rgba(255,255,255,0.72) 54%, rgba(255,255,255,0.86) 68%, rgba(255,255,255,0.95) 82%, rgba(255,255,255,0.99) 92%, #fff 100%)",
@@ -479,7 +484,7 @@ function TocLayout({
         <QuietHero spot={spot} h={heroH} />
       )}
       <div
-        className={`px-6 py-[110px] md:px-[56px] lg:px-[100px] ${
+        className={`px-6 py-[56px] md:px-[56px] md:py-[80px] lg:px-[100px] lg:py-[110px] ${
           /* 白い面の続き。写真(z-0)より手前に置く */
           pinnedHero ? "relative z-10 -mt-px bg-white pt-0" : ""
         }`}
@@ -496,7 +501,7 @@ function TocLayout({
           </aside>
 
           {/* 右カラム：本文 */}
-          <div className="flex min-w-0 flex-1 flex-col gap-[96px]">
+          <div className="flex min-w-0 flex-1 flex-col gap-[56px] lg:gap-[96px]">
             {heads.map((s, i) => (
               <motion.section
                 key={i}
@@ -516,7 +521,7 @@ function TocLayout({
               </motion.section>
             ))}
             {spot.photos.map((p, i) => (
-              <Photo key={i} src={p} root={ref} className="h-[58dvh] w-full" />
+              <Photo key={i} src={p} root={ref} className="aspect-[3/2] w-full" />
             ))}
             <QuietBlocks spot={spot} root={ref} from={heads.length} />
           </div>
@@ -624,7 +629,7 @@ export function V37PinnedBlur({ spot }: VProps) {
               </motion.section>
             ))}
             {spot.photos.map((p, i) => (
-              <Photo key={i} src={p} root={ref} className="h-[62dvh] w-full" />
+              <Photo key={i} src={p} root={ref} className="aspect-[3/2] w-full" />
             ))}
             <QuietBlocks spot={spot} root={ref} from={heads.length} />
           </div>
@@ -700,7 +705,7 @@ export function V38Grid({ spot }: VProps) {
         <Grid className="gap-y-[96px]">
           {spot.photos.map((p, i) => (
             <div key={p} className={`col-span-4 ${span[i % span.length]}`}>
-              <Photo src={p} root={ref} className="h-[52dvh] w-full lg:h-[66dvh]" />
+              <Photo src={p} root={ref} className="aspect-[3/2] w-full" />
             </div>
           ))}
         </Grid>
