@@ -615,30 +615,13 @@
     background-repeat: no-repeat;
   }
 
-  /* === V2 KV: 惑星を隠して「パターン群」(iframe)に差し替え（2026-08-25 移行） ===
-     iframe にしている理由: すりガラス(backdrop-filter)を本体の transform:scale から隔離し、
-     kv/embed.html の 1440 座標系で 1:1 描画させるため。地色は Figma実測の var(--surface)（白フロストが#EEEに浮き出る）。 */
+  /* 【2026-08-26 ヒデさん指定】V1.0 の惑星ビジュアル(軌道・惑星・ドット .orbit)を KV に表示。html.kv-planet が付いている時だけ出す。
+     【2026-09-26 整理】旧KV(iframe の kv/embed.html・A案/B案)と、その中のパネルを開く透明ボックス(kvpSecret)は撤去。
+     KV は惑星だけ(html.kv-planet は常に付く)。 */
   .orbit { display: none !important; }
-  /* 【2026-08-26 ヒデさん指定】V1.0 の惑星ビジュアルを KV に復活。
-     調整パネルの「KV案」で 惑星(V1) を選ぶと html.kv-planet が付き、
-     iframe を隠して V1.0 の軌道・惑星・ドット(.orbit)を表示する。デザインは V1.0 のまま。 */
   html.kv-planet .orbit { display: block !important; }
-  html.kv-planet .kv-graphic-embed, html.kv-planet .kvp-secret { display: none; }
-  .kv-graphic-embed {
-    position: absolute; top: 0; right: 0;
-    width: 1440px; height: var(--dh, 921px);
-    border: 0; background: transparent;
-    color-scheme: light;
-  }
-  /* 調整パネルを開く透明ボックス（本体側。iframe内のパネルをトグルする）。
-     網走と同じく“完全に透明な空ボックス”。アイコンは出さない（ヒデさん指定 2026-08-25） */
-  .kvp-secret {
-    position: absolute; top: 54px; right: 0; width: 120px; height: 90px;
-    z-index: 40; cursor: pointer; background: transparent;
-  }
   /* 【2026-08-25 復活・ヒデさん指定】本体の「モーション調整パネル」を再表示する。
-     スクロール駆動/固定追従などの切替を V1.0 のように戻すため。
-     開閉ボックスは 2枚に分離: 右上⚙ = KVパネル(kvpSecret) / 左上⚙ = 本体モーションパネル(.tools-secret-hot)。 */
+     スクロール駆動/固定追従などの切替を V1.0 のように戻すため。開閉は透明ボックス(.tools-secret-hot)。 */
 
   /* ---- Logos (ティッカー風カルーセル) ---- */
   .logos {
@@ -3924,13 +3907,7 @@
 <div class="stage-wrap">
   <div class="stage" id="stage">
 
-    <!-- V2 KV: 右側グラフィック（パターン群）。惑星の代わり。ヘッダー等より背面に置く -->
-    <!-- 【2026-08-30 ヒデさん指定・軽量化】旧KV(モック案A/B)の iframe は遅延ロード。
-         既定の「惑星」では読み込まず(以前は毎回 約850KB+フォント二重取得が走っていた)、
-         パネルで A案/B案 を選んだ瞬間に kvEnsureIframe() が data-src → src へ入れて読み込む。 -->
-    <iframe class="kv-graphic-embed" data-src="kv/embed.html?v=10" title="キービジュアル" loading="eager" scrolling="no"></iframe>
-    <!-- 調整パネルを開く透明ボックス（右上・ヘッダーの下）。iframe内のパネルをトグル -->
-    <div class="kvp-secret" id="kvpSecret" title="調整パネル"></div>
+    <!-- 【2026-09-26 整理】旧KV(iframe の kv/embed.html・A案/B案)とパネル開閉ボックス(kvpSecret)は撤去。KVは惑星(.orbit)だけ -->
 
     <header class="header">
       <div class="logo"><img class="logo-c" src="assets/header-logo.svg" alt="Anyflow Embed"><img class="logo-w" src="assets/header-logo-textwhite.svg?v=1" alt="" aria-hidden="true"><!-- 【2026-09-18 ヒデさん指定】暗い場面(開発者体験・メニュー)はシンボルは青/ピンクのまま文字だけ白 --></div>
@@ -5123,9 +5100,6 @@ const DEFAULTS = {
     lineGap: 0.20,    // 改行の間
     graphicGap: -0.9, // 小ラベル基準の前後。マイナス=小ラベルより前(タイピング中)に出す(2026-08-29 さらに早める -0.45→-0.9)
     revealDur: 1.5,   // ブラーで出てくる所の所要時間 (大きいほどゆったり)
-    /* 【2026-08-26 ヒデさん指定】右グラフィックの入場を「1行目タイピング完了」から始める。
-       introLead = 1行目完了からの前後ずらし(秒。マイナスで1行目完了より前、プラスで後)。 */
-    introLead: 0,
   },
   orbits: {
     /* 軌道ごと: サイズ倍率 / 角度ずらし(°) / 位置ずらし(px) / ゆれ(幅°・周期s・位相°) */
@@ -5377,7 +5351,7 @@ const DEFAULTS = {
      'lock'   = 固定。従来のスクロールジャック(再生中は貼りつけて動かさない)
      ※ pin='on' のまま(=リビール演出は維持)、この scrollHold で“ロックの強さ”だけ切替える。 */
   scrollHold: 'smooth', // 2026-08-26 ヒデさん指定: サイト全体は「固定追従なし」を既定に(掴み無し・ロック無し)。固定は個別で必要な所だけ。切替は 固定追従なし / 固定 の2択
-  kvDesign: 'planet',   // 右グラフィックの案。'planet'=V1.0の惑星(2026-08-26 復活・既定) / それ以外=iframe(kv/embed.html)の案
+  kvDesign: 'planet',   // 右グラフィック＝V1.0の惑星(2026-08-26 復活)。【2026-09-26 整理】旧iframe案(A/B)は撤去したので 'planet' だけ
   visResPull: 200,   /* 【2026-09-19 夜】260→200(ヒデさん「まだ近い」→気持ち60px空ける・仮置き) 【2026-09-19】ビジョン→実績の空白を詰める量(px・PCのみ)。ビジョンタブ。200→260(1440×921 で図/Point に被らない上限は約320) */
   secHeadGap: 6,   /* 【2026-09-19】セクション見出しのラベル→見出しの間隔(px)。🌊全体タブ */
   drawer: { padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14, barW: 20, barH: 2, barGap: 7, navBlur: 8 },   /* navBlur=スクロールでナビが格納される時のぼかし最大(px) */   /* barW/barH/barGap=右上のハンバーガー(2本線)の 長さ/太さ/間隔(px)。2本にした分ちょっと広め(7) 2026-09-18 */
@@ -5510,8 +5484,6 @@ const DEFAULTS = {
     accre:  { count: 1000, fall: 0.55, speed: 0.45, size: 0.35, scale: 1.15, twinkle: 0.4, wobble: 0, showOrbit: false,
               swirl: 1, fallCurve: 1 },   /* swirl=内側ほど速く回る度合い / fallCurve=落ち方のカーブ */
   },
-  /* KV(右グラフィック)の入場の各フェーズの出始めタイミング(秒・合図から)。パネルで調整可。iframe へ postMessage。 */
-  kvIntro: { mockAt: 0.08, iconsAt: 0.7, iconsStagger: 0.11, orbitAt: 1.5 },
   patterns: {
     results: 'C',   // 実績のレイアウト A=横長画像 / B=左端の縦帯 / C=中央テキスト＋黒オブジェクトで開発者体験へ(既定)
     /* 【2026-08-29 ヒデさん指定】実績→開発者体験の「切替演出」。
@@ -6083,7 +6055,7 @@ function loadParams() {
   if (!['atom', 'saturn', 'rosette', 'globe'].includes(merged.conv.ringShape)) merged.conv.ringShape = DEFAULTS.conv.ringShape;
   if (typeof merged.conv.echoCrisp !== 'boolean') merged.conv.echoCrisp = DEFAULTS.conv.echoCrisp;
   if (!['every', 'count', 'time'].includes(merged.conv.fxMode)) merged.conv.fxMode = DEFAULTS.conv.fxMode;
-  if (!['planet', 'p7', 'p9'].includes(merged.kvDesign)) merged.kvDesign = DEFAULTS.kvDesign;
+  merged.kvDesign = 'planet';   /* 【2026-09-26 整理】旧KV(A案p7/B案p9・iframe)は撤去。古い保存値でも惑星に */
   if (merged.crossDelay == null) merged.crossDelay = DEFAULTS.crossDelay;
   if (merged.crossLead == null) merged.crossLead = DEFAULTS.crossLead;
   merged.kv = { ...DEFAULTS.kv, ...(s.kv || {}) };
@@ -14669,61 +14641,9 @@ kvEls.textNodes = [null, null];
   });
 })();
 
-/* KV iframe(右グラフィック)の入場は「見出しタイピング完了」後に始める。
-   iframe とは postMessage で握手: iframe から kvReady を受け、typing 完了(gAt)で kvIntroStart を返す。
-   ⚠️ 埋め込み時 iframe は defer=true でシーンを隠したまま待っている（embed.html）。 */
-let kvIframeReady = false, kvIntroDue = false, kvIntroSent = false;
-function kvSendIntro() {
-  if (kvIntroSent || !(kvIframeReady && kvIntroDue)) return;
-  const ifr = document.querySelector('.kv-graphic-embed');
-  if (ifr && ifr.contentWindow) { ifr.contentWindow.postMessage({ type: 'kvIntroStart', timing: params.kvIntro }, '*'); kvIntroSent = true; }
-}
-/* パネルで KV の出始めタイミングを変えた時: iframe に反映(replay=true なら再生して確認) */
-function kvSendIntroTiming(replay) {
-  const ifr = document.querySelector('.kv-graphic-embed');
-  if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage({ type: replay ? 'kvIntroReplay' : 'kvIntroTiming', timing: params.kvIntro }, '*');
-}
-/* 【2026-08-30 ヒデさん指定・軽量化】旧KV iframe の遅延ロード。
-   惑星が既定の今、kv/embed.html(画像724KB+JS/CSS+フォント)を毎回読むのは無駄なので、
-   A案/B案が選ばれた時に初めて src を入れて読み込む。ロード完了(kvReady)後に選択案を送る。 */
-let kvPendingDesign = null;
-function kvEnsureIframe() {
-  const ifr = document.querySelector('.kv-graphic-embed');
-  if (!ifr) return null;
-  if (!ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
-  return ifr;
-}
-window.addEventListener('message', (e) => {
-  if (e && e.data && e.data.type === 'kvReady') {
-    kvIframeReady = true; kvSendIntro();
-    if (kvPendingDesign) {   /* 遅延ロード完了後に、選ばれていた案を反映 */
-      const ifr = document.querySelector('.kv-graphic-embed');
-      if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage({ type: 'kvSetDesign', design: kvPendingDesign }, '*');
-      kvPendingDesign = null;
-    }
-  }
-});
-
-/* 調整パネルから選べる「右グラフィックの案」。key は iframe(embed.html) の data-design に対応。 */
-const KV_DESIGNS = [
-  { key: 'planet', name: '惑星(V1)' },   /* 2026-08-26 復活・既定。V1.0の軌道+惑星+ドット */
-  { key: 'p7', name: 'A案' },
-  { key: 'p9', name: 'B案' },
-];
-/* 案を選ぶと切り替える（本体の文字は流し直さない）。
-   'planet' は本体の .orbit を表示(html.kv-planet)、それ以外は iframe へ postMessage。 */
-function kvSetDesign(d) {
-  params.kvDesign = d;
-  document.documentElement.classList.toggle('kv-planet', d === 'planet');
-  if (d === 'planet') return;
-  const ifr = kvEnsureIframe();   /* 遅延ロード: A案/B案を選んだ瞬間に読み込む */
-  if (ifr && kvIframeReady && ifr.contentWindow) ifr.contentWindow.postMessage({ type: 'kvSetDesign', design: d }, '*');
-  else kvPendingDesign = d;       /* まだロード中なら kvReady 受信時に送る */
-}
-/* 読み込み時に保存値どおりのモードにしておく（既定は惑星）。
-   保存が A案/B案 なら iframe をこの時点で読み込む(惑星なら読まない=軽量化) */
+/* 【2026-09-26 整理】旧KV(iframe の kv/embed.html・A案/B案)の遅延読み込み・案の切替・入場の合図(postMessage)は撤去。
+   KV は惑星だけ(params.kvDesign は読み込み時に 'planet' へそろえる)。 */
 document.documentElement.classList.toggle('kv-planet', params.kvDesign === 'planet');
-if (params.kvDesign !== 'planet') { kvPendingDesign = params.kvDesign; kvEnsureIframe(); }
 /* 【2026-08-30 ヒデさん指定】ナビ項目の左右の間隔(px)。パネルの「ナビ項目の間隔」から変えられる */
 function applyNavGap() {
   document.documentElement.style.setProperty('--nav-gap', (params.kv.navGap != null ? params.kv.navGap : 32) + 'px');
@@ -14970,11 +14890,7 @@ function updateKV() {
   /* スマホのロゴ帯は JS(rv)で触らない: iOS で inline の blur/opacity 書き込みが合成レイヤーを落とすため。
      スマホは常時表示(CSS の .logos opacity:1)＝チカチカ/一瞬消える対策(2026-09-09、遅延フェードは撤去)。 */
   if (!isMobile) rv(kvEls.logos, easeOutQ(clamp01((t - gAt - RD * 0.6) / RD)), 8);
-  /* 【2026-08-26 ヒデさん指定】1行目のタイピングが終わったあたりで、右のKV iframe に入場開始を合図する
-     (モック→アイコン→軌道)。以前は全タイピング完了(gAt)を待っていた。introLead で前後にずらせる。 */
-  const _line1End = (starts.length > 1 ? starts[1] - c.lineGap : typeEnd);   /* 1行目の打ち終わり(多行対応) */
-  const kvIntroFireAt = c.typeAt + _line1End + (c.introLead || 0);
-  if (elapsed >= kvIntroFireAt) { kvIntroDue = true; kvSendIntro(); }
+  /* 【2026-09-26 整理】旧KV iframe への入場合図(1行目の打ち終わり＋introLead)は iframe ごと撤去 */
 }
 
 function updateSections() {
@@ -20888,20 +20804,5 @@ document.getElementById('panelBody').addEventListener('click', () => {
 })();
 </script>
 
-<!-- V2 KV: 右上の透明ボックスで、iframe内の「調整パネル」を出し入れ（網走と同じ隠しモード） -->
-<script>
-(function () {
-  var box = document.getElementById('kvpSecret');
-  var ifr = document.querySelector('.kv-graphic-embed');
-  if (!box || !ifr) return;
-  box.addEventListener('click', function () {
-    try {
-      var d = ifr.contentDocument;
-      var bar = d && d.querySelector('.kv-bar');
-      if (bar) bar.classList.toggle('show');
-    } catch (e) { /* iframe未ロード時は無視 */ }
-  });
-})();
-</script>
 </body>
 </html>

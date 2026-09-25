@@ -1,0 +1,6 @@
+# 本番(Vercel)に上げないもの。サイトの表示には使わない開発用のファイル。
+# 【2026-09-26 整理】以前は tools/(スマホ同期の中継)や _backup/ まで公開URLで誰でも取れる状態だった。
+tools/
+_backup/
+README.md
+.gitignore
