@@ -18528,12 +18528,8 @@ function buildPanel() {
       if ((M.style || 'organic') === 'cage') {
         slider('大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
           '惑星の半径の何倍でメッシュを組むか。大きいほど大きく取り囲みます。', { mbKey: 'conv.mesh.cageR' });
-        /* 【2026-09-21 ヒデさん依頼】メッシュの形状バリエーション(丸み/横長/ひし形/縦長・現状=ノーマル)＋手動微調整 */
-        note('▼ 形状（案）');
-        varRowX('kvMeshShape', VIS_MESH_SHAPES, () => kvMeshShapeKey(), k => { kvApplyMeshShape(String(k)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-        slider('横のふくらみ', 0.6, 1.6, 0.02, () => (params.conv.mesh.msx != null ? params.conv.mesh.msx : 1), v => M.msx = v, v => '×' + v.toFixed(2), 'メッシュの横幅。大きいほど横長。', { mbKey: 'conv.mesh.msx' });
-        slider('縦のふくらみ', 0.6, 1.6, 0.02, () => (params.conv.mesh.msy != null ? params.conv.mesh.msy : 1), v => M.msy = v, v => '×' + v.toFixed(2), 'メッシュの縦の高さ。大きいほど縦長。', { mbKey: 'conv.mesh.msy' });
-        slider('尖り（ひし形）', 0, 0.9, 0.02, () => (params.conv.mesh.mpinch || 0), v => M.mpinch = v, v => Math.round(v * 100) + '%', '上下の極を尖らせてひし形に。0で球。', { mbKey: 'conv.mesh.mpinch' });
+        /* 【2026-09-25 ヒデさん依頼】メッシュの形状バリエーション(丸み/横長/ひし形/縦長)＋横/縦のふくらみ＋尖りのつまみは削除。
+           現状(焼き込み済みの msx/msy/mpinch)を既定として固定。形状はいじらせず、面の数(下)だけ残す。 */
         slider('回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
           v => '×' + v.toFixed(2), '右へ動かすほどメッシュが速く回ります。0(左端)で止まります。', { mbKey: 'conv.mesh.cageSpin' });
         slider('傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
@@ -19030,12 +19026,8 @@ function buildPanel() {
   sub(catVis, 'メッシュ', false);
   note('Figma 18004:38228 のグラフィックをコードで描画(正二十面体を分割した球)。位置は ✏️編集でもドラッグ可。');
   const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfgVal(key), v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true, mbActive: () => { const _v = params.sections.vision; return !!(_v && _v.domeMb && _v.domeMb[key] != null); }, mbClear: () => { const _v = params.sections.vision; if (_v && _v.domeMb) { delete _v.domeMb[key]; applyVfFade(); } } }, o || {})));
-  /* 【2026-09-21 ヒデさん依頼】メッシュの形状バリエーション(丸み/横長/ひし形/縦長・現状=ノーマル)。下の手動つまみで微調整も可 */
-  note('▼ 形状（案）');
-  varRowX('visMeshShape', VIS_MESH_SHAPES, () => visMeshShapeKey(), k => { visApplyMeshShape(String(k)); }, { after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  vfS('横のふくらみ', 'msx', 0.6, 1.6, 0.02, v => '×' + v.toFixed(2), 'メッシュの横幅。大きいほど横長。');
-  vfS('縦のふくらみ', 'msy', 0.6, 1.6, 0.02, v => '×' + v.toFixed(2), 'メッシュの縦の高さ。大きいほど縦長。');
-  vfS('尖り（ひし形）', 'mpinch', 0, 0.9, 0.02, v => Math.round(v * 100) + '%', '上下の極を尖らせてひし形に。0で球。');
+  /* 【2026-09-25 ヒデさん依頼】メッシュの形状バリエーション＋横/縦のふくらみ＋尖りのつまみは削除。
+     現状(焼き込み済み)を既定として固定。形状はいじらせず、細かさ(面の数)だけ下に残す。 */
   note('▼ セット（メッシュ＋ロゴ＋機能名）');
   vfS('セットの位置 X', 'dx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セット(メッシュ・ロゴ・機能名)を左右に。Point 01/02 は動きません。PCのみ。0＝いまの位置。', { signed: true });
   vfS('セットの位置 Y', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セットを上下に。Point 01/02 は動きません。既定 +30px 仮置き。');
