@@ -5001,244 +5001,6 @@ try {
     localStorage.setItem('anyflow-vision-sig', _sig);
   }
 } catch (e) {}
-/* 2026-08-25: 実績→開発者体験の新演出(案C)を既定化＋タイミングを詰める。既存の保存値も一度だけ移行する
-   （パネルで案A/Bやタイミングへ戻せる。移行フラグで一度きり＝以後は保存値を尊重） */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-migrate-resC2')) {
-    const D = DEFAULTS.sections.results;
-    params.patterns.results = 'C';
-    if (params.sections && params.sections.results) {
-      params.sections.results.outFrom = D.outFrom;
-      params.sections.results.outTo = D.outTo;
-      params.sections.results.driveLen = D.driveLen;
-    }
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    _s.patterns = _s.patterns || {}; _s.patterns.results = 'C';
-    _s.sections = _s.sections || {}; _s.sections.results = _s.sections.results || {};
-    _s.sections.results.outFrom = D.outFrom;
-    _s.sections.results.outTo = D.outTo;
-    _s.sections.results.driveLen = D.driveLen;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-migrate-resC2', '1');
-  }
-} catch (e) {}
-/* 【2026-08-28 ヒデさん指定】選択ピルをグループへ再編。既存の保存値は一度だけ「周回のみ(off)」を
-   デフォルトに寄せる(以後は保存値を尊重)。プリセットは別キー(PRESET_KEY)なので消えない。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-migrate-groups')) {
-    params.converge = 'off';
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    _s.converge = 'off';
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-migrate-groups', '1');
-  }
-} catch (e) {}
-/* 【2026-08-29 ヒデさん指定】開発者体験2はテキストスライドを既定に(listは廃止方向)。
-   ⚠️【重大バグ修正】以前は loadParams() の中で merged.sections.dev.ds2 だけ書き換えていたが、
-   その値を localStorage に保存し直していなかったため、次のリロードで保存値の 'list' に戻り、
-   「デザインが全く変わらない」症状になっていた。実績C/グループ化と同じく、ここで params と
-   保存の【両方】へ確実に焼く。キー d は新規なので、c まで踏んだ人にも一度だけ再適用される。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-dev-ds2-slide-20260829d')) {
-    if (params.sections && params.sections.dev) params.sections.dev.ds2 = 'slide';
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    _s.sections = _s.sections || {}; _s.sections.dev = _s.sections.dev || {};
-    _s.sections.dev.ds2 = 'slide';
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-dev-ds2-slide-20260829d', '1');
-  }
-} catch (e) {}
-/* 【2026-09-17 大掃除＋ビジョン破綻の根治】ヒデさん報告「左の惑星図(Platform)と Point 01/02 が重なって破綻。V4.0 は正常」。
-   真因(ブラウザ保存を実測): 図の位置が noPinX 45 / noPinY 143、Point の横ずらしが p1X 0 / p2X 0 になっていた。
-   V4.0 本番(焼き込み)は noPinX −95 / noPinY 109 / 大きさ 1.18 / Point 01 +36 / Point 02 +70。
-   前回「p1X/p2X を 0 に戻す」対処は誤り(0 は 9/15 の一時値で、V4.0 の正はこの値)。params と保存の【両方】へ焼く。
-   同じ移行で: 旧フォントテスト(⑪調整版)を基本値へ焼き込んだのに合わせ、KV の文字設定を新しい置き場へ移す
-   (mainSize 70 / jumpSize 120 / eyebrowSize 20、copyX は「ロゴ左端からのずらし」なので 0、copyY は基準208pxに含めたので 0)、
-   フォントテスト系の保存を捨て、調整版で 600 に揃えていた見出し群は params.edits(文字システム)の太さとして seed する。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-v5-cleanup-20260917')) {
-    const V4 = { noPinX: -95, noPinY: 109, noPinScale: 1.18, p1X: 0, p1Y: 0, p2X: 0, p2Y: 0 };
-    const KV = { mainSize: 70, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0 };
-    const SEED = { visLabel: 600, visMsg: 600, pfTitle: 600, pfSub: 600, p1tag: 600, p1h: 600, p2tag: 600, p2h: 600,
-      resHl1: 600, resHl2: 600, r2vTag: 600, r2vBig: 600, r2vH: 600, statsLab: 600, statsVal: 600,
-      dcLabel: 600, dcOne: 600, caseEyebrow: 600, caseTitle: 600, cvEyebrow: 600, cvHead: 600 };
-    const fix = (o) => {
-      if (!o) return;
-      o.sections = o.sections || {}; o.sections.vision = o.sections.vision || {}; Object.assign(o.sections.vision, V4);
-      o.kv = o.kv || {}; Object.assign(o.kv, KV);
-      delete o.kv.mainWeight; delete o.kv.eyebrowWeight; delete o.kv.eyebrowLs; delete o.kv.mainThin;
-      delete o.fontTest; delete o.fontTestW; delete o.fontTestEdits; delete o.fwDelta;
-      o.edits = o.edits || {};
-      for (const k in SEED) { o.edits[k] = o.edits[k] || {}; if (o.edits[k].fw == null) o.edits[k].fw = SEED[k]; }
-    };
-    fix(params);
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    fix(_s);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-v5-cleanup-20260917', '1');
-  }
-} catch (e) {}
-/* 【2026-09-17 大掃除②・ヒデさん指定】調整パネルから外した選択UIの値を固定(焼き込み)。ブラウザ保存に古い選択が残っていても
-   今の見た目(ヒデさんのローカル実測値)に揃える: ヘッダー12/なめらか/1.65秒、ハンバーガー2本線/クロス、浮くピル標準、ドロワー左寄せ大、
-   お問い合わせ=インデント/フォーム直置き/リキッドグラス明/放射グラデ(中心0.78,0.12 広がり0.9)/標準の溶け込み(260)/余白120,0,0,60、
-   導入事例=罫線なし/影でふわっと浮く、KV=ネットワーク★1 大きいケージ(mesh)。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-v5-cleanup2-20260917')) {
-    const FIX = { hdrMode: '12', hdrMotion: '1', hdrDur: 1.65, burgerIcon: '2', burgerAnim: '1', floatStyle: '1', drawerStyle: '3',
-      cvHier: '1', cvCta: 'form', formStyle: '1', cvForm: '0', cvEdge: '0', converge: 'mesh' };
-    const CV = { blend: 260, headTop: 120, addT: 0, addB: 0, gapTop: 60, gMode: 0, gcx: 0.78, gcy: 0.12, gr: 0.9, gAspect: 1, gAng: 0 };
-    const fix2 = (o) => {
-      if (!o) return;
-      Object.assign(o, FIX);
-      o.cv = o.cv || {}; Object.assign(o.cv, CV);
-      o.patterns = o.patterns || {}; o.patterns.caseLayout = '1'; o.patterns.caseHover = 'ct-lift';
-      o.gfxVariantOn = o.gfxVariantOn || {}; o.gfxVariantOn.mesh = 3;
-    };
-    fix2(params);
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    fix2(_s);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-v5-cleanup2-20260917', '1');
-  }
-} catch (e) {}
-/* 【2026-09-18 ヒデさん依頼】Figma 17707:26040「ベース」で再調整されたフォントウェイトを、文字システム(params.edits[key].fw)へ反映。
-   値は Figma のネイティブデータ(getStyledTextSegments の fontName.style)を数値に写したもの
-   (Noto Sans JP: Light300/Regular400/Medium500/SemiBold600/Bold700/ExtraBold800、SF Pro(Text): Light300/Regular400/Medium500/Semibold600、Inter: Semi Bold600)。
-   KVメイン(800/最終行700)とサブ(500)は CSS 側の基本値(スマホ据え置きのため edits には入れない)。Platform の図は画像のため文字情報なし＝据え置き。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-figma-weights-20260918')) {
-    const FW = { navLinks: 600, navCta: 600, visLabel: 600, visMsg: 700, p1tag: 500, p1h: 600, p1p: 400, p2tag: 500, p2h: 600, p2p: 400,
-      r2vTag: 600, r2vH: 600, r2vP: 400, resHl1: 400, resHl2: 400, statsLab: 400, statsVal: 300, dcLabel: 500, dcOne: 400,
-      caseEyebrow: 600, caseTitle: 600, cgQuote: 300, cgTag: 300, cgCompany: 300,
-      cvEyebrow: 400, cvHead: 600, cvSub: 300, cvfLab: 400, cvfIn: 300, cvfFine: 400, cvfSubmit: 400, footNav: 300, footAddr: 300, footCopy: 300 };
-    const fix3 = (o) => { if (!o) return; o.edits = o.edits || {}; for (const k in FW) { o.edits[k] = o.edits[k] || {}; o.edits[k].fw = FW[k]; } };
-    fix3(params);
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    fix3(_s);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-figma-weights-20260918', '1');
-  }
-} catch (e) {}
-/* 【2026-09-18 ヒデさん指定】ロゴティッカーを Figma 17707:26078 の書き出しに差し替え。ロゴ間隔は Figma の平均 54px に(保存の 72 を一度だけ更新)。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-logo-gap-20260918')) {
-    if (params.marquee) params.marquee.gap = 54;
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    _s.marquee = _s.marquee || {}; _s.marquee.gap = 54;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    localStorage.setItem('anyflow-logo-gap-20260918', '1');
-  }
-} catch (e) {}
-/* 【2026-09-20 ヒデさん依頼・優先】スマホモードで PC と連動していた頃に、SP で触った値が PC 側の
-   「KVのフォント」と「右グラフィック(惑星/カゴ/右グラフィック全体)」へ誤って移ってしまった分を、一度だけ焼き込みへ戻す。
-   以降は PC/SP 独立(文字=editsMb・起動時 applyKvVariant)なので再発しない。SP は CSS(--fs-hero 等)・焼き込み案で正しく出る。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-sp-rollback-20260920')) {
-    const FULL = ['kvMain', 'kvMainLast', 'kvEyebrow'];   /* KVコピーは焼き込みに文字設定が無い＝丸ごと消せば焼き込みへ戻る(位置dx/dyは残す) */
-    const SIZE = ['navCta', 'navLinks'];                  /* ヘッダーは焼き込みで太さ600がある＝サイズ等だけ消して太さは残す */
-    const rollback = (o) => {
-      if (!o) return;
-      if (o.edits) {
-        for (const k of FULL) { const e = o.edits[k]; if (e) { delete e.fs; delete e.fw; delete e.lh; delete e.ls; } }
-        for (const k of SIZE) { const e = o.edits[k]; if (e) { delete e.fs; delete e.lh; delete e.ls; } }
-      }
-      /* 右グラフィック: KV案の「いまの設定で上書き」控えを消す → 起動時 applyKvVariant が焼き込み案の値を入れ直す */
-      if (o.gfxVarOverride) delete o.gfxVarOverride.kvVar;
-    };
-    rollback(params);
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    rollback(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    try { const st = JSON.parse(localStorage.getItem(PRESET_KEY)) || null; if (st && st.over) { delete st.over.kvVar; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); } } catch (e) {}
-    localStorage.setItem('anyflow-kv-sp-rollback-20260920', '1');
-  }
-} catch (e) {}
-/* 【2026-09-20 ヒデさん依頼・#7】KVの位置移動を案別に独立させるにあたり、いまグローバルに付いている位置を
-   「いま選ばれている案」の控えへ一度だけ移す(以降は案別。他の案には付かない)。これをしないと起動時の kvClearEdits で位置が消える。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-pos-pervariant-20260920')) {
-    /* ⚠️ ここは module 評価の早い段階なので、後方の const(KV_VARIANTS 等)や関数は参照しない(TDZ回避)。キーは直書き */
-    const EL = ['navLogo', 'navLinks', 'navCta', 'kvMain', 'kvMainLast', 'kvEyebrow', 'kvLogos'], PR = ['dx', 'dy', 'pt', 'pr', 'pb', 'pl'];
-    const snap = {}; if (params.edits) EL.forEach(k => { const e = params.edits[k]; if (e) { const o = {}; PR.forEach(pp => { if (e[pp] != null) o[pp] = e[pp]; }); if (Object.keys(o).length) snap[k] = o; } });
-    if (Object.keys(snap).length) {
-      const cur = String((params && params.kvVar) || 'normal');
-      if (!params.gfxVarOverride) params.gfxVarOverride = {};
-      if (!params.gfxVarOverride.kvVar) params.gfxVarOverride.kvVar = {};
-      const o = params.gfxVarOverride.kvVar[cur] || (params.gfxVarOverride.kvVar[cur] = {});
-      o.edits = Object.assign({}, o.edits, snap);
-      try { const st = JSON.parse(localStorage.getItem(PRESET_KEY)) || {}; st.over = st.over || {}; st.over.kvVar = params.gfxVarOverride.kvVar; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); } catch (e) {}
-    }
-    localStorage.setItem('anyflow-kv-pos-pervariant-20260920', '1');
-  }
-} catch (e) {}
-/* 【2026-09-20 ヒデさん依頼】ビジョンのロゴを一度だけ「平面(傾き0・変形なし)・ど真ん中」へ戻す(古い −14° 傾き/位置ズレを解消) */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vislogo-flat-20260920')) {
-    const setFlat = (o) => { if (!o || !o.sections || !o.sections.vision) return; const d = o.sections.vision.dome; if (d) { d.logoTiltX = 0; d.logoAngle = 0; d.logoTiltY = 0; d.logoDx = 0; d.logoDy = 0; } const m = o.sections.vision.domeMb; if (m) { ['logoTiltX', 'logoAngle', 'logoTiltY', 'logoDx', 'logoDy'].forEach(k => delete m[k]); } };
-    setFlat(params);
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    setFlat(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    if (params.gfxVarOverride) delete params.gfxVarOverride.visLogo;
-    try { const st = JSON.parse(localStorage.getItem(PRESET_KEY)) || {}; if (st.over && st.over.visLogo) { delete st.over.visLogo; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); } } catch (e) {}
-    localStorage.setItem('anyflow-vislogo-flat-20260920', '1');
-  }
-} catch (e) {}
-/* 【2026-09-18 ヒデさん指摘「コンプとの照合が100%でない・特にビジョン」】全277文字ノードを機械照合した差分: ビジョンの図の役割名(コネクタ等)・プラットフォーム＝Noto Regular(400)、
-   開発者体験の見出しスロット CLI/SDK/API＝SF Pro Medium(500)。「Platform」(英字)はコンプに無いので据え置き。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-fw2-20260918')) {
-    const FW2 = { pfSub: 400, pfNames: 400, dsWord: 500 };
-    const fx = (o) => { if (!o) return; o.edits = o.edits || {}; for (const k in FW2) { o.edits[k] = o.edits[k] || {}; o.edits[k].fw = FW2[k]; } };
-    fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-fw2-20260918', '1');
-  }
-} catch (e) {}
-/* 【2026-09-18 ヒデさん指定】実績の案は 24-5(シンプル版)を既定に。24-2 を使っていた保存は一度だけ切り替える(以後はパネルで自由) */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-resfx-24-5-20260918')) {
-    const sw = (o) => { if (o && o.patterns && (o.patterns.resFx === '24-2' || o.patterns.resFx == null)) o.patterns.resFx = '24-5'; };
-    sw(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; sw(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-resfx-24-5-20260918', '1');
-  }
-} catch (e) {}
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-formceil-off-20260918')) { if (params.cv) params.cv.formCeil = 1; const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; if (_s.cv) _s.cv.formCeil = 1; localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-formceil-off-20260918', '1'); } } catch (e) {}   /* 2026-09-18: 白飛び処理の取り下げ */
-/* 【2026-09-18 ヒデさん指定】見出しの共通部品化: 英字ラベル(Our Vision/Use Case/Contact)は 600 で統一 */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-sechead2-20260918')) { const fx = (o) => { if (!o) return; o.edits = o.edits || {}; for (const k of ['cvEyebrow', 'dcLabel', 'dcOne']) { o.edits[k] = o.edits[k] || {}; o.edits[k].fw = 600; } }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-sechead2-20260918', '1'); } } catch (e) {}
-/* 【2026-09-18 ヒデさん依頼】導入事例のカード文字を Figma 17790:28520 に: 一言 Medium(500)16px / 業種 Regular(400) / 会社名 Regular(400) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cases-fw-20260918')) { const FW = { cgQuote: 500, cgTag: 400, cgCompany: 400 }; const fx = (o) => { if (!o) return; o.edits = o.edits || {}; for (const k in FW) { o.edits[k] = o.edits[k] || {}; o.edits[k].fw = FW[k]; } }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cases-fw-20260918', '1'); } } catch (e) {}
-/* 【2026-09-19 ヒデさん依頼】ビジョンの図を SVG 書き出しに差し替え: Point の位置ずらしを 0 に(位置は CSS でカンプ座標)、旧図の文字(edits)を掃除 */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vision-svg-20260919')) { const fx = (o) => { if (!o) return; o.sections = o.sections || {}; o.sections.vision = o.sections.vision || {}; for (const k of ['p1X', 'p1Y', 'p2X', 'p2Y']) o.sections.vision[k] = 0; if (o.edits) for (const k of ['pfTitle', 'pfSub', 'pfNames']) delete o.edits[k]; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-vision-svg-20260919', '1'); } } catch (e) {}
-/* 【2026-09-21 ヒデさん報告・メッシュの濃さ/回転が「効かない」根治】以前の保存値 vision.dome / gfxVarOverride.visMesh が
-   コード既定(VF_DEF)を隠していた(＝lineColor/lineAlpha/spin を変えても保存値が勝って反映されない)。
-   この4キーを保存値から一度だけ剥がして、VF_DEF の新しい値(濃い #5F5F5F・0.85・回転 0.6)が効くようにする。個別の位置(labOff/logoDy等)は残す。 */
-try {
-  if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-mesh-dark-spin-20260921')) {
-    const MK = ['lineColor', 'lineAlpha', 'spin', 'spinOn'];
-    const stripDome = (o) => { if (!o || !o.sections || !o.sections.vision) return; const v = o.sections.vision; if (v.dome) MK.forEach(k => delete v.dome[k]); if (v.domeMb) MK.forEach(k => delete v.domeMb[k]); };
-    const stripOver = (ov) => { if (ov && ov.visMesh) { for (const key in ov.visMesh) { const snap = ov.visMesh[key]; if (snap) MK.forEach(k => delete snap[k]); } } };
-    stripDome(params); if (params.gfxVarOverride) stripOver(params.gfxVarOverride);
-    const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; stripDome(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s));
-    try { const ps = JSON.parse(localStorage.getItem('anyflow-gfx-presets')) || {}; if (ps.over) { stripOver(ps.over); localStorage.setItem('anyflow-gfx-presets', JSON.stringify(ps)); } } catch (e) {}
-    localStorage.setItem('anyflow-mesh-dark-spin-20260921', '1');
-  }
-} catch (e) {}
-/* 【2026-09-19 ヒデさん依頼】お問い合わせのグラデの案を1欄に統合: 案が色を持たない(現行/案1〜4)のに色の移ろいだけ残っている保存値は off に */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-onerow-20260919')) { const fx = (o) => { if (!o || !o.cv) return; const sw = String(o.cvSway || '0'); if (['0', '7', '8', '9', '10'].includes(sw) && o.cv.hueMode && o.cv.hueMode !== 'off') o.cv.hueMode = 'off'; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-onerow-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19】ビジョン→実績の詰め幅の既定 200→260(旧既定のままの保存値だけ更新。手で変えた値は触らない) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vis-res-pull-260-20260919')) { const fx = (o) => { if (o && (o.visResPull == null || o.visResPull === 200)) o.visResPull = 260; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-vis-res-pull-260-20260919', '1'); } } catch (e) {}
-/* 2026-09-19 夜: ビジョン→実績の余白を気持ち広げる(260→200)。260 のままの保存値だけ動かす */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-vis-res-pull-200-20260919')) { const fx = (o) => { if (o && (o.visResPull == null || o.visResPull === 260)) o.visResPull = 200; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-vis-res-pull-200-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19】入場ぼかしの「はっきりし始める」既定 0.5→0.4(最初の版の既定のままの保存値だけ更新) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-entryfrom-04-20260919')) { const fx = (o) => { const r = o && o.sections && o.sections.results; if (r && (r.entryFrom == null || r.entryFrom === 0.5)) r.entryFrom = 0.4; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-entryfrom-04-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19 ヒデさん指定】お問い合わせのグラデを「案7 白を絞って右上に留める」に(全員。他の案は残る) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-sway-13-20260919')) { const V = {"swayMode":0,"swayDeg":6,"swaySec":40,"wave":0.16,"waveLen":0.5,"waveSpd":0.08,"speed":0.04,"swell":0.02,"flowScale":0.4,"gcx":0.84,"gcy":0.1,"gr":0.55,"swayPivot":1,"waveAnchor":0.9,"hueMode":"off","moodSec":30,"moodWhite":0.85,"swapHold":0.45}; const fx = (o) => { if (!o) return; o.cvSway = '13'; o.cv = Object.assign(o.cv || {}, V); }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-sway-13-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19】案7 の値を更新(白の芯だけ絞る方式へ: 広がり 0.55→0.8・白の絞り 1.2) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-sway-13b-20260919')) { const fx = (o) => { if (!o || !o.cv) return; if (String(o.cvSway) === '13') { o.cv.gr = 0.8; o.cv.core = 1.2; } else if (o.cv.core == null) o.cv.core = 0; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-sway-13b-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19 ヒデさん指摘】白の縁のぼかし: 案7 の保存値に 0.08 を入れる(他は 0) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-coresoft2-20260919')) { const fx = (o) => { if (!o || !o.cv) return; if (o.cv.coreSoft == null || o.cv.coreSoft === 0.08) o.cv.coreSoft = (String(o.cvSway) === '13') ? 0.12 : 0; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-coresoft2-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19 ヒデさん指定】KV の惑星/ケージの「ゆらぎ(軸の揺れ)」を止めて回転だけに(旧既定 1 のままの保存値だけ 0 に) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-sway0-20260919')) { const fx = (o) => { if (o && (o.swayAmp == null || o.swayAmp === 1)) o.swayAmp = 0; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-kv-sway0-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19 ヒデさん依頼】ビジョンの Point 01 を元(焼き込み時の状態)に戻す: ✏️編集で入った見出しのずれ(dx19/dy1)・太さ500・ブロックの下ずれ(p1Y 17) を、焼き込み値(ずれ0・600)へ。見出しサイズ(pHSize 30)は焼き込み値どおりなので触らない */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-p1-reset-20260919')) { const fx = (o) => { if (!o) return; o.sections = o.sections || {}; o.sections.vision = o.sections.vision || {}; const v = o.sections.vision; v.p1X = 0; v.p1Y = 0; o.edits = o.edits || {}; o.edits.p1h = { fw: 600 }; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-p1-reset-20260919', '1'); } } catch (e) {}
-/* 【2026-09-19 ヒデさん指定】お問い合わせの白い領域を取る: 案7 の保存値に coreSkip 0.34・core 0(他の案は 0) */
-try { if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-cv-coreskip-20260919')) { const fx = (o) => { if (!o || !o.cv) return; if (String(o.cvSway) === '13') { o.cv.coreSkip = 0.34; o.cv.core = 0; } else if (o.cv.coreSkip == null) o.cv.coreSkip = 0; }; fx(params); const _s = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; fx(_s); localStorage.setItem(STORAGE_KEY, JSON.stringify(_s)); localStorage.setItem('anyflow-cv-coreskip-20260919', '1'); } } catch (e) {}
 function loadParams() {
   try {
     let s = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -5307,33 +5069,9 @@ function loadParams() {
     const v0 = merged.conv.orbitSpin || 0;
     merged.conv.orbitSpinBy = { off: v0, reel: v0, spiral: v0, accre: v0, mesh: v0, beads: v0, duplex: v0, gyro: v0 };
   }
-  if (Array.isArray(s.orbitPresets) && s.orbitPresets.length && !localStorage.getItem('anyflow-gfx-permode-20260827b')) {
-    /* 旧プリセットは全案共通だった。どの案で作ったかは記録が無いので、
-       ⚠️【仮置き】いま選んでいる案の引き出しへ移す(消さずに残すことを優先) */
-    merged.gfxPresets[merged.converge || 'reel'] = s.orbitPresets.slice();
-  }
+  /* 【2026-09-26 整理】旧・全案共通プリセット(orbitPresets)を案ごとの引き出しへ移す一度きりの処理は撤去(フラグ済みで二度と動かない) */
   delete merged.orbitPresets; delete merged.orbitPresetOn;
 
-  /* 【2026-08-27 ヒデさん指定】案ごとに既定がバラバラに変わってしまっていたので、
-     全案の形を「最初に実装した位置関係」へ一度だけ戻す */
-  if (!localStorage.getItem('anyflow-gfx-permode-20260827b')) {
-    merged.gfxByMode = {};
-    for (const k of ['outer', 'inner']) {
-      for (const key of ['dx', 'dy', 'scale', 'angle', 'flat']) merged.orbits[k][key] = DEFAULTS.orbits[k][key];
-    }
-    merged.planet = { ...DEFAULTS.planet };
-    merged.orbitLayout = DEFAULTS.orbitLayout;
-    localStorage.setItem('anyflow-gfx-permode-20260827b', '1');
-  }
-  /* 【2026-08-26 ヒデさん指定】直接編集でいじった変形(位置/サイズ/傾き/つぶし)を一度だけ既定へ戻す。
-     他の調整は残す。1回だけ走らせるため印を localStorage に置く */
-  if (!localStorage.getItem('anyflow-reset-transform-20260827')) {
-    for (const k of ['outer', 'inner']) {
-      for (const key of ['dx', 'dy', 'scale', 'angle', 'flat']) merged.orbits[k][key] = DEFAULTS.orbits[k][key];
-    }
-    merged.planet = { ...DEFAULTS.planet };
-    localStorage.setItem('anyflow-reset-transform-20260827', '1');
-  }
   /* 廃止した案(⑪糸・⑭⑯〜⑳)を選んだままなら既定へ寄せる (2026-08-26) */
   /* ⚠️ ここは CONVERGES(const)の定義より前に走るので、CONVERGES を参照すると TDZ で例外になり、
      【保存した設定がまるごと読めなくなる】(2026-08-26 に実際に踏んだ)。キーは直書きで判定する。 */
@@ -5409,19 +5147,6 @@ function loadParams() {
       if (!['A', 'B', 'C'].includes(merged.patterns.dev)) merged.patterns.dev = 'A';
       if (!['A', 'B'].includes(merged.patterns.cases)) merged.patterns.cases = 'A';
       if (!['A', 'B', 'C'].includes(merged.patterns.mock)) merged.patterns.mock = 'B';
-      /* 【2026-08-30 ヒデさん指定】導入事例のホバーはトリミング固定＋For SaaS/For AI の既定アニメを修正版に。
-         選択UIを廃止/既定を作り直したので、保存値が残っている人も一度だけ寄せ直す。 */
-      if (!localStorage.getItem('anyflow-casehover-trim-20260830')) {
-        merged.patterns.caseHover = 'trim';
-        merged.patterns.valSaas = 'S1';   /* 新For SaaS(点線→青/ピンク後追い) */
-        merged.patterns.valAi = 'A1';     /* For AI(終端三角なし・角丸なし・1px) */
-        localStorage.setItem('anyflow-casehover-trim-20260830', '1');
-      }
-      /* 【2026-08-30 ヒデさん指定】強み強調(蛍光灯チカチカ)を見逃しにくく: 発光ハロー追加＋尺を延長。
-         既定=flicker を維持しつつ、旧既定の尺(2.0)のままの人だけ 2.6 へ寄せ直す(触っていれば尊重)。 */
-      if (!localStorage.getItem('anyflow-flicker-glow-20260830')) {
-        localStorage.setItem('anyflow-flicker-glow-20260830', '1');
-      }
       /* 【2026-08-30 ヒデさん指定】強み強調はグラデ揺らぎ(live)で確定。保存値がどれでも live へ */
       merged.visStrongFx = 'live';
       /* 【2026-08-30 ヒデさん指定・パネル整理】進み方=自動再生(時間)・固定なし で確定。保存値がどれでもこの組に */
@@ -5432,138 +5157,10 @@ function loadParams() {
       /* 【2026-08-30】旧「粒(吸い込み)専用の連動(reelP.link)」を共通トグル(spinLink)へ引き継ぎ */
       if (merged.conv && merged.conv.reelP && merged.conv.reelP.link === false && merged.conv.spinLink == null)
         merged.conv.spinLink = false;
-      /* 【2026-08-30 ヒデさん指定】メッセージのマスク出現をもう少しゆったりに(0.7/0.9→1.15)。
-         旧値のままの保存だけ寄せ直す(パネルで別の値にしていれば尊重) */
-      /* 【2026-08-31 ヒデさん指定】ビジョンのグラフィック/ポイントをもう少しゆったり+ブラー強めに(一度だけ寄せ直し) */
-      if (!localStorage.getItem('anyflow-vision-slower-20260831') && merged.sections.vision) {
-        merged.sections.vision.miniDur = 1.6;
-        merged.sections.vision.npPointDur = 1.2;
-        merged.sections.vision.blur = 14;
-        localStorage.setItem('anyflow-vision-slower-20260831', '1');
-      }
-      /* 【2026-08-31 ヒデさん指定・改】出始めは早く、ブラーは強め+解けをちょっとだけ長く(一度だけ寄せ直し) */
-      if (!localStorage.getItem('anyflow-vision-tune-20260831b') && merged.sections.vision) {
-        merged.sections.vision.npP1 = 0.10;
-        merged.sections.vision.npP2 = 0.30;
-        merged.sections.vision.miniDur = 1.8;
-        merged.sections.vision.npPointDur = 1.4;
-        merged.sections.vision.blur = 18;
-        localStorage.setItem('anyflow-vision-tune-20260831b', '1');
-      }
-      /* 【2026-08-31 ヒデさん指定・再々調整】やりすぎたので解けは元の速さに(パッパッ)。早出し+ブラー18は維持 */
-      if (!localStorage.getItem('anyflow-vision-tune-20260831c') && merged.sections.vision) {
-        merged.sections.vision.miniDur = 1.1;
-        merged.sections.vision.npPointDur = 0.8;
-        localStorage.setItem('anyflow-vision-tune-20260831c', '1');
-      }
-      /* 【2026-09-01 ヒデさん指定】ブラー18のまま出現時間だけ短く(パッパッ)。一度だけ寄せ直し */
-      if (!localStorage.getItem('anyflow-vision-tune-20260901') && merged.sections.vision) {
-        merged.sections.vision.miniDur = 0.4;
-        merged.sections.vision.npPointDur = 0.6;
-        merged.sections.vision.blur = 18;
-        localStorage.setItem('anyflow-vision-tune-20260901', '1');
-      }
       {
         const _rv = merged.sections.vision && merged.sections.vision.revealDur;
         if (_rv != null && (Math.abs(_rv - 0.7) < 1e-6 || Math.abs(_rv - 0.9) < 1e-6))
           merged.sections.vision.revealDur = 1.15;
-      }
-      /* 【2026-08-30 ヒデさん指定】全体的にアニメの出はじめを前倒し(尺=ゆったり感は不変)。
-         旧既定のままの保存値だけ新既定へ寄せ直す(パネルで触った値は尊重)。 */
-      if (!localStorage.getItem('anyflow-timing-earlier-20260830')) {
-        const _set = (obj, defs, list) => { if (!obj) return;
-          for (const [k, oldV] of list) { if (obj[k] == null || Math.abs(obj[k] - oldV) < 1e-6) obj[k] = defs[k]; } };
-        _set(merged.kv, DEFAULTS.kv, [['headerAt', 0.25], ['typeAt', 1.0], ['eyebrowGap', 0.14]]);
-        _set(merged.sections.vision, DEFAULTS.sections.vision,
-          [['labelAt', 0.15], ['line1At', 0.45], ['line2Gap', 0.55], ['miniGap', 0.45],
-           ['npGap', 0.35], ['npP1', 0.40], ['npP2', 0.80], ['dotsInAt', 0.25]]);
-        _set(merged.sections.results, DEFAULTS.sections.results,
-          [['typeAt', 0.15], ['typeGap', 0.55], ['restGap', 0.1], ['slotAt', 0.3]]);
-        _set(merged.sections.dev, DEFAULTS.sections.dev, [['splitDelay', 0.45]]);
-        _set(merged.sections.cases, DEFAULTS.sections.cases,
-          [['lineStagger', 0.10], ['lineDur', 0.30], ['vlineAt', 0.34], ['vlineDur', 0.34],
-           ['cardAt', 0.56], ['cardDur', 0.22]]);
-        localStorage.setItem('anyflow-timing-earlier-20260830', '1');
-      }
-      /* 【2026-08-30 ヒデさん指定】導入事例のカードは1枚ずつでなく4枚同時にブラーで出す(線のアニメはそのまま)。
-         確定指示なので、保存値がいくつでも一度だけ 0(同時) に寄せる(そのあとパネルで変えれば尊重)。 */
-      if (!localStorage.getItem('anyflow-cases-cards-together-20260830b')) {
-        if (merged.sections.cases) merged.sections.cases.cardGap = 0;
-        localStorage.setItem('anyflow-cases-cards-together-20260830b', '1');
-      }
-      /* 【2026-08-30 ヒデさん指定】Our Vision: グラフィックをメッセージのマスク出現と同時に(npGap基準変更・0=同時)。
-         ポイント1/2もさらに前倒し。旧既定のままの保存値だけ新既定へ。 */
-      if (!localStorage.getItem('anyflow-vision-graphic-with-msg-20260830')) {
-        const _v2 = merged.sections.vision;
-        if (_v2) {
-          if (_v2.npGap == null || Math.abs(_v2.npGap - 0.25) < 1e-6 || Math.abs(_v2.npGap - 0.35) < 1e-6) _v2.npGap = 0;
-          if (_v2.npP1 == null || Math.abs(_v2.npP1 - 0.30) < 1e-6 || Math.abs(_v2.npP1 - 0.40) < 1e-6) _v2.npP1 = 0.20;
-          if (_v2.npP2 == null || Math.abs(_v2.npP2 - 0.60) < 1e-6 || Math.abs(_v2.npP2 - 0.80) < 1e-6) _v2.npP2 = 0.45;
-        }
-        localStorage.setItem('anyflow-vision-graphic-with-msg-20260830', '1');
-      }
-      /* 【2026-09-02 ヒデさん指定】「2つの価値」見出し削除に伴い、Point 01/02 をさらに前倒し。
-         確定指示なので保存値がいくつでも一度だけ 0.0 / 0.15 へ寄せる(以後パネルで変えれば尊重)。 */
-      if (!localStorage.getItem('anyflow-vision-points-earlier-20260902')) {
-        const _vp = merged.sections.vision;
-        if (_vp) { _vp.npP1 = 0.0; _vp.npP2 = 0.15; }
-        localStorage.setItem('anyflow-vision-points-earlier-20260902', '1');
-      }
-      /* 【2026-09-02 ヒデさん指定】ポイントの出現(フェード)時間 npPointDur が「出るまで遅い」の正体。
-         確定指示なので保存値がいくつでも一度だけ 0.3 へ寄せる(以後パネルで変えれば尊重)。 */
-      if (!localStorage.getItem('anyflow-vision-pointdur-20260902')) {
-        const _vd = merged.sections.vision;
-        if (_vd) _vd.npPointDur = 0.3;
-        localStorage.setItem('anyflow-vision-pointdur-20260902', '1');
-      }
-      /* 【2026-09-03 ヒデさん指定】ドットの回転は「もっと早くから回っていて早めに止まる」。
-         確定指示なので一度だけ 先行1.2秒 / 1周2.2秒 へ寄せる(以後パネルで変えれば尊重)。 */
-      /* 【2026-09-08 ヒデさん指定】for AIピクトを A4(正方形収縮+水色三角が右へ)→ A20(レーダー/棒が上下)へ。
-         確定指示なので一度だけ寄せる(以後パネルで変えれば尊重)。ダンプ焼き込みは使わない。 */
-      if (!localStorage.getItem('anyflow-valai-radar-20260908')) {
-        if (merged.patterns) merged.patterns.valAi = 'A20';
-        localStorage.setItem('anyflow-valai-radar-20260908', '1');
-      }
-      /* 【2026-09-08 ヒデさん指定・改】既定を A21(折れて進む・改/矢印+三角フェードイン)へ。
-         直前のレーダー移行(A20)より後に置き、最終的にA21で開く。以後パネルで変えれば尊重。 */
-      if (!localStorage.getItem('anyflow-valai-arrow-20260908b')) {
-        if (merged.patterns) merged.patterns.valAi = 'A21';
-        localStorage.setItem('anyflow-valai-arrow-20260908b', '1');
-      }
-      if (!localStorage.getItem('anyflow-vision-orbit-earlier-20260903')) {
-        const _vo = merged.sections.vision;
-        if (_vo) { _vo.npOrbitLead = 1.2; _vo.npOrbitDur = 2.2; }
-        localStorage.setItem('anyflow-vision-orbit-earlier-20260903', '1');
-      }
-      /* 【2026-09-15 ヒデさん採用】導入事例は「罫線なし × カードの周りに線が引かれる」で行く。
-         保存がある人も一度だけこの組み合わせに寄せる(以後パネルで変えれば尊重) */
-      if (!localStorage.getItem('anyflow-case-noline-20260915')) {
-        if (merged.patterns) { merged.patterns.caseLayout = '1'; merged.patterns.caseHover = 'cardtrim'; }
-        localStorage.setItem('anyflow-case-noline-20260915', '1');
-      }
-      /* 【2026-09-15 ヒデさん指摘「Our Vision の位置がずれた」】Point01/02 の位置をカンプ(16678:22987)の
-         座標で CSS に入れ直した。保存されているドラッグずらし(p1X/p1Y・p2X/p2Y)は「ステージが画面幅まで
-         広がっていた頃」の打ち消しなので、一度だけ 0 に戻す(以後パネルで動かせば尊重)。 */
-      if (!localStorage.getItem('anyflow-vision-comp-20260915')) {
-        const _v = merged.sections && merged.sections.vision;
-        if (_v) { _v.p1X = 0; _v.p1Y = 0; _v.p2X = 0; _v.p2Y = 0; _v.noPinX = 6.5; _v.noPinY = 109; }
-        localStorage.setItem('anyflow-vision-comp-20260915', '1');
-      }
-      /* 【2026-09-15 ヒデさん指摘「案26 の下段が表示されない」】場面表を直した(SaaS を読む区間 4%→15%)。保存が旧既定のままなら新既定へ(自分で触った値は尊重) */
-      if (!localStorage.getItem('anyflow-fx26-timeline-20260915')) {
-        const _f = merged.sections && merged.sections.results && merged.sections.results.fx26;
-        if (_f && Math.abs((_f.panAt || 0) - 0.58) < 1e-6 && Math.abs((_f.lineAt || 0) - 0.28) < 1e-6)
-          merged.sections.results.fx26 = { numScale: _f.numScale != null ? _f.numScale : 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 };
-        localStorage.setItem('anyflow-fx26-timeline-20260915', '1');
-      }
-      /* 【2026-09-08 ヒデさん指定】暗転(実績→開発者体験)の既定を締め直す。以前の 0.18/0.82/2 は暗転が
-         遅すぎて、開発者体験のモックパネルが“明るい背景”のまま出ていた。モックが出る前に黒くなりきる
-         値へ一度だけ寄せる(以後パネルで変えれば尊重)。 */
-      if (!localStorage.getItem('anyflow-dark-tune-20260908b') && merged.sections.results) {
-        merged.sections.results.darkFrom = 0.04;
-        merged.sections.results.darkTo = 0.5;
-        merged.sections.results.darkVar = 2;
-        localStorage.setItem('anyflow-dark-tune-20260908b', '1');
       }
       /* ⚠️ 今の DOTS の個数ぶんだけ作る。保存が足りなければ既定で埋め、余っていれば捨てる
          (s.dots を起点にすると、増えたドットのぶんが undefined になって落ちる) */
@@ -5571,32 +5168,9 @@ function loadParams() {
       /* 削除済みの選択肢が保存されていた場合はデフォルトに戻す */
       if (!DESIGNS[merged.design]) merged.design = DEFAULTS.design;
       if (merged.sway < 1 || merged.sway > SWAYS.length) merged.sway = 1;
-      /* 【2026-08-29 ヒデさん指定】アニメ各案のフォーマット統一: 揺らぎは既定オン(②シーソー)・回転は既定オフ。
-         以前オフに揃えた保存値が残っている人も、一度だけオン(2)へ揃え直す。 */
-      if (!localStorage.getItem('anyflow-sway-on-20260829')) {
-        merged.sway = 2;
-        localStorage.setItem('anyflow-sway-on-20260829', '1');
-      }
-      /* 【2026-08-29 ヒデさん指定】開発者体験2はテキストスライドを既定に(listは廃止方向)。
-         保存値が残っている人も一度だけ強制でスライドへ揃える。キーは更新のたびに上げて再適用させる。 */
-      if (!localStorage.getItem('anyflow-dev-ds2-slide-20260829c')) {
-        if (merged.sections && merged.sections.dev) {
-          merged.sections.dev.ds2 = 'slide';
-          if (merged.sections.dev.slideMotion == null) merged.sections.dev.slideMotion = 'snap';
-          if (merged.sections.dev.slideHold == null) merged.sections.dev.slideHold = 0.62;
-          if (merged.sections.dev.slideSnapK == null) merged.sections.dev.slideSnapK = 3.4;
-          if (merged.sections.dev.slideEvery == null) merged.sections.dev.slideEvery = 3.0;
-          if (merged.sections.dev.slideDur == null) merged.sections.dev.slideDur = 0.5;
-        }
-        localStorage.setItem('anyflow-dev-ds2-slide-20260829c', '1');
-      }
       /* 【2026-08-27 ヒデさん指定】①のスピンも既定オフ。保存値が残っている人も一度だけ揃える */
       /* 【2026-08-27 ヒデさん指定】①の流れは「上がる」で固定(選択UIは廃止)。保存値も揃える */
       if (merged.conv && merged.conv.reel) merged.conv.reel.flow = 'up';
-      if (!localStorage.getItem('anyflow-spin-off-20260827')) {
-        if (merged.conv && merged.conv.reel) merged.conv.reel.spinUp = 0;
-        localStorage.setItem('anyflow-spin-off-20260827', '1');
-      }
       if (merged.dither < 1 || merged.dither > DITHERS.length) merged.dither = 1;
       if (merged.dotGap < 1 || merged.dotGap > DOT_GAPS.length) merged.dotGap = DEFAULTS.dotGap;
       return merged;
@@ -5625,35 +5199,6 @@ function load() {
     if (st.hidden && typeof st.hidden === 'object') merged.gfxVariantHidden = st.hidden;
     if (st.trash && typeof st.trash === 'object') merged.gfxPresetTrash = st.trash;   /* 2026-08-29: 削除プリセットのゴミ箱を復元 */
     if (st.over && typeof st.over === 'object') merged.gfxVarOverride = st.over;      /* 2026-08-30: バリエーション上書きの控えを復元 */
-    /* 【2026-09-15 ヒデさん指定】ネットワーク『D 大きいケージ』の数値(線の濃さ 0.25・太さ 1.5・頻度 10.9 ほか)を、保存値・調整の控え・上書きの控えの3か所へ一度だけ揃える
-       (上書きの控えが古いままだと起動時にそれが勝って戻るため) */
-    try {
-      if (!localStorage.getItem('anyflow-mesh-d-20260915')) {
-        const MD = { lineAlpha: 0.25, lineWidth: 1.5, rate: 10.9, size: 0.52, spread: 1.2, span: 0.34, random: 0.5, drift: 1.3, hop: 0.7, cageFreq: 2 };
-        if (merged.conv && merged.conv.mesh) Object.assign(merged.conv.mesh, MD);
-        const _tw = merged.gfxTweaks && merged.gfxTweaks.mesh && merged.gfxTweaks.mesh['3'];
-        if (_tw && _tw.mode) Object.assign(_tw.mode, MD);
-        const _ovD = merged.gfxVarOverride && merged.gfxVarOverride.mesh && merged.gfxVarOverride.mesh['D 大きいケージ'];
-        if (_ovD && _ovD.mode) { Object.assign(_ovD.mode, MD); st.over = merged.gfxVarOverride; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); }
-        localStorage.setItem('anyflow-mesh-d-20260915', '1');
-      }
-    } catch (e) {}
-    /* 【2026-09-17 ヒデさん報告】ネットワーク★1『D 大きいケージ』が organic(14ノード・疎で横広がり)に化けていた件の根治。
-       旧移行(20260915)の MD は数値だけで style/cageShape/nodes を含まず、保存側が organic のままだった＝
-       ★1 を選んでも V4 のような測地線ケージ(cage/geo/32)にならない。V5焼き込みの conv.mesh と同一の完全なケージ設定を、
-       active(conv.mesh)・調整の控え(gfxTweaks.mesh['3'].mode)・上書きの控え(gfxVarOverride.mesh['D 大きいケージ'].mode)の3か所へ揃える。 */
-    try {
-      if (!localStorage.getItem('anyflow-mesh-d-geo-20260917')) {
-        const MD2 = { style: 'cage', cageShape: 'geo', cageFreq: 2, nodes: 32, cageR: 2.1, cageSpin: 0.4, cageLinks: 4, cageTilt: -11,
-                      lineAlpha: 0.25, lineWidth: 1.5, rate: 10.9, size: 0.52, spread: 1.2, span: 0.34, random: 0.5, drift: 1.3, hop: 0.7 };
-        if (merged.conv && merged.conv.mesh) Object.assign(merged.conv.mesh, MD2);
-        const _tw2 = merged.gfxTweaks && merged.gfxTweaks.mesh && merged.gfxTweaks.mesh['3'];
-        if (_tw2 && _tw2.mode) Object.assign(_tw2.mode, MD2);
-        const _ovD2 = merged.gfxVarOverride && merged.gfxVarOverride.mesh && merged.gfxVarOverride.mesh['D 大きいケージ'];
-        if (_ovD2 && _ovD2.mode) { Object.assign(_ovD2.mode, MD2); st.over = merged.gfxVarOverride; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); }
-        localStorage.setItem('anyflow-mesh-d-geo-20260917', '1');
-      }
-    } catch (e) {}
     if (Array.isArray(st.fav)) merged.gfxFav = st.fav;                              /* 2026-09-01: お気に入りを復元 */
   } else if (merged.gfxPresets && Object.keys(merged.gfxPresets).length) {
     /* まだ別置きしていない古い持ち物は、ここで引っ越す */
@@ -5680,14 +5225,6 @@ function load() {
   try {
     if (!(typeof SHIPPED_PRESET_STATE !== 'undefined' && SHIPPED_PRESET_STATE.presets))
       for (const mk in SHIPPED_PRESETS) { if ((SHIPPED_PRESETS[mk] || []).length && (!merged.gfxPresets[mk] || !merged.gfxPresets[mk].length)) { merged.gfxPresets[mk] = SHIPPED_PRESETS[mk].map(function (p) { return { name: p.name, data: JSON.parse(JSON.stringify(p.data)) }; }); } }
-  } catch (e) {}
-  /* 【2026-08-31 ヒデさん指定】削除したプリセット(ゴミ箱)の完全削除。ローカルに残っている控えも一度だけ空にする */
-  try {
-    if (!localStorage.getItem('anyflow-purge-trash-20260831')) {
-      merged.gfxPresetTrash = {};
-      if (st) { st.trash = {}; localStorage.setItem(PRESET_KEY, JSON.stringify(st)); }
-      localStorage.setItem('anyflow-purge-trash-20260831', '1');
-    }
   } catch (e) {}
   return merged;
 }
@@ -13104,22 +12641,6 @@ applyPfGradStops();   /* 【2026-09-01】軌道グラデの色ストップを保
    setTimeout(0) でスクリプト評価が全部終わってから適用する。 */
 setTimeout(function applyOverrideOnBoot() {
   try {
-    /* 【2026-09-09 ヒデさん指定】KVの既定を「ネットワークタブ ★1 ＝ mesh『D 大きいケージ』」へ (V4.0)。
-       本番は世代バンプで焼き込み(SHIPPED)が勝つ。ローカル(localhost=世代ガード対象外)に残る
-       既存の保存値も、ここで一度だけ ★6 へ寄せる(フラグで一度きり＝以後は保存値を尊重)。
-       案は番号でなく名前で解決(並び替えで別案を指さないように)。直後の再適用で見た目も即反映。 */
-    try {
-      if (localStorage.getItem(STORAGE_KEY) && !localStorage.getItem('anyflow-kv-mesh-d-20260909v4')) {
-        const _vi = (GFX_VARIANTS.mesh || []).findIndex(v => v.name === 'D 大きいケージ');
-        if (_vi >= 0) {
-          params.converge = 'mesh';
-          if (!params.gfxVariantOn) params.gfxVariantOn = {};
-          params.gfxVariantOn.mesh = _vi;
-          save();
-        }
-        localStorage.setItem('anyflow-kv-mesh-d-20260909v4', '1');
-      }
-    } catch (e) {}
     const m = params.converge || 'off';
     const i = (params.gfxVariantOn || {})[m];
     if (i == null) return;
@@ -13689,23 +13210,6 @@ const vLoop = (t, T) => (t % T) / T;                                     /* 0→
 const VAL_SAAS = {
   /* S1 【2026-08-30 ヒデさん指定・新規】点線が左→右へ伸びてから、青→ピンクの粒が後追いで流れる。
      最初は点線は出ておらず、伸びきってから粒が追いかける。すべて1pxの枠線。 */
-  S1(st, t) {
-    const C = VAL_VB / 2, x0 = 26, x1 = 194, span = x1 - x0;
-    const k = vLoop(t, 4.6);
-    /* ① 点線が左から右へ伸びる(トリミングで“描かれていく”) */
-    const draw = vE(Math.min(1, k / 0.42));
-    vTrim(vLine(st, x0, C, x1, C, { w: 1, dash: '4 5', a: 0.65 }), draw);
-    /* 端の小さな受け皿(1px枠) */
-    vCircle(st, x0, C, 5, { w: 1, a: 0.5 });
-    vCircle(st, x1, C, 5, { w: 1, a: 0.5 });
-    /* ② 伸びきってから、青が先・ピンクが少し後ろで後追い */
-    const fol = (k - 0.4) / 0.6;
-    if (fol > 0) {
-      const pB = vE(Math.min(1, fol));
-      vRect(st, x0 + span * pB, C, 12, 12, { c: VAL_ACC, w: 1});
-      if (fol > 0.16) { const pP = vE(Math.min(1, fol - 0.16)); vRect(st, x0 + span * pP, C, 12, 12, { c: VAL_PINK, w: 1}); }
-    }
-  },
   /* S2 双方向のやり取り: 2つの箱の間を小さな正方形が行き来し、届くと受け手の枠が太くなる */
   S2(st, t) {
     const C = VAL_VB / 2, L = 46, R = 174;
@@ -13720,50 +13224,12 @@ const VAL_SAAS = {
     vRect(st, x, C, 13, 13, { c: fwd ? VAL_ACC : VAL_PINK, w: 1, rot: u * 180, rx0: x, ry0: C });
   },
   /* S4 一斉にそろう: 3×3 の升目がバラバラに光り、最後に全部が同じ状態へ揃う */
-  S4(st, t) {
-    const C = VAL_VB / 2, S = 34, G = 8;
-    const k = vLoop(t, 4.2);
-    const settle = k > 0.68 ? vE((k - 0.68) / 0.32) : 0;
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
-      const i = r * 3 + c;
-      const ph = ((i * 7) % 9) / 9;
-      const lit = settle > 0.1 ? settle : (Math.sin((k + ph) * Math.PI * 4) > 0.55 ? 1 : 0);
-      vRect(st, C + (c - 1) * (S + G), C + (r - 1) * (S + G), S, S,
-        { rx: 3, w: 1, c: lit ? VAL_ACC : VAL_INK, a: lit ? 1 : 0.4 });
-    }
-  },
   /* S5 すれ違う2本の流れ: 上下の線を、円と正方形が逆向きに流れる。交差で一瞬ふくらむ */
-  S5(st, t) {
-    const C = VAL_VB / 2;
-    vLine(st, 26, C - 26, 194, C - 26, { a: 0.35 });
-    vLine(st, 26, C + 26, 194, C + 26, { a: 0.35 });
-    for (let i = 0; i < 3; i++) {
-      const u = vLoop(t * 0.42 + i / 3, 1);
-      const x = 26 + 168 * u;
-      const near = Math.abs(x - C) < 16 ? 1 : 0;
-      vCircle(st, x, C - 26, 8 + near * 3, { c: VAL_ACC, w: 1});
-      const x2 = 194 - 168 * u;
-      vRect(st, x2, C + 26, 15 + near * 4, 15 + near * 4, { c: VAL_PINK, w: 1});
-    }
-  },
   /* ===== ここから 2026-08-28 追加分 =====
      ヒデさん指定の方向: 複数が1つになる / 重なり合う / 時系列が分かる / 緩急がある。
      S6〜S10 はパスのトリミング(線が描かれていく)を使い、時間の経過とストーリーを出す。 */
 
   /* S6 描かれてつながる: 左から右へ線が引かれ、届いた瞬間に受け手の枠が一周描かれる */
-  S6(st, t) {
-    const C = VAL_VB / 2, L = 48, R = 172, T = 3.4, k = vLoop(t, T);
-    const draw = Math.min(1, k / 0.42);                 /* 速く引く */
-    const land = Math.max(0, (k - 0.44) / 0.3);         /* 受け手が一周描かれる */
-    const rest = Math.max(0, (k - 0.8) / 0.2);          /* 余韻はゆっくり */
-    vRect(st, L, C, 44, 56, { rx: 4, w: 1});
-    vTrim(vRect(st, R, C, 44, 56, { rx: 4, w: 1, c: VAL_ACC, a: land > 0 ? 1 : 0 }), vE(land));
-    vTrim(vLine(st, L + 24, C, R - 24, C, { c: VAL_ACC, w: 1}), vE(draw));
-    vLine(st, L + 24, C, R - 24, C, { a: 0.16, dash: '4 6' });
-    const px = L + 24 + (R - L - 48) * vE(draw);
-    vRect(st, px, C, 10, 10, { c: VAL_ACC, w: 1, a: draw < 1 ? 1 : 1 - rest });
-    vCircle(st, L, C, 8, { a: 0.4 });
-  },
   /* S7 4つが1つに: 四隅の四角が中央へ集まり、重なって1つになる。合流の瞬間に外周が一周描かれる */
   S7(st, t) {
     const C = VAL_VB / 2, T = 4.2, k = vLoop(t, T);
@@ -13777,19 +13243,6 @@ const VAL_SAAS = {
     vTrim(vCircle(st, C, C, 52, { w: 1, c: VAL_ACC, a: hold > 0 ? 1 - back : 0 }), vE(hold));
   },
   /* S8 満ちて同期: 外周が0→100%まで描かれ(進捗)、満ちた瞬間に内側の四角がパッと出る */
-  S8(st, t) {
-    const C = VAL_VB / 2, T = 3.8, k = vLoop(t, T);
-    const fill = Math.min(1, k / 0.72), pop = Math.max(0, (k - 0.72) / 0.28);
-    vCircle(st, C, C, 62, { a: 0.16, dash: '3 5' });
-    vTrim(vCircle(st, C, C, 62, { w: 1, c: VAL_ACC }), fill);
-    vCircle(st, C, C, 40, { a: 0.28 });
-    const sz = 34 * (pop > 0 ? (1 + (1 - vE(Math.min(1, pop * 2.4))) * 0.5) : 0);
-    if (pop > 0) vRect(st, C, C, sz, sz, { rx: 3, w: 1, c: VAL_ACC, a: 1 - pop * 0.5 });
-    for (let i = 0; i < 4; i++) {
-      const a = (i * 90 - 90) * Math.PI / 180;
-      vLine(st, C + Math.cos(a) * 70, C + Math.sin(a) * 70, C + Math.cos(a) * 78, C + Math.sin(a) * 78, { a: 0.3 });
-    }
-  },
   /* S9 2つの弧が噛み合う: 左右から弧が伸びて1つの円になる。噛み合った瞬間だけ太くなる */
   S9(st, t) {
     const C = VAL_VB / 2, T = 3.6, k = vLoop(t, T);
@@ -13810,124 +13263,21 @@ const VAL_SAAS = {
     if (lock > 0) vCircle(st, C, C, 12 + vE(Math.min(1, lock * 2)) * 6, { c: VAL_ACC, w: 1, a: 1 - lock });
   },
   /* S10 積層して重なる: 3つの円がずれて重なっていき、完全に重なると1つに見える */
-  S10(st, t) {
-    const C = VAL_VB / 2, T = 4.6, k = vLoop(t, T);
-    const stack = Math.min(1, k / 0.46), one = Math.max(0, (k - 0.5) / 0.22), open = Math.max(0, (k - 0.78) / 0.22);
-    const sp = 34 * (1 - vE(stack)) + 34 * vE(open);
-    for (let i = 0; i < 3; i++) {
-      const dy = (i - 1) * sp;
-      vCircle(st, C, C + dy, 44, { w: 1, c: i === 1 ? VAL_INK : (i ? VAL_ACC : VAL_PINK), a: 0.9 });
-    }
-    vTrim(vCircle(st, C, C, 44, { w: 1, c: VAL_ACC, a: one > 0 ? 1 - open : 0 }), vE(one));
-    vLine(st, C - 66, C, C + 66, C, { a: 0.14, dash: '4 6' });
-  },
   /* ===== ここから 2026-08-28 追加分(躍動感・回転・奥行き) =====
      2Dのフラットなまま立体に見せる手: 楕円を寝かせる / 手前を大きく奥を小さく /
      回転しながら大小を変える / 前後の重なりを入れ替える。 */
 
   /* S11 二軸のジャイロ: 直交する2つの輪が転がる。交点に印。いちばん躍動感がある */
-  S11(st, t) {
-    const C = VAL_VB / 2, R = 66;
-    const a = t * 46, b = -t * 38;
-    const f1 = Math.abs(Math.cos(t * 0.8)), f2 = Math.abs(Math.sin(t * 0.8));
-    vEll(st, C, C, R, Math.max(5, R * f1), a, { c: VAL_ACC, w: 1});
-    vEll(st, C, C, R, Math.max(5, R * f2), b, { c: VAL_PINK, w: 1});
-    for (let i = 0; i < 2; i++) {
-      const p = vOn(C, C, R, Math.max(5, R * f1), t * 120 + i * 180, a);
-      vRect(st, p.x, p.y, 9 + p.depth * 6, 9 + p.depth * 6, { w: 1, a: 0.4 + p.depth * 0.6 });
-    }
-    vCircle(st, C, C, 9, { w: 1, a: 0.9 });
-  },
   /* S12 立方体が回る: 前後2枚の正方形を線で結んだ枠。横幅の伸び縮みで回転して見せる */
-  S12(st, t) {
-    const C = VAL_VB / 2, S = 58;
-    const k = Math.cos(t * 0.9);                       /* -1〜1 = 回転 */
-    const near = 1 + 0.16 * k, far = 1 - 0.16 * k;     /* 手前は大きく、奥は小さく */
-    const off = 22 * k;
-    const A = { x: C - off, y: C - 10, s: S * far },
-          B = { x: C + off, y: C + 10, s: S * near };
-    vRect(st, A.x, A.y, A.s, A.s, { w: 1, a: 0.45 });
-    for (const [dx, dy] of [[-1,-1],[1,-1],[1,1],[-1,1]])
-      vLine(st, A.x + dx * A.s / 2, A.y + dy * A.s / 2, B.x + dx * B.s / 2, B.y + dy * B.s / 2, { a: 0.3 });
-    vRect(st, B.x, B.y, B.s, B.s, { w: 1, c: VAL_ACC });
-    vCircle(st, B.x, B.y, 7, { c: VAL_PINK, w: 1});
-  },
   /* S13 手前と奥をめぐる: 寝かせた輪の上を四角が周回。手前で大きく前面、奥で小さく背面 */
-  S13(st, t) {
-    const C = VAL_VB / 2, RX = 82, RY = 30, ROT = -18;
-    vEll(st, C, C, RX, RY, ROT, { a: 0.4 });
-    vEll(st, C, C, RX * 0.62, RY * 0.62, ROT, { a: 0.2, dash: '4 6' });
-    vCircle(st, C, C, 16, { w: 1});
-    for (let i = 0; i < 4; i++) {
-      const p = vOn(C, C, RX, RY, t * 66 + i * 90, ROT);
-      const sz = 8 + p.depth * 12;
-      vRect(st, p.x, p.y, sz, sz, { w: 1,
-        c: i % 2 ? VAL_ACC : VAL_PINK, a: 0.35 + p.depth * 0.65 });
-    }
-  },
   /* S14 盤が立ち上がる: 寝かせた盤が周期的に立ち上がり、上に乗った3つが一緒に回る */
-  S14(st, t) {
-    const C = VAL_VB / 2, RX = 74;
-    const tilt = 0.14 + 0.76 * (0.5 + 0.5 * Math.sin(t * 0.55));   /* 寝る↔立つ */
-    const RY = RX * tilt, ROT = -14;
-    vEll(st, C, C, RX, RY, ROT, { c: VAL_ACC, w: 1});
-    for (let i = 0; i < 3; i++) {
-      const p = vOn(C, C, RX, RY, t * 54 + i * 120, ROT);
-      const sz = 10 + p.depth * 8;
-      vTri(st, p.x, p.y, sz, t * 40 + i * 120, { w: 1, a: 0.4 + p.depth * 0.6 });
-    }
-    vLine(st, C - RX - 10, C, C - RX + 4, C, { a: 0.25 });
-    vLine(st, C + RX - 4, C, C + RX + 10, C, { a: 0.25 });
-  },
   /* S15 逆回転して噛み合う: 2つの正方形が逆に回りながら近づき、45°ずれて重なる */
-  S15(st, t) {
-    const C = VAL_VB / 2, T = 4.4, k = vLoop(t, T);
-    const close = k < 0.46 ? vE(k / 0.46) : (k < 0.74 ? 1 : 1 - vE((k - 0.74) / 0.26));
-    const gap = 40 * (1 - close);
-    const sp = close * 45;
-    vRect(st, C - gap, C, 62, 62, { w: 1, c: VAL_PINK, rot: -sp, rx0: C - gap, ry0: C });
-    vRect(st, C + gap, C, 62, 62, { w: 1, c: VAL_ACC, rot: sp, rx0: C + gap, ry0: C });
-    vCircle(st, C, C, 62 * 0.72, { a: 0.14, dash: '4 6' });
-    const lock = Math.max(0, (close - 0.85) / 0.15);
-    if (lock > 0) vCircle(st, C, C, 10 + lock * 8, { c: VAL_ACC, w: 1, a: 1 - lock * 0.5 });
-  },
   /* ===== 2026-08-28 追加: 開く → グリンと回る → 重なる =====
      ヒデさん指定「一旦上下に開いた後に右回転でグリンとスピンして、また重なる」。
      緩急を効かせるため、開く/回る/戻る をはっきり分けて、間に“ため”を入れている。 */
 
   /* S16 開いて回って重なる: 3枚が上下に開き、右へグリンと回って、また1つに重なる */
-  S16(st, t) {
-    const C = VAL_VB / 2, T = 3.8, k = vLoop(t, T);
-    const open = Math.max(0, Math.min(1, k / 0.22));                 /* 一気に開く */
-    const spin = vHold(Math.max(0, Math.min(1, (k - 0.26) / 0.38)), 0.1) * 360;  /* ためて回る */
-    const back = vE3(Math.max(0, Math.min(1, (k - 0.7) / 0.24)));    /* 戻って重なる */
-    const gap = (44 * vE2(open)) * (1 - back);
-    const COL = [VAL_PINK, VAL_INK, VAL_ACC];
-    for (let i = 0; i < 3; i++) {
-      const y = C + (i - 1) * gap;
-      vRect(st, C, y, 76, 48, { rx: 5, w: 1, c: COL[i],
-        rot: spin, rx0: C, ry0: y });
-    }
-    vCircle(st, C, C, 66, { a: 0.13, dash: '4 6' });
-    const lock = Math.max(0, (back - 0.86) / 0.14);
-    if (lock > 0) vCircle(st, C, C, 12 + lock * 10, { c: VAL_ACC, w: 1, a: 1 - lock });
-  },
   /* S17 花のように開いて閉じる: 4枚が放射状に開き、全体が回ってから中央へ戻る */
-  S17(st, t) {
-    const C = VAL_VB / 2, T = 4.2, k = vLoop(t, T);
-    const open = vE2(Math.max(0, Math.min(1, k / 0.24)));
-    const spin = vHold(Math.max(0, Math.min(1, (k - 0.28) / 0.34)), 0.08) * 270;
-    const back = vE3(Math.max(0, Math.min(1, (k - 0.66) / 0.28)));
-    const d = 52 * open * (1 - back);
-    vCircle(st, C, C, 70, { a: 0.13, dash: '4 6' });
-    for (let i = 0; i < 4; i++) {
-      const a = (i * 90 + 45 + spin) * Math.PI / 180;
-      const x = C + Math.cos(a) * d, y = C + Math.sin(a) * d;
-      vRect(st, x, y, 40, 40, { rx: 4, w: 1, c: i % 2 ? VAL_ACC : VAL_PINK,
-        rot: spin + i * 90, rx0: x, ry0: y });
-    }
-    vCircle(st, C, C, 10, { w: 1, a: 0.4 + back * 0.6 });
-  },
   /* S18 カードを配って束ねる: 3枚が扇に開き、グリンと回って、パチンと束に戻る */
   S18(st, t) {
     const C = VAL_VB / 2, T = 3.6, k = vLoop(t, T);
@@ -13950,22 +13300,6 @@ const VAL_SAAS = {
 /* ===================== for AI: コンテキスト取得から実行 ===================== */
 const VAL_AI = {
   /* A1 一方向のパイプライン: 円(取得)→正方形(処理)→三角(実行)。粒が左から右へ一方向に流れ、段ごとに形が変わる */
-  A1(st, t) {
-    /* 【2026-08-30 ヒデさん指定】四角の角丸なし・点線をやめて実線・各要素1px枠・終端で光る三角は削除。 */
-    const C = VAL_VB / 2, X = [44, 110, 176];
-    vCircle(st, X[0], C, 26, { a: 0.9, w: 1});
-    vRect(st, X[1], C, 46, 46, { rx: 0, a: 0.9, w: 1});
-    vTri(st, X[2], C, 28, 90, { a: 0.9, w: 1});
-    vLine(st, X[0] + 30, C, X[1] - 27, C, { a: 0.3, w: 1});
-    vLine(st, X[1] + 27, C, X[2] - 26, C, { a: 0.3, w: 1});
-    for (let i = 0; i < 2; i++) {
-      const u = vLoop(t * 0.5 + i / 2, 1);
-      const x = X[0] + (X[2] - X[0]) * u;
-      if (u < 0.5) vCircle(st, x, C, 7, { c: VAL_ACC, w: 1});
-      else vRect(st, x, C, 12, 12, { c: VAL_ACC, w: 1, rot: u * 240, rx0: x, ry0: C });
-    }
-    /* 終端で光る三角(fire)は削除(ヒデさん指定) */
-  },
   /* A20 レーダー(2026-09-08 ヒデさん指定): 縦の棒が上下するだけのループ。
      長方形の収縮も水色の再生マークが右へずれる動きも無し。棒が波打つのを延々くり返す。 */
   A20(st, t) {
@@ -14001,298 +13335,27 @@ const VAL_AI = {
     const tri = vE(clamp01((draw - 0.78) / 0.22));   /* 伸びきる直前にフェードイン */
     vTri(st, 186, C - 44, 20, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
   },
-  A22(st, t) {   /* まっすぐ伸びて実行: 左下→右上の直線、途中に取得点、先端に三角フェードイン(緩急強め) */
-    const C = VAL_VB / 2, T = 4.0, k = vLoop(t, T);
-    const draw = vEIO(Math.min(1, k / 0.72));
-    const A = [40, C + 52], B = [166, C - 40];
-    vPath(st, [A, B], { a: 0.14, dash: '4 6' });
-    vTrim(vPath(st, [A, B], { c: VAL_ACC, w: 1 }), draw);
-    for (let i = 1; i <= 3; i++) { const u = i / 4, x = A[0] + (B[0] - A[0]) * u, y = A[1] + (B[1] - A[1]) * u;
-      vCircle(st, x, y, 3.2, { c: VAL_ACC, w: 1, a: draw > u ? 0.95 : 0.18 }); }
-    const dir = Math.atan2(B[1] - A[1], B[0] - A[0]);
-    const tri = vE(clamp01((draw - 0.78) / 0.22));
-    vTri(st, B[0] + 10 * Math.cos(dir), B[1] + 10 * Math.sin(dir), 18, dir * 180 / Math.PI + 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A23(st, t) {   /* 点をつないで実行: 散らばった文脈の点→中央へ集約→右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.6, k = vLoop(t, T);
-    const gather = Math.min(1, k / 0.52), go = Math.max(0, (k - 0.5) / 0.5);
-    const pts = [[50, C - 42], [42, C + 28], [86, C - 6], [66, C + 50], [92, C + 22]];
-    const hub = [112, C];
-    pts.forEach(p => { vCircle(st, p[0], p[1], 3.5, { c: VAL_ACC, w: 1, a: 0.45 + 0.5 * vE(gather) });
-      vTrim(vPath(st, [p, hub], { a: 0.5, w: 1 }), vE(gather)); });
-    vCircle(st, hub[0], hub[1], 10, { w: 1, a: 0.9 });
-    vTrim(vPath(st, [hub, [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A24(st, t) {   /* 束ねて放つ: 左の複数線が1本に束なり→右へ矢印を放つ+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.2, k = vLoop(t, T);
-    const merge = Math.min(1, k / 0.5), shoot = Math.max(0, (k - 0.5) / 0.5);
-    const ys = [C - 42, C - 15, C + 15, C + 42], x0 = 36, xm = 104;
-    ys.forEach(y => { const yy = y + (C - y) * vE(merge);
-      vPath(st, [[x0, y], [xm, yy]], { c: VAL_ACC, w: 1, a: 0.9 - 0.45 * shoot }); });
-    vTrim(vPath(st, [[xm, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(shoot));
-    const tri = vE(clamp01((shoot - 0.72) / 0.28));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A25(st, t) {   /* 満ちて矢が伸びる: 円弧が満ちる(取得)→右へ直線が伸びて三角フェードイン */
-    const C = VAL_VB / 2, T = 4.4, k = vLoop(t, T);
-    const fill = Math.min(1, k / 0.55), go = Math.max(0, (k - 0.58) / 0.42);
-    const r = 34, cx = 70;
-    vCircle(st, cx, C, r, { a: 0.16 });
-    vTrim(vCircle(st, cx, C, r, { c: VAL_ACC, w: 1 }), vE(fill));
-    vCircle(st, cx, C, 4, { c: VAL_PINK, w: 1, a: 0.8 });
-    vTrim(vPath(st, [[cx + r, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A26(st, t) {   /* 枠を読み取り実行: 枠内を走査線が走って取得→右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 5.0, k = vLoop(t, T), S = 78;
-    const scan = Math.min(1, k / 0.5), go = Math.max(0, (k - 0.55) / 0.45);
-    const bx = 64;
-    vRect(st, bx, C, S, S + 12, { rx: 0, w: 1, a: 0.9 });
-    for (let i = 0; i < 3; i++) { const yy = C - 22 + i * 22;
-      vLine(st, bx - 24, yy, bx + 24, yy, { a: (i / 3) < scan ? 0.5 : 0.15, dash: '5 6' }); }
-    if (go < 0.35) { const y = C - (S + 12) / 2 + (S + 12) * vE(scan);
-      vLine(st, bx - S / 2 + 6, y, bx + S / 2 - 6, y, { c: VAL_ACC, w: 1, a: scan < 1 ? 1 : 0.2 }); }
-    vTrim(vPath(st, [[bx + S / 2, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A27(st, t) {   /* ノードが灯り実行: ノードが順に灯って文脈がつながる→右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.8, k = vLoop(t, T);
-    const light = Math.min(1, k / 0.6), go = Math.max(0, (k - 0.6) / 0.4);
-    const nodes = [[46, C - 30], [52, C + 36], [92, C - 2], [84, C + 42], [110, C - 36]];
-    const edges = [[0, 2], [1, 2], [2, 4], [3, 2]];
-    edges.forEach(e => vTrim(vPath(st, [nodes[e[0]], nodes[e[1]]], { a: 0.5, w: 1 }), vE(Math.min(1, light * 1.2))));
-    nodes.forEach((n, i) => vCircle(st, n[0], n[1], 4, { c: VAL_ACC, w: 1, a: light > i / nodes.length ? 0.95 : 0.2 }));
-    vTrim(vPath(st, [[110, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A28(st, t) {   /* 段を上って実行: 段(取得→整形→…)が順に現れ、つないで右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.6, k = vLoop(t, T);
-    const appear = Math.min(1, k / 0.6), go = Math.max(0, (k - 0.62) / 0.38);
-    const steps = [[54, C + 34], [96, C + 8], [134, C - 20]];
-    vPath(st, steps, { a: 0.14, dash: '4 6' });
-    steps.forEach((p, i) => { const kk = clamp01((appear - i * 0.24) / 0.24);
-      vRect(st, p[0], p[1], 26, 18, { rx: 0, w: 1, a: 0.16 + 0.8 * kk }); });
-    vTrim(vPath(st, steps, { c: VAL_ACC, w: 1 }), vE(appear));
-    const last = steps[2];
-    vTrim(vPath(st, [[last[0] + 13, last[1]], [176, last[1]]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, last[1], 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A29(st, t) {   /* 波紋が集まって実行: 同心の弧が中心へ集まる(取得)→右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.4, k = vLoop(t, T);
-    const conv = Math.min(1, k / 0.55), go = Math.max(0, (k - 0.58) / 0.42);
-    const cx = 74;
-    for (let i = 0; i < 3; i++) { const r = (46 - i * 10) * (1 - 0.5 * vE(conv)) + 6;
-      vCircle(st, cx, C, r, { c: VAL_ACC, w: 1, a: 0.3 + 0.2 * i }); }
-    vCircle(st, cx, C, 5, { c: VAL_PINK, w: 1, a: 0.85 });
-    vTrim(vPath(st, [[cx + 10, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A31(st, t) {   /* 粒がゲートを抜けて実行: 粒が左→ゲートを抜け→右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.0, k = vLoop(t, T), gateX = 104;
-    vRect(st, gateX, C, 14, 62, { rx: 0, w: 1, a: 0.9 });
-    vLine(st, 48, C, gateX - 10, C, { a: 0.2, dash: '4 6' });
-    for (let i = 0; i < 3; i++) { const u = vLoop(t * 0.6 + i / 3, 1), x = 44 + u * 132;
-      vCircle(st, x, C, 4, { c: x > gateX ? VAL_ACC : VAL_INK, w: 1, a: 0.85 }); }
-    const go = Math.max(0, (k - 0.5) / 0.5);
-    vTrim(vPath(st, [[gateX + 10, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
-  A32(st, t) {   /* 格子が満ちて実行: 3×3の格子が順に満ちる(取得)→右へ矢印+三角フェードイン */
-    const C = VAL_VB / 2, T = 4.6, k = vLoop(t, T);
-    const fill = Math.min(1, k / 0.6), go = Math.max(0, (k - 0.62) / 0.38);
-    const gx = 68, n = 3, cell = 18, gap = 4, span = (n - 1) * (cell + gap);
-    for (let r = 0; r < n; r++) for (let c2 = 0; c2 < n; c2++) { const idx = r * n + c2, on = fill * n * n > idx;
-      vRect(st, gx - span / 2 + c2 * (cell + gap), C - span / 2 + r * (cell + gap), cell, cell, { rx: 0, w: 1, a: on ? 0.9 : 0.16 }); }
-    vTrim(vPath(st, [[gx + span / 2 + cell / 2, C], [176, C]], { c: VAL_ACC, w: 1 }), vE(go));
-    const tri = vE(clamp01((go - 0.78) / 0.22));
-    vTri(st, 186, C, 18, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
-  },
   /* A2 形が変わる: 円 → 正方形 → 三角 と姿を変え、三角になった瞬間に外へ線が飛ぶ＝実行 */
-  A2(st, t) {
-    const C = VAL_VB / 2, T = 5.4, k = vLoop(t, T);
-    /* 常設の当たり(点線)。どの場面でも図形の数が他の案とそろうようにする */
-    vCircle(st, C, C, 78, { a: 0.16, dash: '4 6' });
-    vLine(st, C - 92, C, C - 74, C, { a: 0.22 });
-    vLine(st, C + 74, C, C + 92, C, { a: 0.22 });
-    const seg = k < 0.34 ? 0 : (k < 0.68 ? 1 : 2);
-    const u = vE(seg === 0 ? k / 0.34 : seg === 1 ? (k - 0.34) / 0.34 : (k - 0.68) / 0.32);
-    /* 見えている形を切り替えつつ、大きさを合わせて「変形」に見せる */
-    const R = 52;
-    if (seg === 0) { vCircle(st, C, C, R * (0.9 + 0.1 * u), { w: 1}); vRect(st, C, C, R * 1.5 * u, R * 1.5 * u, { w: 1, a: u * 0.9 }); }
-    else if (seg === 1) { vRect(st, C, C, R * 1.5, R * 1.5, { w: 1, a: 1 - u * 0.1 }); vTri(st, C, C, R * u, 90, { w: 1, a: u }); }
-    else { vTri(st, C, C, R, 90, { w: 1}); }
-    if (seg === 2) for (let i = 0; i < 4; i++) {
-      const d = 60 + u * 34;
-      const a = (-90 + i * 90) * Math.PI / 180;
-      vLine(st, C + Math.cos(a) * d, C + Math.sin(a) * d,
-               C + Math.cos(a) * (d + 16), C + Math.sin(a) * (d + 16), { c: VAL_ACC, w: 1, a: 1 - u });
-    }
-    vCircle(st, C, C, 6, { c: VAL_PINK, w: 1, a: 0.8 });
-  },
   /* A3 集めて撃つ: 散らばった小さな正方形が中央の円へ集まり、満ちたら右へ三角が飛ぶ */
-  A3(st, t) {
-    const C = VAL_VB / 2, T = 4.6, k = vLoop(t, T);
-    const gather = Math.min(1, k / 0.62), shoot = Math.max(0, (k - 0.66) / 0.34);
-    vCircle(st, C - 18, C, 38, { a: 0.9 });
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2 + t * 0.35;
-      const d = 86 * (1 - vE(gather)) + 26 * vE(gather);
-      vRect(st, C - 18 + Math.cos(a) * d, C + Math.sin(a) * d, 12, 12,
-        { c: VAL_ACC, w: 1, a: 1 - shoot * 0.7, rot: a * 57, rx0: C - 18 + Math.cos(a) * d, ry0: C + Math.sin(a) * d });
-    }
-    if (shoot > 0) {
-      const x = C - 18 + vE(shoot) * 96;
-      vTri(st, x, C, 22, 90, { c: VAL_ACC, w: 1, a: 1 - shoot * 0.3, rot: 90, rx0: x, ry0: C });
-    }
-  },
   /* A5 積んで実行 (2026-08-28 ヒデさん指定で作り直し):
      ・フェードインをやめ、【下から入ってくる】動きにした
      ・あとから入ってきた板が、先にあった板を【下から押し上げる】
      ・三角は出さない。積み上がる動きだけで「溜まっていく」を見せる
      ・緩急: 入るのは一気に(vE2)、押し上げは少し行き過ぎて戻る(vE3) */
-  A5(st, t) {
-    const C = VAL_VB / 2, T = 4.2, k = vLoop(t, T);
-    const N = 3, BW = 108, BH = 24, GAP = 5;
-    const baseY = C + 44;                 /* いちばん下の段の位置 */
-    const fromY = baseY + BH + 30;        /* 画面の下から入ってくる */
-    const at = q => q * 0.26, dur = 0.2;
-    /* 常設の受け皿(点線)。空の瞬間を作らない */
-    for (let q = 0; q < N; q++)
-      vRect(st, C, baseY - q * (BH + GAP), BW, BH, { rx: 0, a: 0.13, dash: '4 6' });
-    vLine(st, C - BW / 2 - 8, baseY + BH / 2 + 9, C + BW / 2 + 8, baseY + BH / 2 + 9, { a: 0.3 });
-    for (let q = 0; q < N; q++) {
-      const kk = Math.max(0, Math.min(1, (k - at(q)) / dur));
-      if (kk <= 0) continue;
-      /* 自分より【あとに】入ってきた枚数だけ、押し上げられる */
-      let lift = 0;
-      for (let r = q + 1; r < N; r++) lift += vE3(Math.max(0, Math.min(1, (k - at(r)) / dur)));
-      const y0 = baseY - lift * (BH + GAP);
-      const y = fromY + (y0 - fromY) * vE2(kk);
-      vRect(st, C, y, BW, BH, { rx: 0, w: 1, c: q === N - 1 ? VAL_ACC : VAL_INK });
-      vLine(st, C - BW / 2 + 12, y, C - BW / 2 + 38, y, { a: 0.35 });
-    }
-  },
   /* ===== ここから 2026-08-28 追加分 =====
      A6〜A10 はパスのトリミングで「道筋が描かれていく」＝時間の経過とストーリーを出す。
      どれも 取得 → 処理 → 実行 の順番が読み取れるようにしてある。 */
 
   /* A6 経路が描かれて実行: 円から三角へ折れ線が引かれ、描き切った瞬間に三角が一周描かれて発火 */
-  A6(st, t) {
-    const C = VAL_VB / 2, T = 3.8, k = vLoop(t, T);
-    const draw = Math.min(1, k / 0.5), fire = Math.max(0, (k - 0.52) / 0.28), off = Math.max(0, (k - 0.84) / 0.16);
-    const P = [[46, C + 34], [92, C + 34], [92, C - 30], [166, C - 30]];
-    vPath(st, P, { a: 0.15, dash: '4 6' });
-    vTrim(vPath(st, P, { c: VAL_ACC, w: 1, a: 1 - off }), vE(draw));
-    vCircle(st, 46, C + 34, 15, { w: 1});
-    vTrim(vTri(st, 178, C - 30, 22, 90, { c: VAL_ACC, w: 1, a: fire > 0 ? 1 - off : 0 }), vE(fire));
-    vTri(st, 178, C - 30, 22, 90, { a: 0.16 });
-    const kk = vE(draw), idx = Math.min(P.length - 2, Math.floor(kk * 3));
-    const seg = kk * 3 - idx;
-    vRect(st, P[idx][0] + (P[idx+1][0] - P[idx][0]) * seg, P[idx][1] + (P[idx+1][1] - P[idx][1]) * seg,
-      9, 9, { c: VAL_ACC, w: 1, a: draw < 1 ? 1 : 0 });
-  },
   /* A7 3ステップ: 取得→解釈→実行の枠が順に描かれて満ちる。最後に三角。時系列そのもの */
-  A7(st, t) {
-    const C = VAL_VB / 2, T = 5, k = vLoop(t, T);
-    for (let i = 0; i < 3; i++) {
-      const y = C - 46 + i * 40;
-      const at = i * 0.2, kk = Math.max(0, Math.min(1, (k - at) / 0.2));
-      vRect(st, C - 12, y, 116, 26, { rx: 0, a: 0.16, dash: '4 6' });
-      vTrim(vRect(st, C - 12, y, 116, 26, { rx: 0, c: kk >= 1 ? VAL_INK : VAL_ACC, w: 1}), vE(kk));
-    }
-    const go = Math.max(0, (k - 0.66) / 0.34);
-    if (go > 0) vTrim(vTri(st, C + 74, C + 34, 20, 90, { c: VAL_ACC, w: 1, a: 1 - go * 0.3 }), vE(Math.min(1, go * 2)));
-    vLine(st, C - 70, C + 62, C + 86, C + 62, { a: 0.2 });
-  },
   /* A8 満ちて発射 (2026-08-28 ヒデさん指定): 発射は三角ではなく【矢印】に。
      円弧が満ちるまでが「取得」。満ちた瞬間に矢印が右へ飛ぶ＝いちばん緩急が強い */
-  A8(st, t) {
-    const C = VAL_VB / 2, T = 3.2, k = vLoop(t, T);
-    const load = Math.min(1, k / 0.62), shoot = Math.max(0, (k - 0.62) / 0.38);
-    vCircle(st, C - 30, C, 46, { a: 0.16, dash: '3 5' });
-    vTrim(vCircle(st, C - 30, C, 46, { c: VAL_ACC, w: 1, a: 1 - shoot * 0.8 }), load);
-    vRect(st, C - 30, C, 20, 20, { w: 1, a: 0.5 + load * 0.5, rot: load * 90, rx0: C - 30, ry0: C });
-    if (shoot > 0) {
-      const e = vE2(shoot);
-      vArrow(st, C - 24 + e * 44, C, 50, 0, { c: VAL_ACC, w: 1, a: 1 - shoot * 0.35 });
-    } else {
-      vArrow(st, C + 24, C, 44, 0, { a: 0.16 });     /* 出口の目印 */
-    }
-    vLine(st, C + 84, C - 16, C + 84, C + 16, { a: 0.22 });
-  },
   /* A9 重なって答えになる: 3つの円(文脈の断片)が中央で重なり、重なりから四角→三角へ変わって抜ける */
-  A9(st, t) {
-    const C = VAL_VB / 2, T = 5.2, k = vLoop(t, T);
-    const come = Math.min(1, k / 0.4), born = Math.max(0, (k - 0.42) / 0.22),
-          morph = Math.max(0, (k - 0.62) / 0.2), go = Math.max(0, (k - 0.8) / 0.2);
-    const d = 52 * (1 - vE(come));
-    for (let i = 0; i < 3; i++) {
-      const a = (i * 120 - 90) * Math.PI / 180;
-      vCircle(st, C + Math.cos(a) * d, C + Math.sin(a) * d, 40,
-        { w: 1, c: [VAL_PINK, VAL_ACC, VAL_INK][i], a: 0.9 - go * 0.6 });
-    }
-    /* 常設の当たり。場面が変わっても図形の数がそろうように */
-    vCircle(st, C, C, 82, { a: 0.13, dash: '4 6' });
-    vLine(st, C + 88, C - 14, C + 88, C + 14, { a: 0.22 });
-    if (born > 0 && morph <= 0) vTrim(vRect(st, C, C, 30, 30, { rx: 0, c: VAL_ACC, w: 1}), vE(born));
-    if (morph > 0) vTri(st, C + vE(go) * 62, C, 22 + morph * 6, 90, { c: VAL_ACC, w: 1, a: 1 - go * 0.4 });
-  },
   /* A10 一本の線が折れて進む: 線が描かれながら3回折れ、先端が三角になって抜ける */
-  A10(st, t) {
-    const C = VAL_VB / 2, T = 4.4, k = vLoop(t, T);
-    const draw = Math.min(1, k / 0.7), tip = Math.max(0, (k - 0.7) / 0.3);
-    const P = [[36, C + 46], [78, C + 46], [78, C], [130, C], [130, C - 44], [172, C - 44]];
-    vPath(st, P, { a: 0.14, dash: '4 6' });
-    vTrim(vPath(st, P, { c: VAL_ACC, w: 1}), vE(draw));
-    /* 折れ点に小さな印(＝段を越えた印。時系列が読める) */
-    for (let i = 1; i < P.length - 1; i++) {
-      const at = i / (P.length - 1);
-      vRect(st, P[i][0], P[i][1], 8, 8, { w: 1, a: vE(draw) > at ? 0.9 : 0.18 });
-    }
-    if (tip > 0) vTrim(vTri(st, 182, C - 44, 20, 90, { c: VAL_ACC, w: 1}), vE(Math.min(1, tip * 1.6)));
-    else vTri(st, 182, C - 44, 20, 90, { a: 0.16 });
-  },
   /* ===== ここから 2026-08-28 追加分(躍動感・回転・奥行き) ===== */
 
   /* A11 回り込んで発射: 寝かせた軌道を粒が回り、1周したら中央から三角が飛ぶ。奥は小さく手前は大きく */
-  A11(st, t) {
-    const C = VAL_VB / 2, RX = 80, RY = 28, ROT = -16, T = 3.6, k = vLoop(t, T);
-    vEll(st, C, C, RX, RY, ROT, { a: 0.35 });
-    vCircle(st, C, C, 20, { w: 1});
-    for (let i = 0; i < 3; i++) {
-      const p = vOn(C, C, RX, RY, k * 360 + i * 120, ROT);
-      vCircle(st, p.x, p.y, 4 + p.depth * 6, { c: VAL_ACC, w: 1, a: 0.35 + p.depth * 0.65 });
-    }
-    const fire = Math.max(0, (k - 0.72) / 0.28);
-    if (fire > 0) {
-      const x = C + vE(fire) * 78;
-      vTri(st, x, C, 20 - fire * 4, 90, { c: VAL_ACC, w: 1, a: 1 - fire * 0.4 });
-    }
-  },
   /* A12 球を走査する: 寝かせた輪を何本も重ねて球の骨組みに。走査線が上から下へ、終わると三角 */
-  A12(st, t) {
-    const C = VAL_VB / 2, R = 62, T = 4.4, k = vLoop(t, T);
-    const scan = Math.min(1, k / 0.62), go = Math.max(0, (k - 0.68) / 0.32);
-    vCircle(st, C, C, R, { w: 1, a: 0.8 - go * 0.6 });
-    for (let i = 1; i <= 3; i++) {
-      const f = Math.cos((i / 4) * Math.PI * 0.5 + t * 0.5);
-      vEll(st, C, C, R, Math.max(3, R * Math.abs(f)), 0, { a: (0.5 - go * 0.4) * 0.8 });
-    }
-    const y = C - R + 2 * R * vE(scan);
-    if (go <= 0) {
-      const w = Math.sqrt(Math.max(0, R * R - (y - C) * (y - C)));
-      vLine(st, C - w, y, C + w, y, { c: VAL_ACC, w: 1});
-    }
-    if (go > 0) vTri(st, C + vE(go) * 62, C, 24, 90, { c: VAL_ACC, w: 1, a: 1 - go * 0.35 });
-  },
   /* A13 カードがめくれる: 長方形が横幅の伸び縮みで3回めくれる。
      【2026-08-30 ヒデさん指定】最後の三角は削除・角丸もすべて無し。 */
   A13(st, t) {
@@ -14308,86 +13371,13 @@ const VAL_AI = {
       vRect(st, C - 42 + i * 42, BARY, 28, 7, { rx: 0, w: 1, a: i <= step ? 0.9 : 0.2 });
   },
   /* A14 螺旋で落ちて撃つ: 粒が寝かせた軌道を回りながら中心へ。着いた瞬間に三角が上へ抜ける */
-  A14(st, t) {
-    const C = VAL_VB / 2, RX = 78, RY = 27, ROT = -20, T = 4.2, k = vLoop(t, T);
-    vEll(st, C, C, RX, RY, ROT, { a: 0.28, dash: '4 6' });
-    vEll(st, C, C, RX * 0.5, RY * 0.5, ROT, { a: 0.2, dash: '4 6' });
-    vCircle(st, C, C, 14, { w: 1});
-    for (let i = 0; i < 3; i++) {
-      const kk = Math.max(0, Math.min(1, (k - i * 0.14) / 0.66));
-      const f = 1 - vE(kk) * 0.9;
-      const p = vOn(C, C, RX * f, RY * f, k * 520 + i * 120, ROT);
-      vRect(st, p.x, p.y, 6 + p.depth * 8, 6 + p.depth * 8,
-        { c: VAL_ACC, w: 1, a: (0.35 + p.depth * 0.65) * (1 - kk * 0.4) });
-    }
-    const up = Math.max(0, (k - 0.76) / 0.24);
-    if (up > 0) vTri(st, C, C - vE(up) * 66, 22, 0, { c: VAL_ACC, w: 1, a: 1 - up * 0.4 });
-  },
   /* A15 板が立ち上がる: 寝ていた3枚が順に立ち上がり、揃うと三角に変わって抜ける */
-  A15(st, t) {
-    const C = VAL_VB / 2, T = 5, k = vLoop(t, T);
-    const done = Math.max(0, (k - 0.66) / 0.34);
-    for (let i = 0; i < 3; i++) {
-      const at = i * 0.2, kk = Math.max(0, Math.min(1, (k - at) / 0.22));
-      const x = C - 54 + i * 54;
-      const h = 8 + vE(kk) * 62;                        /* 寝ている → 立つ */
-      const w = 44 - vE(kk) * 16;
-      vRect(st, x, C + 34 - h / 2, w, Math.max(4, h),
-        { rx: 0, w: 1, c: kk >= 1 ? VAL_ACC : VAL_INK, a: (0.4 + kk * 0.6) * (1 - done * 0.7) });
-    }
-    vEll(st, C, C + 44, 86, 12, 0, { a: 0.22 });        /* 床(寝かせた楕円)＝奥行き */
-    if (done > 0) vTri(st, C, C + 4 - vE(done) * 48, 24, 90, { c: VAL_ACC, w: 1, a: 1 - done * 0.3 });
-  },
   /* ===== 2026-08-28 追加: 矢印で「実行」を表す3案 =====
      ヒデさん指定。三角だけでなく、ふつうの矢印も使ってよいとのこと。 */
 
   /* A16 伸びて刺さる: 左から矢印が伸びていき、右の枠に刺さると枠が一瞬太くなる */
-  A16(st, t) {
-    const C = VAL_VB / 2, T = 3.0, k = vLoop(t, T);
-    const grow = vE2(Math.min(1, k / 0.46));
-    const hitK = Math.max(0, (k - 0.48) / 0.2);
-    const rest = Math.max(0, (k - 0.76) / 0.24);
-    vCircle(st, 40, C, 17, { w: 1});
-    vRect(st, 172, C, 46, 62, { rx: 0, w: 1,
-      c: hitK > 0 && hitK < 1 ? VAL_ACC : VAL_INK });
-    for (let i = 0; i < 3; i++) vLine(st, 158, C - 18 + i * 18, 186, C - 18 + i * 18, { a: 0.3 });
-    vArrow(st, 60, C, 88, 0, { a: 0.14 });
-    if (grow > 0.01) vArrow(st, 60, C, 88 * grow, 0, { c: VAL_ACC, w: 1, a: 1 - rest * 0.5 });
-  },
   /* A17 三方向へ配信: 中央の四角から矢印が3本、同時に外へ飛ぶ */
-  A17(st, t) {
-    const C = VAL_VB / 2, T = 3.2, k = vLoop(t, T);
-    const load = Math.min(1, k / 0.34);
-    const go = Math.max(0, (k - 0.38) / 0.42);
-    const out = vE2(go);
-    vRect(st, C, C, 46, 46, { rx: 0, w: 1, c: go > 0 ? VAL_ACC : VAL_INK,
-      rot: load * 45, rx0: C, ry0: C });
-    vCircle(st, C, C, 78, { a: 0.12, dash: '4 6' });
-    for (let i = 0; i < 3; i++) {
-      const a = -90 + i * 120;
-      const r = a * Math.PI / 180;
-      const sx = C + Math.cos(r) * (30 + out * 16), sy = C + Math.sin(r) * (30 + out * 16);
-      vArrow(st, sx, sy, 46 * out, a, { c: VAL_ACC, w: 1, a: out > 0.02 ? 1 - go * 0.35 : 0 });
-      vArrow(st, C + Math.cos(r) * 46, C + Math.sin(r) * 46, 40, a, { a: 0.13 });
-    }
-  },
   /* A18 向きを決めて飛ぶ: 矢印が中心でぐるっと回り、止まった向きへシュッと飛ぶ */
-  A18(st, t) {
-    const C = VAL_VB / 2, T = 3.4, k = vLoop(t, T);
-    const spin = vHold(Math.min(1, k / 0.48), 0.06);
-    const deg = -90 + spin * 400;
-    const go = Math.max(0, (k - 0.54) / 0.34);
-    const out = vE2(go);
-    vCircle(st, C, C, 62, { a: 0.14, dash: '4 6' });
-    for (let i = 0; i < 4; i++) {
-      const a = (i * 90 - 90) * Math.PI / 180;
-      vLine(st, C + Math.cos(a) * 68, C + Math.sin(a) * 68, C + Math.cos(a) * 76, C + Math.sin(a) * 76, { a: 0.3 });
-    }
-    const r = deg * Math.PI / 180;
-    const sx = C + Math.cos(r) * out * 54, sy = C + Math.sin(r) * out * 54;
-    vArrow(st, sx, sy, 50, deg, { c: go > 0 ? VAL_ACC : VAL_INK, w: 1, a: 1 - go * 0.3 });
-    vCircle(st, C, C, 9, { w: 1, c: VAL_PINK, a: 0.85 });
-  },
   /* A19 ひし形を貫く (2026-08-28 ヒデさん指定・Figma 15888:25154 のピクトグラムをもとに)
      ひし形が左から順に現れて右へ4つまで増え、そこを矢印が左から右へ貫く。
      カンプの比率を実測して合わせた(900×520の描画で計測):
@@ -14395,28 +13385,6 @@ const VAL_AI = {
        → こちらの 220 の座標系では 全体180(x15〜195) / ひし形の並び81 /
          半幅16.5・半高59 / 中心 x=86,104.6,123.2,141.8 / 中心 y=110
      緩急: ひし形は一気に(vE2)、矢印は ためてから一気に(vHold) */
-  A19(st, t) {
-    const C = VAL_VB / 2, T = 4.0, k = vLoop(t, T);
-    const HW = 16.5, HH = 59;
-    const XS = [86, 104.6, 123.2, 141.8];
-    /* 1) 左からの線が引かれる */
-    const lineK = Math.min(1, k / 0.14);
-    vTrim(vLine(st, 15, C, 70, C, { c: VAL_INK, w: 1}), vE2(lineK));
-    /* 2) ひし形が左から順に現れる(常設の当たりを薄く置いて、空の瞬間を作らない) */
-    for (let i = 0; i < 4; i++) {
-      const x = XS[i];
-      const pts = [[x, C - HH], [x + HW, C], [x, C + HH], [x - HW, C], [x, C - HH]];
-      vPath(st, pts, { a: 0.1 });
-      const at = 0.16 + i * 0.09, kk = Math.max(0, Math.min(1, (k - at) / 0.09));
-      if (kk > 0) vTrim(vPath(st, pts, { c: VAL_INK, w: 1}), vE2(kk));
-    }
-    /* 3) 矢印が左から右へ貫く。ためてから一気に */
-    const shoot = vHold(Math.max(0, Math.min(1, (k - 0.56) / 0.34)), 0.22);
-    const x0 = 58, x1 = 152;                 /* 矢印の【根元】が動く範囲 */
-    const ax = x0 + (x1 - x0) * shoot;
-    vArrow(st, ax, C, 43, 0, { c: VAL_ACC, w: 1, a: shoot > 0.01 ? 1 : 0 });
-    if (shoot <= 0.01) vArrow(st, 152, C, 43, 0, { a: 0.14 });   /* 出口の目印 */
-  },
 };
 function drawValueIcons() {
   const p = params.patterns || {};
@@ -14433,9 +13401,9 @@ function drawValueIcons() {
   const _sp = (_rs && _rs.pictoSpeed != null) ? _rs.pictoSpeed : 1;
   const _et = elapsed * _sp;
   const a = valEnsure('saas', 'valSaas');
-  if (a) { const f = VAL_SAAS[p.valSaas] || VAL_SAAS.S1; try { f(a, rfxValT(valTOv.saas, _et)); } catch (e) {} valDone(a); }
+  if (a) { const f = VAL_SAAS[p.valSaas] || VAL_SAAS.S9;   /* 【2026-09-26 整理】完全削除した案(S1ほか)は表から外したので、保存値が消した案なら既定(S9)で描く */ try { f(a, rfxValT(valTOv.saas, _et)); } catch (e) {} valDone(a); }
   const b = valEnsure('ai', 'valAi');
-  if (b) { const f = VAL_AI[p.valAi] || VAL_AI.A1; try { f(b, rfxValT(valTOv.ai, _et)); } catch (e) {} valDone(b); }
+  if (b) { const f = VAL_AI[p.valAi] || VAL_AI.A21;   /* 同上: 消した案(A1ほか)なら既定(A21) */ try { f(b, rfxValT(valTOv.ai, _et)); } catch (e) {} valDone(b); }
 }
 
 let _rafPaused = false;   /* 【2026-09-22】タブ非表示で描画ループを止めているか */
@@ -17298,69 +16266,30 @@ function buildPanel() {
   sub(catRes, 'ピクトグラム（2つの価値の右）', true, { fixed: true, grp: 'variation' });   /* For SaaS/For AI のピクト案選択＝バリエーション扱い */
   {
     const SAAS = [
-      { key: 'S1', name: 'S1 同期して回る',   tip: '2つの輪の中のマーカーが同じ角度で回ります。片方が遅れ、すっと追いつく＝同期。' },
       { key: 'S2', name: 'S2 双方向のやり取り', tip: '2つの箱の間を小さな四角が行き来し、届くと受け手の枠が太くなります。' },
-      { key: 'S5', name: 'S5 すれ違う2本',    tip: '上下の線を、円と四角が逆向きに流れます。交差で一瞬ふくらみます。' },
       /* 2026-08-28 追加: 合流・重なり・時系列・パスのトリミング */
-      { key: 'S6', name: 'S6 描かれてつながる', tip: '左から右へ線が引かれ、届いた瞬間に受け手の枠が一周描かれます。引くのは速く、余韻はゆっくり。' },
       { key: 'S7', name: 'S7 4つが1つに',      tip: '四隅の四角が中央へ集まって重なり、合流した瞬間に外周が一周描かれます。' },
-      { key: 'S8', name: 'S8 満ちて同期',      tip: '外周が0→100%まで描かれ(進捗)、満ちた瞬間に内側の四角がパッと出ます。時系列がはっきり。' },
       { key: 'S9', name: 'S9 弧が噛み合う',    tip: '左右から弧が伸びてきて、中央で1つの円になります。噛み合った瞬間だけ太くなります。' },
-      { key: 'S10', name: 'S10 積層して重なる', tip: '3つの円がずれて重なっていき、完全に重なると1つに見えます。また離れます。' },
       /* 2026-08-28 追加: 躍動感・回転・奥行き */
-      { key: 'S11', name: 'S11 二軸のジャイロ', tip: '直交する2つの輪が転がります。交点に印が乗り、手前は大きく奥は小さく。いちばん躍動感があります。' },
-      { key: 'S12', name: 'S12 立方体が回る',   tip: '前後2枚の正方形を線で結んだ枠。横幅の伸び縮みで回転して見せます。' },
-      { key: 'S13', name: 'S13 手前と奥をめぐる', tip: '寝かせた輪の上を四角が周回。手前で大きく前面、奥で小さく背面に回ります。' },
-      { key: 'S14', name: 'S14 盤が立ち上がる', tip: '寝かせた盤が周期的に立ち上がり、上に乗った3つが一緒に回ります。' },
-      { key: 'S15', name: 'S15 逆回転で噛み合う', tip: '2つの正方形が逆に回りながら近づき、45°ずれて重なります。' },
       /* 2026-08-28 追加: 開く → グリンと回る → 重なる */
-      { key: 'S16', name: 'S16 開いて回って重なる', tip: '3枚が一気に上下へ開き、ためてから右へグリンと回って、また1つに重なります。' },
-      { key: 'S17', name: 'S17 花のように開く',   tip: '4枚が放射状に開き、全体が回ってから中央へ戻ります。' },
       { key: 'S18', name: 'S18 配って束ねる',     tip: '3枚が扇に開き、グリンと回って、パチンと束に戻ります。' },
     ];
     const AI = [
-      { key: 'A1', name: 'A1 一方向の流れ', tip: '円(取得)→四角(処理)→三角(実行)。粒が左から右へ一方向に流れ、段ごとに形が変わります。' },
-      { key: 'A2', name: 'A2 形が変わる',   tip: '円→四角→三角と姿を変え、三角になった瞬間に外へ線が飛びます＝実行。' },
-      { key: 'A3', name: 'A3 集めて撃つ',   tip: '散らばった四角が中央の円へ集まり、満ちたら右へ三角が飛びます。' },
-      { key: 'A5', name: 'A5 積んで実行',   tip: '長方形が下から入ってきて、先にあった板を押し上げながら積み上がります。フェードや三角は使いません。' },
       /* 2026-08-28 追加: パスのトリミングで「道筋が描かれていく」＝時間の経過とストーリー */
-      { key: 'A6', name: 'A6 経路が描かれる', tip: '円から三角へ折れ線が引かれ、描き切った瞬間に三角が一周描かれて発火します。' },
-      { key: 'A7', name: 'A7 3ステップ',     tip: '取得→解釈→実行の枠が順に描かれて満ち、最後に三角が出ます。時系列そのもの。' },
-      { key: 'A8', name: 'A8 満ちて発射',    tip: '円弧が満ちるまでが取得。満ちた瞬間に【矢印】が右へ飛びます。いちばん緩急が強い案。' },
-      { key: 'A9', name: 'A9 重なって答え',  tip: '3つの円(文脈の断片)が中央で重なり、重なりから四角→三角へ変わって抜けます。' },
-      { key: 'A10', name: 'A10 折れて進む',  tip: '1本の線が描かれながら3回折れ、通った折れ点に印が付きます。先端が三角になって抜けます。' },
       /* 2026-08-28 追加: 躍動感・回転・奥行き */
-      { key: 'A11', name: 'A11 回り込んで発射', tip: '寝かせた軌道を粒が回り、1周したら中央から三角が飛びます。奥は小さく手前は大きく。' },
-      { key: 'A12', name: 'A12 球を走査する',   tip: '寝かせた輪を重ねて球の骨組みに。走査線が上から下へ走り、終わると三角が出ます。' },
       { key: 'A13', name: 'A13 カードがめくれる', tip: '長方形が横幅の伸び縮みで3回めくれ、3枚目で三角が現れます。' },
-      { key: 'A14', name: 'A14 螺旋で落ちて撃つ', tip: '粒が寝かせた軌道を回りながら中心へ落ち、着いた瞬間に三角が上へ抜けます。' },
-      { key: 'A15', name: 'A15 板が立ち上がる', tip: '寝ていた3枚が順に立ち上がり、揃うと三角に変わって抜けます。床の楕円で奥行きを出しています。' },
       /* 2026-08-28 追加: 実行を「矢印」で表す */
-      { key: 'A16', name: 'A16 伸びて刺さる',   tip: '左から矢印が伸びていき、右の枠に刺さると枠が一瞬太くなります。' },
-      { key: 'A17', name: 'A17 三方向へ配信',   tip: '中央の四角から矢印が3本、同時に外へ飛びます。' },
-      { key: 'A18', name: 'A18 向きを決めて飛ぶ', tip: '矢印が中心でぐるっと回り、止まった向きへシュッと飛びます。' },
-      { key: 'A19', name: 'A19 ひし形を貫く',    tip: 'ひし形が左から順に現れて4つまで増え、そこを矢印が左から右へ貫きます（Figmaのピクトグラムをもとにした形）。' },
       /* 2026-09-08 ヒデさん指定・追加。矢印の三角は「線が伸びきる直前にフェードイン」(トリミングしない) */
       { key: 'A21', name: 'A21 折れて進む・改（既定）', tip: '左下から折れ線が伸び、伸びきる直前に三角矢印がフェードインします（トリミングしない）。' },
-      { key: 'A22', name: 'A22 まっすぐ伸びて実行', tip: '左下から右上へ直線が伸び、途中の点（取得）を通り、先端に三角矢印がフェードインします。' },
-      { key: 'A23', name: 'A23 点をつないで実行', tip: '散らばった文脈の点が中央へつながり、右へ矢印が伸びて三角がフェードインします。' },
-      { key: 'A24', name: 'A24 束ねて放つ', tip: '左の複数の線が1本に束なり、右へ矢印を放って三角がフェードインします。' },
-      { key: 'A25', name: 'A25 満ちて矢が伸びる', tip: '円弧が満ちるまでが取得。満ちたら右へ矢印が伸び、三角がフェードインします。' },
-      { key: 'A26', name: 'A26 枠を読み取り実行', tip: '枠の中を走査線が走って取得し、右へ矢印が伸びて三角がフェードインします。' },
-      { key: 'A27', name: 'A27 ノードが灯り実行', tip: 'ノードが順に灯って文脈がつながり、右へ矢印が伸びて三角がフェードインします。' },
-      { key: 'A28', name: 'A28 段を上って実行', tip: '段（取得→整形→…）が順に現れてつながり、右へ矢印が伸びて三角がフェードインします。' },
-      { key: 'A29', name: 'A29 波紋が集まって実行', tip: '同心の弧が中心へ集まって取得し、右へ矢印が伸びて三角がフェードインします。' },
-      { key: 'A31', name: 'A31 粒がゲートを抜けて実行', tip: '粒が左からゲートを抜けて水色になり、右へ矢印が伸びて三角がフェードインします。' },
-      { key: 'A32', name: 'A32 格子が満ちて実行', tip: '3×3の格子が順に満ちて取得し、右へ矢印が伸びて三角がフェードインします。' },
       { key: 'A20', name: 'A20 レーダー', tip: '縦の棒が位相をずらして上下するだけのループ（矢印・三角なし）。' },
     ];
     /* 【2026-08-28 ヒデさん指定】どちらの案か分かるよう、見出しを付けて分ける。
        ⚠️ もとは note() で書いていたが、補足文は既定で隠しているので見えていなかった */
     const picRoot = mount;
     sub(picRoot, 'For Saas', true, { fixed: true });
-    varRowX('valSaas', SAAS, () => params.patterns.valSaas || 'S1', v => { params.patterns.valSaas = v; }, { snap: VAR_SNAP.picto });
+    varRowX('valSaas', SAAS, () => params.patterns.valSaas || 'S9', v => { params.patterns.valSaas = v; }, { snap: VAR_SNAP.picto });
     sub(picRoot, 'For AI', true, { fixed: true });
-    varRowX('valAi', AI, () => params.patterns.valAi || 'A1', v => { params.patterns.valAi = v; }, { snap: VAR_SNAP.picto });
+    varRowX('valAi', AI, () => params.patterns.valAi || 'A21', v => { params.patterns.valAi = v; }, { snap: VAR_SNAP.picto });
   }
   liveEdit = false;
 
@@ -17820,8 +16749,6 @@ try { const _dv = location.search.match(/[?&]dev=(\d{1,2})(?:&|$)/); if (_dv && 
 try { const _cvc = location.search.match(/[?&]cvc=(C\d{1,2})(?:&|$)/); if (_cvc && CV_COLORS.some(s => s.key === _cvc[1])) { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = _cvc[1]; cvApplyColorFull(_cvc[1]); } } catch (e) {}
 cvApplyForm(cvFormKey());   /* 【2026-09-16】グラデの形を初期反映(放射/縦/斜め) */
 applyCvEdge(cvEdgeKey());   /* 【2026-09-16】溶け込みの深さを初期反映(blend も案の値に) */
-/* 【V5.0 2026-09-16 ヒデさん依頼】誤って全消しされたヘッダー案を1回だけ復元(構成も刷新するため) */
-try { if (!localStorage.getItem('anyflow-hdr-restore-v2')) { if (params.gfxVariantHidden) delete params.gfxVariantHidden['hdrMode']; localStorage.setItem('anyflow-hdr-restore-v2', '1'); } } catch (e) {}
 applyHdrMode(hdrModeKey());  /* 【V5.0】追従ヘッダーの案を初期反映＋固定化 */
 applyHdrMotion();            /* 【V5.0 2026-09-17】ヘッダー変形のイージング/速さを初期反映 */
 applyKvCopy();               /* 【2026-09-17】ヘッダーが固定(全幅)になった後にロゴ左端を測り直す(KVコピーの左端をロゴに揃える) */
