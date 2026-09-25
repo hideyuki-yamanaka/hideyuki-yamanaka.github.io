@@ -45,7 +45,6 @@ import {
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
-import { MENU_DRAWERS, MENU_DRAWER_EVENT } from "./MobileHeader";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import {
 } from "./SiteFooter";
@@ -189,8 +188,6 @@ type Params = {
   events: { pattern: number; tailPad: number; cardRatio: number; peelSpeed: number; flow: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
-  /** スマホのハンバーガーメニュー（ドロワー）の案 1〜3（2026-09-26） */
-  menu: { drawer: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
   footer: {
     padX: number;
@@ -265,7 +262,6 @@ export default function TopTunePanel({
       gourmet: { speed: 40, pauseOnHover: true },
       events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
-      menu: { drawer: 1 }, /* スマホのハンバーガーメニューの案（2026-09-26・🟡既定は仮に案1） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
@@ -485,25 +481,8 @@ export default function TopTunePanel({
             cat: "サイト共通",
             open: false,
             items: [
-              /* 【2026-09-26 ヒデさん指示】ハンバーガーメニューのドロワーを3案から選ぶ。
-                 スマホ表示でしか出ないので、PC では「📱 スマホモード」の枠で確認する
-                 （選ぶと枠の中でメニューが開いて見える） */
-              { sub: "ハンバーガーメニュー（スマホ）", grp: "variation" },
-              {
-                note: "スマホで右上の ≡ を押した時に出るメニューの見た目。PC では「📱 スマホモード」のスマホ枠で確認できます（選ぶと枠の中でメニューが開きます）。",
-                keep: true,
-              },
-              {
-                pills: "案",
-                path: "menu.drawer",
-                immediate: true,
-                options: Object.entries(MENU_DRAWERS).map(([v, m]) => ({
-                  name: m.name,
-                  value: Number(v),
-                  swatch: "#0070c9",
-                  desc: m.note,
-                })),
-              },
+              /* 【2026-09-26】ハンバーガーメニューの3案は「案1 空に浮かぶ作字」に確定したので、
+                 ここにあった切り替えは外した（MobileHeader.tsx に固定） */
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
@@ -1661,16 +1640,6 @@ export default function TopTunePanel({
         onChange: (info?: { path?: string }) => {
           applyVars();
           applyVolume();
-          if (info?.path === "menu.drawer") {
-            const d = { v: params.menu.drawer };
-            window.dispatchEvent(new CustomEvent(MENU_DRAWER_EVENT, { detail: d }));
-            /* 📱スマホモードの枠の中にも「この案で開いて」と伝える（同じサイトなので直接届く） */
-            try {
-              const f = document.querySelector<HTMLIFrameElement>("#tp-pp iframe");
-              const fw = f?.contentWindow as (Window & typeof globalThis) | null | undefined;
-              fw?.dispatchEvent(new fw.CustomEvent(MENU_DRAWER_EVENT, { detail: { ...d, open: true } }));
-            } catch {}
-          }
           /* イベントセクションのホバー案はイベントで直接届ける（ページ再構築なしで即反映） */
           if (info?.path === "events.pattern") {
             window.dispatchEvent(

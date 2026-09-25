@@ -182,8 +182,5 @@
     "cycle": 8,
     "show": 2.6,
     "swayFirst": true
-  },
-  "menu": {
-    "drawer": 1
   }
 }
