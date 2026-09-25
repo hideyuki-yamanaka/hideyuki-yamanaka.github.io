@@ -3583,7 +3583,7 @@
   /* 【2026-09-15 ヒデさん指定】大カテゴリはアコーディオンからタブへ: 上のタブで選ぶと、そのカテゴリの中身だけが下に出る(選んだタブはブラウザに記憶) */
   /* 【2026-09-20 ヒデさん依頼】タブは2段組(flex-wrap)をやめ、横1列＋横スクロールに。選択タブは中央へ寄せる(showTab) */
   .pan-tabs { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: nowrap; gap: 16px; margin: 0 -10px; padding: 6px 10px 0;
-              background: transparent; border-bottom: 1px solid #dcdcdc; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);   /* 【2026-09-21 ヒデさん依頼】白塗りは撤去＋下にグレー下線。後ろのコンテンツが透けるので、きつめの背景ブラーで隠す(塗りは足さない) */
+              background: #fff; border-bottom: 1px solid #dcdcdc;   /* 【2026-09-25 ヒデさん依頼】ブラー撤去→スマホモード/編集ボタンと同じ白(#fff)の不透明地でスクロール中の後ろを隠す。下のグレー下線は維持 */
               overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .pan-tabs::-webkit-scrollbar { height: 6px; }
   .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
@@ -3599,7 +3599,7 @@
   .panel-body.tabbed > .cat > .cat-body { display: block; padding: 0; }
   /* 【2026-09-20 大改修・ヒデさん依頼】階層を H1(カテゴリ)/H2(オブジェクト)/H3(入れ子) でパッと分かるように。装飾は最小・左の縦線は全廃・絵文字なし。 */
   /* H1: カテゴリ節。開閉アコーディオンは 基本/フォント/エフェクト＆テクスチャ/アニメ のみ。区切り線はここだけ */
-  .cat-section { border-top: none; }   /* 【2026-09-20 ヒデさん依頼A】カテゴリ(基本など)の上の横棒線は不要。区切りは見出しの大きさ・余白で表す */
+  .cat-section { border-top: 1px solid #ededed; margin-top: 3px; }   /* 【2026-09-25 ヒデさん依頼】基本/フォント/テクスチャ/アニメの節が溶け込むので、各節の上に極細のグレー線＋わずかな余白で区切りを出す(ミニマム・悪目立ちしない #ededed 1px) */
   .cat-section:first-of-type { border-top: none; }
   .cat-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; padding: 13px 2px 7px; font-size: 13px; font-weight: 700; color: #111; letter-spacing: .03em; user-select: none; }
   .cat-section-head:hover { color: #000; }
