@@ -45,6 +45,8 @@ import {
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
+import { MENU_DRAWERS, MENU_DRAWER_EVENT } from "./MobileHeader";
+import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import {
 } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
@@ -187,6 +189,8 @@ type Params = {
   events: { pattern: number; tailPad: number; cardRatio: number; peelSpeed: number; flow: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
+  /** スマホのハンバーガーメニュー（ドロワー）の案 1〜3（2026-09-26） */
+  menu: { drawer: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
   footer: {
     padX: number;
@@ -259,8 +263,9 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62, flow: 1 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案（既定は案1 床をすべる） */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
+      menu: { drawer: 1 }, /* スマホのハンバーガーメニューの案（2026-09-26・🟡既定は仮に案1） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
@@ -408,7 +413,8 @@ export default function TopTunePanel({
 
       panel = lib.create({
         title: "調整パネル", /* 2026-09-20 anyflow と同じ名称にそろえる */
-        storageKey: "abashiri-top-tune",
+        /* ⚠️ 保存キーと版は tuneKeys.ts に1つだけ置く（スマホのメニューも同じ場所を読むため） */
+        storageKey: TOP_TUNE_KEY,
         /* ⚠既定値の意味を変えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 「ぼーっ」の採用案を 案1 → 案4 に変更（2026-08-18）
            v3: カンプ更新でイラストが差し替わり、キラキラの項目が無くなった（2026-08-19）
@@ -463,7 +469,7 @@ export default function TopTunePanel({
            v33: 古いブラウザ保存値を一斉破棄。自動焼き込み（tune-defaults.json）導入前に
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
-        version: 41, /* 2026-09-24 流れる速さの既定を変更。古い保存値を破棄 */ /* 2026-09-20 剥がれる速さの既定を変更。古い保存値を破棄する */
+        version: TOP_TUNE_VERSION, /* =41。2026-09-24 流れる速さの既定を変更。古い保存値を破棄 */ /* 2026-09-20 剥がれる速さの既定を変更。古い保存値を破棄する */
         /* ⚠autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
            既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
            （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
@@ -479,6 +485,25 @@ export default function TopTunePanel({
             cat: "サイト共通",
             open: false,
             items: [
+              /* 【2026-09-26 ヒデさん指示】ハンバーガーメニューのドロワーを3案から選ぶ。
+                 スマホ表示でしか出ないので、PC では「📱 スマホモード」の枠で確認する
+                 （選ぶと枠の中でメニューが開いて見える） */
+              { sub: "ハンバーガーメニュー（スマホ）", grp: "variation" },
+              {
+                note: "スマホで右上の ≡ を押した時に出るメニューの見た目。PC では「📱 スマホモード」のスマホ枠で確認できます（選ぶと枠の中でメニューが開きます）。",
+                keep: true,
+              },
+              {
+                pills: "案",
+                path: "menu.drawer",
+                immediate: true,
+                options: Object.entries(MENU_DRAWERS).map(([v, m]) => ({
+                  name: m.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: m.note,
+                })),
+              },
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
@@ -1636,6 +1661,16 @@ export default function TopTunePanel({
         onChange: (info?: { path?: string }) => {
           applyVars();
           applyVolume();
+          if (info?.path === "menu.drawer") {
+            const d = { v: params.menu.drawer };
+            window.dispatchEvent(new CustomEvent(MENU_DRAWER_EVENT, { detail: d }));
+            /* 📱スマホモードの枠の中にも「この案で開いて」と伝える（同じサイトなので直接届く） */
+            try {
+              const f = document.querySelector<HTMLIFrameElement>("#tp-pp iframe");
+              const fw = f?.contentWindow as (Window & typeof globalThis) | null | undefined;
+              fw?.dispatchEvent(new fw.CustomEvent(MENU_DRAWER_EVENT, { detail: { ...d, open: true } }));
+            } catch {}
+          }
           /* イベントセクションのホバー案はイベントで直接届ける（ページ再構築なしで即反映） */
           if (info?.path === "events.pattern") {
             window.dispatchEvent(

@@ -484,14 +484,17 @@ function returnEase(pos: (τ: number) => number) {
 }
 
 /** いま選ばれている流れ方（CSS 変数 --ev-flow。調整パネルが書く） */
+/** 流れ方の既定（2026-09-26 ヒデさん「3番目でデフォルトに」）。
+    ⚠️ 値の住み家は4つ：ここ／globals.css の --ev-flow／TopTunePanel の既定／tune-defaults.json */
+const EV_FLOW_DEFAULT = 3;
 export function useEvFlow(): EvFlow {
-  const [n, setN] = useState(1);
+  const [n, setN] = useState(EV_FLOW_DEFAULT);
   useAnimationFrame(() => {
     const v = parseInt(
       getComputedStyle(document.documentElement).getPropertyValue("--ev-flow"),
       10
     );
-    const k = EV_FLOWS[v] ? v : 1;
+    const k = EV_FLOWS[v] ? v : EV_FLOW_DEFAULT;
     if (k !== n) setN(k);
   });
   return EV_FLOWS[n];
