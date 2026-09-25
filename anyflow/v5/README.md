@@ -1,35 +1,30 @@
-# anyflow-embed V2（アップデート案の作業場）
+# anyflow-embed V5.0（作業版）
 
-**公開中の本番は V1.0 の方です。ここは触ってよい、いくら壊してよい場所です。**
+| | 中身 | 本番 URL |
+|---|---|---|
+| **V5.0** | このフォルダ | https://anyflow-embed-v5.vercel.app |
 
-| | 中身 | 本番 URL | 触る |
-|---|---|---|---|
-| **V1.0** | [`../v1/`](../v1/) | https://anyflow-embed.vercel.app | 公開版（安定）。更新は V2 側で進める |
-| **V2** | このフォルダ | https://anyflow-embed-v2.vercel.app | ⭕ アップデート案はここで |
+## ファイル構成（2026-09-26 に分割）
 
-- V2 は 2026-08-19 時点の V1.0 を丸ごとコピーしたものからスタートしています
-  （`index.html` が完全一致の状態が出発点）。
-- **Vercel プロジェクトが別**なので、V2 をいくらデプロイしても V1.0 の URL は変わりません。
-- V1.0 のその時点のコードは `anyflow-v1.0` ブランチにも凍結してあります（削除厳禁）。
+- `index.html` … HTML だけ
+- `css/style.css` … 見た目（CSS）
+- `js/parts/01〜07-*.js` … JavaScript（**直すのはここ**）
+- `js/app.js` … ⚠️ 自動生成。`js/parts` を番号順につなげただけ（ブラウザはこれを読む）
+
+**`js/parts` を直したら `./build.sh` を実行**（`js/app.js` を作り直す）。
+焼き込み値は `js/parts/02-shipped.js`。詳しくは
+[settings/docs/anyflow/V5-FILES.md](../../settings/docs/anyflow/V5-FILES.md)。
 
 ## デプロイ
 
-このフォルダの中で叩く（V1.0 と同じ手動デプロイ）:
-
 ```bash
-npx vercel --prod --yes
+./build.sh && grep projectName .vercel/project.json && npx vercel --prod --yes
 ```
 
-⚠️ **`../v1/`（V1.0）の中で叩かないこと。** 公開中のサイトが上書きされます。
-デプロイ前に `cat .vercel/project.json` で `projectName` が `anyflow-embed-v2` か必ず確認。
+`projectName` が `anyflow-embed-v5` であることを必ず確認（他のバージョンを上書きしないため）。
+`../deploy-v5.sh` は `./build.sh` を自動で実行してから上げる。
 
 ## 検索エンジン
 
-`robots.txt` と `vercel.json` の `X-Robots-Tag` で全クローラーを拒否しています（V1.0 と同じ）。
-URL を知っている人だけが見られる状態です。公開する時は両方と `index.html` の
-noindex メタタグを一緒に外してください。
-
-## V1.0 から変えたこと
-
-まだありません（コピーしただけの状態）。
-ここに「何を・なぜ変えたか」を追記していきます。
+`robots.txt` と `vercel.json` の `X-Robots-Tag` と `index.html` の noindex メタで全クローラーを拒否。
+公開する時は3つ一緒に外す。

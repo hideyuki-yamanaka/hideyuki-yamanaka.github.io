@@ -4,3 +4,6 @@ tools/
 _backup/
 README.md
 .gitignore
+# 【2026-09-26 整理D】JS は js/parts(編集用)をつなげた js/app.js だけを配る。部品とビルド用スクリプトは本番に不要
+js/parts/
+build.sh

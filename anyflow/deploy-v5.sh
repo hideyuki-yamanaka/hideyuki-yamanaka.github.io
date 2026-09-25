@@ -27,6 +27,12 @@ if [ "$proj" != "anyflow-embed-v5" ]; then
   exit 1
 fi
 
+# 【2026-09-26 整理D】JS は js/parts をつなげた js/app.js を配る。上げる前に必ず作り直す(構文エラーならここで止まる)
+if ! bash ./build.sh >> "$LOG" 2>&1; then
+  say "js/app.js の作り直しに失敗したので中止"
+  exit 1
+fi
+
 out=$(npx vercel --prod --yes 2>&1); rc=$?
 if [ $rc -ne 0 ]; then
   if echo "$out" | grep -q "api-deployments-free-per-day"; then

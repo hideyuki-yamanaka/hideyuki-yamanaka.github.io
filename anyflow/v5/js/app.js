@@ -1,0 +1,13893 @@
+/* ⚠️ 自動生成ファイル(つなげただけ)。直接編集しない。js/parts/ のファイルを直して ./build.sh を実行する(2026-09-26 整理D) */
+/* ================= 軌道データ (Figma カンプから抽出) ================= */
+/* ===== 軌道レイアウト (2026-08-26 ヒデさん採用: ジャイロクロス) =====
+   figma = カンプ通り(2本ほぼ平行) / gyro = ジャイロクロス。
+   gyro は2本の傾きを逆方向にして天球儀のように立体交差させ、惑星の前後を横切る場所を
+   増やして奥行きを出す。中心は惑星(436,242)寄りに置き、開き(ry/rx)も変えて交差を強調。 */
+const ORBIT_LAYOUTS = {
+  figma: {
+    name: 'カンプ通り',
+    outer: { cx: 457.741, cy: 306.543, rx: 435.517, ry: 146.026, rot: -23.3266 },
+    inner: { cx: 475.283, cy: 350.505, rx: 397.09,  ry: 133.142, rot: -23.3266 },
+  },
+  gyro: {
+    name: 'ジャイロクロス',
+    outer: { cx: 436, cy: 265, rx: 435.517, ry: 435.517 * 0.30, rot: -24 },
+    inner: { cx: 436, cy: 253, rx: 397.09,  ry: 397.09  * 0.42, rot: 14 },
+  },
+};
+/* 【2026-08-29 ヒデさん指定】回転アニメの時計。開始位相(startPhase)を足す。
+   ページを開いた時点の startPhase を1回だけ固定して覚え(kvStartAtLoad)、
+   そこに elapsed を足すので、ボタンで startPhase を保存しても今の表示は飛ばない(次回開いた時に効く)。 */
+let kvStartAtLoad = null, kvRevealElapsed = null;
+function kvGT() {
+  if (kvStartAtLoad == null) kvStartAtLoad = (params.conv && params.conv.startPhase) || 0;
+  /* 【2026-09-08】静的モバイル: グラフィックの時間アニメ(メッシュ/軌道/回転)を固定時刻で静止させる＝
+     スクロールで動いて見えるのを止める。 */
+  /* 【2026-09-09 ヒデさん指定】出現アニメは PC と同じに戻す(静的化で固定していたクロックを解除) */
+  /* 登場(KVが見え始める)までは開始位相のまま止める → 登場した瞬間が開始地点になる */
+  if (kvRevealElapsed == null) return kvStartAtLoad;
+  return kvStartAtLoad + (elapsed - kvRevealElapsed);
+}
+/* 軌道そのものの回転量(度)。0なら従来どおり形は固定 */
+/* いま選んでいる案の「軌道の回転」の量 */
+function convOrbitSpinAmt() {
+  const C = params.conv;
+  if (!C) return 0;
+  const m = params.converge || 'reel';
+  const by = C.orbitSpinBy;
+  if (by && typeof by[m] === 'number') return by[m];
+  return C.orbitSpin || 0;      /* 案ごとの値がまだ無い時は、昔の共通の値を使う */
+}
+function convOrbitSpin(key) {
+  const amt = convOrbitSpinAmt();
+  if (!amt) return 0;
+  if (params.kvDesign !== 'planet') return 0;
+  const dir = (key === 'inner') ? -1 : 1;   /* 2本が逆向きに回ると立体感が出る */
+  /* 【2026-08-30 ヒデさん指定】回り方のバリエーション:
+     turn   = ぐるっと一周し続ける(従来)
+     wobble = グラグラ揺れる(往復)。振れ幅は spinWobbleDeg(°)、速さは「回転の速さ」を流用 */
+  const style = ((params.conv.spinStyleBy || {})[params.converge || 'off']) || 'turn';
+  if (style === 'wobble') {
+    /* 【2026-08-30 ヒデさん指定・改】グラグラがガタガタして見えたので滑らかに:
+       速度を落とし(2.4→1.4)、周期の違う2つの波を混ぜて「端でピタッと折り返す」感じを消す。
+       一周はせず、揺れ幅(spinWobbleDeg)の範囲内でぬるっと行き来する。 */
+    const deg = (params.conv.spinWobbleDeg != null ? params.conv.spinWobbleDeg : 16);
+    const ph = kvGT() * Math.abs(amt) * 1.4;
+    const s = Math.sin(ph) * 0.7 + Math.sin(ph * 0.53 + 1.3) * 0.3;
+    return s * deg * dir;
+  }
+  return kvGT() * amt * 18 * dir;
+}
+function orbitBase(key) {
+  return (ORBIT_LAYOUTS[params.orbitLayout] || ORBIT_LAYOUTS.figma)[key];
+}
+/* 各ドット: 所属楕円と初期角度
+   【2026-08-19 ヒデさん指定】
+     ・上の軌道(outer)はドットが2個しかなかったので、ピンクを1個足して3個に
+     ・ネイビー(#0E4497)は水色(#0EBBFF)へ
+     ・角度は「できるだけ等間隔」に → outer=120°ずつ / inner=90°ずつ
+   外側の基準角は【カンプの位置からいちばん動かなくて済む値】を最小二乗で求めた:
+     outer 44.15° (グレー -23.1° / 元ネイビー +23.1°)
+   内側の基準角は 14°。カンプ寄せの 33.14° にしなかったのは、
+   ⚠️ 2本の軌道は画面上で交差するため、そこですれ違うドットが重なるから。
+      全周を1°刻み × 内外の基準角を総当たりで走査した実測:
+        outer 44.15° / inner 33.14°(カンプ寄せ) → いちばん近づく瞬間 1px = 2個が1個に見える
+        outer 44.15° / inner 14°               → いちばん近づく瞬間 26px = ちゃんと2個に見える
+      26px はこの構成(3個+4個・この2本の楕円)で取りうる最大値。
+      ドットの直径が 11.2px なので、26px なら間に1個ぶんの隙間が残る */
+const DOTS = [
+  /* ↓ 上の軌道 (outer)。120°ずつの等間隔 */
+  { name: 'グレー',    color: '#4E4E4E', ellipse: 'outer', angle: 44.15 },
+  { name: 'ピンク C',  color: '#FF5D97', ellipse: 'outer', angle: 164.15 },   /* 2026-08-19 追加 */
+  { name: '水色 C',    color: '#0EBBFF', ellipse: 'outer', angle: 284.15 },   /* 元ネイビー #0E4497 */
+  /* ↓ 下の軌道 (inner)。90°ずつの等間隔。ピンクと水色が交互に並ぶ */
+  { name: 'ピンク B',  color: '#FF5D97', ellipse: 'inner', angle: 14 },
+  { name: '水色 A',    color: '#0EBBFF', ellipse: 'inner', angle: 104 },
+  { name: 'ピンク A',  color: '#FF5D97', ellipse: 'inner', angle: 194 },
+  { name: '水色 B',    color: '#0EBBFF', ellipse: 'inner', angle: 284 },
+];
+const DOT_R = 5.606;
+/* 【2026-08-28 ヒデさん指定】軌道に乗る基準ドットは、カンプ(node 13951-13623 / 15886)の
+   12px 相当。半径6.0=直径12。やや大きめで、基本は透過させない(カンプに合わせる)。 */
+const BASE_DOT_R = 6.0;
+/* ===== ドットの間隔 (2026-08-19) =====
+   「速さのゆらぎ(pulse)」の位相をドットごとにずらすと、等間隔に置いても
+   走っているうちに間隔が崩れる。実測: outer は 120°のはずが 82°〜151° まで開閉した。
+   ①きっちり等間隔 = 同じ軌道のドットは同じ位相で走らせる → 間隔が常に一定
+   ②ばらつかせる   = 従来どおりドットごとに位相をずらす → 団子になったり離れたりする */
+const DOT_GAPS = [
+  { name: '①きっちり等間隔', desc: '間隔を保ったまま7個が同じ速さで回る（外120°ずつ・内90°ずつ）。カンプの整った印象に近い。' },
+  { name: '②ばらつかせる',   desc: '1個ずつ速さがずれて、近づいたり離れたりする。生き物っぽく見えるが、間隔は崩れる。' },
+];
+/* ①の時に使う ゆらぎ位相。
+   ⚠️ 内と外でずらすと、2本のリングの相対位置が時間とともに動く。
+      すると軌道の交差点で【ドットが完全に重なる瞬間】が必ず出てしまう。
+      内外そろえておけば相対位置が固定され、最接近 26px（＝重ならない）を保てる */
+const DOT_PULSE_PHASE = 0;
+
+/* ================= ゆらぎ (グラフィック全体の動き) ================= */
+const SWAYS = [
+  { id: 'none',   name: '①固定', desc: 'ゆらぎなし。カンプの構図のまま。' },
+  { id: 'seesaw', name: '②シーソー', desc: '全体が±3°ほどでゆっくり傾く。' },
+  { id: 'cross',  name: '③クロス', desc: '最初はカンプ通り平行。少し経つと2本が逆方向に傾いて交差しはじめる。' },
+];
+
+/* 【2026-08-29 ヒデさん指定】Vision メッセージの「強み」強調アニメ 10案。
+   先進的・洗練・ちょいハイテク、でも上品・誠実・自信のトンマナ。 */
+
+/* ================= ディザ演出 (惑星B ハーフトーン専用) ================= */
+const DITHERS = [
+  { name: '①固定', desc: '色は動かない。' },
+  { name: '②うつろい', desc: '場所ごとに白⇄青⇄紫をゆっくり行き来して、境目のピクセルがパラパラ入れ替わる。' },
+  { name: '③流れ', desc: '白→青→紫の色の帯が斜めに流れていき、ピクセルが順にめくれていく。' },
+  { name: '④さざ波', desc: '細かい色の波が球面を通って、通り道のドットがパラパラ変わる。' },
+];
+
+
+/* ================= セクション演出の複数案 =================
+   絵コンテで「Claude側で補完して」とされた箇所は案を出し分けられる */
+/* 見出しの左スライド4案は、2026-08-14 に「中央で上下に分かれる」形へ作り替えたため廃止 */
+
+
+
+/* ================= 惑星デザイン (Figmaカンプ5種) =================
+   カンプ画像(4倍解像度)をそのまま球面テクスチャとして貼り、
+   デザインごとに専用シェーダー(finish)で質感を仕上げる。
+   裏側はカンプに存在しないため鏡映で生成 (uv を d.xy から取ると表裏対称になる)。 */
+/* ================= 波が流れる惑星 (F/G/H) =================
+   カンプ 14776:26144 の3案。E と同じハーフトーン(ベイヤーディザ)の質感のまま、
+   「色の場」だけを差し替えて【左下から右上へ色の帯が波のように流れる】形にしたもの。
+     F = 帯なし(一方向のグラデがゆっくり流れる)
+     G = 白い帯が1本、斜めに流れる
+     H = 白い帯が2本、S字にうねりながら流れる */
+function waveFragment(bands, warp, rampSrc, rimCol, rimAmt) {
+  /* 【2026-09-02 ヒデさん指定】配色ランプとフチの色を差し替え可能に。
+     未指定なら従来のカンプ配色のまま(C1〜C3は挙動不変) */
+  return `
+precision highp float;
+uniform vec2 uRes;
+uniform float uAngle;
+uniform float uAngle2;
+uniform float uNoise;
+uniform float uTime;
+uniform float uDither;  /* 1=止まる 2=ゆっくり 3=流れる 4=波打つ */
+uniform float uLight;
+
+mat3 rotAxis(vec3 a, float t){
+  float c = cos(t), s = sin(t);
+  vec3 u = normalize(a);
+  return mat3(
+    c+u.x*u.x*(1.-c),      u.x*u.y*(1.-c)-u.z*s,  u.x*u.z*(1.-c)+u.y*s,
+    u.y*u.x*(1.-c)+u.z*s,  c+u.y*u.y*(1.-c),      u.y*u.z*(1.-c)-u.x*s,
+    u.z*u.x*(1.-c)-u.y*s,  u.z*u.y*(1.-c)+u.x*s,  c+u.z*u.z*(1.-c)
+  );
+}
+float hash(vec3 p){
+  p = fract(p * vec3(127.1, 311.7, 74.7));
+  p += dot(p, p.yzx + 19.19);
+  return fract((p.x + p.y) * p.z);
+}
+float vnoise(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  vec3 u = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(mix(hash(i), hash(i+vec3(1,0,0)), u.x),
+        mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)), u.x), u.y),
+    mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)), u.x),
+        mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)), u.x), u.y), u.z);
+}
+float fbm(vec3 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+float bayer8(vec2 a){ return bayer4(0.5 * a) * 0.25 + bayer2(a); }
+
+${rampSrc || `/* ===== カンプ実測の配色ランプ =====
+   assets/planet-e.png（カンプの惑星）のピクセルを数えた面積比:
+     水色/シアン 55.7% / 青 24.2% / 白に近い 8.3% / マゼンタ 7.5% / 紫 4.1%
+   ストップの幅をこの比率に合わせてあるので、どこを流れても
+   「水色が主役・ピンクは端に少しだけ」というカンプの色バランスが崩れない。
+   ⚠️ 等間隔のストップにすると、ピンクと紫が出過ぎて色が汚くなる（実際にそうなった） */
+vec3 ramp(float x){
+  x = clamp(x, 0.0, 1.0);
+  vec3 mg = vec3(1.000, 0.365, 0.592);   /* #FF5D97 ブランドのピンク */
+  vec3 pu = vec3(0.502, 0.459, 0.863);   /* #8075DC カンプ実測の紫 */
+  vec3 bl = vec3(0.102, 0.659, 0.984);   /* #1AA8FB カンプ実測の青 */
+  vec3 cy = vec3(0.043, 0.867, 1.000);   /* #0BDDFF カンプ実測の水色 */
+  vec3 wh = vec3(0.918, 1.000, 1.000);   /* #EAFFFF カンプ実測の白 */
+  if (x < 0.075) return mix(mg, pu, x / 0.075);                    /* ピンク 7.5% */
+  if (x < 0.115) return mix(pu, bl, (x - 0.075) / 0.040);          /* 紫 4.1% */
+  if (x < 0.355) return mix(bl, cy, (x - 0.115) / 0.240);          /* 青 24.2% */
+  /* 水色が過半(55.7%)。中でわずかに明暗が動く程度にして帯っぽくしない */
+  if (x < 0.915) return mix(cy, mix(cy, wh, 0.22), (x - 0.355) / 0.560);
+  return mix(mix(cy, wh, 0.22), wh, (x - 0.915) / 0.085);          /* 白 8.3% */
+}`}
+
+void main(){
+  float CELL = 2.0;
+  vec2 fcTrue = gl_FragCoord.xy;
+  vec2 cellId = floor(fcTrue / CELL);
+  vec2 fc = (cellId + 0.5) * CELL;
+  vec2 pTrue = (fcTrue * 2.0 - uRes) / uRes.y;
+  vec2 p = (fc * 2.0 - uRes) / uRes.y;
+  float R = 0.884615;
+  float px = 2.0 / uRes.y;
+  float alpha = 1.0 - smoothstep(R - 1.5 * px, R + 1.5 * px, length(pTrue));
+  if (alpha <= 0.0) { gl_FragColor = vec4(0.0); return; }
+  float z = sqrt(max(R * R - dot(p, p), 1e-5));
+  vec3 n = normalize(vec3(p, z));
+  vec3 ax1 = normalize(vec3(0.53, 0.85, 0.35));
+  vec3 ax2 = normalize(vec3(-0.62, 0.22, 0.76));
+  vec3 d = rotAxis(ax2, uAngle2) * rotAxis(ax1, uAngle) * n;
+
+  /* 左下(青) → 右上(ピンク) の軸に沿って色の帯を並べる。
+     カンプ 14776:26144 は右上がピンク・左下が青で、白い帯がその間を斜めに走る */
+  vec3 axis = normalize(vec3(0.70, 0.62, -0.30));
+  vec3 perp = normalize(cross(axis, vec3(0.0, 0.30, 0.95)));
+  float u = dot(d, axis) / R;      /* -1(左下) 〜 1(右上) */
+  float v = dot(d, perp) / R;
+
+  /* 流れの速さ・うねり方 (ディザ演出のスイッチで切替) */
+  float spd = 0.0, swell = 0.0;
+  if (uDither > 1.5 && uDither < 2.5) { spd = 0.16; swell = 0.10; }
+  else if (uDither > 2.5 && uDither < 3.5) { spd = 0.34; swell = 0.18; }
+  else if (uDither > 3.5) { spd = 0.30; swell = 0.55; }
+
+  /* 帯の位置。v(帯と直交する向き)で位相をずらすと、まっすぐでなくS字にうねる */
+  float wave = u * ${bands} + sin(v * 2.1 + uTime * 0.5) * (${warp} + swell) - uTime * spd;
+  float band = sin(wave * 3.14159265);
+  /* 0〜1 に写す。ランプ側が面積比を持っているので、ここは素直に均等でよい */
+  float lum = 0.5 + 0.5 * band;
+  lum += (fbm(d * 2.4) - 0.5) * 0.12;         /* わずかなゆらぎ */
+  lum += pow(clamp(dot(n, normalize(vec3(0.55, 0.52, 0.62))), 0.0, 1.0), 7.0) * 0.22;
+
+  float dith = bayer8(cellId);
+  float spread = 0.8 + uNoise * 1.2;
+  float levels = 6.0;
+  float q = clamp(floor(lum * levels + (dith - 0.5) * spread + 0.5) / levels, 0.0, 1.0);
+  vec3 col = ramp(q);
+
+  /* 左下のマゼンタリム (カンプもピンクは端だけ。面積を増やさないよう控えめに) */
+  float rim = pow(1.0 - n.z, 1.6) * clamp(dot(normalize(n.xy + vec2(1e-4)), normalize(vec2(-0.7, -0.6))), 0.0, 1.0);
+  float mg = clamp(floor(rim * 1.5 * 3.0 + (dith - 0.5) * 1.3 + 0.5) / 3.0, 0.0, 1.0);
+  col = mix(col, ${rimCol || 'vec3(1.0, 0.365, 0.592)'}, mg * ${rimAmt || '0.70'});
+
+  if (uLight > 1.5) {
+    vec3 Ldir = normalize(vec3(0.62, 0.62, 0.48));
+    float diffL = clamp(dot(n, Ldir), 0.0, 1.0);
+    float lightAmt = 0.45 + 0.55 * diffL;
+    vec3 shadowCol = col * vec3(0.55, 0.60, 0.85);
+    col = mix(shadowCol, col, lightAmt);
+    col += vec3(0.95, 0.96, 1.0) * pow(diffL, 8.0) * 0.25;
+  }
+
+  gl_FragColor = vec4(col * alpha, alpha);
+}`;
+}
+
+const DESIGNS = {
+  A1: {
+    name: 'A1 ビビッドブルー',
+    swatch: 'linear-gradient(140deg, #ff5d97 5%, #fff 30%, #1e9bff 65%, #0b6bff 100%)',
+    src: 'assets/planet-b.png',
+    grainScale: '120.0',
+    /* ビビッド優先: 粒は乗算で粗く、白飛びさせない */
+    finish: `
+      col *= 1.0 + grain * 0.5 * uNoise;
+      float hi = pow(max(dot(n, normalize(vec3(-0.4, 0.65, 0.65))), 0.0), 2.5);
+      col = mix(col, vec3(1.0), hi * 0.08);
+      col *= 1.0 - pow(1.0 - n.z, 2.2) * 0.10;`,
+  },
+  A2: {
+    name: 'A2 ピンク×ブルー',
+    swatch: 'linear-gradient(160deg, #ff5d97 22%, #fff 50%, #26a9ff 78%)',
+    src: 'assets/planet-c.png',
+    grainScale: '150.0',
+    /* 2色の境界を活かす: 中くらいの粒を加算で */
+    finish: `
+      col += grain * 0.16 * uNoise;
+      float hi = pow(max(dot(n, normalize(vec3(-0.45, 0.6, 0.66))), 0.0), 2.2);
+      col = mix(col, vec3(1.0), hi * 0.12);
+      col *= 1.0 - pow(1.0 - n.z, 2.0) * 0.08;`,
+  },
+  A3: {
+    name: 'A3 ライトグレイン',
+    swatch: 'linear-gradient(200deg, #9fdcff 12%, #fff 45%, #ff9ac4 88%)',
+    src: 'assets/planet-d.png',
+    grainScale: '260.0',
+    /* 高密度の微粒が主役: 細かい粒を強めに */
+    finish: `
+      col += grain * 0.20 * uNoise;
+      float hi = pow(max(dot(n, normalize(vec3(-0.45, 0.6, 0.66))), 0.0), 2.2);
+      col = mix(col, vec3(1.0), hi * 0.12);
+      col *= 1.0 - pow(1.0 - n.z, 2.0) * 0.07;`,
+  },
+  B: {
+    name: 'B ハーフトーン',
+    swatch: 'radial-gradient(circle at 68% 30%, #fff 8%, #5fd2ff 40%, #0e9bff 72%, #ff4fd8 100%)',
+    src: 'assets/planet-e.png',   /* WebGL非対応時のフォールバック表示にのみ使用 */
+    /* 完全生成のディザリング専用シェーダー:
+       画像貼り付けだと網点が回転でにじみ継ぎ目も出るため、
+       色のグラデを計算で作り、ベイヤーディザで1pxドットに割ってピクセル調に仕上げる */
+    fragment: `
+precision highp float;
+uniform vec2 uRes;
+uniform float uAngle;
+uniform float uAngle2;
+uniform float uNoise;
+uniform float uTime;    /* ディザ演出用の時間 (一時停止と連動) */
+uniform float uDither;  /* ディザ演出モード 1〜8 */
+uniform float uLight;   /* 1=なし / 2=右上光源 */
+
+mat3 rotAxis(vec3 a, float t){
+  float c = cos(t), s = sin(t);
+  vec3 u = normalize(a);
+  return mat3(
+    c+u.x*u.x*(1.-c),      u.x*u.y*(1.-c)-u.z*s,  u.x*u.z*(1.-c)+u.y*s,
+    u.y*u.x*(1.-c)+u.z*s,  c+u.y*u.y*(1.-c),      u.y*u.z*(1.-c)-u.x*s,
+    u.z*u.x*(1.-c)-u.y*s,  u.z*u.y*(1.-c)+u.x*s,  c+u.z*u.z*(1.-c)
+  );
+}
+float hash(vec3 p){
+  p = fract(p * vec3(127.1, 311.7, 74.7));
+  p += dot(p, p.yzx + 19.19);
+  return fract((p.x + p.y) * p.z);
+}
+float vnoise(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  vec3 u = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(mix(hash(i), hash(i+vec3(1,0,0)), u.x),
+        mix(hash(i+vec3(0,1,0)), hash(i+vec3(1,1,0)), u.x), u.y),
+    mix(mix(hash(i+vec3(0,0,1)), hash(i+vec3(1,0,1)), u.x),
+        mix(hash(i+vec3(0,1,1)), hash(i+vec3(1,1,1)), u.x), u.y), u.z);
+}
+float fbm(vec3 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+float bayer8(vec2 a){ return bayer4(0.5 * a) * 0.25 + bayer2(a); }
+
+/* マゼンタ → 紫 → 深い青 → ブルー → シアン → 白 のカラーランプ
+   (0未満に押し下げられると紫〜マゼンタ帯に入る) */
+vec3 ramp(float x){
+  x = clamp(x, -0.6, 1.0);
+  vec3 magenta = vec3(1.0, 0.27, 0.78);
+  vec3 purple = vec3(0.58, 0.26, 0.94);
+  vec3 deep = vec3(0.04, 0.36, 0.86);
+  vec3 blue = vec3(0.05, 0.62, 0.98);
+  vec3 cyan = vec3(0.56, 0.88, 1.0);
+  vec3 white = vec3(1.0);
+  if (x < -0.3) return mix(magenta, purple, (x + 0.6) / 0.3);
+  if (x < 0.0) return mix(purple, deep, (x + 0.3) / 0.3);
+  if (x < 0.34) return mix(deep, blue, x / 0.34);
+  if (x < 0.67) return mix(blue, cyan, (x - 0.34) / 0.33);
+  return mix(cyan, white, (x - 0.67) / 0.33);
+}
+
+void main(){
+  float CELL = 2.0; /* ドット1粒の物理px (dpr2でCSS1px相当) */
+  vec2 fcTrue = gl_FragCoord.xy;
+  vec2 cellId = floor(fcTrue / CELL);
+  vec2 fc = (cellId + 0.5) * CELL;   /* セル中央で色を決める → 粒が均一なピクセルに */
+  vec2 pTrue = (fcTrue * 2.0 - uRes) / uRes.y;
+  vec2 p = (fc * 2.0 - uRes) / uRes.y;
+  float R = 0.884615;
+  float px = 2.0 / uRes.y;
+  float alpha = 1.0 - smoothstep(R - 1.5 * px, R + 1.5 * px, length(pTrue));
+  if (alpha <= 0.0) { gl_FragColor = vec4(0.0); return; }
+  float z = sqrt(max(R * R - dot(p, p), 1e-5));
+  vec3 n = normalize(vec3(p, z));
+  vec3 ax1 = normalize(vec3(0.53, 0.85, 0.35));
+  vec3 ax2 = normalize(vec3(-0.62, 0.22, 0.76));
+  vec3 d = rotAxis(ax2, uAngle2) * rotAxis(ax1, uAngle) * n;
+
+  /* 明るさ: 右上ハイライトは画面固定(カンプ準拠)、表面の流れは球と一緒に回る */
+  vec3 L = normalize(vec3(0.55, 0.52, 0.62));
+  float lam = dot(n, L) * 0.5 + 0.5;
+  float flow = (fbm(d * 2.2) - 0.5) * 0.4;
+  /* 中央はシアン〜ブルー主体、白は右上のハイライト付近だけ (カンプ準拠) */
+  float lum = clamp(lam * 0.95 - 0.15 + pow(lam, 6.0) * 0.55 + flow, 0.0, 1.0);
+
+  /* ---- ディザ演出: 表面の模様ではなく「色そのもの」を動かす ----
+     lum を波で押し上げ/押し下げると 白⇄シアン⇄青⇄紫⇄マゼンタ の帯を行き来し、
+     ベイヤーディザで量子化しているため境目のピクセルがパラパラと入れ替わる */
+  if (uDither > 1.5 && uDither < 2.5) {
+    /* ②うつろい: 場所ごとに位相の違うゆっくりした色サイクル (白⇄青⇄紫) */
+    lum += sin(uTime * 0.45 + fbm(d * 1.6) * 6.2832) * 0.30;
+  } else if (uDither > 2.5 && uDither < 3.5) {
+    /* ③流れ: 白→青→紫の色の帯が斜めに流れていく */
+    lum += sin(dot(p, normalize(vec2(0.8, -0.6))) * 3.2 - uTime * 1.1) * 0.32;
+  } else if (uDither > 3.5 && uDither < 4.5) {
+    /* ④さざ波: 細かい色の波が通過して境目のドットがめくれる */
+    lum += sin((p.x + p.y) * 8.0 - uTime * 2.4) * 0.16;
+  }
+  float dith = bayer8(cellId);
+
+  /* ベイヤーディザ: 階調を段に割って、隣のセルと交互に混ぜる → 網点 */
+  float spread = 0.8 + uNoise * 1.2;
+  float levels = 6.0;
+  float q = clamp(floor(lum * levels + (dith - 0.5) * spread + 0.5) / levels, -0.6, 1.0);
+  vec3 col = ramp(q);
+
+  /* 左下のマゼンタリム (これもディザで混ぜる) */
+  float rim = pow(1.0 - n.z, 1.6) * clamp(dot(normalize(n.xy + vec2(1e-4)), normalize(vec2(-0.7, -0.6))), 0.0, 1.0);
+  float mg = clamp(floor((rim * 1.5 + flow * 0.25) * 3.0 + (dith - 0.5) * 1.3 + 0.5) / 3.0, 0.0, 1.0);
+  col = mix(col, vec3(1.0, 0.27, 0.78), mg * 0.92);
+
+  /* ---- 右上光源モード: 白を「光の反射」として陰影をつける ---- */
+  if (uLight > 1.5) {
+    vec3 Ldir = normalize(vec3(0.62, 0.62, 0.48));
+    float diffL = clamp(dot(n, Ldir), 0.0, 1.0);
+    float lightAmt = 0.45 + 0.55 * diffL;
+    vec3 shadowCol = col * vec3(0.55, 0.60, 0.85); /* 影はグレーでなく青みに沈める */
+    col = mix(shadowCol, col, lightAmt);
+    col += vec3(0.95, 0.96, 1.0) * pow(diffL, 8.0) * 0.25;
+  }
+
+  gl_FragColor = vec4(col * alpha, alpha);
+}`,
+  },
+  C1: {
+    name: 'C1 波・流れる',
+    swatch: 'linear-gradient(135deg, #fff 0%, #56d0ff 38%, #2f6dff 66%, #ff4fd8 100%)',
+    src: 'assets/planet-e.png',
+    fragment: waveFragment('0.55', '0.06'),
+  },
+  C2: {
+    name: 'C2 波・白帯',
+    swatch: 'linear-gradient(135deg, #ff6fd8 0%, #fff 32%, #56d0ff 62%, #2f6dff 100%)',
+    src: 'assets/planet-e.png',
+    fragment: waveFragment('1.05', '0.30'),
+  },
+  C3: {
+    name: 'C3 波・呼吸',
+    swatch: 'linear-gradient(140deg, #ff4fd8 0%, #fff 22%, #56d0ff 46%, #fff 68%, #2f6dff 100%)',
+    src: 'assets/planet-e.png',
+    fragment: waveFragment('0.85', '0.14'),
+  },
+  /* ===== 【2026-09-02 ヒデさん指定】A1〜A3のニューバージョン =====
+     画像貼り(A1/A2/A3)の配色を、B/C系と同じ「完全生成・色が溶けて流れるハーフトーン」で
+     作り直した新3案。既存のA1〜A3はそのまま残し、選択肢として並ぶ。 */
+  N1: {
+    name: 'A1+ ビビッドブルー・溶け(新)',
+    swatch: 'linear-gradient(135deg, #ff5d97 0%, #fff 18%, #1e9bff 55%, #0b6bff 100%)',
+    fragment: waveFragment('0.90', '0.22', `
+/* A1配色: 深い青が主役。白の帯を挟んでピンクは端だけ */
+vec3 ramp(float x){
+  x = clamp(x, 0.0, 1.0);
+  vec3 mg = vec3(1.000, 0.365, 0.592);   /* #FF5D97 */
+  vec3 wh = vec3(1.0, 1.0, 1.0);
+  vec3 lb = vec3(0.118, 0.608, 1.000);   /* #1E9BFF */
+  vec3 db = vec3(0.043, 0.420, 1.000);   /* #0B6BFF */
+  vec3 dd = vec3(0.031, 0.290, 0.820);   /* 深い青 */
+  if (x < 0.07) return mix(mg, wh, x / 0.07);
+  if (x < 0.22) return mix(wh, lb, (x - 0.07) / 0.15);
+  if (x < 0.62) return mix(lb, db, (x - 0.22) / 0.40);
+  return mix(db, dd, (x - 0.62) / 0.38);
+}`),
+  },
+  N2: {
+    name: 'A2+ ピンク×ブルー・溶け(新)',
+    swatch: 'linear-gradient(160deg, #ff5d97 22%, #fff 50%, #26a9ff 78%)',
+    fragment: waveFragment('0.75', '0.20', `
+/* A2配色: ピンクと青が対等。真ん中に白 */
+vec3 ramp(float x){
+  x = clamp(x, 0.0, 1.0);
+  vec3 mg = vec3(1.000, 0.365, 0.592);   /* #FF5D97 */
+  vec3 wh = vec3(1.0, 1.0, 1.0);
+  vec3 bl = vec3(0.149, 0.663, 1.000);   /* #26A9FF */
+  vec3 db = vec3(0.071, 0.459, 0.851);   /* 深い青 */
+  if (x < 0.30) return mix(mg, mix(mg, wh, 0.35), x / 0.30);
+  if (x < 0.50) return mix(mix(mg, wh, 0.35), wh, (x - 0.30) / 0.20);
+  if (x < 0.72) return mix(wh, bl, (x - 0.50) / 0.22);
+  return mix(bl, db, (x - 0.72) / 0.28);
+}`, "vec3(0.071, 0.459, 0.851)", '0.55'),
+  },
+  N3: {
+    name: 'A3+ ライトグレイン・溶け(新)',
+    swatch: 'linear-gradient(200deg, #9fdcff 12%, #fff 45%, #ff9ac4 88%)',
+    fragment: waveFragment('0.80', '0.18', `
+/* A3配色: パステル。淡い水色→白→淡いピンク */
+vec3 ramp(float x){
+  x = clamp(x, 0.0, 1.0);
+  vec3 lc = vec3(0.624, 0.863, 1.000);   /* #9FDCFF */
+  vec3 wh = vec3(1.0, 1.0, 1.0);
+  vec3 pk = vec3(1.000, 0.604, 0.769);   /* #FF9AC4 */
+  vec3 dp = vec3(1.000, 0.478, 0.690);   /* 濃いめのピンク */
+  if (x < 0.32) return mix(lc, mix(lc, wh, 0.6), x / 0.32);
+  if (x < 0.56) return mix(mix(lc, wh, 0.6), wh, (x - 0.32) / 0.24);
+  if (x < 0.86) return mix(wh, pk, (x - 0.56) / 0.30);
+  return mix(pk, dp, (x - 0.86) / 0.14);
+}`, "vec3(1.000, 0.478, 0.690)", '0.55'),
+  },
+};
+
+/* ================= 調整パラメーター ================= */
+const DEFAULTS = {
+  running: true,
+  /* 【2026-09-03 ヒデさん指定】編集モードの汎用テキスト編集の保存先。
+     キー→{fs,fw,lh,ls,pt,pr,pb,pl,text}。トップ全体で共有(案・KV非依存)。 */
+  edits: {},
+  editsMb: {},   /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホモードで付けた文字設定の上書き(スマホの時だけ base に重なる) */
+  mb: {},        /* 【2026-09-20 ヒデさん依頼・PC/SP独立(全つまみ)】スマホ専用の値。{ "dotパス": 値 }。スマホ(isMobile)の時だけ applyMbToParams で本体へ流し込む */
+  grid: { on: false, cell: 40, w: 1, op: 0.45, color: '#ACACAC' },   /* 【2026-09-21 ヒデさん依頼】背景の方眼グリッド。on=表示 / cell=マスの大きさ(px・既定40=中央仕切り720/余白120がマス目に乗る) / w=線の太さ(px) / op=線の濃さ(0〜1) / color=線色。applyGrid() が html.grid-on と CSS変数に反映 */
+  sway: 2,   // 2026-08-29 ヒデさん指定: 揺らぎは既定オン(②シーソー=全案共通で効く緩やかな揺れ)。回転は既定オフ
+  swayAmp: 0,   // 2026-08-29 ヒデさん指定: ゆらぎの強さ(振幅倍率)。0でぴたっと止まる。【2026-09-19 ヒデさん指定】軸は固定で回すだけ→0(KVタブ「揺らぎの強さ」で戻せる)
+  swayDir: 'tilt',   /* 【2026-08-30 ヒデさん指定】揺らぎの動き: tilt=傾き(従来) / h=左右 / v=上下 / diag=斜め */
+  /* 【2026-08-29 ヒデさん指定】ネットワーク3D案(Figma15970)のつまみ。mode=3d/2d。3D=手前太く奥細く＋物理 */
+  net3d: { mode: '3d', frontW: 5, backW: 1, phys: 0.7, flatW: 2, spd: 0.7, dots: 1, spin: 0, spinDots: true, showDots: true },   /* dots=1本の軌道に流すドット数(2026-08-29) / spin=軌道の回転・spinDots=粒も連動・showDots=粒表示(2026-08-30) */
+  /* 【2026-08-29 ヒデさん指定】コンバージョン背景(流れるグラデ+Bayerディザ)。
+     既定はカンプのディザ設定(Bayer16×16 / Size1 / Levels3 / Brightness104% / Contrast1.38)に合わせる */
+  cv: { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38,
+        colors: ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'], gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, ramp: 0, addT: 0, addB: 0 },   // 【2026-09-15】色5段・形・暗さ(カラー案)・色味の移ろい(ブランド色⇄白)
+  cvColorBy: {},       // 【2026-09-15 ヒデさん指定】お問い合わせのカラー案: デザイン案ごとに { cvStyle: 'C1〜C10' }
+  cvSway: '0',         // 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。0=現行 / 1〜5。URL ?sway=N
+  cvEdge: '0',         // 【2026-09-16 改訂】お問い合わせ上部の溶け込みの深さ。0=標準/1さらに深く/2浅め。URL ?edge=N
+  cvForm: '0',         // 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの形。0=放射(現行)/1=縦グラデ/2=放射柔らか/3=斜め。URL ?form=N
+  cvCta: 'form',     // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせのCTA。button=ボタン遷移(現行)/form=フォーム直置き。URL ?cta=button|form
+  cvHier: '1',         // 【V5.0 2026-09-16 ヒデさん依頼】コンバージョン調整パネルの“情報の階層”の見せ方。1インデント/2余白区分/3左アクセント/4背景ブロック/5見出し強弱
+  formStyle: '1',      // 【V5.0 2026-09-16 ヒデさん依頼】自作フォームのスタイル案。1〜5(リキッドグラス系)。URL ?fstyle=N
+  formWidth: 660,      // 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせフォームの横幅(px)。パネルで調整
+  cvfGlass: { bgA: 0.5, blur: 22, sat: 1.5, inA: 0.56, phA: 0.32 },   // 【V5.0 2026-09-17】フォームカードの地色の白さ/ぼかし/彩度/入力欄の白さ/プレースホルダーの濃さ(白飛び対策で調整可)
+  hdrMode: '12',        // 【V5.0 2026-09-16 ヒデさん依頼】追従ヘッダーの案。1すりガラス/2ソリッド白/3隠す戻す/4縮む/5フローティングピル。URL ?hdr=N
+  burgerIcon: '2',     // 【V5.0 2026-09-17】ハンバーガーのアイコン案(1クラシック/2 2本/3中央短/4ドット/5太丸)
+  burgerAnim: '1',     // 【V5.0 2026-09-17】ハンバーガーを押した時の変化(1クロス/2半回転X/3 90°X/4一本線/5シザー)
+  floatStyle: '1',     // 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案 1〜10(影/ブラー/リキッドグラス等)
+  hdrTune: { '8': { logoH: 47, cw: 345 } },   // 【V5.0 2026-09-17】案ごとのスクロール後サイズ微調整(その案を選んだ時だけパネルに出す)。hm-8: ロゴ縮小なし(47)
+  drawerStyle: '3',    // 【V5.0 2026-09-17】ハンバーガーを押した先の画面 1中央/2右スライド/3左寄せ大(ダーク)
+  hdrMotion: '1',      // 【V5.0 2026-09-17 ヒデさん依頼】ヘッダー変形のモーション(イージング)案 1なめらか/2キビキビ/3ゆったり/4バウンド/5直線
+  hdrDur: 1.65,   /* 【2026-09-17 大掃除】ヘッダーの調整UIは撤去。ローカルで使っていた 1.65 秒を固定値に */ //         // 【V5.0 2026-09-17】ヘッダー変形の速さ(秒・進む時)。戻る時はこの0.55倍でキビキビ(トップ復帰のラグ解消)
+  devStyle: '0',       // 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(0=現行 / 1〜5)
+  devTone: 'dark',     // 同・配色(dark / graphite / blue / cyan / pink)
+  cvStyle: '10',       // 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で固定。パネルの選択UIは削除済み(比較したい時だけ URL ?cv=N)
+  crossDelay: 2.5,     // クロスが効き始めるまでの秒数 (それまではカンプ通り平行)
+  crossLead: 6,        // 完全にクロスするまでにかける秒数           // ゆらぎ 1=固定 / 2=シーソー / 3=クロス
+  design: 'B',       // 惑星デザイン B〜E ＋ F/G/H(波が流れる)
+  dither: 2,         // ディザ演出 1〜4 (惑星E専用)
+  light: 1,          // ライティング 1=なし / 2=右上光源
+  duration: 24,      // ドット1周の基準秒数
+  globalSpeed: 1,    // 全体スピード倍率
+  direction: 1,      // 1=時計回り / -1=反時計回り
+  ramp: 1.5,         // 動き出しのなめらか加速(秒)
+  pulse: {
+    amp: 0,          // 緩急の強さ (0=一定速度)。2026-08-30 ヒデさん指定: 「急に速く/遅く」に見えるので削除(0固定)
+    period: 8,       // 緩急の周期(秒)
+  },
+  sphere: {
+    duration: 32,    // 球体1回転の秒数
+    tumble: 0.37,    // 多面ゆらぎ (2軸目の回転比率)
+    noise: 0.5,      // 質感の粒の強さ
+    dir: 1,          // 回転方向 (1=順 / -1=逆)
+    tilt: 0,         // 回転軸の傾き(度)
+    random: 0,       // ランダムのゆらぎ量。回転速度が不規則に伸び縮みする
+  },
+  planet: { dx: 21, dy: 46, scale: 0.99, flat: 1 },   // 惑星の位置ずらし(px)・大きさ・つぶし(縦横比)
+  /* KV: グラフィック全体の位置と登場シーケンス(秒) */
+  kv: {
+    gx: 0, gy: -70,   // 軌道グループ全体の位置ずらし
+    rotX: 0, rotY: 0, rotZ: 0,   // 【2026-08-28】グラフィック全体の回転(XYZ・3D)
+    persp: 1400,   // 【2026-08-29】遠近感(3Dの奥行きの効き)。CSS perspective の距離px。小さいほど強い
+
+    /* 【2026-08-30 ヒデさん指定】全体的に出はじめを前倒し(尺=ゆったり感は不変)。headerAt 0.25→0.15 / typeAt 1.0→0.7 / eyebrowGap 0.14→0.10 */
+    headerAt: 0.15,   // ヘッダーがブラーで出る
+    navGap: 32,       // 【2026-08-30 ヒデさん指定】ナビ項目の左右の間隔(px)。旧20→広めの32を既定に
+    /* 【2026-08-31 ヒデさん指定】コピー(文字)の調整。パネル「キービジュアル > コピー(文字)」 */
+    mainSize: 70,       // メインコピーの文字サイズ(px)。調整版(Figma 17435:22386)＝70
+    jumpSize: 120,      // 【2026-09-17】最終行「競争力を」のサイズ(px)。調整版＝120(行間1.2はCSS固定)
+    mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row',   // 【2026-09-18】案が入れ替える書体(PCのみ・CSS変数経由。eyebrowLh 0=auto / eyebrowLayout col=罫線を上に置く2行組)
+    eyebrowSize: 20,    // サブコピーの文字サイズ(px)。調整版＝20
+    /* (mainWeight/eyebrowWeight/eyebrowLs/mainThin は 2026-09-17 の大掃除で撤去。太さ・字間は「文字」(params.edits)が唯一の置き場) */
+    copyX: 0, copyY: 0,   // コピー全体の位置ずらし(px・カンプ位置基準) 2026-09-02        // 【2026-09-01】メインを縁取りで細く見せる量(px)。背景色の縁で線を削る
+    hlOff: 0,             // 【2026-09-20】ヘッダー↔コピーの距離。コピー(.headline)の基準top(PC208/SP434)に足すオフセット(px)。PC/SP独立(mbKey)
+    gfxY: 0,              // 【2026-09-20】グラフィック(惑星)↔コピーの距離。右グラフィックの縦位置オフセット(px・+で下/−で上)。PC/SP独立(mbKey)
+    copyOrder: 'main',  // 【2026-09-02】KVコピーの上下並び 'main'=メイン上/サブ下 'sub'=サブ上/メイン下
+    eyebrowDash: true,  // サブコピー先頭の罫線(ハイフン)あり/なし
+    eyebrowDashW: 26,   // 罫線の長さ(px)
+    dashGap: 10,        // 罫線とサブコピー文字の間(px)
+    copyGap: 16,        // メインコピーとサブコピーの間(px)
+    eyebrowGap: 0.10, // タイピングが終わってから小ラベル(罫線ごと)が出るまで
+    typeAt: 0.7,      // タイピング開始
+    charDur: 0.042,    // 1行目「AIと事業を」の1文字あたり(平均)。素早く打つ
+    charDur2: 0.088,   // 2行目「強くする」の1文字あたり(平均)。ゆったり打つ
+    typeEase: 0.55,   // タイピングの緩急 (0=一定, 1=最初ゆっくり→加速)
+    lineGap: 0.20,    // 改行の間
+    graphicGap: -0.9, // 小ラベル基準の前後。マイナス=小ラベルより前(タイピング中)に出す(2026-08-29 さらに早める -0.45→-0.9)
+    revealDur: 1.5,   // ブラーで出てくる所の所要時間 (大きいほどゆったり)
+  },
+  orbits: {
+    /* 軌道ごと: サイズ倍率 / 角度ずらし(°) / 位置ずらし(px) / ゆれ(幅°・周期s・位相°) */
+    outer: { scale: 1, angle: 0, dx: 0, dy: 0, flat: 1, behind: false, wobbleAmp: 0, wobblePeriod: 12, wobblePhase: 0 },
+    inner: { scale: 1, angle: 0, dx: 0, dy: 0, flat: 1, behind: false, wobbleAmp: 0, wobblePeriod: 12, wobblePhase: 180 },
+  },
+  orbitEase: 1,        // 軌道の回り方の緩急 (ORBIT_EASES)
+  dotGap: 1,           // ドットの間隔 (DOT_GAPS) 1=きっちり等間隔 / 2=ばらつかせる
+  visReveal: 2,        // (未使用) 2026-08-25 以降、Our Vision=ブラー / 2行=マスク を updateVision に直書き
+  visStrongFx: 'live', // 2026-08-30 ヒデさん指定: 「強み」強調はグラデ揺らぎで確定(他の案とパネルは削除)
+  visSpin: 2,          // ドットの回り方は「②速く回って減速」で確定（パネルからは外した）
+  visMove: 2,          // 軌道の出方 (VIS_MOVES)。②先に動いて後で拡大 で確定（パネルからは外した）
+  replay: true,        // スクロールで画面外へ出たセクションを巻き戻して再生し直す
+  /* 【2026-09-09 ヒデさん指定】ヘッダーのホバーアニメ(調整パネルで切替・リアルタイム反映)。
+     nav=テキスト(お問い合わせ以外) fade/underline/roll/lift/cyan、btn=お問い合わせボタン lighten/fill/scale/arrow/invert。 */
+  hoverFx: { nav: 'fade', btn: 'lighten' },
+  marquee: {
+    /* ロゴとロゴの左右の間隔(px)。継ぎ目も同じ値になるので、どこで切れても等間隔。
+       【2026-08-19 ヒデさん指定】96px は広すぎたので 72px に詰めた
+       【2026-09-18】Figma 17707:26078 のロゴ間隔は 46.5〜66.2px(平均54)なので 54 に(仮置き: 均一間隔のため平均値) */
+    gap: 54,
+    duration: 30,    // ロゴが1周する秒数
+    direction: 1,    // 1=左へ / -1=右へ
+  },
+  /* pulsePhase は「②ばらつかせる」の時だけ使う、ドットごとのゆらぎのズレ。
+     ⚠️ 以前は i*60 固定だったので、ドットが7個になると7個目が 360°(=0°) になり
+        1個目と完全に同じ動きになっていた。個数で割って必ずバラけるようにする */
+  dots: DOTS.map((_, i) => ({ speed: 1, delay: 0, offset: 0, pulsePhase: i * 360 / DOTS.length })),
+  /* スクロールセクションの調整値 */
+  sections: {
+    common: {
+      smooth: 3,         // スクロール慣性補間の強さ (小さいほど慣性たっぷり / 0=オフ)
+      /* 再生中にホイールを回した時の早送り。0 で早送りなし(閉じ込められるので非推奨) */
+      ffMax: 0.6,        // 上限。0.6 なら最大 1.6倍速まで (2026-08-18: さらに抑えた)
+      ffGain: 700,       // 効きはじめの緩さ。大きいほどゆるやかに効く
+      /* スクロール駆動の時、ピン区間の何割で再生しきるか。
+         小さいほど少ないスクロールで一気に展開する */
+      driveWin: 0.80,
+      /* ⚠️ 尺の倍率は【各セクション別】に持たせた (2026-08-18 ヒデさん指定)。
+         まとめて1つだと、章の数や再生時間が違うセクションでばらつきが出るため。
+         → params.sections.<各セクション>.driveLen を見ること */
+    },
+    /* ビジョンは「ピン留めされたら自動再生 → ワンスクロールで軌道が左下へ」。
+       自動パートの時間はすべて秒で指定する */
+    vision:  {
+      emph: 'default',   // 【2026-09-20】ビジョンのバリエーション。'default'=現状(1行・中央) / 'strong'=強調(2行・左揃え・大きめ)
+      driveLen: 3.0,     // スクロール駆動の時、尺を何倍に伸ばすか（大きいほどゆったり）
+      /* ⚠️ 再生中はスクロールを止めているので、lenVh はまるごと「再生後の空スクロール」になる。
+         長いと「終わったのに何度もスクロールしないと次へ行けない」になるので短くする */
+      lenVh: 150,
+      /* 【2026-08-30 ヒデさん指定】出はじめを前倒し(尺は不変): labelAt 0.15→0.10 / line1At 0.45→0.32 / line2Gap 0.55→0.40 */
+      labelAt: 0.10,     // Our Vison がブラーで出る
+      labelDur: 1.0,     // その所要時間
+      labelOutLead: 0.5, // 上下に分かれ始める何秒前から「Our Vison」を消し始めるか
+      labelOutDur: 0.6,  // 消えきるまでの秒数
+      line1At: 0.32,     // 1行目 (Our Vison に続けてすぐ)
+      line2Gap: 0.40,    // 2行目までの間 (1行目が出きる前に始まってよい＝絵コンテ指定)
+      revealDur: 1.15,   // 1行の出現時間(2026-08-30 ヒデさん指定: マスク出現をもう少しゆったり 0.9→1.15)
+      splitGap: 0,       // 2行そろってから「消え始める／軌道が出る」までの間 (0=そのまま)
+      splitDur: 0.9,     // 消え・軌道出現のタイミングの基準になる時間
+      /* 【2026-08-25 ヒデさん指定】上下に分かれる演出は廃止。2行はその場でブラーで消える。
+         上下の開き量 splitAmt と 流れる量 driftAmt は 0（＝分かれない）が既定。 */
+      splitAmt: 0,       // 上下に開く量(px・片側)。0=分かれない
+      miniGap: 0.32,     // 2行が出そろってから軌道が出るまで (splitDur に対する割合) 2026-08-30: 0.45→0.32 前倒し
+      miniDur: 0.4,      // 軌道グラフィックの出現時間 (2026-09-01: ヒデさんが元々詰めていた0.4へ。ブラー18は維持)
+      /* 【2026-08-29 ヒデさん指定】固定追従なし(no-pin)の時間再生の「ブロック間隔」。パネルで調整可。
+         npGap=メッセージ後グラフィックが出るまで / npP1=グラフィック後ポイント1 / npP2=ポイント2 (秒) */
+      npGap: 0, npP1: 0.0, npP2: 0.15,   /* 2026-09-02 ヒデさん指定: valHead削除に伴いポイントをさらに前倒し(0.10/0.30→0.0/0.15) */
+      npFireK: 0.70,     /* グラフィック発火＝メッセージの何割が出た時点か(2026-09-02: 隠れ係数0.70をパネルへ公開) */
+      npPointDur: 0.3,   /* 【2026-09-02 ヒデさん指定】「グラフィック後ポイントが出るまで遅い」の正体=この出現(フェード)時間。0.6→0.3でパッと出す */
+      moveLead: 0.35,    // 軌道が何割出た時点で左下へ動き出すか (0=出はじめと同時)
+      moveDur: 2.6,      // 左下へ移動する時間(秒)。この間ずっと少しずつ拡大する
+      /* 【2026-08-25・Figma 15764:55518】軌道が最初に小さく現れる中心位置(ステージ座標)。
+         カンプでは右寄り(中心 ≒ x1134 / y417・幅約293px)。左端の左寄せメッセージと重ならない。 */
+      miniCX: 1334,      // 軌道が現れる中心の左右位置(px) 2026-08-26 ヒデさん指定: 1134→+200右=1334
+      miniCY: 417,       // 軌道が現れる中心の上下位置(px)
+      miniY: 0,          // ↑ miniCY からの縦位置の微調整(px)
+      miniScale: 0.248,  // ミニ楕円の縮小率 2026-08-26 ヒデさん指定: 出現サイズ0.8倍 (0.31×0.8≒0.248)
+      strokeW: 3,        // 軌道線の太さ(px) ※カンプの stroke-width は 3
+      /* 軌道上のドットの出方 (2026-08-17 指定)。以前は軌道が出た時点で6個そろっていた */
+      dotsInAt: 0.18,      // 軌道が出はじめてから、1個目が出るまでの秒数 (2026-08-30: 0.25→0.18 前倒し)
+      dotsInStagger: 0.14, // ドットごとの遅れ (大きいほど1つずつ順に出る)
+      dotsInDur: 0.5,      // 1個が出きるまでの秒数 (点が膨らみながら濃くなる)
+      spinLaps: 1,       // 止まるまでに何周するか (2026-08-15: きっちり1周)
+      spinHold: 0.5,     // 左下に着いてから止まり始めるまでの秒数
+                         /* ⚠️ spinHold + spinBrake = 1.35 にすると、役割名(コネクタ等)が
+                            Point 02 とちょうど同じタイミングで出る (2026-08-15 指定) */
+      spinBrake: 0.85,   // 減速して止まるまでの秒数
+      /* 固定追従なしの時だけ使う。ブロックが画面に入ったら少しだけ回って、
+         カンプの位置（所定の位置）でピタッと止まる（2026-08-18 ヒデさん指定） */
+      npSpinDeg: 40,     // 止まるまでに回る角度
+      npSpinDur: 1.0,    // 回りきるまでの秒数
+      introPat: 1,       // 出現パターン 1=現状(一括ブラー) 2=ドットが動くバージョン(2026-09-02 ヒデさん指定)
+      npOrbitDur: 2.2,   // パターン2で1周にかける時間(秒) 2026-09-03: 3.5→2.2(早めに止まる)
+      npOrbitDir: -1,    // パターン2の回る向き。-1=既定(2026-09-02 ヒデさん指定で従来と逆に) / 1=逆
+      npOrbitLead: 1.2,  // パターン2: ブラー出現の何秒前から動き出しているか 2026-09-03: 0.5→1.2(もっと早くから回っている)
+      npOrbitEase: 2.0,  // パターン2: 減速の効き。出だしが最速で徐々に減速(2026-09-03 等速廃止)。
+                         //   ⚠️出だしの速さ=効き÷1周時間。「1周6秒×効き2」で旧・等速時の速さと一致
+      npOrbitOp0: 0.35,  // パターン2: 出だしのドットの不透明度(止まる頃に100%へ)
+      npOrbitBlur0: 2,   // パターン2: 出だしのドットのブラー(px。止まる頃に0へ)
+      pHSize: 26, pPSize: 14,   // ポイント1・2の見出し/本文の文字サイズ(px) 2026-09-03
+      pWidth: 328,              // ポイント1・2の横幅(px) 2026-09-03
+      msgSize: 50,              // 日本語メッセージの文字サイズ(px・カンプ50) 2026-09-03
+      emphGap: 119,             // 【2026-09-25】強調案の1行目↔2行目の行間(px・PC既定119/SP既定50)。強調案だけに効く
+      npOrbitTextGap: 0, // パターン2: ドットが止まってから文字(役割名/Platform)が出るまでの間(秒)
+      npPtLead: 0.6,     // 【2026-09-08 ヒデさん指定】ポイント1/2を回転が終わる何秒前から出すか(左グラフィックのアニメ終盤と被せる)
+      blur: 18,          // 出現ブラー量 (2026-08-31: さらに強く 14→18)
+      /* 【2026-09-01 ヒデさん指定】軌道グラデをパネルで直接調整できるように。
+         g0=傾き大きい楕円(いま青く見える方) / g1=傾き小さい楕円(いまピンクに見える方)。
+         x,y=グラデ軸の中心(楕円ローカル座標) / deg=向き / len=色が変わる距離 /
+         white=白の位置(%) / wSpan=白まわりのぼかし幅(%) / c1..c4=端→中間→中間→端の色。
+         初期値はこれまでの見た目と同じになるよう実測から逆算した値 */
+      pfGrad: {
+        g0: { x: 769.97, y: 177.74, deg: 92.1, len: 175.4, white: 49, wSpan: 23,
+              c1: '#FF5D97', c2: '#FFCFE0', c3: '#A2E6FF', c4: '#00ABEB' },
+        g1: { x: 769.97, y: 177.74, deg: 92.1, len: 175.4, white: 51, wSpan: 23,
+              c1: '#00ABEB', c2: '#A2E6FF', c3: '#FFCFE0', c4: '#FF5D97' },
+      },
+      /* 「2つの価値」まわりの位置ずらし(px)。カンプ位置からの相対。
+         2026-08-15 にヒデさんが調整パネルで詰めた値を既定にした */
+      headX: -78, headY: 0,   // 連携が生む、2つの価値
+      p1X: 0,     p1Y: 0,     // Point 01 (2026-09-15: カンプ位置を CSS に入れたので 0)
+      noPinX: 6.5, noPinY: 109,   // 軌道グラフィックの位置(2026-09-15: カンプ 16678:23002 実測 x−228 / y236)
+      p2X: 0,     p2Y: 0,     // Point 02
+      charLag: 0,        // 1文字ずつの遅れ (0=行まるごと ← 2026-08-15 指定)
+      driftAmt: 0,       // 分かれたあと慣性で流れる量(px・片側)。0=流れない(分割廃止に伴い既定0)
+      vanishDur: 0.85,   // 流れながら消えきるまでの秒数
+      vanishAt: 0.15,    // 分かれ始めてから消え出すまで (splitDur に対する割合)
+    },
+    /* 尺(中央で止まる) / カウント時間 / 画像のぼけ。
+       尺の8割ぶんスクロールすると全部出そろい、残り2割で下のセクションへ抜ける */
+    results: {
+      hrGap: 100, hrGap2: 0,   /* 2026-09-15: 案24系 区切り線の上/下の余白(px) */
+      pictoW: 1,         // 【2026-09-02 ヒデさん指定】for SaaS/for AI ピクトグラムの線幅倍率(1=1px基準)
+      pictoSpeed: 1,     // 【2026-09-08 ヒデさん指定】ピクトの再生速度(SaaS/AI共通・全案に適用。1=標準)
+      pictoDisp: 1,      // 【2026-09-21 ヒデさん依頼】ピクトの表示サイズ倍率(実際に見えている大きさ。flowモードでも効く。1=現状)
+      spGap: 16,         // 【2026-09-21 ヒデさん依頼】スマホの実績の縦の余白(各ブロック↔区切り線。既定16px=現状。SP専用)
+
+      driveLen: 2.0,     // スクロール駆動の時、尺を何倍に伸ばすか（小さいほどスクロール量が減る。2026-08-25 3.0→2.0）
+      lenVh: 200,   /* 固定される幅 = 200-100 = 100vh。この間に再生と暗転が収まる */
+      numsGap: 0.55,   // 見出しが何割出たら、下の数字たちが出はじめるか
+      imgBlur: 24,     // 画像が出る時のぼかし量
+      /* スクロールで画像の中身がずれる量。
+         【2026-08-19 ヒデさん指定】左のグラデーション画像はパララックスなしにする → 0 */
+      parallax: 0,
+      typeAt: 0.10,    // 見出し1行目「事業の推進力を、」が出はじめるまで (2026-08-30: 0.15→0.10 前倒し)
+      charDur: 0.055,  // 1文字あたりの秒数(案B)
+      softDur: 1.6,    // まわりの要素がブラーから出そろうまで
+      /* 【2026-08-29 ヒデさん指定】タイピングテキストと、その他の要素(区切り線/3数値/2つの価値)の
+         出るタイミングを別々に。typeGap=見出し1行目→タイピング開始 / restGap=タイピング開始→その他 */
+      typeGap: 0.40, restGap: 0.05,   /* 2026-08-30: 前倒し(0.55/0.1→0.40/0.05) */
+      typeStyle: 'slot',   // 2026-08-30 ヒデさん指定: Anyflowのタイピング見せ方 slot=下線に打ち込む(既定)/push=押し広げる
+      slotGap: 4,          // 【2026-09-01】「Anyflow」と「が支えます。」の間(px)。パネルで調整可
+      imgAt: 0.9,      // 画像が出はじめるまで(案A。テキストのあと)
+      outFrom: 0.14,   // 案B/C: ここから遷移開始。案Cは黒レクタングルが入り始める(実績が出そろったらすぐ・2026-08-25 0.48→0.14)
+      outTo: 0.95,     // ここで完全に黒。dev を実績尾部に重ねたので、黒の全面到達≒dev1中央到達に近づける(2026-08-26 0.85→0.95)
+      /* 【2026-09-08 ヒデさん指定】smoothモードの暗転(実績→開発者体験)の効き。
+         darkFrom=明るいままの範囲(devが画面をこの割合登るまで暗転しない) / darkTo=黒くなりきる位置 /
+         darkVar=暗転カーブ(1なめらか/2ためて一気に/3早めにゆっくり/4直線) */
+      darkFrom: 0.04, darkTo: 0.5, darkVar: 2,   /* 2026-09-08修正: devのモックが出る前に黒くなりきるよう締める(0.18/0.82は遅すぎてモックが明るい背景に出ていた) */
+      outBlur: 22,     // 消える時のぼかし量(案Bのみ。案Cは白反転)
+      /* 【2026-09-26 整理】完全削除した案の設定(主役ピクト系 hero・案14/20/21)は削除。
+         案24-4 が読む出現ブラー(hero.pictoBlur)は RFX_HERO_DEF の既定 18 がそのまま効く(値は同じ) */
+      fx24: { heroScale: 1.7, labelUp: 190, prodSize: 38 },   /* prodSize: 登場の大きい文字の下に付く「Product」のサイズ(px)。2026-09-18 */   // 案24: ピクトの主役の大きさ(絵コンテ 666枠/386枠≒1.7)・文字が上へ動く距離(px)
+      fx26: { numScale: 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 },   /* 2026-09-15: SaaS を読む区間 4%→15%(下段が出てすぐ横へ動いて「表示されない」に見えていた) */   // 案26: 数値の大きさ(120/70)・収まり・線・横移動(固定区間の割合)
+      /* 数字のスロット (2026-08-17 指定)。
+         数字は最初から出しておき、回転そのものを見せる。ブラー出現は見出しだけ。
+         ⚠️ 下の4つは「回転が見えるように」仮で置いた値。パネルで詰めてください */
+      slotAt: 0.2,       // 再生開始から回り出すまでの秒数 (0 で即スタート) (2026-08-30: 0.3→0.2 前倒し)
+      slotDur: 1.4,      // 1桁が回り終わるまでの秒数
+      slotStagger: 0.12, // 桁ごとの遅れ (左から順に止まる)
+      slotCycles: 3,     // 止まるまでに 0〜9 を何周流すか
+      entryBlur: 16, entryBlur44: 26, entryFrom: 0.4, entryTo: 0.95, entryOp: 1, bigStartY: 0.4,   // 【2026-09-19】for SaaS/AI の入場のぼかし(強さpx / 解け始め・解けきり=入場の進み 0〜1 / 出だしの薄さ 1=薄くしない)
+      slotEnterAt: 0.85, // 数字が画面のどこまで入ったら回り出すか (1.0=下端 / 0.5=中央)
+      slotFx: 'plain', slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1, slotDrumN: 12, slotDrumFade: 1.3,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)
+      slotEase: 5,       // 減速の強さ。大きいほど「最初速く→最後じりじり」になる (2〜9)
+                         /* ⚠️ 回転中のぼかしは 2026-08-17 に「要らない」で確定。
+                            パラメータごと削除したので、復活させる時は renderSlots にも戻すこと */
+    },
+    /* stackDur = カードが回って入れ替わるのにかける秒数
+       swapEase = その動き出し方 (DEV_SWAP_EASES)
+       ⚠️ 2026-08-19: 一度 2.0秒 × ゆったり(easeIO) にしたが、
+          ヒデさんが見比べて「前の方が良かった」とのことで元に戻した。
+          既定は 1.3秒 × ①元の動き(easeOutQ)。
+          他のカーブはパネルから選べるようにしてあるので、試したくなったらそこで。 */
+    /* 【2026-08-29 ヒデさん指定】ds2=開発者体験2のデザイン。'list'=現行(右にAPI/CLI/SDKリスト) /
+       'slide'=テキストスライド(見出しの箱がCLI→SDK→APIと切替、モックも同期。dev1と同サイズ・モック内アニメOFF)。
+       slideMotion=箱の切替モーション(snap/flip/blur)、slideHold=各語をホールドする割合、slideSnapK=スナップのキレ。 */
+    dev:     { lenVh: 200, driveLen: 3.0, swapBlur: 14, stackDur: 1.3, swapEase: 1,
+               ds2: 'slide', slideMotion: 'snap', slideHold: 0.62, slideSnapK: 3.4,   /* 2026-08-29: テキストスライドを既定に */
+               slideEvery: 3.0, slideDur: 0.5,   /* 自動スロットの間隔と切替時間(秒) */
+               /* 【2026-08-29 ヒデさん指定】dev2: ブロックの出入り(フェード)は dev1 と同じスクロール位置駆動(vpMode)。
+                  ただし箱が左右に割れて開く所は【時間再生】でゆったり。splitDelay=登場から割れ始めるまでの間(秒)、
+                  splitDur=割れきるまでの時間(秒。大きいほどゆったり)。 */
+               vpMode: 'center', splitDelay: 0.32, splitDur: 1.2,
+               /* 【2026-09-15】モックのスタイル案のつまみ。stv = 案ごとの値(案を切り替えても各案の設定が残る) */
+               mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {},
+               slotBoxY: 0, slotBoxH: 42,   /* 2026-09-15: ②のスロットの箱の上下位置・高さ */
+               pinStops: 'on', devDwell: 40 },   /* 2026-09-16 ①②で中央に固定して一旦止まる。devDwell=止まっている長さ(vh)。2026-09-17: 90→40 で“優しく”短めに(急に止めすぎない)。'off'で通常スクロール */
+    /* 【2026-08-25 刷新・カンプ 15800:24526/24258】導入事例 = 2×2グリッド。
+       見出し(ブラー) → 水平線3本が左から(上→下でディレイ) → 中央の垂直線 → カード4枚がブラーで登場。 */
+    cases:   { lenVh: 200, driveLen: 3.0, playSec: 2.0, inBlur: 20,
+      /* 見出しだけ「開発者体験の暗転(devFin)」基準。暗い背景の上に文字が重ならないようにするため */
+      introAt: 0.72,   // 見出し「導入事例」が出はじめる位置 (devFin の何割地点か)
+      introDur: 0.22,  // 見出しが出きるまで
+      /* 以下はこのセクションの再生進捗 p(0→1) 基準 */
+      /* 【2026-08-30 ヒデさん指定】前倒し(尺は不変)。⚠️ これまで固定追従なし(常時no-pin)ではハードコード値
+         (0.25s/0.7s/0.9s…)が使われ、パネルのつまみが効いていなかった。updateCases を「playSec に対する割合」で
+         共通化したので、いまはパネルの値=実際の動きになっている。 */
+      lineAt: 0.08,      // 1本目(上)の水平線を引き始める
+      lineStagger: 0.07, // 水平線ごとの遅れ (上→下で順に) 0.10→0.07
+      lineDur: 0.28,     // 水平線1本を左から引き切るまで
+      vlineAt: 0.28,     // 中央の垂直線を引き始める 0.34→0.28
+      vlineDur: 0.30,    // 垂直線を上から引き切るまで
+      cardAt: 0.40,      // カード4枚がブラーで出はじめる 0.56→0.40
+      cardGap: 0,        // カードごとの遅れ。2026-08-30 ヒデさん指定: 1枚ずつでなく4枚同時にブラーで出す(0=同時)
+      cardDur: 0.25, cardStagger: 0.18,     // カード1枚が出きるまで
+    },
+  },
+  /* 【2026-08-18】アニメーションの駆動方式。参考サイト調査を受けて2軸を用意した。
+       time   = 今までどおり。固定して「映像を再生」する。速さが常に一定で絵コンテ通り
+       scroll = スクロール量で展開する。手を止めれば絵も止まり、戻せばそのまま巻き戻る */
+  /* 【2026-08-19 ヒデさん指定】既定は「スクロール駆動 × 固定追従あり」。
+     ⚠️ 保存があればそちらが優先される（＝最後に保存した設定が引き継がれる）。
+        ここは「まだ一度も保存していない人／元に戻したあと」の初期値。 */
+  drive: 'time',   /* 2026-08-30 ヒデさん指定: 自動再生(時間)で確定。パネルの切替も削除した */
+  /* 【2026-08-18 指定】固定追従(sticky)を使うか。
+       on  = 従来。セクションを画面に貼りつけて見せる
+       off = 貼りつけない。セクションは普通に流れ、画面に入った時に中で再生する
+             （貼りつけが外れる時のスライドが起きないので、重なりの事故が構造的に無い） */
+  pin: 'on',
+  /* 【2026-08-26 ヒデさん指定】スクロールの固定の強さ(3パターン・調整パネルで切替)。
+     'smooth' = 固定なし。自由にスクロール、アニメは画面に来たら時間で再生(ガタつき無し・既定)
+     'soft'   = 弱め。ブロックはせずゆるく引き戻す(ラバーバンド)＋回すと早送りで追いつく
+     'lock'   = 固定。従来のスクロールジャック(再生中は貼りつけて動かさない)
+     ※ pin='on' のまま(=リビール演出は維持)、この scrollHold で“ロックの強さ”だけ切替える。 */
+  scrollHold: 'smooth', // 2026-08-26 ヒデさん指定: サイト全体は「固定追従なし」を既定に(掴み無し・ロック無し)。固定は個別で必要な所だけ。切替は 固定追従なし / 固定 の2択
+  kvDesign: 'planet',   // 右グラフィック＝V1.0の惑星(2026-08-26 復活)。【2026-09-26 整理】旧iframe案(A/B)は撤去したので 'planet' だけ
+  visResPull: 200,   /* 【2026-09-19 夜】260→200(ヒデさん「まだ近い」→気持ち60px空ける・仮置き) 【2026-09-19】ビジョン→実績の空白を詰める量(px・PCのみ)。ビジョンタブ。200→260(1440×921 で図/Point に被らない上限は約320) */
+  secHeadGap: 6,   /* 【2026-09-19】セクション見出しのラベル→見出しの間隔(px)。🌊全体タブ */
+  drawer: { padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14, barW: 20, barH: 2, barGap: 7, navBlur: 8 },   /* navBlur=スクロールでナビが格納される時のぼかし最大(px) */   /* barW/barH/barGap=右上のハンバーガー(2本線)の 長さ/太さ/間隔(px)。2本にした分ちょっと広め(7) 2026-09-18 */
+  /* 【2026-09-18 ヒデさん依頼「ロゴティッカーを目視で美しく」】ロゴごとの微調整。dy=上下(px・＋で下)、mx=左右それぞれに足す余白(px)。
+     既定値はインク(見える部分)の重心と濃さの実測から: 重心が箱の中心より下のロゴは上げ(akerun/ANDPAD)、上のロゴは下げ(sweeep)、
+     黒ベタで重いロゴ(スマレジ/ContractS/UPSIDER)は余白を広く、線の細い NP掛け払い は狭く。 */
+  logoTune: { hennge: { dy: 0, mx: 0 }, upsider: { dy: -0.5, mx: 5 }, np: { dy: -0.5, mx: -4 }, akerun: { dy: -1.5, mx: -1 }, smaregi: { dy: 0, mx: 8 },
+              andpad: { dy: -2, mx: -1 }, icare: { dy: -0.5, mx: 0 }, contracts: { dy: 0.5, mx: 8 }, sweeep: { dy: 2, mx: -1 } },   // 【2026-09-18 ヒデさん依頼】ハンバーガーメニューの余白(px)・項目の間隔・文字サイズ(項目/番号)。上下は以前(10)より広め
+  kvVar: 'normal',     // 【2026-09-18 ヒデさん依頼】KVのバリエーション(normal=ノーマル Figma 17707:26544 / strong=強調 調整版)
+  kvGfx: { scale: 1.21, dx: 148, dy: 184, ox: 0, oy: 0, oz: 0 },   // 【2026-09-18】右グラフィック全体の拡大・移動(PCのみ)。案(KV_VARIANTS)が入れ替える。ox/oy/oz=【2026-09-19】XYZのずらし(0=いまの位置。Z は % で手前/奥)
+  converge: 'mesh',     // 【V4.0 2026-09-09 ヒデさん指定】既定＝ネットワークタブ★1(mesh『D 大きいケージ』)。惑星への集約アニメ。既定は「周回のみ」(2026-08-28 ヒデさん指定・グループ再編)
+  /* 集約アニメの調整つまみ (2026-08-26 ヒデさん指定: 各項目をパネルで調整できるように)
+     pers: 'normal'=今の実装 / 'fix'=パース調整版(輪が先に惑星の真ん中へ寄ってから同心円ですぼまる)
+     showOuter/showInner: 軌道の輪のオンオフ(輪を消すとその輪のドットも消える)
+     タイミング系(inDur/shrinkAt/endAt など)は「周期の中の割合」(0〜1) */
+  orbitLayout: 'figma',  // 軌道レイアウト(ORBIT_LAYOUTS)。2026-08-26 ヒデさん指定でカンプ通り(2本が平行)を既定に戻した
+  /* 【2026-08-27 ヒデさん指定】グラフィックの形(軌道と惑星の位置・サイズ・傾き)は
+     アニメ案ごとに別々に持つ。案を切り替えると、その案の形に入れ替わる(引き継がない)。
+     形が入っていない案は gfxDefault() = 最初に実装した位置関係で始まる。 */
+  gfxByMode: {},         // { 案キー: {layout, outer, inner, planet} }
+  gfxPresets: {},        // { 案キー: [{name, data}] } 案ごとのプリセット
+  gfxPresetOn: {},       // { 案キー: 選んでいる番号 }
+  gfxVariantOn: { mesh: 3 },      // { 案キー: 選んでいるバリエーションの番号 } 【V4.0 2026-09-09】既定 mesh:3＝『D 大きいケージ』(ネットワーク★1)
+  gfxVariantHidden: {},  // { 案キー: [消したバリエーションの名前] } UI から削除したもの
+  gfxPresetTrash: {},    // { 案キー: [{name, data}] } 削除したプリセットのゴミ箱(復元用・2026-08-29)
+  gfxVarOverride: {},    // { 案キー: { バリエーション名: 全設定 } } 「この設定で上書き」の控え(2026-08-30)
+  gfxFav: [],            // 【2026-09-01】お気に入りピン留め [{m:モード, name:案名}] 並び順=ピン留め順
+  presetUiStyle: 'chips',// プリセットの見せ方: 'chips'(コンパクトチップ) / 'drop'(ドロップダウン)。2026-08-29
+  conv: {
+    showOuter: true, showInner: true,
+    showDots: true,                                          // 軌道上のドット(7個)の表示/非表示
+    /* 【2026-09-01 ヒデさん指定】B3「J 地平線・横揺れ」の横揺れ。内外の輪を左右にゆらす。
+       on=横揺れする(この案の目玉なのでB3では定義がtrueにする) / pat=揺れ方(sine/drift/tri) /
+       outerAmp・innerAmp=外・内の振れ幅(px) / period=1往復の秒数 / delay=内側の遅れ(秒) */
+    hsway: { on: false, pat: 'sine', outerAmp: 16, innerAmp: 16, period: 6, delay: 0.8 },
+    net3d: false,                                            // 2026-08-29: ネットワーク3D案のときだけ true(専用レンダラーに切替)
+    /* 【2026-08-26 ヒデさん指定】どの案でも効く共通のドット設定
+       dotSize = 全部のドットの大きさ倍率
+       dotPersp: 'flat'=どこでも同じ大きさ / 'persp'=手前が大きく奥が小さい(遠近感)
+       perspK = 遠近の強さ
+       perspScope = 遠近を効かせる対象 'dots'=ドットのみ / 'orbit'=軌道の線のみ / 'both'=両方
+                    軌道は「手前(下)の線を太く・奥(上)を細く」で遠近を出す(2026-08-29 ヒデさん指定) */
+    dotSize: 1, dotPersp: 'flat', perspK: 0.45, perspScope: 'dots',
+    /* 【2026-08-28 ヒデさん指定】惑星の手前に来たもの(輪のはみ出し・粒・パケット)を
+       隠すかどうか。true=隠す(惑星の中へ入ったように見える) / false=そのまま前を通す */
+    frontCut: true,
+    /* 【2026-08-27 ヒデさん指定】軌道にそってドット自体が動く(周回する)かを案ごとに切替。
+       off にすると、その案ではドットが位置に留まったまま(集約などの動きだけが起きる) */
+    dotMove: { reel: true, spiral: true, accre: true, mesh: true, beads: true, duplex: true, gyro: true },
+    /* 【2026-08-27 ヒデさん指定】軌道そのものの回転は【案ごと】に持つ。
+       案によって似合う回り方が違うため。orbitSpin(全案共通)は古い保存値からの引き継ぎ用に残す */
+    orbitSpinBy: { off: 0, reel: 0, spiral: 0, accre: 0, mesh: 0, beads: 0, duplex: 0, gyro: 0 },
+    /* 【2026-08-28 ヒデさん指定】軌道の線の太さ(倍率)。案ごとに持つ。1=カンプ通りの3px */
+    orbitWidthBy: { off: 1, reel: 1, spiral: 1, accre: 1, mesh: 1, beads: 1, duplex: 1, gyro: 1 },
+    /* 【2026-08-28 ヒデさん指定】軌道全体の大きさ(倍率)。案ごとに持つ。1=そのまま */
+    orbitScaleBy: { off: 1, reel: 1, spiral: 1, accre: 1, mesh: 1, beads: 1, duplex: 1, gyro: 1 },
+    /* 【2026-08-27 ヒデさん指定】ドット1粒ずつの不規則さと、軌道そのものの動き。
+       dotRandom = ドットごとに速さ・位置がばらつく量
+       orbitSpin = 軌道そのものが回る速さ(0で回らない。これまでは形が固定だった)
+       orbitDrift = 軌道そのものがゆっくり漂う量 */
+    dotRandom: 0, orbitSpin: 0, orbitDrift: 0,
+      glow: 0.35,
+    /* 【2026-08-28 ヒデさん指定】吸収の光り方を5つから選ぶ。
+       pulse=ふっと明るくなる(従来) / hue=色が変わる / core=芯が育つ /
+       ripple=波紋 / breath=呼吸
+       charge=データが溜まっていく度合い(0〜1)。吸収のたびに増え、ゆっくり戻る */
+    glowKind: 'pulse',
+    glowEcho: 'k8',     /* エコーの見え方(k1〜k9)。glowKind='echo' の時だけ効く。既定はくっきり尾を引く */
+    fxMode: 'every',    /* 【2026-08-28】エフェクトの出方。every=毎回 / count=N回に1回 / time=N秒に1回 */
+    fxCount: 10,        /* 【2026-08-28】count のとき、何回の取り込みに1回だすか */
+    fxEvery: 8,         /* 【2026-08-28】time のとき、何秒に1回だすか */
+    fxInertia: 0.5,     /* 【2026-08-28】広がりの慣性。0=一定(機械的)、1=最初速く→減速(自然な波紋) */
+    echoCrisp: false,   /* 【2026-08-28】くっきり表示。trueで残像のぼかしを切り、輪郭をはっきり見せる */
+    /* 【2026-08-28 ヒデさん指定】エコーがガクガクして見えるので、細かく調整できるようにした。
+       echoSpeed=広がる速さ(小さいほどゆっくり滑らか) / echoShells=重ねる枚数 /
+       echoSpread=どこまで広がるか / echoStart=どこから始まるか / echoFade=消え方のなめらかさ */
+    echoSpeed: 0.7, echoShells: 3, echoSpread: 0.28, echoStart: 1.12, echoFade: 1.6,
+    echoAlpha: 1,      /* 残像の濃さ(倍率)。1 が既定 */
+    /* 【2026-08-28 ヒデさん指定】複数軌道(アトム型/土星型/花型など)。ringCount>=2 で有効 */
+    ringCount: 0, ringShape: 'atom', ringSpin: 0.35, ringFlat: 0.42, ringSize: 1, ringTumble: 0.6, ringWidth: 3, ringRotate: false,
+    startPhase: 0,   /* 【2026-08-29】回転アニメの開始位相(「いまを開始地点にする」で設定) */
+    glowHold: 6,        /* 溜まったものが半分に戻るまでの秒数 */                                              // 吸収の瞬間の惑星の光り方
+    /* reel(①循環版 2026-08-26): 内の輪が吸収→外の輪が内の位置へ移動(moveDur)→
+       元の外の位置に新しい輪がフェードイン(inDur)、を交代でくり返す。
+       vanish=消え方(fade=フェード/sink=惑星の後ろへ沈む/shrink=点まで縮む/blur=ぼかし)
+       fadeAt=透過し始め(収縮の中の割合) / fadeTo=吸収の瞬間に残す濃さ / spinUp=収縮中の回転アップ */
+    reel:   { T: 4.8, inDur: 0.14, shrinkAt: 0.30, endAt: 0.72, depth: 0.95, moveDur: 0.16,
+              swapSec: 1.2,   /* 【2026-08-30 ヒデさん指定・統一】輪の入れ替わり(回転)にかける秒数。パネル「入れ替わりの速さ」 */
+              vanish: 'clip', fadeAt: 0.7, fadeTo: 0, spinUp: 0,   /* spinUpは2026-08-30廃止(0固定) */
+              blend: 0, blendAlpha: 0.45,   /* 外と内の間を埋める中間の輪(イラレのブレンドのイメージ) */
+              transRot: true,   /* 【2026-08-28】輪が入れ替わる時、傾きの違うスロットへ移ると回転して見える。offで回転しない */
+              /* データ粒: 最初は点線 → 圧縮されて1本の線になる。太さ/密度/ゆらぎを調整できる */
+              pxWidth: 1.6, pxDensity: 1, pxWobble: 0, pxSpin: 1,   /* pxSpin=ドットが軌道を回る速さ */
+              pxJoinAt: 0, pxJoinEnd: 1,   /* 点がつながり始める / つながりきる タイミング(収縮の中の割合) */
+              glowWidth: 0.5, glowTone: 'now', glowPower: 1,   /* 圧縮グローの線の太さ・光り方・強さ */
+              flow: 'up' },   // 2026-08-27 ヒデさん指定: 既定は「上がる」(内→外→吸収)
+    /* 【2026-08-29 ヒデさん指定】収縮(reel)に重ねる「粒が吸い込まれる」オプション(spiral と同じ設定形)。既定オフ。 */
+    reelP: { on: false, count: 12, life: 8, speed: 0.55, size: 0.62, stay: 5, swirl: 1, fallCurve: 1 },
+    /* 【2026-08-30 ヒデさん指定】軌道の回転と「粒」(各案の内蔵の粒＝渦/円盤/粒リング＋追加の粒(吸い込み))を
+       連動させるか。false=軌道の線だけ回り、粒の回転軸は固定のまま。パネル「動き(この案)>粒も一緒に回す」。 */
+    spinLink: true,
+    /* spiral(② 2026-08-26): 粒はまず軌道上を stay 秒ほど回り、それから惑星へ吸い込まれる */
+    spiral: { count: 12, life: 8, speed: 0.55, size: 0.62, stay: 5, swirl: 1, fallCurve: 1 },   /* 2026-08-28 ゆったりへ */   /* swirl=吸い込まれる間の巻き具合 */
+    /* beads(⑬ドットの軌道): 軌道の線の代わりに、ドットが密に並んで「輪」に見せる。
+       一部だけが順に惑星へ吸われるので、輪の形は保たれる。ghost=薄い軌道線を残すか */
+    /* beads: 軌道線は出さず、点だけで輪を作る(2026-08-27 ヒデさん指定で ghost 廃止) */
+    beads:  { count: 300, even: true, speed: 0.26,   /* even=弧の長さで等分(見た目が均等) */ life: 3.4, size: 0.5, ratio: 0.22, jitter: 0, spin: 0, spinEase: 1, backIn: 1.2 },
+    /* mesh(⑫メッシュ): 3つの見た目(style) + ランダムに漂う動き
+       style: organic=ふわふわ漂う / constellation=星座(明滅) / grid=格子状のネット /
+              cage=包囲ケージ(惑星のまわりの球殻にノードを並べて回す。2026-08-27 ヒデさん指定) */
+    /* mesh(メッシュ): ノードがランダムに漂う網。見た目は「ふわふわ」に固定(2026-08-26 ヒデさん指定) */
+    /* pts = 頂点を手で置いた座標([{x,y}])。null なら自動配置。
+       【2026-08-28 ヒデさん指定】「グラフィックを編集」から頂点をドラッグして決められる */
+    mesh:   { style: 'organic', nodes: 14, hop: 0.55, span: 0.34, rate: 1.2, size: 0.6, spread: 1, pts: null,
+              cageR: 1.75, cageSpin: 1, cageLinks: 3, cageTilt: -20,   /* ケージ専用 */
+              lineAlpha: 0.25, lineWidth: 1.4, drift: 1, random: 0.6 },   /* 2026-09-09 ヒデさん指定: メッシュ線の濃さ 0.5→0.25 */
+    /* link(⑮同時双方向): 惑星とドットをラインで結び、双方向にデータが飛び交う。
+       melt = 惑星の内側での溶かし方(fade / blur / shrink) */
+    link:   { speed: 1, size: 0.6, density: 1, curve: 0.22, lineAlpha: 0.16, lineWidth: 1, T: 3.2, vanishK: 0.35 },
+    /* ⑦ジャイロ回転 (2026-08-27 ヒデさん指定)
+       2本の輪が独楽(ジャイロスコープ)のように立体的に転がる。
+       2Dのまま3Dに見せるため、面の向き(rot)を回しながら 縦の潰れ(ry) を |cos| で伸び縮みさせる。
+       tumble=転がる速さ / spin=面が回る速さ / phase=2本のずれ(90度で直交＝ジャイロらしい)
+       thin=真横になった時にどこまで潰すか / pull=惑星へ吸い寄せる強さ / pullT=その周期 */
+    gyro:   { tumble: 1, spin: 1, phase: 90, thin: 0.06, pull: 0.25, pullT: 5 },
+    /* 【2026-08-28 ヒデさん指定】⑦の「転がり」を、どの案にも混ぜられるようにした度合い。
+       0=混ぜない / 1=⑦と同じだけ転がる。案ごとに持つ */
+    gyroMixBy: { off: 0, reel: 0, spiral: 0, accre: 0, mesh: 0, beads: 0, duplex: 0 },
+    /* accre(⑦降着円盤 2026-08-26): 軌道の代わりに無数の微粒子の渦。回りながら内へ落ちて取り込まれる */
+    accre:  { count: 1000, fall: 0.55, speed: 0.45, size: 0.35, scale: 1.15, twinkle: 0.4, wobble: 0, showOrbit: false,
+              swirl: 1, fallCurve: 1 },   /* swirl=内側ほど速く回る度合い / fallCurve=落ち方のカーブ */
+  },
+  patterns: {
+    results: 'C',   // 実績のレイアウト A=横長画像 / B=左端の縦帯 / C=中央テキスト＋黒オブジェクトで開発者体験へ(既定)
+    /* 【2026-08-29 ヒデさん指定】実績→開発者体験の「切替演出」。
+       'black' = 黒オブジェクトがせり上がる(従来) / 'smooth' = スムーズフェード(既定・2026-08-29)
+       (スクロールジャック/固定追従なし・背景が自然にクロスフェード・黒オブジェクトなし) */
+    resTrans: 'smooth',
+    devStack: 'on', // 開発者体験②で後ろに2枚控えるか (カンプ 14924:21985)
+    dev: 'A', cases: 'A', mock: 'B',
+    caseHover: 'ct-lift',   // 導入事例のホバー = カードの周りに線が引かれる (2026-09-15 ヒデさん採用)
+    caseLayout: '1',         // 導入事例の罫線 = なし (2026-09-15 ヒデさん採用)
+    /* 【2026-08-28 ヒデさん指定】実績の2つの価値の、右側ピクトグラムの動き(各5案) */
+    valSaas: 'S9',       // for SaaS「リアルタイムにデータ同期」2026-09-08: S1完全削除に伴い生存案へ
+    valAi: 'A21',        // for AI「コンテキスト取得から実行」2026-09-08: 折れて進む・改(矢印/三角フェードイン)を既定に
+    /* 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出案(Codex 1/4/5/6/7/9)。'default'=現行。
+       採用前の比較用。本番の焼き込み(SHIPPED_SETTINGS)には入れない＝本番は常に現行。 */
+    resFx: '24-4',
+  },   // セクション演出の採用案
+};
+/* ⚠️ パラメータの「意味」を変えたら必ずこのバージョンを上げること。
+   上げないと、利用者のブラウザに残った旧値が新しいデフォルトを上書きして
+   レイアウトが壊れる (v7→v8: slideX を絶対位置から中央からの微調整に変更
+   / v8→v9: 導入事例の depth を「ブラーと透明度の効き」から「絵コンテ通りの縮小率」に変更
+   / v9→v10: 導入事例の重なりを spread(%) から step(px) に変更、惑星の既定位置を更新
+   / v10→v11: 導入事例を「縦に並べてから重ねる」→ カンプ通りのスティッキースタックに作り直し
+   / v11→v12: 見出しスライドを5案化・2行目の追従を即時に、実績の余白と尺を変更
+   / v12→v13: スライド⑤を削除、実績を時間＋スクロール併用に、開発者体験の間合いを緩める、
+              KVのタイピング速さを行ごとに分離
+   / v13→v14: 導入事例の重なりを overlap(px) から step(ズレ px・既定0＝完全に重なる) に変更
+   / v14→v15: 出現の秒数をトークン(0.25/0.8/1.3)に統一、見出しの1文字ずつ出しを追加、
+              慣性スクロール(Lenis)を導入
+   / v15→v16: 開発者体験の1巡目モックを復活し尺を850vhへ・間合いを全体に拡大、
+              実績を220vhへ短縮し乗り換え区間も使う、導入事例の文字を黒抜け直後に出す
+   / v16→v17: ビジョンの見出しを中央寄せにし、左スライド廃止 → 上下に分かれて
+              間から軌道が出る形に変更 (slide* を split* に差し替え)
+   / v17→v18: 惑星に「波が流れる」F/G/H を追加
+   / v18→v19: 導入事例を「縦に並んでスクロールで重なる」形に変更 (step → gap)、
+              ビジョン/開発者体験も時間駆動から時間＋スクロール併用へ
+   / v19→v20: ビジョンを「出だしだけ自動・あとは全部スクロール」に変更
+   / v20→v21: フォントウェイトをカンプと突き合わせて修正、カード間隔 40→44px
+   / v21→v22: Platform図の字間を撤去、「認証基盤」ラベル追加、コネクタの位置を更新
+   / v22→v23: KVは打ち終わってから小ラベル、スクロール速度の上限(maxRate)を全体に、
+              ビジョンは画面中央に来てから開始
+   / v23→v24: 波の惑星の配色をカンプ実測の面積比ランプに差し替え
+   / v24→v25: スクロール速度の上限(maxRate)は“のっそり”するため撤去。元の追従に戻した
+   / v25→v26: Platform図の役割ラベルをドット基準の相対配置に変更、
+              スクロール＝きっかけ/再生＝時間 方式に、ビジョンの尺をドット停止まで延長
+   / v26→v27: 全セクションを「所定の位置で止めて1本の映像として自動再生」方式に
+   / v27→v28: ビジョンの出だし・行間・上下分割と、実績のテキスト出現を詰めた
+   / v28→v29: 描画ループを例外で止まらないようにし、所定の位置へ寄せてから再生開始
+   / v29→v30: KVのタイピングを速く、早送りを4倍速に（白へワープするバグ修正）、
+              ビジョンの助走→本編の時間飛びを解消
+   / v30→v31: 開発者体験を5つの章に分け、章ごとに再生→解放→スクロールで次章に
+   / v31→v32: ビジョンの spinDur を廃止し spinHold(たっぷり回す時間)へ。
+              ロゴティッカーを1枚ずつに切り出して等間隔化 (marquee.gap 追加)
+   / v32→v33: 開発者体験をカンプ 14791:29575 の新レイアウトへ (DEV_P を総入れ替え)
+   / v33→v34: 実績をカンプ 14801:31557 へ / スクロールリプレイ復活 / 軌道の緩急とライト追加
+              / 惑星の回転に向き・傾き・ランダムを追加 / 各セクションの尺を短縮
+   / v34→v35: 軌道ライトを細く(orbitLightW)＋グラデの継ぎ目がライトと一緒に動くように
+   / v35→v36: 通り過ぎた後に頭へ引き戻されるループを修正 / キーメッセージの出方を2種類に
+              / 軌道の出現と移動を同時に(moveLead) / 待ちを全体的に短縮
+   / v36→v37: 軌道ライト廃止 / 惑星デザインのキーを A1..C3 に振り直し / ゆらぎ既定=クロス
+              / パネルを階層化＋全項目に補足 / 実績を中央寄せ＋画像レスポンシブ＋パララックス
+   / v37→v38: 軌道グラデの白をカンプ通りに戻した
+   / v38→v39: キーメッセージを行ごと×ブラーのみに / スライダーの既定値がツマミ中央に来るように
+   / v39→v40: 消えていた .dev-bg / .dev-bg2 を復活 (真っ白の原因) ＋ 開発者体験を上下中央そろえ) */
+/* v40→v41: 実績をカンプ 14824:22160 へ (見出し変更・罫線追加・数字80px・画像はフレームでトリミング) */
+/* v41→v42: 軌道の拡大を移動の“途中で”じわじわに / 2つの価値の位置をパネルで動かせるように */
+/* v42→v43: 実績に案B(カンプ 14831:22066)を追加して既定に。案Aは「テキスト→画像」の順へ */
+/* v43→v44: スキップ削除 / モックの会話を作り直し / モックは消さず左へスライド
+             / 実績(案B)の終わりで暗い背景へトランジション */
+/* v44→v45: ビジョンと実績のフォントをカンプ再取得値へ / 実績→開発者体験を1スクロールで切替
+             / 章②を短縮しリストは一括 / ホバーは下線＋白文字 / 開発者体験②を3枚スタックに */
+/* v45→v46: 実績→開発者体験の暗幕を fixed にして流れないように / つなぎの1画面をモックと見出しで埋める
+             / 2つの価値の位置を調整値で既定化 / ホバー切替のブラーを廃止 */
+/* v46→v47: 軌道の出はじめを小さく / 役割名を Point02 と同時に / カード入れ替えを案1(横に回る)で本実装
+             / 実績の開始をビューポート中央に戻す */
+/* v47→v48: 開発者体験②のレイアウトをカンプ 14927:22549 の実測へ (カードの重なり位置とリストの余白) */
+/* v48→v49: ドットの回り方と軌道の出方を3パターンずつに (visSpin / visMove) */
+/* v49→v50: 実績→開発者体験を1画面重ねて「その場で切り替わる」形に / モックの下地を不透明に
+             / ゆらぎクロスは平行から始める / パネルの確定項目を整理 / 滑らかさ既定3 */
+/* v50→v51: ビジョンの2行を上下中央へ / 実績も再生中はスクロールを止める
+             / 開発者体験の日本語見出しを4px下げ / モックの会話をスピーディーに */
+/* v51→v52: ドットはきっちり1周して止まる / 実績はタイピング廃止＆カウントアップ
+             / ラベルと数字を右端そろえ / パネルをいじったらその場でリプレイ */
+/* v52→v53: 数字のカウンターをスロット式(縦帯をマスクで切り取って回す)に */
+/* v53→v54: 上に戻る時のスクロールリプレイをきれいに (奥にいる間は完成状態を見せる) */
+/* v54→v55: 開発者体験の見出しをさらに4px下げ＋Thinへ / API・CLI・SDK のウェイトをカンプ 14937:23895 へ */
+/* v55→v56: 実績の数字はスロットをやめて単純なブラー出現に（見出し→数字の順） */
+/* v56→v57: 開発者体験の見出しをカンプ 14937:23888 へ (40px / gap12px) */
+/* v57→v58: 透明な要素があたり判定を持っていて、下の文字を選べなくしていたのを修正 */
+/* v58→v59: 開発者体験の背景グラデをカンプ 14937:23887 へ (#161616 → #454545)
+   / v59→v60: デザイントークン整理(サイズ偶数化・角丸4段階・色統合) と
+              描画まわりの改善(背景ぼかしは手前1枚 / 矩形キャッシュ / 無駄な書き込みを止める)
+              ⚠️ swapBlur・countDur・spinSpeed を削除したのでバージョンを上げる */
+/* v60→v61: ビジョンの開始をビューポート中央（ピン開始）にそろえた */
+/* 2026-08-19: ドットを6個→7個に増やし、角度を等間隔に置き直した。
+   ⚠️ バージョンは上げない。上げると「動かし方(スクロール駆動)」「固定追従」など
+      ヒデさんがパネルで選んだ設定まで一緒に初期化されてしまうため。
+      代わりに load() 側で【個数が違っても他の設定は生かす】ようにしてある。
+      新しく足した dotGap は保存側に無いので、自動で既定(=①きっちり等間隔)が入る */
+/* ⚠️【2026-08-27】ヒデさんの画面で「軌道と惑星が初期に戻らない」問題の原因は、
+   ブラウザに残っていた古い保存値(直接編集でいじった形)だった。
+   コード側の既定値は本番(anyflow-embed-v3)と完全に一致していることを実測で確認済み
+   (楕円 cx/cy/rx/ry/rotate、惑星 transform とも一致)。
+   一度きりのリセットでは取りこぼすので、保存キーごと上げて古い保存値を丸ごと捨てる。 */
+/* ===== プリセットの保管場所 (2026-08-27 ヒデさん指定) =====
+   ⚠️ 調整パネルを作り替えるたびに STORAGE_KEY を上げると、保存値が丸ごと捨てられる。
+      プリセットまで一緒に消えるのは困るので、【バージョンを付けない別のキー】に分けて置く。
+      ここは今後もキー名を変えない。パネルをどう作り替えてもプリセットは残る。 */
+const PRESET_KEY = 'anyflow-gfx-presets';
+/* 【2026-08-29 ヒデさん指定】devで作ったプリセットをコードに焼いて本番にも出す。その案にプリセットが無い時だけ seed する。 */
+const SHIPPED_PRESETS = {"reel":[{"name":"プリセット 1","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"T":3,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":0,"blend":0,"blendAlpha":0.28,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":1,"spin":1,"phase":90,"thin":0.06,"pull":0.25,"pullT":5}}},{"name":"プリセット 4","data":{"layout":"gyro","outer":{"dx":0,"dy":-18,"scale":1.16,"flat":0.9,"angle":52},"inner":{"dx":0,"dy":14,"scale":1.04,"flat":1.05,"angle":44},"planet":{"dx":-24,"dy":40,"scale":0.9,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.09,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1.08},"mode":{"T":7,"inDur":0.22,"shrinkAt":0.36,"endAt":0.82,"depth":0.98,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":0,"blend":3,"blendAlpha":0.26,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},{"name":"プリセット 6","data":{"layout":"gyro","outer":{"dx":0,"dy":-18,"scale":1.16,"flat":0.9,"angle":52},"inner":{"dx":0,"dy":14,"scale":1.04,"flat":1.05,"angle":44},"planet":{"dx":4,"dy":21,"scale":0.9,"flat":1},"design":"B","sway":3,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.65,"echoCrisp":false,"dotRandom":0,"orbitSpin":-0.95,"orbitDrift":0,"dotMove":true,"gyroMix":0.4,"orbitWidth":0.65,"orbitScale":0.76},"mode":{"T":7.8,"inDur":0.24,"shrinkAt":0.36,"endAt":0.82,"depth":0.98,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":0,"blend":4,"blendAlpha":0.28,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.2,"spin":0.22,"phase":140,"thin":0.24,"pull":0.18,"pullT":13}}},{"name":"プリセット 7","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.88,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":2.3,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":3.6,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":0,"blend":0,"blendAlpha":0.26,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 14","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"swayAmp":1.45,"duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.86,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"T":3,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":0,"blend":0,"blendAlpha":0.28,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":1,"spin":1,"phase":90,"thin":0.06,"pull":0.25,"pullT":5}}},{"name":"プリセット 16","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":0.92,"flat":2.4,"angle":66,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.84,"flat":2.3,"angle":-58,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.86,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.82},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}}],"spiral":[{"name":"プリセット 3","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":0,"orbitSpin":-0.95,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.65,"orbitScale":1},"mode":{"count":127,"life":8,"speed":0.65,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 4","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":0,"orbitSpin":-0.95,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.65,"orbitScale":0.66},"mode":{"count":127,"life":8,"speed":0.65,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 6","data":{"layout":"figma","outer":{"dx":69,"dy":7,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":57,"dy":-44,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":90,"dy":51,"scale":1.2419081655649034,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":0,"orbitSpin":-1.35,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1.05,"orbitScale":0.74},"mode":{"count":127,"life":8,"speed":0.65,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 7","data":{"layout":"figma","outer":{"dx":69,"dy":7,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":57,"dy":-44,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":90,"dy":51,"scale":1.2419081655649034,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":0,"orbitSpin":-1.35,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1.5,"orbitScale":0.74},"mode":{"count":127,"life":8,"speed":0.65,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 8","data":{"layout":"figma","outer":{"dx":69,"dy":7,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":57,"dy":-44,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":90,"dy":51,"scale":1.2419081655649034,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.4,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":0,"orbitSpin":-1.35,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.74},"mode":{"count":409,"life":8,"speed":0.5,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 9","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":-1e-16,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.98},"mode":{"count":24,"life":8,"speed":0.5,"size":0.62,"stay":6.9,"swirl":1.15,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 11","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.12,"flat":0.26,"angle":23.33,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.98,"flat":0.22,"angle":23.33,"behind":false},"planet":{"dx":21,"dy":57,"scale":0.8682288348858173,"flat":1},"design":"B","sway":3,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.46,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":1.65,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.65,"orbitScale":0.92},"mode":{"count":288,"life":11,"speed":0.45,"size":0.8,"stay":6,"swirl":1.6,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 12","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.12,"flat":0.26,"angle":23.33,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.98,"flat":0.22,"angle":23.33,"behind":false},"planet":{"dx":21,"dy":57,"scale":0.8682288348858173,"flat":1},"design":"B","sway":3,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.46,"dotPersp":"persp","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":1.65,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.65,"orbitScale":0.92},"mode":{"count":288,"life":8,"speed":0.6,"size":0.8,"stay":6,"swirl":1.6,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 15","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.12,"flat":0.26,"angle":23.33,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.98,"flat":0.22,"angle":23.33,"behind":false},"planet":{"dx":21,"dy":57,"scale":0.8682288348858173,"flat":1},"design":"B","sway":1,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.46,"dotPersp":"persp","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":4,"ringShape":"atom","ringSpin":0.45,"ringFlat":0.22,"ringSize":0.68,"ringTumble":0.75,"ringWidth":1.6,"startPhase":0,"dotRandom":1.65,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.65,"orbitScale":0.92},"mode":{"count":288,"life":8,"speed":0.6,"size":0.8,"stay":6,"swirl":1.6,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 16","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.88,"flat":1},"design":"B","sway":3,"swayAmp":1,"duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":26,"life":9,"speed":0.6,"size":0.5,"stay":3.5,"swirl":2.4,"fallCurve":1.8},"meshPts":null,"gyro":{"tumble":1,"spin":1,"phase":90,"thin":0.06,"pull":0.25,"pullT":5}}},{"name":"プリセット 18","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":6,"ringShape":"rosette","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":69,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 19","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.88,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":32,"globalSpeed":1,"kv":{"rotX":22,"rotY":27,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":226.41670000002063,"dotRandom":0,"orbitSpin":0.18,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":26,"life":9,"speed":0.6,"size":0.5,"stay":3.5,"swirl":2.4,"fallCurve":1.8},"meshPts":null,"gyro":{"tumble":1,"spin":1,"phase":90,"thin":0.06,"pull":0.25,"pullT":5}}},{"name":"プリセット 20","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":4,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 21","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1.9,"angle":-40,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.93,"flat":1.8,"angle":36,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0.28,"orbitDrift":0,"dotMove":true,"gyroMix":0.9,"orbitWidth":1,"orbitScale":0.76},"mode":{"count":30,"life":8.5,"speed":0.6,"size":0.55,"stay":4,"swirl":1.8,"fallCurve":1.4},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.22,"spin":0.24,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},{"name":"プリセット 21","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":0.25,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":4,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":-0.55,"orbitDrift":0,"dotMove":true,"gyroMix":0.9,"orbitWidth":1,"orbitScale":0.86},"mode":{"count":48,"life":2.5,"speed":0.55,"size":0.62,"stay":5,"swirl":1.35,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},{"name":"プリセット 22","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1.65,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":6,"ringShape":"saturn","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":37,"life":9.8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}}],"off":[{"name":"プリセット 1","data":{"layout":"figma","outer":{"dx":20,"dy":-10,"scale":1.0314538950615273,"flat":1.1009674665801141,"angle":20.6,"behind":false},"inner":{"dx":-13,"dy":-54,"scale":1,"flat":1,"angle":21.5,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}}],"duplex":[],"accre":[{"name":"プリセット 1","data":{"layout":"gyro","outer":{"dx":-1,"dy":60,"scale":1,"flat":1,"angle":0},"inner":{"dx":17,"dy":69,"scale":0.92,"flat":1.1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.95,"flat":1},"design":"B","sway":3,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.5,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.8},"mode":{"count":700,"fall":0.35,"speed":0.75,"size":0.4,"scale":0.85,"twinkle":0.6,"wobble":0.2,"showOrbit":true,"swirl":2.4,"fallCurve":1.8},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},{"name":"プリセット 2","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":0.92,"flat":1.1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.95,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.2,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":700,"fall":0.6,"speed":0.6,"size":0.4,"scale":0.85,"twinkle":0.6,"wobble":0.2,"showOrbit":true,"swirl":2,"fallCurve":1.5},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},{"name":"プリセット 3","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":2.3,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.8},"mode":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":1.15,"twinkle":0.6,"wobble":0.2,"showOrbit":false,"swirl":1,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.7,"spin":0.8,"phase":140,"thin":0.1,"pull":0.3,"pullT":6.5}}},{"name":"プリセット 4","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":0.84,"twinkle":0.4,"wobble":0,"showOrbit":false,"swirl":1.55,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":1.8,"spin":1.9,"phase":90,"thin":0.03,"pull":0.2,"pullT":3.2}}}],"mesh":[{"name":"プリセット 1","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.5,"flat":0.78,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.6,"flat":1.05,"angle":0,"behind":false},"planet":{"dx":21,"dy":48,"scale":0.72,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":2.3,"orbitSpin":0.22,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"constellation","nodes":16,"hop":2.9,"span":0.4,"rate":2.2,"size":0.6,"pts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"cageR":2,"cageSpin":0.9,"cageLinks":3,"cageTilt":34,"lineAlpha":0.68,"lineWidth":0.9,"drift":0.5,"random":0.8},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 2","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":0.74,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":1.85,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":32,"hop":0.5,"span":0.34,"rate":2.2,"size":0.72,"spread":1.2,"pts":null,"cageR":3.1,"cageSpin":0.85,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.42,"lineWidth":1.2,"drift":1.3,"random":0.5},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 3","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":0.74,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":1.85,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":32,"hop":0.5,"span":0.34,"rate":2.2,"size":0.72,"spread":1.2,"pts":null,"cageR":3.1,"cageSpin":0.85,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.42,"lineWidth":1.2,"drift":1.3,"random":0.5},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 4","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":0.74,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":1.85,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":32,"hop":0.5,"span":0.34,"rate":2.2,"size":0.72,"spread":1.2,"pts":null,"cageR":2.35,"cageSpin":0.85,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.42,"lineWidth":1.2,"drift":1.3,"random":0.5},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},{"name":"プリセット 5","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":31,"dy":45,"scale":1.02,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":1.85,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":32,"hop":0.5,"span":0.34,"rate":2.2,"size":0.72,"spread":1.2,"pts":null,"cageR":2.35,"cageSpin":0.85,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.42,"lineWidth":1.2,"drift":1.3,"random":0.5},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}}],"beads":[{"name":"プリセット 1","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"glow":0.35,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true},"mode":{"count":298,"speed":0.1,"life":3.4,"size":0.5,"ratio":0.35,"jitter":0,"spin":0.8,"spinEase":1,"backIn":1.2}}},{"name":"プリセット 2","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.02,"flat":0.05,"angle":0},"inner":{"dx":-3,"dy":44,"scale":0.94,"flat":0.3610727051762235,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.9,"flat":1},"design":"B","sway":3,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"glow":0.35,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true},"mode":{"count":300,"speed":0.04,"life":3.4,"size":0.55,"ratio":0.3,"jitter":0,"spin":1.3,"spinEase":1.4,"backIn":1.5}}},{"name":"プリセット 3","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0},"planet":{"dx":21,"dy":36,"scale":0.74,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.45,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.46},"mode":{"count":300,"even":true,"speed":0.2,"life":5,"size":0.6,"ratio":0.16,"jitter":0,"spin":0.8,"spinEase":1.3,"backIn":1.8},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}}],"gyro":[]};
+/* 【2026-08-30 ヒデさん指定】devで調整・保存した値を本番の初期値として焼き込む。
+   ブラウザに保存(localStorage)がある人はそちらが優先。無い人(本番の訪問者)はこの値で表示される。 */
+const SHIPPED_PRESET_STATE = {"v":1,"presets":{"reel":[],"spiral":[],"off":[],"duplex":[],"accre":[{"name":"プリセット 1","data":{"layout":"gyro","outer":{"dx":-1,"dy":60,"scale":1,"flat":1,"angle":0},"inner":{"dx":17,"dy":69,"scale":0.92,"flat":1.1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.95,"flat":1},"design":"B","sway":3,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.5,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.8},"mode":{"count":700,"fall":0.35,"speed":0.75,"size":0.4,"scale":0.85,"twinkle":0.6,"wobble":0.2,"showOrbit":true,"swirl":2.4,"fallCurve":1.8},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},{"name":"プリセット 2","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":0.92,"flat":1.1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.95,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.2,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":700,"fall":0.6,"speed":0.6,"size":0.4,"scale":0.85,"twinkle":0.6,"wobble":0.2,"showOrbit":true,"swirl":2,"fallCurve":1.5},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},{"name":"プリセット 3","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"duration":32,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"dotRandom":2.3,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.8},"mode":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":1.15,"twinkle":0.6,"wobble":0.2,"showOrbit":false,"swirl":1,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.7,"spin":0.8,"phase":140,"thin":0.1,"pull":0.3,"pullT":6.5}}},{"name":"プリセット 4","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":0.84,"twinkle":0.4,"wobble":0,"showOrbit":false,"swirl":1.55,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":1.8,"spin":1.9,"phase":90,"thin":0.03,"pull":0.2,"pullT":3.2}}}],"mesh":[],"beads":[{"name":"プリセット 1","data":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"glow":0.35,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true},"mode":{"count":298,"speed":0.1,"life":3.4,"size":0.5,"ratio":0.35,"jitter":0,"spin":0.8,"spinEase":1,"backIn":1.2}}},{"name":"プリセット 2","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.02,"flat":0.05,"angle":0},"inner":{"dx":-3,"dy":44,"scale":0.94,"flat":0.3610727051762235,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.9,"flat":1},"design":"B","sway":3,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"glow":0.35,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true},"mode":{"count":300,"speed":0.04,"life":3.4,"size":0.55,"ratio":0.3,"jitter":0,"spin":1.3,"spinEase":1.4,"backIn":1.5}}},{"name":"プリセット 3","data":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0},"planet":{"dx":21,"dy":36,"scale":0.74,"flat":1},"design":"B","sway":3,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"dotRandom":0,"orbitSpin":0.45,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.46},"mode":{"count":300,"even":true,"speed":0.2,"life":5,"size":0.6,"ratio":0.16,"jitter":0,"spin":0.8,"spinEase":1.3,"backIn":1.8},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}}],"gyro":[]},"on":{"beads":2,"reel":null,"accre":3,"spiral":1,"mesh":3,"off":null},"hidden":{"off":[],"reel":[],"mesh":[],"accre":[],"duplex":[],"gyro":[],"beads":[],"spiral":[],"glowKind":[],"valSaas":[],"valAi":[],"glowEcho":[],"resFx":[],"planetSkin":[],"visIntro":[],"cvStyle":[],"cvColor":[],"visGrad":[],"devStyle":[],"devTone":[],"cvShape":[],"caseLayout":[],"caseHover":[],"cvSway":[],"cvCta":[],"formStyle":[],"cvForm":[],"cvEdge":[],"hdrMode":[],"burgerIcon":[],"floatStyle":[],"hdrMotion":[],"fontTest":[],"swayDir":[],"cageShape":[],"copyOrder":[],"pictoSpeed":[],"darkVar":[],"devPinStops":[],"devVpMode":[],"hueMode":[],"kvVar":[],"cvfCardBorder":[],"cvfInBorder":[],"cvfPh":[],"visMesh":[],"visLogo":[],"resSlotFx":[],"visEmph":[],"kvMeshShape":[],"visMeshShape":[],"devSide":[]},"trash":{"mesh":[],"off":[],"spiral":[],"accre":[],"beads":[],"reel":[]},"over":{"off":{"P1 プリセット 1":{"layout":"figma","outer":{"dx":20,"dy":-10,"scale":1.0314538950615273,"flat":1.1009674665801141,"angle":20.6,"behind":false},"inner":{"dx":-13,"dy":-54,"scale":1,"flat":1,"angle":21.5,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":1.85,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":null,"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"ネットワーク3D":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":1,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k2","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":true},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"ジャイロ・ゆるやか":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1.9,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":3,"orbitSpin":0.0999999999999996,"orbitDrift":0,"gyroMix":0.45,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},"spiral":{"P9 プリセット 15":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.12,"flat":0.26,"angle":23.33,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.98,"flat":0.22,"angle":23.33,"behind":false},"planet":{"dx":21,"dy":57,"scale":0.8682288348858173,"flat":1},"design":"B","sway":1,"swayAmp":1,"swayDir":"tilt","duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.46,"dotPersp":"persp","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":4,"ringShape":"atom","ringSpin":0.45,"ringFlat":0.22,"ringSize":0.68,"ringTumble":0.75,"ringWidth":1.6,"ringRotate":true,"startPhase":0,"dotRandom":1.65,"orbitSpin":0.25,"orbitDrift":0,"dotMove":true,"gyroMix":1,"orbitWidth":1,"orbitScale":0.92,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":288,"life":8,"speed":0.6,"size":0.8,"stay":6,"swirl":1.6,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"P11 プリセット 18":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":6,"ringShape":"rosette","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":1.95,"orbitSpin":0,"orbitDrift":1.65,"dotMove":true,"gyroMix":0,"orbitWidth":0.5,"orbitScale":0.68,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":113,"life":8,"speed":0.55,"size":0.45,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"アトム 4本":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":4,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1,"orbitSpin":0.3,"orbitDrift":0,"dotMove":true,"gyroMix":0.9,"orbitWidth":1,"orbitScale":0.84,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":44,"life":10.4,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"P10 プリセット 16":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.88,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":11,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.82},"mode":{"count":203,"life":4,"speed":0.3,"size":0.5,"stay":1,"swirl":1.4,"fallCurve":1.05},"meshPts":null,"gyro":{"tumble":1,"spin":1,"phase":90,"thin":0.06,"pull":0.25,"pullT":5}},"P1 プリセット 3":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":-13,"dy":-108,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":-0.95,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.65,"orbitScale":0.8,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":127,"life":8,"speed":0.65,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},"accre":{"A 標準の円盤":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.76,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":0.99,"twinkle":0.4,"wobble":0,"showOrbit":false,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},"reel":{"P3 プリセット 6":{"layout":"gyro","outer":{"dx":0,"dy":-18,"scale":1.16,"flat":0.9,"angle":52,"behind":false},"inner":{"dx":0,"dy":14,"scale":1.04,"flat":1.05,"angle":44,"behind":false},"planet":{"dx":4,"dy":21,"scale":0.9,"flat":1},"design":"B","sway":3,"swayAmp":1,"duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.65,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":-0.95,"orbitDrift":0,"dotMove":true,"gyroMix":0.4,"orbitWidth":0.65,"orbitScale":0.76},"mode":{"T":4.2,"inDur":0.24,"shrinkAt":0.36,"endAt":0.82,"depth":0.98,"moveDur":0.03,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":0,"blend":4,"blendAlpha":0.28,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.2,"spin":0.22,"phase":140,"thin":0.24,"pull":0.18,"pullT":13}},"土星の輪":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"T":4.7,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"swapSec":1.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":1.2,"blend":0,"blendAlpha":0.28,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},"mesh":{"P2 プリセット 2":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":0.64,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":1.85,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.92},"mode":{"style":"cage","nodes":32,"hop":0.5,"span":0.34,"rate":2.2,"size":0.72,"spread":1.2,"pts":null,"cageR":2.3,"cageSpin":0.85,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.42,"lineWidth":1.2,"drift":1.3,"random":0.5},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"D 大きいケージ":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":31,"dy":45,"scale":1.6,"flat":1},"design":"B","sway":1,"swayAmp":1,"swayDir":"tilt","duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k2","echoSpeed":0.7,"echoShells":1,"echoSpread":0.2,"echoStart":1.12,"echoFade":1.6,"echoAlpha":0.4,"fxMode":"count","fxCount":15,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1.35,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"style":"cage","nodes":32,"hop":0.8,"span":0.34,"rate":30.3,"size":0.52,"spread":1,"pts":null,"cageR":3,"cageSpin":0.4,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.8,"lineWidth":0.5,"drift":0.5,"random":0.6,"cageShape":"geo","cageFreq":2,"msx":1,"msy":1,"msz":1,"mpinch":0,"meshShape":"normal"},"meshPts":null,"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"G 整った網（測地線）":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":1.08,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"style":"cage","nodes":14,"hop":0.5,"span":0.34,"rate":2,"size":0.5,"spread":1,"pts":null,"cageR":2.2,"cageSpin":0.45,"cageLinks":3,"cageTilt":-14,"lineAlpha":0.25,"lineWidth":0.9,"drift":1,"random":0,"cageShape":"geo","cageFreq":2},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},"beads":{"C 交差する二重リング":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.02,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.94,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.7,"orbitScale":1},"mode":{"count":292,"even":true,"speed":0.18,"life":2.3,"size":0.55,"ratio":0.2,"jitter":0,"spin":0.4,"spinEase":0.45,"backIn":0.9},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},"visGrad":{"0":{"gradVar":"0","gradSat":1,"gradBri":1,"gradDur":7,"gradAng":67},"2":{"gradVar":"2","gradSat":1.2,"gradBri":1.05,"gradDur":7,"gradAng":67},"3":{"gradVar":"3","gradSat":1,"gradBri":1,"gradDur":7,"gradAng":67}},"resFx":{},"devStyle":{"11":{"lenVh":200,"driveLen":3,"swapBlur":14,"stackDur":1.3,"swapEase":1,"ds2":"slide","slideMotion":"snap","slideHold":0.62,"slideSnapK":1.4,"slideEvery":2,"slideDur":0.5,"vpMode":"bottom","splitDelay":0.15,"splitDur":0.65,"mockInner":0.2,"mockBlur":24,"mockShadow":1,"stv":{"11":{"w":0.5,"len":0.1,"sec":3.5},"12":{},"13":{},"14":{},"15":{},"glass":{}},"splitAt":0.35}},"visMesh":{"kv":{"r":251,"spin":0.6,"tilt":0,"roll":0,"yaw":0,"depthFade":0.75,"lineAlpha":0.7,"lineWidth":1,"dot":2.9,"freq":3,"lineColor":"#5F5F5F","nodeMode":"alt","levels":0,"pk":4,"bgBlur":0,"bgAlpha":0,"bgW":1.6,"bgH":2.8,"msx":1,"msy":1,"msz":1,"mpinch":0},"domeDepth":{"r":262,"tilt":-14,"roll":0,"yaw":0,"depthFade":0.75,"lineWidth":1,"dot":2.2,"freq":3,"nodeMode":"alt","levels":1,"pk":0,"bgBlur":0,"bgAlpha":0,"bgW":1.6,"bgH":2.8},"domeBlur":{"r":262,"tilt":-14,"roll":0,"yaw":0,"depthFade":0.75,"lineWidth":1,"dot":2.2,"freq":3,"nodeMode":"alt","levels":1,"pk":0,"bgBlur":10,"bgAlpha":0.55,"bgW":1.6,"bgH":2.8}},"resSlotFx":{"blur":{"slotFade":22,"slotBlur":3,"slotBlurZone":45,"slotWin":1.5,"slotRamp":1,"slotDrumN":12,"slotDrumFade":1.3}},"cvSway":{"13":{"swayMode":0,"swayDeg":6,"swaySec":40,"wave":0.16,"waveLen":0.5,"waveSpd":0.08,"speed":0.04,"swell":0.02,"flowScale":0.4,"gcx":0.78,"gcy":0.12,"gr":0.8,"swayPivot":1,"waveAnchor":0.9,"hueMode":"off","moodSec":30,"moodWhite":0.85,"swapHold":0.45,"core":0,"coreSoft":0.12,"coreSkip":0.34}},"kvVar":{"strong":{"kv":{"mainSize":70,"jumpSize":120,"eyebrowSize":20,"copyX":12,"copyY":-4,"copyGap":32,"eyebrowDash":false,"eyebrowDashW":14,"dashGap":10,"mainWeight":800,"mainLh":1.4,"lastWeight":700,"lastLh":1.2,"eyebrowWeight":500,"eyebrowLh":0,"eyebrowLayout":"row"},"kvGfx":{"scale":1.21,"dx":148,"dy":184,"ox":30,"oy":0},"planet":{"dx":31,"dy":45,"scale":1.6,"flat":1},"mesh":{"cageR":3,"size":0.52,"nodes":32,"cageFreq":2,"cageTilt":-11,"cageSpin":0.4,"lineAlpha":0.8,"lineWidth":0.5,"spread":1,"msx":1,"msy":1,"msz":1,"mpinch":0,"meshShape":"normal"},"edits":{}},"normal":{"kv":{"mainSize":50,"jumpSize":90,"eyebrowSize":20,"copyX":64,"copyY":-10,"copyGap":42,"eyebrowDash":true,"eyebrowDashW":40,"dashGap":20,"mainWeight":800,"mainLh":1.4,"lastWeight":700,"lastLh":1.2,"eyebrowWeight":500,"eyebrowLh":1.6,"eyebrowLayout":"col"},"kvGfx":{"scale":1,"dx":31.9,"dy":15,"ox":70,"oy":-8},"planet":{"dx":31,"dy":45,"scale":1.004,"flat":1},"mesh":{"cageR":2.22,"size":0.52,"nodes":32,"cageFreq":2,"cageTilt":-11,"cageSpin":0.4,"lineAlpha":0.45,"lineWidth":0.8,"spread":1,"msx":1,"msy":1,"msz":1,"mpinch":0,"meshShape":"normal"},"edits":{}}},"visLogo":{"flat":{"logoTiltX":0,"logoTiltY":0,"logoOpacity":1,"logoShadow":0,"logoPlate":0,"logoStick":0,"logoBackAlpha":0.3}},"visEmph":{"strong":{"msgSize":60,"pHSize":30,"pPSize":14,"pWidth":328,"__vm":{"fs":90},"__vmMb":{"fs":32,"lh":1.6}},"default":{"msgSize":60,"pHSize":30,"pPSize":14,"pWidth":328,"__vm":null,"__vmMb":null}}},"fav":[{"m":"spiral","name":"アトム 4本"},{"m":"off","name":"P1 プリセット 1"},{"m":"spiral","name":"P1 プリセット 3"},{"m":"spiral","name":"P6 プリセット 9"},{"m":"spiral","name":"P7 プリセット 11"},{"m":"spiral","name":"P9 プリセット 15"},{"m":"spiral","name":"P11 プリセット 18"},{"m":"accre","name":"A 標準の円盤"},{"m":"spiral","name":"P15 プリセット 21"},{"m":"mesh","name":"D 大きいケージ"},{"m":"resFx","name":"24-4"}]};
+const SHIPPED_SETTINGS = {"running":true,"edits":{"visMsg":{"dx":-4,"dy":1,"fw":600,"fs":90},"visLabel":{"fw":600},"resVals":{},"p1tag":{"fw":500},"p1h":{"fw":600},"p2tag":{"fw":500},"p2h":{"fw":500},"resHl1":{"fw":500,"fs":30,"lh":1.8},"resHl2":{"fw":500,"fs":30,"lh":1.8},"r2vTag":{"fw":500},"r2vBig":{"fw":500},"r2vH":{"fw":600,"fs":40,"lh":1.4},"statsLab":{"fw":400},"statsVal":{"fw":300},"dcLabel":{"fw":400},"dcOne":{"fw":500,"fs":40},"caseEyebrow":{"fw":600},"caseTitle":{"fw":600,"fs":40},"cvEyebrow":{"fw":600},"cvHead":{"fw":600,"fs":40},"navLinks":{"fw":600},"navCta":{"fw":600},"p1p":{"fw":400,"lh":1.8},"p2p":{"fw":400,"lh":1.8},"r2vP":{"fw":400},"cgQuote":{"fw":400,"fs":24},"cgTag":{"fw":400},"cgCompany":{"fw":400},"cvSub":{"fw":300},"cvfLab":{"fw":400},"cvfIn":{"fw":300},"cvfFine":{"fw":400},"cvfSubmit":{"fw":400},"footNav":{"fw":300},"footAddr":{"fw":300},"footCopy":{"fw":300},"dsWord":{"fw":500},"drwCta":{"fw":500},"drwNum":{"fw":700},"drwNav":{"fw":500},"vfWrap":{"dx":0,"dy":36},"vfL1":{"fw":600,"fs":20},"vfL2":{"fw":600,"fs":20},"vfL1s":{"fw":500},"vfL2s":{"fw":500},"vfL3":{"fw":600,"fs":20},"vfL3s":{"fw":500},"vfL4":{"fw":600,"fs":20},"vfL4s":{"fw":500},"vfL5":{"fw":600,"fs":20},"vfL5s":{"fw":500},"dlHead":{"fw":500},"kvMain":{"fs":60,"fw":800},"kvMainLast":{"fs":122},"kvEyebrow":{"fs":18}},"editsMb":{"kvMainLast":{"fs":44,"fw":800},"kvMain":{"fw":800},"kvEyebrow":{"fs":12,"fw":600},"visMsg":{"fw":800,"fs":32,"lh":1.6},"caseTitle":{"fs":30},"cgQuote":{},"dcOne":{},"cvHead":{"fs":30},"cgCompany":{"fs":14}},"mb":{"drawer.padT":0,"planet.scale":1.6,"conv.mesh.cageR":2.5,"conv.mesh.lineAlpha":0.6,"conv.mesh.lineWidth":1,"sections.results.pictoW":1.5},"grid":{"on":true,"cell":44,"w":0.5,"op":0.3,"color":"#ACACAC"},"sway":1,"swayAmp":1,"swayDir":"tilt","net3d":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"cv":{"cell":1,"levels":3,"spread":0.75,"speed":0.04,"swell":0.02,"flowScale":0.4,"bright":1.08,"contrast":1.38,"colors":["#fee0f8","#b6e0ff","#0ebbff","#477ed1","#ff5d97"],"gMode":0,"gcx":0.78,"gcy":0.12,"gr":0.8,"gAspect":1,"gAng":0,"dark":0,"darkCol":"#0d0f14","hueMode":"off","moodSec":30,"moodWhite":0.85,"swapHold":0.45,"topCol":"#7cc9e8","topWhite":0.12,"ceil":1,"gOffX":0.18,"gOffY":0.12,"gSpread":0.85,"ramp":"comp","addT":0,"addB":0,"grain":0.35,"addH":0,"topTint":0,"hueSpeed":6,"hueRange":50,"ink":"auto","h":300,"gapTop":60,"shape":"0","btnHover":"cyan","waveF":1,"waveMix":1.02,"fade0":0,"fade1":64,"headTop":120,"blend":260,"wave":0.16,"waveLen":0.5,"waveSpd":0.08,"swayDeg":6,"swaySec":40,"swayMode":0,"formCeil":1,"swayPivot":1,"waveAnchor":0.9,"core":0,"coreSoft":0.12,"coreSkip":0.34},"cvColorBy":{"10":"CK"},"cvSway":"13","cvEdge":"0","cvForm":"0","cvCta":"form","cvHier":"1","formStyle":"1","formWidth":900,"cvfGlass":{"bgA":0.5,"blur":22,"sat":1.5,"inA":0.56,"phA":0.32,"radius":16,"inR":8,"bDark":false},"hdrMode":"12","burgerIcon":"2","burgerAnim":"1","floatStyle":"1","hdrTune":{"8":{"logoH":40,"cw":300}},"drawerStyle":"3","hdrMotion":"1","hdrDur":1.65,"devStyle":"11","devTone":"graphite","cvStyle":"10","crossDelay":2.5,"crossLead":6,"design":"B","dither":2,"light":1,"duration":38,"globalSpeed":1,"direction":1,"ramp":1.5,"pulse":{"amp":0,"period":8},"sphere":{"duration":32,"tumble":0.37,"noise":0.5,"dir":1,"tilt":0,"random":0},"planet":{"dx":31,"dy":45,"scale":1.6,"flat":1},"kv":{"gx":-4,"gy":-51,"rotX":0,"rotY":0,"rotZ":0,"persp":1392.0000000000002,"headerAt":0.15,"navGap":32,"mainSize":70,"jumpSize":120,"mainWeight":800,"mainLh":1.4,"lastWeight":700,"lastLh":1.2,"eyebrowWeight":500,"eyebrowLh":0,"eyebrowLayout":"row","eyebrowSize":20,"copyX":12,"copyY":-4,"hlOff":0,"gfxY":0,"copyOrder":"main","eyebrowDash":false,"eyebrowDashW":14,"dashGap":10,"copyGap":32,"eyebrowGap":0.05,"typeAt":0.65,"charDur":0.03,"charDur2":0.07,"typeEase":0.55,"lineGap":0.15,"graphicGap":0.0999999999999998,"revealDur":0.8},"orbits":{"outer":{"scale":1.4,"angle":0,"dx":0,"dy":0,"flat":1,"behind":false,"wobbleAmp":0,"wobblePeriod":12,"wobblePhase":0},"inner":{"scale":1.3,"angle":0,"dx":0,"dy":0,"flat":1.15,"behind":false,"wobbleAmp":0,"wobblePeriod":12,"wobblePhase":180}},"orbitEase":1,"dotGap":1,"visReveal":2,"visStrongFx":"live","visSpin":2,"visMove":2,"replay":false,"hoverFx":{"nav":"fade","btn":"lighten"},"marquee":{"gap":54,"duration":30,"direction":1},"dots":[{"speed":1,"delay":0,"offset":0,"pulsePhase":0},{"speed":1,"delay":0,"offset":0,"pulsePhase":51.42857142857143},{"speed":1,"delay":0,"offset":0,"pulsePhase":102.85714285714286},{"speed":1,"delay":0,"offset":0,"pulsePhase":154.28571428571428},{"speed":1,"delay":0,"offset":0,"pulsePhase":205.71428571428572},{"speed":1,"delay":0,"offset":0,"pulsePhase":257.14285714285717},{"speed":1,"delay":0,"offset":0,"pulsePhase":308.57142857142856}],"sections":{"common":{"smooth":9,"ffMax":0.6,"ffGain":700,"driveWin":0.8},"vision":{"emph":"strong","driveLen":3,"lenVh":150,"labelAt":0.15,"labelDur":0.5,"labelOutLead":0.5,"labelOutDur":0.6,"line1At":0.3,"line2Gap":0.55,"revealDur":1.4,"splitGap":0,"splitDur":0.9,"splitAmt":0,"miniGap":0.45,"miniDur":1,"npGap":0,"npP1":0,"npP2":0.1,"npFireK":0.35,"npPointDur":0.65,"moveLead":0.35,"moveDur":2.6,"miniCX":1334,"miniCY":417,"miniY":0,"miniScale":0.248,"strokeW":3,"dotsInAt":0,"dotsInStagger":0,"dotsInDur":0,"spinLaps":1,"spinHold":0.5,"spinBrake":0.85,"npSpinDeg":0,"npSpinDur":3.3,"introPat":2,"npOrbitDur":2.2,"npOrbitDir":-1,"npOrbitLead":1.2,"npOrbitEase":3,"npOrbitOp0":0.35,"npOrbitBlur0":2,"pHSize":30,"pPSize":14,"pWidth":328,"msgSize":60,"emphGap":136,"npOrbitTextGap":0,"npPtLead":0.6,"blur":18,"pfGrad":{"g0":{"x":769.97,"y":177.74,"deg":92.1,"len":175.4,"white":0,"wSpan":23,"c1":"#FF5D97","c2":"#FFCFE0","c3":"#A2E6FF","c4":"#00ABEB"},"g1":{"x":769.97,"y":177.74,"deg":92.1,"len":175.4,"white":0,"wSpan":23,"c1":"#00ABEB","c2":"#A2E6FF","c3":"#FFCFE0","c4":"#FF5D97"}},"headX":-142,"headY":0,"p1X":42,"p1Y":-6,"noPinX":45,"noPinY":143,"p2X":44,"p2Y":10,"charLag":0,"driftAmt":0,"vanishDur":0.85,"vanishAt":0.15,"gradVar":"0","gradSat":1,"gradBri":1,"gradDur":7,"gradAng":67,"noPinScale":1.18,"dome":{"scale":1.38,"tilt":0,"logoDx":0,"logoDy":-14,"r":251,"logoScale":1.14,"logoAngle":0,"lineWidth":1,"dot":2.9,"freq":3,"nodeMode":"alt","levels":0,"pk":4,"variant":"kv","roll":0,"yaw":0,"depthFade":0.75,"bgBlur":0,"bgAlpha":0,"bgW":1.6,"bgH":2.8,"logoTiltX":0,"logoTiltY":0,"logoOpacity":1,"logoShadow":0,"logoPlate":0,"logoStick":0,"logoBackAlpha":0.3,"labOff":[{"x":24,"y":16},{"x":0,"y":0},{"x":0,"y":0},{"x":0,"y":0},{"x":-24,"y":16}],"labelDist":0.94,"fadeB":0.68,"fadeA":0.18,"msx":1,"msy":1,"msz":1,"mpinch":0,"lineAlpha":0.7,"spin":0.6,"lineColor":"#5F5F5F","dy":30,"labGY":0,"logoVar":"flat"},"belowGap":62,"pointsX":16,"domeMb":{"labGY":-18,"fadeB":0.8},"meshShape":"normal"},"results":{"hrGap":48,"hrGap2":20,"pictoW":2.5,"pictoSpeed":1,"pictoDisp":1,"spGap":16,"driveLen":2,"lenVh":200,"numsGap":0.55,"imgBlur":24,"parallax":0,"typeAt":0.15,"charDur":0.055,"softDur":1.6,"typeGap":0.3,"restGap":0.1,"typeStyle":"slot","slotGap":8,"imgAt":0.9,"outFrom":0.06,"outTo":0.9,"darkFrom":0.04,"darkTo":0.5,"darkVar":2,"outBlur":22,"fx24":{"heroScale":1.7,"labelUp":190},"fx26":{"numScale":1.714,"settleAt":0.06,"settleLen":0.2,"lineAt":0.28,"lineLen":0.14,"panAt":0.58,"panLen":0.2},"slotAt":0.3,"slotDur":1.4,"slotStagger":0.12,"slotCycles":3,"entryBlur":16,"entryBlur44":26,"entryFrom":0.4,"entryTo":0.95,"entryOp":1,"bigStartY":0.4,"slotEnterAt":0.85,"slotFx":"blur","slotBlur":3,"slotBlurZone":45,"slotWin":1.5,"slotRamp":1,"slotDrumN":12,"slotDrumFade":1.3,"slotEase":5,"slotFade":22},"dev":{"lenVh":200,"driveLen":3,"swapBlur":14,"stackDur":1.3,"swapEase":1,"ds2":"slide","slideMotion":"snap","slideHold":0.62,"slideSnapK":2,"slideEvery":3,"slideDur":1,"vpMode":"bottom","splitDelay":0.15,"splitDur":0.65,"mockInner":0.2,"mockBlur":24,"mockShadow":1,"stv":{"11":{"w":0.5,"len":0.1,"sec":3.5},"12":{},"13":{},"14":{},"15":{},"glass":{}},"slotBoxY":-3,"slotBoxH":42,"pinStops":"on","devDwell":90,"splitAt":0.35},"cases":{"lenVh":200,"driveLen":3,"playSec":2,"inBlur":20,"introAt":0.72,"introDur":0.22,"lineAt":0.06,"lineStagger":0.09,"lineDur":0.26,"vlineAt":0.3,"vlineDur":0.3,"cardAt":0.36,"cardGap":0.06,"cardDur":0.18,"cardStagger":0.18}},"drive":"time","pin":"on","scrollHold":"smooth","kvDesign":"planet","visResPull":200,"secHeadGap":6,"drawer":{"padT":0,"padB":0,"padL":130,"padR":0,"gap":40,"fs":56,"numFs":14},"logoTune":{"hennge":{"dy":0,"mx":0},"upsider":{"dy":-0.5,"mx":5},"np":{"dy":-0.5,"mx":-4},"akerun":{"dy":-1.5,"mx":-1},"smaregi":{"dy":0,"mx":8},"andpad":{"dy":-2,"mx":-1},"icare":{"dy":-0.5,"mx":0},"contracts":{"dy":0.5,"mx":8},"sweeep":{"dy":2,"mx":-1}},"kvVar":"strong","kvGfx":{"scale":1.21,"dx":148,"dy":184,"ox":30,"oy":0},"converge":"mesh","orbitLayout":"gyro","gfxByMode":{"reel":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1}},"spiral":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1}},"off":{"layout":"figma","outer":{"dx":20,"dy":-10,"scale":1.0314538950615273,"flat":1.1009674665801141,"angle":20.6,"behind":false},"inner":{"dx":-13,"dy":-54,"scale":1,"flat":1,"angle":21.5,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1}},"duplex":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1}},"accre":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1}},"mesh":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":31,"dy":45,"scale":1.6,"flat":1}},"beads":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.02,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.94,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.9,"flat":1}},"gyro":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1}}},"gfxVariantOn":{"off":15,"accre":0,"beads":2,"reel":9,"spiral":8,"mesh":3},"gfxPresetTrash":{"mesh":[],"off":[],"spiral":[],"accre":[],"beads":[],"reel":[]},"presetUiStyle":"chips","conv":{"showOuter":true,"showInner":true,"showDots":true,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8},"net3d":false,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","frontCut":true,"dotMove":{"reel":true,"spiral":true,"accre":true,"mesh":true,"beads":true,"duplex":true,"gyro":true},"orbitSpinBy":{"off":0,"reel":0,"spiral":0.3,"accre":0,"mesh":0,"beads":0,"duplex":0,"gyro":0},"orbitWidthBy":{"off":1,"reel":1,"spiral":1,"accre":1,"mesh":1.35,"beads":0.7,"duplex":1,"gyro":1},"orbitScaleBy":{"off":1,"reel":1,"spiral":0.84,"accre":0.76,"mesh":1,"beads":1,"duplex":1,"gyro":1},"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"glow":0.35,"glowKind":"echo","glowEcho":"k2","fxMode":"count","fxCount":15,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"echoSpeed":0.7,"echoShells":1,"echoSpread":0.2,"echoStart":1.12,"echoFade":1.6,"echoAlpha":0.4,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"glowHold":6,"reel":{"T":4.7,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"swapSec":1.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":1.2,"blend":0,"blendAlpha":0.28,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"reelP":{"on":true,"count":56,"life":5,"speed":0.4,"size":0.62,"stay":2.5,"swirl":0.85,"fallCurve":1},"spinLink":false,"spiral":{"count":44,"life":10.4,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"beads":{"count":292,"even":true,"speed":0.18,"life":2.3,"size":0.55,"ratio":0.2,"jitter":0,"spin":0.4,"spinEase":0.45,"backIn":0.9},"mesh":{"style":"cage","nodes":32,"hop":0.8,"span":0.34,"rate":30.3,"size":0.52,"spread":1,"pts":null,"cageR":3,"cageSpin":0.4,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.8,"lineWidth":0.5,"drift":0.5,"random":0.6,"cageShape":"geo","cageFreq":2,"msx":1,"msy":1,"msz":1,"mpinch":0,"meshShape":"normal"},"link":{"speed":1,"size":0.6,"density":1,"curve":0.22,"lineAlpha":0.16,"lineWidth":1,"T":3.2,"vanishK":0.35},"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14},"gyroMixBy":{"off":0,"reel":0,"spiral":0.9,"accre":0,"mesh":0,"beads":0,"duplex":0},"accre":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":0.99,"twinkle":0.4,"wobble":0,"showOrbit":false,"swirl":1,"fallCurve":1},"spinDefBy":{"spiral":0,"reel":0.04,"off":0.8,"mesh":0,"beads":0.5},"gyroMixDefBy":{"reel":0.3,"spiral":0.9,"off":0.45},"spinStyleBy":{"reel":"wobble"}},"patterns":{"results":"C","resTrans":"smooth","devStack":"on","dev":"A","cases":"A","mock":"B","caseHover":"ct-lift","caseLayout":"1","valSaas":"S18","valAi":"A20","resFx":"24-4"},"cvPanelUi":"obj","cvColor":"C1","visFlickerDur":2.5,"gfxTweaks":{"spiral":{"0":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.22,"spin":0.24,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}},"1":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.88,"flat":1},"design":"B","sway":3,"swayAmp":1.45,"duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.86,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0.18,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":26,"life":9,"speed":0.6,"size":0.5,"stay":3.5,"swirl":2.4,"fallCurve":1.8},"meshPts":null,"gyro":{"tumble":1,"spin":1,"phase":90,"thin":0.06,"pull":0.25,"pullT":5}},"3":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1.9,"angle":-40,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.93,"flat":1.8,"angle":36,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":30,"life":8.5,"speed":0.6,"size":0.55,"stay":4,"swirl":1.8,"fallCurve":1.4},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.22,"spin":0.24,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}},"6":{"layout":"figma","outer":{"dx":69,"dy":7,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":57,"dy":-44,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":90,"dy":51,"scale":1.2419081655649034,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.65,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":-1.35,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1.05,"orbitScale":0.74,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":0.7},"mode":{"count":127,"life":8,"speed":0.65,"size":0.62,"stay":5.5,"swirl":1.75,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.2,"spin":0.22,"phase":140,"thin":0.24,"pull":0.18,"pullT":13}},"7":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":3,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0.35,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.92},"mode":{"count":6,"life":3.6,"speed":0.5,"size":1.2,"stay":7,"swirl":0.6,"fallCurve":1.4},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"8":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":4,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1,"orbitSpin":0.3,"orbitDrift":0,"dotMove":true,"gyroMix":0.9,"orbitWidth":1,"orbitScale":0.84,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":44,"life":10.4,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"9":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":6,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"10":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":8,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"11":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":6,"ringShape":"saturn","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"12":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":6,"ringShape":"rosette","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"16":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.12,"flat":0.26,"angle":23.33,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.98,"flat":0.22,"angle":23.33,"behind":false},"planet":{"dx":21,"dy":54,"scale":1.16,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":18,"life":11,"speed":0.45,"size":0.8,"stay":6,"swirl":0.4,"fallCurve":0.8},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"18":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":4,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"19":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0.15,"orbitDrift":1.85,"dotMove":true,"gyroMix":0.9,"orbitWidth":1,"orbitScale":1},"mode":{"count":12,"life":8,"speed":0.55,"size":0.62,"stay":5,"swirl":1,"fallCurve":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},"off":{"0":{"layout":"figma","outer":{"dx":20,"dy":-10,"scale":1.0314538950615273,"flat":1.1009674665801141,"angle":20.6,"behind":false},"inner":{"dx":-13,"dy":-54,"scale":1,"flat":1,"angle":21.5,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.9,"spin":1,"phase":90,"thin":0.06,"pull":0.28,"pullT":5.5}},"1":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.9,"spin":1,"phase":90,"thin":0.06,"pull":0.28,"pullT":5.5}},"2":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.22,"flat":0.55,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.08,"flat":0.5,"angle":0,"behind":false},"planet":{"dx":21,"dy":54,"scale":1.12,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.9,"spin":1,"phase":90,"thin":0.06,"pull":0.28,"pullT":5.5}},"3":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1.9,"angle":-40,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.93,"flat":1.8,"angle":36,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":3,"swayAmp":1.1,"swayDir":"tilt","duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.65,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0.4,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":0.74,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":0.7,"spin":1.45,"dots":2},"mode":null,"meshPts":null,"gyro":{"tumble":0.2,"spin":0.22,"phase":140,"thin":0.24,"pull":0.18,"pullT":13}},"6":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":1,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k2","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":true,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"8":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":0.92,"flat":2.4,"angle":66,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.84,"flat":2.3,"angle":-58,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.86,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":null,"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"12":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0.0999999999999996,"orbitDrift":0,"gyroMix":0.45,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":null,"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}},"reel":{"0":{"layout":"figma","outer":{"dx":-162,"dy":-58,"scale":0.5568209065086839,"flat":2.785623155425911,"angle":0,"behind":false},"inner":{"dx":121,"dy":42,"scale":0.6242434606335212,"flat":2.990306424278004,"angle":0,"behind":false},"planet":{"dx":33,"dy":60,"scale":1.1632732496995193,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":3.6,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":1.2,"blend":2,"blendAlpha":0.26,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"1":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.05,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.95,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":40,"scale":0.9,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":34,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0.1,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":7.2,"inDur":0.22,"shrinkAt":0.36,"endAt":0.82,"depth":0.95,"moveDur":0.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":3,"blendAlpha":0.28,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"4":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":0.74,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":38,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0.07,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":9,"inDur":0.26,"shrinkAt":0.3,"endAt":0.84,"depth":0.95,"moveDur":0.24,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":4,"blendAlpha":0.26,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"5":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":0.8,"flat":0.95,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.72,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":50,"scale":1.32,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":28,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0.12,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":5.6,"inDur":0.2,"shrinkAt":0.34,"endAt":0.8,"depth":0.95,"moveDur":0.18,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":2,"blendAlpha":0.32,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"6":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":28,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":4,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"7":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":28,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":6,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"8":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":1,"swayAmp":1,"duration":28,"globalSpeed":1,"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1.16,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":8,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":-1e-16,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.84},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"9":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"T":4.7,"inDur":0.22,"shrinkAt":0.36,"endAt":0.8,"depth":0.98,"moveDur":0.2,"swapSec":1.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0.18,"spinUp":1.2,"blend":0,"blendAlpha":0.28,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"warm","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}},"11":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.45,"flat":0.62,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.36,"flat":0.58,"angle":0,"behind":false},"planet":{"dx":21,"dy":44,"scale":0.62,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.66},"mode":{"T":8.4,"inDur":0.26,"shrinkAt":0.34,"endAt":0.84,"depth":0.98,"moveDur":0.22,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":2,"blendAlpha":0.14,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"16":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0.04,"orbitDrift":0,"dotMove":true,"gyroMix":0.3,"orbitWidth":1,"orbitScale":1},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"swapSec":1.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"18":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.34,"spin":0.38,"phase":90,"thin":0.16,"pull":0.2,"pullT":10}},"19":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":0.92,"flat":2.4,"angle":66,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.84,"flat":2.3,"angle":-58,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.86,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k7","echoSpeed":0.7,"echoShells":3,"echoSpread":0.45,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"time","fxCount":10,"fxEvery":3.5,"fxInertia":0.5,"echoCrisp":true,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"T":4.8,"inDur":0.14,"shrinkAt":0.3,"endAt":0.72,"depth":0.95,"moveDur":0.16,"swapSec":1.2,"vanish":"clip","fadeAt":0.7,"fadeTo":0,"spinUp":0,"blend":0,"blendAlpha":0.45,"transRot":true,"pxWidth":1.6,"pxDensity":1,"pxWobble":0,"pxSpin":1,"pxJoinAt":0,"pxJoinEnd":1,"glowWidth":0.5,"glowTone":"now","glowPower":1,"flow":"up"},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},"mesh":{"0":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":false,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"style":"organic","nodes":14,"hop":0.55,"span":0.34,"rate":1.2,"size":0.6,"spread":1,"pts":null,"cageR":1.75,"cageSpin":1,"cageLinks":3,"cageTilt":-20,"lineAlpha":0.5,"lineWidth":1.4,"drift":1,"random":0.6,"cageShape":"geo","cageFreq":2},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}},"1":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":3,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"constellation","nodes":9,"hop":0.75,"span":0.55,"rate":0.9,"size":0.75,"spread":1,"pts":null,"cageR":1.75,"cageSpin":1,"cageLinks":3,"cageTilt":-20,"lineAlpha":0.3,"lineWidth":1,"drift":1.7,"random":1},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"2":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.12,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1.25,"angle":0,"behind":false},"planet":{"dx":21,"dy":44,"scale":0.9,"flat":1},"design":"B","sway":3,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":26,"hop":0.45,"span":0.34,"rate":1.8,"size":0.5,"spread":1,"pts":null,"cageR":1.8,"cageSpin":1,"cageLinks":3,"cageTilt":-20,"lineAlpha":0.5,"lineWidth":1.1,"drift":1,"random":0.6},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"3":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":31,"dy":45,"scale":1.6,"flat":1},"design":"B","sway":1,"swayAmp":1,"swayDir":"tilt","duration":38,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"echo","glowHold":6,"glowEcho":"k2","echoSpeed":0.7,"echoShells":1,"echoSpread":0.2,"echoStart":1.12,"echoFade":1.6,"echoAlpha":0.4,"fxMode":"count","fxCount":15,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1.35,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"style":"cage","nodes":32,"hop":0.8,"span":0.34,"rate":30.3,"size":0.52,"spread":1,"pts":null,"cageR":3,"cageSpin":0.4,"cageLinks":4,"cageTilt":-11,"lineAlpha":0.8,"lineWidth":0.5,"drift":0.5,"random":0.6,"cageShape":"geo","cageFreq":2,"msx":1,"msy":1,"msz":1,"mpinch":0,"meshShape":"normal"},"meshPts":null,"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"6":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.4,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1.3,"flat":1.15,"angle":0,"behind":false},"planet":{"dx":21,"dy":36,"scale":1.08,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"style":"cage","nodes":14,"hop":0.5,"span":0.34,"rate":2,"size":0.5,"spread":1,"pts":null,"cageR":2.2,"cageSpin":0.45,"cageLinks":3,"cageTilt":-14,"lineAlpha":0.25,"lineWidth":0.9,"drift":1,"random":0,"cageShape":"geo","cageFreq":2},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"11":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.92,"flat":1},"design":"B","sway":3,"swayAmp":1,"duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":28,"hop":0.5,"span":0.4,"rate":1.6,"size":0.45,"spread":1,"pts":null,"cageR":1.9,"cageSpin":0.4,"cageLinks":3,"cageTilt":-46,"lineAlpha":0.42,"lineWidth":1,"drift":1.2,"random":0.4},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"13":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1.5,"flat":0.78,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.6,"flat":1.05,"angle":0,"behind":false},"planet":{"dx":21,"dy":48,"scale":0.72,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"constellation","nodes":16,"hop":0.55,"span":0.4,"rate":1.2,"size":0.6,"spread":1,"pts":null,"cageR":1.75,"cageSpin":1,"cageLinks":3,"cageTilt":-20,"lineAlpha":0.34,"lineWidth":0.9,"drift":1.2,"random":0.8},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}},"15":{"layout":"gyro","outer":{"dx":0,"dy":-18,"scale":1.16,"flat":0.9,"angle":52,"behind":false},"inner":{"dx":0,"dy":14,"scale":1.04,"flat":1.05,"angle":44,"behind":false},"planet":{"dx":-24,"dy":40,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"style":"cage","nodes":32,"hop":0.55,"span":0.34,"rate":1.2,"size":0.42,"spread":1,"pts":null,"cageR":2,"cageSpin":0.9,"cageLinks":3,"cageTilt":34,"lineAlpha":0.45,"lineWidth":0.9,"drift":1,"random":0.6},"meshPts":null,"gyro":{"tumble":0.45,"spin":0.5,"phase":90,"thin":0.18,"pull":0.15,"pullT":8}}},"accre":{"0":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":1,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.99,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":0.76,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":1000,"fall":0.55,"speed":0.45,"size":0.35,"scale":0.99,"twinkle":0.4,"wobble":0,"showOrbit":false,"swirl":1,"fallCurve":1},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}},"13":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.04,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.96,"flat":1.1,"angle":0,"behind":false},"planet":{"dx":21,"dy":42,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":0.25,"swayDir":"tilt","duration":34,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.68,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":true,"startPhase":0,"dotRandom":0,"orbitSpin":0.25,"orbitDrift":0,"dotMove":true,"gyroMix":1,"orbitWidth":1,"orbitScale":0.8},"mode":{"count":900,"fall":0.5,"speed":0.5,"size":0.34,"scale":1,"twinkle":0.6,"wobble":0.3,"showOrbit":true,"swirl":1.4,"fallCurve":1.2},"meshPts":[{"x":763,"y":521.9},{"x":850.3,"y":415.9},{"x":661.9,"y":392.7},{"x":544.1,"y":395.4},{"x":462.8,"y":555.3},{"x":338.3,"y":433.7},{"x":281.5,"y":378.1},{"x":67.5,"y":457.6},{"x":126.1,"y":290.3},{"x":170.7,"y":80.5},{"x":310.8,"y":217.2},{"x":316.7,"y":148.8},{"x":459.9,"y":103},{"x":544.1,"y":185.2},{"x":798.3,"y":69.8},{"x":743.7,"y":230.9}],"gyro":{"tumble":0.16,"spin":0.16,"phase":90,"thin":0.3,"pull":0.1,"pullT":14}}},"beads":{"2":{"layout":"gyro","outer":{"dx":0,"dy":0,"scale":1.02,"flat":1,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.94,"flat":1.2,"angle":0,"behind":false},"planet":{"dx":21,"dy":46,"scale":0.9,"flat":1},"design":"B","sway":2,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":1,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k8","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":0,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":0.7,"orbitScale":1,"net3d":false,"hsway":{"on":false,"pat":"sine","outerAmp":16,"innerAmp":16,"period":6,"delay":0.8}},"net3dNT":{"mode":"3d","frontW":5,"backW":1,"phys":0.7,"flatW":2,"spd":1.4,"spin":1.45,"dots":2},"mode":{"count":292,"even":true,"speed":0.18,"life":2.3,"size":0.55,"ratio":0.2,"jitter":0,"spin":0.4,"spinEase":0.45,"backIn":0.9},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}},"5":{"layout":"figma","outer":{"dx":0,"dy":0,"scale":0.8,"flat":0.95,"angle":0,"behind":false},"inner":{"dx":0,"dy":0,"scale":0.72,"flat":1,"angle":0,"behind":false},"planet":{"dx":21,"dy":50,"scale":1.32,"flat":1},"design":"B","sway":3,"swayAmp":1,"swayDir":"tilt","duration":32,"globalSpeed":1,"kv":{"rotX":0,"rotY":0,"rotZ":0},"common":{"showOuter":true,"showInner":true,"showDots":true,"dotSize":0.55,"dotPersp":"flat","perspK":0.45,"perspScope":"dots","glow":0.35,"frontCut":true,"glowKind":"pulse","glowHold":6,"glowEcho":"k1","echoSpeed":0.7,"echoShells":3,"echoSpread":0.28,"echoStart":1.12,"echoFade":1.6,"echoAlpha":1,"fxMode":"every","fxCount":10,"fxEvery":8,"fxInertia":0.5,"echoCrisp":false,"ringCount":0,"ringShape":"atom","ringSpin":0.35,"ringFlat":0.42,"ringSize":1,"ringTumble":0.6,"ringWidth":3,"ringRotate":false,"startPhase":0,"dotRandom":0,"orbitSpin":1.4,"orbitDrift":0,"dotMove":true,"gyroMix":0,"orbitWidth":1,"orbitScale":1},"mode":{"count":300,"even":true,"speed":0.44,"life":2.4,"size":0.44,"ratio":0.34,"jitter":0.15,"spin":0.8,"spinEase":1.4,"backIn":1.6},"meshPts":null,"gyro":{"tumble":0.24,"spin":0.26,"phase":90,"thin":0.22,"pull":0.16,"pullT":12}}}},"convCatFilter":{"plain":true,"dot":true,"shrink":true,"orbdot":true}};
+/* migrationフラグ: SHIPPED_SETTINGS は migration 適用済みの値なので、二重適用しないようフラグも立てる */
+const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-trim-20260830": "1", "anyflow-cases-cards-together-20260830": "1", "anyflow-cases-cards-together-20260830b": "1", "anyflow-cases-fw-20260918": "1", "anyflow-cv-coreskip-20260919": "1", "anyflow-cv-coresoft2-20260919": "1", "anyflow-cv-onerow-20260919": "1", "anyflow-cv-sway-13-20260919": "1", "anyflow-cv-sway-13b-20260919": "1", "anyflow-dark-tune-20260908b": "1", "anyflow-dev-ds2-slide-20260829": "1", "anyflow-dev-ds2-slide-20260829c": "1", "anyflow-dev-ds2-slide-20260829d": "1", "anyflow-entryfrom-04-20260919": "1", "anyflow-figma-weights-20260918": "1", "anyflow-flicker-glow-20260830": "1", "anyflow-formceil-off-20260918": "1", "anyflow-fw2-20260918": "1", "anyflow-fx26-timeline-20260915": "1", "anyflow-gfx-permode-20260827b": "1", "anyflow-hdr-restore-v2": "1", "anyflow-kv-mesh-d-20260909v4": "1", "anyflow-kv-pos-pervariant-20260920": "1", "anyflow-kv-sp-rollback-20260920": "1", "anyflow-kv-sway0-20260919": "1", "anyflow-logo-gap-20260918": "1", "anyflow-mesh-d-20260915": "1", "anyflow-mesh-d-geo-20260917": "1", "anyflow-mesh-dark-spin-20260921": "1", "anyflow-migrate-groups": "1", "anyflow-migrate-resC2": "1", "anyflow-p1-reset-20260919": "1", "anyflow-purge-trash-20260831": "1", "anyflow-reset-transform-20260827": "1", "anyflow-resfx-24-5-20260918": "1", "anyflow-sechead-20260918": "1", "anyflow-sechead2-20260918": "1", "anyflow-spin-off-20260827": "1", "anyflow-sway-off-20260827": "1", "anyflow-sway-on-20260829": "1", "anyflow-timing-earlier-20260830": "1", "anyflow-v5-cleanup-20260917": "1", "anyflow-v5-cleanup2-20260917": "1", "anyflow-valai-arrow-20260908b": "1", "anyflow-valai-radar-20260908": "1", "anyflow-vis-res-pull-200-20260919": "1", "anyflow-vis-res-pull-260-20260919": "1", "anyflow-vision-comp-20260915": "1", "anyflow-vision-graphic-with-msg-20260830": "1", "anyflow-vision-orbit-earlier-20260903": "1", "anyflow-vision-pointdur-20260902": "1", "anyflow-vision-points-earlier-20260902": "1", "anyflow-vision-pt-reset-20260917": "1", "anyflow-vision-slower-20260831": "1", "anyflow-vision-svg-20260919": "1", "anyflow-vision-tune-20260831b": "1", "anyflow-vision-tune-20260831c": "1", "anyflow-vision-tune-20260901": "1", "anyflow-vislogo-flat-20260920": "1"};
+/* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
+   ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
+   本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
+const SHIPPED_GENERATION = 20260926013000;
+function presetStoreLoad() {
+  try {
+    const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
+    if (j && typeof j === 'object' && j.presets && typeof j.presets === 'object') return j;
+  } catch (e) {}
+  return null;
+}
+function presetStoreSave() {
+  try {
+    localStorage.setItem(PRESET_KEY, JSON.stringify({
+      v: 1, presets: params.gfxPresets || {}, on: params.gfxPresetOn || {},
+      /* 消したバリエーションの控えもここに置く。パネルを作り替えても残るように */
+      hidden: params.gfxVariantHidden || {},
+      /* 【2026-08-29】削除したプリセットのゴミ箱(復元用)もここに置く */
+      trash: params.gfxPresetTrash || {},
+      /* 【2026-08-30 ヒデさん指定】バリエーションの「この設定で上書き」の控え(案名→全設定) */
+      over: params.gfxVarOverride || {},
+      fav: params.gfxFav || [],   /* 【2026-09-01】お気に入りピン留め */
+    }));
+  } catch (e) {}
+}
+const STORAGE_KEY = 'anyflow-embed-anim-v81';   /* 2026-08-27 案ごとの形/3案/番号詰め。v80の保存値は破棄 */
+
+/* 【2026-09-01 ヒデさん指定】本番では「新しい焼き込み」を必ず勝たせる。
+   これまで焼き込みは「保存が無い時のフォールバック」だったため、過去に本番を開いた
+   ブラウザでは古いlocalStorageが勝ち続け、デプロイしてもKVが変わらなかった(実際に発生)。
+   本番ドメイン限定: 保存された世代が焼き込み世代より古ければ、anyflow-*の保存を全部捨てて
+   焼き込み値で起動する。ローカル(localhost)は対象外=ヒデさんの調整は消えない。
+   ローカルで本番の挙動を試したい時は URL に ?prodsim=1 を付ける。 */
+try {
+  const _isLocalDev = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname) && !/[?&]prodsim=1/.test(location.search);
+  if (!_isLocalDev) {
+    const _seenGen = +(localStorage.getItem('anyflow-shipped-gen') || 0);
+    if (_seenGen < SHIPPED_GENERATION) {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf('anyflow-') === 0) localStorage.removeItem(k);
+      }
+      localStorage.setItem('anyflow-shipped-gen', String(SHIPPED_GENERATION));
+    }
+  }
+} catch (e) {}
+/* 【2026-09-15 実測で発覚】load() の浅いコピー({ ...DEFAULTS.sections.results, ...保存値 })で、保存に無い入れ子(fx21 / hero など)が DEFAULTS と同じオブジェクトを共有していた。
+   その状態でつまみを動かすと DEFAULTS まで書き換わり、「既定へ戻す」「上書きを解除」が効かない。→ 起動時に既定の原本を控え、params は入れ子まで複製して共有を断つ */
+const DEFAULTS_PRISTINE = structuredClone(DEFAULTS);
+let params = structuredClone(load());
+/* 【2026-09-13 比較検証】URL に ?resFx=1|4|5|6|7|9|default を付けると実績の演出案を指定できる(共有用)。
+   パネルで別の値を触るまでは保存されない。 */
+try {
+  const _rfx = location.search.match(/[?&]resFx=(default|11|12|13|14|15|16|17|19|20|21|22|23|24-5|24-2|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|4|5|6)(?:&|$)/);
+  if (_rfx) { params.patterns = params.patterns || {}; params.patterns.resFx = _rfx[1]; }
+  const _cv = location.search.match(/[?&]cv=(\d{1,2})(?:&|$)/);
+  if (_cv) params.cvStyle = _cv[1];   /* お問い合わせのデザイン案(2026-09-15) */
+  const _eg = location.search.match(/[?&]edge=(\d)(?:&|$)/);
+  if (_eg) { params.cvEdge = _eg[1]; window.__edgeFromUrl = true; }   /* 切れ目の形(2026-09-16)。反映は init で */
+  const _fm = location.search.match(/[?&]form=(\d)(?:&|$)/);
+  if (_fm) { params.cvForm = _fm[1]; window.__formFromUrl = true; }   /* グラデの形(2026-09-16)。反映は init で */
+  const _cta = location.search.match(/[?&]cta=(button|form)(?:&|$)/);
+  if (_cta) params.cvCta = _cta[1];   /* 【V5.0】CTA=ボタン/フォーム */
+  const _fs = location.search.match(/[?&]fstyle=([1-5])(?:&|$)/);
+  if (_fs) params.formStyle = _fs[1];   /* 【V5.0】フォームのスタイル案 */
+  const _hd = location.search.match(/[?&]hdr=(1[0-5]|[1-9])(?:&|$)/);
+  if (_hd) params.hdrMode = _hd[1];   /* 【V5.0】追従ヘッダーの案 */
+} catch (e) {}
+/* 【2026-09-08 ヒデさん指定・根治】「ビジョンだけ本番が遅い/直らない」の根本対策。
+   世代ガードは『保存世代 < 焼き込み世代』でしか発火しないため、いったん現行世代のまま
+   古い(遅い)値で固まったブラウザは値を直しても永久に直らなかった(実測: 現行世代+npOrbitDur3.5
+   注入→リロード2回でも3.5のまま)。しかも『速くする移行』のフラグは既に立っていて再適用もされない。
+   対策= ビジョン重要値の“内容署名”を持ち、SHIPPED と食い違ったら本番では毎回 SHIPPED の値へ
+   同期し直す(=焼き込みが常に正・固まったブラウザも次回ロードで自動回復)。localhost は対象外なので
+   ヒデさんのローカル調整は消えない。焼き込み値を変えれば署名が変わり全ブラウザへ行き渡る(世代バンプ不要)。 */
+try {
+  const _isLocalDev2 = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname) && !/[?&]prodsim=1/.test(location.search);
+  const _visKeys = ['npOrbitDur', 'npOrbitLead', 'npOrbitEase', 'npOrbitOp0', 'npOrbitBlur0', 'npOrbitDir',
+    'npFireK', 'npGap', 'npP1', 'npP2', 'npPointDur', 'miniDur', 'revealDur', 'line1At', 'labelDur',
+    'msgSize', 'pHSize', 'pPSize', 'pWidth', 'introPat', 'charLag', 'strokeW'];
+  const _shipVis = (typeof SHIPPED_SETTINGS !== 'undefined' && SHIPPED_SETTINGS.sections && SHIPPED_SETTINGS.sections.vision) || {};
+  const _sig = _visKeys.map(k => k + ':' + _shipVis[k]).join('|');
+  if (!_isLocalDev2 && localStorage.getItem('anyflow-vision-sig') !== _sig) {
+    if (params.sections && params.sections.vision) {
+      for (const k of _visKeys) if (_shipVis[k] !== undefined) params.sections.vision[k] = _shipVis[k];
+    }
+    /* ⚠️ メモリだけ直しても localStorage の古い値が残ると、署名一致後の次回ロードで再び古値が勝つ。
+       保存値(STORAGE_KEY)のビジョンも今この場で SHIPPED へ書き直しておく(＝次回以降も正しい値)。 */
+    try {
+      const _raw = localStorage.getItem(STORAGE_KEY);
+      if (_raw) { const _o = JSON.parse(_raw);
+        if (_o && _o.sections && _o.sections.vision) {
+          for (const k of _visKeys) if (_shipVis[k] !== undefined) _o.sections.vision[k] = _shipVis[k];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(_o));
+        } }
+    } catch (e2) {}
+    localStorage.setItem('anyflow-vision-sig', _sig);
+  }
+} catch (e) {}
+function loadParams() {
+  try {
+    let s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    /* 【2026-08-30 ヒデさん指定】保存が無い(=本番の初回など)なら、devで調整した焼き込み値を初期値にする。
+       フラグも立てて、適用済み migration が二重に走って値を戻すのを防ぐ。 */
+    if (!s && typeof SHIPPED_SETTINGS !== 'undefined') {
+      s = JSON.parse(JSON.stringify(SHIPPED_SETTINGS));
+      try { for (const fk in SHIPPED_FLAGS) { if (!localStorage.getItem(fk)) localStorage.setItem(fk, SHIPPED_FLAGS[fk]); } } catch (e) {}
+    }
+    /* ⚠️【2026-08-19】以前は保存されたドットの個数が今と違うと、この if を丸ごと外れて
+       【保存値ぜんぶが初期化】されていた。ドットを1個足しただけで
+       「動かし方」や「固定追従」の設定まで巻き添えで消える。
+       個数が違っても他の設定は生かし、ドットだけ既定で埋めるようにする */
+    if (s && Array.isArray(s.dots)) {
+      const merged = { ...structuredClone(DEFAULTS), ...s };
+      merged.pulse = { ...DEFAULTS.pulse, ...(s.pulse || {}) };
+      merged.sphere = { ...DEFAULTS.sphere, ...(s.sphere || {}) };
+      merged.planet = { ...DEFAULTS.planet, ...(s.planet || {}) };
+      merged.kv = { ...DEFAULTS.kv, ...(s.kv || {}) };
+      merged.orbits = {
+        outer: { ...DEFAULTS.orbits.outer, ...((s.orbits && s.orbits.outer) || {}) },
+        inner: { ...DEFAULTS.orbits.inner, ...((s.orbits && s.orbits.inner) || {}) },
+      };
+      merged.marquee = { ...DEFAULTS.marquee, ...(s.marquee || {}) };
+      /* 【2026-08-19】ロゴの間隔を 96 → 72px に詰めた。
+         旧既定(96)のまま保存されている＝触っていない場合だけ、新しい既定に載せ替える */
+      if (merged.marquee && merged.marquee.gap === 96) merged.marquee.gap = DEFAULTS.marquee.gap;
+  if (typeof merged.replay !== 'boolean') merged.replay = DEFAULTS.replay;
+  /* 【2026-08-27】止まったまま保存された古い値の救済。開いた時は必ず再生状態にする */
+  merged.running = true;
+  merged.orbitEase = merged.orbitEase || DEFAULTS.orbitEase;
+  merged.dotGap = merged.dotGap || DEFAULTS.dotGap;
+  merged.visReveal = merged.visReveal || DEFAULTS.visReveal;
+  merged.visSpin = merged.visSpin || DEFAULTS.visSpin;
+  merged.visMove = merged.visMove || DEFAULTS.visMove;
+  if (typeof merged.converge !== 'string') merged.converge = DEFAULTS.converge;
+  if (!merged.conv || typeof merged.conv !== 'object') merged.conv = {};
+  merged.conv.dotMove = { ...DEFAULTS.conv.dotMove, ...((s.conv && s.conv.dotMove) || {}) };   /* 2026-08-26 集約アニメ */
+  merged.conv = {                                                                  /* 集約アニメの調整つまみ */
+    ...DEFAULTS.conv, ...(s.conv || {}),
+    reel:   { ...DEFAULTS.conv.reel,   ...((s.conv && s.conv.reel)   || {}) },
+    spiral: { ...DEFAULTS.conv.spiral, ...((s.conv && s.conv.spiral) || {}) },
+    accre:  { ...DEFAULTS.conv.accre,  ...((s.conv && s.conv.accre)  || {}) },
+    beads:  { ...DEFAULTS.conv.beads,  ...((s.conv && s.conv.beads)  || {}) },
+    mesh:   { ...DEFAULTS.conv.mesh,   ...((s.conv && s.conv.mesh)   || {}) },
+    link:   { ...DEFAULTS.conv.link,   ...((s.conv && s.conv.link)   || {}) },
+    gyro:   { ...DEFAULTS.conv.gyro,   ...((s.conv && s.conv.gyro)   || {}) },
+  };
+  if (typeof merged.orbitLayout !== 'string') merged.orbitLayout = DEFAULTS.orbitLayout;
+  /* 案ごとの形とプリセットの入れ物。古い保存値(全案共通の orbitPresets)からの引っ越しもここで */
+  if (!merged.gfxByMode || Array.isArray(merged.gfxByMode)) merged.gfxByMode = {};
+  if (!merged.gfxPresets || Array.isArray(merged.gfxPresets)) merged.gfxPresets = {};
+  if (!merged.gfxPresetOn || Array.isArray(merged.gfxPresetOn)) merged.gfxPresetOn = {};
+  if (!merged.gfxVariantOn || Array.isArray(merged.gfxVariantOn)) merged.gfxVariantOn = {};
+  /* 案ごとの軌道回転。古い保存値(全案共通の orbitSpin)は、全案の初期値として配る */
+  if (!merged.conv.orbitWidthBy || typeof merged.conv.orbitWidthBy !== 'object') {
+    merged.conv.orbitWidthBy = { ...DEFAULTS.conv.orbitWidthBy };
+  }
+  if (!merged.conv.orbitScaleBy || typeof merged.conv.orbitScaleBy !== 'object') {
+    merged.conv.orbitScaleBy = { ...DEFAULTS.conv.orbitScaleBy };
+  }
+  if (!merged.conv.gyroMixBy || typeof merged.conv.gyroMixBy !== 'object') {
+    merged.conv.gyroMixBy = { ...DEFAULTS.conv.gyroMixBy };
+  }
+  if (!merged.conv.orbitSpinBy || typeof merged.conv.orbitSpinBy !== 'object') {
+    const v0 = merged.conv.orbitSpin || 0;
+    merged.conv.orbitSpinBy = { off: v0, reel: v0, spiral: v0, accre: v0, mesh: v0, beads: v0, duplex: v0, gyro: v0 };
+  }
+  /* 【2026-09-26 整理】旧・全案共通プリセット(orbitPresets)を案ごとの引き出しへ移す一度きりの処理は撤去(フラグ済みで二度と動かない) */
+  delete merged.orbitPresets; delete merged.orbitPresetOn;
+
+  /* 廃止した案(⑪糸・⑭⑯〜⑳)を選んだままなら既定へ寄せる (2026-08-26) */
+  /* ⚠️ ここは CONVERGES(const)の定義より前に走るので、CONVERGES を参照すると TDZ で例外になり、
+     【保存した設定がまるごと読めなくなる】(2026-08-26 に実際に踏んだ)。キーは直書きで判定する。 */
+  if (!['off', 'reel', 'spiral', 'accre', 'mesh', 'beads', 'duplex', 'gyro'].includes(merged.converge)) {
+    merged.converge = DEFAULTS.converge;
+  }
+  /* 廃止した案・消え方を選んだままの保存値を、生きている値へ寄せる (2026-08-26) */
+  if (merged.converge === 'vein' || merged.converge === 'pulse') merged.converge = DEFAULTS.converge;
+  /* 【2026-08-27 ヒデさん指定】消え方の選択は廃止。前面カット固定 */
+  if (merged.conv.reel) merged.conv.reel.vanish = 'clip';
+  /* 惑星の模様 5〜7(C1/C2/C3)は 2026-08-27 に廃止。選んだままなら既定へ寄せる */
+  if (!['A1', 'A2', 'A3', 'B'].includes(merged.design)) merged.design = DEFAULTS.design;
+  /* 光り方は 2026-08-28 に パルス/波紋 の2つへ。廃止した案を選んだままなら寄せる */
+  if (!['pulse', 'echo'].includes(merged.conv.glowKind)) merged.conv.glowKind = 'pulse';
+  if (!['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9'].includes(merged.conv.glowEcho)) merged.conv.glowEcho = 'k8';
+  for (const kk of ['echoSpeed', 'echoShells', 'echoSpread', 'echoStart', 'echoFade', 'echoAlpha', 'fxEvery', 'fxInertia', 'fxCount',
+                    'ringCount', 'ringSpin', 'ringFlat', 'ringSize', 'ringTumble', 'ringWidth', 'startPhase'])
+    if (typeof merged.conv[kk] !== 'number') merged.conv[kk] = DEFAULTS.conv[kk];
+  if (!['atom', 'saturn', 'rosette', 'globe'].includes(merged.conv.ringShape)) merged.conv.ringShape = DEFAULTS.conv.ringShape;
+  if (typeof merged.conv.echoCrisp !== 'boolean') merged.conv.echoCrisp = DEFAULTS.conv.echoCrisp;
+  if (!['every', 'count', 'time'].includes(merged.conv.fxMode)) merged.conv.fxMode = DEFAULTS.conv.fxMode;
+  merged.kvDesign = 'planet';   /* 【2026-09-26 整理】旧KV(A案p7/B案p9・iframe)は撤去。古い保存値でも惑星に */
+  if (merged.crossDelay == null) merged.crossDelay = DEFAULTS.crossDelay;
+  if (merged.crossLead == null) merged.crossLead = DEFAULTS.crossLead;
+  merged.kv = { ...DEFAULTS.kv, ...(s.kv || {}) };
+  merged.sphere = { ...DEFAULTS.sphere, ...(s.sphere || {}) };
+  merged.cv = { ...DEFAULTS.cv, ...(s.cv || {}) };   /* 【2026-09-15】お問い合わせのディザ: 保存に無い新しい鍵(色5段・形・暗さ)は既定で埋める */
+  if (merged.cvColor && !merged.cvColorBy) merged.cvColorBy = { [String(merged.cvStyle || '0')]: String(merged.cvColor) };   /* 旧: 全体で1つ → デザイン案ごと */
+  if (!merged.cvColorBy || typeof merged.cvColorBy !== 'object') merged.cvColorBy = {};
+      merged.sections = {
+        common:  { ...DEFAULTS.sections.common,  ...((s.sections && s.sections.common) || {}) },
+        vision:  { ...DEFAULTS.sections.vision,  ...((s.sections && s.sections.vision) || {}) },
+        results: { ...DEFAULTS.sections.results, ...((s.sections && s.sections.results) || {}) },
+        dev:     { ...DEFAULTS.sections.dev,     ...((s.sections && s.sections.dev) || {}) },
+        cases:   { ...DEFAULTS.sections.cases,   ...((s.sections && s.sections.cases) || {}) },
+      };
+      /* 【2026-08-19】一度 2.0秒 に変えたが「前の方が良かった」とのことで 1.3秒 に戻した。
+         2.0秒 のまま保存されている場合だけ、元の 1.3秒 に戻す */
+      if (merged.sections.dev && Math.abs(merged.sections.dev.stackDur - 2.0) < 1e-6)
+        merged.sections.dev.stackDur = DEFAULTS.sections.dev.stackDur;
+      /* ⚠️【2026-08-19 重大バグ】ここで DEV_SWAP_EASES を参照していた。
+         あの定数の定義はこの行よりずっと下にあるため ReferenceError になり、
+         下の catch に飲み込まれて【保存値がまるごと無視され、毎回そっくり初期値で起動】していた。
+         「保存ボタンを押しても次に開くと元に戻る」の正体がこれ。
+         load() の中では、この関数より下で定義されるものを絶対に参照しないこと。
+         swapEase の範囲チェックは DEV_SWAP_EASES を定義した直後で行う。 */
+      /* 【2026-08-19】実績の左グラデ画像はパララックスなしに変更（旧既定 16 → 0）。
+         旧既定のまま(=触っていない)なら新しい既定に載せ替える */
+      if (merged.sections.results && Math.abs(merged.sections.results.parallax - 16) < 1e-6)
+        merged.sections.results.parallax = DEFAULTS.sections.results.parallax;
+      /* 【2026-08-25】ビジョン: 上下分割の廃止＋軌道の出現位置/サイズ変更。
+         旧既定のまま(=触っていない)保存だけ、新しい既定に載せ替える。触った値は尊重。
+         miniCX / miniCY は新規プロパティなので、上の spread で自動的に新既定が入る。 */
+      const _visV = merged.sections.vision;
+      if (_visV) {
+        if (Math.abs(_visV.splitAmt  - 92)   < 1e-6) _visV.splitAmt  = DEFAULTS.sections.vision.splitAmt;   // 92 → 0
+        if (Math.abs(_visV.driftAmt  - 130)  < 1e-6) _visV.driftAmt  = DEFAULTS.sections.vision.driftAmt;   // 130 → 0
+        if (Math.abs(_visV.miniScale - 0.16) < 1e-6) _visV.miniScale = DEFAULTS.sections.vision.miniScale;  // 0.16 → 0.31
+        /* 【2026-08-29】「2つの価値」見出しを非表示にしたので、その待ちを詰める。旧既定のままの人だけ寄せ直す */
+        if (Math.abs(_visV.npP1 - 0.95) < 1e-6) _visV.npP1 = DEFAULTS.sections.vision.npP1;   // 0.95 → 0.40
+        if (Math.abs(_visV.npP2 - 1.35) < 1e-6) _visV.npP2 = DEFAULTS.sections.vision.npP2;   // 1.35 → 0.80
+      }
+      /* 【2026-08-25】導入事例: カードスタック → 2×2グリッド＋ライン描画に刷新。
+         カード出現の意味(基準)が devFin→再生進捗p に変わったので、旧既定のまま保存されていたら
+         新既定へ載せ替える。lineAt 等の新プロパティは上の spread で自動的に入る。 */
+      const _casV = merged.sections.cases;
+      if (_casV) {
+        if (Math.abs(_casV.cardAt  - 0.84) < 1e-6) _casV.cardAt  = DEFAULTS.sections.cases.cardAt;   // 0.84 → 0.56
+        if (Math.abs(_casV.cardGap - 0.05) < 1e-6) _casV.cardGap = DEFAULTS.sections.cases.cardGap;  // 0.05 → 0.06
+        if (Math.abs(_casV.cardDur - 0.16) < 1e-6) _casV.cardDur = DEFAULTS.sections.cases.cardDur;  // 0.16 → 0.22
+      }
+      merged.patterns = { ...DEFAULTS.patterns, ...(s.patterns || {}) };
+      if (!['A', 'B', 'C'].includes(merged.patterns.dev)) merged.patterns.dev = 'A';
+      if (!['A', 'B'].includes(merged.patterns.cases)) merged.patterns.cases = 'A';
+      if (!['A', 'B', 'C'].includes(merged.patterns.mock)) merged.patterns.mock = 'B';
+      /* 【2026-08-30 ヒデさん指定】強み強調はグラデ揺らぎ(live)で確定。保存値がどれでも live へ */
+      merged.visStrongFx = 'live';
+      /* 【2026-08-30 ヒデさん指定・パネル整理】進み方=自動再生(時間)・固定なし で確定。保存値がどれでもこの組に */
+      merged.drive = 'time';
+      merged.scrollHold = 'smooth';
+      /* 【2026-08-30 ヒデさん指定】軌道ドットの周回の緩急(pulse)は「急に速く/遅く」に見えるため削除(0固定) */
+      if (merged.pulse) merged.pulse.amp = 0;
+      /* 【2026-08-30】旧「粒(吸い込み)専用の連動(reelP.link)」を共通トグル(spinLink)へ引き継ぎ */
+      if (merged.conv && merged.conv.reelP && merged.conv.reelP.link === false && merged.conv.spinLink == null)
+        merged.conv.spinLink = false;
+      {
+        const _rv = merged.sections.vision && merged.sections.vision.revealDur;
+        if (_rv != null && (Math.abs(_rv - 0.7) < 1e-6 || Math.abs(_rv - 0.9) < 1e-6))
+          merged.sections.vision.revealDur = 1.15;
+      }
+      /* ⚠️ 今の DOTS の個数ぶんだけ作る。保存が足りなければ既定で埋め、余っていれば捨てる
+         (s.dots を起点にすると、増えたドットのぶんが undefined になって落ちる) */
+      merged.dots = DEFAULTS.dots.map((d, i) => ({ ...d, ...(s.dots[i] || {}) }));
+      /* 削除済みの選択肢が保存されていた場合はデフォルトに戻す */
+      if (!DESIGNS[merged.design]) merged.design = DEFAULTS.design;
+      if (merged.sway < 1 || merged.sway > SWAYS.length) merged.sway = 1;
+      /* 【2026-08-27 ヒデさん指定】①のスピンも既定オフ。保存値が残っている人も一度だけ揃える */
+      /* 【2026-08-27 ヒデさん指定】①の流れは「上がる」で固定(選択UIは廃止)。保存値も揃える */
+      if (merged.conv && merged.conv.reel) merged.conv.reel.flow = 'up';
+      if (merged.dither < 1 || merged.dither > DITHERS.length) merged.dither = 1;
+      if (merged.dotGap < 1 || merged.dotGap > DOT_GAPS.length) merged.dotGap = DEFAULTS.dotGap;
+      return merged;
+    }
+  } catch (e) {
+    /* ⚠️【2026-08-19】ここは以前 catch (e) {} と【握りつぶし】ていた。
+       そのせいで load() の中のちょっとした書き間違い（下で定義される定数の参照）が
+       「保存値が毎回まるごと捨てられる」という症状になり、原因が全く見えなかった。
+       黙って初期値に戻すのは同じでよいが、必ず理由を残すこと。 */
+    console.error('[anyflow] 保存した設定を読み込めませんでした。初期値で起動します:', e);
+  }
+  return structuredClone(DEFAULTS);
+}
+/* 【2026-08-27 ヒデさん指定】プリセットは STORAGE_KEY とは別に持つ。
+   ⚠️ 本体の保存値が無い / バージョンを上げて捨てた時は loadParams() が
+      いきなり DEFAULTS を返すので、そこを通っても必ずプリセットを載せ直す。
+      (この受け皿を作る前は、キーを上げるとプリセットも消えていた) */
+function load() {
+  const merged = loadParams();
+  const st = presetStoreLoad();
+  if (st) {
+    merged.gfxPresets = st.presets || {};
+    merged.gfxPresetOn = (st.on && typeof st.on === 'object') ? st.on : {};
+    /* ⚠️ hidden が入っていない古い保管を読んだ時に {} で上書きすると、
+       消した案が勝手に戻ってしまう。入っている時だけ差し替える (2026-08-28) */
+    if (st.hidden && typeof st.hidden === 'object') merged.gfxVariantHidden = st.hidden;
+    if (st.trash && typeof st.trash === 'object') merged.gfxPresetTrash = st.trash;   /* 2026-08-29: 削除プリセットのゴミ箱を復元 */
+    if (st.over && typeof st.over === 'object') merged.gfxVarOverride = st.over;      /* 2026-08-30: バリエーション上書きの控えを復元 */
+    if (Array.isArray(st.fav)) merged.gfxFav = st.fav;                              /* 2026-09-01: お気に入りを復元 */
+  } else if (merged.gfxPresets && Object.keys(merged.gfxPresets).length) {
+    /* まだ別置きしていない古い持ち物は、ここで引っ越す */
+    try { localStorage.setItem(PRESET_KEY, JSON.stringify({ v: 1, presets: merged.gfxPresets, on: merged.gfxPresetOn || {} })); } catch (e) {}
+  }
+  /* 【2026-08-30 ヒデさん指定】プリセット保管が無い(=本番の初回など)なら、
+     選択中プリセット・削除した案・ゴミ箱も焼き込み(SHIPPED_PRESET_STATE)から復元 */
+  if (!st && typeof SHIPPED_PRESET_STATE !== 'undefined') {
+    /* 【2026-08-31 ヒデさん指定】プリセット保管が無い(=本番の初回など)は、devの最新状態を丸ごと初期値に:
+       残っているプリセットチップ(presets)・選択(on)・削除した案(hidden)。ゴミ箱(trash)は完全削除済み={}。 */
+    if (SHIPPED_PRESET_STATE.presets) merged.gfxPresets = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.presets));
+    merged.gfxPresetOn = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.on || {}));
+    merged.gfxVariantHidden = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.hidden || {}));
+    merged.gfxPresetTrash = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.trash || {}));
+    if (SHIPPED_PRESET_STATE.over) merged.gfxVarOverride = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.over));   /* 2026-09-01: 上書きも本番初期値へ */
+    if (Array.isArray(SHIPPED_PRESET_STATE.fav)) merged.gfxFav = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.fav));
+  }
+  if (!merged.gfxPresets || Array.isArray(merged.gfxPresets)) merged.gfxPresets = {};
+  if (!merged.gfxPresetOn || Array.isArray(merged.gfxPresetOn)) merged.gfxPresetOn = {};
+  if (!merged.gfxVariantHidden || Array.isArray(merged.gfxVariantHidden)) merged.gfxVariantHidden = {};
+  /* 【2026-08-29→08-31 改】SHIPPED_PRESETS(昇格バリエーションの土台・凍結)での seed は、
+     SHIPPED_PRESET_STATE に presets が無い古い焼き込みの時だけ。最新焼き込みでは
+     「ヒデさんがチップとして残したもの」だけを出す(削除したチップを本番で復活させない)。 */
+  try {
+    if (!(typeof SHIPPED_PRESET_STATE !== 'undefined' && SHIPPED_PRESET_STATE.presets))
+      for (const mk in SHIPPED_PRESETS) { if ((SHIPPED_PRESETS[mk] || []).length && (!merged.gfxPresets[mk] || !merged.gfxPresets[mk].length)) { merged.gfxPresets[mk] = SHIPPED_PRESETS[mk].map(function (p) { return { name: p.name, data: JSON.parse(JSON.stringify(p.data)) }; }); } }
+  } catch (e) {}
+  return merged;
+}
+/* ⚠️【2026-08-27 事故対応】直接編集をオンにすると再生を止める(params.running=false)。
+   その状態のまま保存すると【次に開いた時に何も動かず＝画面が真っ白】になる(実際に発生)。
+   一時停止は"今だけの状態"なので、保存には必ず再生中として書き出す。 */
+function save() {
+  /* 【2026-09-20 ヒデさん依頼・PC/SP独立の要】スマホ(実機/スマホ幅=isMobile)は「閲覧専用」。
+     起動時 applyMbToParams が SP専用の値(params.mb)を本体 params に流し込んで描画しているため、
+     ここで保存すると PC の基準値まで SP の値で上書きされてしまう(＝SPがPCに漏れる)。
+     編集・保存は PC 側(スマホモードのトグルは PC 上のクラス切替で isMobile=false のまま)だけで行う。 */
+  if (typeof isMobile !== 'undefined' && isMobile) return;
+  /* いま画面に出ている形を、いまの案の引き出しへ入れてから保存する
+     (2026-08-27 ヒデさん指定・案ごとに形を分ける) */
+  if (typeof gfxStash === 'function') gfxStash();
+  try { if (typeof varAutoCapture === 'function') varAutoCapture(); } catch (e) {}   /* 【2026-09-20】案(kvVar等)の上書き控えを保存前に最新化(デフォルトにしても戻るバグの修正) */
+  /* 【2026-09-15 ヒデさん指摘「デフォルトにしても反映されない」の根治】選択中の KV バリエーションに「⤓ いまの設定で上書き」の控えがあると、
+     起動時にその控えが再適用されて保存値に勝つ(実測: 線の濃さ 0.25 で保存→再読込で 0.54 に戻った)。
+     「これをデフォルトに設定」＝いま見えている形を既定にする操作なので、控えも同じ内容に更新する */
+  try {
+    const _m = params.converge || 'reel', _i = params.gfxVariantOn && params.gfxVariantOn[_m];
+    const _v = (typeof GFX_VARIANTS !== 'undefined' && GFX_VARIANTS[_m] || [])[_i];
+    if (_v && params.gfxVarOverride && params.gfxVarOverride[_m] && params.gfxVarOverride[_m][_v.name]) { params.gfxVarOverride[_m][_v.name] = gfxSnapshotFull(); presetStoreSave(); }
+  } catch (e) {}
+  const out = { ...params, running: true };
+  /* プリセットと「消したバリエーション」は PRESET_KEY 側だけで持つ。本体に二重で持たせない
+     (二重に持つと、古いほうが勝って消した案が戻る事故になる) */
+  delete out.gfxPresets; delete out.gfxPresetOn; delete out.gfxVariantHidden; delete out.gfxFav;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
+}
+/* ===== 保存の考え方 (2026-08-19 ヒデさん指定) =====
+   以前は「触った瞬間に保存」だったので、ちょっと試しただけの値が
+   そのまま次回の既定になってしまい、元に戻したいのに戻せなかった。
+   いまは【触っている間は画面で試せるだけ／保存ボタンを押して初めて残る】。
+   dirty = 保存していない変更があるか */
+let dirty = false;
+let varCaptureReady = false;   /* 【2026-09-20】起動時の案適用が済むまで、markDirty での即時控えを止める門番(起動途中の初期値で控えを汚さない) */
+let syncSaveBtn = null;   /* パネルを組む時に、保存ボタンの表示を更新する関数が入る */
+function markDirty() {
+  dirty = true; if (syncSaveBtn) syncSaveBtn(); if (syncPresetPills) syncPresetPills();
+  if (typeof gfxTouchVariant === 'function') gfxTouchVariant();
+  /* 【2026-09-20 ヒデさん報告・巻き戻りの根治強化】つまみを触った瞬間に、選択中の案の控え(gfxVarOverride)を
+     【メモリ内だけ】即時更新する。これで 0.8秒の自動保存を待たずに案を選び直しても・パネルが再描画されても
+     applyKvVariant が『いまの値』を再適用する(＝焼き込み値に戻らない)。localStorage への書き込みは下のデバウンスで。
+     ⚠️ 起動が終わる(案の焼き込み適用が済む)までは動かさない。起動途中の初期値を控えに焼くと、
+        その後の applyKvVariant が壊れた控えを適用して逆に焼き込み値へ戻ってしまうため(varCaptureReady で門番)。 */
+  if (varCaptureReady) { try { if (typeof varAutoCapture === 'function') varAutoCapture(true); } catch (e) {} }
+  /* 【2026-09-20 ヒデさん依頼】スマホ実機と同期中は、ドラッグ中もリアルタイムに反映(800msの保存を待たずに送る)。同期ON時のみ・約140msのthrottle。
+     save() は localStorage 保存＋(liveSyncがラップして)スマホへ push するので、これで保存前でも実機がすぐ変わる。 */
+  if (typeof window !== 'undefined' && window.__liveSyncOn && varCaptureReady) {
+    const _now = Date.now();
+    if (!markDirty._live || _now - markDirty._live > 140) { markDirty._live = _now; try { save(); } catch (e) {} }
+  }
+  /* 【2026-09-01 ヒデさん指定】調整は自動で保存する(リロード・ブラウザを閉じても引き継ぐ)。
+     以前は「保存ボタンを押して初めて残る」設計(2026-08-19)だったが、押し忘れると
+     調整が消える方が困る、との指定で自動保存に変更。連続ドラッグ中は書かない(0.8秒デバウンス)。 */
+  clearTimeout(markDirty._t);
+  markDirty._t = setTimeout(() => {
+    try { if (typeof varAutoCapture === 'function') varAutoCapture(); } catch (e) {}   /* 【2026-09-19】案の上書き控えを常に最新に */
+    try { save(); dirty = false; if (syncSaveBtn) syncSaveBtn(); } catch (e) {}
+  }, 800);
+}
+
+/* ================= ドット要素 (奥/手前レイヤーに1個ずつ) ================= */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const dotsBackG = document.getElementById('dotsBack');
+const dotsFrontG = document.getElementById('dotsFront');
+/* ===== 軌道を回る「緩急」パターン (2026-08-15) =====
+   手前に来ると速く、奥へ行くとゆったり回る。
+   仕組み: 等速の角度 θ を φ = θ + a·sin(θ - θ0) に写す。
+   すると角速度は 1 + a·cos(θ - θ0) になり、手前で最大・奥で最小になる。
+   ⚠️ a を 1 に近づけると角速度が 0 に近づいて「奥で止まって見える」ので 0.85 が上限 */
+const ORBIT_EASES = [
+  { id: 'even',   name: '等速',  desc: 'ずっと同じ速さで回る。' },
+  { id: 'strong', name: '緩急',  desc: '手前に来ると速く、奥へ行くとゆっくり回る。奥行きが出る。', amt: 0.85 },
+];
+/* posOn は「楕円ローカルで下半分(sin>0)が手前」。手前の真ん中は θ=90° なので
+   θ0 = 90° にすると、いちばん手前で速度が最大になる */
+function orbitEase(deg) {
+  const a = ORBIT_EASES[(params.orbitEase || 1) - 1].amt || 0;
+  if (a <= 0) return deg;
+  const t = (deg - 90) * Math.PI / 180;
+  return deg + a * Math.sin(t) * (180 / Math.PI);
+}
+
+const dotEls = DOTS.map(d => {
+  const mk = () => {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('r', DOT_R);
+    c.setAttribute('fill', d.color);
+    return c;
+  };
+  const back = mk(), front = mk();
+  dotsBackG.appendChild(back);
+  dotsFrontG.appendChild(front);
+  return { back, front, k: 1 };
+});
+
+/* ドットの出現度合い (0=まだ無い / 1=出きった)。
+   Our Vision で軌道が出てくる時に、1つずつ順に出すために使う (2026-08-17 指定)。
+   ⚠️ 軌道の SVG は KV と Our Vision で使い回しているので、
+      Our Vision 以外の場面では 1 のままにしておくこと */
+const dotK = DOTS.map(() => 1);
+
+/* 現在の軌道ジオメトリ = カンプ基準値 × パネル設定 (サイズ/角度/位置) + ゆれ */
+function orbitGeom(key, noSpin) {
+  /* noSpin=true: 軌道自体の回転(convOrbitSpin/ジャイロ回転)を除いたジオメトリを返す。
+     【2026-08-30 ヒデさん指定】粒(吸い込み)を軌道の回転と連動させない時に使う(粒の回転軸を固定)。 */
+  const b = orbitBase(key);   /* レイアウト(カンプ通り/ジャイロクロス)の基準値 */
+  const p = params.orbits[key];
+  let wobble = 0;
+  if (p.wobbleAmp > 0 && p.wobblePeriod > 0) {
+    wobble = p.wobbleAmp * Math.sin(2 * Math.PI * elapsed / p.wobblePeriod + p.wobblePhase * Math.PI / 180);
+  }
+  /* ①収縮ループ中は軌道を固定 (傾き・クロスなし。ヒデさん指定 2026-08-26) */
+  const convReelFixed = params.kvDesign === 'planet' && params.converge === 'reel';
+  if (!convReelFixed && SWAYS[(params.sway || 1) - 1].id === 'cross') {
+    /* クロス: 2本が逆方向に傾く。
+       ⚠️ 最初からクロスしているとカンプと違うので、はじめは平行(傾き0)にしておき、
+          crossLead 秒かけてじわじわ交差しはじめる */
+    const lead = clamp01((elapsed - params.crossDelay) / Math.max(0.1, params.crossLead));
+    wobble += (key === 'outer' ? 6 : -6) * (params.swayAmp == null ? 1 : params.swayAmp) * Math.sin(2 * Math.PI * elapsed / 10) * easeIO(lead);
+  }
+  let dfx = 0, dfy = 0;
+  /* 【2026-09-01 ヒデさん指定】横揺れ(B3): 内外の輪を左右へ。内側はディレイぶん遅れて追従 */
+  const hs = params.conv && params.conv.hsway;
+  if (hs && hs.on && params.kvDesign === 'planet') {
+    const amp = key === 'inner' ? (hs.innerAmp || 0) : (hs.outerAmp || 0);
+    if (amp > 0) {
+      const T = Math.max(0.5, hs.period || 6);
+      const ph = 2 * Math.PI * (elapsed - (key === 'inner' ? (hs.delay || 0) : 0)) / T;
+      let w;
+      if (hs.pat === 'drift')    w = 0.62 * Math.sin(ph) + 0.38 * Math.sin(ph * 0.53 + 1.7);  /* ふわふわ(不規則) */
+      else if (hs.pat === 'tri') w = 2 * Math.asin(Math.sin(ph)) / Math.PI;                    /* 等速で往復(三角波) */
+      else                       w = Math.sin(ph);                                             /* なめらか(振り子) */
+      dfx += amp * w;
+    }
+  }
+  const dr = (params.conv && params.conv.orbitDrift) || 0;
+  if (dr > 0 && params.kvDesign === 'planet') {
+    const ph = key === 'inner' ? 2.1 : 0;
+    dfx = Math.sin(elapsed * 0.37 + ph) * dr * 26;
+    dfy = Math.cos(elapsed * 0.29 + ph) * dr * 18;
+  }
+  /* 【2026-08-27 ヒデさん指定】⑦ジャイロ回転: 輪そのものが独楽のように転がる。
+     面の向きを回しながら、縦の潰れを |cos| で伸び縮みさせると
+     2Dのままでも「立体的に転がっている」ように見える。
+     さらに周期的に惑星へ引き寄せて、集約している感じを出す。 */
+  let gyK = 1, gyRot = 0, gyPull = 1;
+  /* 【2026-08-28 ヒデさん指定】⑦だけの動きだった「転がり」を、どの案にも混ぜられるようにした。
+     mix = 0 で混ぜない / 1 で⑦と同じだけ転がる。⑦を選んでいる時は常に 1 */
+  /* 【2026-08-29 ヒデさん指定】ジャイロの転がりも既定オフに統一。以前は converge==='gyro' で強制1(常に回転)
+     だったのをやめ、gyroMixBy(=軌道の回転トグルで制御)に一本化。0でジャイロも止まる。 */
+  const gyMix = (params.kvDesign !== 'planet') ? 0
+    : Math.max(0, Math.min(1, ((params.conv.gyroMixBy || {})[params.converge] || 0)));
+  if (gyMix > 0) {
+    const G = params.conv.gyro;
+    const t = kvGT() * Math.max(0, G.tumble == null ? 1 : G.tumble);
+    const ph = (key === 'inner' ? (G.phase == null ? 90 : G.phase) : 0) * Math.PI / 180;
+    const thin = Math.max(0.02, G.thin == null ? 0.06 : G.thin);
+    const kFull = thin + (1 - thin) * Math.abs(Math.cos(t * 0.9 + ph));
+    gyK = 1 + (kFull - 1) * gyMix;                            /* 混ぜ具合ぶんだけ潰す */
+    gyRot = kvGT() * (G.spin == null ? 1 : G.spin) * 26 * (key === 'inner' ? -1 : 1) * gyMix;
+    const pull = Math.max(0, G.pull == null ? 0.25 : G.pull);
+    if (pull > 0) {
+      const cyc = Math.max(0.5, G.pullT == null ? 5 : G.pullT);
+      const u = (kvGT() % cyc) / cyc;                        /* 0→1 のくり返し */
+      gyPull = 1 - pull * gyMix * Math.pow(Math.sin(u * Math.PI), 2);
+    }
+  }
+  return {
+    cx: b.cx + p.dx + dfx, cy: b.cy + p.dy + dfy,
+    /* 案ごとの「軌道のサイズ」もここで掛ける (2026-08-28 ヒデさん指定) */
+    rx: b.rx * p.scale * gyPull * convOrbitScale(),
+    ry: b.ry * p.scale * (p.flat == null ? 1 : p.flat) * gyK * gyPull * convOrbitScale(),
+    /* 【2026-08-27 ヒデさん指定】軌道そのものを回す/漂わせる(これまでは形が固定だった)。
+       惑星の案を選んでいる時だけ効かせる */
+    rot: b.rot + p.angle + wobble + (noSpin ? 0 : convOrbitSpin(key) + gyRot),
+  };
+}
+
+/* ===== 楕円の上に「見た目が均等」に点を並べるための表 (2026-08-28 ヒデさん指定) =====
+   ⚠️ これまでは【角度を等分】して並べていた。楕円は長径の両端でカーブがきつく、
+      同じ角度でも弧の長さが短いので、そこだけ点が詰まって見えていた(ヒデさん指摘の箇所)。
+   弧の長さで等分し直すと、見た目が均等になる。
+   ・表は「1周のどこ(u=0〜1)」→「楕円の角度(度)」の対応。
+   ・形(ry/rx)が同じなら結果も同じなので、比率ごとに作って使い回す(小数2桁で丸めて共用)。
+   ・u を進めれば弧の上を一定の速さで進むので、端で速くなる/遅くなるムラも消える。 */
+const convArcTables = new Map();
+function convArcTable(ratio) {
+  const key = ratio.toFixed(2);
+  let t = convArcTables.get(key);
+  if (t) return t;
+  const r = Math.max(0.02, +key);
+  const STEPS = 1440, cum = [0];
+  let px = 1, py = 0, total = 0;
+  for (let i = 1; i <= STEPS; i++) {
+    const a = i / STEPS * Math.PI * 2;
+    const x = Math.cos(a), y = Math.sin(a) * r;
+    total += Math.hypot(x - px, y - py); cum.push(total); px = x; py = y;
+  }
+  const N = 512; t = new Float32Array(N + 1);
+  let j = 0;
+  for (let k = 0; k <= N; k++) {
+    const want = total * k / N;
+    while (j < STEPS && cum[j + 1] < want) j++;
+    const seg = (cum[j + 1] - cum[j]) || 1;
+    t[k] = ((j + (want - cum[j]) / seg) / STEPS) * 360;
+  }
+  t[N] = 360;
+  convArcTables.set(key, t);
+  if (convArcTables.size > 48) convArcTables.delete(convArcTables.keys().next().value);
+  return t;
+}
+/* u(0〜1、はみ出しても可) → 楕円の角度(度) */
+function convArcAngle(ratio, u) {
+  const t = convArcTable(ratio), N = t.length - 1;
+  const uu = u - Math.floor(u);
+  const x = uu * N, i = Math.floor(x), f = x - i;
+  return t[i] + (t[i + 1] - t[i]) * f;
+}
+
+function posOn(g, deg) {
+  const t = deg * Math.PI / 180;
+  const rot = g.rot * Math.PI / 180;
+  const lx = g.rx * Math.cos(t), ly = g.ry * Math.sin(t);
+  return {
+    x: g.cx + lx * Math.cos(rot) - ly * Math.sin(rot),
+    y: g.cy + lx * Math.sin(rot) + ly * Math.cos(rot),
+    front: Math.sin(t) > 0,   // 楕円ローカルで下半分 = 手前側
+  };
+}
+
+/* ================= 【2026-08-29 ヒデさん指定】自由回転＝軌道の疑似3D =================
+   惑星は動かさず、軌道(楕円)を「3Dの円」として捉え、傾けた分だけ形を計算し直して
+   2Dのまま描く(ペラペラにならない)。惑星中心を軸に system 全体を倒す。前後(z)で分割し、
+   手前(z>=0)は惑星の前(layer-front)、奥(z<0)は惑星の後ろ(layer-back)に描く。 */
+const kvRepro = (function () {
+  const D2R = Math.PI / 180;
+  const C0X = 457.1, C0Y = 288.3;   // 惑星(グラフィック)の中心＝倒す時の軸
+  let bg, fg, dbg, dfg, ready = false;
+  function grp(parent) { const g = document.createElementNS(SVG_NS, 'g'); parent.appendChild(g); return g; }
+  function ensure() {
+    if (ready) return;
+    const lb = document.querySelector('.orbit .layer-back'), lf = document.querySelector('.orbit .layer-front');
+    if (!lb || !lf) return;
+    bg = grp(lb); dbg = grp(lb);   // 奥の軌道 / 奥のドット
+    fg = grp(lf); dfg = grp(lf);   // 手前の軌道 / 手前のドット
+    ready = true;
+  }
+  function rot3(x, y, z, ax, ay, az) {
+    ax *= D2R; ay *= D2R; az *= D2R;
+    let y1 = y * Math.cos(ax) - z * Math.sin(ax), z1 = y * Math.sin(ax) + z * Math.cos(ax);   // X(奥に倒す)
+    let x2 = x * Math.cos(ay) + z1 * Math.sin(ay), z2 = -x * Math.sin(ay) + z1 * Math.cos(ay); // Y
+    let x3 = x2 * Math.cos(az) - y1 * Math.sin(az), y3 = x2 * Math.sin(az) + y1 * Math.cos(az); // Z
+    return [x3, y3, z2];
+  }
+  /* 楕円 g={cx,cy,rx,ry,rot} 上の角度 th(ラジアン) の点を、傾いた円として3D化 → 自由回転 → 投影 */
+  function pt3(g, th, ax, ay, az) {
+    const rx = g.rx, ry = g.ry, rot = g.rot * D2R;
+    const wide = rx >= ry;
+    const R = wide ? rx : ry;
+    const phi = Math.acos(Math.max(0, Math.min(1, wide ? ry / rx : rx / ry)));
+    let lx, ly, lz;
+    if (wide) { lx = R * Math.cos(th); ly = R * Math.sin(th) * Math.cos(phi); lz = R * Math.sin(th) * Math.sin(phi); }
+    else { lx = R * Math.cos(th) * Math.cos(phi); ly = R * Math.sin(th); lz = R * Math.cos(th) * Math.sin(phi); }
+    const x3 = lx * Math.cos(rot) - ly * Math.sin(rot), y3 = lx * Math.sin(rot) + ly * Math.cos(rot);
+    const p = rot3(g.cx + x3 - C0X, g.cy + y3 - C0Y, lz, ax, ay, az);
+    return [C0X + p[0], C0Y + p[1], p[2]];   // [x, y, depth(手前が+)]
+  }
+  function ringPaths(g, ax, ay, az) {
+    const N = 128, pts = [];
+    for (let i = 0; i <= N; i++) pts.push(pt3(g, i / N * 2 * Math.PI, ax, ay, az));
+    const segs = { front: [], back: [] }; let cur = null, sign = null;
+    for (const p of pts) {
+      const s = p[2] >= 0 ? 'front' : 'back';
+      if (s !== sign) { if (cur && cur.length > 1) segs[sign].push(cur); cur = [p]; sign = s; }
+      else cur.push(p);
+    }
+    if (cur && cur.length > 1) segs[sign].push(cur);
+    const toD = run => 'M' + run.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+    return { front: segs.front.map(toD), back: segs.back.map(toD) };
+  }
+  function path(parent, d, stroke, w) {
+    const p = document.createElementNS(SVG_NS, 'path');
+    p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', stroke);
+    p.setAttribute('stroke-width', w); p.setAttribute('stroke-linecap', 'round');
+    parent.appendChild(p);
+  }
+  function readEll(e) {
+    const tr = e.getAttribute('transform') || ''; const m = /rotate\(([-\d.]+)/.exec(tr);
+    return { cx: +e.getAttribute('cx'), cy: +e.getAttribute('cy'), rx: +e.getAttribute('rx'), ry: +e.getAttribute('ry'), rot: m ? +m[1] : 0 };
+  }
+  const HIDE_IDS = ['ellOuterF', 'ellOuterB', 'ellInnerF', 'ellInnerB'];
+  function setHidden(hide) {
+    const d = hide ? 'none' : '';
+    for (const id of HIDE_IDS) { const e = document.getElementById(id); if (e) e.style.display = d; }
+    /* 【2026-09-02 ヒデさん指定】自由回転で回すのは軌道(輪・アトム型リング)だけ。
+       粒・ドット(基本7個/データ粒/漂う粒)は連動させない＝隠さず通常描画のまま残す。
+       以前はここで dotsBackG/dotsFrontG ごと非表示にしていたため、XYZを動かした瞬間に
+       粒が全部消える(アトム型では再投影も無く完全に消える)バグになっていた */
+    if (dotsBackG) dotsBackG.style.display = '';
+    if (dotsFrontG) dotsFrontG.style.display = '';
+    if (typeof convShapeBack !== 'undefined' && convShapeBack) for (const e of convShapeBack) e.style.display = d;
+    if (typeof convShapeFront !== 'undefined' && convShapeFront) for (const e of convShapeFront) e.style.display = d;
+  }
+  function clear() { for (const g of [bg, fg, dbg, dfg]) if (g) g.textContent = ''; }
+  function update(geoms, shapeOn) {
+    ensure(); if (!ready) return;
+    const kv = params.kv || {}; const ax = kv.rotX || 0, ay = kv.rotY || 0, az = kv.rotZ || 0;
+    const active = !!(ax || ay || az);
+    if (!active) { setHidden(false); clear(); return; }
+    setHidden(true); clear();
+    /* いま出ている軌道リングを集める */
+    const rings = [];
+    if (shapeOn && typeof convShapeBack !== 'undefined' && convShapeBack) {
+      for (let i = 0; i < convShapeBack.length; i++) {
+        const e = convShapeBack[i]; if (+(e.getAttribute('opacity') || 0) < 0.02) continue;
+        const w = e.getAttribute('stroke-width') || '3';
+        rings.push({ g: readEll(e), gf: 'url(#gShRF' + i + ')', gb: 'url(#gShRB' + i + ')', w });
+      }
+    } else {
+      const oW = (document.getElementById('ellOuterF') || {}).getAttribute ? document.getElementById('ellOuterF').getAttribute('stroke-width') : '3';
+      const iW = (document.getElementById('ellInnerF') || {}).getAttribute ? document.getElementById('ellInnerF').getAttribute('stroke-width') : '3';
+      const C = params.conv || {};
+      if (C.showOuter !== false) rings.push({ g: geoms.outer, gf: 'url(#gOuterF)', gb: 'url(#gOuterB)', w: oW || '3' });
+      if (C.showInner !== false) rings.push({ g: geoms.inner, gf: 'url(#gInnerF)', gb: 'url(#gInnerB)', w: iW || '3' });
+    }
+    for (const r of rings) {
+      const { front, back } = ringPaths(r.g, ax, ay, az);
+      for (const d of back) path(bg, d, r.gb, r.w);
+      for (const d of front) path(fg, d, r.gf, r.w);
+    }
+    /* 【2026-09-02 ヒデさん指定】ドットの再投影は廃止。粒・ドットは自由回転に連動させず、
+       通常パイプライン(隠していない dotsBackG/dotsFrontG)がそのまま描き続ける */
+  }
+  return { update, setHidden };
+})();
+
+/* ===== ネットワーク周回 3D (2026-08-29 ヒデさん指定・Figma 15970-42735 の再現) =====
+   周回のみグループの新バリエーション。惑星は固定のまま、3本の軌道を「傾いた3Dの円」として描く。
+   3D=手前が太く奥が細い線幅テーパー＋物理(手前のドットは速く/奥はゆっくり)。2Dはフラット均一線。
+   実測(frame 850x521・惑星448.67,255.64)を KV座標系(915.483x630・惑星457.1,288.3)へ平行移動。 */
+const net3d = (function () {
+  const D2R = Math.PI / 180;
+  const SX = 457.1 - 448.67, SY = 288.3 - 255.64;   // 惑星中心をKVへ合わせる平行移動
+  const ORBITS = [
+    { key: 'big',   cx: 425.1 + SX, cy: 260.4 + SY, R: 441.5, phi: 81,   rho: -26.79, grad: 'gNet0', flipZ: 1, dot: { ang: 210, c: '#0EBBFF' } },
+    { key: 'horiz', cx: 425.1 + SX, cy: 284.1 + SY, R: 376.5, phi: 80.6, rho: 0,      grad: 'gNet1', flipZ: 1, dot: { ang: 205, c: '#0E4497' } },
+    { key: 'cross', cx: 437.5 + SX, cy: 263.7 + SY, R: 174,   phi: 80.6, rho: 27.34,  grad: 'gNet2', flipZ: 1, dot: { ang: 150, c: '#FF5D97' } },
+  ];
+  ORBITS.forEach(o => { o.theta = o.dot.ang * D2R; });
+  let bg, fg, dbg, dfg, ready = false, defsDone = false, lastT = null, wasActive = false;
+  let spinAng = 0;   /* 【2026-08-30】軌道の回転の累積角(時間で回す) */
+  function grp(p) { const g = document.createElementNS(SVG_NS, 'g'); p.appendChild(g); return g; }
+  function addDefs(svg) {
+    let defs = svg.querySelector('defs');
+    if (!defs) { defs = document.createElementNS(SVG_NS, 'defs'); svg.insertBefore(defs, svg.firstChild); }
+    ORBITS.forEach(o => {
+      if (defs.querySelector('#' + o.grad)) return;
+      const a = o.rho * D2R, L = o.R;
+      const x1 = o.cx - Math.cos(a) * L, y1 = o.cy - Math.sin(a) * L, x2 = o.cx + Math.cos(a) * L, y2 = o.cy + Math.sin(a) * L;
+      const lg = document.createElementNS(SVG_NS, 'linearGradient');
+      lg.id = o.grad; lg.setAttribute('gradientUnits', 'userSpaceOnUse');
+      lg.setAttribute('x1', x1.toFixed(1)); lg.setAttribute('y1', y1.toFixed(1));
+      lg.setAttribute('x2', x2.toFixed(1)); lg.setAttribute('y2', y2.toFixed(1));
+      [['0', '#00ABEB'], ['0.49', '#ffffff'], ['1', '#FF5D97']].forEach(s => {
+        const st = document.createElementNS(SVG_NS, 'stop'); st.setAttribute('offset', s[0]); st.setAttribute('stop-color', s[1]); lg.appendChild(st);
+      });
+      defs.appendChild(lg);
+    });
+  }
+  function ensure() {
+    if (ready) return;
+    const lb = document.querySelector('.orbit .layer-back'), lf = document.querySelector('.orbit .layer-front');
+    if (!lb || !lf) return;
+    bg = grp(lb); dbg = grp(lb); fg = grp(lf); dfg = grp(lf); ready = true;
+    if (!defsDone) { addDefs(lb); addDefs(lf); defsDone = true; }   /* グラデは両レイヤーに(別SVGなので)  */
+  }
+  function pt3(o, th, spin) {
+    const x = o.R * Math.cos(th), y = o.R * Math.sin(th), ph = o.phi * D2R, rh = o.rho * D2R;
+    const y2 = y * Math.cos(ph), z2 = o.flipZ * (-y * Math.sin(ph));
+    let x3 = x * Math.cos(rh) - y2 * Math.sin(rh); const y3 = x * Math.sin(rh) + y2 * Math.cos(rh);
+    let z = z2;
+    /* 【2026-08-30 ヒデさん指定】軌道の回転: 3D構造ぜんぶを縦(画面Y)軸まわりに回す。
+       横(x3)と奥行き(z)を混ぜる=惑星が回るような立体スピン。y3(縦)は不動。 */
+    if (spin) { const cs = Math.cos(spin), sn = Math.sin(spin); const nx = x3 * cs - z * sn; z = x3 * sn + z * cs; x3 = nx; }
+    return [o.cx + x3, o.cy + y3, z];
+  }
+  function widthAt(z, R) {
+    const n = params.net3d || {};
+    if ((n.mode || '3d') === '2d') return (n.flatW != null ? n.flatW : 2);
+    const t = (z / R + 1) / 2, fw = n.frontW != null ? n.frontW : 5, bw = n.backW != null ? n.backW : 1;
+    return bw + (fw - bw) * t;
+  }
+  function path(parent, d, stroke, w) {
+    const p = document.createElementNS(SVG_NS, 'path'); p.setAttribute('d', d); p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', stroke); p.setAttribute('stroke-width', w.toFixed(2)); p.setAttribute('stroke-linecap', 'round'); parent.appendChild(p);
+  }
+  function clear() { for (const g of [bg, fg, dbg, dfg]) if (g) g.textContent = ''; }
+  const HIDE_IDS = ['ellOuterF', 'ellOuterB', 'ellInnerF', 'ellInnerB'];
+  function setHidden(hide) {
+    const d = hide ? 'none' : '';
+    for (const id of HIDE_IDS) { const e = document.getElementById(id); if (e) e.style.display = d; }
+    if (typeof dotsBackG !== 'undefined' && dotsBackG) dotsBackG.style.display = d;
+    if (typeof dotsFrontG !== 'undefined' && dotsFrontG) dotsFrontG.style.display = d;
+    if (typeof convShapeBack !== 'undefined' && convShapeBack) for (const e of convShapeBack) e.style.display = d;
+    if (typeof convShapeFront !== 'undefined' && convShapeFront) for (const e of convShapeFront) e.style.display = d;
+  }
+  function active() { return !!(params.conv && params.conv.net3d); }
+  function update() {
+    if (!active()) {
+      if (wasActive) { if (ready) { setHidden(false); clear(); } wasActive = false; }
+      lastT = null; return;
+    }
+    ensure(); if (!ready) return;
+    wasActive = true; setHidden(true); clear();
+    const n = params.net3d || {}, mode = n.mode || '3d';
+    const spd = (n.spd != null ? n.spd : 0.7) * 1.1, phys = (n.phys != null ? n.phys : 0.7);
+    let dt = (lastT == null ? 0 : Math.min(0.05, Math.max(0, elapsed - lastT))); lastT = elapsed;
+    if (params.running === false) dt = 0;
+    /* 【2026-08-30 ヒデさん指定】軌道の回転(3D構造まるごとスピン)と、それに粒を連動させるか。 */
+    const orbitSpin = (n.spin != null ? n.spin : 0);
+    spinAng += orbitSpin * 0.7 * dt;
+    const lineSpin = orbitSpin ? spinAng : 0;
+    /* 連動オフ(spinDots=false)なら、線だけ回して粒は元の軌道面のまま(粒の回転軸を変えない) */
+    const dotSpin = (orbitSpin && n.spinDots !== false) ? spinAng : 0;
+    const showDots = n.showDots !== false;
+    const N = 140;
+    ORBITS.forEach(o => {
+      const pts = [];
+      for (let i = 0; i <= N; i++) pts.push(pt3(o, i / N * 2 * Math.PI, lineSpin));
+      for (let i = 0; i < N; i++) {
+        const a = pts[i], b = pts[i + 1], zA = (a[2] + b[2]) / 2, w = widthAt(zA, o.R);
+        path(zA >= 0 ? fg : bg, `M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${b[0].toFixed(1)} ${b[1].toFixed(1)}`, 'url(#' + o.grad + ')', w);
+      }
+      if (!showDots) return;   /* 粒オフ: この軌道のドットは描かない(周回計算も不要) */
+      /* ドットの物理: 手前(zN>0)ほど速く・奥ほどゆっくり。2Dは一定 */
+      const zc = pt3(o, o.theta, dotSpin)[2], zN = zc / o.R;
+      const factor = mode === '3d' ? (1 + phys * zN) : 1;
+      o.theta += spd * Math.max(0.08, factor) * dt;
+      /* 【2026-08-29 ヒデさん指定】飛び交うドット数を可変に。1本の軌道に等間隔で並べて流す。 */
+      const cnt = Math.max(1, Math.min(12, Math.round(n.dots != null ? n.dots : 1)));
+      for (let k = 0; k < cnt; k++) {
+        const p = pt3(o, o.theta + k * (2 * Math.PI / cnt), dotSpin);
+        const c = document.createElementNS(SVG_NS, 'circle');
+        const r = mode === '3d' ? Math.max(3, 5 + (p[2] / o.R) * 2.2) : 6;
+        c.setAttribute('cx', p[0].toFixed(1)); c.setAttribute('cy', p[1].toFixed(1));
+        c.setAttribute('r', r.toFixed(1)); c.setAttribute('fill', o.dot.c);
+        (p[2] >= 0 ? dfg : dbg).appendChild(c);
+      }
+    });
+  }
+  return { update, setHidden, active };
+})();
+
+
+/* ===== 【2026-09-15 ヒデさん指定】お問い合わせのデザイン案(10案)。流れるディザを活かしつつ、フッター一体型(ロゴなし)を含む =====
+   fi=フッター一体型(通常フッターを隠す) / card=角丸カード＋黒帯(一体型だが画面幅いっぱいにはしない) / dark=ディザを暗いトーンに(シェーダ uTone) */
+const CV_STYLES = [
+  { key: '0',  name: '現行', fixed: true, tip: 'カンプどおり: 1200×416 の枠に流れるディザ、中央に見出し・本文・黒ボタン。フッターは通常。' },
+  { key: '10', name: 'フッター一体型・溶け込む', fi: true, tip: '上端をページの地色から徐々に現れるようにマスクし、下端までディザが続く。中央に見出し、下端にフッター。' },
+];
+
+/* ===== 【2026-09-15 ヒデさん指定】お問い合わせのカラー案(10案)。ブランド色を使いつつ、グラデの形・ディザの具合・暗さ(黒ベース)を変える。
+   選ぶとその案の値を params.cv に入れる(＝下のつまみで細かく変えられる。⋯「いまの設定で上書き」でその案に保存) ===== */
+const CV_DEF_COLORS = ['#fee0f8', '#b6e0ff', '#0ebbff', '#477ed1', '#ff5d97'];
+/* ===== 【2026-09-15 ヒデさん指定・作り直し】「色が移ろう」= ブランド色と白の間だけを行き来する =====
+   ⚠️ 以前は色相(hue)をぐるっと回していたので、青からピンクへ行く途中で【ブランドにない色(緑・黄など)】が出ていた。
+      → 色相を回すのをやめ、「ブランド色で作った5色セット(パレット)」ごと入れ替える方式に。
+        間に白のパレットを挟むので、にごった中間色を通らずに色味だけが徐々に変わる。
+        白の入り具合(moodWhite)を下げると、白を通らず直接つなぐ(=中間色が少し出る)。 */
+const CV_MOOD_PAL = {
+  navy:  ['#eaf1ff', '#9dc0f7', '#2f6fd0', '#153f8f', '#0e4497'],   /* 紺 */
+  blue:  ['#eef7ff', '#b6e0ff', '#0ebbff', '#2f6fd0', '#0e4497'],   /* 青(シアン→紺) */
+  cyan:  ['#f2fbff', '#c9edff', '#0ebbff', '#0aa0e0', '#0e79b8'],   /* シアン */
+  white: ['#ffffff', '#f4f9ff', '#ffffff', '#fdf2f7', '#ffffff'],   /* 白(通過点) */
+  pink:  ['#fff0f7', '#ffc2dc', '#ff5d97', '#f2529a', '#c8317a'],   /* ピンク */
+};
+const CV_MOOD_RINGS = { swing: ['blue', 'white', 'pink', 'white'], cycle: ['navy', 'cyan', 'white', 'pink'] };
+let cvMoodCache = null;
+/* 白のパレットは「両隣の中間色」と白の間で混ぜる(白の入り具合 wAmt)。1周ぶんを組み立てて使い回す */
+function cvMoodBuild(mode, wAmt) {
+  if (cvMoodCache && cvMoodCache.m === mode && cvMoodCache.w === wAmt) return cvMoodCache.p;
+  const names = CV_MOOD_RINGS[mode]; if (!names) return null;
+  const N = names.length;
+  const pal = names.map((nm, i) => {
+    const base = CV_MOOD_PAL[nm] || CV_MOOD_PAL.blue;
+    if (nm !== 'white') return base.map(h => cvHex(h, '#ffffff'));
+    const a = CV_MOOD_PAL[names[(i - 1 + N) % N]] || base, b = CV_MOOD_PAL[names[(i + 1) % N]] || base;
+    return base.map((h, j) => {
+      const W = cvHex(h, '#ffffff'), A = cvHex(a[j], '#ffffff'), B = cvHex(b[j], '#ffffff');
+      return [0, 1, 2].map(k => { const mid = (A[k] + B[k]) / 2; return mid + (W[k] - mid) * wAmt; });
+    });
+  });
+  cvMoodCache = { m: mode, w: wAmt, p: pal };
+  return pal;
+}
+/* p = 1周のうちどこにいるか(0〜1)。隣り合うパレットをなめらかに混ぜて5色を返す */
+function cvMoodAt(p, mode, wAmt) {
+  const pal = cvMoodBuild(mode, wAmt); if (!pal) return null;
+  const N = pal.length, x = ((p % 1) + 1) % 1 * N, i = Math.floor(x) % N, f = x - Math.floor(x), e = f * f * (3 - 2 * f);
+  const A = pal[i], B = pal[(i + 1) % N];
+  return A.map((c, j) => [0, 1, 2].map(k => c[k] + (B[j][k] - c[k]) * e));
+}
+/* ===== 【2026-09-19 ヒデさん依頼】色の入れ替わり =====
+   「白のところは変わらず、ピンクのところがブルーに、ライトブルーになる」= 白い核(c0)は固定し、外側の4色(淡ブルー/シアン/青/ピンク)の
+   並びを時間で入れ替える。swap=1つずつ外へ回す(ピンクの面 → 青 → シアン → 淡ブルー → ピンク) / flip=左右(内外)を反転(ピンク⇄淡ブルー)。
+   各状態に「留まる」時間(swapHold)を置き、残りでなめらかに混ぜる(白を経由しないので中間色はブランド色どうしの混色)。
+   13段(カンプ)ランプは、状態0=カンプ実測の13色そのまま / それ以外=並べ替えた5色から13の位置で作る。 */
+const CV_COMP_STOPS = [[0.996,0.878,0.973],[0.714,0.878,1.000],[0.549,0.843,1.000],[0.384,0.808,1.000],[0.220,0.769,1.000],[0.137,0.753,1.000],[0.055,0.733,1.000],[0.169,0.612,0.910],[0.278,0.494,0.820],[0.459,0.463,0.765],[0.639,0.427,0.706],[0.820,0.396,0.651],[1.000,0.365,0.592]];
+const CV_COMP_POS = [0, 0.26237, 0.34377, 0.42516, 0.50656, 0.54725, 0.58795, 0.67557, 0.76318, 0.82239, 0.88159, 0.94080, 1];
+const CV_COMP_FLAT = new Float32Array(CV_COMP_STOPS.flat());
+function cvRamp5(t, pal) { const P = [0, 0.262, 0.588, 0.763, 1]; t = Math.min(1, Math.max(0, t)); for (let i = 0; i < 4; i++) { if (t <= P[i + 1]) { const f = (t - P[i]) / (P[i + 1] - P[i]); return [0, 1, 2].map(k => pal[i][k] + (pal[i + 1][k] - pal[i][k]) * f); } } return pal[4]; }
+function cvSwapState(mode, base5, k) { const o = base5.slice(1); let r; if (mode === 'flip') r = (k % 2) ? o.slice().reverse() : o; else { const n = ((k % 4) + 4) % 4; r = o.map((_, i) => o[(i - n + 4) % 4]); } return [base5[0]].concat(r); }
+function cvSwapAt(p, mode, cols5, hold) {
+  const base5 = (Array.isArray(cols5) ? cols5 : CV_DEF_COLORS).map((h, i) => cvHex(h, CV_DEF_COLORS[i]));
+  const N = mode === 'flip' ? 2 : 4; const x = (((p % 1) + 1) % 1) * N; const i = Math.floor(x) % N; const f = x - Math.floor(x);
+  const h = Math.min(0.95, Math.max(0, hold)); const g = f <= h ? 0 : (f - h) / (1 - h); const e = g * g * (3 - 2 * g);
+  const A = cvSwapState(mode, base5, i), B = cvSwapState(mode, base5, i + 1);
+  const five = A.map((c, j) => [0, 1, 2].map(k => c[k] + (B[j][k] - c[k]) * e));
+  const comp13 = (st, k) => (k % N === 0) ? CV_COMP_STOPS : CV_COMP_POS.map(t => cvRamp5(t, st));
+  const CA = comp13(A, i), CB = comp13(B, i + 1);
+  const comp = new Float32Array(39); for (let j = 0; j < 13; j++) for (let k = 0; k < 3; k++) comp[j * 3 + k] = CA[j][k] + (CB[j][k] - CA[j][k]) * e;
+  return { five, comp };
+}
+function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
+const CV_BLEND_DEF = 260;      /* 【2026-09-16 改訂2】溶け込みの深さの既定 px。上(導入事例側)まで色を届かせつつ、rise＋本体で線を出さず溶かす */
+const CV_HEAD_TOP_DEF = 120;   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
+const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, swayDeg: 12, swaySec: 40, swayMode: 0, ramp: 0, addT: 0, addB: 0 };
+/* ===== 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。お問い合わせのグラデがどう揺れるかの性格を切り替える。
+   URL: ?sway=0〜5。案を選ぶと「流れる雰囲気」のつまみにその案の値が入る(細かく変えたら ⋯「いまの設定で上書き」で保存) ===== */
+const SWAY_KEYS = ['swayMode', 'swayDeg', 'swaySec', 'wave', 'waveLen', 'waveSpd', 'speed', 'swell', 'flowScale', 'gcx', 'gcy', 'gr', 'swayPivot', 'waveAnchor', 'hueMode', 'moodSec', 'moodWhite', 'swapHold', 'core', 'coreSoft', 'coreSkip'];   /* 2026-09-19: 色の入れ替わり(hueMode 等)も案の一部に=別欄と喧嘩しない */   /* 2026-09-18: 白い光の中心(gcx/gcy)と広がり(gr)、揺らぎの軸・うねり抑制も案の値に */
+const SWAY_BASE = { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 0, waveAnchor: 0, hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, core: 0, coreSoft: 0, coreSkip: 0 };   /* 【2026-09-15 ヒデさん指摘】粒(fbm=speed/swell)を弱め、大きな波(wave)＋全体のゆらぎ(sway)で『面ごと』うねらせる */
+const CV_SWAYS = [
+  { key: '0', name: '現行 ゆっくり流れる（うねり）', fixed: true, tip: '波全体がゆっくり左右にうねる。粒のざわつきは無く、色の面ごと大きく形が変わる。落ち着いた基本の動き。',
+    cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9 } },
+  /* 【2026-09-18 ヒデさん依頼】フォームの後ろに白が来て白飛びする対策として、白い光が「右上のあたりを漂う」3案(見た目は極力そのまま)。
+     白がフォームまで流れ込む主因は うねり(wave 0.40=画面の4割ぶん位置がずれる)。7=うねりを小さく / 8=白の広がりを絞る / 9=白はほぼ固定 */
+  { key: '7', name: '案1 白は右上を漂う（うねり小さめ）', tip: '白い光は右上の周りだけをゆっくり漂う。うねり(波)を 0.40→0.18 に小さくして中央のフォームまで流れ込まないように。色の面の動きはそのまま。',
+    cv: { swayMode: 0, swayDeg: 8, swaySec: 40, wave: 0.18, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.82, gcy: 0.10, gr: 0.9 } },
+  { key: '8', name: '案2 白の広がりを絞る（右上の小さな光）', tip: '動きは今のまま、白い光の広がりを 0.9→0.6 に小さくして、フォームまで届かないようにする。',
+    cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.82, gcy: 0.10, gr: 0.6 } },
+  { key: '9', name: '案3 白は右上に固定・色だけ流れる', tip: '白い光はほぼ右上に固定(傾き3°・うねり0.12)し、周りの色のうねりだけ続ける。いちばん静か。',
+    cv: { swayMode: 0, swayDeg: 3, swaySec: 40, wave: 0.12, waveLen: 0.50, waveSpd: 0.06, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.80, gcy: 0.10, gr: 0.8 } },
+  { key: '10', name: '案4 白を軸に揺らす（白の近くはうねらせない）', tip: '揺らぎの軸を画面中心から白い光の中心へ移し、白の近くだけうねりを弱める。白は右上に留まり、周りの色は今までどおり動く(見た目を一番損なわない)。',
+    cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85 } },
+  /* 【2026-09-19 ヒデさん依頼】色の入れ替わりは別の欄(色の移ろい)ではなく、この案の一部に。案4の動き＋色。
+     どの案も hueMode を持つ(SWAY_BASE で 'off')ので、案を切り替えれば前の案の色設定は残らない=喧嘩しない */
+  { key: '11', name: '案5 色が入れ替わる（案4の動き＋白はそのまま・ピンク→青→水色）', tip: '案4の動きのまま、白い光は変えずに外側の色だけが時間で入れ替わる(ピンクの面が 青→シアン→水色→ピンク と一周)。1周の時間と留まる割合は下のつまみ。',
+    cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85, hueMode: 'swap', moodSec: 30, moodWhite: 0.85, swapHold: 0.45 } },
+  { key: '12', name: '案6 左右入れ替え（案4の動き＋ピンク⇄水色）', tip: '案4の動きのまま、ピンクと水色が内外で入れ替わる往復(白はそのまま)。',
+    cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85, hueMode: 'flip', moodSec: 30, moodWhite: 0.85, swapHold: 0.45 } },
+  /* 【2026-09-19 ヒデさん指定】「白エリアの領域を絞り、ゆらぎも基本は右上で範囲も抑えて」→ 広がり 0.9→0.55・中心を右上(0.84,0.10)・揺らぎの軸は白・傾き±6°・うねり 0.16・白の近くはうねらせない(0.9) */
+  { key: '13', name: '案7 白なし・右上に留める（揺らぎ小）', tip: '白い領域を取り(中心は水色〜シアンから始まる)、いちばん明るい所を右上(84%,10%)に置く。揺らぎの軸を白に置いて傾き±6°・うねり 0.16 に抑え、白の近くはうねらせない＝白はほぼ右上に留まり、周りの色だけ静かに動く。',
+    cv: {swayMode: 0,swayDeg: 6,swaySec: 40,wave: 0.16,waveLen: 0.5,waveSpd: 0.08,speed: 0.04,swell: 0.02,flowScale: 0.4,gcx: 0.84,gcy: 0.1,gr: 0.8,swayPivot: 1,waveAnchor: 0.9,hueMode: 'off',moodSec: 30,moodWhite: 0.85,swapHold: 0.45, core: 0, coreSoft: 0.12, coreSkip: 0.34} },
+];
+function cvSwayKey() { const v = String((params && params.cvSway) || '0'); return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
+function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
+
+/* ===== 【2026-09-16 改訂・ヒデさん依頼】お問い合わせ上部の「溶け込み(馴染ませ)」=====
+   デザインサンプル(Figma 17400:22955)を実測: ピンクは縦の線形グラデ(上端=透明→下端=満色)を
+   お問い合わせ帯まるごと(≒947px)の長い距離でかけ、Bayerディザを重ねたもの。境目に線・波・形は無い。
+   2案の違いはグレーの「ぼかし玉(レイヤーブラー354px)」の置き方だけ(=大きな非対称のゆらぎ。細かい揺れではない)。
+   → v4 でも rise(導入事例の下の空き)＋本体の中 を合わせた長い距離で、上端の傾きを 0 に近づけて溶かす。
+   案は“形”でなく“溶け込みの深さ(blend px)”の違いだけにする(波・弧・斜め・二段・もやは撤去)。 */
+const CV_EDGES = [
+  { key: '0', name: '標準（上まで馴染ませる）', blend: 260, shape: 'linear', fixed: true, tip: '導入事例のカード下まで色が届き、そこへ柔らかく溶け込む(奥行き)。境目の線は出ない既定。余白は詰めめ。' },
+  { key: '1', name: 'さらに深く（もっとゆるやか）', blend: 460, shape: 'linear', tip: 'もっと下まで使ってさらにゆっくり。上端がいちばん淡い。' },
+  { key: '2', name: '浅め（コンパクト）',          blend: 160, shape: 'linear', tip: '溶け込みを短めに。余白をぐっと詰めたい時。それでも線は出さず徐々に。' },
+];
+function cvEdgeKey() { const v = String((params && params.cvEdge) || '0'); return (CV_EDGES.some(e => e.key === v) && !variantRemovedKey('cvEdge', v)) ? v : '0'; }
+function applyCvEdge(key) { const e = CV_EDGES.find(x => x.key === key); if (!e) return; params.cvEdge = String(key); params.cv = params.cv || {}; params.cv.blend = e.blend; }
+
+/* 溶け込みの縦グラデ(スムーザーステップ)を H px で作る文字列。上端=透明 → H px で満色。
+   H を長く取り、上端の傾きを 0 に近づけることで「色が始まる線」を消す(馴染ませが目的)。 */
+function cvFadeStops(H, ang) {
+  const P = [[0,0],[.0625,.01],[.125,.042],[.1875,.098],[.25,.167],[.375,.333],[.5,.5],[.625,.667],[.75,.833],[.8125,.902],[.875,.958],[.9375,.99],[1,1]];
+  const body = P.map(([t,a]) => `rgba(0,0,0,${a}) ${(t*H).toFixed(1)}px`).join(',');
+  return `linear-gradient(${ang||'180deg'}, ${body})`;
+}
+/* #cvCanvas に、上端(=導入事例側)から span px かけて満色になる縦マスクを直接適用(PCのみ)。
+   span を長く(rise＋本体の中)取るので、境目は線にならず本体の中で徐々に色が乗る。形(波/弧)は付けない。 */
+function cvEdgeMask(canvas, span) {
+  span = Math.max(1, Math.round(span));
+  const img = cvFadeStops(span, '180deg');
+  canvas.style.maskImage = img;        canvas.style.webkitMaskImage = img;
+  canvas.style.maskSize = '100% 100%'; canvas.style.webkitMaskSize = '100% 100%';
+  canvas.style.maskRepeat = 'no-repeat'; canvas.style.webkitMaskRepeat = 'no-repeat';
+  canvas.style.maskPosition = 'top';   canvas.style.webkitMaskPosition = 'top';
+  canvas.style.maskComposite = '';     canvas.style.webkitMaskComposite = '';
+}
+
+/* ===== 【2026-09-16 ヒデさん依頼】お問い合わせのグラデの「形」を調整パネルで選ぶ =====
+   デザインサンプル(17400:22955)は輪の無い“縦グラデ”。現行は放射(同心円)。色は現行のまま、形だけ切替。
+   最終形はヒデさんが実物を見比べて決める(varRowX でパターン選択)。 */
+/* 【2026-09-19 ヒデさん指摘「似たパラメーターの喧嘩」の根治】白い光の中心(gcx/gcy)と広がり(gr)は「グラデの案(cvSway)」が持ち主。
+   以前は FORM_BASE にも 0.78/0.12/0.9 が入っていて、読み込み時の cvApplyForm(cvFormKey()) が毎回上書きし、案で絞った白(案7 gr0.55)が負けていた。
+   → 形(FORM_BASE)からは外す。形1〜3(縦/斜め)は自分の中心を持つのでそのまま */
+const FORM_BASE = { gMode: 0, gAng: 0, gAspect: 1, gSpread: 0.85, contrast: 1.38 };   /* 放射=デザインカンプ 17398:21957 に一致(gSpread0.85でv4の背の低さを補正)。中心・広がりは案(cvSway)側 */
+const CV_FORMS = [
+  { key: '0', name: '放射（カンプ 17398・既定）',   tip: 'デザインカンプ 17398:21957 の放射グラデを再現。明るい中心=右上、そこからシアン→青→ピンク(左端)。色の比率・角度・広がりをカンプに一致。', cv: {} },
+  { key: '1', name: '縦グラデ（サンプル寄り）',   tip: 'サンプル同様、輪をなくして上→下へ素直に色が乗る。落ち着いた雰囲気。色は現行のまま。', cv: { gMode: 2, gAng: 90, gcx: 0.5, gcy: 0.5, gr: 1.15, gAspect: 1 } },
+  { key: '2', name: '放射・大きく柔らかく',       tip: '放射のまま“輪の主張”だけ消す。中心を大きく広げて同心円の帯をぼかす。色は残す。', cv: { gMode: 0, gcx: 0.60, gcy: 0.30, gr: 1.25, gAspect: 1.10, gSpread: 1.5, contrast: 1.34 } },
+  { key: '3', name: '斜めグラデ',               tip: '斜め35°の線形グラデ。帯が斜めに流れる。', cv: { gMode: 2, gAng: 35, gcx: 0.5, gcy: 0.5, gr: 1.2, gAspect: 1 } },
+];
+function cvFormKey() { const v = String((params && params.cvForm) || '0'); return (CV_FORMS.some(f => f.key === v) && !variantRemovedKey('cvForm', v)) ? v : '0'; }
+function cvApplyForm(key) { const c = CV_FORMS.find(f => f.key === key); if (!c) return; params.cvForm = String(key); params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(FORM_BASE), structuredClone(c.cv)); }
+
+/* 【V5.0 2026-09-16 ヒデさん依頼】お問い合わせの CTA(ボタン/フォーム直置き) と、自作フォームのスタイル案(5) */
+const CV_CTAS = [
+  { key: 'button', name: 'ボタン（遷移）',     tip: '現行。マーキーの「フォームを記入」ボタン。押すと別ページ(contact.html)へ遷移。' },
+  { key: 'form',   name: 'フォーム（直置き）', tip: '見出し・本文の下にお問い合わせフォームを直置き(遷移なし)。フォームの見た目は下の「フォームのスタイル」で選ぶ。' },
+];
+const CV_HDRS = [
+  { key: '5', name: 'フローティングピル',   tip: 'スクロールで画面の縁から浮くカプセル型に。ガラス＋影。' },
+  { key: '8',  name: '⑧ 左寄せピル(ロゴ＋バーガー)',   tip: 'スクロールで左に小さなピル。ロゴとハンバーガーが隣接。' },
+  { key: '12', name: '⑫ 分離: 丸ロゴ＋丸バーガー',     tip: '左に丸いロゴマーク、右に丸いハンバーガー。2つの浮遊要素。' },
+];
+function hdrModeKey() { const v = String((params && params.hdrMode) || '1'); if (CV_HDRS.some(h => h.key === v) && !variantRemovedKey('hdrMode', v)) return v; const first = CV_HDRS.find(h => !variantRemovedKey('hdrMode', h.key)); return first ? first.key : '5'; }   /* 削除済みなら生存案の先頭へ(既定が消えても壊れない) */
+/* 【V5.0 2026-09-17 ヒデさん依頼】ヘッダー変形の“モーション(イージング)”5案。速さは params.hdrDur(秒)。 */
+const CV_HDR_MOTIONS = [
+  { key: '1', name: 'なめらか',   ease: 'cubic-bezier(.4,0,.2,1)',      tip: '標準の ease-in-out。素直に加減速する落ち着いた変形。' },
+  { key: '2', name: 'キビキビ',   ease: 'cubic-bezier(.2,.9,.25,1)',    tip: '出だしが速く終わりでスッと止まる。反応が良い機敏な変形。' },
+  { key: '3', name: 'ゆったり',   ease: 'cubic-bezier(.45,.05,.4,1)',   tip: 'ゆっくり始まりゆっくり収まる。上品でゆとりのある変形。' },
+  { key: '4', name: 'バウンド',   ease: 'cubic-bezier(.34,1.45,.5,1)',  tip: '終点で少し行き過ぎて戻る。弾むような気持ちいい変形。' },
+  { key: '5', name: '直線',       ease: 'linear',                       tip: '一定速度。加減速なしのメカニカルな変形。' },
+];
+function hdrMotionKey() { const v = String((params && params.hdrMotion) || '1'); return CV_HDR_MOTIONS.some(m => m.key === v) ? v : '1'; }
+function hdrMotionEase() { const m = CV_HDR_MOTIONS.find(x => x.key === hdrMotionKey()); return (m && m.ease) || 'cubic-bezier(.4,0,.2,1)'; }
+/* イージングを :root に反映。速さ(--hdr-dur)は bindHdrScroll が「進む=hdrDur / 戻る=0.55倍」で方向別に設定(トップ復帰のラグ解消)。 */
+function applyHdrMotion() {
+  try {
+    document.documentElement.style.setProperty('--hdr-ease', hdrMotionEase());
+    const d = Math.max(0.15, +(params && params.hdrDur) || 0.7);
+    document.documentElement.style.setProperty('--hdr-dur', d.toFixed(3) + 's');   /* 初期値。方向別上書きは scroll ハンドラ */
+  } catch (e) {}
+}
+/* 【V5.0 2026-09-17】ハンバーガーのアイコン・押した時の変化・浮くピルの質感 を varRowX(ピル＋⋯削除)で出す用の案リスト */
+const CV_BURGER_ICONS = [
+  { key: '1', name: 'クラシック', tip: '3本の水平線(定番)。' },
+  { key: '2', name: '2本線', tip: '2本の線でミニマルに。' },
+];
+const CV_BURGER_ANIMS = [
+  { key: '1', name: 'クロス', tip: '上下が回って×に(定番)。' },
+  { key: '2', name: '半回転X', tip: '半回転しながら×に。' },
+  { key: '3', name: '90°X', tip: '90°回りながら×に。' },
+  { key: '4', name: '一本線', tip: '上下が中央へ集まって1本線に。' },
+  { key: '5', name: 'シザー', tip: '左端を軸に×へ(すくい上げ)。' },
+];
+const CV_FLOATS = [
+  { key: '1', name: '標準', tip: '標準のすりガラス。' },
+  { key: '2', name: '濃フロスト', tip: '白強めのフロスト＋柔らかい影。' },
+  { key: '3', name: '深い影', tip: 'くっきり深い影。' },
+  { key: '4', name: '軽い', tip: '薄い地色・影控えめ。' },
+  { key: '5', name: 'リキッド', tip: '斜めの光沢＋内側ハイライト。' },
+  { key: '6', name: '白', tip: 'ソリッド白・シャープ。' },
+  { key: '7', name: '発光縁', tip: 'ブランド色のリングが光る。' },
+  { key: '8', name: '強ブラー', tip: 'すりガラス最大。' },
+  { key: '9', name: '長い影', tip: '低い角度の長い影で浮遊感。' },
+  { key: '10', name: 'リキッド2', tip: '色づいた艶・強め。' },
+];
+function burgerIconKey() { const v = String((params && params.burgerIcon) || '1'); return (CV_BURGER_ICONS.some(i => i.key === v) && !variantRemovedKey('burgerIcon', v)) ? v : (CV_BURGER_ICONS.find(i => !variantRemovedKey('burgerIcon', i.key)) || { key: '1' }).key; }
+function burgerAnimKey() { const v = String((params && params.burgerAnim) || '1'); return (CV_BURGER_ANIMS.some(i => i.key === v) && !variantRemovedKey('burgerAnim', v)) ? v : (CV_BURGER_ANIMS.find(i => !variantRemovedKey('burgerAnim', i.key)) || { key: '1' }).key; }
+function floatStyleKey() { const v = String((params && params.floatStyle) || '1'); return (CV_FLOATS.some(i => i.key === v) && !variantRemovedKey('floatStyle', v)) ? v : (CV_FLOATS.find(i => !variantRemovedKey('floatStyle', i.key)) || { key: '1' }).key; }
+function applyHdrMode(key) {
+  params.hdrMode = String(key);
+  const h = document.documentElement;
+  h.classList.add('hdr-follow');
+  /* 【V5.0】親 .stage に transform があると position:fixed がそれ基準になり追従しない。
+     ヘッダーを body 直下へ出して viewport 基準の fixed にする。
+     【2026-09-19 仮置き】SP も出す(旧: mb はスケール維持のため動かさなかった)。SP でもスクロール後にハンバーガー箱でメニューを開けるようにするため。
+     ドロワーも stage の中だと fixed(inset:0)が stage 基準になり画面外へ飛ぶので同様に出す */
+  {
+    const hdr = document.querySelector('.header');
+    if (hdr && hdr.parentElement !== document.body) document.body.appendChild(hdr);
+    /* ドロワーは backdrop-filter を持つ header の中だと fixed がクリップされるので body 直下へ出す */
+    const dr = document.getElementById('hdrDrawer');
+    if (dr && dr.parentElement !== document.body) document.body.appendChild(dr);
+  }
+  for (let i = 1; i <= 15; i++) h.classList.toggle('hm-' + i, String(key) === String(i));
+  applyBurgerStyle();
+  applyFloatStyle();
+  applyHdrTune();
+  applyDrawerStyle();
+}
+/* 【V5.0 2026-09-17】ハンバーガーを押した先の画面(ドロワー)の案を反映 */
+function applyDrawerStyle() {
+  const dr = document.getElementById('hdrDrawer'); if (!dr) return;
+  const s = String(params.drawerStyle || '1');
+  for (let i = 1; i <= 3; i++) dr.classList.toggle('drw-' + i, s === String(i));
+}
+/* 【V5.0 2026-09-17 ヒデさん依頼】お問い合わせフォームの地色の白さ/ぼかし/彩度/入力欄の白さ/プレースホルダーの濃さを反映(白飛び対策) */
+function applyCvfGlass() {
+  const sec = document.getElementById('conversion'); if (!sec) return;
+  const g = params.cvfGlass || {};
+  const set = (k, v, u) => sec.style.setProperty(k, (v != null ? v : '') + (u || ''));
+  set('--cvf-bg-a', g.bgA != null ? g.bgA : 0.5, '');
+  /* 【2026-09-21 ヒデさん依頼】フォームカードの色味(tint)。既定は白。色コード→RGB */
+  var _bc = g.bgColor || '#ffffff', _bm = /^#?([0-9a-fA-F]{6})$/.exec(_bc);
+  set('--cvf-bg-rgb', _bm ? (parseInt(_bm[1].slice(0, 2), 16) + ',' + parseInt(_bm[1].slice(2, 4), 16) + ',' + parseInt(_bm[1].slice(4, 6), 16)) : '255,255,255', '');
+  set('--cvf-blur', g.blur != null ? g.blur : 22, 'px');
+  set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
+  set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
+  set('--cvf-ph-a', g.phA != null ? g.phA : 0.32, '');
+  set('--cvf-r', g.radius != null ? g.radius : 22, 'px');     /* 2026-09-18: フォームの角丸 */
+  set('--cvf-in-r', g.inR != null ? g.inR : 10, 'px');       /* 2026-09-18: 入力欄の角丸 */
+  /* 【2026-09-18 ヒデさん依頼】枠線(カード/入力欄)の色系・太さ・濃さ、プレースホルダーの色系 */
+  set('--cvf-bw', g.bw != null ? g.bw : 1, 'px'); set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');
+  set('--cvf-in-bw', g.inBw != null ? g.inBw : 1, 'px'); set('--cvf-in-bc', 'rgba(' + (g.inBDark ? '0,0,0' : '255,255,255') + ',' + (g.inBa != null ? g.inBa : 0.72) + ')', '');
+  set('--cvf-ph-rgb', g.phDark === false ? '255,255,255' : '0,0,0', '');
+}
+/* 【V5.0 2026-09-17 ヒデさん指定】選んだヘッダー案ごとの「スクロール後サイズ」微調整を header にインライン適用(その案の時だけ)。
+   常時ではなく、パネルはその案を選んだ時だけ出す(buildPanel が hdrModeKey で出し分け)。 */
+function applyHdrTune() {
+  const hdr = document.querySelector('.header'); if (!hdr) return;
+  const t = (params.hdrTune && params.hdrTune[hdrModeKey()]) || null;
+  if (t && t.logoH != null) hdr.style.setProperty('--hdr-logo-h', t.logoH + 'px'); else hdr.style.removeProperty('--hdr-logo-h');
+  if (t && t.cw != null) hdr.style.setProperty('--hdr-cw', t.cw + 'px'); else hdr.style.removeProperty('--hdr-cw');
+}
+/* 【V5.0 2026-09-17】ハンバーガーのアイコン案(bi-)と押した時の変化(ba-)を html に反映 */
+function applyBurgerStyle() {
+  const h = document.documentElement;
+  const bi = burgerIconKey(), ba = burgerAnimKey();   /* 削除済みは既定へ落とす */
+  for (let i = 1; i <= 5; i++) { h.classList.toggle('bi-' + i, bi === String(i)); h.classList.toggle('ba-' + i, ba === String(i)); }
+}
+/* 【V5.0 2026-09-17】フローティング(ピル)のスタイリング案(fs-)を html に反映 */
+function applyFloatStyle() {
+  const h = document.documentElement;
+  const fs = floatStyleKey();
+  for (let i = 1; i <= 10; i++) h.classList.toggle('fs-' + i, fs === String(i));
+}
+/* 【V5.0】追従ヘッダーのスクロール監視(1回だけ設置)。lenis でも window.scrollY は追従する。 */
+let _hdrScrollBound = false;
+function bindHdrScroll() {
+  if (_hdrScrollBound) return; _hdrScrollBound = true;
+  const hdr = document.querySelector('.header'); if (!hdr) return;
+  let lastY = window.scrollY || 0, ticking = false;
+  /* 【2026-09-17 作り直し】スクロール量に連動した連続変形。--hdr-t(0=全幅/1=コンパクト)を毎フレーム更新し、
+     幅・位置・余白・ロゴ・ナビ・バーガー・地色を CSS の calc(var(--hdr-t)) で“ひとつの動き”として補間する。
+     クラス一気切替＋トランジションだと width:fit-content(アニメ不可)や position 切替で瞬間移動・重なりが出るのが原因だった。
+     連続変数なので低速スクロール・途中反転でも 1:1 で追従し、跳ね/ちらつきが出ない。 */
+  const upd = () => {
+    ticking = false;
+    const y = window.scrollY || window.pageYOffset || 0;
+    /* 【2026-09-17 ヒデさん指定】スクロール量/速さに依存させない。しきい値で --hdr-t を 0/1 に切り替えるだけにし、
+       変形の“動き”は CSS の transition(--hdr-t を --hdr-dur で補間)に任せる＝どれだけ速くスクロールしても一定速度でゆったり。
+       ヒステリシス(発火70px/解除30px)で境目のちらつきを防ぐ。 */
+    const wasOn = hdr.classList.contains('hdr-stuck');
+    /* 【2026-09-20 ヒデさん依頼】SP はヘッダー右を常に黒い四角ハンバーガーに(スクロール前から)。クリックでドロワーが開く(compact判定=hdr-stuck) */
+    const _mbHdr = !!(window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches);
+    const on = _mbHdr ? true : (wasOn ? (y > 30) : (y > 70));
+    if (on !== wasOn) {   /* 【2026-09-17 ヒデさん指摘】進む=ゆったり / 戻る=キビキビ(トップ復帰のラグ解消)。速さは params.hdrDur */
+      const d = Math.max(0.15, +(params && params.hdrDur) || 0.7);
+      hdr.style.setProperty('--hdr-dur', (on ? d : d * 0.55).toFixed(3) + 's');
+    }
+    hdr.style.setProperty('--hdr-t', on ? 1 : 0);
+    hdr.classList.toggle('hdr-stuck', on);
+    /* 【2026-09-17 ヒデさん指定】開発者体験(黒いセクション)の上にヘッダーが来たら、ロゴ/ハンバーガーの色だけ白へ反転。
+       ヘッダーの地色は変えない。分離案(hm-12)などの透明ヘッダー用。 */
+    const _dev = document.getElementById('dev');
+    /* 【2026-09-22 ヒデさん依頼】反転が「ワンテンポ遅い」根治: #dev の上端が 44px に来る幾何条件だと、
+       背景(devDarkK)が先に暗転しきっても反転が devTop=0 まで待ち、実測で約480px遅れていた。
+       → 実際の背景の暗さ devDarkK が 0.5 を超えた瞬間に反転(＝見た目の暗転と同期)。退場は従来の幾何(dr.bottom≥30)を維持。PC/SP共通。 */
+    if (_dev) { const dr = _dev.getBoundingClientRect(); const _dk = (typeof devDarkK !== 'undefined' ? devDarkK : 0); hdr.classList.toggle('hdr-on-dark', _dk >= 0.5 && dr.bottom >= 30); }
+    /* 【2026-09-17 ヒデさん指摘】hm-15(ミニピル)は「消える」をやめ常に表示。hm-3 のみ下スクロール隠し(現在削除済み) */
+    if (document.documentElement.classList.contains('hm-3')) {
+      if (y > 160 && y > lastY + 4) hdr.classList.add('hdr-hidden');
+      else if (y < lastY - 4 || y <= 160) hdr.classList.remove('hdr-hidden');
+    } else { hdr.classList.remove('hdr-hidden'); }
+    lastY = y;
+  };
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
+  upd();
+}
+/* 【V5.0】ハンバーガーのドロワー開閉 */
+let _drawerBound = false;
+function bindDrawer() {
+  if (_drawerBound) return; _drawerBound = true;
+  const burger = document.querySelector('.hdr-burger');
+  const drawer = document.getElementById('hdrDrawer');
+  const cta = document.querySelector('.header .cta');   /* 分離型(hm-12)で黒箱=メニューボタンになる */
+  if (!drawer) return;
+  const setOpen = (open) => {
+    if (open) { drawer.hidden = false; requestAnimationFrame(() => drawer.classList.add('is-open')); }
+    else { drawer.classList.remove('is-open'); setTimeout(() => { if (!drawer.classList.contains('is-open')) drawer.hidden = true; }, 380); }
+    if (burger) { burger.classList.toggle('is-open', open); burger.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    if (cta) cta.classList.toggle('is-open', open);   /* 黒箱の中のハンバーガーも×へ */
+  };
+  if (burger) burger.addEventListener('click', () => setOpen(!drawer.classList.contains('is-open')));
+  /* 【2026-09-17】分離型(hm-12)でスクロール後(コンパクト=hdr-stuck)は、黒箱クリックでドロワーを開く。
+     展開時(ページ上部)は通常どおり「お問い合わせ」へ遷移する。 */
+  if (cta) cta.addEventListener('click', (e) => {
+    const sep = document.documentElement.classList.contains('hm-12');
+    const hdr = document.querySelector('.header');
+    const compact = hdr && hdr.classList.contains('hdr-stuck');
+    if (sep && compact) { e.preventDefault(); setOpen(!drawer.classList.contains('is-open')); }
+  });
+  drawer.addEventListener('click', (e) => { if (e.target === drawer || (e.target.closest && e.target.closest('.hdr-drawer-nav a'))) setOpen(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+}
+
+const CV_COLORS = [
+  /* 【2026-09-16 ヒデさん依頼】デザインカンプ(node 17383:21430)の色味に忠実な案。13ストップのランプ(ramp:'comp')で、
+     C1(現行)の5段近似より青の階調と紫の中間色がカンプ通りに出る。形・ディザは現行と同じ。 */
+  { key: 'CK',  name: 'デザインカンプ', tip: 'デザインカンプ(17383:21430)の放射グラデを実測した13色を忠実に再現。淡ピンク白→青の階調→紫→ピンク。現行(C1)は5色の近似で、これはカンプそのままの色味です。', cv: { ramp: 'comp' } },
+  { key: 'C1',  name: 'カンプ（5色近似）', tip: 'カンプ実測の5色(淡ピンク白→淡ブルー→シアン→青紫→ピンク)・カンプの放射グラデ・Bayer 1px 3段。忠実版は「デザインカンプ」を選んでください。', cv: {} },
+  { key: 'C2',  name: 'ブルー寄り', tip: 'ピンクを青紫に置き換え、シアン〜ブルーで統一。放射の中心は右上。', cv: { colors: ['#eef7ff', '#9ad9ff', '#0ebbff', '#1f5fd6', '#6a4bd8'], gMode: 1, gcx: 0.8, gcy: 0.1, gr: 0.95, gAspect: 1.25 } },
+  { key: 'C3',  name: 'ピンク寄り', tip: 'ピンク〜マゼンタを主役に、外側で青へ。放射の中心は左上。', cv: { colors: ['#fff0f7', '#ffb8d6', '#ff5d97', '#c04ab5', '#4a5fd8'], gMode: 1, gcx: 0.2, gcy: 0.15, gr: 1.0, gAspect: 1.1 } },
+  { key: 'C11', name: '色が移ろう（青⇄白⇄ピンク）', tip: 'うねり全体の色味が、ブランドの青とピンクの間を白を通ってゆっくり行き来する(他の中間色は出さない)。既定は30秒で1往復。「色味の移ろい」で往復/巡る・1周の時間・白の入り具合を変えられる。', cv: { hueMode: 'swing', moodSec: 30, moodWhite: 0.85 } },
+];
+function cvColorKey() { const by = (params && params.cvColorBy) || {}; const v = String(by[cvStyleKey()] || 'C1'); return (CV_COLORS.some(s => s.key === v) && !variantRemovedKey('cvColor', v)) ? v : 'C1'; }
+/* カラー案の値(既定＋その案の「上書き」控え)を params.cv に入れる */
+function cvApplyColorFull(key) { cvApplyColor(key); const ov = ((params.gfxVarOverride || {}).cvColor || {})[key]; if (ov) { try { Object.assign(params.cv, structuredClone(ov)); } catch (e) {} } }
+function cvApplyColor(key) { const c = CV_COLORS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(CV_BASE), structuredClone(c.cv)); }
+function cvStyleKey() { const v = String((params && params.cvStyle) || '10'); return (CV_STYLES.some(s => s.key === v) && !variantRemovedKey('cvStyle', v)) ? v : '10'; }   /* 【2026-09-16 確定】既定は一体型(10) */
+function cvStyleDef() { const k = cvStyleKey(); return CV_STYLES.find(s => s.key === k) || CV_STYLES[0]; }
+
+/* ===== 【2026-09-15 ヒデさん指定】開発者体験モックのスタイル案(立体感)と配色。#dev に dev-st-N / dev-tone-X を付け、CSS 変数で傾き・ぼかし・影を渡す ===== */
+const DEV_STYLES = [
+  { key: '0',  name: '現行（フラット）', fixed: true, tip: 'カンプどおりの平らな板(#161616 に白10%・薄い縁)。' },
+  /* 【2026-09-15 ヒデさん指定】AI らしい5案。案を選ぶと調整パネルの項目がその案のものに入れ替わる */
+  { key: '11', name: 'ネオンが一周する', tip: '縁に沿って光が走る(既定は反時計回り)。シアン→白→ピンクの尾を引く。速さ・向き・光の長さ・太さを調整できます。' },
+];
+/* 【2026-09-15 ヒデさん指定】案ごとのつまみ。パネルでは選んでいる案のまとまりだけ出す(syncDevDyn)。
+   値は params.sections.dev.stv[まとまりのkey][項目のkey] に入る(案を切り替えても各案の値が残る)。
+   css() が返した文字列を #dev の CSS 変数に入れる＝CSS 側は var() を読むだけ */
+const DEV_DYN_SPEC = {
+  '11': { title: 'この案の調整（ネオンが一周する）', on: ['11'], rows: [
+    { k: 'dir', seg: [['反時計回り', 'ccw'], ['時計回り', 'cw']], label: '光の向き', def: 'ccw', v: '--dm-run-dir', css: v => (v === 'cw' ? 'normal' : 'reverse') },
+    { k: 'sec', label: '光が1周する時間', min: 2, max: 24, step: 0.5, def: 6, v: '--dm-run-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '短いほど速く走ります。' },
+    { k: 'len', label: '光の長さ', min: 0.06, max: 0.7, step: 0.02, def: 0.28, v: '--dm-run-len', css: v => v + 'turn', fmt: v => Math.round(v * 100) + '%', hint: '縁1周のうち何割を光が占めるか。短いと点に近く、長いと帯になります。' },
+    { k: 'w', label: '光の太さ', min: 1, max: 6, step: 0.5, def: 2, v: '--dm-run-w', css: v => v + 'px', fmt: v => v.toFixed(1) + 'px', hint: '縁取りの太さ。' },
+  ] },
+};
+/* ガラス(後ろが透ける)案 = 地色を敷いて後ろのカードをぼかす対象 */
+const DEV_GLASS_KEYS = [];   /* 2026-09-18: ガラス案(1)を完全削除 */
+function devStv(g) { const d = (params.sections && params.sections.dev) || {}; d.stv = d.stv || {}; d.stv[g] = d.stv[g] || {}; return d.stv[g]; }
+function devDynGet(g, r) { const v = devStv(g)[r.k]; return v != null ? v : r.def; }
+const DEV_TONES = [
+  { key: 'dark', name: '現行（黒）', fixed: true, tip: '#161616 に白10%(カンプ)。' },
+  { key: 'graphite', name: 'グラファイト', tip: '少し明るいグレー。' },
+];
+function devStyleKey() { const v = String((params && params.devStyle) || '0'); return (DEV_STYLES.some(s => s.key === v) && !variantRemovedKey('devStyle', v)) ? v : '0'; }
+function devToneKey() { const v = String((params && params.devTone) || 'dark'); return (DEV_TONES.some(s => s.key === v) && !variantRemovedKey('devTone', v)) ? v : 'dark'; }
+/* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②の 見出し↔モックの間隔 とモックの拡大を CSS 変数へ(PCのみ) */
+function applyDevTune() {
+  const sec = document.getElementById('dev'); if (!sec) return; const d = (params.sections && params.sections.dev) || {};
+  sec.style.setProperty('--dev1-gap', (d.dev1Gap != null ? d.dev1Gap : 36) + 'px');
+  sec.style.setProperty('--dev2-gap', (d.dev2Gap != null ? d.dev2Gap : 36) + 'px');   /* 【2026-09-26】既定 77→36(①と同じ)。②の束を上端基準にし、CSS で正面カードの内側8px×拡大を差し引くので、この値＝見出し→正面カードの見た目の間隔。旧77は中心基準の張り出しの打ち消しだった */
+  sec.style.setProperty('--dev1-scale', String(d.dev1Scale != null ? d.dev1Scale : 1.1));
+  sec.style.setProperty('--dev2-scale', String(d.dev2Scale != null ? d.dev2Scale : 1.1));
+}
+function applyDevStyle() {
+  const sec = (typeof SECS !== 'undefined' && SECS.dev) || document.getElementById('dev'); if (!sec) return;
+  const sk = devStyleKey(), tk = devToneKey();
+  DEV_STYLES.forEach(st => sec.classList.toggle('dev-st-' + st.key, st.key === sk));
+  DEV_TONES.forEach(t => sec.classList.toggle('dev-tone-' + t.key, t.key === tk));
+  const d = (params.sections && params.sections.dev) || {};
+  sec.style.setProperty('--dm-blur', (d.mockBlur != null ? d.mockBlur : 24) + 'px');
+  sec.style.setProperty('--dm-sh', String(d.mockShadow != null ? d.mockShadow : 1));
+  sec.style.setProperty('--dm-in', String(d.mockInner != null ? d.mockInner : 1));
+  /* ガラス案の時だけ、後ろのカードを実際にぼかす(backdrop-filter は後ろのカードを参照できないため) */
+  sec.classList.toggle('dev-glass', DEV_GLASS_KEYS.indexOf(sk) >= 0);
+  /* 案ごとのつまみ → CSS 変数(全まとまりぶん入れておく＝案を切り替えてもその案の値がすぐ効く) */
+  try { Object.keys(DEV_DYN_SPEC).forEach(g => DEV_DYN_SPEC[g].rows.forEach(r => sec.style.setProperty(r.v, r.css(devDynGet(g, r))))); } catch (e) {}
+}
+/* パネル: 選んでいる案のまとまりだけ出す */
+const DEV_DYN = {};
+function syncDevDyn() { const k = devStyleKey(); Object.keys(DEV_DYN).forEach(g => { const el = DEV_DYN[g], sp = DEV_DYN_SPEC[g]; if (el && sp) el.style.display = sp.on.indexOf(k) >= 0 ? '' : 'none'; }); }
+/* ===== 【2026-09-15 ヒデさん指定】ビジョン「つなぐ／強み」の揺らぎのグラデ: 鮮やかな配色 3案＋つまみ(彩度・明るさ・速さ・角度) =====
+   値は params.sections.vision.{gradVar, gradSat, gradBri, gradDur, gradAng}。CSS 変数と #vision.vg-N で反映 */
+const VIS_GRADS = [
+  { key: '0', name: '現行（紺⇄ピンク）', fixed: true, tip: '紺(#0E4497)とピンク(#FF5D97)が 67° で流れる。中間は2色の混色。', v: { gradSat: 1, gradBri: 1 } },
+  { key: '2', name: '鮮やか・ピンク×シアン', tip: '紺を外してピンクとシアンだけで流す。いちばん明るく発色する。彩度 +20%。', v: { gradSat: 1.2, gradBri: 1.05 } },
+  { key: '3', name: '鮮やか・混ざる帯を短く', tip: '紺⇄ピンクのまま、色の間に同色の区間を置いて混色の帯を短く(にごる幅を 1/3 に)。彩度 +40%・明るさ +6%。', v: { gradSat: 1.4, gradBri: 1.06 } },
+];
+function visGradKey() { const v = String((params.sections && params.sections.vision && params.sections.vision.gradVar) || '0'); return (VIS_GRADS.some(g => g.key === v) && !variantRemovedKey('visGrad', v)) ? v : '0'; }
+function applyVisGrad() {
+  const sec = SECS && SECS.vision; if (!sec) return;
+  const v = (params.sections && params.sections.vision) || {}, k = visGradKey();
+  VIS_GRADS.forEach(g => sec.classList.toggle('vg-' + g.key, g.key === k));
+  sec.style.setProperty('--vg-sat', String(v.gradSat != null ? v.gradSat : 1));
+  sec.style.setProperty('--vg-bri', String(v.gradBri != null ? v.gradBri : 1));
+  sec.style.setProperty('--vg-dur', (v.gradDur != null ? v.gradDur : 7) + 's');
+  sec.style.setProperty('--vg-ang', (v.gradAng != null ? v.gradAng : 67) + 'deg');
+}
+function visApplyGrad(key) { const g = VIS_GRADS.find(x => x.key === key); if (!g) return; const v = params.sections.vision; v.gradVar = key; Object.assign(v, { gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v); }
+/* 文字色の自動判定: 色5段の中ほど(26/59/76%)の明るさ平均に「暗さ」を掛けて 0.42 未満なら白文字 */
+function cvInkLight() {
+  const c = params.cv || {}; if (c.ink === 'light') return true; if (c.ink === 'dark') return false;
+  const cols = Array.isArray(c.colors) ? c.colors : CV_DEF_COLORS;
+  const lum = h => { const v = cvHex(h, '#888888'); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+  const mid = (lum(cols[1]) + lum(cols[2]) + lum(cols[3])) / 3;
+  const dark = Math.max(c.dark || 0, (typeof cvStyleDef === 'function' && cvStyleDef().dark) ? 1 : 0);
+  return (mid * (1 - dark * 0.7)) < 0.42;
+}
+/* ===== 【2026-09-15 ヒデさん指摘】縦幅や間隔を伸ばしても「上が薄くならない」ための土台 =====
+   ① 溶け込みの薄い帯は【伸ばす前の高さ】を基準にした px で持つ(% だと伸ばした分だけ薄い帯も伸びる)
+   ② グラデ自体はセクションに素直に収める(引き伸ばさない)。以前は上端固定で下へ伸ばしていたが、
+      色の範囲を超えた所が平坦になり、縦幅を伸ばすと絵が破綻したためやめた(2026-09-15) */
+let cvNatH = 0, cvNatKey = '';
+function cvNaturalH(sec) {
+  if (!sec) return 0;
+  const key = (sec.className || '') + '|' + Math.round(window.innerWidth || 0) + '|' + ((params.cv && params.cv.headTop != null) ? params.cv.headTop : CV_HEAD_TOP_DEF);
+  if (key === cvNatKey && cvNatH > 20) return cvNatH;
+  const st = sec.style, mh = st.minHeight, pt = st.paddingTop;
+  st.minHeight = '0px'; st.paddingTop = '0px';                 /* 伸ばす指定を一時的に外して素の高さを測る */
+  const h = sec.getBoundingClientRect().height;
+  st.minHeight = mh; st.paddingTop = pt;
+  if (h > 20) { cvNatH = h; cvNatKey = key; }
+  return cvNatH || h;
+}
+let cvRisePx = 0;                 /* 【2026-09-15】canvas を上へはみ出させている量(CSSpx)。シェーダへ渡す */
+function cvApplyFade(sec) {
+  const base = cvNaturalH(sec) || sec.getBoundingClientRect().height || 609;
+  const f0 = (params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0;
+  const f1 = (params.cv && params.cv.fade1 != null) ? params.cv.fade1 : 44;
+  /* 【2026-09-15 ヒデさん指摘】PC は「上の溶け込み(px)」を導入事例の下の空きへ逃がす方式。
+     SP はレイアウトが別物なので従来どおり(素の高さに対する %)。 */
+  const _mbF = document.documentElement.classList.contains('mb');
+  const _cvCanvasEl = document.getElementById('cvCanvas');
+  if (_mbF) {
+    cvRisePx = 0;
+    sec.style.setProperty('--cv-rise', '0px');
+    sec.style.setProperty('--cv-fade0', Math.round(base * f0 / 100) + 'px');
+    sec.style.setProperty('--cv-fade1', Math.round(base * f1 / 100) + 'px');
+    /* SP は従来の CSS 変数マスクへ戻す(PC で付けたインラインマスクを解除) */
+    if (_cvCanvasEl) { ['maskImage','webkitMaskImage','maskSize','webkitMaskSize','maskRepeat','webkitMaskRepeat','maskPosition','webkitMaskPosition','maskComposite','webkitMaskComposite'].forEach(k => _cvCanvasEl.style[k] = ''); }
+  } else {
+    const _deepRaw = Math.max(0, (params.cv && params.cv.blend != null) ? params.cv.blend : CV_BLEND_DEF);
+    const _deep = Math.min(_deepRaw, Math.round(base * 0.95));   /* 本体の高さを超えない=下端は必ず満色になる */
+    /* 上端を導入事例の下の空きへ“少しだけ”逃がす(隙間があれば)。無くても本体の中で溶けるので線は出ない */
+    let _room = 0;
+    const _gr = document.getElementById('caseGrid');
+    if (_gr) _room = Math.max(0, Math.round(sec.getBoundingClientRect().top - _gr.getBoundingClientRect().bottom - 2));
+    /* 【2026-09-16 ヒデさん案】お問い合わせを z-index で導入事例の“下”に潜らせ、グラデでカードを淡く染める。
+       cases は z-index:1 で上・pin-vp 透明なので、canvas を余分に上げるとカードの裏でグラデが淡く透ける。 */
+    const _under = Math.max(0, (params.cv && params.cv.underCards != null) ? params.cv.underCards : 0);   /* カードの裏へ潜り込ませる量(px)。0=従来(カード直下で止める) */
+    cvRisePx = Math.min(_deep, _room) + _under;   /* 隙間ぶん＋カードの裏へ潜る分 */
+    const _span = cvRisePx + _deep;   /* 溶け込みの総距離: rise(隙間＋カード裏) ＋ deep(本体の中)。上端ほど淡いので裏はうっすら色味 */
+    sec.style.setProperty('--cv-rise', cvRisePx + 'px');
+    sec.style.setProperty('--cv-fade0', '0px');
+    sec.style.setProperty('--cv-fade1', _span + 'px');
+    /* 【2026-09-16 改訂】溶け込みは「本体の中まで前寄せで長く」。形(波/弧/斜め/二段/もや)は付けない=馴染ませが目的 */
+    if (_cvCanvasEl && typeof cvEdgeMask === 'function') cvEdgeMask(_cvCanvasEl, _span);
+  }
+}
+/* 画面幅が変わったら素の高さも変わる(文字の折返し)ので測り直す */
+function cvSyncStretch() {
+  const sec = document.getElementById('conversion'); if (!sec) return 1;
+  const before = cvNatH, base = cvNaturalH(sec);
+  if (base !== before) cvApplyFade(sec);
+  const now = sec.getBoundingClientRect().height;
+  return (base > 20 && now > 20) ? Math.min(3, Math.max(0.5, now / base)) : 1;
+}
+function applyCvStyle(fromSwitch) {
+  const sec = document.getElementById('conversion'); if (!sec) return;
+  if (typeof applyCvfGlass === 'function') applyCvfGlass();   /* フォームの地色/ぼかし/彩度/入力欄/プレースホルダー */
+  const st = cvStyleDef();
+  /* デザイン案を切り替えた時は、その案に紐づくカラー案の値を入れ直す(初回読み込みは保存値を尊重して触らない) */
+  if (fromSwitch && applyCvStyle._last !== st.key) cvApplyColorFull(cvColorKey());
+  applyCvStyle._last = st.key;
+  sec.classList.toggle('cv-ink-light', cvInkLight());
+  CV_STYLES.forEach(s => sec.classList.toggle('cvs-' + s.key, s.key === st.key));
+  /* 【V5.0】CTA=ボタン/フォーム 切替、フォームのスタイル案 fst-1〜5 */
+  sec.classList.toggle('cv-cta-form', String((params.cvCta) || 'button') === 'form');
+  ['1','2','3','4','5'].forEach(k => sec.classList.toggle('fst-' + k, String(params.formStyle || '1') === k));
+  sec.classList.toggle('cv-fi', !!st.fi && !st.card);
+  const ft = document.getElementById('footer'); if (ft) ft.classList.toggle('ft-hidden', !!st.fi);
+  /* 【2026-09-15 ヒデさん指摘「縦幅を伸ばしても見た目が変わらない」】
+     一体型は min-height が素の高さ(≒670px)より小さいと何も起きなかった。→「素の高さ＋追加の高さ」で持つ。
+     枠の案は従来どおり「縦幅」そのもの(カンプ 416)。 */
+  /* 【2026-09-15 ヒデさん指摘】見出しの上の余白。素の高さに影響するので cvNaturalH より【先】に入れる */
+  /* 【2026-09-16】切れ目(溶け込み)が基準の空きより高い時、はみ出す分だけ見出しの上の余白を削る＝見た目の総高さを一定に保つ */
+  const _edgeComp = 0;   /* 【2026-09-16 改訂】溶け込みはマスクで本体に重ねる方式。空間を予約しないので見出し/間隔の補正は不要 */
+  { const _ht = ((params.cv && params.cv.headTop != null) ? params.cv.headTop : CV_HEAD_TOP_DEF) - _edgeComp;
+    sec.style.setProperty('--cv-head-top', Math.max(16, Math.round(_ht)) + 'px'); }
+  { const _fi = !!st.fi && !st.card, _nat = _fi ? cvNaturalH(sec) : 0;
+    const _t = (params.cv && params.cv.addT) || 0, _b = (params.cv && params.cv.addB) || 0;
+    sec.style.setProperty('--cv-add-t', Math.round(_t) + 'px');
+    sec.style.setProperty('--cv-add-b', Math.round(_b) + 'px');
+    sec.style.setProperty('--cv-h', Math.round(_fi && _nat > 20 ? _nat + _t + _b : ((params.cv && params.cv.h) || 416)) + 'px'); }
+  { const HV = { cyan: ['#0EBBFF', '#fff'], black: ['#090909', '#fff'], white: ['#ffffff', '#111'], pink: ['#FF5D97', '#fff'], navy: ['#0E4497', '#fff'] };
+    const hv = HV[(params.cv && params.cv.btnHover) || 'cyan'] || HV.cyan; sec.style.setProperty('--cv-hov-bg', hv[0]); sec.style.setProperty('--cv-hov-fg', hv[1]); }
+  sec.style.setProperty('--cvf-w', Math.round(params.formWidth != null ? params.formWidth : 660) + 'px');   /* 【V5.0】フォームの横幅 */
+  const _mb = document.documentElement.classList.contains('mb');
+  /* ⚠️ 間隔は #cases(別のセクション)に効かせるので、変数はルート(html)に置く。#conversion に置くと届かない */
+  { let _g = _mb ? 0 : (((params.cv && params.cv.gapTop) || 0) + _edgeComp);   /* 【2026-09-16】切れ目の高さ分だけ間隔も広げる(headTop 側で相殺し総高さ一定) */
+    /* 詰める(マイナス)は「導入事例の下に空いている分」までに制限する。これ以上詰めるとカードが切れるため */
+    if (_g < 0) {
+      const _cs = document.getElementById('cases'), _gr = document.getElementById('caseGrid');
+      if (_cs && _gr) {
+        const _slack = Math.max(0, Math.round(_cs.getBoundingClientRect().bottom - _gr.getBoundingClientRect().bottom - 8));
+        _g = Math.max(_g, -_slack);
+      }
+    }
+    document.documentElement.style.setProperty('--cv-gap', Math.round(_g) + 'px');   /* 導入事例との間隔(SP は従来どおり効かせない) */ }
+  cvApplyFade(sec);   /* 溶け込みの境界(「伸ばす前の高さ」基準の px。伸ばしても薄い帯は広がらない) */
+  /* 案11: 黒ボタンをフッター帯(©の左)へ移す。他の案では本文の下へ戻す */
+  const btn = sec.querySelector('.cv-btn'), footR = sec.querySelector('.cv-foot-r'), content = sec.querySelector('.cv-content');
+  if (btn && footR && content) { if (st.btnInFoot) { if (btn.parentElement !== footR) footR.insertBefore(btn, footR.firstChild); } else if (btn.parentElement !== content) content.appendChild(btn); }
+}
+
+/* ===== コンバージョン背景: 流れるグラデ + Bayerディザ (2026-08-29 ヒデさん指定) =====
+   カンプ 15993:43966 のラジアルグラデ(5ストップ・gradientTransform実測)を WebGL で再現し、
+   惑星と同じ発想の「流れ」(fbmドメインワープ)を足して、Bayer行列で per-channel ディザ。
+   粗さ(セル)・階調(levels)・流れの速さ/うねり・明るさ/コントラストは params.cv(調整パネル)で。 */
+const cvBg = (function () {
+  const canvas = document.getElementById('cvCanvas');
+  if (!canvas) return {};
+  let gl = null, uni = {}, fail = false;
+  const t0 = performance.now();
+  const VS = 'attribute vec2 aP; void main(){ gl_Position = vec4(aP, 0.0, 1.0); }';
+  const FS = `
+precision mediump float;
+uniform vec2 uRes; uniform float uTime;
+uniform float uCell, uLevels, uSpread, uSpeed, uSwell, uFlowScale, uBright, uContrast;
+uniform vec3 uC0, uC1, uC2, uC3, uC4;      /* 【2026-09-15】5段の色(カラー案・パネルで変更可) */
+uniform float uCompRamp;   /* 【2026-09-16 ヒデさん依頼】1=デザインカンプ(17383:21430)の13段ランプを忠実に使う */
+uniform vec3 uTopCol;   /* 【2026-09-15 ヒデさん指定】いちばん明るい所(カンプでは右上)の色。既定は薄い水色 */
+uniform float uWhite;   /* 同・そこに白をどれだけ残すか(かすかに=0.12 くらい) */
+uniform vec4 uFormRect; uniform float uFormCeil;   /* 【2026-09-18】お問い合わせフォームの範囲(gl座標 x0,y0,x1,y1)と、その中だけの明るさ上限(白飛び対策) */
+uniform float uCeil;    /* 【2026-09-15】明るさの頭打ち。コントラスト(1.38)で淡い色が白に飛んで『欠けて見える』のを防ぐ */
+uniform float uRise;   /* 【2026-09-15】canvas が上へはみ出した高さ(デバイスpx)。グラデはセクションの高さ基準のまま保つ */
+/* 【2026-09-15 ヒデさん指摘】「うねりが小刻みにしかつけられない」。fbm は3オクターブなので強くすると細かいノイズも一緒に増え、
+   大きな波にならず荒れるだけだった。→ なめらかな正弦波3本の合成で「大きなうねり」を別レイヤーとして足す。
+   uWaveAmp=強さ / uWaveLen=波の細かさ(小さいほど大きな波) / uWaveSpd=ゆっくりさ */
+uniform float uWaveAmp, uWaveLen, uWaveSpd;
+/* 【2026-09-15 ヒデさん指摘】「もっとゆらゆらしている感じ」。進む波だけだと「流れて」見えるので、
+   グラデ全体をゆっくり左右に傾ける＋わずかに息をするように伸縮させる＝ゆらゆら。
+   uSwayDeg=傾く角度(度) / uSwaySec=1往復の秒数 */
+uniform float uSwayDeg, uSwaySec, uSwayMode;   /* uSwayMode=揺らぎの型(0 ゆっくり傾く のみ。1〜6 は 2026-09-18 に完全削除) */
+uniform float uSwayPivot, uWaveAnchor;
+uniform float uCoreSkip;   /* 【2026-09-19 ヒデさん指定「白の領域を取る」】ランプの開始位置(0=白から / 0.34=白と淡ブルーを飛ばしてシアン寄りから) */
+uniform float uCoreSoft;   /* 【2026-09-19 ヒデさん指摘「白がくっきりし過ぎ」】白の縁のぼかし: 白の周りだけ、色の切り替わりを t の前後 ±2w で平均してやわらかく(白の大きさは変えない) */
+uniform float uCore;   /* 【2026-09-19 ヒデさん指定】白の絞り: 0=そのまま / 大きいほど白い芯だけ小さく(t を pow で中心側だけ圧縮。端の色の広がりは変えない) */   /* 【2026-09-18】揺らぎの軸(0=画面中心/1=白い光の中心) ／ 白い光の近くでうねりを弱める割合(0〜1) */
+uniform float uGSpread;   /* 【2026-09-15】カンプの放射の広がり。1=カンプ / 大きいほど淡い中心が小さくなり、端まで色が届く */
+uniform float uGMode, uGAng, uDark; uniform vec2 uGC, uGR; uniform vec3 uDarkCol;   /* 形(0=カンプ/1=放射/2=線形)・中心・広がり・回転、暗さ(黒ベース) */
+uniform float uHue;   /* 【2026-09-15】色味の移ろい(色相の回転・ラジアン。JS が時間で回す) */
+vec3 hueRot(vec3 c, float a) { const vec3 k = vec3(0.57735); float ca = cos(a), sa = sin(a); return c * ca + cross(k, c) * sa + k * dot(k, c) * (1.0 - ca); }
+uniform vec3 uGA, uGB;   /* radial gradientTransform の係数(PC/SP でカンプが違うので JS から渡す) */
+float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+float bayer8(vec2 a){ return bayer4(0.5 * a) * 0.25 + bayer2(a); }
+float bayer16(vec2 a){ return bayer8(0.5 * a) * 0.25 + bayer2(a); }
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y); }
+float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; } return v; }
+/* カンプ実測の5ストップ(radial): 0=淡ピンク白 / 0.262=淡ブルー / 0.588=#0EBBFF / 0.763=青紫 / 1=#FF5D97 */
+/* 【2026-09-16 ヒデさん依頼】デザインカンプ(node 17383:21430)のラジアルグラデを実測した13ストップ。
+   淡ピンク白(t=0・右上) → 青の階調 → 紫 → ピンク(t=1・左下)。位置・色ともカンプの gradient stops そのまま。 */
+uniform vec3 uS[13];   /* 【2026-09-19 ヒデさん依頼】13段の色は JS から渡す(通常はカンプ実測値そのまま=CV_COMP_STOPS。「色の入れ替わり」の時だけ並べ替えた色) */
+vec3 stopColComp(float t){
+  t = clamp(t, 0.0, 1.0);
+  vec3 s0=uS[0], s1=uS[1], s2=uS[2], s3=uS[3], s4=uS[4], s5=uS[5], s6=uS[6], s7=uS[7], s8=uS[8], s9=uS[9], s10=uS[10], s11=uS[11], s12=uS[12];
+  if(t<0.26237) return mix(s0,s1,t/0.26237);
+  if(t<0.34377) return mix(s1,s2,(t-0.26237)/0.08140);
+  if(t<0.42516) return mix(s2,s3,(t-0.34377)/0.08139);
+  if(t<0.50656) return mix(s3,s4,(t-0.42516)/0.08140);
+  if(t<0.54725) return mix(s4,s5,(t-0.50656)/0.04069);
+  if(t<0.58795) return mix(s5,s6,(t-0.54725)/0.04070);
+  if(t<0.67557) return mix(s6,s7,(t-0.58795)/0.08762);
+  if(t<0.76318) return mix(s7,s8,(t-0.67557)/0.08761);
+  if(t<0.82239) return mix(s8,s9,(t-0.76318)/0.05921);
+  if(t<0.88159) return mix(s9,s10,(t-0.82239)/0.05920);
+  if(t<0.94080) return mix(s10,s11,(t-0.88159)/0.05921);
+  return mix(s11,s12,(t-0.94080)/0.05920);
+}
+vec3 stopCol(float t){
+  /* 色は uniform(既定はカンプ実測: #fee0f8 / #b6e0ff / #0ebbff / #477ed1 / #ff5d97)。位置はカンプの 0 / .262 / .588 / .763 / 1 */
+  t = clamp(t, 0.0, 1.0);
+  /* いちばん明るい所は「指定色＋ほんの少し白」。真っ白だと地色と同化して『グラデが欠けて見える』ため */
+  vec3 c0 = mix(uTopCol, vec3(1.0), clamp(uWhite, 0.0, 1.0));
+  if (t < 0.262) return mix(c0, uC1, t / 0.262);
+  if (t < 0.588) return mix(uC1, uC2, (t - 0.262) / 0.326);
+  if (t < 0.763) return mix(uC2, uC3, (t - 0.588) / 0.175);
+  return mix(uC3, uC4, (t - 0.763) / 0.237);
+}
+vec3 rampAt(float t){ return (uCompRamp > 0.5) ? stopColComp(t) : stopCol(t); }
+void main(){
+  float CELL = max(1.0, uCell);
+  vec2 cellId = floor(gl_FragCoord.xy / CELL);
+  vec2 fc = (cellId + 0.5) * CELL;
+  /* Figmaのオブジェクト座標(y下向き)に合わせる。uRise ぶん上へはみ出していても、
+     グラデは【セクションの範囲】に写る(はみ出した所は上へ自然に続く)＝見え方は uRise=0 の時と同じ */
+  vec2 uv = vec2(fc.x / uRes.x, (uRes.y - fc.y - uRise) / max(1.0, uRes.y - uRise));
+  /* 流れ: 惑星と同じ発想で、uv を fbm でゆらしてから色を引く(ドメインワープ) */
+  vec2 w = uv * uFlowScale;
+  float n1 = fbm(w + vec2(uTime * uSpeed, 0.0));
+  float n2 = fbm(w + vec2(0.0, uTime * uSpeed * 0.8) + 7.3);
+  vec2 uvW = uv + (vec2(n1, n2) - 0.5) * uSwell;
+  /* 大きなうねり: 周期の違う正弦波を重ねて、ゆっくり大きく押し引きする(細かいノイズが増えないので上品に揺れる) */
+  if (uWaveAmp > 0.0001) {
+    float tw = uTime * uWaveSpd;
+    vec2 q = uv * max(0.15, uWaveLen);
+    float w1 = sin((q.x * 1.00 + q.y * 0.35) * 6.2832 + tw * 1.00);
+    float w2 = sin((q.x * 0.55 - q.y * 0.80) * 6.2832 - tw * 0.73 + 1.7);
+    float w3 = sin((q.y * 0.70) * 6.2832 + tw * 0.49 + 3.1);
+    float wk = uWaveAmp;
+    if (uWaveAnchor > 0.001) { float dd = distance(uv, uGC); float near = 1.0 - smoothstep(0.15, 0.55, dd); wk *= 1.0 - clamp(uWaveAnchor, 0.0, 1.0) * near; }   /* 白い光の近くはうねらせない(案4) */
+    uvW += vec2(w1 * 0.55 + w3 * 0.45, w2 * 0.60 + w1 * 0.40) * wk;
+  }
+  /* 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。型ごとに動きの性格を変える。
+     どの型も「ゆらゆらの大きさ」(uSwayDeg)と「周期」(uSwaySec)で強さ・速さを調整できる */
+  if (uSwayDeg > 0.001) {
+    float ph = uTime * 6.2832 / max(2.0, uSwaySec);
+    vec2 pv = mix(vec2(0.5), uGC, clamp(uSwayPivot, 0.0, 1.0));   /* 揺らぎの軸: 画面中心 ↔ 白い光の中心(案4) */
+    vec2 d = uvW - pv;
+    float A = uSwayDeg * 0.017453;   /* 傾ける角度(ラジアン) */
+    float S = uSwayDeg * 0.006;      /* 位置をずらす量(大きさに比例) */
+    if (uSwayMode < 0.5) {                      /* 0 ゆっくり傾く(＋わずかな伸縮) */
+      float a = sin(ph) * A, sc = 1.0 + sin(ph * 0.63 + 1.1) * uSwayDeg * 0.0045;
+      d *= sc;
+      uvW = pv + vec2(d.x * cos(a) - d.y * sin(a), d.x * sin(a) + d.y * cos(a));
+    }   /* 揺らぎの型 1〜6(たゆたう/呼吸/潮/渦/斜め/連動モーフ)は 2026-09-18 に完全削除。残るのは 0 のみ */
+  }
+  /* カンプの gradientTransform(実測) で radial の t を出す(係数は uGA/uGB: PC と SP で別) */
+  float t;
+  if (uGMode < 0.5) {
+    /* 【2026-09-15 ヒデさん指摘】カンプの形では「中心・広がり・縦横比・回転」のつまみが効いていなかった。
+       カンプの明るい中心(0.78, 0.12)を基準に、パネルの値で ずらす/回す/伸ばす/広げる を全部効かせる。
+       既定(中心 0.78,0.12 / 広がり0.9 / 縦横比1 / 回転0)なら、カンプそのままの見え方になる。 */
+    vec2 c0p = vec2(0.78, 0.12);
+    vec2 d = uvW - uGC;                                  /* 中心をずらす */
+    float ca = cos(uGAng), sa = sin(uGAng);
+    d = vec2(d.x * ca - d.y * sa, d.x * sa + d.y * ca);  /* 回転 */
+    d.x /= max(0.2, uGR.x / max(0.05, uGR.y));           /* 縦横比 */
+    vec3 g = vec3(d + c0p, 1.0);
+    float gx = dot(uGA, g); float gy = dot(uGB, g);
+    t = length(vec2(gx, gy) - 0.5) * 2.0 * max(0.2, uGSpread) * (0.9 / max(0.1, uGR.y));   /* 広がり */
+  }
+  else {
+    /* パネルの形: 中心(uGC)・広がり(uGR)・回転(uGAng)。放射=楕円の距離 / 線形=回転した軸に沿った距離 */
+    vec2 d = uvW - uGC; float ca = cos(uGAng), sa = sin(uGAng); d = vec2(d.x * ca - d.y * sa, d.x * sa + d.y * ca);
+    t = (uGMode < 1.5) ? length(d / max(uGR, vec2(0.05))) : (d.x / max(uGR.x, 0.05) + 0.5);
+  }
+  t = pow(clamp(t, 0.0, 1.0), 1.0 / (1.0 + max(0.0, uCore)));   /* 白の絞り(案7) */
+  t = clamp(uCoreSkip, 0.0, 0.9) + t * (1.0 - clamp(uCoreSkip, 0.0, 0.9));   /* 白を取る: 中心の色を uCoreSkip の位置から始める */
+  vec3 col;
+  float sw = uCoreSoft * (1.0 - smoothstep(0.3, 0.7, t));   /* 白の周り(t<0.3)は全開、遠くは効かない */
+  if (sw > 0.0005) {
+    col = (rampAt(t - 2.0 * sw) + rampAt(t - sw) * 2.0 + rampAt(t) * 3.0 + rampAt(t + sw) * 2.0 + rampAt(t + 2.0 * sw)) / 9.0;   /* 白の縁のぼかし */
+  } else col = rampAt(t);
+  if (abs(uHue) > 0.001) col = clamp(hueRot(col, uHue), 0.0, 1.0);   /* 色味の移ろい: うねり全体が青になったりピンクになったり */
+  col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
+  col *= uBright;                          /* Brightness 104% */
+  /* 【2026-09-18 ヒデさん依頼】フォームの領域には白が来ないように: 範囲内だけ明るさの上限を下げる(縁60pxはなだらかに) */
+  float fm = 0.0;
+  if (uFormRect.z > uFormRect.x) { float fe = 140.0; vec2 fc2 = gl_FragCoord.xy;
+    fm = smoothstep(uFormRect.x - fe, uFormRect.x, fc2.x) * (1.0 - smoothstep(uFormRect.z, uFormRect.z + fe, fc2.x)) * smoothstep(uFormRect.y - fe, uFormRect.y, fc2.y) * (1.0 - smoothstep(uFormRect.w, uFormRect.w + fe, fc2.y)); }
+  col = min(col, vec3(uCeil));             /* 白飛びの頭打ち(1.0 で従来どおり) */
+  { float mx = max(col.r, max(col.g, col.b)); float capF = min(uCeil, uFormCeil);   /* フォーム裏: 色味は変えずに明るさだけ上限へ(縁140pxはなだらか) */
+    if (fm > 0.0 && mx > capF) col = mix(col, col * (capF / mx), fm); }
+  col = mix(col, mix(uDarkCol, col, 0.42), uDark);   /* 暗さ: 黒ベースに寄せる(色は残り火のように残る) */
+  float dith = bayer16(cellId);
+  vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread) + 0.5) / uLevels, 0.0, 1.0);
+  gl_FragColor = vec4(q, 1.0);
+}`;
+  function compile(type, src) {
+    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { fail = true; return null; }
+    return s;
+  }
+  function init() {
+    gl = canvas.getContext('webgl', { antialias: false, alpha: false });
+    if (!gl) { fail = true; return; }
+    const p = gl.createProgram();
+    const v = compile(gl.VERTEX_SHADER, VS), f = compile(gl.FRAGMENT_SHADER, FS);
+    if (!v || !f) { fail = true; return; }
+    gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { fail = true; return; }
+    gl.useProgram(p);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(p, 'aP');
+    gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uS', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uRise', 'uCompRamp', 'uWaveAmp', 'uWaveLen', 'uWaveSpd', 'uSwayDeg', 'uSwaySec', 'uSwayMode'])
+      uni[k] = gl.getUniformLocation(p, k);
+    uni.uFormRect = gl.getUniformLocation(p, 'uFormRect'); uni.uFormCeil = gl.getUniformLocation(p, 'uFormCeil');   /* 2026-09-18 */
+    uni.uSwayPivot = gl.getUniformLocation(p, 'uSwayPivot'); uni.uWaveAnchor = gl.getUniformLocation(p, 'uWaveAnchor'); uni.uCore = gl.getUniformLocation(p, 'uCore'); uni.uCoreSoft = gl.getUniformLocation(p, 'uCoreSoft'); uni.uCoreSkip = gl.getUniformLocation(p, 'uCoreSkip');
+  }
+  function visible() {
+    const r = canvas.getBoundingClientRect();
+    return r.width > 0 && r.bottom > -60 && r.top < (innerHeight || 1) + 60;
+  }
+  function draw() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(2, Math.round((canvas.clientWidth || 400) * dpr)), h = Math.max(2, Math.round((canvas.clientHeight || 200) * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
+    const c = params.cv || {};
+    gl.uniform2f(uni.uRes, w, h);
+    gl.uniform1f(uni.uTime, (performance.now() - t0) / 1000);
+    gl.uniform1f(uni.uCell, Math.max(1, (c.cell != null ? c.cell : 1)) * dpr);
+    gl.uniform1f(uni.uLevels, Math.max(2, c.levels != null ? c.levels : 3));
+    gl.uniform1f(uni.uSpread, c.spread != null ? c.spread : 1.0);
+    gl.uniform1f(uni.uSpeed, c.speed != null ? c.speed : 0.25);
+    gl.uniform1f(uni.uSwell, c.swell != null ? c.swell : 0.12);
+    gl.uniform1f(uni.uFlowScale, c.flowScale != null ? c.flowScale : 3.0);
+    gl.uniform1f(uni.uBright, c.bright != null ? c.bright : 1.04);
+    gl.uniform1f(uni.uContrast, c.contrast != null ? c.contrast : 1.38);
+    /* 【2026-09-15 ヒデさん指定】カラー案: 5色・形・暗さ(params.cv。パネル「コンバージョン」で細かく変えられる) */
+    const cols = Array.isArray(c.colors) ? c.colors : CV_DEF_COLORS;
+    /* 色が移ろう案: ブランド色＋白のパレットを時間でなめらかに入れ替える(params.cv.colors は書き換えない=保存値は無事) */
+    let mood = null;
+    if (c.hueMode === 'swing' || c.hueMode === 'cycle') {
+      const msec = Math.max(4, c.moodSec != null ? c.moodSec : 30);
+      mood = cvMoodAt(((performance.now() - t0) / 1000) / msec, c.hueMode, c.moodWhite != null ? c.moodWhite : 0.85);
+    }
+    ['uC0', 'uC1', 'uC2', 'uC3', 'uC4'].forEach((k, i) => { const v = mood ? mood[i] : cvHex(cols[i], CV_DEF_COLORS[i]); gl.uniform3f(uni[k], v[0], v[1], v[2]); });
+    /* 【2026-09-19 ヒデさん依頼】色の入れ替わり(白い光はそのまま・外側の色だけ回す/左右反転)。13段(カンプ)ランプと5段ランプの両方に同じ並べ替えを入れる */
+    { const sw = (c.hueMode === 'swap' || c.hueMode === 'flip') ? cvSwapAt(((performance.now() - t0) / 1000) / Math.max(4, c.moodSec != null ? c.moodSec : 30), c.hueMode, cols, c.swapHold != null ? c.swapHold : 0.45) : null;
+      gl.uniform3fv(uni.uS, sw ? sw.comp : CV_COMP_FLAT);
+      if (sw) ['uC1', 'uC2', 'uC3', 'uC4'].forEach((k, i) => gl.uniform3f(uni[k], sw.five[i + 1][0], sw.five[i + 1][1], sw.five[i + 1][2])); }
+    gl.uniform1f(uni.uGMode, c.gMode != null ? c.gMode : 0);
+    gl.uniform2f(uni.uGC, c.gcx != null ? c.gcx : 0.60, c.gcy != null ? c.gcy : 0.00);
+    const gr = c.gr != null ? c.gr : 0.9, ga = c.gAspect != null ? c.gAspect : 1;
+    gl.uniform2f(uni.uGR, gr * ga, gr);
+    gl.uniform1f(uni.uGAng, (c.gAng != null ? c.gAng : 0) * Math.PI / 180);
+    gl.uniform1f(uni.uDark, Math.max(c.dark != null ? c.dark : 0, (typeof cvStyleDef === 'function' && cvStyleDef().dark) ? 1 : 0));
+    const dc = cvHex(c.darkCol, '#0d0f14'); gl.uniform3f(uni.uDarkCol, dc[0], dc[1], dc[2]);
+    /* 色相の回転は使わない(ブランドにない色が出るため)。移ろいは上のパレット入れ替えで行う */
+    gl.uniform1f(uni.uHue, 0);
+    /* 【2026-09-15 ヒデさん指摘・修正】以前は縦に伸ばした分だけグラデも下へ引き伸ばしていたが、
+       色の範囲(0〜1)を超えた所が【平坦なピンク】になり、縦幅を伸ばすと絵が破綻していた。
+       グラデはセクション全体に素直に収める(引き伸ばさない)。上が薄くなる問題は溶け込みの px 固定で対処済み。
+       cvSyncStretch は「伸ばす前の高さ」の測り直し(＝溶け込みの px 更新)のために呼ぶ。 */
+    if (typeof cvSyncStretch === 'function') cvSyncStretch();
+    /* いちばん明るい所(カンプでは右上)が地色と同化して「グラデが欠けて見える」ので、淡ブルー側へ寄せて色を通す */
+    { const tc = cvHex(c.topCol, '#7cc9e8'); gl.uniform3f(uni.uTopCol, tc[0], tc[1], tc[2]); }
+    gl.uniform1f(uni.uWhite, c.topWhite != null ? c.topWhite : 0.12);
+    gl.uniform1f(uni.uCeil, c.ceil != null ? c.ceil : 0.9);
+    /* 【2026-09-18】フォームの範囲を毎フレーム渡す(canvas の実ピクセル座標・y は下から) */
+    try { const fe = document.querySelector('#conversion .cv-form'), cvs = gl.canvas; const fcs = fe ? getComputedStyle(fe) : null;
+      if (fe && cvs && fcs && fcs.display !== 'none') { const fr = fe.getBoundingClientRect(), cr = cvs.getBoundingClientRect(); const sx = cvs.width / Math.max(1, cr.width), sy = cvs.height / Math.max(1, cr.height);
+        gl.uniform4f(uni.uFormRect, (fr.left - cr.left) * sx, (cr.bottom - fr.bottom) * sy, (fr.right - cr.left) * sx, (cr.bottom - fr.top) * sy); }
+      else gl.uniform4f(uni.uFormRect, 0, 0, 0, 0); } catch (e) { try { gl.uniform4f(uni.uFormRect, 0, 0, 0, 0); } catch (e2) {} }
+    gl.uniform1f(uni.uFormCeil, c.formCeil != null ? c.formCeil : 1.0);   /* 2026-09-18: 取り下げ(1.0=効かない)。仕組みだけ残す */
+    gl.uniform1f(uni.uRise, cvRisePx * dpr);   /* 【2026-09-15】上へのはみ出し(CSSpx→デバイスpx) */
+    gl.uniform1f(uni.uWaveAmp, c.wave != null ? c.wave : 0.13);      /* 【2026-09-15】大きなうねり */
+    gl.uniform1f(uni.uWaveLen, c.waveLen != null ? c.waveLen : 0.85);
+    gl.uniform1f(uni.uWaveSpd, c.waveSpd != null ? c.waveSpd : 0.11);
+    gl.uniform1f(uni.uSwayDeg, c.swayDeg != null ? c.swayDeg : 5);      /* 【2026-09-15】ゆらゆら(全体の傾き) */
+    gl.uniform1f(uni.uSwaySec, c.swaySec != null ? c.swaySec : 26);
+    gl.uniform1f(uni.uSwayPivot, c.swayPivot != null ? c.swayPivot : 0); gl.uniform1f(uni.uWaveAnchor, c.waveAnchor != null ? c.waveAnchor : 0);   /* 2026-09-18 案4 */
+    gl.uniform1f(uni.uCore, c.core != null ? c.core : 0);   /* 2026-09-19 白の絞り(案7) */
+    gl.uniform1f(uni.uCoreSoft, c.coreSoft != null ? c.coreSoft : 0);   /* 2026-09-19 白の縁のぼかし */
+    gl.uniform1f(uni.uCoreSkip, c.coreSkip != null ? c.coreSkip : 0);   /* 2026-09-19 白を取る */
+    gl.uniform1f(uni.uSwayMode, c.swayMode != null ? c.swayMode : 0);   /* 揺らぎの型(案) */
+    gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
+    gl.uniform1f(uni.uCompRamp, (c.ramp === 'comp' || c.ramp === 1) ? 1 : 0);   /* 【2026-09-16】デザインカンプの13段ランプ */
+    /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
+       SP は M=[-31.225 24.205 -22.32 -26.671 300.25 32.955], r=10 を u,v∈[0,1] に正規化して
+       gx = 係数·(u,v,1)/20 + 0.5 の形にした値(中心(300,33)=右上で t=0(淡ピンク白)、左下 t≒0.98(ピンク)、右下 0.70(青紫))。 */
+    const GA = isMobile ? [-0.33604, 0.22351, 0.76480] : [-0.38077, 0.29537, 0.79503];
+    const GB = isMobile ? [-0.30497, -0.31268, 0.80212] : [-0.37953, -0.33868, 0.86993];
+    gl.uniform3f(uni.uGA, GA[0], GA[1], GA[2]);
+    gl.uniform3f(uni.uGB, GB[0], GB[1], GB[2]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  function frame() {
+    requestAnimationFrame(frame);
+    if (fail || !visible()) return;
+    if (!gl) { init(); if (fail || !gl) return; }
+    draw();
+  }
+  requestAnimationFrame(frame);
+  /* sample() = 描画直後に readPixels で色を返す(検証用。preserveDrawingBuffer なしでも同一フレームなら読める) */
+  function sample() {
+    if (fail) return { fail: true };
+    if (!gl) { init(); if (fail || !gl) return { fail: true }; }
+    draw();
+    const w = canvas.width || 2, h = canvas.height || 2;
+    const read = (fx, fy) => {
+      const p = new Uint8Array(4);
+      gl.readPixels(Math.round(w * fx), Math.round(h * fy), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p);
+      return [p[0], p[1], p[2]];
+    };
+    return { tl: read(0.05, 0.9), tr: read(0.95, 0.9), c: read(0.5, 0.5), bl: read(0.05, 0.1), br: read(0.95, 0.1) };
+  }
+  return { sample };
+})();
+
+/* ===== 惑星への集約アニメ (2026-08-26 ヒデさん指定・①②④⑩) =====
+   大前提: デザインは V1.0 のまま一切変えない。既存の軌道・惑星・ドットに「動き」だけ足す。
+   （既存パーツと同じ見た目の複製を増やすのは OK: スパイラルの粒・波の輪）
+   'reel'   ①収縮ループ: 外の輪は常に固定で残し、内の輪がドットごと惑星へ収縮→吸収(フェード)→
+            新しい輪がフェードインして再生。傾き(シーソー)・クロスはさせない(固定)。
+   'spiral' ②スパイラル: 通常の周回はそのまま。追加の粒が螺旋で半径を縮めて吸い込まれる。
+   'pulse'  ④パルス: 7個のドットが鼓動の周期で一斉に惑星へ収束→吸収→軌道上へ再出現。
+   ※ ④「輪が流れ込む」(waves) は 2026-08-27 ヒデさん指定で削除。番号は詰めず据え置き
+     (これまでの会話が「6番＝点が並ぶ軌道」で通っているため) */
+/* ===== 選択ピルの「グループ」(2026-08-28 ヒデさん指定) =====
+   内部モード(converge)は上の CONVERGES のまま保持し、表示だけ束ねる。
+   こうするとプリセット(gfxPresets[mode])もバリエーション(GFX_VARIANTS[mode])も消えない。
+     周回のみ  … off。「線で行き来」(duplex)のオン/オフ＋ジャイロ(gyro)をバリエーションに
+     1 収縮    … reel
+     2 軌道と粒 … spiral + accre + beads を統合
+     3 ネットワーク … mesh */
+/* 【2026-08-29 ヒデさん指定・大枠再編】選択ピルは 2グループに統合:
+     A 軌道     … 周回のみ(off/gyro) + 収縮(reel) + 軌道と粒(spiral/accre/beads) + 線で行き来(duplex) を統合。
+                   中を「軌道のみ / 粒とセット / 収縮あり」のカテゴリに分け、下のトグルで絞り込める。
+     B ネットワーク … 網(mesh) + ネットワーク3D。
+   内部モード(converge)・プリセット(gfxPresets)・バリエーション(GFX_VARIANTS)は保持したまま表示だけ束ねる。 */
+/* 【2026-08-31 ヒデさん指定・解釈修正】タブは従来どおり A 軌道 / B ネットワーク の2つ。
+   合体するのは A の中のカテゴリ「軌道のみ」+「粒とセット」→「軌道と粒」(下の CONV_CATS)。 */
+const CONV_GROUPS = [
+  { key: 'orbit',   name: '軌道',
+    modes: ['off', 'gyro', 'reel', 'spiral', 'accre', 'beads', 'duplex'],
+    desc: '軌道をベースにした案。カテゴリ(軌道と粒/収縮あり)ごとに並びます。' },
+  { key: 'network', name: 'ネットワーク', modes: ['mesh'],
+    desc: 'ゆらぎ漂うノードの網、または3Dネットワーク。データがノードを渡り歩いて惑星へ届きます。' },
+];
+/* A(軌道)の中のカテゴリ。各内部モードをタグ付けし、バリエーション行を振り分ける＋オンオフで絞り込む。 */
+function convCatFilter() {
+  if (!params.convCatFilter || typeof params.convCatFilter !== 'object') params.convCatFilter = { orbdot: true, shrink: true };
+  if (params.convCatFilter.orbdot == null) params.convCatFilter.orbdot = true;   /* 2026-08-31: カテゴリ合体(軌道と粒)を古い保存にも補完 */
+  return params.convCatFilter;
+}
+/* あるバリエーションが「B ネットワーク」に属するか(=ネットワーク3D。off内に定義があるので名前でBへ回す) */
+function convVarIsNetwork(v) { return !!(v && v.common && v.common.net3d); }
+function convGroupOf(mode) {
+  mode = mode || 'off';
+  /* 【2026-08-30 ヒデさん指定】ネットワーク3D(off + net3d)は A 軌道のバリエーションに置く(off の所属=A)。 */
+  return CONV_GROUPS.find(g => g.modes.includes(mode) || g.line === mode) || CONV_GROUPS[0];
+}
+/* ===== 案ごとのグラフィック6案 (2026-08-27 ヒデさん指定。3案→6案に増やした) =====
+   ⚠️ デザインそのものは変えない。同じアニメーションの枠の中で
+      【軌道と惑星の 位置・大きさ・つぶし・傾き・レイアウト】と
+      【その案のつまみ】【軌道そのものの回転】だけを変えて、見え方の違う6案を用意する。
+   gfx    = 書いた項目だけが既定(gfxDefault)を上書きする
+   conv   = その案のつまみ
+   common = 全案で共通の見せ方。orbitSpin だけは「案ごとの引き出し」へ入る
+   ※ 配置は下の LOOKS を使い回す。案ごとに毎回書かないことで、
+      「どの案でも同じ配置バリエーションが選べる」状態を保つ。 */
+const GFX_LOOKS = {
+  /* カンプ通り。2本がほぼ平行に流れる */
+  std:     {},
+  /* ジャイロ交差。傾きを逆にして立体交差させる */
+  cross:   { layout: 'gyro', planet: { scale: 0.92 } },
+  /* 薄く広がる皿。横に広げて寝かせ、土星の輪のように */
+  dish:    { outer: { scale: 1.22, flat: 0.55 }, inner: { scale: 1.08, flat: 0.5 }, planet: { scale: 1.12, dy: 54 } },
+  /* 立ち上がるクロス。輪を起こして丸に近づけ、深く交差させる */
+  upright: { outer: { scale: 1.0, flat: 1.9, angle: -40 }, inner: { scale: 0.93, flat: 1.8, angle: 36 }, planet: { scale: 0.92 } },
+  /* 大きく包む。軌道を広げて惑星を小さく＝スケール感が出る */
+  wide:    { layout: 'gyro', outer: { scale: 1.4 }, inner: { scale: 1.3, flat: 1.15 }, planet: { scale: 0.74, dy: 36 } },
+  /* 惑星に寄る。軌道を小さくして惑星を大きく＝密で力強い */
+  tight:   { outer: { scale: 0.8, flat: 0.95 }, inner: { scale: 0.72, flat: 1.0 }, planet: { scale: 1.32, dy: 50 } },
+  /* 片寄せ。惑星を右へ、軌道を左へずらして非対称に */
+  offset:  { layout: 'gyro', outer: { scale: 1.12, dx: -50, dy: 8 }, inner: { scale: 1.0, dx: -32, flat: 1.2 },
+             planet: { scale: 0.96, dx: 64, dy: 52 } },
+};
+const GFX_VARIANTS = {
+  off: [
+    { name: 'A カンプ通り', desc: 'Figma のカンプそのまま。2本がほぼ平行に流れます。',
+      gfx: GFX_LOOKS.std, common: { orbitSpin: 0 } },
+    { name: 'B ジャイロ交差', desc: '2本の傾きを逆にして立体交差させます。惑星の前後を横切る回数が増え、奥行きが出ます。',
+      gfx: GFX_LOOKS.cross, common: { orbitSpin: 0.35 } },
+    { name: 'C 薄く広がる皿', desc: '2本とも横に広げて薄くつぶし、土星の輪のように寝かせます。惑星は大きめ。',
+      gfx: GFX_LOOKS.dish, common: { orbitSpin: 0.2 } },
+    { name: 'D 立ちクロス', desc: '輪を起こして丸に近づけ、深く交差させます。回転をつけると天球儀のように見えます。',
+      gfx: GFX_LOOKS.upright, common: { orbitSpin: 0.8 } },
+    { name: 'E 大きく包む', desc: '軌道を大きく広げて惑星を小さく。スケール感が出ます。',
+      gfx: GFX_LOOKS.wide, common: { orbitSpin: 0.5 } },
+    { name: 'F 惑星に寄る', desc: '軌道を小さくたたんで惑星を大きく。密で力強い見え方になります。',
+      gfx: GFX_LOOKS.tight, common: { orbitSpin: 1.2 } },
+    /* 【2026-08-29 ヒデさん指定】Figma 15970-42735 のネットワーク周回を3Dで再現した新案。
+       専用レンダラー(net3d)に切り替わる。2D/3D・手前奥の太さ・物理は下の「この案のつまみ」で。 */
+    { name: 'ネットワーク3D', desc: 'Figmaのネットワーク周回の再現。3本の軌道を傾いた3Dの円で描きます。3D＝手前が太く奥が細い線幅＋物理(手前のドットは速く/奥はゆっくり)。2D/3Dは下のつまみで切替。',
+      gfx: GFX_LOOKS.std, common: { net3d: true } },
+  ],
+  /* 【2026-08-27 ヒデさん指定】①はスピンが速すぎて狙う印象(ゆったり・先進・未来)から遠かった。
+     ・1周の秒数(duration)を 24秒 → 30〜40秒 に伸ばして、ドットの流れ自体をゆっくりに
+     ・1循環(T)を 5〜9秒に伸ばし、長く回ってから静かに縮み始めるようにした
+     ・軌道の回転(orbitSpin)は 0〜0.3 に抑えた(以前は最大1.3=15秒で1回転していた)
+     ・現れ方(inDur)と移り方(moveDur)を長くして、動きの角を取った */
+  reel: [
+    { name: 'A カンプ通り', desc: '既定の並び。長くゆっくり回ってから、静かに惑星へ滑り込みます。',
+      gfx: GFX_LOOKS.std,
+      conv: { blend: 0, T: 6.4, shrinkAt: 0.36, endAt: 0.80, moveDur: 0.20, inDur: 0.22 },
+      common: { orbitSpin: 0 }, root: { duration: 32 } },
+    { name: 'B 深く交差', desc: 'ジャイロ交差の配置。中間の輪を3本はさんで層をつくり、ゆっくり惑星の前後を横切ります。',
+      gfx: { layout: 'gyro', outer: { scale: 1.05 }, inner: { scale: 0.95, flat: 1.15 }, planet: { scale: 0.9, dy: 40 } },
+      conv: { blend: 3, blendAlpha: 0.28, T: 7.2, shrinkAt: 0.36, endAt: 0.82, moveDur: 0.20, inDur: 0.22 },
+      common: { orbitSpin: 0.10 }, root: { duration: 34 } },
+    { name: 'C 薄い皿', desc: '横に広げて寝かせた薄い輪。中間の輪5本が、土星の輪のようにゆっくり吸い込まれます。',
+      gfx: GFX_LOOKS.dish,
+      conv: { blend: 5, blendAlpha: 0.24, T: 7.6, shrinkAt: 0.34, endAt: 0.82, moveDur: 0.22, inDur: 0.24 },
+      common: { orbitSpin: 0.07 }, root: { duration: 34 } },
+    { name: 'D 立ちクロス', desc: '起こして交差させた輪が、球状の層のままゆっくり縮んでいきます。',
+      gfx: GFX_LOOKS.upright,
+      conv: { blend: 6, blendAlpha: 0.22, T: 8.0, depth: 0.98, shrinkAt: 0.34, endAt: 0.84, moveDur: 0.22, inDur: 0.24 },
+      common: { orbitSpin: 0.10 }, root: { duration: 36 } },
+    { name: 'E 大きく包む', desc: '大きく広げた輪が、長い時間をかけて小さな惑星へ吸い込まれます。いちばんゆったり。',
+      gfx: GFX_LOOKS.wide,
+      conv: { blend: 4, blendAlpha: 0.26, T: 9.0, shrinkAt: 0.30, endAt: 0.84, moveDur: 0.24, inDur: 0.26 },
+      common: { orbitSpin: 0.07 }, root: { duration: 38 } },
+    { name: 'F 惑星に寄る', desc: '惑星のすぐ外で輪が生まれては縮みます。11案の中ではテンポが速めですが、以前より落ち着かせてあります。',
+      gfx: GFX_LOOKS.tight,
+      conv: { blend: 2, blendAlpha: 0.32, T: 5.6, shrinkAt: 0.34, endAt: 0.80, moveDur: 0.18, inDur: 0.20 },
+      common: { orbitSpin: 0.12 }, root: { duration: 28 } },
+    /* 【2026-08-28 ヒデさん指定】複数軌道シェイプ(本数はパネルの「軌道の本数」で増減)。粒はこの案の吸収のまま。 */
+    { name: 'アトム 4本', desc: '4本の軌道が原子模型のように交差して回ります。粒はこの案の吸収のまま。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 4, ringShape: 'atom' } },
+    { name: 'アトム 6本', desc: '6本の軌道が原子模型のように交差。密度が上がって華やかに。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'atom' } },
+    { name: 'アトム 8本', desc: '8本の軌道が球状に張り巡らされ、複雑に回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 8, ringShape: 'atom' } },
+    { name: '土星の輪', desc: '同心の輪が土星の輪のように重なってゆっくり回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'saturn' } },
+    { name: '花のリング', desc: '同じ大きさの輪を均等に回して重ねた花のような形。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'rosette' } },
+  ],
+  /* 【2026-08-28 ヒデさん指定】②③は回る速さと取り込む速さが速かったので、全体にゆっくりへ。
+     ・回る速さ(speed)を 1 → 0.3〜0.9 に
+     ・吸い込みにかける時間(life / fall)を長く
+     ・軌道にいる時間(stay)を長く取って、落ち始めるまでの間を作った
+     ・全体の1周(duration)も 24秒 → 28〜38秒 に伸ばした */
+  spiral: [
+    { name: 'A 標準の渦', desc: '既定の並び。長く軌道を回ってから、ゆっくり渦を描いて落ちます。',
+      gfx: GFX_LOOKS.std,
+      conv: { count: 12, life: 8, speed: 0.55, size: 0.62, stay: 5, swirl: 1, fallCurve: 1 },
+      common: { orbitSpin: 0 }, root: { duration: 32 } },
+    { name: 'B 大げさな渦巻き', desc: '粒を26個に増やし、中心へ近づくほど強く巻き込みます。速さは抑えてあるので、うねりが読み取れます。',
+      gfx: { layout: 'gyro', outer: { scale: 1.1 }, inner: { scale: 1.0, flat: 1.2 }, planet: { scale: 0.88 } },
+      conv: { count: 26, life: 9, speed: 0.6, size: 0.5, stay: 3.5, swirl: 2.4, fallCurve: 1.8 },
+      common: { orbitSpin: 0.18 }, root: { duration: 34 } },
+    { name: 'C ゆったり大回り', desc: '軌道を大きく広げて寝かせ、粒がとても長い時間かけて回り込みます。いちばん静か。',
+      gfx: { outer: { scale: 1.28, flat: 0.6 }, inner: { scale: 1.18, flat: 0.55 }, planet: { scale: 0.8, dy: 56 } },
+      conv: { count: 16, life: 13, speed: 0.45, size: 0.75, stay: 7, swirl: 0.3, fallCurve: 0.7 },
+      common: { orbitSpin: 0.1 }, root: { duration: 38 } },
+    { name: 'D 立ちクロスの渦', desc: '起こして交差させた軌道から、粒が縦方向にも巻き込まれます。渦の軸が見えやすい配置。',
+      gfx: GFX_LOOKS.upright,
+      conv: { count: 30, life: 8.5, speed: 0.6, size: 0.55, stay: 4, swirl: 1.8, fallCurve: 1.4 },
+      common: { orbitSpin: 0.28 }, root: { duration: 34 } },
+    { name: 'E 大きく包む渦', desc: '遠くの大きな軌道から、小さな惑星へ長い渦を描いて落ちていきます。',
+      gfx: GFX_LOOKS.wide,
+      conv: { count: 22, life: 14, speed: 0.45, size: 0.68, stay: 6.5, swirl: 1.2, fallCurve: 1.1 },
+      common: { orbitSpin: 0.14 }, root: { duration: 38 } },
+    { name: 'F 近くで速い渦', desc: '惑星のすぐ外で、粒が短くきつく巻き込まれます。14案の中ではテンポ速めですが、以前より落ち着かせてあります。',
+      gfx: GFX_LOOKS.tight,
+      conv: { count: 34, life: 5, speed: 0.85, size: 0.45, stay: 2, swirl: 2.4, fallCurve: 1.9 },
+      common: { orbitSpin: 0.3 }, root: { duration: 28 } },
+    /* 【2026-08-28 ヒデさん指定】「周回のみ」と同じカンプの2本の軌道のまま、粒が吸収される案。
+       レイアウトは std(カンプ通り)・回転なしで、周回のみの見た目を保ったまま粒だけ惑星へ落ちる。 */
+    { name: '周回レイアウトで吸収', desc: '周回のみと同じ2本の軌道(カンプ通り)のまま、粒がゆっくり惑星へ吸い込まれます。軌道の形は崩れません。',
+      gfx: GFX_LOOKS.std,
+      conv: { count: 14, life: 8, speed: 0.5, size: 0.62, stay: 5.5, swirl: 1, fallCurve: 1 },
+      common: { orbitSpin: 0 }, root: { duration: 34 } },
+    /* 【2026-08-29 ヒデさん指定】コメット: 大きめの粒が少数、軌道をくるくる回りながら、たまに1個ずつ惑星へ吸い込まれる。 */
+    { name: 'コメット', desc: '2本の軌道が斜めに交差してくるくる回り、大きめの粒がたまに1つずつ惑星へ吸い込まれます（Figmaカンプ準拠）。',
+      gfx: { layout: 'gyro', planet: { scale: 0.92 } },
+      conv: { count: 6, life: 3.6, speed: 0.5, size: 1.2, stay: 7, swirl: 0.6, fallCurve: 1.4 },
+      common: { orbitSpin: 0.35 }, root: { duration: 34 } },
+    /* 【2026-08-28 ヒデさん指定】複数軌道シェイプ(本数はパネルの「軌道の本数」で増減)。粒はこの案の吸収のまま。 */
+    { name: 'アトム 4本', desc: '4本の軌道が原子模型のように交差して回ります。粒はこの案の吸収のまま。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 4, ringShape: 'atom' } },
+    { name: 'アトム 6本', desc: '6本の軌道が原子模型のように交差。密度が上がって華やかに。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'atom' } },
+    { name: 'アトム 8本', desc: '8本の軌道が球状に張り巡らされ、複雑に回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 8, ringShape: 'atom' } },
+    { name: '土星の輪', desc: '同心の輪が土星の輪のように重なってゆっくり回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'saturn' } },
+    { name: '花のリング', desc: '同じ大きさの輪を均等に回して重ねた花のような形。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'rosette' } },
+  ],
+  accre: [
+    { name: 'A 標準の円盤', desc: '既定の円盤。粒がゆっくり渦を巻きながら、少しずつ内へ落ちていきます。',
+      gfx: GFX_LOOKS.std,
+      conv: { scale: 1.15, count: 1000, size: 0.35, fall: 0.55, speed: 0.45, showOrbit: false, swirl: 1, fallCurve: 1 },
+      common: { orbitSpin: 0 }, root: { duration: 32 } },
+    { name: 'B 大きく薄い円盤', desc: '円盤を広げて粒を1800個に。1粒を小さく、流れもゆっくりにして、細かい砂が漂うようにします。',
+      gfx: { planet: { scale: 0.82, dy: 52 } },
+      conv: { scale: 1.85, count: 1800, size: 0.22, fall: 0.4, speed: 0.35, wobble: 0.7, twinkle: 0.6, showOrbit: false, swirl: 0.6 },
+      common: { orbitSpin: 0 }, root: { duration: 36 } },
+    { name: 'C 軌道つき・きつい渦', desc: '軌道を出したまま、内側でしっかり渦を巻かせます。ジャイロ交差なので円盤と輪が立体的に絡みます。',
+      gfx: { layout: 'gyro', inner: { scale: 0.92, flat: 1.1 }, planet: { scale: 0.95 } },
+      conv: { scale: 0.85, count: 700, size: 0.4, fall: 0.6, speed: 0.6, showOrbit: true, swirl: 2.0, fallCurve: 1.5, wobble: 0.2 },
+      common: { orbitSpin: 0.2 }, root: { duration: 32 } },
+    { name: 'D 立ちクロス＋円盤', desc: '起こして交差させた輪を出したまま、その内側で円盤が渦を巻きます。',
+      gfx: GFX_LOOKS.upright,
+      conv: { scale: 1.0, count: 900, size: 0.34, fall: 0.5, speed: 0.5, showOrbit: true, swirl: 1.4, fallCurve: 1.2, wobble: 0.3 },
+      common: { orbitSpin: 0.3 }, root: { duration: 34 } },
+    { name: 'E 大きく包む円盤', desc: '小さな惑星のまわりに、大きく薄い円盤がゆったり広がります。銀河のようなスケール感。',
+      gfx: GFX_LOOKS.wide,
+      conv: { scale: 2.2, count: 1600, size: 0.24, fall: 0.35, speed: 0.3, showOrbit: false, swirl: 0.5, twinkle: 0.7 },
+      common: { orbitSpin: 0.12 }, root: { duration: 38 } },
+    { name: 'F 惑星に密着', desc: '大きな惑星のすぐ表面近くを粒が回ります。14案の中では速めですが、以前よりかなり落ち着かせてあります。',
+      gfx: GFX_LOOKS.tight,
+      conv: { scale: 0.65, count: 1200, size: 0.3, fall: 0.8, speed: 0.9, showOrbit: false, swirl: 2.0 },
+      common: { orbitSpin: 0.3 }, root: { duration: 28 } },
+  ],
+  mesh: [
+    { name: 'A ふわふわ漂う', desc: '既定。ノードがゆらゆら漂い、線で結ばれてデータが渡り歩きます。',
+      gfx: GFX_LOOKS.std,
+      conv: { style: 'organic', nodes: 14, span: 0.34, lineAlpha: 0.5, lineWidth: 1.4, drift: 1, random: 0.6, size: 0.6, hop: 0.55, rate: 1.2 },
+      common: { orbitSpin: 0 } },
+    { name: 'B まばらな星座', desc: 'ノードを9個まで減らして間隔を広げ、線を薄く。ぽつぽつと星座のように見せます。',
+      gfx: { planet: { scale: 0.92 } },
+      conv: { style: 'constellation', nodes: 9, span: 0.55, lineAlpha: 0.3, lineWidth: 1, drift: 1.7, random: 1, size: 0.75, hop: 0.75, rate: 0.9 },
+      common: { orbitSpin: 0 } },
+    { name: 'C 包囲ケージ', desc: '惑星のまわりの球殻にノードを並べ、骨で結んだカゴがゆっくり回ります。手前の骨は惑星の前を、奥の骨は後ろを通るので、まるごと取り囲んでいるように見えます。',
+      gfx: { layout: 'gyro', outer: { scale: 1.12 }, inner: { scale: 1.0, flat: 1.25 }, planet: { scale: 0.9, dy: 44 } },
+      conv: { style: 'cage', nodes: 26, cageR: 1.8, cageSpin: 1, cageLinks: 3, cageTilt: -20,
+              lineAlpha: 0.5, lineWidth: 1.1, size: 0.5, random: 0.6, hop: 0.45, rate: 1.8 },
+      common: { orbitSpin: 0 } },
+    { name: 'D 大きいケージ', desc: '包囲ケージを大きく組み、骨を増やして密に。惑星を大きく囲い込む印象になります。',
+      gfx: GFX_LOOKS.wide,
+      conv: { style: 'cage', nodes: 40, cageR: 2.6, cageSpin: 0.6, cageLinks: 4, cageTilt: -14,
+              lineAlpha: 0.42, lineWidth: 0.9, size: 0.42, random: 0.4, hop: 0.5, rate: 2.2 },
+      common: { orbitSpin: 0 } },
+    { name: 'E 細かいケージ', desc: '細かい骨のカゴが惑星を包んで速く回ります。手前の骨は惑星の前、奥は後ろを通って取り囲みます。',
+      gfx: GFX_LOOKS.std,
+      conv: { style: 'cage', nodes: 34, cageR: 1.7, cageSpin: 1.8, cageLinks: 3, cageTilt: -28,
+              lineAlpha: 0.5, lineWidth: 1.0, size: 0.4, random: 0.2, hop: 0.32, rate: 2.6 },
+      common: { orbitSpin: 0 } },
+    { name: 'F 立ちクロスの網', desc: '起こして交差させた広い範囲に網を張ります。奥行きのあるネットになります。',
+      gfx: GFX_LOOKS.upright,
+      conv: { style: 'organic', nodes: 22, span: 0.42, lineAlpha: 0.45, lineWidth: 1.2, drift: 1.3, random: 0.9, size: 0.5, hop: 0.5, rate: 1.6 },
+      common: { orbitSpin: 0.8 } },
+    /* 【2026-09-02 ヒデさん指定】現行ケージのブラッシュアップ案: 面がきれいに整った(潰れ・歪みなし)測地線球。 */
+    { name: 'G 整った網（測地線）', desc: '面がきれいに整った、潰れ・歪みのない網。正20面体を細分した測地線球で、全ての面がほぼ均一・全ての辺がほぼ同じ長さ。縦の潰しも無い真円の球なので、端正な多面体らしい佇まいになります。密度は「面の細かさ」で調整(1=正20面体/2=42点/3=162点)。',
+      gfx: GFX_LOOKS.wide,
+      conv: { style: 'cage', cageShape: 'geo', cageFreq: 2, cageR: 2.4, cageSpin: 0.6, cageLinks: 3, cageTilt: -14,
+              lineAlpha: 0.5, lineWidth: 0.9, size: 0.42, random: 0, hop: 0.5, rate: 2.0 },
+      common: { orbitSpin: 0 } },
+    /* 【2026-08-28 ヒデさん指定】複数軌道シェイプ(本数はパネルの「軌道の本数」で増減)。粒はこの案の吸収のまま。 */
+    { name: 'アトム 4本', desc: '4本の軌道が原子模型のように交差して回ります。粒はこの案の吸収のまま。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 4, ringShape: 'atom' } },
+    { name: 'アトム 6本', desc: '6本の軌道が原子模型のように交差。密度が上がって華やかに。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'atom' } },
+    { name: 'アトム 8本', desc: '8本の軌道が球状に張り巡らされ、複雑に回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 8, ringShape: 'atom' } },
+    { name: '土星の輪', desc: '同心の輪が土星の輪のように重なってゆっくり回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'saturn' } },
+    { name: '花のリング', desc: '同じ大きさの輪を均等に回して重ねた花のような形。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'rosette' } },
+  ],
+  beads: [
+    { name: 'A 標準', desc: '既定。点が等間隔に並んだ輪から、順に惑星へ吸い込まれます。',
+      gfx: GFX_LOOKS.std, conv: { count: 300, size: 0.5, ratio: 0.22, speed: 0.26, spin: 0, jitter: 0 },
+      common: { orbitSpin: 0 } },
+    { name: 'B 細かい粒', desc: '1粒を小さくして、線に近い細かさに。流れがなめらかに見えます。',
+      gfx: { outer: { scale: 1.06 }, inner: { scale: 1.02 }, planet: { scale: 1.02 } },
+      conv: { count: 300, size: 0.34, ratio: 0.16, speed: 0.34, spin: 0.5, jitter: 0.15 },
+      common: { orbitSpin: 0.25 } },
+    { name: 'C 交差する二重リング', desc: 'ジャイロ交差の2本に点を並べ、吸い込まれる時に渦を巻かせます。2本の重なりで奥行きが出ます。',
+      gfx: { layout: 'gyro', outer: { scale: 1.02 }, inner: { scale: 0.94, flat: 1.2 }, planet: { scale: 0.9 } },
+      conv: { count: 300, size: 0.55, ratio: 0.3, spin: 1.3, spinEase: 1.4, backIn: 1.5 },
+      common: { orbitSpin: 0.5 } },
+    { name: 'D 立ちクロスのリング', desc: '起こして交差させた2本の点リングが、天球儀のように回りながら吸い込まれます。',
+      gfx: GFX_LOOKS.upright, conv: { count: 300, size: 0.5, ratio: 0.24, speed: 0.3, spin: 1.0, spinEase: 1.2, backIn: 1.3 },
+      common: { orbitSpin: 1.0 } },
+    { name: 'E 大きいリング', desc: '大きく広げたリングから、小さな惑星へゆっくり吸い込まれます。',
+      gfx: GFX_LOOKS.wide, conv: { count: 300, size: 0.6, ratio: 0.16, speed: 0.2, life: 5, backIn: 1.8 },
+      common: { orbitSpin: 0.45 } },
+    { name: 'F 惑星に寄るリング', desc: '大きな惑星のすぐ外で、点が速く回りながら次々に吸い込まれます。',
+      gfx: GFX_LOOKS.tight, conv: { count: 300, size: 0.44, ratio: 0.34, speed: 0.44, life: 2.4, spin: 0.8 },
+      common: { orbitSpin: 1.4 } },
+  ],
+  duplex: [
+    { name: 'A 標準', desc: '既定。ゆるく反った線の上を、粒が惑星と軌道の間で行き来します。',
+      gfx: GFX_LOOKS.std, conv: { curve: 0.22, density: 1, lineAlpha: 0.16, lineWidth: 1, size: 0.6, speed: 1 },
+      common: { orbitSpin: 0 } },
+    { name: 'B まっすぐ放射', desc: '線の反りをほぼ無くして放射状に。太く濃くして、配線図のようなはっきりした見え方にします。',
+      gfx: { outer: { scale: 1.08 }, inner: { scale: 0.98 }, planet: { scale: 1.05 } },
+      conv: { curve: 0.03, density: 1.6, lineAlpha: 0.26, lineWidth: 2.2, size: 0.5, speed: 1.3 },
+      common: { orbitSpin: 0.2 } },
+    { name: 'C 大きく弧を描く', desc: '線を大きく反らせて細く。ジャイロ交差の広い軌道と組み合わせ、弧が惑星の前後を回り込みます。',
+      gfx: { layout: 'gyro', outer: { scale: 1.15, flat: 0.85 }, inner: { scale: 1.0, flat: 1.3 }, planet: { scale: 0.85, dy: 40 } },
+      conv: { curve: 0.62, density: 0.8, lineAlpha: 0.34, lineWidth: 0.6, size: 0.7, speed: 0.75, T: 4.2 },
+      common: { orbitSpin: 0.4 } },
+    { name: 'D 立ちクロスの線', desc: '起こして交差させた軌道と惑星を結ぶので、線が縦にも走ります。立体的な配線に見えます。',
+      gfx: GFX_LOOKS.upright, conv: { curve: 0.3, density: 1.3, lineAlpha: 0.24, lineWidth: 1.2, size: 0.55, speed: 1.1 },
+      common: { orbitSpin: 0.9 } },
+    { name: 'E 遠くから長い線', desc: '大きく広げた軌道から、小さな惑星まで長い線が伸びます。粒がゆっくり長距離を移動します。',
+      gfx: GFX_LOOKS.wide, conv: { curve: 0.45, density: 1.1, lineAlpha: 0.2, lineWidth: 0.8, size: 0.62, speed: 0.7, T: 5 },
+      common: { orbitSpin: 0.45 } },
+    { name: 'F 密な短い線', desc: '大きな惑星のすぐ外から、短い線で密に行き来します。処理量が多そうな印象。',
+      gfx: GFX_LOOKS.tight, conv: { curve: 0.12, density: 2.4, lineAlpha: 0.3, lineWidth: 1.6, size: 0.45, speed: 1.6, T: 2.2 },
+      common: { orbitSpin: 1.3 } },
+  ],
+  gyro: [
+    { name: 'A 標準のジャイロ', desc: '2本の輪が直交して転がります。いちばんジャイロらしい形。',
+      gfx: GFX_LOOKS.std, conv: { tumble: 1, spin: 1, phase: 90, thin: 0.06, pull: 0.25, pullT: 5 },
+      common: { orbitSpin: 0 } },
+    { name: 'B 立ちクロスで転がる', desc: '起こして交差させた輪が転がるので、球体の骨組みが回っているように見えます。',
+      gfx: GFX_LOOKS.upright, conv: { tumble: 1.2, spin: 1.4, phase: 90, thin: 0.04, pull: 0.3, pullT: 4.4 },
+      common: { orbitSpin: 0.3 } },
+    { name: 'C ゆっくり大きく', desc: '大きく広げた輪が、ゆったりと転がりながら小さな惑星へ吸い寄せられます。',
+      gfx: GFX_LOOKS.wide, conv: { tumble: 0.45, spin: 0.5, phase: 90, thin: 0.08, pull: 0.4, pullT: 8 },
+      common: { orbitSpin: 0.2 } },
+    { name: 'D 高速スピン', desc: '惑星のすぐ外で輪が速く転がります。装置が高速で稼働しているような見え方。',
+      gfx: GFX_LOOKS.tight, conv: { tumble: 2.2, spin: 2.4, phase: 90, thin: 0.03, pull: 0.18, pullT: 2.6 },
+      common: { orbitSpin: 0.6 } },
+    { name: 'E 同じ向きで転がる', desc: '2本のずれを無くして同じ向きに転がします。1枚の板が回っているように見えます。',
+      gfx: GFX_LOOKS.dish, conv: { tumble: 0.9, spin: 0.8, phase: 0, thin: 0.05, pull: 0.22, pullT: 5.5 },
+      common: { orbitSpin: 0.25 } },
+    { name: 'F 片寄せジャイロ', desc: '惑星を右へ、輪を左へずらした非対称な配置で転がります。動きに癖が出ます。',
+      gfx: GFX_LOOKS.offset, conv: { tumble: 1.1, spin: 1.2, phase: 120, thin: 0.05, pull: 0.34, pullT: 4 },
+      common: { orbitSpin: 0.7 } },
+    /* 【2026-08-28 ヒデさん指定】複数軌道シェイプ(本数はパネルの「軌道の本数」で増減できる)。
+       3案=アトム型(本数違い) / 4・5案目=別のシェイプ(土星型・花型)。 */
+    { name: 'アトム 4本', desc: '4本の軌道が原子模型のように、惑星の中心で均等に交差して回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 4, ringShape: 'atom' } },
+    { name: 'アトム 6本', desc: '6本の軌道が原子模型のように交差。密度が上がって華やかになります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'atom' } },
+    { name: 'アトム 8本', desc: '8本の軌道が球状に張り巡らされ、複雑に回ります。いちばん密。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 8, ringShape: 'atom' } },
+    { name: '土星の輪', desc: '同じ傾きの輪を大きさ違いで同心に重ねた、土星の輪のような形。ゆっくり回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'saturn' } },
+    { name: '花のリング', desc: '同じ大きさの輪を均等に回して重ねた、花びらのような形。平面的に回ります。',
+      gfx: GFX_LOOKS.std, common: { ringCount: 6, ringShape: 'rosette' } },
+  ],
+};
+/* 【2026-08-29 ヒデさん指定】バリエーション一覧から「完全削除」した案(案キー→消した案名)。
+   ⚠️ 配列(GFX_VARIANTS)から要素を抜くと、案の並び順(インデックス)がズレて既存の調整値(gfxTweaks)が
+      別の案に化ける／共有バリエ(GFX_LOOKS2・ジャイロ版)は他案でも使うため配列削除は危険。
+      なので「表示・復元の両方から名前で恒久除外」する方式にする(コードに焼くので localStorage を消しても復活しない)。
+   これ以降ヒデさんが新たに案を完全削除したい時は、その案の名前をここへ足すだけでよい。 */
+const VARIANT_REMOVED = {
+  off:    ['F 惑星に寄る', 'I 大小の入れ子', 'J 地平線', 'K 斜めの流れ', 'ジャイロ・速い', 'E 大きく包む', 'G ヘアライン', 'B ジャイロ交差', 'ジャイロ・直交'],
+  reel:   ['C 薄い皿', 'D 立ちクロス', 'I 大小の入れ子', 'A カンプ通り', 'B 深く交差', 'E 大きく包む', 'アトム 4本', 'アトム 6本', 'アトム 8本', '花のリング', 'H 縦のクロス', 'J 地平線', 'K 斜めの流れ', 'ジャイロ・直交', 'ジャイロ・斜めの流れ', 'G ヘアライン', 'ジャイロ・速い'],
+  mesh:   ['J 地平線', 'F 立ちクロスの網', 'ジャイロ・斜めの流れ', 'H 縦のクロス', '花のリング', '土星の輪', 'G ヘアライン', 'ジャイロ・縦のクロス', 'アトム 8本', 'アトム 6本', 'アトム 4本', 'ジャイロ・直交', 'ジャイロ・ゆるやか', 'B まばらな星座', 'ジャイロ・速い'],
+  accre:  ['B 大きく薄い円盤', 'E 大きく包む円盤', 'F 惑星に密着', 'G ヘアライン', 'J 地平線', 'ジャイロ・直交', 'L 前後を貫く軌道', 'H 縦のクロス', 'I 大小の入れ子', 'K 斜めの流れ', 'C 軌道つき・きつい渦', 'ジャイロ・速い', 'ジャイロ・斜めの流れ', 'ジャイロ・縦のクロス', 'ジャイロ・ゆるやか'],
+  duplex: ['C 大きく弧を描く', 'G ヘアライン', 'I 大小の入れ子', 'J 地平線', 'ジャイロ・直交', 'ジャイロ・速い', 'E 遠くから長い線', 'B まっすぐ放射', 'F 密な短い線', 'H 縦のクロス', 'K 斜めの流れ', 'ジャイロ・縦のクロス', 'ジャイロ・斜めの流れ', 'D 立ちクロスの線'],
+  gyro:   ['F 片寄せジャイロ', 'G ヘアライン', 'I 大小の入れ子', 'J 地平線', 'D 高速スピン', 'A 標準のジャイロ', 'E 同じ向きで転がる', '花のリング', 'アトム 4本', 'アトム 6本', 'アトム 8本', '土星の輪', 'C ゆっくり大きく', 'K 斜めの流れ'],
+  beads:  ['G ヘアライン', 'J 地平線', 'ジャイロ・斜めの流れ', 'ジャイロ・縦のクロス', 'ジャイロ・速い', 'ジャイロ・直交', 'H 縦のクロス', 'A 標準', 'B 細かい粒', 'I 大小の入れ子', 'K 斜めの流れ', 'F 惑星に寄るリング', 'D 立ちクロスのリング', 'E 大きいリング', 'ジャイロ・ゆるやか'],
+  spiral: ['J 地平線' /* 2026-09-01: A4をB3(J 地平線・横揺れ)へ移動 */, 'C ゆったり大回り', 'E 大きく包む渦', 'F 近くで速い渦', 'G ヘアライン', 'I 大小の入れ子', 'K 斜めの流れ', 'H 縦のクロス', 'B 大げさな渦巻き', 'アトム 8本', '花のリング', 'アトム 6本', 'ジャイロ・縦のクロス', 'ジャイロ・斜めの流れ'],
+};
+/* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
+   VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":["ripple"],"valSaas":["S1","S5","S8","S16","S10","S17","S4","S3"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27","A30","A4"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22","33","30","10","18","1","default","20","24-2","24-5","24-3"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2","5","8","1"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13","14","10","15","1"],"burgerIcon":["3","4","5"],"cvSway":["1","2","3","4","5","6"],"devTone":["blue","cyan","pink"],"pictoSpeed":["0.7","1.4","1.9"],"darkVar":["1","3","4"],"cvfCardBorder":["k"],"cvfInBorder":["k"],"cvfPh":["w"]};   /* 2026-09-20 追加(ヒデさん依頼・完全削除): resFx default/20/24-2/24-5/24-3、devTone blue/cyan/pink、pictoSpeed 0.7/1.4/1.9、darkVar 1/3/4、cvfCardBorder k、cvfInBorder k、cvfPh w */   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) / 2026-09-18 追加: ピクト S3・A30・A4、実績の案 1/10/18、開発者体験モックの案 1/5/8、お問い合わせの揺らぎ 1〜6、エフェクト「波紋」(ripple)(定義・CSS・シェーダも削除済み) */
+const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
+/* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
+const VARIANT_REMOVED_KEY = {
+  glowEcho: ['k5', 'k6', 'k9', 'k1', 'k4', 'k8'],
+  valSaas:  ['S13', 'S14', 'S12', 'S11', 'S6', 'S15'],   /* 2026-08-30: S1 を新For SaaS既定にしたので除外リストから外す */
+  valAi:    ['A2', 'A11', 'A14', 'A15', 'A12', 'A9', 'A7', 'A19', 'A17', 'A3', 'A5', 'A18'],
+};
+const variantRemovedKey = (bucket, key) => (VARIANT_REMOVED_KEY[bucket] || []).includes(key) || (VARIANT_REMOVED_EXTRA[bucket] || []).includes(key);
+/* 【2026-09-15 ヒデさん指定】「消した案」の控え(gfxVariantHidden)の最新化。
+   焼き込み済み(=コードから恒久的に消えている)案が控えに残ったままだと、「完全削除リストをコピー」に毎回その古い案まで混ざって出る。
+   焼き込み済みぶん・重複を控えから外す(見た目は変わらない: 焼き込み済みはどのみち一覧に出ない)。変わった時だけ保存 */
+function hiddenListRefresh() {
+  const h = params && params.gfxVariantHidden; if (!h || typeof h !== 'object') return false;
+  let changed = false;
+  for (const m in h) {
+    if (!Array.isArray(h[m])) continue;
+    const seen = new Set();
+    const keep = h[m].filter(nm => { if (seen.has(nm) || variantRemoved(m, nm) || variantRemovedKey(m, nm)) return false; seen.add(nm); return true; });
+    if (keep.length !== h[m].length) { h[m] = keep; changed = true; }
+  }
+  if (changed) { try { presetStoreSave(); } catch (e) {} }
+  return changed;
+}
+/* ===== さらに5案 (2026-08-27 ヒデさん指定) =====
+   狙う印象は【先進的 / 上品 / 洗練】。A〜F より思い切って見た目を変える。
+   ⚠️ デザイン(惑星・軌道・ドットの絵)は変えない。変えるのは配置と、その案のつまみだけ。
+   同じ5つがどの案にも並ぶので、案をまたいで見比べられる。 */
+const GFX_LOOKS2 = [
+  { key: 'hair', name: 'G ヘアライン', spin: 0.12,
+    desc: '軌道を大きく広げ、粒をごく小さく。細い線だけが遠くを走る、いちばん静かで上品な形。',
+    gfx: { outer: { scale: 1.45, flat: 0.62 }, inner: { scale: 1.36, flat: 0.58 }, planet: { scale: 0.62, dy: 44 } },
+    common: { dotSize: 0.55 } },
+  { key: 'portrait', name: 'H 縦のクロス', spin: 1.1,
+    desc: '輪を縦に立てて交差させます。横に流れる普通の形と真逆で、いちばん目を引きます。',
+    gfx: { outer: { scale: 0.92, flat: 2.4, angle: 66 }, inner: { scale: 0.84, flat: 2.3, angle: -58 }, planet: { scale: 0.86 } } },
+  { key: 'nested', name: 'I 大小の入れ子', spin: 0.22,
+    desc: '外を大きく、内をぐっと小さく。大小の差で奥行きが出て、構造がある印象になります。',
+    gfx: { outer: { scale: 1.5, flat: 0.78 }, inner: { scale: 0.6, flat: 1.05 }, planet: { scale: 0.72, dy: 48 } } },
+  { key: 'horizon', name: 'J 地平線', spin: 0,
+    desc: '輪を水平に寝かせて細い帯に。大きな惑星が帯の上に浮かび、静かで洗練された佇まいになります。',
+    /* ⚠️ angle は基準の傾き(-23.33°)を打ち消す値。そのままだと「斜めの直線2本」に見えた(実測) */
+    gfx: { outer: { scale: 1.12, flat: 0.26, angle: 23.33 },
+           inner: { scale: 0.98, flat: 0.22, angle: 23.33 },
+           planet: { scale: 1.16, dy: 54 } } },
+  { key: 'rising', name: 'K 斜めの流れ', spin: 0.75,
+    desc: '2本とも右肩上がりに傾け、惑星を左下へ。対角に流れる非対称な構図で、動きが出ます。',
+    gfx: { layout: 'gyro',
+           outer: { scale: 1.16, flat: 0.9, angle: 52, dy: -18 },
+           inner: { scale: 1.04, flat: 1.05, angle: 44, dy: 14 },
+           planet: { scale: 0.9, dx: -24, dy: 40 } } },
+];
+/* 案ごとの味付け。書いていない組み合わせは、その案の既定のつまみのまま */
+const LOOK_TUNE = {
+  reel:   { hair:     { blend: 2, blendAlpha: 0.14, T: 8.4, depth: 0.98, shrinkAt: 0.34, endAt: 0.84, moveDur: 0.22, inDur: 0.26 },
+            portrait: { blend: 4, blendAlpha: 0.28, T: 7.8, shrinkAt: 0.36, endAt: 0.82, moveDur: 0.20, inDur: 0.24 },
+            nested:   { blend: 0, T: 7.4, shrinkAt: 0.36, endAt: 0.82, moveDur: 0.20, inDur: 0.24 },
+            horizon:  { blend: 5, blendAlpha: 0.20, T: 8.6, shrinkAt: 0.32, endAt: 0.84, moveDur: 0.24, inDur: 0.26 },
+            rising:   { blend: 3, blendAlpha: 0.26, T: 7.0, shrinkAt: 0.36, endAt: 0.82, moveDur: 0.20, inDur: 0.22 } },
+  spiral: { hair:     { count: 40, size: 0.34, life: 12, speed: 0.4, stay: 6, swirl: 1.2 },
+            portrait: { count: 24, size: 0.6,  life: 9,  speed: 0.6, stay: 4, swirl: 2.2, fallCurve: 1.6 },
+            nested:   { count: 20, size: 0.7,  life: 10, speed: 0.5, stay: 5.5, swirl: 1.6 },
+            horizon:  { count: 18, size: 0.8,  life: 11, speed: 0.45, stay: 6, swirl: 0.4, fallCurve: 0.8 },
+            rising:   { count: 28, size: 0.5,  life: 9,  speed: 0.6, stay: 4.5, swirl: 1.8 } },
+  accre:  { hair:     { scale: 2.4,  count: 1800, size: 0.18, fall: 0.3,  speed: 0.28, twinkle: 0.8, showOrbit: false },
+            portrait: { scale: 1.0,  count: 1100, size: 0.34, fall: 0.5,  speed: 0.5,  showOrbit: true, swirl: 1.6 },
+            nested:   { scale: 0.7,  count: 1000, size: 0.34, fall: 0.55, speed: 0.55, showOrbit: true, swirl: 1.8 },
+            horizon:  { scale: 1.6,  count: 1400, size: 0.24, fall: 0.4,  speed: 0.35, swirl: 0.5, showOrbit: false },
+            rising:   { scale: 1.25, count: 1100, size: 0.3,  fall: 0.5,  speed: 0.5,  swirl: 1.4, wobble: 0.5, showOrbit: true } },
+  mesh:   { hair: { style: 'cage', nodes: 46, cageR: 2.9, cageSpin: 0.45, cageLinks: 3, cageTilt: -10,
+                    lineAlpha: 0.3, lineWidth: 0.7, size: 0.3, random: 0.3 },
+            portrait: { style: 'cage', nodes: 30, cageR: 1.7, cageSpin: 1.4, cageLinks: 4, cageTilt: -62,
+                        lineAlpha: 0.5, lineWidth: 1, size: 0.45 },
+            nested: { style: 'constellation', nodes: 16, span: 0.4, lineAlpha: 0.34, lineWidth: 0.9,
+                      drift: 1.2, random: 0.8, size: 0.6 },
+            horizon: { style: 'organic', nodes: 18, span: 0.5, lineAlpha: 0.4, lineWidth: 1,
+                       drift: 0.7, random: 0.4, size: 0.55 },
+            rising: { style: 'cage', nodes: 32, cageR: 2.0, cageSpin: 0.9, cageLinks: 3, cageTilt: 34,
+                      lineAlpha: 0.45, lineWidth: 0.9, size: 0.42 } },
+  beads:  { hair: { count: 520, size: 0.3, ratio: 0.12, speed: 0.2, life: 5 },
+            portrait: { count: 300, size: 0.55, ratio: 0.26, spin: 1.2, spinEase: 1.3 },
+            nested: { count: 300, size: 0.52, ratio: 0.2, speed: 0.3, backIn: 1.6 },
+            horizon: { count: 380, size: 0.4, ratio: 0.14, speed: 0.22, life: 4.2 },
+            rising: { count: 300, size: 0.5, ratio: 0.28, speed: 0.36, spin: 0.9 } },
+  duplex: { hair: { curve: 0.5, density: 0.9, lineAlpha: 0.14, lineWidth: 0.4, size: 0.42, speed: 0.8, T: 5.2 },
+            portrait: { curve: 0.2, density: 1.4, lineAlpha: 0.28, lineWidth: 1.1, size: 0.55, speed: 1.2 },
+            nested: { curve: 0.35, density: 1.2, lineAlpha: 0.22, lineWidth: 0.9, size: 0.6 },
+            horizon: { curve: 0.08, density: 1.8, lineAlpha: 0.24, lineWidth: 1.4, size: 0.5, speed: 1.1 },
+            rising: { curve: 0.4, density: 1.3, lineAlpha: 0.26, lineWidth: 1, size: 0.55, speed: 1.15 } },
+  gyro:   { hair: { tumble: 0.6, spin: 0.7, phase: 90, thin: 0.02, pull: 0.3, pullT: 7 },
+            portrait: { tumble: 1.3, spin: 1.5, phase: 90, thin: 0.04, pull: 0.25, pullT: 4 },
+            nested: { tumble: 0.9, spin: 1.0, phase: 120, thin: 0.05, pull: 0.45, pullT: 5.5 },
+            horizon: { tumble: 0.7, spin: 0.6, phase: 30, thin: 0.03, pull: 0.2, pullT: 6.5 },
+            rising: { tumble: 1.5, spin: 1.3, phase: 150, thin: 0.04, pull: 0.35, pullT: 4.2 } },
+};
+/* 案ごとの「全体の速さ」。①はゆったり見せたいので長めに取る (2026-08-27 ヒデさん指定) */
+const LOOK_ROOT = {
+  reel:   { hair: { duration: 38 }, portrait: { duration: 34 }, nested: { duration: 34 },
+            horizon: { duration: 36 }, rising: { duration: 32 } },
+  /* ②③も渦がゆっくり見えるよう長めに (2026-08-28 ヒデさん指定) */
+  spiral: { hair: { duration: 38 }, portrait: { duration: 34 }, nested: { duration: 36 },
+            horizon: { duration: 38 }, rising: { duration: 34 } },
+  accre:  { hair: { duration: 38 }, portrait: { duration: 34 }, nested: { duration: 34 },
+            horizon: { duration: 38 }, rising: { duration: 34 } },
+};
+/* ①だけ、軌道の回転を落ち着かせる(共通の値だと速すぎた) */
+const LOOK_SPIN = {
+  reel:   { hair: 0.05, portrait: 0.10, nested: 0.07, horizon: 0, rising: 0.09 },   /* 2026-08-28 さらにゆっくりへ */
+  spiral: { hair: 0.08, portrait: 0.2,  nested: 0.12, horizon: 0, rising: 0.15 },
+  accre:  { hair: 0.08, portrait: 0.2,  nested: 0.12, horizon: 0, rising: 0.15 },
+};
+/* どの案にも G〜K を同じ順で足す */
+for (const mode in GFX_VARIANTS) {
+  for (const L of GFX_LOOKS2) {
+    const tune = (LOOK_TUNE[mode] || {})[L.key];
+    const spin = ((LOOK_SPIN[mode] || {})[L.key] != null) ? LOOK_SPIN[mode][L.key] : L.spin;
+    GFX_VARIANTS[mode].push({
+      name: L.name, desc: L.desc, gfx: L.gfx,
+      conv: tune || undefined,
+      common: { orbitSpin: spin, ...(L.common || {}) },
+      root: (LOOK_ROOT[mode] || {})[L.key],
+    });
+  }
+}
+/* ===== どの案にも「ジャイロ版」を3つずつ足す (2026-08-28 ヒデさん指定) =====
+   ⑦の【輪が独楽のように転がる動き】を、他の案にも混ぜたもの。
+   ⚠️ ④網でつながる は輪そのものを使わない(ノードと骨で描く)ので、転がりが乗らない。
+      代わりに【カゴの傾きと回転】を振ったものを3つ入れる(別のアニメーションでよい、との指定)。 */
+const GYRO_MIX_SETS = [
+  { name: 'ジャイロ・ゆるやか', mix: 0.45, spin: 0.1,
+    desc: '⑦の転がりを控えめに混ぜます。輪がゆっくり傾きながら回り、奥行きだけが増します。',
+    gyro: { tumble: 0.45, spin: 0.5, phase: 90, thin: 0.18, pull: 0.15, pullT: 8 } },
+  { name: 'ジャイロ・直交', mix: 0.9, spin: 0.15,
+    desc: '2本を直交させて転がします。いちばんジャイロらしく、球の骨組みが回っているように見えます。',
+    gyro: { tumble: 0.9, spin: 1.0, phase: 90, thin: 0.06, pull: 0.28, pullT: 5.5 } },
+  { name: 'ジャイロ・速い', mix: 1, spin: 0.25,
+    desc: '転がりを強く速く。装置が高速で稼働しているような、機械的で先進的な印象になります。',
+    gyro: { tumble: 1.8, spin: 1.9, phase: 90, thin: 0.03, pull: 0.2, pullT: 3.2 } },
+];
+/* ④網でつながる 用の代替3案(カゴの傾き・回転を振る) */
+const MESH_GYRO_SETS = [
+  { name: 'ジャイロ・ゆるやか', desc: 'カゴをゆっくり傾けて回します。奥行きが静かに出ます。',
+    conv: { style: 'cage', nodes: 28, cageR: 1.9, cageSpin: 0.4, cageLinks: 3, cageTilt: -46,
+            lineAlpha: 0.42, lineWidth: 1, size: 0.45, random: 0.4, hop: 0.5, rate: 1.6 } },
+  { name: 'ジャイロ・直交', desc: 'カゴをほぼ真横に倒して回します。輪が直交しているように見えます。',
+    conv: { style: 'cage', nodes: 30, cageR: 1.75, cageSpin: 1.0, cageLinks: 4, cageTilt: -80,
+            lineAlpha: 0.5, lineWidth: 1, size: 0.45, random: 0.3, hop: 0.42, rate: 2 } },
+  { name: 'ジャイロ・速い', desc: 'カゴを速く回します。機械的で先進的な印象。',
+    conv: { style: 'cage', nodes: 34, cageR: 1.55, cageSpin: 2.2, cageLinks: 3, cageTilt: -24,
+            lineAlpha: 0.5, lineWidth: 0.9, size: 0.4, random: 0.2, hop: 0.3, rate: 2.6 } },
+];
+/* 【2026-08-28 ヒデさん指定】①はゆったり見せたいので、ジャイロ版も転がりを大幅に落とす。
+   ⑦そのもの(独立した案)は速いままでよい */
+const GYRO_SLOW_REEL = [
+  { mix: 0.30, spin: 0.04, gyro: { tumble: 0.16, spin: 0.16, phase: 90, thin: 0.30, pull: 0.10, pullT: 14 } },
+  { mix: 0.50, spin: 0.06, gyro: { tumble: 0.24, spin: 0.26, phase: 90, thin: 0.22, pull: 0.16, pullT: 12 } },
+  { mix: 0.70, spin: 0.08, gyro: { tumble: 0.34, spin: 0.38, phase: 90, thin: 0.16, pull: 0.20, pullT: 10 } },
+];
+for (const mode in GFX_VARIANTS) {
+  if (mode === 'gyro') continue;                 /* ⑦そのものには足さない */
+  if (mode === 'mesh') {
+    for (const M of MESH_GYRO_SETS) {
+      GFX_VARIANTS.mesh.push({ name: M.name, desc: M.desc, gfx: GFX_LOOKS.cross, conv: M.conv,
+                               common: { orbitSpin: 0 } });
+    }
+    continue;
+  }
+  GYRO_MIX_SETS.forEach((G, gi) => {
+    const slow = (mode === 'reel') ? GYRO_SLOW_REEL[gi] : null;
+    GFX_VARIANTS[mode].push({
+      name: G.name,
+      desc: slow ? G.desc.replace('。', '。①はゆったり見せたいので、転がりはかなり抑えてあります。') : G.desc,
+      gfx: { layout: 'gyro', outer: { scale: 1.04 }, inner: { scale: 0.96, flat: 1.1 }, planet: { scale: 0.9, dy: 42 } },
+      gyro: slow ? slow.gyro : G.gyro,
+      common: { orbitSpin: slow ? slow.spin : G.spin, gyroMix: slow ? slow.mix : G.mix },
+      root: { duration: mode === 'reel' ? 38 : 34 },
+    });
+  });
+}
+
+/* ===== ⑦の「縦のクロス」「斜めの流れ」の動きをする案を、①〜⑥にも入れる (2026-08-28 ヒデさん指定) =====
+   配置は G〜K と同じ型(portrait / rising)を使い、そこに⑦の転がりを混ぜたもの。
+   ⚠️ ④網でつながる は輪を使わないので転がりが乗らない。
+      代わりに、同じ向き(縦/斜め)に見えるカゴの傾きで入れる。 */
+const GYRO_LOOK_SETS = [
+  { key: 'portrait', name: 'ジャイロ・縦のクロス',
+    desc: '縦に立てて交差させた輪が、そのまま転がります。球の骨組みが縦向きに回っているように見えます。',
+    gfx: GFX_LOOKS2[1].gfx,
+    gyro: { tumble: 0.8, spin: 0.9, phase: 90, thin: 0.08, pull: 0.26, pullT: 6 },
+    slow: { tumble: 0.22, spin: 0.24, phase: 90, thin: 0.22, pull: 0.16, pullT: 12 },
+    mix: 0.85, slowMix: 0.45, spin2: 0.12, slowSpin: 0.06,
+    mesh: { style: 'cage', nodes: 30, cageR: 1.8, cageSpin: 0.9, cageLinks: 4, cageTilt: -78,
+            lineAlpha: 0.48, lineWidth: 1, size: 0.45, random: 0.3, hop: 0.45, rate: 1.9 } },
+  { key: 'rising', name: 'ジャイロ・斜めの流れ',
+    desc: '右肩上がりに傾けた輪が転がります。惑星は左下寄り。対角に流れる非対称な動きになります。',
+    gfx: GFX_LOOKS2[4].gfx,
+    gyro: { tumble: 0.7, spin: 0.8, phase: 140, thin: 0.1, pull: 0.3, pullT: 6.5 },
+    slow: { tumble: 0.2, spin: 0.22, phase: 140, thin: 0.24, pull: 0.18, pullT: 13 },
+    mix: 0.8, slowMix: 0.4, spin2: 0.1, slowSpin: 0.05,
+    mesh: { style: 'cage', nodes: 28, cageR: 2.0, cageSpin: 0.8, cageLinks: 3, cageTilt: 42,
+            lineAlpha: 0.45, lineWidth: 0.95, size: 0.44, random: 0.35, hop: 0.5, rate: 1.7 } },
+];
+for (const mode of ['reel', 'spiral', 'accre', 'mesh', 'beads', 'duplex']) {
+  for (const G of GYRO_LOOK_SETS) {
+    if (mode === 'mesh') {
+      GFX_VARIANTS.mesh.push({ name: G.name, desc: G.desc, gfx: G.gfx, conv: G.mesh,
+                               common: { orbitSpin: 0 } });
+      continue;
+    }
+    const slow = (mode === 'reel');            /* ①はゆったり見せたいので抑える */
+    GFX_VARIANTS[mode].push({
+      name: G.name,
+      desc: slow ? G.desc + '（①はゆったり見せたいので、転がりは抑えてあります）' : G.desc,
+      gfx: G.gfx,
+      gyro: slow ? G.slow : G.gyro,
+      common: { orbitSpin: slow ? G.slowSpin : G.spin2, gyroMix: slow ? G.slowMix : G.mix },
+      root: { duration: slow ? 38 : 34 },
+    });
+  }
+}
+
+/* 【2026-08-28 ヒデさん指定】③(粒の渦が回る)に、立体感(3D)が出る案を足す。
+   軌道を出したまま【惑星の手前を通る半分】と【奥へ回る半分】をはっきり見せる。
+   ・輪を起こして大きめにし、惑星の前後を大きく横切らせる
+   ・手前のものは隠さない(frontCut:false)ので、輪と粒が惑星の前を堂々と通る
+   ・円盤は控えめにして、輪の前後関係が読み取れるようにする */
+GFX_VARIANTS.accre.push({
+  name: 'L 前後を貫く軌道',
+  desc: '軌道を出したまま立てて、惑星の手前を通る半分と奥へ回る半分をはっきり見せます。手前のものを隠さないので、輪と粒が惑星の前を横切って立体的に見えます。',
+  gfx: { layout: 'gyro',
+         outer: { scale: 1.18, flat: 1.55, angle: -34 },
+         inner: { scale: 1.02, flat: 1.65, angle: 30 },
+         planet: { scale: 0.86, dy: 44 } },
+  conv: { scale: 0.78, count: 900, size: 0.32, showOrbit: true, swirl: 1.5, fallCurve: 1.2, wobble: 0.25 },
+  common: { orbitSpin: 0.22, frontCut: false, dotSize: 1.1 },
+  root: { duration: 34 },
+});
+/* 【2026-08-30 ヒデさん指定】プリセット(devで保存した35個)を正式バリエーションへ昇格。
+   preset: を持つバリエーションは、適用時にプリセットとまったく同じ関数(gfxApplyFull)で
+   全設定を再現する(変換ロスなし)。プリセットのチップ自体は「確認できるまで」残してある。 */
+for (const _pm in SHIPPED_PRESETS) {
+  if (!GFX_VARIANTS[_pm]) continue;
+  (SHIPPED_PRESETS[_pm] || []).forEach((p, pi) => {
+    GFX_VARIANTS[_pm].push({
+      name: 'P' + (pi + 1) + ' ' + p.name,   /* 同名プリセットがあっても取り違えないよう一意化 */
+      desc: 'プリセット「' + p.name + '」から昇格した案。',
+      preset: p.data,
+    });
+  });
+}
+/* 【2026-09-01 ヒデさん指定】A4「J 地平線」を収縮(B)グループへ移動。
+   reel(収縮)バケットの新案として追加し、収縮はB1(土星系reel)のhorizon調整値、
+   さらにこの案だけの「横揺れ」(内外の輪の左右ゆれ)を既定オンにする。
+   元のA4(spiral側のJ 地平線)は VARIANT_REMOVED.spiral で恒久除外。 */
+GFX_VARIANTS.reel.push({
+  name: 'J 地平線・横揺れ',
+  desc: '輪を水平に寝かせた地平線レイアウトの収縮版。内側の輪が吸い込まれ、内外の輪を左右にゆらせます。振れ幅・周期・ディレイ・揺れ方は「横揺れ（この案）」で調整。',
+  gfx: GFX_LOOKS2[3].gfx,                     /* J 地平線と同じ配置(horizon) */
+  conv: (LOOK_TUNE.reel || {}).horizon,        /* 収縮の味付けはreelのhorizon調整値 */
+  common: { orbitSpin: 0 },
+  hsway: true,
+});
+
+/* 案キー → params.conv の中のどのつまみ束か (duplex だけ名前が link) */
+const CONV_PARAM_KEY = { reel: 'reel', spiral: 'spiral', accre: 'accre', mesh: 'mesh', beads: 'beads', duplex: 'link', gyro: 'gyro' };
+/* 双方向(ラインで結ぶ)系のモード。共通エンジンで動かす */
+const CONV_LINKED = ['duplex'];
+function convOn() { return params.kvDesign === 'planet' && (params.converge || 'off') !== 'off'; }
+/* いまの案で「ドット自体の移動(周回)」を動かすか。案ごとに切り替えられる */
+function convDotMoves() {
+  const m = params.conv && params.conv.dotMove;
+  if (!m) return true;
+  const k = params.converge || 'reel';
+  return m[k] !== false;
+}
+const convDotF = DOTS.map(() => 1);   // ドットごとの「惑星への寄せ」(1=軌道上 → 0=惑星中心)
+const convDotA = DOTS.map(() => 1);   // ドットごとの濃さ倍率 (集約アニメ用)
+let convGlow = 0;                     // 吸収の瞬間、惑星がふっと明るくなる(減衰)
+let applyingVariant = false;          // 案を適用中は「案ごとの調整の記録」を止める
+/* 【2026-08-29 ヒデさん指定】案ごとに調整値を独立させる: いま選んでいる案の状態を、その案専用に控える */
+function gfxTouchVariant() {
+  if (applyingVariant || !params || !params.conv) return;
+  /* 【2026-08-30 ヒデさん指定・バグ修正】案を切り替えた直後の markDirty では保存しない。
+     ⚠️ convSwitchTo 直後は「形だけ新モード・つまみは前モードのまま」の混合状態で、
+        これを控え(gfxTweaks)に保存すると、次にその案を開いた時に混合状態が復元されていた。 */
+  if (gfxJustSwitched) { gfxJustSwitched = false; return; }
+  const m = params.converge || 'off';
+  const idx = (params.gfxVariantOn || {})[m];
+  if (idx == null) return;
+  /* 【2026-08-30 ヒデさん指定】プリセット昇格案は「常にプリセットの数値」なので控えを取らない */
+  const vv = (typeof GFX_VARIANTS !== 'undefined' && GFX_VARIANTS[m] || [])[idx];
+  if (vv && vv.preset) return;
+  if (!params.gfxTweaks) params.gfxTweaks = {};
+  if (!params.gfxTweaks[m]) params.gfxTweaks[m] = {};
+  try { params.gfxTweaks[m][idx] = gfxSnapshotFull(); } catch (e) {}
+}
+let gfxJustSwitched = false;   /* convSwitchTo 直後の混合状態を控えに入れないためのフラグ */
+let convGlowLast = -1e9;              // 最後に「エフェクトを出した」時刻
+let convGlowN = 0;                    // 取り込みイベントの通し番号(回数モード用)
+let convGlowBurst = -1e9;             // いま出している一連(バースト)の開始時刻
+/* 【2026-08-28 ヒデさん指定】エフェクトの出方を3つから。
+     every … 取り込みのたびに毎回(従来)
+     count … N回の取り込みに1回だけ出す(粒が0.1秒ごとに入っても、まびいて出す)
+     time  … 前に出してから N秒たっていなければ出さない
+   ⚠️ 取り込みは1回でも「粒がパラパラ入る」と細かく何度も呼ばれる。
+      出したバーストの直後(0.4秒)は同じ取り込みの積み増しとして必ず通し、光を育てる。
+      それを1イベントとは数えない。 */
+function convAddGlow(amt) {
+  const C = params.conv || {};
+  const mode = C.fxMode || 'every';
+  const sinceBurst = elapsed - convGlowBurst;
+  if (sinceBurst >= 0 && sinceBurst < 0.4) {   // 同じ取り込みの続き = 常に通す
+    convGlow = Math.min(1.2, convGlow + amt);
+    return;
+  }
+  /* ここからは「新しい取り込みイベント」 */
+  convGlowN++;
+  let allow = true;
+  if (mode === 'count') {
+    const every = Math.max(1, Math.round(C.fxCount || 10));
+    allow = (convGlowN % every === 0);
+  } else if (mode === 'time') {
+    const every = Math.max(0, C.fxEvery || 0);
+    allow = (convGlowLast < -1e8) || (elapsed - convGlowLast >= every);
+  }
+  if (!allow) return;
+  convGlow = Math.min(1.2, convGlow + amt);
+  convGlowLast = elapsed;
+  convGlowBurst = elapsed;
+}
+/* 【2026-08-28 ヒデさん指定】吸収を重ねるほど「データが強くなっていく」感じを出すための蓄積。
+   吸収のたびに増え、glowHold 秒でゆっくり半分へ戻る。0〜1 */
+let convCharge = 0;
+/* 波紋(ripple)用: 惑星から広がる輪の残り時間 */
+let convRipples = [];
+let convRippleEls = null;
+let convLastT = null;                 // elapsed 基準の dt (一時停止に追従)
+let convWasOn = false;
+let reelPWasOn = false;   /* 【2026-08-30】off(軌道のみ)での粒(吸い込み)の後片付け用 */
+let convLastMode = null;              // モード切替の検知 (前のモードの粒・輪の片付け用)
+const convSStep = x => { x = clamp01(x); return x * x * (3 - 2 * x); };
+/* 【2026-08-28 ヒデさん指定】広がりの慣性。0=一定(なめらかステップ)、1=最初速く→だんだん減速。
+   水面の波紋のように、勢いよく広がってスッと落ち着く(慣性)見え方にする。 */
+function convFxEase(u) {
+  u = clamp01(u);
+  const inr = clamp01((params.conv && params.conv.fxInertia != null) ? params.conv.fxInertia : 0.5);
+  const smooth = u * u * (3 - 2 * u);
+  const easeOut = 1 - Math.pow(1 - u, 2.6);
+  return smooth * (1 - inr) + easeOut * inr;
+}
+/* 惑星(#sphere)の中心 = 集約先。CSS(left306.06 top112.32 260px角) + パネルの惑星オフセット */
+function convCenter() {
+  const pl = params.planet || {};
+  return { x: 306.06 + 130 + (pl.dx || 0), y: 112.32 + 130 + (pl.dy || 0) };
+}
+/* 楕円 g を「惑星中心へ f で寄せた」ジオメトリ (f=1 そのまま → f→0 惑星中心で消える) */
+function convGeom(g, f) {
+  const c = convCenter();
+  return { cx: c.x + (g.cx - c.x) * f, cy: c.y + (g.cy - c.y) * f,
+           rx: g.rx * f, ry: g.ry * f, rot: g.rot };
+}
+/* --- 追加パーツのプール (見た目は既存パーツの複製) --- */
+let convSpiral = null;   // ②の粒: 既存ドットと同じ circle を back/front に1個ずつ
+let convSpiralBuilt = null;   // 作った時の {count, size}。パネルで変わったら作り直す
+function convSpiralPool(S) {
+  S = S || params.conv.spiral;   /* 2026-08-29: reel でも同じ粒を使えるよう設定を引数化 */
+  const n = Math.max(1, Math.round(S.count));
+  if (convSpiral && convSpiralBuilt && (convSpiralBuilt.count !== n || convSpiralBuilt.size !== S.size)) {
+    for (const p of convSpiral) { p.back.remove(); p.front.remove(); }
+    convSpiral = null;
+  }
+  if (convSpiral) return convSpiral;
+  convSpiralBuilt = { count: n, size: S.size };
+  const COLORS = ['#0EBBFF', '#FF5D97'];   // 既存ドットと同じ2色 (グレーはデータ感が無いので除外)
+  convSpiral = [];
+  for (let i = 0; i < n; i++) {
+    const mk = () => {
+      const c = document.createElementNS(SVG_NS, 'circle');
+      c.setAttribute('r', (DOT_R * S.size).toFixed(3));   // 大きさはパネルから
+      c.setAttribute('fill', COLORS[i % 2]);
+      c.setAttribute('opacity', '0');
+      return c;
+    };
+    const back = mk(), front = mk();
+    dotsBackG.appendChild(back); dotsFrontG.appendChild(front);
+    /* 【2026-08-26 ヒデさん指定】粒はまず軌道上(f=1)を回り、hold 秒たったら吸い込まれ始める */
+    convSpiral.push({ back, front, ell: i % 2 ? 'inner' : 'outer',
+      deg: Math.random() * 360, f: 1, mode: 0,
+      age: Math.random() * Math.max(0.5, S.stay),                    // 出のタイミングをばらす
+      hold: Math.max(0.3, S.stay * (0.5 + Math.random())),
+      spd: (28 + Math.random() * 42), rate: 1 / (S.life * (0.7 + Math.random() * 0.6)) });
+  }
+  return convSpiral;
+}
+/* 【2026-08-29 ヒデさん指定】「粒が渦を描いて惑星へ吸い込まれる」動きを関数化。spiral 案の本体でもあり、
+   収縮(reel)案でも粒オプションとして同じ動きを重ねられるようにする。geoms=軌道の楕円、S=粒の設定、dt=経過秒。 */
+function runSpiralParticles(geoms, S, dt) {
+  const pool = convSpiralPool(S);
+  for (const p of pool) {
+    /* 吸い込まれる間のスピン(巻き具合)。軌道にいる間は普通に回り、吸い込まれ始めると中心に近いほど速く回る(swirl) */
+    const sw = Math.max(0, S.swirl == null ? 1 : S.swirl);
+    const boost = (p.mode === 1 && sw > 0) ? Math.pow(Math.max(0.15, p.f), -sw) : 1;
+    if (convDotMoves()) p.deg += p.spd * S.speed * boost * dt * (params.direction || 1);
+    p.age += dt;
+    if (p.mode === 0) {
+      p.f = 1;                                                       // 軌道上に乗って回る
+      if (p.age >= p.hold) p.mode = 1;
+    } else {
+      const fc = Math.max(0.1, S.fallCurve == null ? 1 : S.fallCurve);
+      p.f -= p.rate * dt * Math.pow(Math.max(0.15, p.f), 1 - fc);     // 螺旋で吸い込まれる
+      if (p.f <= 0.12) {                                             // 吸収 → 軌道上に生まれ直す
+        convAddGlow(0.18);
+        p.mode = 0; p.age = 0; p.f = 1;
+        p.hold = Math.max(0.3, S.stay * (0.5 + Math.random()));
+        p.deg = Math.random() * 360;
+        p.ell = Math.random() < 0.5 ? 'inner' : 'outer';
+        p.spd = 28 + Math.random() * 42;
+        p.rate = 1 / (S.life * (0.7 + Math.random() * 0.6));         // 吸い込みの秒数はパネルから
+      }
+    }
+    const fv = Math.max(0.12, Math.min(1, p.f));
+    let al = 1;
+    if (p.mode === 0 && p.age < 0.5) al = p.age / 0.5;               // 軌道上にフェードイン
+    else if (fv < 0.26) al = (fv - 0.12) / 0.14;                     // 惑星際でフェードアウト
+    const pos = posOn(convGeom(geoms[p.ell], fv), p.deg);
+    const op = clamp01(al) * 0.9;
+    const rr = (DOT_R * S.size * convDotK(pos.y, geoms[p.ell].cy, geoms[p.ell].ry)).toFixed(2);
+    [p.back, p.front].forEach(el => { el.setAttribute('cx', pos.x); el.setAttribute('cy', pos.y); el.setAttribute('r', rr); el.setAttribute('opacity', op.toFixed(3)); });
+    p.front.style.display = pos.front ? '' : 'none';
+    p.back.style.display = pos.front ? 'none' : '';
+  }
+}
+/* ===== 2026-08-26 追加: 糸 / メッシュ / ドット軌道 / 双方向(ラインで結ぶ7案) =====
+   すべて「既存のドットと同じ circle」と「path(線)」だけで作る。惑星と軌道の見た目は変えない。 */
+const CONV_BLUE = '#0EBBFF', CONV_PINK = '#FF5D97';
+let convMesh = null, convBeads = null;   // ⑫メッシュ / ⑬ドット軌道 の状態
+/* 【2026-09-02 ヒデさん指定】面がきれいに整った(潰れ・歪みなし)網の案用: 測地線球(正20面体を細分)。
+   全頂点が球面に均等・全辺がほぼ同長=正多面体らしい整った面になる。freq=1で12頂点(正20面体)、2で42、3で162。 */
+function buildGeodesic(freq) {
+  const t = (1 + Math.sqrt(5)) / 2;
+  let verts = [[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],
+               [0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]];
+  let faces = [[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],
+               [10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],
+               [2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+  const norm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0]/l, v[1]/l, v[2]/l]; };
+  verts = verts.map(norm);
+  for (let s = 1; s < Math.max(1, freq); s++) {
+    const mid = {}, nf = [];
+    const midpoint = (a, b) => {
+      const key = a < b ? a + '_' + b : b + '_' + a;
+      if (mid[key] != null) return mid[key];
+      const va = verts[a], vb = verts[b];
+      verts.push(norm([(va[0]+vb[0])/2, (va[1]+vb[1])/2, (va[2]+vb[2])/2]));
+      return (mid[key] = verts.length - 1);
+    };
+    for (const [a, b, c] of faces) {
+      const ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
+      nf.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]);
+    }
+    faces = nf;
+  }
+  const eset = new Set(), edges = [];
+  const addE = (a, b) => { const k = a < b ? a + '_' + b : b + '_' + a; if (!eset.has(k)) { eset.add(k); edges.push([a, b]); } };
+  for (const [a, b, c] of faces) { addE(a, b); addE(b, c); addE(c, a); }
+  return { verts, edges };
+}
+/* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】フィボナッチ球(n点)を凸包で三角形分割した網。
+   測地線球(buildGeodesic/vfBuild)は点が飛び飛び(12/42/92/162…)なので、点の数を1個ずつ変えたい時はこちら。
+   球面上の点の凸包＝ドロネー分割なので、線が交差せず穴も空かない「少しラフな整った網」になる(辺=3n-6・面=2n-4 を n=8〜400 で検証済み)。
+   向きは最初の四面体の重心(常に内側)から外向きに揃える。n=300 でも生成 約2ms・呼び出し側でキャッシュする。 */
+function sphereFiboHull(n) {
+  n = Math.max(8, Math.round(n));
+  const P = [];
+  for (let i = 0; i < n; i++) { const y = 1 - ((i + 0.5) / n) * 2, r = Math.sqrt(Math.max(0, 1 - y * y)), th = Math.PI * (1 + Math.sqrt(5)) * i; P.push([Math.cos(th) * r, y, Math.sin(th) * r]); }
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const i0 = 0, i1 = n - 1, i2 = Math.floor(n / 2), i3 = Math.floor(n / 4);
+  const C = [0, 1, 2].map(k => (P[i0][k] + P[i1][k] + P[i2][k] + P[i3][k]) / 4);
+  const mk = (a, b, c) => { let nv = crs(sub(P[b], P[a]), sub(P[c], P[a])); const l = Math.hypot(nv[0], nv[1], nv[2]) || 1; nv = [nv[0] / l, nv[1] / l, nv[2] / l];
+    if (dot(nv, sub(P[a], C)) < 0) { const t = b; b = c; c = t; nv = [-nv[0], -nv[1], -nv[2]]; } return { v: [a, b, c], n: nv, d: dot(nv, P[a]) }; };
+  let F = [mk(i0, i1, i2), mk(i0, i1, i3), mk(i0, i2, i3), mk(i1, i2, i3)];
+  const used = new Set([i0, i1, i2, i3]);
+  for (let p = 0; p < n; p++) { if (used.has(p)) continue;
+    const vis = [], keep = [];
+    for (const f of F) (dot(f.n, P[p]) - f.d > 1e-10 ? vis : keep).push(f);
+    if (!vis.length) continue;
+    const cnt = new Map();
+    for (const f of vis) for (let k = 0; k < 3; k++) { const a = f.v[k], b = f.v[(k + 1) % 3]; const key = a < b ? a + '_' + b : b + '_' + a; cnt.set(key, (cnt.get(key) || 0) + 1); }
+    F = keep;
+    for (const [key, c] of cnt) if (c === 1) { const [a, b] = key.split('_').map(Number); F.push(mk(a, b, p)); }
+  }
+  const es = new Set(), edges = [];
+  for (const f of F) for (let k = 0; k < 3; k++) { const a = f.v[k], b = f.v[(k + 1) % 3]; const key = a < b ? a * 65536 + b : b * 65536 + a; if (!es.has(key)) { es.add(key); edges.push([Math.min(a, b), Math.max(a, b)]); } }
+  return { verts: P, edges };
+}
+let convLine = null;   // 線(path)のプール。奥レイヤーに置く(惑星の後ろを通る線が自然に隠れる)
+/* 【2026-08-27 ヒデさん指定】惑星を「包囲する」ケージ用の線。
+   convLinePool の線は奥レイヤーにしか置けず、必ず惑星の後ろを通ってしまう。
+   ケージは手前の骨も見えないと囲んでいるように見えないので、
+   ドットと同じく【奥に1本・手前に1本】持ち、深さで描くほうを切り替える。 */
+let convLine2 = null;
+function convLine2Pool(n) {
+  if (convLine2 && convLine2.length !== n) {
+    for (const q of convLine2) { q.back.remove(); q.front.remove(); }
+    convLine2 = null;
+  }
+  if (convLine2) return convLine2;
+  convLine2 = [];
+  const mk = (host, before) => {
+    const el = document.createElementNS(SVG_NS, 'path');
+    el.setAttribute('fill', 'none');
+    el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('opacity', '0');
+    host.insertBefore(el, before);
+    return el;
+  };
+  for (let i = 0; i < n; i++) {
+    convLine2.push({ back: mk(dotsBackG.parentNode, dotsBackG), front: mk(dotsFrontG.parentNode, dotsFrontG) });
+  }
+  return convLine2;
+}
+function convHideLines2() {
+  if (convLine2) for (const q of convLine2) { q.back.setAttribute('opacity', '0'); q.front.setAttribute('opacity', '0'); }
+}
+function convLine2Set(q, A, B, color, w, op, front) {
+  const d = `M${A.x.toFixed(1)},${A.y.toFixed(1)} L${B.x.toFixed(1)},${B.y.toFixed(1)}`;
+  /* 【2026-09-02】色と太さは変わった時だけ書く(毎フレームのsetAttribute削減。dとopacityは毎回) */
+  const sig = color + '|' + w;
+  for (const el of [q.back, q.front]) {
+    el.setAttribute('d', d);
+    if (q._sig !== sig) { el.setAttribute('stroke', color); el.setAttribute('stroke-width', String(w)); }
+  }
+  q._sig = sig;
+  q.front.setAttribute('opacity', front ? String(op) : '0');
+  q.back.setAttribute('opacity', front ? '0' : String(op));
+}
+function convLinePool(n) {
+  if (convLine && convLine.length !== n) { for (const el of convLine) el.remove(); convLine = null; }
+  if (convLine) return convLine;
+  convLine = [];
+  const host = dotsBackG.parentNode;
+  for (let i = 0; i < n; i++) {
+    const el = document.createElementNS(SVG_NS, 'path');
+    el.setAttribute('fill', 'none'); el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('opacity', '0');
+    host.insertBefore(el, dotsBackG);
+    convLine.push(el);
+  }
+  return convLine;
+}
+/* 【2026-08-29 ヒデさん指定】網の線を「惑星の前」にも通すためのプール(手前レイヤー・下半分だけクリップ)。
+   これで平面の網でも、惑星が網の中に入れ子に見える。 */
+let convLineFront = null, convMeshFrontClip = null;
+function convLineFrontPool(n) {
+  if (convLineFront && convLineFront.length !== n) { for (const el of convLineFront) el.remove(); convLineFront = null; }
+  if (convLineFront) return convLineFront;
+  convLineFront = [];
+  const frontHost = dotsFrontG.parentNode;
+  if (!convMeshFrontClip) {
+    let defs = frontHost.querySelector('defs');
+    if (!defs) { defs = document.createElementNS(SVG_NS, 'defs'); frontHost.insertBefore(defs, frontHost.firstChild); }
+    const cp = document.createElementNS(SVG_NS, 'clipPath'); cp.setAttribute('id', 'meshFrontClip');
+    const r = document.createElementNS(SVG_NS, 'rect'); r.setAttribute('x', -4000); r.setAttribute('y', 0); r.setAttribute('width', 12000); r.setAttribute('height', 8000);
+    cp.appendChild(r); defs.appendChild(cp); convMeshFrontClip = r;
+  }
+  for (let i = 0; i < n; i++) {
+    const el = document.createElementNS(SVG_NS, 'path');
+    el.setAttribute('fill', 'none'); el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('opacity', '0'); el.setAttribute('clip-path', 'url(#meshFrontClip)');
+    frontHost.insertBefore(el, dotsFrontG);
+    convLineFront.push(el);
+  }
+  return convLineFront;
+}
+/* 粒(circle)のプール。【2026-08-26 ヒデさん指定】惑星の後ろに回ったものは透けさせず消すため、
+   奥(layer-back)と手前(layer-front)に1個ずつ持ち、front 判定で描くほうを切り替える。
+   奥レイヤーは惑星canvas(z-index:2)の下にあるので、惑星に隠れて自然に見えなくなる。 */
+let convPkt = null;
+function convPktPool(n) {
+  if (convPkt && convPkt.length !== n) { for (const p of convPkt) { p.el.remove(); p.back.remove(); } convPkt = null; }
+  if (convPkt) return convPkt;
+  convPkt = [];
+  for (let i = 0; i < n; i++) {
+    const mk = () => { const c = document.createElementNS(SVG_NS, 'circle'); c.setAttribute('opacity', '0'); return c; };
+    const el = mk(), back = mk();
+    dotsFrontG.appendChild(el); dotsBackG.appendChild(back);
+    convPkt.push({ el, back, k: -1, dir: 1, li: 0, hue: 0 });
+  }
+  return convPkt;
+}
+/* 粒を1つ描く。front=false なら奥レイヤーへ回して惑星に隠れさせる */
+function pktSet(pk, x, y, r, fill, op, front) {
+  for (const el of [pk.el, pk.back]) {
+    el.setAttribute('cx', x); el.setAttribute('cy', y);
+    el.setAttribute('r', r); el.setAttribute('fill', fill);
+  }
+  pk.el.setAttribute('opacity', front === false ? '0' : String(op));
+  pk.back.setAttribute('opacity', front === false ? String(op) : '0');
+}
+function convHideLines() { if (convLine) for (const el of convLine) el.setAttribute('opacity', '0'); if (convLineFront) for (const el of convLineFront) el.setAttribute('opacity', '0'); }
+function convHidePkts() { if (convPkt) for (const p of convPkt) { p.el.setAttribute('opacity', '0'); p.back.setAttribute('opacity', '0'); p.k = -1; } }
+/* ドットの今の位置 (convFrame は renderFrame の描画前に走るので自前で出す) */
+function convDotPos(geoms, i) {
+  const d = DOTS[i];
+  return posOn(geoms[d.ellipse], patternDeg(d, i, params.dots[i]));
+}
+/* 惑星⇄点 を結ぶゆるい曲線。curve で反りの強さ */
+function convCurve(a, b, curve) {
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  return { x: mx - dy * curve, y: my + dx * curve };   // 中点を法線方向へずらす
+}
+function convBez(p0, pc, p1, t) {
+  const u = 1 - t;
+  return { x: u * u * p0.x + 2 * u * t * pc.x + t * t * p1.x,
+           y: u * u * p0.y + 2 * u * t * pc.y + t * t * p1.y };
+}
+function convPathD(p0, pc, p1) { return `M${p0.x.toFixed(1)},${p0.y.toFixed(1)} Q${pc.x.toFixed(1)},${pc.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`; }
+
+/* 【2026-08-28 ヒデさん指定】複数軌道のシェイプ(アトム型/土星型/花型)。
+   ringCount>=2 で、惑星の中心に N 本の軌道を出す。本数はスライダー(リピート)で増減。 */
+let convShapeBack = null, convShapeFront = null, convShapeClipRect = null;
+let convShapeGradB = [], convShapeGradF = [];
+function convShapePool(n) {
+  if (convShapeBack && convShapeBack.length !== n) {
+    for (const e of convShapeBack) e.remove();
+    for (const e of convShapeFront) e.remove();
+    convShapeBack = null; convShapeFront = null;
+  }
+  if (convShapeBack) return;
+  convShapeBack = []; convShapeFront = [];
+  const backHost = dotsBackG.parentNode, frontHost = dotsFrontG.parentNode;
+  /* 前面リングは「惑星の中心より下(手前側)」だけ見せる = 惑星に入れ子に見える。クリップは前面svgのdefsへ */
+  if (!convShapeClipRect) {
+    let defs = frontHost.querySelector('defs');
+    if (!defs) { defs = document.createElementNS(SVG_NS, 'defs'); frontHost.insertBefore(defs, frontHost.firstChild); }
+    const cp = document.createElementNS(SVG_NS, 'clipPath');
+    cp.setAttribute('id', 'shapeFrontClip');
+    const r = document.createElementNS(SVG_NS, 'rect');
+    r.setAttribute('x', -4000); r.setAttribute('y', 0); r.setAttribute('width', 12000); r.setAttribute('height', 8000);
+    cp.appendChild(r); defs.appendChild(cp);
+    convShapeClipRect = r;
+  }
+  const mk = (host, before, clip) => {
+    const el = document.createElementNS(SVG_NS, 'ellipse');
+    el.setAttribute('fill', 'none'); el.setAttribute('stroke-width', '3');
+    el.setAttribute('stroke-linecap', 'round'); el.setAttribute('opacity', '0'); el.setAttribute('data-shape', '1');
+    if (clip) el.setAttribute('clip-path', 'url(#shapeFrontClip)');
+    host.insertBefore(el, before);
+    return el;
+  };
+  /* 【2026-08-29 ヒデさん指定】カンプ実測の青→白→ピンクを、輪ごとに個別グラデで持つ。
+     白の位置(カンプ 0.49/0.40)を輪ごとに少しずつずらして、単調に見えないようにする(特に土星)。 */
+  const ensureDefs = host => { let d = host.querySelector('defs'); if (!d) { d = document.createElementNS(SVG_NS, 'defs'); host.insertBefore(d, host.firstChild); } return d; };
+  [backHost, frontHost].forEach(host => host.querySelectorAll('linearGradient[id^="gShR"]').forEach(g => g.remove()));
+  const defsB = ensureDefs(backHost), defsF = ensureDefs(frontHost);
+  const mkGrad = (defs, id, dir, white) => {
+    const g = document.createElementNS(SVG_NS, 'linearGradient');
+    /* 【2026-08-29 ヒデさん指定】1本1本の軌道それぞれにグラデを効かせる = objectBoundingBox。
+       各リングの長さ方向(major軸)に沿って、その輪自身の向きで色が流れる(回転に追従)。 */
+    g.setAttribute('id', id); g.setAttribute('gradientUnits', 'objectBoundingBox');
+    g.setAttribute('x1', '0'); g.setAttribute('y1', '0.5'); g.setAttribute('x2', '1'); g.setAttribute('y2', '0.5');
+    const c1 = dir ? '#FF5D97' : '#00ABEB', c2 = dir ? '#00ABEB' : '#FF5D97';
+    const s1 = document.createElementNS(SVG_NS, 'stop'); s1.setAttribute('offset', '0'); s1.setAttribute('stop-color', c1);
+    const s2 = document.createElementNS(SVG_NS, 'stop'); s2.setAttribute('offset', white.toFixed(4)); s2.setAttribute('stop-color', 'white'); s2.setAttribute('class', 'shGWhite');
+    const s3 = document.createElementNS(SVG_NS, 'stop'); s3.setAttribute('offset', '1'); s3.setAttribute('stop-color', c2);
+    g.append(s1, s2, s3); defs.appendChild(g); return g;
+  };
+  convShapeGradB = []; convShapeGradF = [];
+  for (let i = 0; i < n; i++) {
+    const dir = i % 2;                                   /* 1本ごとに向きを入れ替え(カンプの外/内と同じ・色の向きだけ) */
+    const white = 0.490385;                              /* 2026-08-29 ヒデさん指定: 白位置のずらし(0.40/0.49)を撤去。全リング同じ白位置 */
+    convShapeGradB.push(mkGrad(defsB, 'gShRB' + i, dir, white));
+    convShapeGradF.push(mkGrad(defsF, 'gShRF' + i, dir, white));
+    convShapeBack.push(mk(backHost, dotsBackG, false));    /* 惑星の裏(z1) */
+    convShapeFront.push(mk(frontHost, dotsFrontG, true));  /* 惑星の前(z3)・下半分だけ */
+  }
+}
+function convHideShape() {
+  if (convShapeBack) for (const e of convShapeBack) e.setAttribute('opacity', '0');
+  if (convShapeFront) for (const e of convShapeFront) e.setAttribute('opacity', '0');
+}
+function convShapeOn() { return params.kvDesign === 'planet' && (params.conv && params.conv.ringCount || 0) >= 2; }
+function convDrawShape() {
+  if (!convShapeOn()) { convHideShape(); return false; }
+  const C = params.conv;
+  const n = Math.max(2, Math.min(12, Math.round(C.ringCount)));
+  convShapePool(n);
+  const cc = convCenter();
+  /* 前面リングは惑星中心より下だけ = 上半分は裏、下半分は前 → 惑星に入れ子 */
+  if (convShapeClipRect) convShapeClipRect.setAttribute('y', cc.y.toFixed(1));
+  const R = orbitBase('outer').rx * (C.ringSize == null ? 1 : C.ringSize) * convOrbitScale();
+  const flat = C.ringFlat == null ? 0.42 : C.ringFlat;
+  const shape = C.ringShape || 'atom';
+  const ringRot = (C.ringRotate === false) ? 0 : 1;   /* 2026-08-29 回転する/しないスイッチ。offで輪を静止 */
+  const spin = kvGT() * (C.ringSpin == null ? 0.35 : C.ringSpin) * ringRot;
+  const tumble = (C.ringTumble == null ? 0.6 : C.ringTumble) * ringRot;
+  const baseRot = orbitBase('outer').rot;    /* カンプの傾きを基準に */
+  for (let i = 0; i < n; i++) {
+    let rx = R, ry = R * flat, rot = baseRot;
+    if (shape === 'atom') {
+      /* 【2026-08-29 ヒデさん指定】横向きで始めたい/縦にならないように。
+         ・全体の回転はゆっくり(spin*12)にしてドリフトを抑える
+         ・「縦寄りの輪ほど開ききらない」ようにして、常に横長のアトムに保つ */
+      rot = i * 180 / n + spin * 12;
+      const horiz = Math.abs(Math.cos(rot * Math.PI / 180));   /* 1=横, 0=縦 */
+      const foreMax = 0.32 + 0.68 * horiz;                     /* 縦の輪は最大でも 0.32 までしか開かない */
+      /* 【2026-09-02 ヒデさん指定】|cos|は折り返しでV字にカクつく→cos²(同じ周期・同じ振れ幅で、
+         両端とも速度0で折り返す=イージング付き)に変更。閉じ切る瞬間の「急に戻る」感じを解消 */
+      const _c = Math.cos(kvGT() * tumble + i * Math.PI / n);
+      const fore = 0.12 + (foreMax - 0.12) * _c * _c;
+      rx = R * (0.62 + 0.38 * horiz);   /* 縦寄りの輪は長さも短く = 上下に伸びない = 横長のアトム */
+      ry = rx * flat * fore;
+    } else if (shape === 'saturn') {
+      const f = n === 1 ? 1 : (0.42 + 0.58 * i / (n - 1));
+      rx = R * f; ry = R * f * flat;
+      rot = baseRot + spin * 10;
+    } else if (shape === 'rosette') {
+      rot = i * 180 / n + spin * 30;
+      ry = R * flat;
+    } else if (shape === 'globe') {
+      rot = i * 180 / n + spin * 26;
+      const _c = Math.cos(kvGT() * tumble + i * Math.PI / n);   /* atomと同じくcos²で滑らかに */
+      const fore = 0.2 + 0.8 * _c * _c;
+      rx = R * (0.5 + 0.5 * fore); ry = R;
+    }
+    /* 【2026-08-29 ヒデさん指定】白位置のずらし(0.40/0.49の交互)を撤去。全リング同じ白位置に統一。 */
+    const white = 0.490385;
+    const tr = `rotate(${rot.toFixed(2)} ${cc.x.toFixed(1)} ${cc.y.toFixed(1)})`;
+    /* 【2026-09-02】複数リングにも「軌道の線の太さ」(案ごとの倍率)を掛ける。
+       掛け忘れでアトム型などの線幅スライダーが無反応だった(★1/6/7/9等) */
+    const swBase = (params.conv.ringWidth == null ? 3 : params.conv.ringWidth) * convOrbitWidth();
+    /* 【2026-08-29 ヒデさん指定】遠近を軌道の線にも: 手前(下=front)を太く・奥(上=back)を細く */
+    const cP = params.conv || {};
+    const orbitPersp = (cP.dotPersp === 'persp') && (cP.perspScope === 'orbit' || cP.perspScope === 'both');
+    const pk = orbitPersp ? (cP.perspK == null ? 0.45 : cP.perspK) : 0;
+    [[convShapeBack[i], convShapeGradB[i], 'gShRB' + i], [convShapeFront[i], convShapeGradF[i], 'gShRF' + i]].forEach(([el, grad, gid], j) => {
+      el.setAttribute('cx', cc.x.toFixed(1)); el.setAttribute('cy', cc.y.toFixed(1));
+      el.setAttribute('rx', Math.max(2, rx).toFixed(1)); el.setAttribute('ry', Math.max(2, ry).toFixed(1));
+      el.setAttribute('transform', tr);
+      if (grad) { const w = grad.querySelector('.shGWhite'); if (w) w.setAttribute('offset', white.toFixed(4)); }
+      el.setAttribute('stroke', 'url(#' + gid + ')');
+      const sw = Math.max(0.3, swBase * (1 + (j === 1 ? pk : -pk) * 0.7));
+      el.setAttribute('stroke-width', sw.toFixed(2));
+      el.setAttribute('opacity', '0.9');
+    });
+  }
+  return true;
+}
+/* ①の「中間の輪」(2026-08-27 ヒデさん指定)。外の輪と内の輪の間を、指定本数だけ埋める。
+   イラストレーターのブレンドのように、2本の間を等間隔で補間した輪を描く。 */
+let convBlendRings = null;
+function convBlendPool(n) {
+  if (convBlendRings && convBlendRings.length !== n) {
+    for (const el of convBlendRings) el.remove();
+    convBlendRings = null;
+  }
+  if (convBlendRings) return convBlendRings;
+  convBlendRings = [];
+  const host = dotsBackG.parentNode;
+  for (let i = 0; i < n; i++) {
+    const el = document.createElementNS(SVG_NS, 'ellipse');
+    el.setAttribute('fill', 'none');
+    el.setAttribute('stroke', 'url(#gInnerB)');
+    el.setAttribute('stroke-width', '2');
+    el.setAttribute('opacity', '0');
+    host.insertBefore(el, dotsBackG);
+    convBlendRings.push(el);
+  }
+  return convBlendRings;
+}
+function convHideBlend() { if (convBlendRings) for (const el of convBlendRings) el.setAttribute('opacity', '0'); }
+
+/* ⑦降着円盤: 惑星を中心にした薄い円盤を無数の微粒子が回りながら内へ落ちる */
+let convAccre = null;
+function convAccrePool() {
+  const A = params.conv.accre;
+  const n = Math.max(10, Math.round(A.count));
+  if (convAccre && (convAccre.length !== n || convAccre.builtSize !== A.size)) {
+    for (const p of convAccre) { p.back.remove(); p.front.remove(); }
+    convAccre = null;
+  }
+  if (convAccre) return convAccre;
+  convAccre = [];
+  convAccre.builtSize = A.size;
+  for (let i = 0; i < n; i++) {
+    const color = i % 2 ? '#FF5D97' : '#0EBBFF';
+    const mk = () => {
+      const c = document.createElementNS(SVG_NS, 'circle');
+      c.setAttribute('r', (DOT_R * params.conv.accre.size).toFixed(3));
+      c.setAttribute('fill', color); c.setAttribute('opacity', '0');
+      return c;
+    };
+    const back = mk(), front = mk();
+    dotsBackG.appendChild(back); dotsFrontG.appendChild(front);
+    convAccre.push({ back, front,
+      ang: Math.random() * 360, f: 0.25 + Math.pow(Math.random(), 0.7) * 0.95,
+      tw: Math.random() * Math.PI * 2 });
+  }
+  return convAccre;
+}
+/* 【2026-08-31】粒(吸い込み)専用の片付け。集約オン中(mesh等)にオフへ切った時、
+   その案のプールを巻き添えにせず吸い込み粒だけを消すために使う */
+function convHideSpiralPool() {
+  if (convSpiral) for (const p of convSpiral) { p.back.setAttribute('opacity', '0'); p.front.setAttribute('opacity', '0'); }
+}
+function convHidePools() {
+  if (convSpiral) for (const p of convSpiral) { p.back.setAttribute('opacity', '0'); p.front.setAttribute('opacity', '0'); }
+  if (convAccre) for (const p of convAccre) { p.back.setAttribute('opacity', '0'); p.front.setAttribute('opacity', '0'); }
+  convHideLines(); convHideLines2(); convHidePkts();
+}
+/* 輪(実物の ellipse SVG)の濃さ。reel の循環(convReelA)と表示オンオフ(conv.showOuter/Inner)を
+   掛け合わせて renderFrame で書く。奥(b)と手前(f)を別々に持てる(消え方「沈む」で手前だけ透かす)。
+   blur は消え方「ぼかし」用。書き込みは変わった時だけ */
+const convReelA = { outer: { b: 1, f: 1, blur: 0, w: 3, dash: '', color: '', fx: '', dashOff: 0, cap: '' },
+                    inner: { b: 1, f: 1, blur: 0, w: 3, dash: '', color: '', fx: '', dashOff: 0, cap: '' } };
+function convReelAReset() {
+  for (const k of ['outer', 'inner']) { const a = convReelA[k]; a.b = 1; a.f = 1; a.blur = 0; a.w = 3; a.dash = ''; a.color = ''; a.fx = ''; a.dashOff = 0; a.cap = ''; }
+}
+const convRingWritten = { outer: '', inner: '' };
+function applyRingAlpha(key, aB, aF) {
+  const sig = aB.toFixed(3) + '|' + aF.toFixed(3);
+  if (sig === convRingWritten[key]) return;
+  convRingWritten[key] = sig;
+  const ells = orbitSvgEls[key].ells;   // [奥, 手前]
+  ells[0].setAttribute('opacity', aB.toFixed(3));
+  ells[1].setAttribute('opacity', aF.toFixed(3));
+}
+/* 【2026-08-27 ヒデさん指定】溶ける時に「別の物質に変わっていく」見せ方をするため、
+   線の太さ・破線・にじみを毎フレーム変えられるようにする */
+const convRingStyleWritten = { outer: '', inner: '' };
+/* いま選んでいる案の「軌道の線の太さ」の倍率 */
+/* いま選んでいる案の「軌道全体の大きさ」の倍率 */
+function convOrbitScale() {
+  const C = params.conv;
+  if (!C || params.kvDesign !== 'planet') return 1;
+  const v = (C.orbitScaleBy || {})[params.converge || 'reel'];
+  return (typeof v === 'number' && v > 0.05) ? v : 1;
+}
+function convOrbitWidth() {
+  const C = params.conv;
+  if (!C) return 1;
+  const v = (C.orbitWidthBy || {})[params.converge || 'reel'];
+  return (typeof v === 'number' && v > 0) ? v : 1;
+}
+function applyRingStyle(key, w, dash, color, cap) {
+  w = w * convOrbitWidth();          /* 案ごとの太さをここでまとめて掛ける */
+  /* 【2026-08-29 ヒデさん指定】遠近を「軌道の線」にも効かせる時は、手前(下=front)を太く・奥(上=back)を細く。
+     ells = [back(上), front(下)]。perspScope が orbit/both かつ 遠近=persp の時だけ効く。 */
+  const C = params.conv || {};
+  const orbitPersp = (C.dotPersp === 'persp') && (C.perspScope === 'orbit' || C.perspScope === 'both');
+  const pk = orbitPersp ? (C.perspK == null ? 0.45 : C.perspK) : 0;
+  const sig = w.toFixed(2) + '|' + dash + '|' + (color || '') + '|' + (cap || '') + '|' + pk.toFixed(3);
+  if (sig === convRingStyleWritten[key]) return;
+  convRingStyleWritten[key] = sig;
+  const ells = orbitSvgEls[key].ells;
+  ells.forEach((el, i) => {
+    const isFront = (i === 1);
+    const wf = Math.max(0.2, w * (1 + (isFront ? pk : -pk) * 0.7));
+    el.setAttribute('stroke-width', wf.toFixed(2));
+    /* 丸いドットに見せたい時は round(短い破線が丸い点になる) */
+    if (cap) el.setAttribute('stroke-linecap', cap); else el.removeAttribute('stroke-linecap');
+    if (dash) el.setAttribute('stroke-dasharray', dash); else el.removeAttribute('stroke-dasharray');
+    if (color) el.setAttribute('stroke', color);
+    else el.setAttribute('stroke', i === 0
+      ? (key === 'inner' ? 'url(#gInnerB)' : 'url(#gOuterB)')
+      : (key === 'inner' ? 'url(#gInnerF)' : 'url(#gOuterF)'));
+  });
+}
+const convRingBlurWritten = { outer: '', inner: '' };
+/* にじみ(blur)だけでなく、彩度・明るさも掛けられるようにする(2026-08-27) */
+function applyRingBlur(key, px, extra, dashOff) {
+  const sig = px.toFixed(2) + '|' + (extra || '') + '|' + (dashOff || 0);
+  if (sig === convRingBlurWritten[key]) return;
+  convRingBlurWritten[key] = sig;
+  const v = ((px > 0.05 ? `blur(${px.toFixed(2)}px) ` : '') + (extra || '')).trim();
+  for (const el of orbitSvgEls[key].ells) {
+    el.style.filter = v;
+    if (dashOff) el.setAttribute('stroke-dashoffset', dashOff.toFixed(1));
+    else el.removeAttribute('stroke-dashoffset');
+  }
+}
+const convDotSpin = DOTS.map(() => 0);   // 収縮中の回転アップ(度)。ドットの角度に足す
+/* 消え方「前面カット」用: 手前レイヤーの輪から、惑星に重なる部分だけをマスクで切り取る。
+   輪が惑星の中へ滑り込んで見える(はみ出し対策。ヒデさん指摘 2026-08-26) */
+let convMaskEl = null, convMaskCircle = null;
+const convMaskOn = { outer: false, inner: false };
+function convSetClip(key, on) {
+  if (convMaskOn[key] === on) return;
+  convMaskOn[key] = on;
+  const front = orbitSvgEls[key].ells[1];   // [奥, 手前] の手前
+  if (on) {
+    if (!convMaskEl) {
+      const svg = front.ownerSVGElement;
+      const defs = svg.querySelector('defs');
+      convMaskEl = document.createElementNS(SVG_NS, 'mask');
+      convMaskEl.setAttribute('id', 'convPlanetHole');
+      const r = document.createElementNS(SVG_NS, 'rect');
+      r.setAttribute('x', '-300'); r.setAttribute('y', '-300');
+      r.setAttribute('width', '1600'); r.setAttribute('height', '1300');
+      r.setAttribute('fill', 'white');
+      convMaskCircle = document.createElementNS(SVG_NS, 'circle');
+      convMaskCircle.setAttribute('fill', 'black');
+      convMaskEl.appendChild(r); convMaskEl.appendChild(convMaskCircle);
+      defs.appendChild(convMaskEl);
+    }
+    front.setAttribute('mask', 'url(#convPlanetHole)');
+  } else front.removeAttribute('mask');
+}
+/* 惑星の手前に来たものを隠すか (パネルで切り替え。2026-08-28 ヒデさん指定) */
+/* 【2026-08-28 ヒデさん指定】波紋: 吸収が届いた瞬間、惑星から外へ輪が広がる。
+   既存の ellipse を使い回すのではなく、専用の circle を数本だけ持つ(軽い) */
+function convDrawRipples(strength, hit, dt) {
+  if (!convRippleEls) {
+    const host = dotsFrontG && dotsFrontG.parentNode;
+    if (!host) return;
+    convRippleEls = [];
+    for (let i = 0; i < 5; i++) {
+      /* 【2026-08-28 ヒデさん指定】軌道と同じ「つぶれ具合・傾き」で広がるので、円ではなく楕円 */
+      const c = document.createElementNS(SVG_NS, 'ellipse');
+      c.setAttribute('fill', 'none');
+      c.setAttribute('stroke', '#0EBBFF');
+      c.setAttribute('opacity', '0');
+      c.style.pointerEvents = 'none';
+      host.insertBefore(c, dotsFrontG);
+      convRippleEls.push(c);
+    }
+  }
+  if (strength <= 0.001) {
+    convRipples.length = 0;
+    for (const c of convRippleEls) c.setAttribute('opacity', '0');
+    return;
+  }
+  /* 届いた瞬間に1本ぶん生む(出しすぎないよう間隔をあける) */
+  if (hit > 0.35 && convRipples.length < convRippleEls.length &&
+      (!convRipples.length || convRipples[convRipples.length - 1].t > 0.22)) {
+    convRipples.push({ t: 0 });
+  }
+  const cc = convCenter(), pr = convPlanetR();
+  for (let i = convRipples.length - 1; i >= 0; i--) {
+    convRipples[i].t += dt * 0.75;
+    if (convRipples[i].t >= 1) convRipples.splice(i, 1);
+  }
+  /* 【2026-08-28 ヒデさん指定】波紋の形と傾きは、軌道に合わせて自動で決める。
+     真円で上下に広がると軌道と噛み合わないため、内の輪の「つぶれ具合(ry/rx)」と「傾き(rot)」を借りる。
+     ⚠️ ③粒の渦・④網 のように輪が出ていない案でも、軌道の形そのものは生きているのでそのまま使える。 */
+  const gi = orbitGeom('inner');
+  const flat = Math.max(0.06, Math.min(1, Math.abs(gi.ry) / Math.max(1, Math.abs(gi.rx))));
+  const rot = gi.rot;
+  for (let i = 0; i < convRippleEls.length; i++) {
+    const q = convRipples[i], el = convRippleEls[i];
+    if (!q) { el.setAttribute('opacity', '0'); continue; }
+    const k = convFxEase(q.t);
+    const rx = pr * (1 + k * 0.95);
+    el.setAttribute('cx', cc.x.toFixed(1)); el.setAttribute('cy', cc.y.toFixed(1));
+    el.setAttribute('rx', rx.toFixed(1));
+    el.setAttribute('ry', Math.max(1, rx * flat).toFixed(1));
+    el.setAttribute('transform', `rotate(${rot.toFixed(2)} ${cc.x.toFixed(1)} ${cc.y.toFixed(1)})`);
+    el.setAttribute('stroke-width', (2.2 * (1 - k) + 0.4).toFixed(2));
+    el.setAttribute('opacity', (0.55 * strength * (1 - k)).toFixed(3));
+  }
+}
+/* ===== エコー (2026-08-28 ヒデさん指定・作り直し3案) =====
+   ⚠️ はじめは「単色の面」や「グラデーションの面」で残像を作っていたが、
+      惑星の色を拾っただけの別物に見えていた。
+      指定は【いま出来上がっている惑星のグラフィック全体を、そのまま重ねる】方向。
+   → 惑星は canvas なので、同じ大きさの canvas を用意して毎フレーム drawImage で
+      【絵をまるごと複製】し、ひと回り大きくして重ねる。本物の質感がそのまま残像になる。
+   1 うしろに重ねる … 惑星の後ろへ。ふちにリムのように出る。いちばん自然
+   2 ぼかして広がる … 複製にぼかしをかけながら広がる。やわらかい残像
+   3 手前にゴースト … 惑星の手前へ薄く重ねる。透けた残像がはっきり見える */
+let convEchoes = [], convEchoCans = null, convEchoEls = null;
+let convEchoClock = 0;      /* 9「連なる波」用。ずっと進み続ける時計 */
+/* 【2026-08-28 ヒデさん指定】1枚を等倍から広げると、始まりは惑星に隠れて残像が見えない。
+   ・最初から【ひと回り大きい】ところから始める
+   ・1回の取り込みで【3枚】を、少しずつ大きさをずらして重ねる
+   3枚 × 同時に2回分 = 6枚ぶん用意する */
+const CONV_ECHO_MAX = 12;      /* 最大 6枚 × 同時2回分 */
+/* 何枚目がどこから始まるか。つまみ(echoStart / echoSpread)から作る */
+function echoShellCount() { return Math.max(1, Math.min(6, Math.round(params.conv.echoShells ?? 3))); }
+function echoStartOf(step) {
+  const s0 = params.conv.echoStart ?? 1.12;
+  const gap = (params.conv.echoSpread ?? 0.28) * 0.5;
+  return s0 + step * gap;
+}
+/* 【2026-08-28 ヒデさん指定】4 は単色の面。取り込むたびに色が変わる。
+   ブランドの色まわりから選ぶので、どれが出ても浮かない */
+const ECHO_COLORS = ['#0EBBFF', '#FF5D97', '#7FD8FF', '#A78BFA', '#FFFFFF'];
+function convEchoEllipses() {
+  if (convEchoEls) return convEchoEls;
+  const host = dotsBackG && dotsBackG.parentNode;
+  if (!host) return null;
+  convEchoEls = [];
+  for (let i = 0; i < CONV_ECHO_MAX; i++) {
+    const e = document.createElementNS(SVG_NS, 'ellipse');
+    e.setAttribute('stroke', 'none');
+    e.setAttribute('opacity', '0');
+    e.style.pointerEvents = 'none';
+    host.insertBefore(e, dotsBackG);
+    convEchoEls.push(e);
+  }
+  return convEchoEls;
+}
+function convEchoCanvases() {
+  if (convEchoCans) return convEchoCans;
+  if (!sphereCanvasEl || !sphereCanvasEl.parentNode) return null;
+  convEchoCans = [];
+  const SRC = sphereCanvasEl.width || 520;
+  for (let i = 0; i < CONV_ECHO_MAX; i++) {
+    const c = document.createElement('canvas');
+    /* 惑星の2倍の器。中央に惑星を描くので、2.0倍まで広げても切れない */
+    c.width = SRC * 2;
+    c.height = SRC * 2;
+    c.className = 'echo-can';
+    sphereCanvasEl.parentNode.insertBefore(c, sphereCanvasEl);   /* 既定は惑星の後ろ */
+    convEchoCans.push({ el: c, ctx: c.getContext('2d') });
+  }
+  return convEchoCans;
+}
+/* ===== 溶けるように広がる残像 (2026-08-28 ヒデさん指定) =====
+   ⚠️ これまでは「別々の殻(コピー)を数枚重ねる」作りだったので、
+      1枚1枚の輪郭が見えて段差＝ガタガタに見えていた。
+   1枚の canvas の中に、惑星を少しずつ大きくしながら【何十枚も薄く】重ねて描くと、
+   境目が消えて、ズームぼかしのように滑らかにつながる(＝ディゾルブ)。
+   さらに内側を消しゴムで抜くと、波紋のように「外へ溶けていく輪」になる。 */
+function echoSmear(c, from, to, alpha, layers, eraseInner) {
+  const ctx = c.ctx, W = c.el.width, H = c.el.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, W, H);
+  const N = Math.max(3, layers | 0);
+  const off = W / 4;                      /* 器は惑星の2倍。中央に置く */
+  for (let i = 0; i < N; i++) {
+    const f = N === 1 ? 0 : i / (N - 1);
+    const sc = from + (to - from) * f;
+    /* 外側ほど薄く。合計が濃くなりすぎないよう枚数で割る */
+    ctx.globalAlpha = Math.max(0, alpha * (1 - f * 0.85) * (2.2 / N));
+    ctx.setTransform(sc, 0, 0, sc, (W / 2) * (1 - sc), (H / 2) * (1 - sc));
+    try { ctx.drawImage(sphereCanvasEl, off, off); } catch (e) {}
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  if (eraseInner > 0) {
+    /* 内側をやわらかく抜く = 中が空いた輪になり、波紋らしく見える。
+       半径は【惑星の半径(W/4) × eraseInner】。いまの広がりに合わせて渡すこと */
+    const g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(1, (W / 4) * eraseInner));
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(0.72, 'rgba(0,0,0,1)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+function convDrawEchoes(strength, hit, dt, style) {
+  const st = style || 'k1';
+  const crispB = (params.conv && params.conv.echoCrisp) ? 0.12 : 1;   /* くっきり表示: ぼかしをほぼ切る */
+  const useEll = (st === 'k4');
+  const cans = (!useEll && strength > 0.001) ? convEchoCanvases() : convEchoCans;
+  const ells = (useEll && strength > 0.001) ? convEchoEllipses() : convEchoEls;
+  const hideAll = () => {
+    if (convEchoCans) for (const c of convEchoCans) c.el.style.opacity = '0';
+    if (convEchoEls) for (const e of convEchoEls) e.setAttribute('opacity', '0');
+  };
+  if (strength <= 0.001) { convEchoes.length = 0; hideAll(); return; }
+  if (useEll ? !ells : !cans) { convEchoes.length = 0; return; }
+  hideAll();
+  /* 生む: 吸収のたびに【3枚】。大きさをずらして重ねるので、広がりが読み取れる。
+     色は取り込みごとに1つ選び、3枚で共有する(4のときだけ使う) */
+  /* 溶ける系(5〜7)は1枚の中で層を作るので、殻は1つだけ生む。
+     「重ねる枚数」はその中の層の細かさとして効く */
+  const SH = (st === 'k5' || st === 'k6' || st === 'k7') ? 1 : echoShellCount();
+  if (hit > 0.35 && (!convEchoes.length || convEchoes[convEchoes.length - 1].t > 0.24)
+      && convEchoes.length + SH <= CONV_ECHO_MAX) {
+    const col = ECHO_COLORS[(Math.random() * ECHO_COLORS.length) | 0];
+    for (let sIdx = 0; sIdx < SH; sIdx++) {
+      convEchoes.push({ t: -sIdx * 0.08, step: sIdx, c: col });
+    }
+  }
+  /* 【2026-08-28】広がる速さをつまみで。ゆっくりにするほど1コマの変化が小さく、滑らかに見える */
+  const spd = Math.max(0.1, params.conv.echoSpeed ?? 0.7) * (st === 'k2' ? 0.85 : 1.0);
+  for (let i = convEchoes.length - 1; i >= 0; i--) {
+    convEchoes[i].t += dt * spd;
+    if (convEchoes[i].t >= 1) convEchoes.splice(i, 1);
+  }
+  /* 消え方: 1 で直線、大きいほど最後まで濃く残ってスッと消える(ガタつきが目立ちにくい) */
+  const fadeP = Math.max(0.4, params.conv.echoFade ?? 1.6);
+  const aMul = Math.max(0, params.conv.echoAlpha ?? 1);      /* 濃さのつまみ */
+  const fadeOf = u => Math.pow(1 - u, fadeP) * aMul;
+  const spread = Math.max(0.02, params.conv.echoSpread ?? 0.28);
+  const pl = params.planet, plFlat = pl.flat == null ? 1 : pl.flat;
+  /* --- 5〜7 溶けるように広がる: 1枚の canvas に何十枚も薄く重ねて描く --- */
+  if (st === 'k5' || st === 'k6' || st === 'k7') {
+    const c0 = cans && cans[0];
+    if (!c0) return;
+    for (let i = 1; i < cans.length; i++) cans[i].el.style.opacity = '0';
+    /* いちばん新しい残像の進み具合を使う(1つのなめらかな波として見せる) */
+    let u = -1;
+    for (const q of convEchoes) if (q.t >= 0 && (u < 0 || q.t < u)) u = q.t;
+    if (u < 0) { c0.el.style.opacity = '0'; return; }
+    const uu = Math.max(0, Math.min(1, u));
+    const layers = Math.max(6, Math.round(6 + (params.conv.echoShells ?? 3) * 6));
+    const from = 1.0, to = echoStartOf(0) + convFxEase(uu) * spread * 1.6;
+    if (st === 'k7') {
+      /* ぼけて溶ける: 重ね描き＋強いぼかし */
+      echoSmear(c0, from, to, 0.9, layers, 0);
+      c0.el.style.filter = `blur(${((2 + uu * 22) * crispB).toFixed(1)}px)`;
+    } else if (st === 'k6') {
+      /* 内から溶ける: 内側を抜いて、外へ広がる輪にする。
+         抜く範囲は「いまの広がり」の内側 55% ぶん。広がるほど輪も外へ移る */
+      echoSmear(c0, from, to, 1.0, layers, from + (to - from) * 0.55);
+      c0.el.style.filter = `blur(${((1 + uu * 6) * crispB).toFixed(1)}px)`;
+    } else {
+      /* 連続ディゾルブ: 段差なく尾を引いて溶ける */
+      echoSmear(c0, from, to, 0.95, layers, 0);
+      c0.el.style.filter = `blur(${((0.5 + uu * 3) * crispB).toFixed(1)}px)`;
+    }
+    c0.el.style.zIndex = '1';
+    c0.el.style.transform = `translate(${pl.dx}px, ${pl.dy}px) scale(${pl.scale.toFixed(4)}, ${(pl.scale * plFlat).toFixed(4)})`;
+    c0.el.style.opacity = (strength * fadeOf(uu)).toFixed(3);
+    return;
+  }
+  /* --- 4 色が変わる面: 単色の楕円。取り込むたびに色が変わる --- */
+  if (useEll) {
+    const cc = convCenter(), rx0 = convPlanetR(), ry0 = convPlanetRY();
+    for (let i = 0; i < ells.length; i++) {
+      const q = convEchoes[i], el = ells[i];
+      if (!q || q.t < 0) { el.setAttribute('opacity', '0'); continue; }
+      const u = Math.max(0, Math.min(1, q.t));
+      const grow = echoStartOf(q.step || 0) + convFxEase(u) * spread;
+      el.setAttribute('cx', cc.x.toFixed(1)); el.setAttribute('cy', cc.y.toFixed(1));
+      el.setAttribute('rx', (rx0 * grow).toFixed(1));
+      el.setAttribute('ry', (ry0 * grow).toFixed(1));
+      el.setAttribute('fill', q.c || '#7FD8FF');
+      /* 外側の殻ほど薄く。重ねた時に濃淡が出る */
+      el.setAttribute('opacity', (0.32 * strength * fadeOf(u) * (1 - (q.step || 0) * 0.18)).toFixed(3));
+    }
+    return;
+  }
+  /* --- 8/9 くっきり系【2026-08-28 ヒデさん指定】--------------------------------
+     1と同じで「惑星の絵をそのまま複製」するのでハッキリ見える。
+     違うのは、1コマぶんの進みを細かく重ねて描くところ(=進みの段差が消える)。
+       8 尾を引く : 取り込みで殻が生まれる。1と同じ出方のまま、なめらか
+       9 連なる波 : 殻を等間隔でずっと回し続ける。生まれる瞬間が無いので段差ゼロ */
+  if (st === 'k8' || st === 'k9') {
+    const N = echoShellCount();
+    convEchoClock = (convEchoClock + dt * spd * 0.6) % 1;
+    for (let i = 0; i < cans.length; i++) {
+      const c = cans[i];
+      if (i >= N) { c.el.style.opacity = '0'; continue; }
+      let u, step;
+      if (st === 'k9') {
+        u = (convEchoClock + i / N) % 1; step = 0;
+      } else {
+        const q = convEchoes[i];
+        if (!q || q.t < 0) { c.el.style.opacity = '0'; continue; }
+        u = Math.max(0, Math.min(1, q.t)); step = q.step || 0;
+      }
+      const base = echoStartOf(step);
+      const grow = base + convFxEase(u) * spread;
+      const prev = base + convFxEase(Math.max(0, u - 0.07)) * spread;   /* 少し前の位置 */
+      echoSmear(c, prev, grow, 1.15, 8, 0);
+      c.el.style.filter = '';
+      c.el.style.zIndex = '1';
+      c.el.style.transform =
+        `translate(${pl.dx}px, ${pl.dy}px) scale(${pl.scale.toFixed(4)}, ${(pl.scale * plFlat).toFixed(4)})`;
+      c.el.style.opacity = (0.95 * strength * fadeOf(u) * (1 - step * 0.14)).toFixed(3);
+    }
+    return;
+  }
+  for (let i = 0; i < cans.length; i++) {
+    const q = convEchoes[i], c = cans[i];
+    if (!q || q.t < 0) { c.el.style.opacity = '0'; continue; }
+    const u = Math.max(0, Math.min(1, q.t));
+    const base = echoStartOf(q.step || 0), dim = 1 - (q.step || 0) * 0.18;
+    /* 惑星の絵をまるごと複製する(これが残像の中身) */
+    try {
+      c.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      c.ctx.clearRect(0, 0, c.el.width, c.el.height);
+      /* 器の中央に惑星を置く(器は惑星の2倍) */
+      const off = c.el.width / 4;
+      c.ctx.drawImage(sphereCanvasEl, off, off);
+    } catch (e) {}
+    let grow, a, fx = '';
+    if (st === 'k2') {
+      grow = base + convFxEase(u) * spread * 1.3;
+      a = 0.8 * strength * fadeOf(u) * dim;
+      fx = `blur(${((4 + (q.step || 0) * 3 + u * 12) * crispB).toFixed(1)}px)`;
+      c.el.style.zIndex = '1';
+    } else if (st === 'k3') {
+      grow = base + convFxEase(u) * spread;
+      a = 0.4 * strength * fadeOf(u) * dim;
+      fx = `saturate(${(1 + u * 0.6).toFixed(2)}) brightness(${(1 + u * 0.25).toFixed(2)})`;
+      c.el.style.zIndex = '3';                 /* 惑星の手前へ */
+    } else {
+      grow = base + convFxEase(u) * spread;
+      a = 0.95 * strength * fadeOf(u) * dim;
+      c.el.style.zIndex = '1';
+    }
+    c.el.style.filter = fx;
+    c.el.style.transform =
+      `translate(${pl.dx}px, ${pl.dy}px) scale(${(pl.scale * grow).toFixed(4)}, ${(pl.scale * plFlat * grow).toFixed(4)})`;
+    c.el.style.opacity = a.toFixed(3);
+  }
+}
+function convFrontCut() { return (params.conv && params.conv.frontCut) !== false; }
+function convPlanetR() { return 130 * ((params.planet && params.planet.scale) || 1); }
+/* 【2026-08-27 ヒデさん指定】惑星も縦横比を保たずにつぶせる。縦の半径はこちら */
+function convPlanetRY() { return convPlanetR() * ((params.planet && params.planet.flat) || 1); }
+/* データ粒の見た目を作る。k=0 で丸いドットの列 / k=1 で隙間ゼロの1本の線。
+   ドットの直径 = 線の太さ。間隔(pitch)を詰めていくので「密着して線になる」ように見える。 */
+function convPixelDash(k, R) {
+  const dotW = Math.max(0.4, R.pxWidth == null ? 1.6 : R.pxWidth);
+  const dens = Math.max(0.05, R.pxDensity == null ? 1 : R.pxDensity);
+  const pitch = dotW * 2.6 * dens;                 /* 点の中心から次の点まで */
+  /* 【2026-08-27 ヒデさん指定】点がつながり始める/つながりきるタイミングを調整できる。
+     収縮の進み(k)のうち、pxJoinAt 〜 pxJoinEnd の区間で「点 → 線」に変える。 */
+  const jA = clamp01(R.pxJoinAt == null ? 0 : R.pxJoinAt);
+  const jB = Math.max(jA + 0.02, clamp01(R.pxJoinEnd == null ? 1 : R.pxJoinEnd));
+  const jk = convSStep(clamp01((k - jA) / (jB - jA)));
+  const len = 0.01 + jk * pitch;                  /* 点が伸びて隣とくっつく */
+  const gap = Math.max(0, pitch - len);
+  const wob = R.pxWobble || 0;
+  /* 【2026-08-27 ヒデさん指定】点が軌道の上をくるくる流れるようにする。
+     破線のオフセットを送り続けると、点が線に沿って回って見える(⑥のドットと同じ感覚)。
+     ドットの周回オフ(convDotMoves)の時は止める。 */
+  const spin = (R.pxSpin == null ? 1 : R.pxSpin);
+  const moving = (typeof convDotMoves === 'function') ? convDotMoves() : true;
+  const base = 360 / Math.max(1, params.duration) * (params.globalSpeed || 1) * (params.direction || 1);
+  const flow = (moving && spin) ? -(elapsed * base * spin * 1.6) : 0;
+  const wave = wob ? Math.sin(elapsed * 4.2) * wob * 6 : 0;
+  return {
+    dash: gap < 0.25 ? '' : len.toFixed(2) + ' ' + gap.toFixed(2),
+    w: dotW,
+    off: (flow + wave) % 100000,
+  };
+}
+/* 【2026-08-26】どの案でも効く「ドットの大きさ」と「遠近感」。
+   画面の下ほど手前＝大きい。cy/ry は基準にする楕円の中心と縦半径。 */
+function convDotK(y, cy, ry) {
+  const C = params.conv || {};
+  const base = C.dotSize == null ? 1 : C.dotSize;
+  if ((C.dotPersp || 'flat') !== 'persp') return base;
+  const k = clamp01(((y - cy) / Math.max(1, ry) + 1) / 2) * 2 - 1;   // -1(奥) 〜 +1(手前)
+  return base * (1 + k * (C.perspK == null ? 0.45 : C.perspK));
+}
+/* 毎フレーム: モードに応じて geoms とドット係数を書き換える (renderFrame から呼ぶ) */
+function convFrame(geoms) {
+  const dt = convLastT == null ? 0 : Math.max(0, elapsed - convLastT);
+  convLastT = elapsed;
+  convGlow *= Math.exp(-dt * 2.4);
+  /* 蓄積は、いま光っている量に応じて増え、時間でゆっくり戻る */
+  {
+    const hold = Math.max(0.5, params.conv.glowHold == null ? 6 : params.conv.glowHold);
+    convCharge += Math.min(convGlow, 1) * dt * 2.6;
+    convCharge -= convCharge * (dt / hold);
+    convCharge = Math.max(0, Math.min(1, convCharge));
+  }
+  const on = convOn();
+  if (!on) {
+    if (convWasOn) {   // 後片付け (モードや案を切り替えた時に一度だけ)
+      for (let i = 0; i < DOTS.length; i++) { convDotF[i] = 1; convDotA[i] = 1; convDotSpin[i] = 0; }
+      convReelAReset(); applyRingBlur('outer', 0, '', 0); applyRingBlur('inner', 0, '', 0);
+      convSetClip('outer', false); convSetClip('inner', false);
+      convHidePools(); convHideBlend(); convGlow = 0;
+      /* 【2026-08-30 ヒデさん指定・バグ修正】吸収の光(エコー/波紋)の器と蓄積も片付ける。
+         ⚠️ これらは集約オンの間しか描き直されないため、「軌道のみ(off)」へ切り替えた瞬間に
+            最後に描いた輪が画面に固まって【常時表示】のまま残っていた。 */
+      convEchoes.length = 0; convRipples.length = 0; convCharge = 0;
+      if (convEchoCans) for (const c of convEchoCans) c.el.style.opacity = '0';
+      if (convEchoEls) for (const e of convEchoEls) e.setAttribute('opacity', '0');
+      if (convRippleEls) for (const e of convRippleEls) e.setAttribute('opacity', '0');
+      if (sphereCanvasEl) { sphereCanvasEl.style.filter = ''; sphereCanvasEl.style.removeProperty('--conv-breath'); }
+      convWasOn = false;
+    }
+    /* 【2026-08-30 ヒデさん指定・バグ修正】「軌道のみ(off)」でも粒(吸い込み)オプションを効かせる。
+       ⚠️ convFrame は off だとここで return するため、粒の描画コード(関数の最後)に届かず
+       「粒ありにしても1つも出ない」になっていた。off ではここで直接描く。 */
+    if (params.conv && params.conv.reelP && params.conv.reelP.on && !params.conv.net3d) {
+      const pg = (params.conv.spinLink === false)
+        ? { outer: orbitGeom('outer', true), inner: orbitGeom('inner', true) }
+        : geoms;   /* 2026-08-30: 連動は共通トグル(spinLink)に統一 */
+      runSpiralParticles(pg, params.conv.reelP, dt);
+      reelPWasOn = true;
+    } else if (reelPWasOn) { convHidePools(); reelPWasOn = false; }   /* オフに切ったら粒を片付ける */
+    return;
+  }
+  convWasOn = true;
+  const mode = params.converge;
+  const C = params.conv;
+  /* 【2026-08-30 ヒデさん指定】粒用ジオメトリ。「粒も一緒に回す=連動しない」の時は、
+     軌道自体の回転(convOrbitSpin/ジャイロ回転)を除いた形で粒を描く(粒の回転軸が変わらない)。
+     輪(軌道の線)・reelの輪・基準ドットは geoms のまま＝軌道と一緒に回る。 */
+  const pGeoms = (C.spinLink === false)
+    ? { outer: orbitGeom('outer', true), inner: orbitGeom('inner', true) }
+    : geoms;
+  if (convLastMode !== mode) { convHidePools(); convLastMode = mode; }   // 切替時に前のモードの粒・輪を片付ける
+  /* 惑星の「受け止め」= 明るさ。WebGL/フォールバック両対応の CSS filter で */
+  if (sphereCanvasEl) {
+    /* 【2026-08-28 ヒデさん指定】吸収の光り方を5つから選べる。
+       どれも「データが取り込まれて惑星が強くなっていく」ことの見せ方。 */
+    const gk = C.glowKind || 'pulse';
+    const g = C.glow || 0;
+    const hit = Math.min(convGlow, 1);       /* いま届いた分 */
+    const ch = convCharge;                   /* これまでに溜まった分 */
+    let fx = '';
+    if (g <= 0.001) fx = '';
+    else if (gk === 'hue') {
+      /* 色が変わる: 溜まるほど色相がじわっと動き、鮮やかになる。届いた瞬間だけ少し明るく */
+      fx = `hue-rotate(${(ch * 72 * g).toFixed(1)}deg) saturate(${(1 + ch * 1.1 * g).toFixed(3)})`
+         + ` brightness(${(1 + hit * 0.5 * g).toFixed(3)})`;
+    } else if (gk === 'core') {
+      /* 芯が育つ: 溜まるほど中心が明るく硬くなる(コントラストと明るさが上がる) */
+      fx = `brightness(${(1 + (ch * 0.95 + hit * 0.35) * g).toFixed(3)})`
+         + ` contrast(${(1 + ch * 0.8 * g).toFixed(3)})`
+         + ` saturate(${(1 + ch * 0.5 * g).toFixed(3)})`;
+    } else if (gk === 'echo') {   /* 波紋(ripple)は 2026-09-18 に完全削除 */
+      /* 波紋 / エコー: 惑星自体は控えめに。外へ広がる輪・残像で受け止めを見せる(下で描く) */
+      fx = `brightness(${(1 + hit * 0.45 * g).toFixed(3)})`;
+    } else if (gk === 'breath') {
+      /* 呼吸: 溜まった量に応じて、ゆっくり明るさが行き来する */
+      const br = 1 + (0.5 + 0.5 * Math.sin(elapsed * 1.15)) * ch * 0.9 * g + hit * 0.3 * g;
+      fx = `brightness(${br.toFixed(3)})`;
+    } else {
+      /* パルス(従来): 届いた瞬間だけ、ふっと明るくなる */
+      const b = 1 + hit * g;
+      fx = b > 1.005 ? `brightness(${b.toFixed(3)})` : '';
+    }
+    sphereCanvasEl.style.filter = fx;
+    /* 呼吸だけは、わずかに大きさも脈打たせる(明るさだけだと弱いため) */
+    if (gk === 'breath' && g > 0.001) {
+      const k = 1 + (0.5 + 0.5 * Math.sin(elapsed * 1.15)) * ch * 0.035 * g;
+      sphereCanvasEl.style.setProperty('--conv-breath', k.toFixed(4));
+    } else sphereCanvasEl.style.removeProperty('--conv-breath');
+    convDrawRipples(0, hit, dt);   /* 波紋は削除済み(0=描かない) */
+    convDrawEchoes(gk === 'echo' ? g : 0, hit, dt, C.glowEcho);
+  }
+
+  if (mode === 'reel') {
+    /* 【2026-08-26 循環版・ヒデさん指定】輪は使い回しで循環する:
+       内の位置の輪が収縮して吸収されたら、外の輪が内の位置へ同じサイズになって移動し、
+       元の外の位置には吸収された輪が新しくフェードインで出現。世代(gen)ごとに
+       実物の2本(inner/outer 要素)が役割を交代し続ける = ベルトコンベアのような循環。 */
+    const R = C.reel;
+    const T = Math.max(1, R.T);
+    const gen = Math.floor(elapsed / T), ph = (elapsed % T) / T;
+    const sAt = Math.max(0.02, R.shrinkAt);                            // 収縮の開始
+    /* 【2026-08-30 ヒデさん指定・統一】輪の入れ替わり(スライド回転)の長さは「秒」で指定(swapSec)。
+       ⚠️ 以前は moveDur(周期の割合)を min(moveDur, 吸収後の残り時間) でクランプしていて、
+          吸収終わり(endAt)が遅い案では上限0.18で頭打ち＝つまみを回しても【全く変わらなかった】。
+          いまは秒→割合に換算し、足りなければ吸収の終わりを自動で前倒しして時間を確保する(確実に効く)。 */
+    const swapSec = (R.swapSec != null) ? R.swapSec : Math.max(0.3, (R.moveDur || 0.16) * Math.max(1, R.T));
+    const slideLen = Math.min(0.6, Math.max(0.04, swapSec / T));
+    const eAt = Math.min(Math.max(sAt + 0.08, Math.min(0.9, R.endAt)), 0.96 - slideLen);
+    const zStart = eAt + slideLen * 0.4;                               // 新しい輪が出はじめる
+    const zLen = Math.max(0.04, Math.min(R.inDur, 1 - zStart - 0.01));
+    const S_out = geoms.outer, S_in = geoms.inner;                     // スロット(位置)のジオメトリ
+    /* 流れの向き(ヒデさん指定 2026-08-26): down=外(上)→内(下)→吸収 / up=内(下)→外(上)→吸収
+       slotA=吸収される側のスロット / slotB=新しい輪が生まれる側のスロット */
+    const up = R.flow === 'up';
+    const slotA = up ? S_out : S_in;
+    const slotB = up ? S_in : S_out;
+    const shrinkKey = gen % 2 ? 'outer' : 'inner';                     // 今回吸収される実物の要素
+    const slideKey = shrinkKey === 'inner' ? 'outer' : 'inner';
+    const planetR = convPlanetR();
+    let effDepth = R.depth;
+    if (R.vanish === 'shrink') effDepth = Math.max(R.depth, 0.995);
+    /* はみ出ず溶ける: 惑星の輪郭に収まるサイズまでしか縮まない */
+    if (R.vanish === 'fit') effDepth = Math.min(R.depth, 1 - planetR / Math.max(1, slotA.rx));
+    /* --- 吸収される輪 --- */
+    let gS = slotA, aB = 1, aF = 1, blur = 0, spinDeg = 0, aDot = 1, clipOn = false;
+    if (ph < sAt) { }
+    else if (ph < eAt) {
+      const k = convSStep((ph - sAt) / (eAt - sAt));
+      /* ⚠️ 前に選んでいた案の見た目(破線・色・太さ)が残らないよう、毎フレーム基準に戻してから塗る */
+      const RA = convReelA[shrinkKey];
+      RA.w = 3; RA.dash = ''; RA.color = ''; RA.fx = ''; RA.dashOff = 0; RA.cap = '';
+      gS = convGeom(slotA, 1 - k * effDepth);
+      spinDeg = 0;   /* 【2026-08-30 ヒデさん指定】spinUp(縮むほど回る)は廃止。くるくる系は「入れ替わりの回転」1本に統一 */
+      /* 透過: fadeAt(収縮の中の割合)から fadeTo(残す濃さ)へ */
+      const fs = sAt + (eAt - sAt) * clamp01(R.fadeAt);
+      const fk = ph > fs ? convSStep((ph - fs) / Math.max(0.001, eAt - fs)) : 0;
+      const fadeA = 1 - (1 - R.fadeTo) * fk;
+      if (R.vanish === 'sink') { aB = 1; aF = fadeA; }                 // 手前だけ透ける=惑星の後ろへ沈む
+      else if (R.vanish === 'shrink') { aB = aF = 1; }                 // 透けずに点まで縮んで消える
+      else if (R.vanish === 'blur') { aB = aF = fadeA; blur = fk * 5; }
+      else if (R.vanish === 'early') {
+        /* 早め透過: 輪の横幅が惑星に重なる前に、サイズ連動で透け切る(はみ出しが見えない) */
+        const rxNow = slotA.rx * (1 - k * effDepth);
+        const kk = 1 - clamp01((rxNow - planetR * 1.05) / (planetR * 1.6));
+        aB = aF = 1 - (1 - R.fadeTo) * convSStep(kk);
+      }
+      else if (R.vanish === 'clip') { aB = aF = fadeA; clipOn = convFrontCut(); }// 前面カット(切替可)
+      /* ===== 「別の物質に変わっていく」3案 (2026-08-27 ヒデさん指定) ===== */
+      else if (R.vanish === 'compress') {
+        /* 圧縮グロー: 縮むほど発光して凝縮する。光り方は5種から選べる(2026-08-27 ヒデさん指定) */
+        aB = aF = fadeA; clipOn = true;
+        const pw = (R.glowPower == null ? 1 : R.glowPower);
+        RA.w = 3 * (R.glowWidth == null ? 0.5 : R.glowWidth) * (1 + k * 0.6);
+        const tone = R.glowTone || 'now';
+        if (tone === 'rainbow') {
+          /* 虹: 色相がゆっくり回りながら鮮やかになる */
+          RA.fx = `hue-rotate(${((elapsed * 40 + k * 180) % 360).toFixed(0)}deg) saturate(${(1 + k * 2.6 * pw).toFixed(2)}) brightness(${(1 + k * 0.35 * pw).toFixed(2)})`;
+          blur = k * 1.6 * pw;
+        } else if (tone === 'strong') {
+          /* 強発光: 白飛びするくらい明るく、にじみも強い */
+          RA.fx = `saturate(${(1 + k * 1.6 * pw).toFixed(2)}) brightness(${(1 + k * 1.5 * pw).toFixed(2)})`;
+          blur = k * 3.6 * pw;
+        } else if (tone === 'cool') {
+          /* 青に寄る: ブランドの水色側へ寄せて、涼しく光る */
+          RA.fx = `hue-rotate(${(-k * 32).toFixed(0)}deg) saturate(${(1 + k * 2.2 * pw).toFixed(2)}) brightness(${(1 + k * 0.4 * pw).toFixed(2)})`;
+          blur = k * 1.4 * pw;
+        } else if (tone === 'warm') {
+          /* ピンクに寄る: ブランドのピンク側へ寄せて、暖かく光る */
+          RA.fx = `hue-rotate(${(k * 30).toFixed(0)}deg) saturate(${(1 + k * 2.2 * pw).toFixed(2)}) brightness(${(1 + k * 0.4 * pw).toFixed(2)})`;
+          blur = k * 1.4 * pw;
+        } else {
+          /* いまの感じ(既定): 彩度が上がって白く発光 */
+          RA.fx = `saturate(${(1 + k * 2.4 * pw).toFixed(2)}) brightness(${(1 + k * 0.45 * pw).toFixed(2)})`;
+          blur = k * 1.6 * pw;
+        }
+      }
+      else if (R.vanish === 'pixel') {
+        /* データ粒(2026-08-27 ヒデさん指定):
+           軌道は最初から【丸いドットの列】。収縮するほど点が伸びて隣とくっつき、
+           最後は隙間のない1本の線になる。 */
+        aB = aF = fadeA; clipOn = true;
+        const px = convPixelDash(k, R);
+        RA.dash = px.dash; RA.w = px.w; RA.cap = 'round';
+        RA.dashOff = px.off;
+        RA.fx = `saturate(${(1 + k * 1.6).toFixed(2)})`;
+      }
+      else { aB = aF = fadeA; }                                        // fade(既定) / fit も同じ透過
+      aDot = Math.max(aB, aF);
+    } else if (ph < zStart) { gS = slotB; aB = aF = 0; aDot = 0; }     // 消えている間(生まれる側で待機)
+    else { gS = slotB; aB = aF = aDot = convSStep((ph - zStart) / zLen); }   // 新しい輪として出現
+    convSetClip(shrinkKey, clipOn);
+    convSetClip(shrinkKey === 'inner' ? 'outer' : 'inner', false);
+    if (clipOn && convMaskCircle) {
+      const cc = convCenter();
+      convMaskCircle.setAttribute('cx', cc.x); convMaskCircle.setAttribute('cy', cc.y);
+      convMaskCircle.setAttribute('r', planetR);
+    }
+    /* --- 生まれる側 → 吸収される側 へ移る輪 --- */
+    let gM = slotB;
+    if (ph >= eAt && ph < eAt + slideLen) {
+      const k = convSStep((ph - eAt) / slideLen);
+      gM = { cx: slotB.cx + (slotA.cx - slotB.cx) * k, cy: slotB.cy + (slotA.cy - slotB.cy) * k,
+             rx: slotB.rx + (slotA.rx - slotB.rx) * k, ry: slotB.ry + (slotA.ry - slotB.ry) * k,
+             /* 【2026-08-28 ヒデさん指定】移り変わりの回転 オン/オフ。offなら傾きを変えず(移動先の傾きのまま)すべり込む＝回らない */
+             rot: (R.transRot === false) ? slotA.rot : (slotB.rot + (slotA.rot - slotB.rot) * k) };
+    } else if (ph >= eAt + slideLen) gM = slotA;
+    if (ph >= eAt && ph - (dt / T) < eAt) convAddGlow(0.7);
+    geoms[shrinkKey] = gS; geoms[slideKey] = gM;                       // ドットも輪ごと動く
+    /* --- 中間の輪(ブレンド): 収縮している輪と、もう1本の輪の間を等間隔で埋める --- */
+    {
+      const bn = Math.max(0, Math.round(R.blend || 0));
+      if (bn > 0) {
+        const rings = convBlendPool(bn);
+        for (let bi = 0; bi < bn; bi++) {
+          const t = (bi + 1) / (bn + 1);              // 0<t<1 の等間隔
+          const el = rings[bi];
+          const cx = gS.cx + (gM.cx - gS.cx) * t, cy = gS.cy + (gM.cy - gS.cy) * t;
+          const rx = gS.rx + (gM.rx - gS.rx) * t, ry = gS.ry + (gM.ry - gS.ry) * t;
+          const rot = gS.rot + (gM.rot - gS.rot) * t;
+          el.setAttribute('cx', cx.toFixed(1)); el.setAttribute('cy', cy.toFixed(1));
+          el.setAttribute('rx', Math.max(0.1, rx).toFixed(1)); el.setAttribute('ry', Math.max(0.1, ry).toFixed(1));
+          el.setAttribute('transform', `rotate(${rot.toFixed(2)} ${cx.toFixed(1)} ${cy.toFixed(1)})`);
+          /* 【2026-08-28 ヒデさん指定】中間の輪は【軌道をそのまま複製したくっきりした線】にする。
+             以前は blendAlpha(既定0.45)で薄くしていたので、混ざったような色に見えていた。
+             濃さは吸収中の輪と同じ動き(収縮側に近いほどその輪に寄せる)だけ残し、
+             線の太さも本物の軌道と同じ 3px × 案ごとの太さ にそろえる。 */
+          const a = ((aB + aF) / 2) * (1 - t) + 1 * t;
+          el.setAttribute('opacity', a.toFixed(3));
+          el.setAttribute('stroke-width', (3 * convOrbitWidth()).toFixed(2));
+        }
+      } else convHideBlend();
+    }
+    convReelA[shrinkKey].b = aB; convReelA[shrinkKey].f = aF; convReelA[shrinkKey].blur = blur;
+    if (!(ph >= sAt && ph < eAt)) {   /* 収縮していない間は元の見た目に戻す */
+      const r0 = convReelA[shrinkKey];
+      r0.w = 3; r0.dash = ''; r0.color = ''; r0.fx = ''; r0.dashOff = 0; r0.cap = '';
+    }
+    const sl = convReelA[slideKey];
+    sl.b = 1; sl.f = 1; sl.blur = 0; sl.w = 3; sl.dash = ''; sl.color = ''; sl.fx = ''; sl.dashOff = 0; sl.cap = '';
+    /* 【2026-08-27 ヒデさん指定】データ粒を選んでいる間は、軌道そのものが最初からドットの列。
+       収縮していない輪(と、収縮前の輪)も、ドット表示のままにしておく。 */
+    if (R.vanish === 'pixel') {
+      const px0 = convPixelDash(0, R);
+      for (const key of [shrinkKey, slideKey]) {
+        const st = convReelA[key];
+        const isShrinking = (key === shrinkKey) && (ph >= sAt && ph < eAt);
+        if (isShrinking) continue;                 /* 収縮中の輪は上で計算済み */
+        st.dash = px0.dash; st.w = px0.w; st.cap = 'round'; st.dashOff = px0.off;
+      }
+    }
+    for (let i = 0; i < DOTS.length; i++) {
+      convDotF[i] = 1;                                                 // 位置は geoms 側で寄せ済み
+      const isShrink = DOTS[i].ellipse === shrinkKey;
+      convDotA[i] = isShrink ? aDot : 1;
+      convDotSpin[i] = isShrink ? spinDeg : 0;                         // 収縮中も回り続ける(+アップ)
+    }
+  } else {
+    convReelAReset();
+    convHideBlend();   /* ①以外では中間の輪は出さない */
+    convSetClip('outer', false); convSetClip('inner', false);
+    for (let i = 0; i < DOTS.length; i++) { convDotF[i] = 1; convDotA[i] = 1; convDotSpin[i] = 0; }
+  }
+
+  if (mode === 'spiral') {
+    /* 粒はまず軌道上を回り、hold秒たったら螺旋で惑星へ吸い込まれ、吸収されたらまた軌道上に生まれ直す */
+    runSpiralParticles(pGeoms, C.spiral, dt);   /* 2026-08-30: 連動しない時は回転を除いた粒用ジオメトリ */
+  } else if (mode === 'accre') {
+    /* ⑦降着円盤: 惑星を中心にした薄い円盤。微粒子が回りながら内へ落ちて取り込まれる */
+    const A = C.accre;
+    const pool = convAccrePool();
+    const cc = convCenter();
+    const disk = { cx: cc.x, cy: cc.y, rx: orbitBase('inner').rx * A.scale, ry: orbitBase('inner').rx * A.scale * 0.335, rot: pGeoms.inner.rot };   /* 2026-08-30: 円盤(粒)も連動切替に従う */
+    for (const p of pool) {
+      /* 【2026-08-27 ヒデさん指定】渦の巻き具合を調整できる。
+         swirl=0 でどこでも同じ速さ(ゆるい渦) / 大きいほど内側で急に速くなり、きつく巻き込む */
+      const sw = Math.max(0, A.swirl == null ? 1 : A.swirl);
+      if (convDotMoves()) {
+        p.ang += (0.5 / Math.pow(Math.max(0.2, p.f), sw)) * A.speed * 60 * dt * (params.direction || 1);
+      }
+      /* 落ち方のカーブ: 1で等速、大きいほど中心に近いほど速く吸い込まれる */
+      const fc = Math.max(0.1, A.fallCurve == null ? 1 : A.fallCurve);
+      p.f -= 0.022 * A.fall * dt * Math.pow(Math.max(0.15, p.f), 1 - fc);
+      if (p.f <= 0.16) { convAddGlow(0.10);
+        p.f = 1.05 + Math.random() * 0.15; p.ang = Math.random() * 360; }
+      /* 揺らぎ: 粒ごとに位相の違う波で半径をわずかに揺らす(0でぴたっと回る) */
+      const wob = 1 + (A.wobble || 0) * 0.18 * Math.sin(elapsed * 1.7 + p.tw * 2.3);
+      const pos = posOn(disk, p.ang);
+      const ff = p.f * wob;
+      const fpos = { x: cc.x + (pos.x - cc.x) * ff, y: cc.y + (pos.y - cc.y) * ff, front: pos.front };
+      const twk = 0.45 + A.twinkle * Math.sin(elapsed * 2 + p.tw);
+      const near = clamp01((0.34 - p.f) / 0.18);           // 惑星際でフェードアウト
+      const al = clamp01(twk * (1 - near));
+      const rr = (DOT_R * A.size * convDotK(fpos.y, cc.y, disk.ry)).toFixed(2);
+      [p.back, p.front].forEach(el => { el.setAttribute('cx', fpos.x); el.setAttribute('cy', fpos.y);
+        el.setAttribute('r', rr); el.setAttribute('opacity', al.toFixed(3)); });
+      p.front.style.display = fpos.front ? '' : 'none';
+      p.back.style.display = fpos.front ? 'none' : '';
+    }
+  } else if (mode === 'mesh' && (C.mesh.style === 'cage')) {
+    /* ===== 包囲ケージ (2026-08-27 ヒデさん指定) =====
+       惑星のまわりの【球殻】にノードを均等に並べ、球ごとゆっくり回す。
+       奥半球のノードと骨は惑星の後ろへ、手前半球は惑星の前を通るので
+       「取り囲んでいる／包囲している」ように見える。
+       デザインは変えない: 使うのは既存のドット(circle)と線(path)だけ。 */
+    const M = C.mesh, cc = convCenter();
+    const n = Math.max(6, Math.round(M.nodes));
+    const fiboN = Math.max(8, Math.min(400, Math.round(M.cageFiboN == null ? 42 : M.cageFiboN)));   /* 【2026-09-25】散らばり(三角網)の点の数。既定42＝整った網(面の数2)と同じ点・線の数 */
+    const links = Math.max(1, Math.round(M.cageLinks == null ? 3 : M.cageLinks));
+    /* 【2026-09-02 ヒデさん指定】geo=測地線球(整った面)。それ以外はフィボナッチ球(従来) */
+    const shape = M.cageShape || 'fibo';
+    const freq = Math.max(1, Math.round(M.cageFreq == null ? 2 : M.cageFreq));
+    /* 球殻の上の位置は回しても関係が変わらないので、隣どうしの組は作る時に1回だけ決める */
+    if (!convMesh || convMesh.style !== 'cage' || convMesh.shape !== shape ||
+        (shape !== 'geo' && convMesh.nodes.length !== fiboN) || (shape === 'geo' && convMesh.freq !== freq)) {   /* 【2026-09-25】散らばりも三角網になったので骨の本数(links)は形に関係しない */
+      let base, pairs;
+      if (shape === 'geo') {
+        /* 測地線球: 頂点も辺も「整った面」そのもの。最近傍接続や縦潰しをしないので歪まない。 */
+        const g = buildGeodesic(freq);
+        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0 }));
+        pairs = g.edges;
+      } else {
+        /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】散らばり＝フィボナッチ球を凸包で三角網に(旧: 最寄りN点と結ぶ＝交差や穴が出てラフすぎた)。点の数は cageFiboN */
+        const g = sphereFiboHull(fiboN);
+        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0 }));
+        pairs = g.edges;
+      }
+      convMesh = { style: 'cage', shape, freq, nodes: base, pairs, links, pk: [], next: 0 };
+    }
+    const spin = M.cageSpin == null ? 1 : M.cageSpin;
+    const yaw = (convDotMoves() ? elapsed : 0) * 0.42 * spin * (params.direction || 1) + (M.cageYaw || 0) * Math.PI / 180;   /* cageYaw=【2026-09-19】向き(回転の位置のずらし) */
+    const tilt = (M.cageTilt == null ? -20 : M.cageTilt) * Math.PI / 180;
+    const roll = (M.cageRoll || 0) * Math.PI / 180;   /* 【2026-09-19】左右の傾き(画面の面内で回す) */
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
+    /* 息をするようにわずかに伸び縮み(0にすると完全に固い球)。geo(整った面)は歪ませないので固定。 */
+    const breathe = shape === 'geo' ? 1 : (1 + Math.sin(elapsed * 0.55) * 0.03 * (M.random || 0));
+    const squish = shape === 'geo' ? 1.0 : 0.94;   /* geoは縦潰しなし=真円の球で歪まない */
+    /* 【2026-08-29 ヒデさん指定】ケージ(外のネットワーク)の大きさを惑星サイズから独立させる。
+       以前は convPlanetR()(=130×惑星スケール)基準だったので「惑星を大きくすると外のケージも一緒に大きくなる」
+       状態だった。基準を固定の 130(=惑星スケール1相当)にし、ケージは cageR だけで大きさが決まるように。
+       これで「大きさ」スライダーは惑星だけを大きくする。 */
+    const Rc = 130 * (M.cageR == null ? 1.75 : M.cageR) * breathe;
+    /* 【2026-09-21 ヒデさん依頼】メッシュの形状(丸み/横長/ひし形/縦長)。頂点をワープしてから回転・投影 */
+    const _msx = M.msx != null ? M.msx : 1, _msy = M.msy != null ? M.msy : 1, _msz = M.msz != null ? M.msz : 1, _mpinch = M.mpinch || 0;
+    const proj = q => {
+      let qx = q.x, qy = q.y, qz = q.z;
+      if (_mpinch) { const k = 1 - _mpinch * Math.abs(qy); qx *= k; qz *= k; }   /* 赤道は太く極は細く=ひし形 */
+      qx *= _msx; qy *= _msy; qz *= _msz;
+      const x1 = qx * cy + qz * sy, z1 = -qx * sy + qz * cy, y1 = qy;      /* 縦軸まわりに回す */
+      const y2 = y1 * ct - z1 * st, z2 = y1 * st + z1 * ct;                      /* 少し傾ける(前後) */
+      const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr;                      /* 左右に傾ける(cageRoll) */
+      return { x: cc.x + x3 * Rc, y: cc.y + y3 * Rc * squish, z: z2 };           /* z>0 = 手前 */
+    };
+    const P = convMesh.nodes.map(proj);
+    /* --- 骨(線) 手前は惑星の前、奥は惑星の後ろを通す --- */
+    const pool = convLine2Pool(convMesh.pairs.length);
+    convHideLines();     /* 片面しか持たない線プールは使わない */
+    for (let i = 0; i < pool.length; i++) {
+      const [a, b] = convMesh.pairs[i];
+      const A = P[a], B = P[b], zm = (A.z + B.z) / 2;
+      const al = M.lineAlpha * (0.42 + 0.58 * (zm + 1) / 2);   /* 奥ほど薄く＝奥行きが出る */
+      convLine2Set(pool[i], A, B, '#6B7690', (M.lineWidth || 1) * (0.7 + 0.3 * (zm + 1) / 2), al.toFixed(3), zm > 0);
+    }
+    /* --- ノード --- (geoは頂点数=測地線の実頂点数に合わせる) */
+    const nn = convMesh.nodes.length;
+    const pkts = convPktPool(nn + 12);
+    for (let i = 0; i < nn; i++) {
+      const p0 = P[i], q = convMesh.nodes[i], pk = pkts[i];
+      const dep = 0.72 + 0.5 * (p0.z + 1) / 2;                 /* 手前ほど大きく明るく */
+      pktSet(pk, p0.x, p0.y, (DOT_R * M.size * dep).toFixed(2), q.c, (0.5 + 0.5 * dep).toFixed(3), p0.z > 0);
+    }
+    /* --- パケット: 骨をたどって惑星へ届く --- */
+    convMesh.next -= dt;
+    if (convMesh.next <= 0 && convMesh.pk.length < 12) {
+      convMesh.next = Math.max(0.08, 1 / Math.max(0.05, M.rate));
+      const e = convMesh.pairs[(Math.random() * convMesh.pairs.length) | 0];
+      convMesh.pk.push({ from: e[0], via: e[1], k: 0, stage: 0 });
+    }
+    for (let i = convMesh.pk.length - 1; i >= 0; i--) {
+      const q2 = convMesh.pk[i];
+      q2.k += dt / Math.max(0.08, M.hop);
+      if (q2.k >= 1) { q2.k = 0; q2.stage++; if (q2.stage > 1) { convAddGlow(0.3); convMesh.pk.splice(i, 1); continue; } }
+      const A = q2.stage === 0 ? P[q2.from] : P[q2.via];
+      const B = q2.stage === 0 ? P[q2.via] : { x: cc.x, y: cc.y, z: 1 };
+      const k = convSStep(q2.k);
+      const pk = pkts[nn + i];
+      if (!pk) continue;
+      const mx = A.x + (B.x - A.x) * k, my = A.y + (B.y - A.y) * k, mz = A.z + (B.z - A.z) * k;
+      const inP = convFrontCut() && Math.hypot(mx - cc.x, my - cc.y) < convPlanetR();
+      pktSet(pk, mx, my, (DOT_R * M.size * 0.8).toFixed(2), CONV_BLUE, '0.95', mz > 0 && !inP);
+    }
+    for (let i = convMesh.pk.length; i < 12; i++) { const pk = pkts[nn + i]; if (pk) { pk.el.setAttribute('opacity', '0'); pk.back.setAttribute('opacity', '0'); } }
+  } else if (mode === 'mesh') {
+    /* ⑫メッシュ (2026-08-26 改良): 3つの見た目 × ランダムに漂う動き。
+       organic=ふわふわ漂う / constellation=星座(明滅・線は近いものだけ) / grid=格子状のネット */
+    const M = C.mesh, cc = convCenter();
+    const n = Math.max(3, Math.round(M.nodes));
+    const style = M.style || 'organic';
+    convHideLines2();
+    if (!convMesh || convMesh.nodes.length !== n || convMesh.style !== style) {
+      convMesh = { style, nodes: [], pk: [], next: 0 };
+      for (let i = 0; i < n; i++) {
+        /* 位相と速さを個別に持たせて、繰り返しに見えない不規則な漂いを作る */
+        convMesh.nodes.push({
+          a: (i / n) * Math.PI * 2, r: 0.5 + ((i * 37) % 10) / 10 * 0.5,
+          p1: Math.random() * 6.28, p2: Math.random() * 6.28, p3: Math.random() * 6.28,
+          s1: 0.21 + Math.random() * 0.22, s2: 0.13 + Math.random() * 0.19, s3: 0.31 + Math.random() * 0.26,
+          gx: (i % 4) / 3, gy: Math.floor(i / 4) / Math.max(1, Math.ceil(n / 4) - 1 || 1),
+          c: i % 2 ? CONV_PINK : CONV_BLUE, tw: Math.random() * 6.28,
+        });
+      }
+    }
+    const RX = orbitBase('outer').rx * 0.95 * (M.spread == null ? 1 : M.spread), RY = RX * 0.5;
+    const amp = M.random * 46;
+    /* 【2026-08-28 ヒデさん指定】頂点を手で置いてあれば、その座標を基準にする。
+       頂点編集の最中は漂いを止めて、掴んだ点が逃げないようにする */
+    const pts = (M.pts && M.pts.length === n) ? M.pts : null;
+    const frozen = (typeof meshHandles !== 'undefined') && meshHandles.on;
+    const np = k => {
+      const q = convMesh.nodes[k];
+      /* 周期の違う3つの波を重ねた、なめらかな擬似ランダム(毎フレーム乱数だとガタつく) */
+      const wx = Math.sin(elapsed * q.s1 + q.p1) * 0.6 + Math.sin(elapsed * q.s3 + q.p3) * 0.4;
+      const wy = Math.sin(elapsed * q.s2 + q.p2) * 0.6 + Math.cos(elapsed * q.s1 * 0.7 + q.p3) * 0.4;
+      let bx, by;
+      if (pts) { bx = pts[k].x; by = pts[k].y; }
+      else if (style === 'grid') { bx = cc.x + (q.gx - 0.5) * RX * 1.7; by = cc.y + (q.gy - 0.5) * RY * 1.5; }
+      else { bx = cc.x + Math.cos(q.a) * RX * q.r; by = cc.y + Math.sin(q.a) * RY * q.r; }
+      const mv = (convDotMoves() && !frozen) ? 1 : 0;   /* 周回オフ・頂点編集中はノードも漂わない */
+      return { x: bx + wx * amp * M.drift * mv, y: by + wy * amp * M.drift * 0.7 * mv };
+    };
+    /* 頂点編集のつまみを置くために、今フレームの位置を控えておく */
+    convMesh.pos = []; for (let k = 0; k < n; k++) convMesh.pos.push(np(k));
+    /* --- 線 --- */
+    const pairs = [];
+    for (let i = 0; i < n; i++) {
+      const A = np(i);
+      if (style !== 'constellation') pairs.push([A, cc, M.lineAlpha * 0.45]);   // 星座は惑星へ線を引かない
+      for (let j = i + 1; j < n; j++) {
+        const B = np(j), dd = Math.hypot(A.x - B.x, A.y - B.y);
+        const reach = RX * M.span * 2;
+        if (dd < reach) pairs.push([A, B, M.lineAlpha * (1 - dd / reach)]);     // 近いほど濃い
+      }
+    }
+    const lines = convLinePool(Math.max(pairs.length, n * 3));
+    for (let i = 0; i < lines.length; i++) {
+      if (i < pairs.length) {
+        const [A, B, al] = pairs[i];
+        lines[i].setAttribute('d', `M${A.x.toFixed(1)},${A.y.toFixed(1)} L${B.x.toFixed(1)},${B.y.toFixed(1)}`);
+        lines[i].setAttribute('stroke', '#6B7690');
+        lines[i].setAttribute('stroke-width', String(M.lineWidth || 1));
+        lines[i].setAttribute('opacity', Math.max(0, al).toFixed(3));
+      } else lines[i].setAttribute('opacity', '0');
+    }
+    /* 【2026-08-29 ヒデさん指定】惑星の中心より下(手前側)の線は、惑星の前にも通す＝入れ子に見せる */
+    if (convMeshFrontClip) convMeshFrontClip.setAttribute('y', cc.y.toFixed(1));
+    const flines = convLineFrontPool(lines.length);
+    for (let i = 0; i < flines.length; i++) {
+      if (i < pairs.length) {
+        const [A, B, al] = pairs[i];
+        flines[i].setAttribute('d', `M${A.x.toFixed(1)},${A.y.toFixed(1)} L${B.x.toFixed(1)},${B.y.toFixed(1)}`);
+        flines[i].setAttribute('stroke', '#6B7690');
+        flines[i].setAttribute('stroke-width', String(M.lineWidth || 1));
+        flines[i].setAttribute('opacity', Math.max(0, al).toFixed(3));
+      } else flines[i].setAttribute('opacity', '0');
+    }
+    /* --- ノードとパケット --- */
+    const pkts = convPktPool(n + 12);
+    for (let i = 0; i < n; i++) {
+      const P0 = np(i), pk = pkts[i], q = convMesh.nodes[i];
+      const tw = style === 'constellation' ? 0.55 + 0.45 * Math.sin(elapsed * 1.6 + q.tw) : 0.85;
+      /* 惑星に重なったノードは奥へ回して隠す(透けさせない) */
+      const inPlanet = convFrontCut() && Math.hypot(P0.x - cc.x, P0.y - cc.y) < convPlanetR();
+      /* 手前(下半分)のノードは惑星に重なっても前に出す=入れ子に見える。奥(上半分)は隠す */
+      pktSet(pk, P0.x, P0.y, (DOT_R * M.size * convDotK(P0.y, cc.y, RY)).toFixed(2), q.c, tw.toFixed(3), !inPlanet || P0.y > cc.y);
+    }
+    convMesh.next -= dt;
+    if (convMesh.next <= 0 && convMesh.pk.length < 12) {
+      convMesh.next = Math.max(0.08, 1 / Math.max(0.05, M.rate));
+      convMesh.pk.push({ from: (Math.random() * n) | 0, via: (Math.random() * n) | 0, k: 0, stage: 0 });
+    }
+    for (let i = convMesh.pk.length - 1; i >= 0; i--) {
+      const q2 = convMesh.pk[i];
+      q2.k += dt / Math.max(0.08, M.hop);
+      if (q2.k >= 1) { q2.k = 0; q2.stage++; if (q2.stage > 1) { convAddGlow(0.3); convMesh.pk.splice(i, 1); continue; } }
+      const A = q2.stage === 0 ? np(q2.from) : np(q2.via);
+      const B = q2.stage === 0 ? np(q2.via) : cc;
+      const k = convSStep(q2.k);
+      const pk = pkts[n + i];
+      if (!pk) continue;
+      const mx = A.x + (B.x - A.x) * k, my = A.y + (B.y - A.y) * k;
+      const inP = convFrontCut() && Math.hypot(mx - cc.x, my - cc.y) < convPlanetR();
+      pktSet(pk, mx, my, (DOT_R * M.size * 0.75).toFixed(2), CONV_BLUE, '0.95', !inP);
+    }
+    for (let i = convMesh.pk.length; i < 12; i++) { const pk = pkts[n + i]; if (pk) { pk.el.setAttribute('opacity', '0'); pk.back.setAttribute('opacity', '0'); } }
+  } else if (mode === 'beads') {
+    /* ⑬ドットの軌道 (2026-08-26 改良・ヒデさん指定):
+       ドットを【等間隔で密に】並べて輪の形そのものを作る。吸われるのは一部(ratio)だけなので
+       輪の形が崩れず「軌道」と分かる。ghost で薄い軌道線も残せる。 */
+    const B = C.beads, cc = convCenter();
+    const n = Math.max(6, Math.round(B.count));
+    const pkts = convPktPool(n);
+    convHideLines();   /* 軌道の線は出さない(点だけで輪を作る) */
+    if (!convBeads || convBeads.length !== n) {
+      convBeads = [];
+      for (let i = 0; i < n; i++) {
+        /* 外周と内周へ交互に、等間隔で並べる = 密度が上がるほど輪に見える */
+        const ring = i % 2, idx = Math.floor(i / 2), half = Math.ceil(n / 2);
+        /* slot/half は「1周のどこか」の割合。弧で等分する時に使う */
+        convBeads.push({ base: (idx / half) * 360, slot: idx, half, ring, t: -1, jit: (Math.random() - 0.5) });
+      }
+      convBeads.spin = 0; convBeads.next = 0;
+    }
+    if (convDotMoves()) convBeads.spin += B.speed * 60 * dt * (params.direction || 1);
+    /* 吸われている数が ratio を超えないよう、順番に送り出す */
+    const wantOn = Math.max(1, Math.round(n * clamp01(B.ratio)));
+    let onNow = 0;
+    for (const b of convBeads) if (b.t >= 0) onNow++;
+    convBeads.next -= dt;
+    if (onNow < wantOn && convBeads.next <= 0) {
+      const idle = convBeads.filter(b => b.t < 0);
+      if (idle.length) { idle[(Math.random() * idle.length) | 0].t = 0; }
+      convBeads.next = Math.max(0.02, B.life / Math.max(1, wantOn) * 0.7);
+    }
+    for (let i = 0; i < n; i++) {
+      const b = convBeads[i];
+      const g = b.ring ? pGeoms.inner : pGeoms.outer;   /* 2026-08-30: 粒リングも連動切替に従う */
+      let f = 1, al = 0.95, swirl = 0;
+      if (b.t >= 0) {
+        b.t += dt;
+        const k = clamp01(b.t / Math.max(0.2, B.life));
+        f = 1 - convSStep(k) * 0.94;
+        /* 【2026-08-27 ヒデさん指定】吸い込まれる間に回り込ませる＝②の「渦で吸収」に近い動き。
+           spinEase を上げるほど、中心に近づくほど速く回る(角運動量ふう) */
+        if (B.spin) {
+          const ease = Math.max(0.1, B.spinEase == null ? 1 : B.spinEase);
+          swirl = B.spin * 180 * Math.pow(k, 1 / ease);
+        }
+        if (k > 0.7) al = (1 - k) / 0.3;
+        if (k >= 1) {
+          convAddGlow(0.10);
+          b.t = -1;
+          b.back = 0;   /* 【2026-08-27 ヒデさん指定】空いた場所へは、ゆったりフェードインで戻す */
+        }
+      }
+      /* 【2026-08-28 ヒデさん指定】端で点が詰まって見えないよう、弧の長さで等分する。
+         「等角(従来)」に戻したい時はパネルの『並べ方』で切り替えられる */
+      let ang;
+      if (B.even === false) {
+        ang = b.base + convBeads.spin;
+      } else {
+        const ratio = Math.abs(g.ry) / Math.max(1, Math.abs(g.rx));
+        ang = convArcAngle(ratio, b.slot / Math.max(1, b.half) + convBeads.spin / 360);
+      }
+      ang += b.jit * (B.jitter || 0) * 12 + swirl;
+      /* 戻ってきた点は、しばらくかけて濃くなる(ふっと湧かない) */
+      if (b.back != null) {
+        b.back += dt;
+        const bi = clamp01(b.back / Math.max(0.1, B.backIn == null ? 1.2 : B.backIn));
+        al *= convSStep(bi);
+        if (bi >= 1) b.back = null;
+      }
+      const pos = posOn(f === 1 ? g : convGeom(g, f), ang);
+      pktSet(pkts[i], pos.x, pos.y, (DOT_R * B.size * convDotK(pos.y, g.cy, g.ry)).toFixed(2),
+        b.ring ? CONV_BLUE : CONV_PINK, clamp01(al).toFixed(3), pos.front);
+    }
+  } else if (CONV_LINKED.includes(mode)) {
+    /* ⑭〜⑳ 双方向: 惑星とドットをラインで結び、行き(集約)と帰り(配信)のデータが飛び交う。
+       青＝軌道から惑星へ集約 / ピンク＝惑星から軌道へ配信 */
+    const L = C.link, cc = convCenter();
+    const nd = DOTS.length;
+    const lines = convLinePool(nd);
+    const per = Math.max(1, Math.round(3 * L.density));
+    const pkts = convPktPool(nd * per);
+    const T = Math.max(0.6, L.T);
+    const ends = [], ctrls = [];
+    for (let i = 0; i < nd; i++) {
+      const p1 = convDotPos(geoms, i);
+      const pc = convCurve(cc, p1, ((i % 2) ? 1 : -1) * L.curve);
+      ends.push(p1); ctrls.push(pc);
+      lines[i].setAttribute('d', convPathD(cc, pc, p1));
+      lines[i].setAttribute('stroke', DOTS[i].color === '#4E4E4E' ? '#6B7690' : DOTS[i].color);
+      lines[i].setAttribute('stroke-width', String(L.lineWidth == null ? 1 : L.lineWidth));
+      lines[i].setAttribute('opacity', String(L.lineAlpha));
+    }
+    /* 【2026-08-26 ヒデさん指定】惑星のエリアに入った粒は【完全に消す】。
+       惑星の縁(fadeK の外側)から縮みながら急速に薄くなり、内側では描かない。 */
+    const pr = convPlanetR();
+    for (let i = 0; i < nd; i++) {
+      for (let j = 0; j < per; j++) {
+        const pk = pkts[i * per + j];
+        if (!pk) continue;
+        const seed = (i * 7 + j * 3) % 10 / 10;
+        const u = convDotMoves() ? ((elapsed * L.speed / T + seed) % 1) : seed;   // 周回オフなら止める
+        const out = j % 2 === 1;                          // 半分は行き(集約)、半分は帰り(配信)
+        const t = out ? 1 - u : u;
+        const q = convBez(cc, ctrls[i], ends[i], clamp01(t));
+        if (!out && t > 0.94) convAddGlow(0.03);
+        let al = 0.95, sz = L.size;
+        /* 惑星のエリア(半径 pr)に入ったら完全に消す。
+           入る手前 vanishK のぶんだけ「縮みながら」薄くなるので、パッと消えず吸い込まれて見える */
+        const dd = Math.hypot(q.x - cc.x, q.y - cc.y);
+        const edge = pr * (1 + Math.max(0, L.vanishK));   // 消え始める半径
+        if (convFrontCut() && dd < pr) { pk.el.setAttribute('opacity', '0'); pk.back.setAttribute('opacity', '0'); continue; }   // 惑星の中では描かない
+        if (convFrontCut() && dd < edge) {
+          const k = convSStep(1 - (dd - pr) / Math.max(1, edge - pr));
+          sz = L.size * (1 - k * 0.9);                    // 縮んで吸い込まれる
+          al = 0.95 * (1 - k);
+        }
+        pktSet(pk, q.x, q.y, (DOT_R * Math.max(0.02, sz) * convDotK(q.y, cc.y, geoms.outer.ry)).toFixed(2),
+          out ? CONV_PINK : CONV_BLUE, clamp01(al).toFixed(3), true);
+      }
+    }
+  } else {
+    convHidePools();
+  }
+  /* 【2026-08-30 ヒデさん指定】「粒が吸い込まれる」オプションを A(軌道)グループの全案で使えるように
+     (以前は収縮=reelだけ)。専用プールなので各案の内蔵の粒とは独立。渦(spiral)は本体が同じ動きなので除外。
+     ⚠️ if連鎖の最後の else{convHidePools()} で粒プールが毎フレーム消される案があるため、
+        必ずこの位置(convFrameの最後)で上書き描画する。オフの時は convHidePools が既に隠している。 */
+  /* 【2026-08-31 ヒデさん指定・バグ修正】①グループ合体で mesh(ネットワーク)にも吸い込み粒が
+     出てしまいデザインが破綻 → mesh は対象外に(自前のノード粒の世界観のため)。
+     ②集約オン中に粒をオフへ切っても、オフ時の片付けが off パスにしか無く消えなかった
+     → ここでも吸い込み粒のプールだけを片付ける(その案の粒は巻き添えにしない)。 */
+  const reelPActive = params.conv.reelP && params.conv.reelP.on
+      && mode !== 'spiral' && mode !== 'mesh' && !params.conv.net3d
+      && convGroupOf(mode).key === 'orbit';
+  if (reelPActive) {
+    runSpiralParticles(pGeoms, params.conv.reelP, dt);   /* 連動は共通トグル(spinLink) */
+    reelPWasOn = true;
+  } else if (reelPWasOn) {
+    if (mode !== 'spiral') convHideSpiralPool();   /* spiral は本体が同じプールを描くので触らない */
+    reelPWasOn = false;
+  }
+}
+const sphereCanvasEl = document.getElementById('sphere');
+
+/* ===== 直接編集（Figma のエディタ操作感を踏襲。2026-08-26 ヒデさん指定） =====
+   リサーチ(Figma/FigJam ヘルプ)に基づく仕様:
+   ・選択すると「バウンディングボックス」(青い枠)が出る
+   ・四隅の白い四角ハンドル = 斜めリサイズ。辺の中央 = 幅だけ／高さだけのリサイズ
+   ・角の【少し外側】にホバーすると回転カーソルに変わり、ドラッグで回転
+   ・Shift = 比率を保つ / 回転は15°刻み
+   ・ドラッグ中はサイズや角度の数値が出る
+   対象: 外の輪 / 内の輪 / 惑星。クリックで選び、枠の内側をドラッグで移動。 */
+const editHandles = (() => {
+  const BLUE = '#0D99FF';
+  /* Figma の回転カーソル(曲がった矢印)に寄せた自前カーソル */
+  const ROT_CUR = 'url("data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+    '<path d="M7 10a6 6 0 0 1 10-3.5" fill="none" stroke="black" stroke-width="2.6" stroke-linecap="round"/>' +
+    '<path d="M7 10a6 6 0 0 1 10-3.5" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round"/>' +
+    '<path d="M17.6 3.2l0.6 4.2-4.2-0.6z" fill="black" stroke="white" stroke-width="0.8"/>' +
+    '</svg>') + '") 12 12, grab';
+  let svg = null, on = false, drag = null, wasRunning = null, sel = null;
+  let selKeys = [];            /* まとめて選んだ対象(1つなら単体・複数ならグループ) */
+  let marq = null, marqRect = null;   /* ドラッグ選択(マーキー) */
+  let onSel = null, onEdit = null;   /* パネルとの同期用コールバック */
+  let boxG = null, boxBg = null, boxRect = null, label = null;
+  const hits = {};      /* 当たり判定(選択用) */
+  const handles = [];   /* {el, kind, ix, iy} kind: corner/edge/rot */
+
+  const KEYS = ['outer', 'inner', 'planet'];
+  function ensure() {
+    if (svg) return svg;
+    const orbit = document.querySelector('.orbit');
+    if (!orbit) return null;
+    svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 915.483 630');
+    svg.setAttribute('class', 'edit-layer');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:9;overflow:visible;';
+    orbit.appendChild(svg);
+
+    /* --- バウンディングボックス --- */
+    /* 【2026-08-27 バグ修正】辺のリサイズが効かなかった原因は重なり順。
+       選択用の当たり判定(透明な太い楕円)がハンドルの上にいて、辺を掴めなかった。
+       枠(移動用) → 当たり判定 → ハンドル類 の順に重ねる。 */
+    /* 【2026-08-28 バグ修正】SVGの"空白"は普通ポインタを拾わないので、まとめて選択(マーキー)が
+       始まらなかった。透明な下敷きを一番下に敷いて、空白ドラッグを必ず拾わせる。
+       当たり判定(軌道・惑星)とハンドルはこの後に足すので、そちらが上=優先される。 */
+    const marqBg = document.createElementNS(SVG_NS, 'rect');
+    marqBg.setAttribute('x', -3000); marqBg.setAttribute('y', -3000);
+    marqBg.setAttribute('width', 9000); marqBg.setAttribute('height', 9000);
+    marqBg.setAttribute('fill', 'rgba(0,0,0,0)');
+    /* 【2026-09-17 大掃除・ヒデさん報告「編集でグラフィックの位置移動ができない」】案をメッシュに固定したので
+       輪＋惑星の囲み選択(マーキー)は不要。この透明シートがドラッグを横取りして、siteEdit の
+       「KVグラフィック全体をつかんで動かす」が始まらなかった。pointer-events を切って下へ通す。 */
+    marqBg.style.pointerEvents = 'none';
+    marqBg.style.cursor = 'crosshair';
+    svg.appendChild(marqBg);
+    marqBg.addEventListener('pointerdown', e => {
+      const q = toLocal(e);
+      marq = { x0: q.x, y0: q.y, x1: q.x, y1: q.y, moved: false };
+    });
+    boxBg = document.createElementNS(SVG_NS, 'g');
+    svg.appendChild(boxBg);
+    boxG = document.createElementNS(SVG_NS, 'g');   /* ハンドル類。当たり判定より後で足す */
+    boxRect = document.createElementNS(SVG_NS, 'rect');
+    boxRect.setAttribute('fill', 'rgba(0,0,0,0)');
+    boxRect.setAttribute('stroke', BLUE);
+    boxRect.setAttribute('stroke-width', '1.5');
+    /* 【2026-08-26 ヒデさん指定】枠の【内側】ならどこを掴んでも動かせる。
+       当たり判定(線・惑星)はこの後に作って上に重ねるので、選択中でも別のオブジェクトを選び直せる */
+    boxRect.style.cursor = 'move';
+    boxRect.style.pointerEvents = 'all';
+    boxRect.addEventListener('pointerdown', e => { e.stopPropagation(); startDrag(e, { kind: 'move' }); });
+    boxBg.appendChild(boxRect);
+
+    /* --- 回転ゾーン(角の少し外側。Figma と同じく“角の外”で回転) --- */
+    for (const [ix, iy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const r = document.createElementNS(SVG_NS, 'rect');
+      r.setAttribute('width', '30'); r.setAttribute('height', '30');
+      r.setAttribute('fill', 'rgba(0,0,0,0)');
+      r.setAttribute('data-kind', 'rot');
+      r.style.cursor = ROT_CUR;
+      r.style.pointerEvents = 'all';
+      r.addEventListener('pointerdown', e => { e.stopPropagation(); startDrag(e, { kind: 'rot' }); });
+      boxG.appendChild(r);
+      handles.push({ el: r, kind: 'rot', ix, iy });
+    }
+    /* --- 辺そのものを掴める帯 (Figma と同じく辺のどこでもリサイズできる) --- */
+    for (const [ix, iy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+      const r = document.createElementNS(SVG_NS, 'rect');
+      r.setAttribute('fill', 'rgba(0,0,0,0)');
+      r.setAttribute('data-kind', 'edgeband');
+      r.setAttribute('data-ix', ix); r.setAttribute('data-iy', iy);
+      r.style.pointerEvents = 'all';
+      r.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); startDrag(e, { kind: 'edge', ix, iy }); });
+      boxG.appendChild(r);
+      handles.push({ el: r, kind: 'edgeband', ix, iy });
+    }
+    /* --- 辺ハンドル(見た目の四角。中央に置く) --- */
+    for (const [ix, iy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+      const h = mkHandle('edge', ix, iy); handles.push(h);
+    }
+    /* --- 角ハンドル(斜めリサイズ)。辺より後に置いて上に来るように --- */
+    for (const [ix, iy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const h = mkHandle('corner', ix, iy); handles.push(h);
+    }
+    /* --- 当たり判定(クリックで選ぶ) --- */
+    for (const key of KEYS) {
+      const el = document.createElementNS(SVG_NS, 'ellipse');
+      el.setAttribute('fill', key === 'planet' ? 'rgba(0,0,0,0)' : 'none');
+      if (key !== 'planet') { el.setAttribute('stroke', 'rgba(0,0,0,0)'); el.setAttribute('stroke-width', '30'); }
+      el.style.cursor = 'move';   /* 描かれている所を触れば、そのまま掴んで動かせる */
+      el.style.pointerEvents = key === 'planet' ? 'fill' : 'stroke';
+      el.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        if (e.shiftKey || e.metaKey || e.ctrlKey) { toggleInSel(key); return; }   /* Cmd/Shift+クリックで追加選択(移動はしない) */
+        select(key); startDrag(e, { kind: 'move' });
+      });
+      svg.appendChild(el);
+      hits[key] = el;
+    }
+
+    svg.appendChild(boxG);   /* ハンドル類は当たり判定より前面へ */
+    /* --- ドラッグ中の数値表示 --- */
+    label = document.createElementNS(SVG_NS, 'g');
+    const lb = document.createElementNS(SVG_NS, 'rect');
+    lb.setAttribute('rx', '3'); lb.setAttribute('fill', BLUE);
+    lb.setAttribute('height', '18'); lb.setAttribute('width', '92');
+    const lt = document.createElementNS(SVG_NS, 'text');
+    lt.setAttribute('fill', '#fff'); lt.setAttribute('font-size', '11');
+    lt.setAttribute('text-anchor', 'middle'); lt.setAttribute('dy', '12.5');
+    label.append(lb, lt); label.style.display = 'none'; label.style.pointerEvents = 'none';
+    svg.appendChild(label);
+    label._bg = lb; label._tx = lt;
+
+    /* ドラッグ選択(マーキー)の枠 */
+    marqRect = document.createElementNS(SVG_NS, 'rect');
+    marqRect.setAttribute('fill', 'rgba(13,153,255,0.10)');
+    marqRect.setAttribute('stroke', BLUE);
+    marqRect.setAttribute('stroke-width', '1');
+    marqRect.setAttribute('stroke-dasharray', '4 3');
+    marqRect.style.display = 'none';
+    marqRect.style.pointerEvents = 'none';
+    svg.appendChild(marqRect);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', endDrag);
+    return svg;
+  }
+  function mkHandle(kind, ix, iy) {
+    const r = document.createElementNS(SVG_NS, 'rect');
+    r.setAttribute('data-kind', kind); r.setAttribute('data-ix', ix); r.setAttribute('data-iy', iy);
+    r.setAttribute('width', '9'); r.setAttribute('height', '9');
+    r.setAttribute('fill', '#fff'); r.setAttribute('stroke', BLUE); r.setAttribute('stroke-width', '1.5');
+    r.style.pointerEvents = 'all';
+    r.addEventListener('pointerdown', e => { e.stopPropagation(); startDrag(e, { kind, ix, iy }); });
+    boxG.appendChild(r);
+    return { el: r, kind, ix, iy };
+  }
+
+  /* 画面座標 → SVG(915x630) 座標 */
+  function toLocal(e) {
+    const m = svg.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(m.inverse());
+    return { x: q.x, y: q.y };
+  }
+  /* いま選んでいる対象の枠(中心・半幅・半高・角度) */
+  function boxOf(key) {
+    if (key === 'planet') {
+      const c = convCenter();
+      return { cx: c.x, cy: c.y, rx: convPlanetR(), ry: convPlanetRY(), rot: 0 };
+    }
+    return orbitGeom(key);
+  }
+  function select(key) {
+    sel = key;
+    selKeys = key ? [key] : [];
+    if (boxG) boxG.style.display = key ? '' : 'none';
+    if (boxBg) boxBg.style.display = key ? '' : 'none';
+    place();
+    if (onSel) onSel(key);      /* パネル側へ「何を選んだか」を伝える */
+  }
+  /* まとめて選ぶ(マーキー用)。1つなら単体選択と同じ扱い */
+  function selectMany(keys) {
+    selKeys = keys.slice();
+    sel = keys.length === 1 ? keys[0] : null;
+    const has = selKeys.length > 0;
+    if (boxG) boxG.style.display = has ? '' : 'none';
+    if (boxBg) boxBg.style.display = has ? '' : 'none';
+    place();
+    if (onSel) onSel(sel);      /* 複数の時は sel=null(数値パネルは単体用) */
+  }
+  /* Cmd/Shift+クリックで、その対象を選択に足す/外す */
+  function toggleInSel(key) {
+    const i = selKeys.indexOf(key);
+    if (i >= 0) selKeys.splice(i, 1); else selKeys.push(key);
+    sel = selKeys.length === 1 ? selKeys[0] : null;
+    const has = selKeys.length > 0;
+    if (boxG) boxG.style.display = has ? '' : 'none';
+    if (boxBg) boxBg.style.display = has ? '' : 'none';
+    place();
+    if (onSel) onSel(sel);
+  }
+  /* 複数選択時のまとめ枠 = 各対象の外接矩形の和(回転は無視した軸並行) */
+  function groupAABB() {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const k of selKeys) {
+      const bb = boxOf(k);
+      x0 = Math.min(x0, bb.cx - bb.rx); x1 = Math.max(x1, bb.cx + bb.rx);
+      y0 = Math.min(y0, bb.cy - bb.ry); y1 = Math.max(y1, bb.cy + bb.ry);
+    }
+    return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, rx: (x1 - x0) / 2, ry: (y1 - y0) / 2, rot: 0 };
+  }
+  /* いま操作対象にしている枠(単体は回転込み・複数はまとめ枠) */
+  function curBox() { return selKeys.length > 1 ? groupAABB() : (sel ? boxOf(sel) : null); }
+  /* マーキーに重なる対象を拾う */
+  function keysIn(m) {
+    const mm = { x0: Math.min(m.x0, m.x1), x1: Math.max(m.x0, m.x1), y0: Math.min(m.y0, m.y1), y1: Math.max(m.y0, m.y1) };
+    const out = [];
+    for (const key of KEYS) {
+      const bb = boxOf(key);
+      const ab = { x0: bb.cx - bb.rx, x1: bb.cx + bb.rx, y0: bb.cy - bb.ry, y1: bb.cy + bb.ry };
+      if (!(mm.x1 < ab.x0 || mm.x0 > ab.x1 || mm.y1 < ab.y0 || mm.y0 > ab.y1)) out.push(key);
+    }
+    return out;
+  }
+  /* 目標の絶対ジオメトリ(中心・半幅・半高)を、対象の params に書き戻す。
+     位置は「元の dx/dy からの差分」で動かす(揺らぎ等のオフセットを二重に足さない) */
+  function setObjRel(bs, ncx, ncy, nrx, nry) {
+    if (bs.k === 'planet') {
+      const P = params.planet;
+      P.scale = clamp(0.2, 3, nrx / 130);
+      P.flat  = clamp(0.05, 3, nry / Math.max(1, 130 * P.scale));
+      P.dx = Math.round(bs.pdx + (ncx - bs.cx));
+      P.dy = Math.round(bs.pdy + (ncy - bs.cy));
+    } else {
+      const O = params.orbits[bs.k], b2 = orbitBase(bs.k);
+      O.scale = clamp(0.2, 2.5, nrx / b2.rx);
+      O.flat  = clamp(0.05, 3, nry / Math.max(1, b2.ry * O.scale));
+      O.dx = Math.round(bs.pdx + (ncx - bs.cx));
+      O.dy = Math.round(bs.pdy + (ncy - bs.cy));
+    }
+  }
+  function startDrag(e, info) {
+    if (!selKeys.length && info.kind === 'move') return;
+    e.preventDefault();
+    const b = curBox();
+    drag = { ...info, start: toLocal(e), box: b, base: sel ? snapshot(sel) : null, shift: e.shiftKey };
+    if (selKeys.length > 1) {
+      /* まとめ操作: 各対象の絶対ジオメトリと元の dx/dy を控える */
+      drag.bases = selKeys.map(k => {
+        const bb = boxOf(k), pr = (k === 'planet' ? params.planet : params.orbits[k]);
+        return { k, cx: bb.cx, cy: bb.cy, rx: bb.rx, ry: bb.ry, pdx: pr.dx || 0, pdy: pr.dy || 0 };
+      });
+    }
+  }
+  function endDrag() {
+    if (marq) {
+      if (marq.moved) { const ks = keysIn(marq); ks.length ? selectMany(ks) : select(null); }
+      else select(null);   /* 動かさずに離した = 何もない所をクリック = 選択解除 */
+      marq = null; if (marqRect) marqRect.style.display = 'none';
+      return;
+    }
+    if (drag && typeof editHistory !== 'undefined') { editHistory.push(); editBar.sync(); }
+    drag = null;
+    if (label) label.style.display = 'none';
+  }
+  function snapshot(key) {
+    return key === 'planet' ? { ...params.planet } : { ...params.orbits[key] };
+  }
+  function clamp(lo, hi, v) { return v < lo ? lo : v > hi ? hi : v; }
+  /* SVG座標 → 対象のローカル座標(回転を戻す) */
+  function toBox(p, b) {
+    const a = -b.rot * Math.PI / 180;
+    const dx = p.x - b.cx, dy = p.y - b.cy;
+    return { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) };
+  }
+  function onMove(e) {
+    /* --- マーキー(ドラッグ選択)中 --- */
+    if (marq) {
+      const q = toLocal(e);
+      marq.x1 = q.x; marq.y1 = q.y;
+      if (!marq.moved && Math.hypot(q.x - marq.x0, q.y - marq.y0) > 3) marq.moved = true;
+      if (marqRect) {
+        const x0 = Math.min(marq.x0, marq.x1), y0 = Math.min(marq.y0, marq.y1);
+        marqRect.setAttribute('x', x0.toFixed(1)); marqRect.setAttribute('y', y0.toFixed(1));
+        marqRect.setAttribute('width', Math.abs(marq.x1 - marq.x0).toFixed(1));
+        marqRect.setAttribute('height', Math.abs(marq.y1 - marq.y0).toFixed(1));
+        marqRect.style.display = marq.moved ? '' : 'none';
+      }
+      return;
+    }
+    if (!drag) return;
+    /* --- 複数まとめて: 中心から比例でサイズ変更 / まとめて移動 --- */
+    if (selKeys.length > 1 && drag.bases) {
+      e.preventDefault();
+      const p2 = toLocal(e), gb = drag.box, shift2 = e.shiftKey;
+      let text2 = '';
+      if (drag.kind === 'move') {
+        const dx = p2.x - drag.start.x, dy = p2.y - drag.start.y;
+        drag.bases.forEach(bs => setObjRel(bs, bs.cx + dx, bs.cy + dy, bs.rx, bs.ry));
+        text2 = `${Math.round(dx)} , ${Math.round(dy)}`;
+      } else if (drag.kind !== 'rot') {
+        const ax = gb.cx - drag.ix * gb.rx, ay = gb.cy - drag.iy * gb.ry;   /* 反対側の辺/角を固定 */
+        let sx = drag.ix !== 0 ? clamp(0.1, 5, Math.abs(p2.x - ax) / Math.max(1, 2 * gb.rx)) : 1;
+        let sy = drag.iy !== 0 ? clamp(0.1, 5, Math.abs(p2.y - ay) / Math.max(1, 2 * gb.ry)) : 1;
+        if (drag.kind === 'corner' && shift2) { const sc = Math.max(sx, sy); sx = sy = sc; }
+        drag.bases.forEach(bs => {
+          const ncx = ax + (bs.cx - ax) * sx, ncy = ay + (bs.cy - ay) * sy;
+          setObjRel(bs, ncx, ncy, bs.rx * sx, bs.ry * sy);
+        });
+        text2 = `${Math.round(sx * 100)}％ × ${Math.round(sy * 100)}％`;
+      }
+      markDirty(); renderFrame();
+      if (typeof syncPanelRows === 'function') syncPanelRows();
+      showLabel(text2);
+      return;
+    }
+    if (!sel) return;
+    e.preventDefault();
+    const p = toLocal(e), b = drag.box, base = drag.base, shift = e.shiftKey;
+    let text = '';
+    if (sel === 'planet') {
+      const P = params.planet;
+      if (drag.kind === 'move') {
+        P.dx = Math.round(base.dx + (p.x - drag.start.x));
+        P.dy = Math.round(base.dy + (p.y - drag.start.y));
+        text = `${P.dx} , ${P.dy}`;
+      } else if (drag.kind !== 'rot') {
+        /* 【2026-08-27 ヒデさん指定】縦横比は維持しない。
+           角=縦横とも / 左右の辺=横だけ / 上下の辺=縦だけ 変わる */
+        const l = toBox(p, b);
+        const wantRx = Math.abs(l.x), wantRy = Math.abs(l.y);
+        const baseFlat = base.flat == null ? 1 : base.flat;
+        if (drag.kind === 'corner') {
+          const sc = clamp(0.2, 3, wantRx / 130);
+          P.scale = sc;
+          P.flat = shift ? baseFlat                      /* Shift の時だけ比率を保つ */
+                         : clamp(0.05, 3, wantRy / Math.max(1, 130 * sc));
+        } else if (drag.ix !== 0) {
+          P.scale = clamp(0.2, 3, wantRx / 130);
+        } else {
+          P.flat = clamp(0.05, 3, wantRy / Math.max(1, 130 * P.scale));
+        }
+        text = `${Math.round(convPlanetR() * 2)} × ${Math.round(convPlanetRY() * 2)}`;
+      }
+    } else {
+      const O = params.orbits[sel], bs = orbitBase(sel);
+      if (drag.kind === 'move') {
+        O.dx = Math.round(base.dx + (p.x - drag.start.x));
+        O.dy = Math.round(base.dy + (p.y - drag.start.y));
+        text = `${O.dx} , ${O.dy}`;
+      } else if (drag.kind === 'rot') {
+        const a0 = Math.atan2(drag.start.y - b.cy, drag.start.x - b.cx);
+        const a1 = Math.atan2(p.y - b.cy, p.x - b.cx);
+        let deg = base.angle + (a1 - a0) * 180 / Math.PI;
+        if (shift) deg = Math.round(deg / 15) * 15;      /* Figma と同じ 15°刻み */
+        O.angle = Math.round(deg * 10) / 10;
+        text = ((bs.rot + O.angle).toFixed(1)) + '°';
+      } else {
+        const l = toBox(p, b);
+        const wantRx = Math.abs(l.x), wantRy = Math.abs(l.y);
+        const baseFlat = base.flat == null ? 1 : base.flat;
+        if (drag.kind === 'corner') {
+          const sc = clamp(0.2, 2.5, wantRx / bs.rx);
+          O.scale = sc;
+          O.flat = shift ? baseFlat                       /* Shift=比率を保つ */
+                         : clamp(0.05, 3, wantRy / Math.max(1, bs.ry * sc));
+        } else if (drag.ix !== 0) {                       /* 左右の辺 = 幅だけ */
+          O.scale = clamp(0.2, 2.5, wantRx / bs.rx);
+        } else {                                          /* 上下の辺 = 高さだけ(つぶし) */
+          O.flat = clamp(0.05, 3, wantRy / Math.max(1, bs.ry * O.scale));
+        }
+        const g = orbitGeom(sel);
+        text = `${Math.round(g.rx * 2)} × ${Math.round(g.ry * 2)}`;
+      }
+    }
+    markDirty();
+    renderFrame();
+    if (typeof syncPanelRows === 'function') syncPanelRows();
+    if (onEdit) onEdit(sel);    /* ドラッグ中もパネルの数値をリアルタイムで更新 */
+    showLabel(text);
+  }
+  function showLabel(text) {
+    if (!label || !text) return;
+    const b = curBox();
+    if (!b) return;
+    label.style.display = '';
+    label._tx.textContent = text;
+    const w = Math.max(56, text.length * 8 + 16);
+    label._bg.setAttribute('width', w);
+    label._bg.setAttribute('x', (b.cx - w / 2).toFixed(1));
+    label._bg.setAttribute('y', (b.cy + b.ry + 14).toFixed(1));
+    label._tx.setAttribute('x', b.cx.toFixed(1));
+    label._tx.setAttribute('y', (b.cy + b.ry + 14).toFixed(1));
+  }
+  /* 毎フレーム、枠とハンドルを今の図形に合わせて置き直す */
+  function place() {
+    if (!on || !svg) return;
+    /* 当たり判定を今の図形に合わせる */
+    for (const key of KEYS) {
+      const el = hits[key];
+      if (key === 'planet') {
+        const c = convCenter();
+        el.setAttribute('cx', c.x); el.setAttribute('cy', c.y);
+        el.setAttribute('rx', convPlanetR()); el.setAttribute('ry', convPlanetRY());
+      } else {
+        const g = orbitGeom(key);
+        el.setAttribute('cx', g.cx); el.setAttribute('cy', g.cy);
+        el.setAttribute('rx', g.rx); el.setAttribute('ry', g.ry);
+        el.setAttribute('transform', `rotate(${g.rot} ${g.cx} ${g.cy})`);
+        /* 【2026-09-17 ヒデさん報告「編集でグラフィックが動かない」】メッシュ案では輪を描かないのに、輪の透明な当たり判定が
+           残っていて見えない輪をつかんでしまい、全体ドラッグ(siteEdit)の邪魔をしていた。輪が無い案では当たり判定も消す。 */
+        el.style.display = ((params.converge || 'reel') === 'mesh') ? 'none' : '';
+      }
+    }
+    if (!selKeys.length) { if (boxG) boxG.style.display = 'none'; if (boxBg) boxBg.style.display = 'none'; return; }
+    boxG.style.display = ''; boxBg.style.display = '';
+    const b = curBox();
+    const multi = selKeys.length > 1;
+    const tr = `rotate(${b.rot} ${b.cx} ${b.cy})`;
+    boxG.setAttribute('transform', tr);
+    boxBg.setAttribute('transform', tr);
+    boxRect.setAttribute('x', (b.cx - b.rx).toFixed(1));
+    boxRect.setAttribute('y', (b.cy - b.ry).toFixed(1));
+    boxRect.setAttribute('width', (b.rx * 2).toFixed(1));
+    boxRect.setAttribute('height', (b.ry * 2).toFixed(1));
+    /* 惑星は円なので、つぶし(辺ハンドル)は出さない */
+    for (const h of handles) {
+      const isEdge = h.kind === 'edge' || h.kind === 'edgeband';
+      /* 複数まとめては回転させない(角の回転ゾーンは隠す)。単体の惑星は円なので辺・回転を隠す */
+      const hide = (multi && h.kind === 'rot') || (sel === 'planet' && (isEdge || h.kind === 'rot'));
+      h.el.style.display = hide ? 'none' : '';
+      if (hide) continue;
+      const x = b.cx + b.rx * h.ix, y = b.cy + b.ry * h.iy;
+      if (h.kind === 'edgeband') {
+        /* 辺いっぱいの帯。角の回転ゾーンとぶつからないよう、少し内側で止める */
+        const T = 22, inset = 18;   /* 2026-08-27: 掴みやすいよう帯を太く */
+        if (h.ix === 0) {   /* 上下の辺 */
+          h.el.setAttribute('x', (b.cx - b.rx + inset).toFixed(1));
+          h.el.setAttribute('y', (y - T / 2).toFixed(1));
+          h.el.setAttribute('width', Math.max(0, b.rx * 2 - inset * 2).toFixed(1));
+          h.el.setAttribute('height', T);
+        } else {            /* 左右の辺 */
+          h.el.setAttribute('x', (x - T / 2).toFixed(1));
+          h.el.setAttribute('y', (b.cy - b.ry + inset).toFixed(1));
+          h.el.setAttribute('width', T);
+          h.el.setAttribute('height', Math.max(0, b.ry * 2 - inset * 2).toFixed(1));
+        }
+        h.el.style.cursor = cursorFor(h.ix, h.iy, b.rot);
+        continue;
+      }
+      if (h.kind === 'rot') {
+        h.el.setAttribute('x', (x + h.ix * 4 - 15).toFixed(1));
+        h.el.setAttribute('y', (y + h.iy * 4 - 15).toFixed(1));
+      } else {
+        h.el.setAttribute('x', (x - 4.5).toFixed(1));
+        h.el.setAttribute('y', (y - 4.5).toFixed(1));
+        /* カーソルは向きに応じて Figma と同じ両矢印にする(回転角も加味) */
+        h.el.style.cursor = cursorFor(h.ix, h.iy, b.rot);
+      }
+    }
+  }
+  function cursorFor(ix, iy, rot) {
+    let a = Math.atan2(iy, ix) * 180 / Math.PI + rot;
+    a = ((a % 180) + 180) % 180;
+    if (a < 22.5 || a >= 157.5) return 'ew-resize';
+    if (a < 67.5) return 'nwse-resize';
+    if (a < 112.5) return 'ns-resize';
+    return 'nesw-resize';
+  }
+  return {
+    get on() { return on; },
+    get selected() { return sel; },
+    /* パネル側から: 選択が変わった時 / ドラッグで値が変わった時 に呼んでもらう */
+    bind(onSelect, onChange) { onSel = onSelect; onEdit = onChange; },
+    refresh() { if (onSel) onSel(sel); },
+    select,
+    set(v) {
+      on = !!v;
+      const el = ensure();
+      if (el) el.style.display = on ? '' : 'none';
+      /* 直接編集の間はアニメーションを止める(掴んで動かしやすくする)。切った時は元に戻す */
+      /* ⚠️【2026-08-27 事故対応】set(true) が2回走ると wasRunning に false を覚えてしまい、
+         オフにしても再生が戻らなかった(止まったまま)。すでに覚えている時は上書きしない。
+         切る時は「編集のための一時停止」を必ず解除する(記録が無ければ再生に戻す)。 */
+      if (on) { if (wasRunning == null) wasRunning = params.running; params.running = false; }
+      else { params.running = (wasRunning == null ? true : wasRunning); wasRunning = null; select(null); }
+      /* 編集バーと「元に戻す」の履歴を、編集モードに合わせて出し入れする */
+      if (typeof editHistory !== 'undefined') {
+        if (on) { editHistory.begin(); editBar.show(); } else editBar.hide();
+      }
+      if (onSel) onSel(on ? sel : null);
+      if (typeof applyMarquee === 'function') applyMarquee();
+      /* ④網でつながる を選んでいる時は、頂点のつまみも一緒に出す (2026-08-28 ヒデさん指定) */
+      if (typeof meshHandles !== 'undefined') meshHandles.set(on && meshHandles.usable);
+      renderFrame();
+      if (on) place();
+    },
+    place,
+  };
+})();
+
+/* ===== ④網でつながる の頂点編集 (2026-08-28 ヒデさん指定) =====
+   「グラフィックを編集」に入っている間、メッシュのノードに丸いつまみを出して
+   ドラッグで位置を決められる。置いた座標は params.conv.mesh.pts に入り、
+   プリセットにも保存される。
+   ⚠️ ケージ(球殻)は3Dの並びなので、この編集の対象外(平面の3種だけ)。 */
+const meshHandles = (() => {
+  let svg = null, on = false, drag = null, dots = [];
+  function host() {
+    if (svg) return svg;
+    const orbit = document.querySelector('.orbit');
+    if (!orbit) return null;
+    svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 915.483 630');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:10;overflow:visible;';
+    orbit.appendChild(svg);
+    return svg;
+  }
+  function toLocal(e) {
+    const m = svg.getScreenCTM(); if (!m) return { x: 0, y: 0 };
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(m.inverse());
+  }
+  /* いま出ている位置を、そのまま「手で置いた座標」として取り込む */
+  function seed() {
+    const M = params.conv.mesh;
+    const n = Math.max(3, Math.round(M.nodes));
+    if (M.pts && M.pts.length === n) return;
+    const src = (convMesh && convMesh.pos && convMesh.pos.length === n) ? convMesh.pos : null;
+    if (!src) return;
+    M.pts = src.map(p => ({ x: +p.x.toFixed(1), y: +p.y.toFixed(1) }));
+  }
+  function build() {
+    const el = host(); if (!el) return;
+    el.innerHTML = ''; dots = [];
+    const M = params.conv.mesh;
+    const n = Math.max(3, Math.round(M.nodes));
+    for (let i = 0; i < n; i++) {
+      const c = document.createElementNS(SVG_NS, 'circle');
+      c.setAttribute('r', '9');
+      c.setAttribute('fill', 'rgba(13,153,255,0.18)');
+      c.setAttribute('stroke', '#0D99FF');
+      c.setAttribute('stroke-width', '1.5');
+      c.style.cursor = 'grab';
+      c.style.pointerEvents = 'all';
+      c.addEventListener('pointerdown', ev => {
+        ev.stopPropagation(); ev.preventDefault();
+        seed();
+        drag = { i, start: toLocal(ev), base: { ...params.conv.mesh.pts[i] } };
+        c.setPointerCapture(ev.pointerId); c.style.cursor = 'grabbing';
+      });
+      el.appendChild(c); dots.push(c);
+    }
+    place();
+  }
+  function place() {
+    if (!on || !convMesh || !convMesh.pos) return;
+    for (let i = 0; i < dots.length; i++) {
+      const p = convMesh.pos[i];
+      if (!p) { dots[i].setAttribute('opacity', '0'); continue; }
+      dots[i].setAttribute('opacity', '1');
+      dots[i].setAttribute('cx', p.x); dots[i].setAttribute('cy', p.y);
+    }
+  }
+  window.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = toLocal(e), M = params.conv.mesh;
+    if (!M.pts || !M.pts[drag.i]) return;
+    M.pts[drag.i].x = +(drag.base.x + (p.x - drag.start.x)).toFixed(1);
+    M.pts[drag.i].y = +(drag.base.y + (p.y - drag.start.y)).toFixed(1);
+    markDirty(); renderFrame(); place();
+  });
+  window.addEventListener('pointerup', () => {
+    if (!drag) return;
+    dots[drag.i] && (dots[drag.i].style.cursor = 'grab');
+    drag = null;
+  });
+  return {
+    get on() { return on; },
+    /* この案で頂点編集が使えるか (平面の3種だけ) */
+    get usable() {
+      return params.kvDesign === 'planet' && params.converge === 'mesh'
+        && (params.conv.mesh.style || 'organic') !== 'cage';
+    },
+    set(v) {
+      on = !!v && this.usable;
+      const el = host(); if (!el) return;
+      el.style.display = on ? '' : 'none';
+      if (on) build();   /* 座標の取り込みは掴んだ瞬間だけ(下の pointerdown) */
+      renderFrame();
+      if (on) place();
+    },
+    place,
+    /* 自動配置へ戻す */
+    reset() { params.conv.mesh.pts = null; markDirty(); renderFrame(); if (on) build(); },
+  };
+})();
+
+/* ===== 編集モードのバー ＋ 元に戻す(⌘Z) / やり直し(⌘⇧Z) (2026-08-27 ヒデさん指定) =====
+   編集モードに入ると、キービジュアルの右上にバーが出て
+   「保存 / やめる / 編集前に戻す / 元に戻す / やり直し」ができる。
+   Figma と同じく ⌘Z(Ctrl+Z) で1つ前へ、⌘⇧Z(Ctrl+Shift+Z) でやり直し。 */
+const editHistory = (() => {
+  let stack = [], idx = -1, entry = null;   /* entry = 編集に入った時の状態(編集前に戻す用) */
+  const snap = () => JSON.stringify({
+    o: params.orbits.outer, i: params.orbits.inner, p: params.planet,
+  });
+  function restore(json) {
+    if (!json) return;
+    const d = JSON.parse(json);
+    Object.assign(params.orbits.outer, d.o);
+    Object.assign(params.orbits.inner, d.i);
+    Object.assign(params.planet, d.p);
+    markDirty();
+    renderFrame();
+    if (editHandles.on) editHandles.place();
+    if (typeof syncPanelRows === 'function') syncPanelRows();
+    if (typeof editHandles.refresh === 'function') editHandles.refresh();
+  }
+  return {
+    /* 編集モードに入った時 */
+    begin() { entry = snap(); stack = [entry]; idx = 0; },
+    /* 1操作(ドラッグや数値入力)が終わったら積む */
+    push() {
+      const now = snap();
+      if (stack[idx] === now) return;          /* 変化なしなら積まない */
+      stack = stack.slice(0, idx + 1);
+      stack.push(now);
+      if (stack.length > 60) stack.shift();    /* 持ちすぎない */
+      idx = stack.length - 1;
+    },
+    undo() { if (idx > 0) { idx--; restore(stack[idx]); return true; } return false; },
+    redo() { if (idx < stack.length - 1) { idx++; restore(stack[idx]); return true; } return false; },
+    /* 編集に入る前の状態へ全部戻す */
+    revert() { if (entry) { restore(entry); stack = [entry]; idx = 0; } },
+    get canUndo() { return idx > 0; },
+    get canRedo() { return idx < stack.length - 1; },
+  };
+})();
+
+/* 画面上の編集バー */
+const editBar = (() => {
+  let el = null, btns = {};
+  function ensure() {
+    if (el) return el;
+    el = document.createElement('div');
+    el.className = 'edit-bar';
+    const mk = (key, label, title, cls) => {
+      const b = document.createElement('button');
+      b.className = 'eb-btn' + (cls ? ' ' + cls : '');
+      b.textContent = label;
+      b.title = title;
+      el.appendChild(b);
+      btns[key] = b;
+      return b;
+    };
+    mk('undo', '↶', '元に戻す（⌘Z）').onclick = () => { editHistory.undo(); sync(); };
+    mk('redo', '↷', 'やり直し（⌘⇧Z）').onclick = () => { editHistory.redo(); sync(); };
+    const sep0 = document.createElement('span');
+    sep0.className = 'eb-sep';
+    el.appendChild(sep0);
+    /* 【2026-09-17 大掃除・ヒデさん指定】「🪐 軌道を裏へ」ボタンは削除(メッシュ案では輪が出ないので無意味だった) */
+    const sep = document.createElement('span');
+    sep.className = 'eb-sep';
+    el.appendChild(sep);
+    mk('revert', '↺ 編集前に戻す', '編集モードに入る前の形へ全部戻す').onclick = () => {
+      editHistory.revert(); sync();
+    };
+    mk('cancel', 'やめる', '保存せずに編集モードを抜ける').onclick = () => {
+      editHistory.revert();
+      editHandles.set(false);
+      if (typeof siteEdit !== 'undefined') siteEdit.set(false);   /* 2026-08-29: html.site-edit を同期(自由回転の表示を戻す) */
+      if (typeof textTools !== 'undefined') textTools.set(false);
+      if (typeof buildPanel === 'function') buildPanel();
+    };
+    mk('save', '保存', 'いまの形で保存して編集モードを抜ける', 'primary').onclick = () => {
+      save(); dirty = false; if (syncSaveBtn) syncSaveBtn();
+      btns.save.textContent = '✓ 保存しました';
+      setTimeout(() => {
+        btns.save.textContent = '保存';
+        editHandles.set(false);
+        if (typeof siteEdit !== 'undefined') siteEdit.set(false);   /* 2026-08-29: html.site-edit を同期(自由回転の表示を戻す) */
+        if (typeof textTools !== 'undefined') textTools.set(false);
+        if (typeof buildPanel === 'function') buildPanel();
+      }, 700);
+    };
+    document.body.appendChild(el);
+    return el;
+  }
+  function sync() {
+    if (!el) return;
+    btns.undo.disabled = !editHistory.canUndo;
+    btns.redo.disabled = !editHistory.canRedo;
+    /* (「軌道を裏へ」ボタンは 2026-09-17 に削除) */
+  }
+  return {
+    show() { ensure(); el.style.display = 'flex'; sync(); },
+    hide() { if (el) el.style.display = 'none'; },
+    sync,
+  };
+})();
+
+/* キーボード: ⌘Z / ⌘⇧Z (Windows は Ctrl) */
+window.addEventListener('keydown', (e) => {
+  if (!editHandles.on) return;
+  const mod = e.metaKey || e.ctrlKey;
+  if (!mod || e.key.toLowerCase() !== 'z') return;
+  const t = e.target;
+  /* 数値入力欄の中では、その欄の取り消しを優先する */
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+  e.preventDefault();
+  if (e.shiftKey) editHistory.redo(); else editHistory.undo();
+  editBar.sync();
+});
+
+/* 軌道SVG(奥/手前の楕円・クリップ・グラデ)へジオメトリを反映 */
+const orbitSvgEls = {
+  outer: {
+    ells: [document.getElementById('ellOuterB'), document.getElementById('ellOuterF')],
+    clip: document.getElementById('clipOuterRect'),
+    grads: [document.getElementById('gOuterB'), document.getElementById('gOuterF')],
+  },
+  inner: {
+    ells: [document.getElementById('ellInnerB'), document.getElementById('ellInnerF')],
+    clip: document.getElementById('clipInnerRect'),
+    grads: [document.getElementById('gInnerB'), document.getElementById('gInnerF')],
+  },
+};
+
+function updateOrbitSvg(geoms) {
+  for (const key of ['outer', 'inner']) {
+    const g = geoms[key], els = orbitSvgEls[key];
+    const tr = `rotate(${g.rot} ${g.cx} ${g.cy})`;
+    for (const el of els.ells) {
+      el.setAttribute('cx', g.cx); el.setAttribute('cy', g.cy);
+      el.setAttribute('rx', g.rx); el.setAttribute('ry', g.ry);
+      el.setAttribute('transform', tr);
+    }
+    /* 【2026-08-28 ヒデさん指定】「裏に回す」= 前面レイヤー(ellXxxF)を隠す。
+       奥のフル楕円(ellXxxB)だけが残り、惑星が重なる所を隠す → 土星の輪のように回り込む。 */
+    if (els.ells[1]) els.ells[1].style.display = params.orbits[key].behind ? 'none' : '';
+    els.clip.setAttribute('x', -(g.rx + 24));
+    els.clip.setAttribute('width', (g.rx + 24) * 2);
+    els.clip.setAttribute('height', g.ry + 26);
+    els.clip.setAttribute('transform', `translate(${g.cx} ${g.cy}) rotate(${g.rot})`);
+    for (const gr of els.grads) {
+      gr.setAttribute('x1', g.cx); gr.setAttribute('x2', g.cx);
+      gr.setAttribute('y1', g.cy - g.ry); gr.setAttribute('y2', g.cy + g.ry);
+    }
+  }
+}
+
+/* 遅延後になめらかに加速するための実効経過時間 */
+function effectiveTime(t, delay, ramp) {
+  const pt = t - delay;
+  if (pt <= 0) return 0;
+  if (ramp <= 0 || pt >= ramp) return pt - ramp / 2;
+  return (pt * pt) / (2 * ramp);
+}
+
+/* 緩急: 速度 v(t) = 1 + amp*sin(2πt/period + φ) を積分した実効時間 */
+function warpTime(t, amp, period, phaseDeg) {
+  if (amp <= 0 || period <= 0) return t;
+  const w = 2 * Math.PI / period;
+  const ph = phaseDeg * Math.PI / 180;
+  return t - (amp / w) * (Math.cos(w * t + ph) - Math.cos(ph));
+}
+
+let elapsed = 0;      // 再生中のみ進む累積時間
+let frameSeq = 0;     // フレーム番号。矩形キャッシュの寿命管理に使う
+let lastTs = null;
+let frameCount = 0, frameErrCount = 0;   /* 【2026-09-01】__anim.health() 診断用 */
+let frameDt = 1 / 60; // 直近フレームの実時間 (スクロール慣性補間用・一時停止中も進む)
+/* スクロールの向き (-1=上へ / 1=下へ / 0=止まっている)。逆再生の開始判定に使う */
+let scrollDir = 0, lastScrollY = 0;
+
+/* ドットの現在角度(deg): 緩急ゆらぎつきの周回 */
+function patternDeg(d, i, p) {
+  /* ドットの周回を止める案では、進む量を 0 にして最初の位置に留める(2026-08-27 ヒデさん指定) */
+  const move = (typeof convDotMoves === 'function' && convOn()) ? convDotMoves() : true;
+  const base = move ? (360 / params.duration * params.globalSpeed * params.direction) : 0;
+  const et = effectiveTime(elapsed, p.delay, params.ramp);
+  /* 【2026-08-19】「①きっちり等間隔」の時は、7個ぜんぶ同じ位相で走らせる。
+     位相がドットごとに違うと、等間隔に置いても走るうちに間隔が開閉する
+     (実測: 外側は 120° のはずが 101°〜151° まで開閉していた) */
+  const phase = (params.dotGap || 1) === 1 ? DOT_PULSE_PHASE : p.pulsePhase;
+  const wt = warpTime(et, params.pulse.amp, params.pulse.period, phase);
+  /* 【2026-08-27】ドット1粒ずつの不規則さ。周期の違う波を重ねて、繰り返しに見えない揺れを作る */
+  const rnd = (params.conv && params.conv.dotRandom) || 0;
+  let jitter = 0;
+  if (rnd !== 0 && move) {
+    const sd = i * 2.399;
+    jitter = (Math.sin(elapsed * (0.53 + (i % 3) * 0.17) + sd) * 0.6
+            + Math.sin(elapsed * (0.91 + (i % 5) * 0.13) + sd * 1.7) * 0.4) * rnd * 26;
+  }
+  /* 手前で速く・奥でゆっくり (パネルの「回り方の緩急」) */
+  return orbitEase(d.angle + p.offset + base * p.speed * wt + jitter);
+}
+
+let _kvPrevVis = true;   /* 【2026-09-22】KVグラフィックが前フレーム画面内だったか(復帰時の dt リセット判定) */
+function renderFrame() {
+  frameSeq++;   /* このフレームぶんの矩形キャッシュを新しくする */
+  /* resize イベントを取りこぼす環境があるので、寸法が変わっていたら組み直す
+     (fit() の準備が済むまでは呼ばない) */
+  if (fitReady && window.innerWidth > 0 &&
+      (window.innerWidth !== lastFitW || window.innerHeight !== lastFitH)) fit();
+  /* 【2026-09-22 ヒデさん依頼・軽量化】KVグラフィック(WebGLのsphere描画＋軌道SVG＋ドット毎フレームsetAttribute＋net3d物理)は
+     重い。ヒーローが画面外(vision以降=実績・開発者体験・お問い合わせ)では丸ごと省く＝SPの発熱/カクつきの主因を断つ。
+     時間(elapsed)駆動なので、戻ってきたら即正しい状態に復帰。積算(convGlow/charge)の dt 飛びだけ convLastT リセットで吸収。
+     ビジョンのメッシュ(vfDome)・お問い合わせ(cvCanvas)は既に各自で画面外ゲート済み。 */
+  if (typeof sphereCanvas !== 'undefined' && sphereCanvas) {
+    const _kr = rectOf(sphereCanvas), _vh = window.innerHeight || 0;
+    const _kvVis = !(_kr.bottom < -120 || _kr.top > _vh + 120);
+    if (!_kvVis) { _kvPrevVis = false; updateSections(); if (editHandles.on) editHandles.place(); return; }
+    if (!_kvPrevVis) { convLastT = elapsed; _kvPrevVis = true; }   /* 画面内へ復帰: dt をリセットしてグロー等の飛びを防ぐ */
+  }
+  const geoms = { outer: orbitGeom('outer'), inner: orbitGeom('inner') };
+  convFrame(geoms);   /* 惑星への集約アニメ (①②④⑩)。geoms・convDotF/A を書き換える */
+  /* 輪の表示オンオフ(パネル) × reelの吸収の濃さを合成して書く (2026-08-26 ヒデさん指定) */
+  /* 「軌道の代わり」になる案は、選んでいる間は輪もドットも自動で隠す。
+     ⑦降着円盤 / ⑫メッシュ = 輪もドットも / ⑬ドットの軌道 = 線だけ消してドットは自前で描く */
+  const cvNow = convOn() ? params.converge : null;
+  /* 【2026-08-27 ヒデさん指定】③(粒の渦)でも、軌道オブジェクトを出せるようにした(既定は出さない)。
+     出す時は、共通の「外の輪 / 内の輪 / ドット」のスイッチに従う。 */
+  const accreShowsOrbit = cvNow === 'accre' && !!(params.conv.accre && params.conv.accre.showOrbit);
+  const hideAll = (cvNow === 'accre' && !accreShowsOrbit) || cvNow === 'mesh' || cvNow === 'beads';
+  const cShowO = !hideAll && (!params.conv || params.conv.showOuter !== false);
+  const cShowI = !hideAll && (!params.conv || params.conv.showInner !== false);
+  const cShowD = !hideAll && (!params.conv || params.conv.showDots !== false);
+  applyRingAlpha('outer', (cShowO ? 1 : 0) * convReelA.outer.b, (cShowO ? 1 : 0) * convReelA.outer.f);
+  applyRingAlpha('inner', (cShowI ? 1 : 0) * convReelA.inner.b, (cShowI ? 1 : 0) * convReelA.inner.f);
+  applyRingStyle('outer', convReelA.outer.w, convReelA.outer.dash, convReelA.outer.color, convReelA.outer.cap);
+  applyRingStyle('inner', convReelA.inner.w, convReelA.inner.dash, convReelA.inner.color, convReelA.inner.cap);
+  applyRingBlur('outer', convReelA.outer.blur, convReelA.outer.fx, convReelA.outer.dashOff);
+  applyRingBlur('inner', convReelA.inner.blur, convReelA.inner.fx, convReelA.inner.dashOff);
+  updateOrbitSvg(geoms);
+  /* 【2026-08-28 ヒデさん指定】複数軌道シェイプ(アトム型など)がオンなら、通常の2本とドットは隠す */
+  const shapeOn = convDrawShape();
+  if (shapeOn) {
+    applyRingAlpha('outer', 0, 0); applyRingAlpha('inner', 0, 0);
+    if (params.orbits.outer.behind !== undefined) { /* 何もしない: 裏フラグはシェイプ時は無効 */ }
+  } else { convHideShape(); }
+  DOTS.forEach((d, i) => {
+    const p = params.dots[i];
+    const deg = patternDeg(d, i, p) + convDotSpin[i];   /* 収縮中の回転アップ(①) */
+    const cf = convDotF[i];
+    const pos = posOn(cf === 1 ? geoms[d.ellipse] : convGeom(geoms[d.ellipse], cf), deg);
+    const els = dotEls[i];
+    [els.back, els.front].forEach(el => {
+      el.setAttribute('cx', pos.x);
+      el.setAttribute('cy', pos.y);
+    });
+    /* 出現度合いが変わった時だけ、半径と濃さを書き換える。
+       ドット非表示(パネル)と、所属する輪が非表示の時はドットも消す */
+    const dotShow = (!shapeOn) && cShowD && (d.ellipse === 'outer' ? cShowO : cShowI) ? 1 : 0;
+    const gRef = geoms[d.ellipse];
+    const dk = dotK[i] * convDotA[i] * dotShow * convDotK(pos.y, gRef.cy, gRef.ry);
+    if (els.k !== dk) {
+      els.k = dk;
+      /* 【2026-08-28 ヒデさん指定】カンプ準拠: 大きさ(奥行き)は dk で変えるが、
+         濃さは【取り込みの消え際(convDotA)と表示ON/OFFだけ】に連動させる。
+         奥のドットや粒サイズのばらつきで薄くならない(=基本は不透過)。 */
+      const rr = (BASE_DOT_R * dk).toFixed(3), op = Math.min(1, convDotA[i] * dotShow).toFixed(3);
+      [els.back, els.front].forEach(el => { el.setAttribute('r', rr); el.setAttribute('opacity', op); });
+    }
+    els.front.style.display = pos.front ? '' : 'none';
+    els.back.style.display = pos.front ? 'none' : '';
+  });
+  kvRepro.update(geoms, shapeOn);   /* 自由回転オン時=軌道を疑似3Dで再投影(惑星は動かさない) */
+  net3d.update();                    /* ネットワーク3D案(周回のみ)＝3軌道をテーパー＋物理で描く。kvReproの後に上書き */
+  applySway();
+  renderSphere();
+  updateSections();
+  if (editHandles.on) editHandles.place();   /* 直接編集の操作点を図形に追従させる */
+}
+
+/* ゆらぎ: グラフィック全体(軌道・惑星)へのゆるい動き */
+const swayEls = {
+  orbit: document.querySelector('.orbit'),
+  svgs: [...document.querySelectorAll('.orbit svg')],
+  layerBack: document.querySelector('.orbit .layer-back'),
+  layerFront: document.querySelector('.orbit .layer-front'),
+  sphere: document.getElementById('sphere'),
+};
+
+function applySway() {
+  const t = elapsed;
+  let orbit = '', svg = '', sph = '';
+  switch (SWAYS[(params.sway || 1) - 1].id) {
+    case 'seesaw': /* ゆらぎ: 全体がゆっくり動く。①収縮ループ中は固定(ヒデさん指定) */
+      if (!(params.kvDesign === 'planet' && params.converge === 'reel')) {
+        /* 【2026-08-30 ヒデさん指定】揺らぎの動きを選べるように:
+           tilt=傾き(従来±3°) / h=左右 / v=上下 / diag=斜め。強さは共通の swayAmp。 */
+        const swA = (params.swayAmp == null ? 1 : params.swayAmp);
+        const swS = Math.sin(t * 0.4) * swA;
+        switch (params.swayDir || 'tilt') {
+          case 'h':    orbit = `translateX(${(swS * 14).toFixed(2)}px)`; break;
+          case 'v':    orbit = `translateY(${(swS * 12).toFixed(2)}px)`; break;
+          case 'diag': orbit = `translate(${(swS * 10).toFixed(2)}px, ${(swS * 8).toFixed(2)}px)`; break;
+          default:     orbit = `rotate(${(swS * 3).toFixed(3)}deg)`;
+        }
+      }
+      break;
+    /* cross は orbitGeom() 側で軌道の角度に効かせる */
+  }
+  /* KVグラフィック全体の位置ずらし (調整パネル) をゆらぎの上に合成 */
+  const kv = params.kv;
+  /* スマホは軌道グループごと縮小して画面幅に収める (原点は mb 用CSSで左上にしてある)。
+     【2026-09-09 カンプ node16534:22139 準拠】メッシュが枠(y81→409/328px)をほぼ埋め、惑星が
+     その中心(≒y248)に来るよう拡大。0.44ではメッシュが小さくコピーとの間に空白が出ていた。 */
+  /* 【2026-09-09 ヒデさん指定「メッシュ＋惑星をほんの少し小さく」】0.565→0.53。
+     中央合わせは margin-left = −(915.483×scale)/2 を JS で同期。コピーとの間隔は .headline top で別途拡大。 */
+  const KV_MB_SCALE = 0.53;
+  const ob = isMobile ? ` scale(${KV_MB_SCALE})` : '';
+  if (isMobile) swayEls.orbit.style.marginLeft = (-(915.483 * KV_MB_SCALE) / 2 - 4.9).toFixed(1) + 'px';   /* 【2026-09-23 ヒデさん指摘】SPでメッシュ(ケージ＋惑星)が画面中央より約+4.9px右にズレていた(設計フレーム915.483の中心と、実際のケージ描画中心がズレているため)。実測に基づき左へ4.9px補正して中央に。実測: 惑星中心199.9→195 */
+  /* 【2026-09-09 ヒデさん指定】静的モバイル: ゆらぎ(sway)も止める＝KVグラフィックが揺れて動くのを解消。 */
+  const swayOrbit = isMobile ? '' : orbit;
+  swayEls.orbit.style.transformStyle = '';
+  /* 【2026-09-09 ヒデさん指摘「メッシュが右にずれている」】スマホは横オフセット gx(PC用=17px)を使わず、
+     .orbit の margin-left(−幅/2 = −238px) だけで画面中央に置く(実測: gx込みだと箱の中心が 232px で
+     画面中央 195px より 37px 右だった)。gy はカンプの上端 y81 に合わせた値として残す。 */
+  const gx = isMobile ? 0 : kv.gx;
+  /* 【2026-09-17 大掃除】旧フォントテスト「調整版」のグラフィック味付け(1.21倍・右へ148/下へ184)を PC の基本値として焼き込み。
+     値は Figma 17547:21430 の球の見た目(中心/直径)に実測で合わせたもの。スマホは 9/9 のSPトレース値のまま(仮置き: SPカンプ未確認)。
+     ⚠️ .orbit にはビジョンの惑星図(.pf-wrap)は入っていない(兄弟)ので、ここを変えてもビジョンの図は動かない(実測で確認済み)。 */
+  const KV_GFX = isMobile ? { scale: 1, dx: 0, dy: 0 } : (params.kvGfx || { scale: 1.21, dx: 148, dy: 184 });   /* 【2026-09-18】案(KV_VARIANTS)で入れ替わる */
+  swayEls.orbit.style.transform = `translate(${gx + KV_GFX.dx + (KV_GFX.ox || 0)}px, ${kv.gy + KV_GFX.dy + (KV_GFX.oy || 0) + ((params.kv && params.kv.gfxY) || 0)}px)${ob} ${swayOrbit} scale(${KV_GFX.scale * (1 + (KV_GFX.oz || 0) / 100)})`.trim();   /* ox/oy/oz=【2026-09-19】XYZのずらし / gfxY=【2026-09-20】グラフィック↔コピーの距離(縦・PC/SP独立)。モバイルでも効く */
+  swayEls.svgs.forEach(s => s.style.transform = isMobile ? '' : svg);
+  /* 惑星の位置・サイズ (パネル設定) を ゆらぎ の上に合成。惑星は固定(回転させない) */
+  const pl = params.planet;
+  const plFlat = pl.flat == null ? 1 : pl.flat;
+  const plT = (pl.dx || pl.dy || pl.scale !== 1 || plFlat !== 1)
+    ? ` translate(${pl.dx}px, ${pl.dy}px) scale(${pl.scale}, ${pl.scale * plFlat})` : '';
+  /* 静的モバイル: 惑星のゆらぎ(sph)は止める。位置はメッシュ中心のまま(以前の translateY(40px) は
+     「惑星だけ下がって見える」原因だったので撤回。カンプの惑星中心 y246 はメッシュごと下げて合わせる) */
+  swayEls.sphere.style.transform = ((isMobile ? '' : sph) + plT).trim();
+}
+
+/* ================= スクロール連動セクション ================= */
+/* ステージの設計幅 (フィル時に画面幅へ広がる)。fit() で更新される。
+   ※ renderFrame() より前に宣言しておくこと (後だと初回呼び出しで参照エラーになる) */
+let stageW = 1440, stagePinW = 1440;
+/* 設計フレーム。スマホ(<=780px)では 390×780 に切り替わる */
+const MOBILE_MAX = 600;   /* 【2026-09-09 ヒデさん指定】スマホ/タブレットの境界。780→600 に下げ、タブレット(iPad mini縦768含む)は
+                             デスクトップ層(自動縮小・834/1024で綺麗)へ寄せる。スマホ設計(≤430)は不変。CSS @media も同値。 */
+let DW = 1440, DH = 921, isMobile = false;
+let lastFitW = 0, lastFitH = 0, fitReady = false;
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const easeIO = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOutC = t => 1 - Math.pow(1 - t, 3);
+/* ゆったり上質な減速 (quint)。CSS の cubic-bezier(.22,1,.36,1) と同じカーブで、
+   参考36サイトの実測でいちばん多かった標準。出現系はぜんぶこれを使う */
+const easeOutQ = t => 1 - Math.pow(1 - t, 5);
+/* 動きの共通トークン(秒)。CSS の --t-fast / --t-in / --t-big と同じ値 */
+const T_FAST = 0.25, T_IN = 0.8, T_BIG = 1.3;
+/* 慣性で滑って止まる (行き過ぎない臨界減衰)。「ぬるっと」した上質さ担当 */
+const SLICK_K = 5.2, SLICK_N = 1 - Math.exp(-SLICK_K) * (1 + SLICK_K);
+const easeSlick = t => (1 - Math.exp(-SLICK_K * t) * (1 + SLICK_K * t)) / SLICK_N;
+
+/* 進捗 p のうち区間 [a,b] を 0→1 に切り出す (イージング付き) */
+function seg(p, a, b, ez) { return (ez || easeIO)(clamp01((p - a) / (b - a))); }
+
+const SECS = {
+  vision: document.getElementById('vision'),
+  results: document.getElementById('results'),
+  dev: document.getElementById('dev'),
+  cases: document.getElementById('cases'),
+};
+/* 【2026-08-29 ヒデさん指定】Vision だけ固定追従(ピン留め)をやめる。
+   実績・事例は従来どおりピン留めのまま。Vision は「入場した瞬間に時間で自動再生」＋
+   updateVision が持つ登場(Our Vision→本文マスク→グラフィックのブラー→右のブラー)で見せる。
+   グラフィックの回転アニメは保持。 */
+const VIS_NOPIN = true;
+/* 【2026-08-29 ヒデさん指定】実績→開発者体験の「スムーズフェード」= 実績も固定追従なし＋
+   背景を自然にクロスフェード＋黒オブジェクトなし。'smooth' のとき true。 */
+function resSmooth() { return !(params.patterns && params.patterns.resTrans === 'black'); }   /* 既定=smooth。明示的にblackの時だけ黒オブジェクト */
+/* 【2026-08-29 ヒデさん指定】導入事例(cases)も固定追従なし。
+   従来はピン用に 200×driveLen=最大600vh の長い尺があり「余分にスクロールできる」状態だった。
+   固定追従なし＝1画面(100vh)で普通に流し、入場で自動再生する。 */
+const CASES_NOPIN = true;
+
+/* ピン留めセクションのスクロール進捗 0〜1 */
+const progOverride = {};   // デバッグ用: __anim.setProgress で固定できる
+/* ⚠️ getBoundingClientRect は呼ぶたびにブラウザがレイアウトを計算し直す(reflow)。
+   同じフレーム内では結果が変わらないので、1フレーム1回だけ測って使い回す */
+let rectFrame = -1;
+const rectCache = new Map();
+function rectOf(el) {
+  if (rectFrame !== frameSeq) { rectCache.clear(); rectFrame = frameSeq; }
+  let r = rectCache.get(el);
+  if (!r) { r = el.getBoundingClientRect(); rectCache.set(el, r); }
+  return r;
+}
+
+function pinP(sec) {
+  const r = rectOf(sec);
+  const vh = window.innerHeight || 1;
+  const total = r.height - vh;
+  if (total <= 0) return 0;
+  return clamp01(-r.top / total);
+}
+/* ===== 所定の位置で止めて、再生し終わったら進む (2026-08-14 採用) =====
+   各セクションは【固定位置に着いたら1本の映像として自動再生される】。
+   再生中はスクロールを止め、終わったら解放する。
+     ・見せたい所で必ず最後まで見てもらえる
+     ・手の速さで再生が早送りにならない
+   ⚠️ 閉じ込め防止: 再生中に強くスクロールし続けると残りを早送りして解放する。
+   ⚠️ スマホは Lenis がタッチを握っていない(syncTouch:false)ので止められない。
+      その場合は「時間で再生されるが、スクロールは通る」動作になる。 */
+const secPlay = {};
+let scrollLocked = false, lockPush = 0;
+
+/* ===== 章立て再生 (2026-08-14) =====
+   セクションを複数の章に分け、【章を再生 → 終わったら解放 → スクロールすると次の章】。
+   chapters = [{ from, to, sec, at }]
+     from/to = その章で描く進捗の範囲 / sec = 再生秒数 / at = 次の章を解放するスクロール量
+   ⚠️ 章と章の間はロックを外す。ここでスクロールできないと「進めない」体験になる。 */
+
+/* 【2026-08-15 バグ修正】再生を始めてよいか。
+   ⚠️ 以前は「進捗 > 0.002」だけだった。スクロールで通り過ぎたあとリプレイで時計が巻き戻ると、
+      進捗が 1 に近いままなのに「開始できる」と判定され、位置合わせの scrollTo が
+      ユーザーをセクションの頭へ引き戻していた（＝2つの価値の後にまたビジョンへ戻るループ）。
+      固定区間の頭の方にいる時だけ開始する。 */
+function canPlay(p) { return p > 0.0005 && p < 0.35; }
+
+/* canStart になったら再生開始。戻り値は再生位置(秒)。-1 = まだ始まっていない。
+   ⚠️ 勢いよくスクロールすると、セクションが行き過ぎた位置でロックされて
+      「そこで固まった」ように見えていた。所定の位置(上端0)から6px以上ずれていたら、
+      まずそこへ寄せてから再生を始める。 */
+function playT(key, total, canStart, sec, pNow) {
+  /* 固定追従なし: セクションの高さが 100vh なので pinP の分母が 0 になり、
+     pinP が常に 0 ＝ 再生開始の判定が永久に成立しなかった（真っ白の原因）。
+     画面を6割占めたら時間で再生する。寄せ(snap)もロックもしない */
+  if (params.pin === 'off') {
+    const st = secPlay[key] || (secPlay[key] = { t0: null, done: false, skip: 0, snapT: 0, snapTried: false });
+    /* 【2026-09-09 ヒデさん指定】スマホは「出現は1回だけ・以後は最終状態で固定」。スクロールで上下しても
+       巻き戻さない(=ヒデさん指摘『巻き戻ってしまった感じ』の解消)。入場は画面を6割占めた時に1回再生。 */
+    if (isMobile) {
+      if (st.done) return total;
+      if (st.t0 === null) { if (clamp01(preP(sec)) < 0.6) return -1; st.t0 = elapsed; }
+      const t = elapsed - st.t0 + st.skip;
+      if (t >= total) { st.done = true; return total; }
+      return t;
+    }
+    /* 【2026-08-18 ヒデさん指定】(PC)画面より下へ戻ったら巻き戻す。
+       こうしないと「一度通り過ぎたら、戻ってきても終わった状態のまま」になる */
+    if (rectOf(sec).top > (window.innerHeight || 1)) { st.t0 = null; st.done = false; st.skip = 0; }
+    if (st.t0 === null) {
+      if (clamp01(preP(sec)) < 0.6) return -1;
+      st.t0 = elapsed;
+    }
+    const t = elapsed - st.t0 + st.skip;
+    if (t >= total) st.done = true;
+    return Math.min(t, total);
+  }
+  /* スクロール駆動: 位置がそのまま再生位置になる。
+     手を止めれば絵も止まり、上へ戻せばそのまま巻き戻る（逆再生の実装が要らない）
+     ⚠️【2026-08-18 指定】実績だけは例外。スクロールに連動させず、ビューポート中央に来た段階で時間再生する。
+     ⚠️【2026-08-25 ヒデさん指定】導入事例(cases)も同じく時間再生（ビューポートに入ったら自動再生）。 */
+  if (params.drive === 'scroll' && key !== 'results' && key !== 'cases' && key !== 'vision') {
+    const raw = (pNow == null ? pinP(sec) : pNow);
+    /* ⚠️【2026-08-19 バグ修正】この関数の約束は「まだ再生していない＝マイナスを返す」。
+       スクロール駆動だけ 0 を返していたため、呼び出し側の `t < 0`（未再生）判定が
+       すり抜けて【再生位置 0 の状態】として扱われていた。
+       実害: キービジュアルのドット6個が消えた。軌道の SVG は KV と Our Vision で
+       使い回しているので、ビジョンの「ドットが1つずつ出る」処理(dotK)が
+       A=0 で「まだ1個も出ていない＝半径0」を書き込み、KV のドットまで消していた。
+       (固定あり × スクロール駆動 の組み合わせでのみ発生。他の3通りは -1 が返っていた) */
+    if (raw <= 0) return -1;
+    return total * clamp01(raw / Math.max(0.1, params.sections.common.driveWin));
+  }
+  const st = secPlay[key] || (secPlay[key] = { t0: null, done: false, skip: 0, snapT: 0, snapTried: false });
+  /* 見終わったあとは、スクロール位置で行ったり来たりできる（上へ戻せば逆再生） */
+  /* 【2026-08-18 指定】時間で再生する方は逆再生しない（不自然になるため）。
+     巻き戻したい場合はスクロール駆動に切り替える */
+  if (st.done) return total;
+  /* ⚠️ 下までスクロールしてから戻ってくると、時計は巻き戻っているのに
+     まだ再生開始位置に着いていない＝「何も出ていない空のセクション」が見えてしまう。
+     セクションの奥にいる間は【完成した状態】を見せておき、頭に着いたら流し直す */
+  if (!st.done && st.t0 === null && pNow != null && pNow > 0.35) return total;
+  if (!st.done && st.t0 === null && (canStart || st.snapTried)) {
+    /* もう頭の近くにいる時は、寄せずにその場で流し始める。
+       （上から戻ってきた時に寄せ直すと、引っぱられて気持ち悪いため） */
+    if (pNow != null && pNow < 0.12) { st.t0 = elapsed; return 0; }
+    const off = sec ? rectOf(sec).top : 0;
+    if (Math.abs(off) > innerHeight) return -1;   /* 遠すぎる時は待つ(頭へ引き戻さない) */
+    /* 【2026-08-26 スナップ撤去】lenis.scrollTo(lock:true) の掴み直しが「ガタガタ・戻れない」の
+       主因（replay で再入のたびに掴む）。中身は sticky で常にピン位置に居るので、
+       掴まずその場で流し始める。1ビューポート以内に来たら再生開始。 */
+    st.t0 = elapsed;
+  }
+  if (st.t0 === null) return -1;
+  const t = elapsed - st.t0 + st.skip;
+  if (t >= total) st.done = true;
+  return Math.min(t, total);
+}
+
+/* ===== 見終わったあとの「行ったり来たり」 (2026-08-18 指定) =====
+   一度最後まで見たセクションは、スクロール位置で再生位置が決まるようにする。
+   下へ動かせば進み、上へ戻せば巻き戻る＝逆再生。固定(sticky)はそのままなので、
+   上下どちらへ動いても絵が飛ばず、なめらかにつながる。
+   ⚠️ 初回だけは今までどおり「時間で流れる映像」。2回目以降がスクラブになる */
+function anyPlaying() {
+  /* スクロール駆動と固定なしの時は、そもそも止めない。
+     ただしスクロール駆動でも実績だけは時間再生なので、その間は止める */
+  if (params.pin === 'off') return null;
+  if ((params.scrollHold || 'lock') === 'smooth') return null;   /* 固定追従なしは一切止めない(scrollHold 最優先) */
+  if (params.drive === 'scroll') {
+    /* ⚠️【2026-08-26 精査・喧嘩の解消】以前は「実績だけ」を止めていたが、playT では
+       【実績と導入事例の両方が時間再生】(3029行の除外リストと同じ)。導入事例は止められないのに
+       clampScroll の maxY では制限され、喧嘩でガタついていた。playT と一致させ両方止める。 */
+    for (const k of ['results', 'cases']) {
+      const s = secPlay[k];
+      if (s && s.t0 !== null && !s.done) return k;
+    }
+    return null;
+  }
+  for (const k in secPlay) { const s = secPlay[k]; if (s.t0 !== null && !s.done) return k; }
+  /* 章の間 (t0 === null) はロックしない = スクロールで次へ進める */
+  return null;
+}
+function updateScrollLock() {
+  const hold = params.scrollHold || 'lock';
+  /* smooth: そもそもロックしない(自由スクロール) */
+  if (hold === 'smooth') {
+    if (scrollLocked) { scrollLocked = false; if (lenis) lenis.start(); }
+    return;
+  }
+  const key = anyPlaying();
+  /* lock: 慣性も止めて完全固定 / soft: scrollLocked は立てる(早送り用)が lenis は止めない(スクロールは通す) */
+  if (key && !scrollLocked) { scrollLocked = true; lockPush = 0; if (lenis && hold === 'lock') lenis.stop(); }
+  else if (!key && scrollLocked) { scrollLocked = false; if (lenis) lenis.start(); }
+}
+
+/* ===== スクロールの押し戻し (2026-08-18 バグ修正) =====
+   ⚠️ lenis.stop() だけでは素のスクロールが素通りする。
+      実測: 固定中に激しくホイールを回すと 1069px 動き、セクションが画面外へ抜けた。
+      「下の方に進めてしまう」バグの正体がこれ。
+
+   対処: 入力の種類（ホイール・指・キー・スクロールバー・慣性）に関係なく効かせるため、
+        位置そのものを毎フレーム押し戻す。
+        許すのは【ピン区間の終わりまで】。そこまでなら固定は保たれているので破綻しない。
+        再生が終わったセクションは対象外なので、見終わったあとは自由に進める。 */
+/* ===== 現象の記録 (2026-08-18 作り直し) =====
+   ⚠️ 最初は「こういう状態になったら記録する」という条件付きにしたが、
+      実機で現象が起きているのに1件も記録されなかった＝条件の想定が間違っていた。
+      条件を当てるのをやめて【直近4秒ぶんを無条件で記録】する。
+      現象が出た直後に __anim.diag() を打てば、その瞬間の推移が丸ごと取れる。 */
+const DIAG_MAX = 240;                 /* 約4秒ぶん */
+const diagRing = [];
+function diagWatch() {
+  const vh = window.innerHeight || 1, vw = window.innerWidth || 1;
+  const row = { y: Math.round(window.scrollY || 0), vh };
+  for (const k of ['results', 'dev', 'cases']) {
+    const el = SECS[k]; if (!el) continue;
+    const r = rectOf(el);
+    const vp = el.querySelector('.pin-vp');
+    row[k] = Math.round(r.top) + '/' + Math.round(r.bottom) + (vp ? ':' + Math.round(rectOf(vp).bottom) : '');
+  }
+  row.fin = +devFin.toFixed(2);
+  row.drive = params.drive === 'scroll' ? 'S' : 'T';
+  const t = caseEls && caseEls.title;
+  row.title = t ? +(parseFloat(getComputedStyle(t).opacity) || 0).toFixed(2) : null;
+  const st = secPlay.dev || {};
+  row.dev_st = (st.t0 == null ? '-' : 'P') + (st.done ? 'D' : '') + (st.started ? 'S' : '') + (st.ch != null ? st.ch : '');
+  /* 画面の下寄りに何が描かれているかを記録する（空っぽかどうかの決め手） */
+  const e = document.elementFromPoint(Math.round(vw / 2), Math.round(vh * 0.78));
+  row.at78 = e ? String(e.id || e.className || e.tagName).slice(0, 18) : 'なし';
+  diagRing.push(row);
+  if (diagRing.length > DIAG_MAX) diagRing.shift();
+}
+
+/* ===== 固定追従なしモードの縦積みレイアウト (2026-08-18 指定) =====
+   貼りつけ前提の演出（移動・拡大・章送り）をやめ、ブロックを縦に積んで
+   「画面に入ったらブラーで出現」だけにする。
+   ⚠️ 要素は複製せず【移動】する。id が変わらないのでアニメ側のコードはそのまま動く。
+      章①のモックだけは、章②のカードと共有できないので静止した複製を置く。 */
+let npState = null, npMock = null;
+function buildNoPin(on) {
+  if (on === !!npState) return;
+  if (on) {
+    npState = [];
+    const mk = (sec, ids, extra) => {
+      const vp = document.createElement('div');
+      vp.className = 'pin-vp np-vp';
+      const stg = document.createElement('div');
+      stg.className = 'pin-stage';
+      vp.appendChild(stg);
+      sec.insertBefore(vp, sec.firstElementChild);
+      const moved = [];
+      for (const id of ids) {
+        const n = document.getElementById(id);
+        if (!n) continue;
+        moved.push({ node: n, parent: n.parentNode, next: n.nextSibling });
+        stg.appendChild(n);
+      }
+      if (extra) extra(stg);
+      npState.push({ vp, moved });
+    };
+    /* Our Vision: 上のブロックにキーメッセージ、下のブロックに軌道＋2つの価値 */
+    mk(SECS.vision, ['visLabel', 'visL1', 'visL2']);
+    /* 開発者体験: 上のブロックに章①の見出し＋静止モック、下のブロックに章② */
+    mk(SECS.dev, ['devH1'], stg => {
+      /* 章①はエディタ画面なので、その状態で写しを取る */
+      dmBuildScreen('editor');
+      const src = document.querySelector('#devMock .dm-panel');
+      if (!src) return;
+      const box = document.createElement('div');
+      box.className = 'np-mock';
+      const cp = src.cloneNode(true);
+      /* id が重複すると本物の取得が壊れるので落とす。参照は class で拾い直す */
+      cp.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+      cp.classList.remove('is-term', 'is-sdk', 'is-blank');
+      box.appendChild(cp);
+      stg.appendChild(box);
+      /* この写しにも本物と同じアニメを流す（2026-08-18 ヒデさん指定）。
+         ブロックが画面に入った時が起点。出ていったら巻き戻して流し直す */
+      npMock = { box, vp: stg.parentElement, refs: dmRefs(cp), t0: null };
+    });
+  } else {
+    npState.forEach(b => {
+      b.moved.forEach(m => m.parent.insertBefore(m.node, m.next));
+      b.vp.remove();
+    });
+    npState = null; npMock = null;
+  }
+}
+
+/* 固定なしモードの見え方。updateXxx のあとに走って上書きする。
+   ・ブロック単位で「画面に入ったらブラーで出現」
+   ・キーメッセージと章①の見出しは、本来の演出だと消えてしまうので出したままにする */
+function npReveal(el) {
+  const r = rectOf(el), vh = window.innerHeight || 1;
+  return easeOutQ(clamp01((vh - r.top) / (vh * 0.62)));
+}
+/* 【2026-08-18 ヒデさん指定】固定追従なしでは、サイト全体で
+   「そのブロックが画面に入った瞬間」を起点にアニメを流す。
+   ページ全体で1つの時計を回すと、スクロールが少し遅れただけで
+   着いた時にはもう終わっている（実際にそうなっていた）。
+   画面から出たら巻き戻すので、戻ってくるとまた頭から流れる。
+   戻り値: 入ってからの秒数。まだ入っていなければ -1 */
+const npClocks = {};
+function npBlockT(key, el) {
+  if (!el) return -1;
+  const st = npClocks[key] || (npClocks[key] = { t0: null });
+  if (npReveal(el) > 0.35) { if (st.t0 === null) st.t0 = elapsed; }
+  else st.t0 = null;
+  return st.t0 === null ? -1 : elapsed - st.t0;
+}
+function renderNoPin() {
+  if (!npState) return;
+  /* ここは直接 style に代入している（setStyle を通していない）。
+     2026-08-18 時点では「setStyle のキャッシュが誤認して空振りする」ための回避策だったが、
+     2026-08-19 に setStyle 側を直した（直接書き換えられたら検知して書き直す）ので、
+     いまはどちらでも動く。書き換える必要が出たら setStyle に寄せてよい。 */
+  document.querySelectorAll('.np-vp, html.nopin .pin-vp').forEach(vp => {
+    const stg = vp.querySelector('.pin-stage');
+    if (!stg) return;
+    /* 【2026-09-19 ヒデさん依頼】導入事例は板ごとのブラーをやめる(見出しは intro、罫線は q、カードは1枚ずつ自分で出る) */
+    if (vp.parentElement && vp.parentElement.id === 'cases') { stg.style.opacity = '1'; stg.style.filter = ''; return; }
+    const k = npReveal(vp);
+    stg.style.opacity = k.toFixed(3);
+    stg.style.filter = k >= 1 ? '' : `blur(${((1 - k) * 14).toFixed(2)}px)`;
+  });
+  /* 割らずに置いたままにする要素（ブロック側のブラーで出す）。
+     子要素にも個別に opacity / transform が入るので、中まで戻すこと */
+  for (const id of ['visLabel', 'visL1', 'visL2', 'devH1', 'devH2']) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.style.transform = 'none';
+    el.style.opacity = '1';
+    el.style.filter = '';
+    el.querySelectorAll('*').forEach(c => {
+      c.style.opacity = '1';
+      c.style.transform = 'none';
+      c.style.filter = '';
+      c.style.clipPath = 'none';
+    });
+  }
+  /* 実績の暗幕は使わない（重ねが無いので暗転させる必要がない）。
+     これを消さないと実績のブロックが真っ暗になる */
+  if (resEls && resEls.dark) resEls.dark.style.opacity = '0';
+  /* 実績の中身も出したままにする。
+     ⚠️ 再生前の状態で el.style.opacity = 0 が直接入るのに対し、出現側は setStyle
+        （キャッシュ付き）で書くため、噛み合わずに 0 のまま残ることがある */
+  if (resEls) for (const el of [resEls.hl1, resEls.stats, resEls.vals, resEls.hr, resEls.head]) {
+    if (!el) continue;
+    el.style.opacity = '1';
+    el.style.filter = '';
+    el.style.transform = 'none';
+  }
+  /* 開発者体験の「白へ戻す」板も使わない（ブロックが独立しているため） */
+  if (devBg2) devBg2.style.opacity = '0';
+  /* 見出しは renderNoPin で出したままにしているので、あたり判定も戻す
+     （devHeading が透明時に pointerEvents:none を入れるため） */
+  if (devEls && devEls.h1) devEls.h1.style.pointerEvents = '';
+  /* 章①のモック（写し）: ブロックが画面に入ったら自動で流す（2026-08-18 ヒデさん指定） */
+  if (npMock && npMock.refs.lines.length) {
+    const vis = npReveal(npMock.vp);
+    if (vis > 0.35) {
+      if (npMock.t0 === null) npMock.t0 = elapsed;
+      npMock.refs.panel.classList.remove('is-blank');
+      devMockContent('anim', elapsed - npMock.t0, 'editor', npMock.refs);
+    } else {
+      npMock.t0 = null;
+      devMockContent('empty', 0, 'editor', npMock.refs);
+    }
+  }
+}
+
+function forceScroll(y) {
+  if (lenis) lenis.scrollTo(y, { immediate: true, force: true, lock: true });
+  else window.scrollTo(0, y);
+}
+
+/* ===== スクロールの固定 (2026-08-18 作り直し) =====
+   ⚠️ macOS のトラックパッドは、慣性で流れている間 wheel イベントが cancelable:false になり、
+      preventDefault が一切効かない。「操作を止める」方式では原理的に止まらない。
+      （Playwright の合成ホイールでは preventDefault が効くため、テストで再現しなかった）
+
+   なので「位置そのものを毎フレーム戻す」方式にする。
+   誰がどうスクロールを動かしても、次のフレームで元の位置へ戻るので必ず止まる。 */
+function clampScroll() {
+  /* 【2026-08-26】スクロール固定の強さ 3パターン。
+     smooth = 押し戻さない(自由スクロール) / soft = ゆるく引き戻す(ラバーバンド) / lock = 従来の強制固定 */
+  const hold = params.scrollHold || 'lock';
+  if (hold === 'smooth') return;
+  /* ⚠️ 固定追従なし(pin=off)の時も押し戻さない（従来仕様）。 */
+  if (params.pin === 'off') return;
+  /* ① 「止めるべきセクション」だけ位置を固定する。
+     ⚠️【2026-08-26 精査・“固定の喧嘩”を解消】以前は再生中の全セクションを位置強制していたが、
+        anyPlaying()（ホイールをブロックする判定）は drive='scroll' では【実績だけ】を対象にしている。
+        全セクションを位置強制すると、ホイールが通るセクション(ビジョン等)で「動く→戻される」の
+        ガタつきになる（サイト全体の固定と個別の固定が食い違う）。clampScroll も anyPlaying() と
+        一致させ、止める対象だけ固定する。 */
+  const lockKey = anyPlaying();
+  if (lockKey && secPlay[lockKey] && secPlay[lockKey].t0 !== null && !secPlay[lockKey].done) {
+    const st = secPlay[lockKey];
+    if (st.lockY == null) st.lockY = Math.round(window.scrollY || window.pageYOffset || 0);
+    const y = window.scrollY || window.pageYOffset || 0;
+    if (Math.abs(y - st.lockY) > 1) {
+      if (hold === 'soft') forceScroll(y + (st.lockY - y) * 0.12);   /* ラバーバンド(ハードスナップしない) */
+      else forceScroll(st.lockY);                                     /* lock=従来の強制 */
+    }
+    return;
+  }
+  /* ② 再生していない時は記録を捨てる。
+        「まだ終わっていないセクション」からは、ピン区間の終わりより下へ行かせない
+        （章と章の間は、次の章へ送るために動けるようにしておく） */
+  let maxY = Infinity;
+  for (const k in secPlay) {
+    const st = secPlay[k], el = SECS[k];
+    if (!el) continue;
+    st.lockY = null;
+    if (st.done) continue;
+    if (st.t0 === null && !st.started) continue;
+    const pinRange = el.offsetHeight - (window.innerHeight || 1);
+    /* 章の間は「次の章が始まる位置の少し先」まで。区間の終わりまで行かせない */
+    const lim = st.nextAt != null
+      ? el.offsetTop + Math.min(1, st.nextAt + 0.06) * pinRange
+      : el.offsetTop + pinRange;
+    maxY = Math.min(maxY, lim);
+  }
+  /* ③ 開発者体験は「暗転が終わりきるまで」ピン区間から下へ抜けさせない。
+        これが無いと、黒→白の途中でセクションがスライドし始めて、
+        暗い面の下に何も無い帯が見える（2026-08-18 ヒデさん報告の症状） */
+  /* ⚠️ 再生がまだ終わっていない間は ② が既に止めている。
+     ここで止めるのは【再生は終わったが暗転がまだ】の区間だけ。
+     条件を広げると、暗転が始まらないまま永久に止まって先へ進めなくなる
+     （2026-08-18 に実際に発生。1190x844 で最下部へ行けなくなった） */
+  const devEl = SECS.dev;
+  if (devEl && secPlay.dev && secPlay.dev.done && devFin < 0.999) {
+    maxY = Math.min(maxY, devEl.offsetTop + devEl.offsetHeight - (window.innerHeight || 1));
+  }
+  if (!isFinite(maxY)) return;
+  const y = window.scrollY || window.pageYOffset || 0;
+  if (y > maxY + 1) {
+    if (hold === 'soft') forceScroll(y + (maxY - y) * 0.12);   /* soft はゆるく引き戻す */
+    else forceScroll(maxY);
+  }
+}
+
+
+/* ロック中は操作そのものも無効化する（押し戻しだけだと、いったん動いてから戻るのでガタつく）。
+   ⚠️ 調整パネルの中で回した時は通す */
+const LOCK_KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ']);
+const inPanel = t => !!(t && t.closest && t.closest('.tools'));
+/* 入力ブロックは 'lock'(完全固定)モードだけ。'soft'/'smooth' はスクロールを通す */
+const hardLock = () => (params.scrollHold || 'lock') === 'lock';
+window.addEventListener('wheel', e => {
+  if (scrollLocked && hardLock() && !inPanel(e.target)) e.preventDefault();
+}, { passive: false });
+window.addEventListener('touchmove', e => {
+  if (scrollLocked && hardLock() && !inPanel(e.target)) e.preventDefault();
+}, { passive: false });
+window.addEventListener('keydown', e => {
+  if (scrollLocked && hardLock() && LOCK_KEYS.has(e.key) && !inPanel(e.target)) e.preventDefault();
+}, { passive: false });
+/* 再生中にホイールを回すと早送りする(閉じ込め防止)。
+   ⚠️ 以前は「残りを一気に飛ばす」実装で、開発者体験だと最終フレーム＝白背景に
+      いきなりワープして【途中から突然真っ白になる】バグになっていた。
+      いまは回している間だけ最大4倍速になる。飛ばずに早く流れるだけ。 */
+window.addEventListener('wheel', e => {
+  if (scrollLocked) lockPush += Math.abs(e.deltaY);
+}, { passive: true });
+function fastForward() {
+  const cm = params.sections.common;
+  lockPush *= Math.exp(-frameDt * 2.5);          // 手を止めると数百msで元の速さへ戻る
+  const key = anyPlaying();
+  if (!key) { lockPush = 0; return; }
+  /* 【2026-08-18 指定】勢いよく回すと極端な早送りになるのを抑える。
+     上限を下げ、効きはじめもゆるやかにした (以前は最大4倍速・立ち上がりも急だった) */
+  const boost = Math.min(cm.ffMax, lockPush / cm.ffGain);
+  if (boost > 0.02) secPlay[key].skip += frameDt * boost;
+}
+
+/* ===== (旧) スクロール＝きっかけ / 再生＝時間 =====
+   スクロール位置は「ここまで再生してよい」という【上限】だけを決める。
+   実際に絵を進めるのは時間なので、手の速さで再生スピードが変わらない。
+     ・勢いよく回す → 上限だけ先に飛ぶ。絵は等速で追いかける = 早送りにならない
+     ・少し回す     → 上限が少し進む。そのぶんを再生して待つ = 見せたい所で見てもらえる
+     ・止める       → 上限まで再生して止まる。続きはスクロールで解放する
+   ⚠️ 以前やった「進捗そのものに速度上限をかける」方式とは別物。
+      あれはスクロールしても画面が動かず“のっそり”して不採用になった。 */
+const storyP = {};
+
+/* セクションが画面下から入ってきた割合 0〜1（0=画面下端に到達 / 1=画面いっぱいに来て固定開始）。
+   ⚠️ sticky の仕組み上、前のセクションの固定が外れてから次のセクションが固定され始めるまでに
+   ちょうど1画面ぶんのスクロールが必ず挟まる。そこで何も起きないと「無駄なスクロール」に見えるので、
+   この助走区間のうちに次のセクションの出だしを見せるために使う */
+function preP(sec) {
+  const r = rectOf(sec);
+  const vh = window.innerHeight || 1;
+  return clamp01((vh - r.top) / vh);
+}
+
+/* ブラー出現の共通適用 (KVの reveal と同じ質感: ブラー6-8px + 浮き上がり) */
+/* rv に「パネルで動かせる位置ずらし(ox, oy)」を足したもの。
+   出現時の translateY(dy) と足し合わせて1つの transform にする */
+function rvAt(el, k, blur, dy, ox, oy) {
+  setStyle(el, 'opacity', k.toFixed(3));
+  setStyle(el, 'pointerEvents', k < 0.02 ? 'none' : '');
+  setStyle(el, 'filter', k >= 1 ? '' : `blur(${((1 - k) * (blur == null ? 8 : blur)).toFixed(2)}px)`);
+  const y = (k >= 1 ? 0 : (1 - k) * (dy || 0)) + (oy || 0);
+  setStyle(el, 'transform', `translate(${(ox || 0).toFixed(2)}px, ${y.toFixed(2)}px)`);
+}
+/* ⚠️ style への書き込みは、値が同じでも毎回「描き直し」の対象になる。
+   毎フレーム同じ値を入れ続けると無駄な再描画が積み上がるので、
+   前回と違う時だけ書き込む。 */
+/* 同じ値を毎フレーム書き込まないためのキャッシュ付き style 設定。
+   ⚠️【2026-08-19 バグ修正】「前回頼まれた値」だけを覚えていたので、
+      どこかが el.style.opacity = 0 のように【直接】書き換えると
+      キャッシュだけが古い値のまま残り、次に同じ値を頼まれても
+      「もうその値です」と判断して書き込まず、画面が戻らなくなっていた。
+      実害: スクロール駆動＋固定追従で、実績の画像・数字・本文が
+            一度消えたあと二度と出てこない（ヒデさん報告）。
+      対策: 「頼まれた値」に加えて【前回書いたあと DOM に入っていた値】も覚えておき、
+            それが変わっていたら誰かが直接書いたとみなして書き直す。
+      ※ ブラウザは "1.000" を "1" に正規化するので、書いた後の値を控えること */
+function setStyle(el, prop, v) {
+  if (el['_s_' + prop] === v && el.style[prop] === el['_r_' + prop]) return;
+  el['_s_' + prop] = v;
+  el.style[prop] = v;
+  el['_r_' + prop] = el.style[prop];
+}
+
+function rv(el, k, blur, dy) {
+  setStyle(el, 'opacity', k.toFixed(3));
+  /* ⚠️ 透明でも「クリック・文字選択」は受け取ってしまう。
+     見えていない要素が上に重なると、下の文字がドラッグで選べなくなる。
+     消えている間はあたり判定も切る */
+  setStyle(el, 'pointerEvents', k < 0.02 ? 'none' : '');
+  setStyle(el, 'filter', k >= 1 ? '' : `blur(${((1 - k) * (blur == null ? 8 : blur)).toFixed(2)}px)`);
+  /* dy を渡した時だけ transform を触る。0や未指定なら要素本来の transform
+     (.pf-title の translateX(-50%) など) を壊さない */
+  if (dy) setStyle(el, 'transform', k >= 1 ? '' : `translateY(${((1 - k) * dy).toFixed(2)}px)`);
+}
+
+/* ---------- Vision: Platform図のジオメトリ (Figma SVG書き出しから) ---------- */
+const PF_ELL = [
+  { cx: 363.464, cy: 333.499, rx: 473.816, ry: 158.868, rot: -23.3266 },
+  { cx: 363.463, cy: 333.522, rx: 473.816, ry: 158.868, rot: -5.36549 },
+];
+/* 停止角度はカンプのドット位置から楕円式で逆算 */
+/* 【2026-08-31 ヒデさん指定・カンプ15900:38423】停止角度をカンプのドット位置から逆算して更新。
+   実行エンジン 72.9→69.8 / ワークフロー 47.1→44.5。他は前カンプと同位置(実測一致)。 */
+const PF_DOTS = [
+  { ell: 0, deg: 263.7, color: '#0E4497' },
+  { ell: 0, deg: 117.8, color: '#0EBBFF' },
+  { ell: 0, deg: 69.8,  color: '#000' },
+  { ell: 0, deg: 44.5,  color: '#FF5D97' },
+  { ell: 0, deg: -30.6, color: '#0EBBFF' },
+  { ell: 1, deg: 205.4, color: '#FF5D97' },
+];
+/* 役割ラベルは【ドットからの相対位置】で持つ (カンプ 14693:28351 実測)。
+   dot = PF_DOTS の番号 / dx,dy = ドット中心からラベル枠左上までのズレ。
+   ⚠️ 以前はカンプの絶対座標を直接書いていたため、
+     ・ドットの停止角度を直す
+     ・カンプが更新される
+     ・軌道の拡大率が変わる
+   のどれが起きてもラベルだけ取り残されてズレた（実際に2回踏んだ）。
+   ドット基準にしておけば、ドットが動いてもラベルは必ず付いてくる。
+   ※ カンプのドットは楕円の線から最大7.5pxほど手でずらして置かれているが、
+      ラベルはドット基準なので、そのズレの影響を受けない。
+   center:true は中央そろえ (カンプが -translate-x-1/2)。 */
+/* 【2026-08-31 ヒデさん指定・カンプ15900:38423】ラベル文言と位置を更新:
+   監査→SDK/CLI / 権限→実行エンジン(位置も) / 認証基盤→認証ウィザード / ワークフローの相対位置を実測値に */
+const PF_LABELS = [
+  { text: 'コネクタ',         dot: 0, dx: -26.30, dy:  18.33 },
+  { text: 'SDK/CLI',          dot: 1, dx: -15.61, dy:  13.38 },
+  { text: '実行エンジン',     dot: 2, dx: -35.69, dy:  18.31 },
+  { text: 'ワークフロー',     dot: 3, dx: -12.69, dy:  16.31 },
+  { text: '認証ウィザード',   dot: 4, dx:   0.00, dy: -37.89, center: true },
+];
+/* ⚠️ 光の楕円を足したので、querySelectorAll('ellipse') で拾うと本数が合わなくなる。
+   必ず id で取ること (実際にここで壊れた) */
+const pfEllEls = [document.getElementById('pfEll0'), document.getElementById('pfEll1')];
+/* 【2026-09-01 ヒデさん指定・4回直らなかった色ズレの根治(実測で確定)】
+   真因: グラデ軸はviewBox座標に固定なのに、楕円は画面幅(kFill)で大きさ・位置が変わる。
+   1440幅では「青ベタ+上部で白 / ピンクベタ+上部中央で白」(=ヒデさんの希望の色味)になるが、
+   1920幅では楕円が大きくなり軸の遷移帯を広く横切って、反対色まで混入していた(実測: 270°にピンク/水色)。
+   対策: 「1440×900の最終状態での楕円と軸の関係」を楕円ローカル座標として固定し、
+   軸も楕円と同じ変換(mapX/mapY)で毎フレーム動かす。どの画面幅でも1440と同じ当たり方になる。
+   ローカル座標の値は 1440実測(sc=1.02333, tx=-11.0, ty=141.0)から逆算した。 */
+const pfGradEls = [document.getElementById('pfG0'), document.getElementById('pfG1')];
+/* 【2026-09-01 ヒデさん指定】グラデ軸・色をパネル調整可能に。設定の取得(古い保存には無いのでDEFAULTSから複製) */
+function pfGradCfg(key) {
+  const vis = params.sections.vision;
+  if (!vis.pfGrad) vis.pfGrad = JSON.parse(JSON.stringify(DEFAULTS.sections.vision.pfGrad));
+  if (!vis.pfGrad[key]) vis.pfGrad[key] = JSON.parse(JSON.stringify(DEFAULTS.sections.vision.pfGrad[key]));
+  return vis.pfGrad[key];
+}
+/* 色ストップ(offset/色)をSVGへ反映。起動時とパネル変更時だけ呼ぶ(軸は毎フレーム追従) */
+function applyPfGradStops() {
+  ['g0', 'g1'].forEach((key, gi) => {
+    const g = pfGradEls[gi]; if (!g) return;
+    const cfg = pfGradCfg(key);
+    const w = Math.min(100, Math.max(0, cfg.white)) / 100;
+    const half = Math.max(0, cfg.wSpan) / 200;
+    const offs = [0, Math.max(0, w - half), w, Math.min(1, w + half), 1];
+    const cols = [cfg.c1, cfg.c2, '#ffffff', cfg.c3, cfg.c4];
+    const stops = g.querySelectorAll('stop');
+    for (let i = 0; i < 5 && i < stops.length; i++) {
+      stops[i].setAttribute('offset', offs[i].toFixed(4));
+      stops[i].setAttribute('stop-color', cols[i]);
+    }
+  });
+}
+function pfDotPos(d, deg) {
+  const e = PF_ELL[d.ell];
+  const t = deg * Math.PI / 180, r = e.rot * Math.PI / 180;
+  const lx = e.rx * Math.cos(t), ly = e.ry * Math.sin(t);
+  return { x: e.cx + lx * Math.cos(r) - ly * Math.sin(r), y: e.cy + lx * Math.sin(r) + ly * Math.cos(r) };
+}
+
+const visEls = {
+  label: document.getElementById('visLabel'),
+  l1: document.getElementById('visL1'),
+  l2: document.getElementById('visL2'),
+  pfWrap: document.getElementById('pfWrap'),   /* 旧図(2026-09-19 削除・null) */
+  vfWrap: document.getElementById('vfWrap'),   /* 【2026-09-19】SVG 書き出しの図 */
+  pfTitle: document.getElementById('pfTitle'),
+  pfSub: document.getElementById('pfSub'),
+  pfTexts: document.getElementById('pfTexts'),
+  valP1: document.getElementById('valP1'),
+  valP2: document.getElementById('valP2'),
+  dots: [], names: [], chars: [[], []],
+};
+(function buildPfDots() {
+  const root = document.getElementById('pfDots');
+  const textRoot = document.getElementById('pfTexts');
+  if (!root || !textRoot) return;   /* 【2026-09-19】図を SVG 書き出しに差し替えたので旧ドット/役割名の DOM は無い */
+  PF_DOTS.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'pf-dot';
+    el.style.background = d.color;
+    el.style.opacity = 0;
+    root.appendChild(el);
+    visEls.dots.push(el);
+  });
+  PF_LABELS.forEach(l => {
+    const nm = document.createElement('div');
+    nm.className = 'pf-name rv';
+    nm.textContent = l.text;
+    /* 担当ドットの「停止位置」を計算して、そこからの相対で置く。
+       .pf-texts は軌道と同じ translate+scale が掛かるので、
+       ここはローカル座標のままでよい (拡大しても関係が崩れない) */
+    const d = PF_DOTS[l.dot];
+    const at = pfDotPos(d, d.deg);
+    nm.style.left = (at.x + l.dx).toFixed(2) + 'px';
+    nm.style.top = (at.y + l.dy).toFixed(2) + 'px';
+    if (l.center) nm.classList.add('is-center');
+    textRoot.appendChild(nm);
+    visEls.names.push(nm);
+  });
+})();
+
+/* 見出しの文字を1文字ずつ span に分解 (案C 文字カスケード用) */
+/* 【2026-08-29 ヒデさん指定】メッセージの中の「強み」を強調アニメの対象にする。
+   文字カスケード(マスク登場)はそのまま活かしつつ、「強み」の2文字だけ .vl-strong で包んで
+   強調エフェクト(発光・チカチカ 等 10案)を当てられるようにする。 */
+const visStrongEls = [];   // 「強み」を包む .vl-strong 要素(l1/l2 ぶん)
+/* 【2026-09-09 カンプSP node16534:22143】スマホのメッセージは「データをつなぐことが、」/「強みになる時代へ。」の
+   2行を明示改行。幅任せだと iPhone(402px)では「強みになる」の後で折れてカンプと違った。
+   isMobile は fit() より前なので、CSS の @media と同じ matchMedia で判定する。 */
+const VIS_MB_BREAK = !!(window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches);
+/* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション。
+   default=現状(1行・visL1に全文/visL2は空・中央) / strong=強調案(2行・visL1「データをつなぐことが、」/visL2「強みになる時代へ」・左揃え・大きめ) */
+const VIS_TEXT = {
+  default: ['データをつなぐことが、強みになる時代へ。', ''],
+  strong:  ['データをつなぐことが、', '強みになる時代へ'],
+};
+/* 【2026-09-20 ヒデさん依頼】バリエーションのUIは他パネルと同じ「ピル型(varRowX)」で統一。案の定義はこの配列 */
+const VIS_EMPH_VARIANTS = [
+  { key: 'default', name: 'デフォルト', fixed: true, tip: '現状(1行・中央そろえ)。' },
+  { key: 'strong',  name: '強調',       fixed: true, tip: '2行(データをつなぐことが、／強みになる時代へ)・左揃え・文字+20px・見出しの左をKVコピー基準に・1行目→2行目のマスク出現。' },
+];
+function visEmphMode() { const v = params.sections && params.sections.vision; return (v && v.emph === 'strong') ? 'strong' : 'default'; }
+function rebuildVisChars(mode) {
+  const src = VIS_TEXT[mode] || VIS_TEXT.default;
+  visStrongEls.length = 0;
+  [visEls.l1, visEls.l2].forEach((line, i) => {
+    const inner = line.firstElementChild;
+    inner.innerHTML = '';
+    visEls.chars[i].length = 0;
+    const text = src[i] || '';
+    const strongStart = text.indexOf('強み');
+    const naguStart = text.indexOf('つなぐ');   /* 【2026-08-29 ヒデさん指定】「つなぐ」に常時グラデ揺らぎ */
+    let strongWrap = null, naguWrap = null;
+    [...text].forEach((ch, idx) => {
+      const s = document.createElement('span');
+      s.className = 'vl-ch';
+      s.textContent = ch;
+      visEls.chars[i].push(s);
+      const isStrong = strongStart >= 0 && idx >= strongStart && idx < strongStart + 2;
+      const isNagu = naguStart >= 0 && idx >= naguStart && idx < naguStart + 3;
+      if (VIS_MB_BREAK && mode !== 'strong' && ch === '、') {   /* SP は '、' で改行(strong は既に2要素なので不要) */
+        inner.appendChild(s);
+        const br = document.createElement('br');
+        br.className = 'vl-br-mb';
+        inner.appendChild(br);
+        return;
+      }
+      if (isStrong) {
+        if (!strongWrap) {
+          strongWrap = document.createElement('span');
+          strongWrap.className = 'vl-strong';
+          inner.appendChild(strongWrap);
+          visStrongEls.push(strongWrap);
+        }
+        strongWrap.appendChild(s);
+      } else if (isNagu) {
+        if (!naguWrap) {
+          naguWrap = document.createElement('span');
+          naguWrap.className = 'vl-nagu';
+          inner.appendChild(naguWrap);
+        }
+        naguWrap.appendChild(s);
+      } else {
+        inner.appendChild(s);
+      }
+    });
+  });
+}
+/* 強調案の見出し(Our Vision＋メッセージ)を「画面左端から120px」に置く。
+   .pin-stage は幅1440・左寄せ scale(--sp) なので、CSS left:120px だと
+   画面幅により右にずれる(1512px で実測170px)。画面左120px = ステージ左端 + CSS-left×スケール
+   なので、CSS-left = (120 − ステージ左端) ÷ スケール を逆算して --vis-emph-left に入れる。
+   ⚠️ PC のみ(SP はメッシュ横並びで別配置)。ウィンドウ幅が変わったら resize で呼び直す。 */
+function applyVisEmphLeft() {
+  try {
+    const sec = document.getElementById('vision'); if (!sec) return;
+    const isMb = (typeof isMobile !== 'undefined' && isMobile);
+    if (visEmphMode() !== 'strong' || isMb) { sec.style.removeProperty('--vis-emph-left'); return; }
+    const stage = sec.querySelector('.pin-stage'); if (!stage) return;
+    let sc = 1;
+    try { const m = new DOMMatrixReadOnly(getComputedStyle(stage).transform); if (m.a) sc = m.a; } catch (e) {}
+    if (!sc) sc = 1;
+    const sl = stage.getBoundingClientRect().left;   // ステージ左端の画面X(横は translateY/リビールに影響されない)
+    const cssLeft = (120 - sl) / sc;
+    sec.style.setProperty('--vis-emph-left', cssLeft.toFixed(1) + 'px');
+  } catch (e) {}
+}
+function applyVisEmph() {
+  const mode = visEmphMode();
+  try { const sec = document.getElementById('vision'); if (sec) sec.classList.toggle('vis-emph', mode === 'strong'); } catch (e) {}
+  rebuildVisChars(mode);
+  try { if (typeof applyVisBelow === 'function') applyVisBelow(); } catch (e) {}   /* 強調案の下コンテンツ間隔(+100)を反映 */
+  try { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); } catch (e) {}   /* 2行目にも太さ等を当て直す */
+  try { applyVisEmphLeft(); } catch (e) {}   /* 見出しを画面左120pxへ(幅依存の逆算) */
+}
+applyVisEmph();   /* 初期化(起動時のモードで組む) */
+
+
+/* ビジョンのフェーズ境界: 調整パネルの値から組み立てる (絵コンテ準拠)
+   コマ順: OurVisonブラー出現 → 1行ずつ下からトリミング出現 → 1行目から左へスライド →
+   ミニ楕円ブラー出現 → 上下に分かれてブラーで消える → 楕円が左下へ移動＋実寸へ拡大 →
+   ドットがくるくる(時間駆動・約1秒) → Platform文字 → ドット停止＋役割名 → 2つの価値 →
+   スクロールで Point 01 → Point 02 */
+/* ビジョンは「セクションがピン留めされたら自動再生」。
+   Our Vison → 1行ずつ文字 → 左へスライド → 軌道グラフィック出現 までが自動。
+   そこから “ワンスクロール” で文字が上下に分かれて消え、軌道が左下へ移動して実寸になる。 */
+let visAutoT0 = null;    // 自動シーケンスの開始時刻
+let visT = -1;           // 実際に進んだ再生位置(秒)。時間とスクロールの速い方で進み、戻らない
+/* 自動パート(5.275) + 軌道が左下へ(2.0) + ドット周回して停止(4+2.5)
+   + そこから Platform〜2つの価値のチェーン(約3.5) をぜんぶ含む長さ。
+   ⚠️ 短いとドットが回りっぱなしになったり、文字が出切らない（両方踏んだ） */
+/* 尺は updateVision 内で時間割から自動計算する (visTotal) */
+/* ===== ドットの回り方 (2026-08-15) =====
+   「最初はスピーディーに回って、止まる頃に徐々に減速して止まる」
+   減速中の角速度を v0×(1-u)^n としている。n が大きいほど
+   「はじめにグッと落ちて、最後は長く尾を引く」止まり方になる。
+   fast = 回っている間の速さの倍率。 */
+/* ===== 軌道が出て左下へ動く時の見せ方 =====
+   pos = 位置のカーブ / scl = 大きさのカーブ / durK = 移動時間の倍率 */
+const VIS_MOVES = [
+  { id: 'sync',  name: '①動きと拡大を同時に', durK: 1.00, posE: 'slick', sclE: 'io',    desc: '動き出すのと同時に、じわじわ大きくなる。' },
+  { id: 'late',  name: '②先に動いて後で拡大', durK: 1.15, posE: 'slick', sclE: 'late',  desc: 'まず位置が決まり、着く頃に大きくなる。文字が読みやすい。' },
+  { id: 'early', name: '③先に拡大して後で動く', durK: 1.15, posE: 'late', sclE: 'early', desc: '先に大きくなってから、ゆっくり定位置へ流れていく。' },
+];
+let visAutoDone = false; // 自動パートが終わったか
+let visMoveT0 = null;    // ワンスクロールで左下へ動き出した時刻
+
+function updateVision(p) {
+  const c = params.sections.vision;
+  const B = c.blur;
+  /* 【2026-08-18 ヒデさん指定】固定追従なしの時は
+     「後ろから拡大 → 左下へ移動」をやめ、最初から所定の位置（左下・実寸）で組み上がった
+     状態にする。出現はブロックごとのブラー（renderNoPin）に任せる。
+     ドットだけは止まらずに回り続ける */
+  const noPin = params.pin === 'off' || VIS_NOPIN;   /* 2026-08-29: Vision は常に no-pin */
+
+  /* ⚠️ 2026-08-14 まで、このセクションは【全部が時間駆動】だった。
+     つまりピン留めされている1.6画面ぶん、いくらスクロールしても進捗が1ミリも動かず、
+     「所定の位置に来たのに何度もスクロールしないと先へ進めない」状態になっていた。
+     いまは実績と同じく【時間でも進む／スクロールでも進む、速い方を採用】。
+     止まっていても勝手に再生され、スクロールした分はちゃんと先へ進む。
+     max で持つので巻き戻りもしない (リプレイなし) */
+  const pre = progOverride.visionPre != null ? progOverride.visionPre : preP(SECS.vision);
+  /* 【出だしだけ自動、あとは全部スクロール】(2026-08-14 ヒデさん選択)
+       ・セクションが画面に入ったら、まず「Our Vison」と1行目までを時間で出す (VIS_AUTO_HEAD 秒)
+       ・そこから先 (2行目 → 上下に分かれる → 軌道が出る → 左下へ → 2つの価値) は
+         ピン中のスクロール量だけで進む。手を止めれば絵も止まる
+       ・max で持つので巻き戻らない (スクロールで戻っても終わった状態のまま) */
+  /* 2026-08-14: 画面に顔を出した瞬間だと早すぎるとの指摘。
+     セクションがビューポートの中央まで来てから開始する (pre = 0.5) */
+  /* 近づいてくる間に「Our Vison」と1行目だけ出す(乗り換え区間を空にしないため)。
+     本編はセクションが所定の位置(固定)に着いてから、1本の映像として自動再生 */
+  /* --- 時間割 (秒) を先に全部出す。尺 visTotal もここから計算する --- */
+  const l1At = c.line1At;
+  const l2At = c.line1At + c.line2Gap;
+  const splitAt = l2At + c.revealDur + c.splitGap;
+  /* 軌道がブラーで出る = ドットも回りはじめる。
+     【2026-08-29 ヒデさん指定】no-pin は「メッセージが出たらすぐ」グラフィックをブラー出現させる
+     (メッセージの登場が終わった直後 +0.35秒)。そのあと Point1 → Point2 の順。 */
+  /* 【2026-08-30 ヒデさん指定・修正】グラフィックは「メッセージのマスクが出きった終点」と同時にブラー出現。
+     マスクは easeOut で終盤じわっと漸近するため、時計上の完了(revealDur)まで待つと見た目に0.2〜0.3秒の
+     「もう止まってるのに待つ」間が出る(実測)。見た目の終点=revealDurの85%時点に合わせる。
+     npGap=そこからの追加の間(既定0=出きったと同時)。 */
+  /* 2026-08-31 ヒデさん指定: グラフィックの出始めをさらに早く(マスク85%→70%時点から) */
+  const miniAt = noPin ? (l1At + c.revealDur * (c.npFireK != null ? c.npFireK : 0.70) + (c.npGap != null ? c.npGap : 0)) : (splitAt + c.splitDur * c.miniGap);
+  /* 【2026-08-15】以前は「軌道が出きってから左下へ移動」だったので待ちが長かった。
+     いま は 出はじめ(moveLead 割)で もう動き出す ＝ 濃くなりながら同時に左下へ流れる */
+  const autoEnd = miniAt + c.miniDur * c.moveLead;
+  const brake = Math.max(0.3, c.spinBrake);
+  /* ドットの時計 S は miniAt 起点。移動が終わってからさらに spinHold 秒たっぷり回してから減速 */
+  const brakeStart = (autoEnd - miniAt) + c.moveDur + c.spinHold;
+  const namesEnd = brakeStart + brake + 0.1 + (PF_LABELS.length - 1) * 0.14 + T_IN;
+  const visTotal = miniAt + namesEnd + 0.2;
+
+  /* 【2026-08-15】開始は「セクションがビューポート中央に来てから」。
+     ⚠️ 以前は近づいてくる途中(preP >= 0.5 = 画面に半分入った時点)から
+        「Our Vision」と1行目を先出ししていたため、中央に来る前に始まって早く感じた。
+        いまは他のセクションと同じく【固定(ピン)された瞬間＝ステージが画面の上下中央に
+        収まった瞬間】に再生を始める */
+  let A = playT('vision', visTotal, canPlay(p), SECS.vision, p);
+  /* 【2026-09-08 ヒデさん指定】静的モバイル: 時間再生を止め、最初から最終状態(メッセージ/図/ポイント
+     すべて表示・ドットの回転も停止後)で固定する。A を十分先へ送るとすべての reveal が完了し、
+     pat2 の回転も停止状態(pat2K=1)になる。スクロールで動かない。 */
+  /* 【2026-09-09 ヒデさん指定】ビジョンの入場(マスク出現→軌道→Point01/02)は PC と同じ時間再生に戻す */
+
+  if (A >= autoEnd && !visAutoDone) visAutoDone = true;
+
+  /* 【2026-08-30 ヒデさん指定】メッセージの「強み」強調は【グラデ揺らぎ(live)】で確定。
+     str-live は CSS の常時アニメ(紺⇄ピンクのグラデがゆっくり流れる)。他の案とパネルは削除した。
+     ⚠️ 旧 str-go(overflow:visible) は付けない。付けると .vis-line の overflow:hidden が無効になり、
+        「下からマスクで出てくる」表現が丸ごと消えていた(実際に起きた)。グラデははみ出さないので不要。 */
+  for (const el of [visEls.l1, visEls.l2]) {
+    if (!el) continue;
+    el.classList.add('str-live');
+  }
+
+  /* --- 自動パートが終わったら、続けて軌道が左下へ (同じ時計で動かす) --- */
+  const mvT = A < 0 ? -1 : A - autoEnd;
+  const S = A < 0 ? -1 : A - miniAt;   /* ドットの時計 */
+  /* ⚠️ easeIO は出だしが遅いので、濃くなり終わってからやっと動き出すように見えていた。
+     easeSlick はすっと動き出して最後だけ静かに止まるので「濃くなりながら同時に移動」になる */
+  /* 位置と拡大は別のカーブにする。同じにすると出だしで一気に大きくなってしまう。
+     カーブの組み合わせは調整パネル「軌道の出方」で3パターンから選べる */
+  const MP = VIS_MOVES[(params.visMove || 1) - 1];
+  const mvRaw = mvT < 0 ? 0 : clamp01(mvT / (c.moveDur * MP.durK));
+  const curve = (id, x) => id === 'slick' ? easeSlick(x)
+    : id === 'io'   ? easeIO(x)
+    : id === 'late' ? easeIO(clamp01((x - 0.28) / 0.72))       /* 後半で動く */
+    : id === 'early'? easeOutQ(clamp01(x / 0.62))              /* 前半で終わる */
+    : x;
+  const mv  = noPin ? 1 : curve(MP.posE, mvRaw);
+  const mvS = noPin ? 1 : curve(MP.sclE, mvRaw);
+  const ex = noPin ? 0 : (mvT < 0 ? 0 : easeIO(clamp01(mvT / (c.moveDur * 0.6))));
+  /* 【2026-08-15】上下に分かれたあと、その場で静止せずに
+     「慣性が効いたようにふわーっと」流れ続けながら消える。
+     spT = 分かれ始めてからの秒数。drift は指数で減速するので、離れるほど遅くなる */
+  const spT = A < 0 ? -1 : A - splitAt;
+  const drift = spT <= 0 ? 0 : (1 - Math.exp(-spT / 1.15)) * c.driftAmt;
+  const vanish = spT <= 0 ? 0 : easeIO(clamp01((spT - c.splitDur * c.vanishAt) / c.vanishDur));
+
+  /* 上下に分かれる進み具合(既定 splitAmt=0 なので視覚的な分割は起きない)。
+     Our Vison / 2行は、これと入れ替わりでその場ブラーで消える */
+  const spK = easeOutQ(clamp01((A - splitAt) / c.splitDur));
+  /* 【2026-08-25 ヒデさん指定】「Our Vision」は必ずブラーで登場・退場（VIS_REVEALS に依存しない） */
+  const blurOnlyLbl = true;
+  /* 【2026-08-15】「Our Vison」は上の行が上下に分かれる時にぶつかるので、
+     分かれ始める labelOutLead 秒前からブラーで先に消しておく */
+  const lblOut = A < 0 ? 0
+    : easeIO(clamp01((A - (splitAt - c.labelOutLead)) / Math.max(0.1, c.labelOutDur)));
+  /* 【2026-08-25 指定】Our Vision は「先に消える」のをやめ、メッセージ(2行)と同じ
+     タイミング(=軌道が左下へ移動し始める ex)で一緒に消す。 */
+  /* 【2026-08-26 ヒデさん指定】Our Vision の文字はブラーなし＝フェードのみで出す(blur=0) */
+  rv(visEls.label, easeOutQ(clamp01((A - c.labelAt) / c.labelDur)) * (1 - ex),
+     0, 0);
+
+  /* 見出し2行: 左寄せで下からトリミング出現(マスク) → その場でブラーで消える (上下分割は廃止) */
+  [[visEls.l1, l1At, -1, 0], [visEls.l2, l2At, 1, 1]].forEach(([el, at, dir, idx]) => {
+    /* 1文字ずつわずかな時間差で立ち上がる (参考サイトの SplitText と同じ考え方)。
+       行の箱は overflow:hidden なので、下から出てくる所はちゃんとマスクされる */
+    const raw0 = clamp01((A - at) / c.revealDur);
+    const k = easeOutQ(raw0);
+    const inner = el.firstElementChild;
+    const chars = visEls.chars[idx];
+    const n = chars.length;
+    const lag = c.charLag;                 // 1文字ぶんの遅れ (行全体の何割か)
+    const perChar = lag > 0 && n > 1;
+
+    /* 行まるごと出す場合は内側の箱を動かす。1文字ずつの場合は下の forEach で文字を動かす */
+    /* 【2026-08-25 ヒデさん指定】2行は必ず「下から立ち上がるマスク」で登場（overflow:hidden で下からトリミング）。
+       rise=下から立ち上がる / blur=その場ブラー のうち rise 固定にする（VIS_REVEALS に依存しない） */
+    const blurOnly = false;
+    if (perChar) {
+      inner.style.transform = ''; inner.style.filter = ''; inner.style.opacity = '';
+      const spanIn = Math.max(0.2, 1 - lag);
+      chars.forEach((sp, ci) => {
+        const ki = easeOutQ(clamp01((raw0 - (ci / (n - 1)) * lag) / spanIn));
+        sp.style.transform = blurOnly ? '' : `translateY(${((1 - ki) * 108).toFixed(2)}%)`;
+        sp.style.opacity = blurOnly ? ki.toFixed(3) : '';
+        sp.style.filter = '';   /* 2026-08-26: ブラーなし(下からのマスクのみで出す) */
+      });
+    } else {
+      inner.style.transform = blurOnly ? '' : `translateY(${((1 - k) * 108).toFixed(2)}%)`;
+      inner.style.opacity = blurOnly ? k.toFixed(3) : '';
+      inner.style.filter = '';   /* 2026-08-26: ブラーなし */
+      if (chars[0] && (chars[0].style.transform || chars[0].style.opacity)) {
+        chars.forEach(sp => { sp.style.transform = ''; sp.style.filter = ''; sp.style.opacity = ''; });
+      }
+    }
+    /* 【2026-08-25 指定】メッセージは分割(split/vanish)では消さず、軌道が移動し始めるタイミング(ex)で消す */
+    const gone = ex;
+    el.style.opacity = ((k > 0 ? 1 : 0) * (1 - gone)).toFixed(3);
+    el.style.filter = '';   /* 2026-08-26 ヒデさん指定: 退場もブラーなし(フェードのみ) */
+    /* 上下に開く → 止まらずに慣性で流れ続けながら消える */
+    const dy = dir * (spK * c.splitAmt + drift);
+    el.style.transform = `translate(0px, ${dy.toFixed(2)}px)`;
+  });
+
+  /* 軌道グラフィック: 上下に分かれた文字の間に小さくブラー出現(自動) → ワンスクロールで左下へ＋実寸。
+     CSSのscaleで拡大するとラスタライズ済みの絵が引き伸ばされて粗くなるため、
+     楕円の座標・半径・ドット位置を毎フレーム計算して SVG に反映する (常にシャープ) */
+  const mi = easeOutQ(clamp01((A - miniAt) / c.miniDur));  /* no-pinでも時間クロックAで出す=入場前は0(真っ白)→入場でブラー登場 */
+  /* 【2026-08-17 指定】ドットは軌道が出たあと、1つずつ順に出てくる。
+     以前は軌道が出た時点でもう6個そろっていた。
+     ⚠️ A<0（まだ再生していない）ときは 1 に戻す。KV でも同じ SVG を使っているため */
+  for (let i = 0; i < dotK.length; i++) {
+    dotK[i] = (noPin || A < 0) ? 1
+      : easeOutQ(clamp01((A - (miniAt + c.dotsInAt + i * c.dotsInStagger)) / Math.max(0.01, c.dotsInDur)));
+  }
+  /* 画面幅に合わせて軌道も拡大する。縦にはみ出さない範囲で頭打ちにする */
+  /* 【2026-09-09 カンプSP node16534:22627 準拠】スマホの軌道図はデスクトップ版のちょうど 0.488 倍
+     (Platform 50px→24.397px / 役割名 14→6.831 / サブ 16→7.807 / 楕円 462×155 / ドット 13.4→6.5)。
+     楕円(rx,ry)・文字(.pf-texts の scale)・ドット(scale) はすべて sc で一様に縮むので、
+     この1値だけで図全体がカンプ寸法になる。以前は幅基準(390/900=0.43)で図を縮めつつ
+     文字だけ CSS で 100px 等に膨らませていたため、カンプと全く違う見た目になっていた。 */
+  /* 【2026-09-19 ヒデさん依頼】図は SVG 書き出し(#vfWrap)。グラフィック発火(miniAt)から miniDur でブラー出現するだけ。
+     旧図の 楕円の座標計算(kFill/sc/tx/ty)・グラデ軸の追従・ドットの周回(pat2/easeDrive)・Platform 文字 は削除 */
+  if (visEls.vfWrap) { rv(visEls.vfWrap, mi, B); vfDraw(elapsed); }   /* 2026-09-19: ドームは毎フレーム描く(ゆっくり回転) */
+
+  /* 【2026-08-29 ヒデさん指定】no-pin は時間再生。グラフィックが出きった時点(miniAt+miniDur)を起点に、そこからディレイで Point01 → Point02 を1つずつ出す。
+     【2026-09-19】Platform 文字・役割名・ドット停止後の処理は図の差し替えで削除 */
+  const C = noPin ? (A < 0 ? -99 : A - (miniAt + c.miniDur)) : (mvT < 0 ? -99 : mvT - c.moveDur);
+  /* ⚠️【2026-08-27】この横ズレは PC(1440座標系)で位置を合わせるためのもの。スマホは 390 の座標系で CSS 側が左右24pxに収めているので効かせない */
+  const offX = isMobile ? 0 : 1;
+  const P_IN = (c.npPointDur != null ? c.npPointDur : 0.8);   /* 2026-08-31: ポイントの出現時間(パネル) */
+  rvAt(visEls.valP1, easeOutQ(clamp01((C - (c.npP1 != null ? c.npP1 : 0.95)) / P_IN)), B, 12, c.p1X * offX, c.p1Y);
+  rvAt(visEls.valP2, easeOutQ(clamp01((C - (c.npP2 != null ? c.npP2 : 1.35)) / P_IN)), B, 12, c.p2X * offX, c.p2Y);
+}
+
+/* ---------- 実績: 画面に入ったらカウント開始 (時間駆動) ---------- */
+const resEls = {
+  head: document.getElementById('resHead'),
+  hl1: document.getElementById('resHl1'),     // 「事業の推進力を、」フェードイン
+  typed: document.getElementById('resTyped'), // 「Anyflow」だけタイピング
+  caret: document.getElementById('resCaret'),
+  suffix: document.getElementById('resSuffix'), // 「が支えます。」は静的表示(見出し1行目と一緒に出す)
+  hl2: document.getElementById('resHl2'),
+  slot: document.getElementById('resSlot'),
+  ghost: document.getElementById('resGhost'),   // Anyflow の幅を確保＋下線プレースホルダ
+  stats: document.getElementById('resStats'), // 3数値グループ
+  vals: document.getElementById('resVals'),   // 2つの価値
+  hr: document.getElementById('resHr'),       // 区切り線
+  dark: document.getElementById('resDark'),
+  grow: document.getElementById('resGrow'),
+  cntMain: document.getElementById('cntMain'),
+  cntSub1: document.getElementById('cntSub1'),
+  cntSub2: document.getElementById('cntSub2'),
+};
+const RES_TYPE_TEXT = 'Anyflow';   /* 2026-08-30 ヒデさん指定: タイピングするのは「Anyflow」だけ。「が支えます。」は静的(resSuffix) */
+/* 黒せり上がりで白反転させる「濃い文字」。色付きタグ(for Saas/for AI)は反転しない */
+function resInvertEls() {
+  return [resEls.hl1, resEls.typed, resEls.suffix,   // 2026-08-30: 「が支えます。」も反転(黒く残らないよう統一)
+    ...SECS.results.querySelectorAll('.r2s b'),   // 数字ラベル(導入企業/連携実績/稼働率)
+    ...SECS.results.querySelectorAll('.r2s span'),// 数字そのもの
+    ...SECS.results.querySelectorAll('.r2v-h'),   // 価値の見出し
+    ...SECS.results.querySelectorAll('.r2v-p')];  // 価値の本文
+}
+/* 【2026-09-08 ヒデさん指定】色付きタグ(for SaaS=ピンク / for AI=濃い青)も暗転で白へフェードさせる。
+   濃い青は黒地で読めなくなるため。各ブランド色→白へ k(暗さ)で補間。どの暗転カーブ・どのピクト案でも同じ。 */
+function resFadeTags(k) {
+  const mix = base => `rgb(${Math.round(base[0] + (255 - base[0]) * k)},${Math.round(base[1] + (255 - base[1]) * k)},${Math.round(base[2] + (255 - base[2]) * k)})`;
+  SECS.results.querySelectorAll('.r2v-tag-saas').forEach(el => el.style.color = mix([255, 93, 151]));   /* --brand-pink */
+  SECS.results.querySelectorAll('.r2v-tag-ai').forEach(el => el.style.color = mix([14, 68, 151]));       /* --brand-blue-deep */
+}
+function resClearTags() { SECS.results.querySelectorAll('.r2v-tag').forEach(el => el.style.color = ''); }
+let resT0 = null;
+let resT = -1;   // 実際に進んだ再生位置(秒)。時間とスクロールの速い方で進み、戻らない
+
+/* 数字の見せ方の変遷:
+   ランダム演出 → カウントアップ → スロット → ブラー出現のみ (2026-08-15)
+   → スロットを復活 (2026-08-17 指定・Counter Pro のような桁ごとのロール)。
+   描画は下の renderSlots() が受け持つ。 */
+
+/* 全部出そろうまでの秒数 (見出しのブラー出現 → 数字 → 下段 まで) */
+/* ===== 実績の数字: 桁ごとに縦へ回るスロット =====
+   数字は「0 から目的の数字まで、0〜9 を何周か流してから止まる」形で作る。
+   桁ごとに少し遅らせて止めるので、左から順に確定していく。 */
+const SLOT_TARGETS = [
+  ['cntMain', '100+'], ['cntSub1', '20,000+'], ['cntSub2', '200+'],   /* 2026-08-31 カンプ15900:38712 の数値へ */
+  ['cntSub3', 'No.1', { min1: true }],   /* 【2026-09-20 ヒデさん依頼】No. は固定・1 だけ 1〜9 でスロット回転 */
+];
+let slots = [];
+let slotBuiltCycles = -1;
+/* 数字がビューポートに入った時刻。null = まだ入っていない */
+let slotT0 = null;
+/* 【2026-09-08】スロット化前の実数字(100+ / 20,000+ / 200+)を控える。静的モバイルで戻す用。
+   スクリプトは body 末尾なので DOM は既にあり、buildSlots より前に確定する。 */
+const SLOT_ORIG = {
+  main: (document.getElementById('cntMain') || {}).textContent,
+  sub1: (document.getElementById('cntSub1') || {}).textContent,
+  sub2: (document.getElementById('cntSub2') || {}).textContent,
+  sub3: (document.getElementById('cntSub3') || {}).textContent,
+};
+
+function buildSlots() {
+  /* 【2026-09-09 ヒデさん指定】スロットアニメはスマホでも PC と同じに再生する(固定表示は撤回) */
+  const cy = Math.max(1, Math.round(params.sections.results.slotCycles));
+  if (slotBuiltCycles === cy && slots.length) return;
+  slotBuiltCycles = cy;
+  slots = [];
+  for (const [id, text, opt] of SLOT_TARGETS) {
+    const host = document.getElementById(id);
+    if (!host) continue;
+    host.textContent = '';
+    const wrap = document.createElement('i');
+    wrap.className = 'slot';
+    const reels = [];
+    for (const ch of text) {
+      if (ch >= '0' && ch <= '9') {
+        const rl = document.createElement('i');
+        rl.className = 'rl';
+        const stp = document.createElement('i');
+        stp.className = 'stp';
+        /* cy 周ぶんの 0〜9 を並べ、最後に目的の数字を置く */
+        const seq = [];
+        const lo = (opt && opt.min1) ? 1 : 0;   /* 【2026-09-20】min1: 0 を飛ばし 1〜9 で回す(No.1 用) */
+        for (let c = 0; c < cy; c++) for (let d = lo; d < 10; d++) seq.push(d);
+        seq.push(Number(ch));
+        for (const d of seq) {
+          const em = document.createElement('em');
+          em.textContent = String(d);
+          stp.appendChild(em);
+        }
+        /* 【2026-09-19 ヒデさん依頼】案4「ドラム」用: 目的の数字の後ろにも次の数字を3つ置く(円筒の下側に見える)。ドラム以外では display:none */
+        for (let x = 1; x <= 3; x++) { const em = document.createElement('em'); em.className = 'x'; em.textContent = String((Number(ch) + x) % 10); stp.appendChild(em); }
+        rl.appendChild(stp);
+        wrap.appendChild(rl);
+        reels.push({ rl, stp, len: seq.length, ems: Array.from(stp.children) });
+      } else {
+        const fx = document.createElement('i');
+        fx.className = 'fx';
+        fx.textContent = ch;
+        wrap.appendChild(fx);
+      }
+    }
+    host.appendChild(wrap);
+    slots.push({ host, reels });
+  }
+}
+
+/* いちばん桁数の多い数字が止まりきるまでの秒数 */
+function slotEnd() {
+  const c = params.sections.results;
+  let maxReels = 1;
+  for (const s of slots) maxReels = Math.max(maxReels, s.reels.length);
+  return c.slotAt + c.slotDur + (maxReels - 1) * c.slotStagger;
+}
+
+/* ts = 数字ブロックが出はじめてからの秒数。マイナスなら先頭(0)で待たせる */
+/* 【2026-09-19 ヒデさん依頼「消え方をもっと自然に」】案4 ドラム(円筒): 数字を円筒の面に貼ったように、中心から離れるほど縦に縮み(cosθ)・薄くなる(cosθ^k)。
+   帯(.stp)は動かさず、見えている数字(±88°)だけを translateY(R·sinθ − j) scaleY(cosθ) で置く。R = N/(2π) 文字分(N=ドラムの分割数) */
+function slotDrumPose(re, e, c) {
+  const N = Math.max(8, Math.round(c.slotDrumN || 12)), R = N / (2 * Math.PI), step = 360 / N, kf = (c.slotDrumFade != null ? c.slotDrumFade : 1.3);
+  const f = (re.len - 1) * e; re.drum = true; if (re.stp.style.transform) re.stp.style.transform = '';
+  const ems = re.ems || (re.ems = Array.from(re.stp.children));
+  for (let j = 0; j < ems.length; j++) {
+    const th = (j - f) * step, em = ems[j];
+    if (Math.abs(th) >= 88) { if (em._v !== false) { em.style.visibility = 'hidden'; em._v = false; } continue; }
+    const r = th * Math.PI / 180, cs = Math.cos(r);
+    if (em._v !== true) { em.style.visibility = ''; em._v = true; }
+    em.style.transform = 'translateY(' + (R * Math.sin(r) - j).toFixed(3) + 'em) scaleY(' + cs.toFixed(3) + ')';
+    em.style.opacity = Math.pow(cs, kf).toFixed(3);
+  }
+}
+function slotDrumClear(re) { (re.ems || []).forEach(em => { em.style.transform = ''; em.style.opacity = ''; em.style.visibility = ''; em._v = undefined; }); re.drum = false; }
+function renderSlots(ts) {
+  const c = params.sections.results;
+  const drum = (typeof resSlotFxKey === 'function' && resSlotFxKey() === 'drum');
+  for (let si = 0; si < slots.length; si++) {
+    const s = slots[si];
+    const tsi = Array.isArray(ts) ? (ts[si] != null ? ts[si] : -1) : ts;   /* 案28: 数値ごとの再生位置(配列) */
+    s.reels.forEach((re, i) => {
+      const k = clamp01((tsi - (c.slotAt + i * c.slotStagger)) / Math.max(0.01, c.slotDur));
+      /* 緩急: 1 - (1-k)^n。n が大きいほど「最初は速く、最後はじりじり」になる。
+         n=2 でゆるやか / n=5 が既定 / n=9 でかなり粘って止まる。
+         ⚠️ easeSlick(臨界減衰) だと全体的に均一で、スロットらしい溜めが出なかった */
+      const e = 1 - Math.pow(1 - k, Math.max(1, c.slotEase));
+      if (drum) { slotDrumPose(re, e, c); }
+      else { if (re.drum) slotDrumClear(re); setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`); }
+      if (re.spin !== (k > 0 && k < 1)) { re.spin = (k > 0 && k < 1); re.rl.classList.toggle('spin', re.spin); }   /* 【2026-09-19】案2「ぼかして消える」用: 回っている桁に印 */
+      /* ⚠️ 回転中のぼかしは入れない（2026-08-17 に「要らない」で確定）。
+         数字はくっきりしたまま回して止める */
+    });
+  }
+}
+
+/* 見出しが出きるまで と 数字が回りきるまで の、遅い方 */
+function resTotal() {
+  const c = params.sections.results;
+  const l1Dur = c.softDur * 0.6;
+  const typeStart = c.typeAt + (c.typeGap != null ? c.typeGap : 0.55);
+  const typeEnd = typeStart + RES_TYPE_TEXT.length * 0.06;
+  const restEnd = typeStart + (c.restGap != null ? c.restGap : 0.1) + c.softDur * 0.8;
+  return Math.max(typeEnd, restEnd, slotEnd() + 0.3) + 0.4;
+}
+/* 中央でピン留めされたら再生。出終わったらスクロールで下のセクションへ抜ける。
+   ⚠️ 以前は「時間だけ」で進めていたので、ピンしている間にスクロールしても何も進まず、
+      再生が終わってからさらに数画面スクロールしないと下へ抜けられなかった。
+      いまは【時間でも進む／スクロールでも進む、速い方を採用】。止まっていても勝手に出てくるし、
+      スクロールした分はちゃんと先へ進むので、無駄なスクロールが発生しない。
+      max で持つので巻き戻りもしない (リプレイなし) */
+let resInvertOn = false;   /* 白反転のインライン color を今かけているか(掃除用) */
+let resGrinAnchor = null;  /* 黒オブジェクトを上げ始めるスクロール位置(リビール完了時にセット) */
+let grinShown = 0;         /* 黒のせり上がりの“実際の表示量”(時間で目標へ追いつく＝ゆったり) */
+let resBlackK = 0;         /* 黒がどれだけ覆ったか(0→1)。dev1 の出現ゲートに共有 */
+
+/* ===== 【2026-09-14 ヒデさん指定・比較検証 v2】実績セクションの演出案 (Codex 1/4/5/6。7・9 は 2026-09-14 に削除) =====
+   RESULTS-VISUAL-HANDOFF.md の方針(旧 MOTION-HANDOFF を上書き):
+   ・現行(default)を正とし、案は「構図・文字サイズ・図の表示サイズ・列幅・余白・画面占有率・読む区間」だけを変える(CSS の #results.rfx-N)
+   ・実績→開発者体験の暗転/白反転(devDarkK 連動)はそのまま。伸ばした尺の終端が既存の入口になる
+   ・スクロール管理は frame()→updateResults(p) の既存ループに乗る(別リスナー/別ループは足さない)
+   ・時間で出る演出(スロット/見出しのマスク)は「時間でも進む／スクロールでも進む、速い方を採用」(実績の既存方針)。
+     案1 は面の移動がスクロール駆動なので、読む区間のスクロールでも進めないと回り切る前に面が流れる(2026-09-14 ヒデさん指摘「切れている」)
+   ・スマホ(html.mb)は各案を縦積みで再現(CSS)。縦≤600px は固定案(1/5/6)も縦流れ
+   仮置き: 尺(vh)・読む区間の配分は原本値。パネル「固定の長さ」で尺は可変。 */
+const RES_FX = {
+  default: { vh: 0 },
+  '24-4': { vh: 240, mobileFlow: true },   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
+  '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
+  /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
+};
+const RES_FX_KEYS = ['24-4', '26'];
+function resFxKey() { const v = params.patterns && params.patterns.resFx; if (RES_FX[v] && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resFx', v))) return v; return (Object.keys(RES_FX).find(k => !variantRemovedKey('resFx', k)) || '24-4'); }   /* 【2026-09-20】既定24-5・フォールバックdefault も完全削除したため、生存案(24-4/26)の先頭へ落とす */
+function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
+function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
+function resFxFlowMode(k) { const c = RES_FX[k] || {}; return !!(c.flow || (isMobile && c.mobileFlow) || (resFxShort() && c.vh)); }
+function resFxVh(k) {
+  const base = RES_FX[k] ? RES_FX[k].vh : 0;
+  if (!base) return 0;
+  const o = (params.sections && params.sections.results && params.sections.results.rfxVh) || {};
+  return o[k] != null ? o[k] : base;
+}
+/* faceT0: 案1 の SaaS/AI 面ごとの出現クロック(面が着いた時刻)。faceHi/tHi/slotHi: 「速い方を採用」の高水位(巻き戻さない) */
+const resFxSt = { key: 'default', faceT0: [null, null], faceHi: [0, 0], tHi: 0, slotHi: 0, valOff: [null, null], chars: [], charsOrig: [], big: [], numDy: 0, headDy: 0, figD: null, statD: null, gate24: false, sents: [], sentsOrig: [], rings: [], slotArr: [-1, -1, -1] };
+function resFxEls() {
+  const S = SECS.results, q = s => S.querySelector(s), qa = s => [...S.querySelectorAll(s)];
+  return { res2: q('.res2'), track: q('.r2v-track'), top: q('.res2-top'), r2v: qa('.r2v'), fig: qa('.r2v-fig'),
+    g: qa('.r2v-graphic'), tx: qa('.r2v-text'), hli: qa('.r2v-hli'), tag: qa('.r2v-tag'), p: qa('.r2v-p'), r2s: qa('.r2s') };
+}
+/* 案が書いたインライン style を掃除(案の切替時)。base(rv)が毎フレーム書く要素は base が上書きするので触らない */
+function resFxClear() {
+  const E = resFxEls();
+  const wipe = (el, props) => { if (el) props.forEach(pr => setStyle(el, pr, '')); };
+  wipe(E.res2, ['transform']);
+  wipe(E.track, ['transform']);
+  wipe(E.top, ['opacity', 'transform', 'pointerEvents']);
+  E.r2v.forEach(el => { wipe(el, ['opacity', 'transform', 'pointerEvents']); el.style.removeProperty('--rfx-link'); });
+  E.fig.forEach(el => wipe(el, ['transform', 'opacity', 'filter', 'pointerEvents']));
+  E.g.forEach(el => wipe(el, ['transform']));
+  E.tx.forEach(el => wipe(el, ['opacity', 'transform', 'clipPath', 'pointerEvents']));
+  E.hli.forEach(el => wipe(el, ['transform', 'opacity', 'filter']));
+  E.tag.forEach(el => wipe(el, ['opacity', 'transform', 'filter', 'fontSize']));   /* fontSize: 案38 のラベル拡大 */
+  [...SECS.results.querySelectorAll('.r2v-h')].forEach(el => wipe(el, ['opacity', 'transform']));   /* 案38 */
+  E.p.forEach(el => wipe(el, ['opacity', 'transform', 'clipPath', 'filter']));
+  E.tx.forEach(el => el.style.removeProperty('--rfx-guide'));
+  E.r2s.forEach(el => wipe(el, ['opacity', 'pointerEvents', 'transform']));
+  resFxSt.statD = null;
+  wipe(resEls.stats, ['borderBottomColor']);
+  wipe(resEls.stats, ['transform']);
+  wipe(resEls.vals, ['transform']);
+  wipe(resEls.hr, ['transform']);
+  wipe(resEls.head, ['opacity', 'transform', 'pointerEvents']);
+  wipe(resEls.hl1, ['transform']); wipe(resEls.hl2, ['transform']);   /* 案22 の行ごとの寄せ */
+  resFxSt.numDy = 0; resFxSt.headDy = 0;
+  SECS.results.style.removeProperty('--rfx-line');
+  SECS.results.style.removeProperty('--rfx-tag-ink');
+  resFxSt.faceT0 = [null, null]; resFxSt.faceHi = [0, 0]; resFxSt.tHi = 0; resFxSt.slotHi = 0;
+  resFxSt.valOff = [null, null]; valTOv.saas = null; valTOv.ai = null;   /* 案14 のピクト時計の上書きを解除 */
+  resFxRemoveBig();     /* 案20/24 の大見出しを消す */
+  resFxSt.figD = null; resFxSt.gate24 = false;
+  if (E.res2) { E.res2.style.removeProperty('--rfx-vline'); E.res2.style.removeProperty('--rfx-hr'); }
+  { const st = rfxStage(); if (st) setStyle(st, 'marginBottom', ''); }
+}
+function applyResFx() {
+  const k = resFxActive();
+  if (resFxSt.key !== k) { resFxClear(); resFxSt.key = k; }
+  const flow = resFxFlowMode(k);
+  RES_FX_KEYS.forEach(n => SECS.results.classList.toggle('rfx-' + n, k === n));
+  SECS.results.classList.toggle('rfx-on', k !== 'default');
+  SECS.results.classList.toggle('rfx-24', k === '24-4');   /* 案24-4 は案24 の CSS(配置)を共用 */
+  SECS.results.classList.toggle('rfx-pin', !flow && !!resFxVh(k));
+  SECS.results.classList.toggle('rfx-flow', flow);
+  if (k === '24-4') resFxBuildBig();
+}
+/* 固定区間の進み: 0=セクション上端が画面上端に着いた / 1=区間の終わり(下端が画面下端)。固定なしの案は 0 */
+function resFxPin() {
+  const r = rectOf(SECS.results), vh = innerHeight || 1;
+  const travel = r.height - vh;
+  return travel > 1 ? clamp01(-r.top / travel) : 0;
+}
+const rfxSmooth = t => t * t * (3 - 2 * t);   /* 原本と同じ smoothstep(easeIO は cubic in-out で保持が強すぎる) */
+const rfxRange = (p, a, b) => rfxSmooth(clamp01((p - a) / Math.max(1e-4, b - a)));
+/* 「面ごとに止まって読む」横移動。segs=[[動き始め,動き終わり],...]。返り値=いまの面(0〜n-1、途中は小数) */
+function rfxHeld(p, segs) { let pos = 0; for (const s of segs) pos += rfxRange(p, s[0], s[1]); return pos; }
+/* 【2026-09-26 整理】案1/27/28 専用の「読む区間のスクロールでも進む(速い方を採用)」は案ごと削除。
+   生きている案(24-4/26)では元から素通りだったので、再生位置 t / スロット位置 ts はそのまま使う */
+function resFxTimeT(t) { return t; }
+function resFxSlotTs(ts) { return ts; }
+/* 図の「収まった位置」の画面上の中心x。transform を含めないレイアウト値(offsetLeft の連鎖)で取るので、
+   拡大・移動中でも所定位置が分かる。trackShift=横に並ぶ面の移動ぶん(案5: 面番号×面の幅) */
+function rfxStage() { return SECS.results.querySelector('.pin-stage'); }
+/* ステージの表示倍率(--sp)。SP と案12(等倍)は 1 */
+function rfxSp() { if (isMobile) return 1; const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sp')); return v > 0 ? v : 1; }
+/* ステージ座標(変形前のレイアウト px)での中心。ステージ(.pin-stage)は画面幅いっぱい・固定中は画面の高さなので、その中心＝画面の中央。
+   セクションと一緒に動く座標なので、入場中に画面の縁で切れない(2026-09-15 ヒデさん指摘「マスクで出てくる」の根治) */
+function rfxCenterX(el, trackShift) { const st = rfxStage(); let x = el.offsetWidth / 2; for (let n = el; n && n !== st; n = n.offsetParent) x += n.offsetLeft; return x - (trackShift || 0); }
+function rfxCenterY(el) { const st = rfxStage(); let y = el.offsetHeight / 2; for (let n = el; n && n !== st; n = n.offsetParent) y += n.offsetTop; return y; }
+function rfxVW() { const st = rfxStage(); return st ? st.offsetWidth : innerWidth; }
+function rfxVH() { const st = rfxStage(); return st ? st.offsetHeight : innerHeight / rfxSp(); }
+/* 案14: ピクト(valSaas/valAi)の描画時計の上書き。null=通常(時間) / {fixed:秒}=その時刻で止める(スクロールで進める) /
+   {off:秒}=時間 - off で続きを描く(描き切った位相から切れ目なく再開)。drawValueIcons が参照 */
+const valTOv = { saas: null, ai: null };
+function rfxValT(ov, et) { return ov == null ? et : (ov.fixed != null ? ov.fixed : Math.max(0, et - ov.off)); }
+/* ===== 【2026-09-15 ヒデさん指定】「読み飛ばさない・しっかり読ませる」10案(27〜36)の共通部品 ===== */
+/* スロットを回し始める位置。案24-4 は終点(下段)が見えてから。それ以外(26)は既定の「数字が 85%H より上に入ったら」 */
+function resFxSlotEnter(v) {
+  if (resFxSt.key === '24-4') return resFxSt.gate24 ? 0.995 : -1;   /* 案24-4: 数値は終点(下段)が見えてから回す */
+  return v;
+}
+/* ===== 【2026-09-14 ヒデさん指定】主役ピクト系(案6・15〜19): 「数値の訴求 → ピクトのアニメーション」の移行を滑らかに。値はパネル「主役ピクト系の移行」 ===== */
+const RFX_HERO_DEF = { introOutAt: 0.19, introOutLen: 0.09, introRise: 60, pictoInAt: 0.22, pictoInLen: 0.10, pictoFrom: 0.7, pictoBlur: 18, heroHold: 0.08, settleLen: 0.42, switchLen: 0.03 };
+function rfxHero() { const r = params.sections && params.sections.results; return Object.assign({}, RFX_HERO_DEF, (r && r.hero) || {}); }
+/* 案20: 各値の大見出し(「for SaaS」/「for AI」)を .r2v の中央に置く。案を離れたら消す */
+function resFxBuildBig() {
+  if (resFxSt.big.length) return;
+  const E = resFxEls();
+  resFxSt.big = E.r2v.map((r2v, i) => {
+    const d = document.createElement('div');
+    d.className = 'r2v-big' + (i ? ' r2v-big-ai' : '');
+    /* 【2026-09-18 ヒデさん依頼】登場の大きい文字は「for SaaS」＋下の行に小さめの「Product」(サイズは --r2v-prod-size) */
+    const w = document.createElement('span'); w.className = 'r2v-big-w'; w.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (i ? 'for AI' : 'for SaaS');
+    const pr = document.createElement('span'); pr.className = 'r2v-big-prod'; pr.textContent = 'Product';
+    d.append(w, pr);
+    d.setAttribute('aria-hidden', 'true');
+    r2v.appendChild(d);
+    return d;
+  });
+  try { textTools.applyAll(); } catch (e) {}   /* 作った直後に文字システム(太さ等)を当てる */
+}
+function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = []; }
+/* 【2026-09-18】大きい文字の下の「Product」のサイズ(px)。パネル「案24…：ピクトの大きさと文字の動き」から */
+/* ===== 【2026-09-19 ヒデさん依頼】ビジョンの図: 網目のドーム(Figma 18004:38228)を KV のケージと同じ発想でコード描画 =====
+   正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
+   ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
+   値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
+const VF_DEF = { meshKind: 'geo', fn: 92, r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+/* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
+const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
+/* 【2026-09-26 ヒデさん判断】ロゴの案はノーマル(フラット)だけ。ロゴ追従(球に貼り付いて回る／面に焼き付け)は試した上で撤去。パネルにロゴの案の切替は出さない */
+const VIS_LOGOS = [
+  { key: 'flat', name: 'ノーマル', fixed: true, tip: 'ロゴはメッシュ中央の上に平面(傾き0)で固定。', cfg: { logoTiltX: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
+];
+function vfLogoKey() { const v = String(vfCfg().logoVar || 'flat'); return (VIS_LOGOS.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visLogo', v))) ? v : 'flat'; }
+function vfApplyLogoVariant(key) { const m = VIS_LOGOS.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.logoVar = key; applyVfFade(); }   /* logoOn=ロゴの表示/非表示(2026-09-19 ヒデさん依頼。非表示なら後ろのぼかしも消す) */   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
+/* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
+const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'depthFade', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH', 'msx', 'msy', 'msz', 'mpinch'];   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
+const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
+const VIS_MESHES = [
+  { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
+    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
+  { key: 'kv', name: '案2 KV のメッシュをそのまま', tip: 'キービジュアルのケージと同じ描き方: 測地線球(頂点42)・線 #6B7690 を奥ほど薄く/細く・点はピンク/シアン交互で手前ほど大きく・骨の上を光(パケット)が走る。半径と回転の速さも KV と同じ比率。',
+    cfg: { r: 251, spin: 1.4, tilt: -11, lineAlpha: 0.25, lineWidth: 1.5, dot: 2.9, freq: 2, lineColor: '#6B7690', nodeMode: 'alt', levels: 0, pk: 4, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 } },
+  /* 【2026-09-19 ヒデさん依頼】案3=案1＋ロゴの後ろをぼかす(楕円の中の網目をぼかし、地色で薄める) */
+  { key: 'domeBlur', name: '案3 ブラーあり（ロゴの後ろをぼかす）', tip: '案1 の色味のまま、ロゴの後ろに楕円の領域を置いて中の網目をぼかし、地色で少し薄める。ぼかし・濃さ・広さは下のつまみ。',
+    cfg: { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 10, bgAlpha: 0.55, bgW: 1.6, bgH: 2.8 } },
+  /* 【2026-09-19 ヒデさん依頼】案4: 奥側の線・点を薄く(遠近感)。depthFade=奥をどれだけ薄くするか */
+  { key: 'domeDepth', name: '案4 奥の線を薄く（遠近感）', tip: '案1 と同じ図で、球の奥側の線と点を薄く・細く(75%減)。手前と奥の差がはっきりして立体に見える。', cfg: Object.assign({}, VIS_MESHES_DOME_CFG, { depthFade: 0.75 }) },
+];
+function vfVarKey() { const v = String(vfCfg().variant || 'dome'); return (VIS_MESHES.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visMesh', v))) ? v : 'dome'; }
+function vfApplyVariant(key) { const m = VIS_MESHES.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.variant = key; vfMesh = null; applyVfFade(); }   /* scale=メッシュの大きさ(2026-09-19 ヒデさん指定で 1.15・仮置き)。機能名の文字サイズは変えず位置だけ中心から外へ */
+const VF_CX = 291, VF_CY = 315;   /* 球の中心(容器座標。カンプ: ケージ(29,49)＋(262,266)) */
+/* 【2026-09-21 ヒデさん依頼】PC の機能名5つは「メッシュ中心 VF_CX を軸に左右対称・円弧に沿う」中心アンカー。
+   x=水平の中心アンカー(ラベルを中央寄せ＝幅が違っても左右対称) / y=上端アンカー(高さは全ラベル同じなので上端でも対称)。
+   ペア(1↔5, 2↔4)は VF_CX=291 を軸に等距離(±262 / ±156)、y は対で同じ＝SDK を頂点に左右へ下る弧。
+   ※SP は従来どおり data-x/data-y(カンプ手置き)。この配列は PC のみ差し替える。 */
+const VF_LAB_PC = [ { x: 29, y: 105 }, { x: 135, y: 33 }, { x: 291, y: 0 }, { x: 447, y: 33 }, { x: 553, y: 105 } ];
+/* 【2026-09-20 ヒデさん依頼・#3 PC/SP独立】ビジョンのメッシュの設定を PC(dome) と SP(domeMb) で分ける。
+   描画: SP(isMobile)の時だけ domeMb を dome に重ねる＝PCは domeMb を一切見ない(SPの調整がPCに出ない)。 */
+function _vfPhoneOn() { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } }
+function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; const c = Object.assign({}, VF_DEF, v.dome); if ((typeof isMobile !== 'undefined' && isMobile) && v.domeMb) Object.assign(c, v.domeMb); return c; }
+/* パネルのつまみの表示用: スマホモード中は SP 上書き(domeMb)を重ねて見せる(PCでいじる値と分ける) */
+function vfCfgVal(k) { const v = params.sections.vision; if (_vfPhoneOn() && v.domeMb && v.domeMb[k] != null) return v.domeMb[k]; if (v.dome && v.dome[k] != null) return v.dome[k]; return VF_DEF[k]; }
+function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; if (_vfPhoneOn()) { if (!v.domeMb) v.domeMb = {}; v.domeMb[k] = val; } else { v.dome[k] = val; } applyVfFade(); }
+/* 【2026-09-19 ヒデさん依頼】メッセージの下の余白: 図(ドーム)と Point 01/02 を同じ量だけ下へ(PC。既定 50px は仮置き) */
+function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; const emphExtra = (typeof visEmphMode === 'function' && visEmphMode() === 'strong' && !(typeof isMobile !== 'undefined' && isMobile)) ? 100 : 0;   /* 【2026-09-20】強調案は見出しメッセージ↔下コンテンツ(図・ポイント)を100px離す(下も連動して下がる)。PC/タブレットのみ */ sec.style.setProperty('--vis-below', ((v.belowGap != null ? v.belowGap : 50) + emphExtra) + 'px'); }
+applyVisBelow();
+/* 【2026-09-19 ヒデさん依頼】ビジョンの図と Point 01/02 の左右の間隔(PCのみ)。+で Point を右へ(間隔を広げる) */
+function applyVisPointsX() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-points-x', (v.pointsX != null ? v.pointsX : 0) + 'px'); }
+applyVisPointsX();
+function applyVfFade() {
+  const w = document.getElementById('vfWrap'); if (!w) return; const c = vfCfg(); const sc = (c.scale != null ? c.scale : 1);
+  const _mb = (typeof isMobile !== 'undefined' && isMobile);   /* 【2026-09-20】SP は独立した見た目(PCに影響しない) */
+  w.style.setProperty('--vf-dy', (c.dy != null ? c.dy : 0) + 'px');   /* セット(網目＋ロゴ＋機能名)の上下 */
+  w.style.setProperty('--vf-dx', (c.dx || 0) + 'px');   /* 【2026-09-19 ヒデさん依頼】セットの左右(PCのみ。SPは固定) */
+  /* 下のフェード: 容器の高さ(600)に対する割合を、中心基準で拡大して canvas(上 −150)の px に */
+  const fy = (f) => (VF_CY + (c.my || 0) + (f * 600 - VF_CY) * sc + 150).toFixed(1) + 'px';   /* 網目を上下にずらしたらフェードも一緒に */
+  w.style.setProperty('--vf-fade-a', fy(c.fadeA)); w.style.setProperty('--vf-fade-b', fy(Math.max(c.fadeA + 0.02, c.fadeB)));
+  /* 機能名: 文字サイズはそのまま、位置だけ中心から外へ */
+  const ld = _mb ? 0.64 : (c.labelDist != null ? c.labelDist : 1);   /* 【2026-09-20 #5】SP は機能名を球の縁(円周)に沿わせる。【2026-09-21 ヒデさん依頼】もっと内側へ(0.72→0.64＝実行エンジンが右端で切れないように) */
+  const _lo = c.labOff || [];   /* 【2026-09-20 ヒデさん依頼】機能名の 全体(labGX/labGY)＋個別(labOff[i]) 位置移動 */
+  const _mbLabGY = _mb ? (c.mbLabGY != null ? c.mbLabGY : -120) : 0;   /* 【2026-09-21 ヒデさん依頼】SP のみ機能名セットを矢印(SDK上面が矢印先端)まで上げる。-38→-120(内部scale0.56で画面約-67px＝メッセージ直下)。位置移動はSPのみ・PCには持ち上げを入れない＝PC/SP独立 */
+  const _mbLabGX = _mb ? [-76, -32, 0, 32, 76] : null;   /* 【2026-09-21 ヒデさん依頼】SPのみ: 左右の機能名をメッシュに重ならないよう外へ。index=[コネクタ,認証ウィザード,SDK,ワークフロー,実行エンジン]。−=左/＋=右・SDKは中央維持。local値(画面では×0.50)。各高さでの球の幅を実測して重ならない量に。PCは null(不変) */
+  /* 【2026-09-21 ヒデさん依頼】位置移動はSPのみ・普通のスケール(画面px)で。PCは元のまま(縮小座標・持ち上げなし)＝PC/SP独立。
+     SPは #vfWrap が pin-stage で縮小(scale)されるので、手動offset(全機能X/Y・個別labOff・SP持ち上げ)に 1/scale を掛けて
+     「値=実際の画面移動px」に換算する。PCは _invSp=1(従来どおり・連動させない)。 */
+  let _invSp = 1;
+  if (_mb) { try { const _st = w.closest && w.closest('.pin-stage'); if (_st) { const _m = new DOMMatrixReadOnly(getComputedStyle(_st).transform); if (_m && _m.a > 0) _invSp = 1 / _m.a; } } catch (e) {} }
+  w.querySelectorAll('.vf-lab').forEach((el, i) => {
+    const _a = VF_LAB_PC[i] ? VF_LAB_PC[i] : null;   /* 【2026-09-21】PC/SP とも左右対称の弧アンカー(中心 VF_CX 基準)。SP も PC 同様に線対称(ヒデさん依頼)。SPは sc*ld で内側へ縮んで収まる */
+    const x = _a ? _a.x : +el.dataset.x, y = _a ? _a.y : +el.dataset.y;
+    const o = _lo[i] || 0, ox = o ? (o.x || 0) : 0, oy = o ? (o.y || 0) : 0;
+    const mgx = _mbLabGX ? (_mbLabGX[i] || 0) : 0;   /* 【2026-09-21】SPのみ per-label 横移動(メッシュ回避) */
+    let lx = VF_CX + (x - VF_CX) * sc * ld + ((c.labGX || 0) + ox + mgx) * _invSp;
+    const ly = VF_CY + (y - VF_CY) * sc * ld + ((c.labGY || 0) + _mbLabGY + oy) * _invSp;
+    if (_a || _mb) { lx -= el.offsetWidth / 2; }   /* 【2026-09-21】PC/SP とも中心アンカーは幅の半分だけ左へ＝幅が違っても左右対称・円周に沿う */
+    el.style.left = lx.toFixed(1) + 'px';
+    el.style.top = ly.toFixed(1) + 'px';
+  });
+  /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
+  const logoOn = !(c.logoOn === 0 || c.logoOn === false);
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 80; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中より上に(独立)。【2026-09-21 ヒデさん依頼】SPはもう少し上へ(-72→-80) */ lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+    const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
+    const tf3 = '';   /* 【2026-09-20 ヒデさん依頼】ロゴはヘッダーのロゴと同じく常にフラット(傾き0)・メッシュの角度から独立。傾き系(logoTiltX/Y・角度)は無視する。 */ lg.style.transform = tf3;
+    lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
+    const sh = (c.logoShadow || 0); lg.style.filter = sh > 0.05 ? 'drop-shadow(0 ' + (sh * 0.7).toFixed(1) + 'px ' + sh.toFixed(1) + 'px rgba(16,24,40,.22))' : '';
+    /* 案4 ガラスの板: ロゴより一回り大きく、同じ傾き */
+    const pl = w.querySelector('.vf-logo-plate'); if (pl) { const on = logoOn && !!c.logoPlate; pl.classList.toggle('is-on', on); if (on) { const px = lw * 0.14, py = lh * 0.7; pl.style.left = (lcx - lw / 2 - px).toFixed(1) + 'px'; pl.style.top = (lcy - lh / 2 - py).toFixed(1) + 'px'; pl.style.width = (lw + px * 2).toFixed(1) + 'px'; pl.style.height = (lh + py * 2).toFixed(1) + 'px'; pl.style.transformOrigin = '50% 50%'; pl.style.transform = tf3; } }
+    /* ロゴの後ろの楕円(案3): ロゴの中心に、横 bgW 倍・縦 bgH 倍 */
+    const bg = w.querySelector('.vf-logo-bg'); if (bg) { const on = logoOn && ((c.bgBlur || 0) > 0.05 || (c.bgAlpha || 0) > 0.005); bg.classList.toggle('is-on', on); if (on) { const bw = lw * (c.bgW != null ? c.bgW : 1.6), bh = lh * (c.bgH != null ? c.bgH : 2.8); bg.style.left = (lcx - bw / 2).toFixed(1) + 'px'; bg.style.top = (lcy - bh / 2).toFixed(1) + 'px'; bg.style.width = bw.toFixed(1) + 'px'; bg.style.height = bh.toFixed(1) + 'px'; bg.style.setProperty('--vfbg-blur', (c.bgBlur || 0).toFixed(1) + 'px'); bg.style.setProperty('--vfbg-a', (c.bgAlpha || 0).toFixed(3)); } } }   /* ロゴ: 中心基準で大きさ(logoScale)・ずらし(logoDx/Dy)・角度(logoAngle)・奥行きの傾き(logoTiltX) */
+}
+function vfBuild(f) {
+  const t = (1 + Math.sqrt(5)) / 2, nrm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  /* 【2026-09-19 ヒデさん指摘「軸が揺れて見える」】素の正二十面体は頂点(極)が Y 軸からずれているので、Y で回すと模様が転がって見えた。
+     頂点 (0,1,t) が真上(0,1,0)に来るよう X 軸まわりに −58.28° 回して、5本の線が集まる極を回転軸に置く */
+  const th = -Math.atan2(t, 1), cth = Math.cos(th), sth = Math.sin(th);
+  const base = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(nrm).map(v => [v[0], v[1] * cth - v[2] * sth, v[1] * sth + v[2] * cth]);
+  const faces = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  const verts = [], idx = new Map(); const key = (v) => v.map(x => x.toFixed(4)).join(',');
+  const add = (v) => { const k = key(v); if (idx.has(k)) return idx.get(k); verts.push(v); idx.set(k, verts.length - 1); return verts.length - 1; };
+  const edges = new Set(); const E = (a, b) => edges.add(a < b ? a * 65536 + b : b * 65536 + a);
+  for (const [ia, ib, ic] of faces) {
+    const A = base[ia], B = base[ib], C = base[ic]; const grid = [];
+    for (let i = 0; i <= f; i++) { grid[i] = []; for (let j = 0; j <= f - i; j++) { const u = i / f, w = j / f; grid[i][j] = add(nrm([A[0] + (B[0] - A[0]) * u + (C[0] - A[0]) * w, A[1] + (B[1] - A[1]) * u + (C[1] - A[1]) * w, A[2] + (B[2] - A[2]) * u + (C[2] - A[2]) * w])); } }
+    for (let i = 0; i < f; i++) for (let j = 0; j < f - i; j++) { E(grid[i][j], grid[i + 1][j]); E(grid[i][j], grid[i][j + 1]); E(grid[i + 1][j], grid[i][j + 1]); }
+  }
+  return { verts, edges: Array.from(edges).map(k => [Math.floor(k / 65536), k % 65536]) };
+}
+let vfMesh = null, vfMeshFreq = 0, vfPk = [], vfPkNext = 0, vfLastT = null;
+function vfRgb(hex) { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')); const v = parseInt(m ? m[1] : 'a6a6a6', 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255].join(','); }
+const VF_LV_LINE = [0.2, 0.4, 0.6, 1.0], VF_LV_NODE = [0.2, 0.4, 0.7, 1.0];   /* 4段の濃淡(奥→手前)。カンプの opacity 分布に合わせた */
+function vfDraw(tSec) {
+  const cv = document.getElementById('vfDome'); if (!cv) return;
+  const sec = SECS && SECS.vision; if (sec) { const r = sec.getBoundingClientRect(); if (r.bottom < -50 || r.top > (window.innerHeight || 1) + 50) return; }   /* 画面外では描かない */
+  const c = vfCfg(); const f = Math.max(1, Math.min(4, Math.round(c.freq)));
+  const _fibo = c.meshKind === 'fibo', _fn = Math.max(12, Math.min(400, Math.round(c.fn || 92)));   /* 【2026-09-25 ヒデさん依頼】形=散らばり(三角網・点を1個ずつ)。KVとは別の値 */
+  const _mkey = _fibo ? 'f' + _fn : 'g' + f;
+  if (!vfMesh || vfMeshFreq !== _mkey) { vfMesh = _fibo ? sphereFiboHull(_fn) : vfBuild(f); vfMeshFreq = _mkey; }
+  const W = 900, H = 900, dpr = Math.min((typeof isMobile !== 'undefined' && isMobile) ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】スマホはドームcanvasの解像度を2→1.5に(座標系はdprでスケール＝見た目ほぼ同じ・約44%省ピクセル) */
+  if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const cx = VF_CX + 150 + (c.mx || 0), cy = VF_CY + 150 + (c.my || 0), R = c.r * (c.scale != null ? c.scale : 1) * (1 + (c.mz || 0) / 100);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ。mx/my/mz=【2026-09-19】網目だけの XYZ ずらし(Z は %) */
+  const spinOn = !(c.spinOn === 0 || c.spinOn === false);   /* 回転 あり/なし(速さの値は保持) */
+  const a = (spinOn ? tSec : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
+  /* 【2026-09-21 ヒデさん依頼】メッシュの形状(丸み/横長/ひし形/縦長)。頂点をワープしてから回転・投影する。
+     msx/msy/msz=XYZの伸縮、mpinch=中心をふくらませ極を尖らせる(ひし形) */
+  const _msx = c.msx != null ? c.msx : 1, _msy = c.msy != null ? c.msy : 1, _msz = c.msz != null ? c.msz : 1, _mpinch = c.mpinch || 0;
+  const P = vfMesh.verts.map(v => {
+    let wx = v[0], wy = v[1], wz = v[2];
+    if (_mpinch) { const k = 1 - _mpinch * Math.abs(wy); wx *= k; wz *= k; }   /* 赤道は太く極は細く=ひし形シルエット */
+    wx *= _msx; wy *= _msy; wz *= _msz;
+    const x1 = wx * ca + wz * sa, z1 = -wx * sa + wz * ca; const y2 = wy * ct - z1 * st, z2 = wy * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2];
+  });
+  /* 【2026-09-19 ヒデさん依頼】案5: ロゴを球の表面に貼って網目と一緒に回す。貼る点＝今のロゴ中心を球の手前側に投影した点。向きは面の法線(回転→傾き→左右の傾きを網目と同じ順で) */
+  if (false && c.logoStick && !(c.logoOn === 0 || c.logoOn === false)) { const lg = document.getElementById('vfLogo'); if (lg) {   /* 【2026-09-20 ヒデさん依頼】ロゴは独立フラット化のため、球に貼り付いて回る(案5)処理は無効化 */
+    const sc = (c.scale != null ? c.scale : 1); const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls;
+    const ux = ((127 + 102 - VF_CX) * sc + (c.logoDx || 0)) / R, uy = -((288 + 18.5 - VF_CY) * sc + (c.logoDy || 0)) / R;
+    const n0 = Math.hypot(ux, uy), rr = Math.min(0.9, n0); const x0 = n0 > 1e-6 ? ux / n0 * rr : 0, y0 = n0 > 1e-6 ? uy / n0 * rr : 0, z0 = Math.sqrt(Math.max(0, 1 - x0 * x0 - y0 * y0));
+    const az0 = Math.atan2(x0, z0), el0 = Math.asin(Math.max(-1, Math.min(1, y0)));
+    const x1 = x0 * ca + z0 * sa, z1 = -x0 * sa + z0 * ca; const y2 = y0 * ct - z1 * st, z2 = y0 * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr;
+    const px = (cx - 150) + x3 * R, py = (cy - 150) - y3 * R;
+    lg.style.left = (px - lw / 2).toFixed(1) + 'px'; lg.style.top = (py - lh / 2).toFixed(1) + 'px';
+    const D = 180 / Math.PI; lg.style.transform = 'perspective(900px) rotateZ(' + (-(c.roll || 0) + (c.logoAngle || 0)).toFixed(2) + 'deg) rotateX(' + (-c.tilt).toFixed(2) + 'deg) rotateY(' + ((a + az0) * D).toFixed(2) + 'deg) rotateX(' + (el0 * D).toFixed(2) + 'deg)';
+    const back = (c.logoBackAlpha != null ? c.logoBackAlpha : 0.3), t = Math.max(0, Math.min(1, (z2 + 0.15) / 0.3));   /* 縁(±0.15)でなめらかに裏側の濃さへ */
+    lg.style.opacity = ((c.logoOpacity != null ? c.logoOpacity : 1) * (back + (1 - back) * t)).toFixed(3); } }
+  g.lineCap = 'round';
+  const lc = vfRgb(c.lineColor || '#A6A6A6'), lw = (c.lineWidth != null ? c.lineWidth : 1), quant = (c.levels == null ? 1 : c.levels) > 0.5;
+  const bin = (k) => Math.min(3, Math.floor(k * 4));
+  const df = c.depthFade || 0;   /* 【2026-09-19】案4: 奥(k→0)ほど薄く・細く */
+  for (const [i, j] of vfMesh.edges) { const A = P[i], B = P[j]; const k = (A[2] + B[2]) / 2;
+    const al = quant ? c.lineAlpha * VF_LV_LINE[bin(k)] : c.lineAlpha * (0.42 + 0.58 * k);   /* 案1=4段 / 案2(KV)=連続 */
+    g.strokeStyle = 'rgba(' + lc + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.lineWidth = (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k)); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
+  const PINK = '255,93,151', CYAN = '14,187,255', NAVY = '14,68,151', PALE = '157,176,201';
+  for (let i = 0; i < P.length; i++) { const [x, y, k] = P[i]; let col, al, rad;
+    if ((c.nodeMode || 'alt') === 'alt') { col = (i % 2) ? PINK : CYAN; if (quant) { al = VF_LV_NODE[bin(k)]; rad = c.dot * (0.55 + 0.45 * k); } else { const dep = 0.72 + 0.5 * k; al = 0.5 + 0.5 * dep; rad = c.dot * dep; } }
+    else { const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; col = h < 0.12 ? PINK : h < 0.24 ? CYAN : h < 0.28 ? NAVY : PALE; al = (col === PALE) ? (0.3 + 0.45 * k) : (0.45 + 0.55 * k); rad = c.dot * (0.55 + 0.45 * k); }
+    g.fillStyle = 'rgba(' + col + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad * (1 - 0.35 * df * (1 - k)), 0, Math.PI * 2); g.fill(); }
+  /* パケット(骨の上を走る光。案2=KV と同じ発想。pk=1秒あたりの数) */
+  const dt = vfLastT == null ? 0 : Math.min(0.1, Math.max(0, tSec - vfLastT)); vfLastT = tSec;
+  if ((c.pk || 0) > 0) { vfPkNext -= dt; if (vfPkNext <= 0 && vfPk.length < 14) { vfPkNext = 1 / c.pk; const e = vfMesh.edges[(Math.random() * vfMesh.edges.length) | 0]; vfPk.push({ a: e[0], b: e[1], k: 0, dur: 0.7 + Math.random() * 0.5 }); } } else vfPk.length = 0;
+  for (let i = vfPk.length - 1; i >= 0; i--) { const q = vfPk[i]; q.k += dt / q.dur; if (q.k >= 1) { vfPk.splice(i, 1); continue; } const A = P[q.a], B = P[q.b]; if (!A || !B) { vfPk.splice(i, 1); continue; } const x = A[0] + (B[0] - A[0]) * q.k, y = A[1] + (B[1] - A[1]) * q.k, k = A[2] + (B[2] - A[2]) * q.k; const fade = Math.sin(q.k * Math.PI);
+    g.fillStyle = 'rgba(' + ((q.a % 2) ? PINK : CYAN) + ',' + ((0.35 + 0.5 * k) * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * (0.9 + 0.6 * k) * (0.6 + 0.4 * fade), 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); }
+}
+applyVfFade();
+/* 【2026-09-21 ヒデさん依頼】実績ピクトの表示サイズ。#results に --r2v-disp を設定→ .r2v-graphic の zoom に反映。
+   params.sections.results.pictoDisp は mbKey でPC/SP独立(SPは applyMbToParams が SP値を流し込む)。 */
+function applyPictoDisp() { try { const r = (params.sections && params.sections.results) || {}; const el = document.getElementById('results'); if (el) el.style.setProperty('--r2v-disp', (r.pictoDisp != null ? r.pictoDisp : 1)); } catch (e) {} }
+/* 【2026-09-21 ヒデさん依頼】スマホの実績の縦余白(各ブロック↔区切り線)。#results に --r2v-sp-gap を設定→ SP の .res2 の gap に反映。 */
+function applyResSpGap() { try { const r = (params.sections && params.sections.results) || {}; const el = document.getElementById('results'); if (el) el.style.setProperty('--r2v-sp-gap', (r.spGap != null ? r.spGap : 16) + 'px'); } catch (e) {} }
+function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
+  /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
+  d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win-n', String(r.slotWin != null ? r.slotWin : 1.6)); d.setProperty('--slot-ramp', String(r.slotRamp != null ? r.slotRamp : 1));
+  const sec = document.getElementById('results'); if (sec) { sec.classList.toggle('slot-fx-blur', resSlotFxKey() !== 'plain'); sec.classList.toggle('slot-fx-drum', resSlotFxKey() === 'drum'); } }
+/* 【2026-09-19 ヒデさん依頼】数字のスロットの案(案1=現状 / 案2=上下のマスクにぼかしをかけて徐々に消える)。値は仮置き */
+const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp', 'slotDrumN', 'slotDrumFade'];
+const RES_SLOT_FX = [
+  { key: 'plain', name: '案1 現状（上下をうすく消す）', fixed: true, tip: '窓の上下 14% をグラデで消すだけ。ぼかし無し。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
+  { key: 'blur',  name: '案2 なめらかに溶ける', tip: '回っている桁だけ窓を 1.6 文字分に開き、端ほどゆっくり薄くなる曲線で消す＋端に弱いぼかし(2.5px)。止まると窓が 0.4 秒で閉じる(切り替わりの段差なし)。', cfg: { slotFade: 14, slotBlur: 2.5, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
+  { key: 'melt',  name: '案3 さらに長く溶ける', tip: '案2 より窓を高く(2.0 文字分)、消える帯も長め(×1.15)、ぼかしは弱め(2px)。前後の数字が長い距離をかけて消える。', cfg: { slotFade: 14, slotBlur: 2, slotBlurZone: 55, slotWin: 2.0, slotRamp: 1.15 } },
+  { key: 'drum',  name: '案4 ドラム（円筒に貼った数字）', tip: '数字を円筒の面に貼ったように回す。中心から離れるほど縦に縮んで薄くなるので、端で自然に消える(ぼかし無し)。回っている間は窓を 1.7 文字分に開き(上のラベルに重ならない範囲)、止まると閉じる。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.7, slotRamp: 0.8, slotDrumN: 12, slotDrumFade: 1.3 } },
+];
+function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'plain'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'plain'; }
+function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
+applyResSlotFade();
+applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを反映 */
+applyResSpGap();    /* 【2026-09-21】起動時にスマホの実績の縦余白を反映 */
+/* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
+/* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
+function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px'); }
+applyVisResPull();
+function applySecHeadGap() { document.documentElement.style.setProperty('--sec-head-gap', (params.secHeadGap != null ? params.secHeadGap : 6) + 'px'); }
+applySecHeadGap();
+function applyResProd() { const f = (params.sections && params.sections.results && params.sections.results.fx24) || {}; document.documentElement.style.setProperty('--r2v-prod-size', (f.prodSize != null ? f.prodSize : 38) + 'px'); }
+applyResProd();
+/* 毎フレーム(updateResults から)。t=入場リビールの再生位置(秒・マイナスは未再生)。 */
+function resFxFrame(t) {
+  const k = resFxSt.key;
+  if (k === 'default') return;
+  const E = resFxEls();
+  const on = t >= 0;
+  const dark = devDarkK;   /* 暗転(白反転)の度合い。案が足した線・ラベルもこれに同期 */
+  const vis = (el, v) => { if (!el) return; setStyle(el, 'opacity', v.toFixed(3)); setStyle(el, 'pointerEvents', v < 0.02 ? 'none' : ''); };
+  const tf = (el, v) => { if (el) setStyle(el, 'transform', v); };
+  /* 案が足した罫線/ラベルの色を既存の白反転と同じ式で同期 */
+  if (dark > 0.002) {
+    const w = b => Math.round(b + (255 - b) * dark);
+    SECS.results.style.setProperty('--rfx-line', `rgba(${w(172)},${w(172)},${w(172)},${(0.6 + 0.4 * dark).toFixed(2)})`);
+    SECS.results.style.setProperty('--rfx-tag-ink', `rgb(${w(30)},${w(34)},${w(42)})`);
+  } else {
+    SECS.results.style.removeProperty('--rfx-line');
+    SECS.results.style.removeProperty('--rfx-tag-ink');
+  }
+  /* 縦が短い端末(SP・高さ600px以下)は固定案(26)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
+  if (k === '26' && resFxShort()) { valTOv.saas = null; valTOv.ai = null; return; }   /* 【2026-09-26 整理】元は固定案の一覧(生きているのは26だけ。24-4 は入っていない) */
+
+  if (k === '24-4') {
+    /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
+    const p = resFxFlowMode(k) ? 1 : resFxPin(), H = rfxHero(), vh = rfxVH();
+    const F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
+    /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
+       「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。
+       元になった案24(絵コンテ Figma 17271:23392): Vision から続けて「for SaaS」「for AI」(70px)が左右に並ぶ → 文字は小さく上へ・各列の中央にピクト →
+       終点: 上に説明(ラベル20/見出し46/本文14・幅530)、下にピクト(300)。横罫線の下に見出し(40px・2行)と数値(70px・スロットはここで回る)。パネル「案24」
+       【2026-09-26 整理】兄弟案(24/24-2/24-3/24-5)は完全削除済みなので、24-4 の区間と分岐だけ残した(値は元のまま) */
+    const L2 = rfxRange(p, 0.03, 0.30), P1 = rfxRange(p, 0.10, 0.44), D = rfxRange(p, 0.20, 0.78);
+    const TK = rfxRange(D, 0.45, 1), B = rfxRange(p, 0.58, 0.92), HR = rfxRange(p, 0.50, 0.74);
+    resFxSt.gate24 = on && B > 0.05;
+    E.res2.style.setProperty('--rfx-vline', P1.toFixed(3));
+    E.res2.style.setProperty('--rfx-hr', HR.toFixed(3));
+    vis(E.top, on ? B : 0);
+    tf(E.top, `translateY(${((1 - B) * 24).toFixed(2)}px)`);
+    E.r2v.forEach((el, i) => {
+      vis(el, on ? 1 : 0);
+      const big = resFxSt.big[i], fig = E.fig[i], tx = E.tx[i];
+      /* 【2026-09-19 ヒデさん依頼・修正】入場のぼかしと出だしの高さは 24 系(24/24-2/24-3/24-4/24-5)の共通処理。
+         ⚠️ 最初は 24-5 の分岐にだけ入れていて、ヒデさんの保存値(24-4)では動かなかった(Chrome 本体で実測して判明) */
+      /* 【2026-09-19 ヒデさん依頼】入場のぼかし: セクションが画面下から入ってくる進み具合(preP: 0=下端に顔を出す/1=所定の位置)に連動して、
+         ぼけ→くっきり。文字が画面下端に出るのは pre≒0.5 なので既定は 0.5→0.95 で解ける。所定の位置に着いたら(pre=1)効かない。実績タブ「入場のぼかし」 */
+      const rc = params.sections.results; const ePre = preP(SECS.results);
+      const eFrom = (rc.entryFrom != null ? rc.entryFrom : 0.4), eTo = Math.max(eFrom + 0.05, rc.entryTo != null ? rc.entryTo : 0.95);
+      const ek0 = clamp01((ePre - eFrom) / (eTo - eFrom)); const ek = ek0 * ek0 * (3 - 2 * ek0);
+      /* 【2026-09-19 ヒデさん指定】24-4 は強めのぼかし(entryBlur44) */
+      const eStrength = rc.entryBlur44 != null ? rc.entryBlur44 : 26;
+      const eBlur = eStrength * (1 - ek); const eOp0 = (rc.entryOp != null ? rc.entryOp : 1); const eOp = eOp0 + (1 - eOp0) * ek;
+      /* 【2026-09-19 ヒデさん依頼】出だしの高さ: 画面の何割の位置に文字の中心を置くか(既定 0.4=少し上。0.5=ど真ん中)。ビジョンとの空白を詰めるため。実績タブ「入場のぼかし」の「出だしの高さ」 */
+      const bsY = (params.sections.results.bigStartY != null ? params.sections.results.bigStartY : 0.4);
+      if (big) {
+        const base = isMobile ? 0 : (vh * bsY) - rfxCenterY(el);   /* p=0 は画面の bsY(出だしの高さ・既定0.4)の位置に。ステージ座標なので入場中も一緒に上がってくる(SP は列の中央) */
+        const sc = 1 - (1 - 40 / 70) * L2;
+        const o = (on ? 1 : 0) * (1 - rfxRange(D, 0, 0.5)) * eOp;
+        setStyle(big, 'opacity', o.toFixed(3));
+        setStyle(big, 'filter', eBlur > 0.05 ? `blur(${eBlur.toFixed(2)}px)` : '');   /* 入場のぼかし(共通) */
+        setStyle(big, 'transform', `translate(-50%, calc(-50% + ${(base - (isMobile ? 60 : F.labelUp) * L2).toFixed(2)}px)) scale(${sc.toFixed(4)})`);
+      }
+      if (fig) {
+        const cy = rfxCenterY(fig);
+        const grow = 1.08;                           /* 要素移動版: ほぼ最終サイズ(絵柄を大きく変えない) */
+        const s = grow - (grow - 1) * D;
+        const dy = isMobile ? 0 : ((vh * 0.55) - cy) * (1 - D);
+        setStyle(fig, 'opacity', (on ? P1 : 0).toFixed(3));
+        const bf = H.pictoBlur * (1 - P1); setStyle(fig, 'filter', bf > 0.05 ? `blur(${bf.toFixed(2)}px)` : '');
+        tf(fig, `translateY(${dy.toFixed(2)}px) scale(${s.toFixed(4)})`);
+      }
+      if (tx) {
+        const kids = tx.querySelectorAll('.r2v-h, .r2v-p');
+        kids.forEach(kd => { setStyle(kd, 'opacity', ''); tf(kd, ''); });   /* 見出し・本文の個別指定は持たない(元は 24-5 の名残を消す処理。挙動を変えないため残置) */
+        setStyle(tx, 'opacity', (on ? TK : 0).toFixed(3)); tf(tx, `translateY(${((1 - TK) * 16).toFixed(2)}px)`);
+      }
+    });
+  } else if (k === '26') {
+    const p = resFxPin(), W = rfxVW(), vh = rfxVH();
+    const F = Object.assign({ numScale: 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 }, (params.sections.results.fx26 || {}));   /* 2026-09-15: 場面表を詰めて SaaS の読む区間を確保(0.41〜0.56) */
+    /* 【案26 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール】(絵コンテ Figma 17283:23622・2026-09-15 ヒデさん指定)
+       A: 3つの数値が中央に大きく(120px相当=1.714倍) → 上段の終点(見出し 左・数値 右)へ収まり、見出しが薄く現れる
+       B: 横線が左から伸びきる → C: 下段(説明 左・ピクト 右)がブラーで現れる(ピクト→文章の順) → D: 下段が横に動いて for AI(到着の終盤にブラーで) → 読む → 縦に戻って開発者体験へ。パネル「案26」 */
+    setStyle(resEls.vals, 'opacity', '1'); setStyle(resEls.vals, 'filter', ''); setStyle(resEls.vals, 'pointerEvents', '');
+    const shrink = rfxRange(p, F.settleAt, F.settleAt + Math.max(0.05, F.settleLen));
+    const S0 = isMobile ? 1.1 : F.numScale;
+    const OFF = isMobile ? [-100, 0, 100] : [-423, -10, 412];   /* 絵コンテ: 大きい時の3つの中心(画面中央からのずれ) */
+    E.r2s.forEach((el, i) => {
+      const cx = rfxCenterX(el, 0), cy = rfxCenterY(el);
+      const dx = (W / 2 + OFF[i] - cx) * (1 - shrink), dy = (vh / 2 - 25 - cy) * (1 - shrink);
+      tf(el, `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${(S0 - (S0 - 1) * shrink).toFixed(4)})`);
+    });
+    const hk = rfxRange(p, F.settleAt + F.settleLen * 0.6, F.settleAt + F.settleLen + 0.04);   /* 見出し(上段左)は数値が収まる終盤に */
+    if (resEls.head) { setStyle(resEls.head, 'opacity', hk.toFixed(3)); setStyle(resEls.head, 'pointerEvents', hk < 0.02 ? 'none' : ''); tf(resEls.head, `translateY(${((1 - hk) * 16).toFixed(2)}px)`); }
+    const lineEnd = F.lineAt + Math.max(0.03, F.lineLen);
+    E.res2.style.setProperty('--rfx-hr', rfxRange(p, F.lineAt, lineEnd).toFixed(3));
+    const fk = rfxRange(p, lineEnd, lineEnd + 0.06), tk = rfxRange(p, lineEnd + 0.03, lineEnd + 0.09);   /* 2026-09-15: 線が伸びきったらすぐ(ピクト→文章)   /* 線が伸びきってから: ピクト → 文章 */
+    const pos = rfxHeld(p, [[F.panAt, F.panAt + Math.max(0.05, F.panLen)]]);
+    tf(E.track, `translateX(${(-pos * 100).toFixed(3)}%)`);
+    E.r2v.forEach((el, i) => {
+      const fig = E.fig[i], tx = E.tx[i];
+      const arrive = rfxRange(pos, 0.35, 0.95);   /* 2026-09-15: 到着する面は横移動の途中から見え始め、着く前に読める濃さに */
+      const kf = on ? (i === 0 ? fk : arrive) : 0, kt = on ? (i === 0 ? tk : arrive) : 0;
+      if (fig) rv(fig, kf, 14, 0);
+      if (tx) rv(tx, kt, 14, 0);
+      vis(el, on ? 1 : 0);
+    });
+  }
+}
+
+function updateResults(p) {
+  const c = params.sections.results;
+  SECS.results.classList.add('pat-c');                 // 単一レイアウト(pin-vp 地色/z-index に使用)
+  SECS.results.classList.remove('pat-a', 'pat-b');
+
+  buildSlots();
+  let t = playT('results', resTotal(), canPlay(p), SECS.results, p);
+  t = resFxTimeT(t);   /* 【2026-09-14 比較検証】案1: 読む区間のスクロールでも進む(速い方・巻き戻さない) */
+  /* 【2026-09-08 ヒデさん指定】静的モバイル: 実績の登場(タイピング/スロット/カード)を最終状態で固定。
+     ただし『実績→開発者体験の暗転』は下の devDarkK 連動で残す(t とは別系統なのでそのまま効く)。 */
+  /* 【2026-09-09 ヒデさん指定】実績のブラー出現＋スロットは PC と同じ時間再生に戻す */
+
+  /* ---- 再生前: 全部隠す(数字は0で待機) ---- */
+  if (t < 0) {
+    resEls.dark.style.opacity = 0;
+    if (resEls.grow) { resEls.grow.style.opacity = 0; resEls.grow.style.transform = 'translateY(82%) scale(0.07, 0.55)'; }
+    rv(resEls.hl1, 0, 0); rv(resEls.stats, 0, 0); rv(resEls.vals, 0, 0); rv(resEls.hr, 0, 0);
+    resEls.typed.textContent = '';
+    if (resEls.caret) resEls.caret.style.opacity = 0;
+    if (resEls.suffix) rv(resEls.suffix, 0, 0);
+    if (resEls.ghost) resEls.ghost.style.setProperty('--res-uline', 'rgba(17,17,17,0)');
+    renderSlots(-1);
+    slotT0 = null;
+    resFxSt.slotHi = 0;
+    resFxFrame(t);   /* 【2026-09-13 比較検証】案の配置(未再生時も面の位置は保つ) */
+    return;
+  }
+
+  /* ---- 再生【2026-08-26 ヒデさん指定・ブラーなしフェード】
+     ①「事業の推進力を、」フェードイン → ②「Anyflowが支えます。」タイピング
+     → ③ タイピング開始頃から 残り(区切り線/3数値/2つの価値)がフェードイン
+     → ④ 数値は0の状態からスロットカウンター ---- */
+  const l1Dur = c.softDur * 0.6;
+  const l1k = easeOutQ(clamp01((t - c.typeAt) / l1Dur));
+  rv(resEls.hl1, l1k, 0, 0);                            // ① フェード(blur=0)
+  if (resEls.suffix) rv(resEls.suffix, l1k, 0, 0);      // 「が支えます。」も見出し1行目と一緒に静的表示(Anyflowだけ後からタイピング)
+
+  /* 【2026-08-30 ヒデさん指定】タイピングの見せ方: 既定=下線に打ち込む(スペース確保・不動)。push=押し広げる(旧) */
+  if (resEls.hl2) resEls.hl2.classList.toggle('type-push', (c.typeStyle || 'slot') === 'push');
+
+  const typeStart = c.typeAt + (c.typeGap != null ? c.typeGap : 0.55);   // ② タイピング開始(見出し1行目からの間隔)
+  const CH = 0.06, chars = RES_TYPE_TEXT.length;
+  const typeEnd = typeStart + chars * CH;
+  const nTyped = t < typeStart ? 0 : Math.min(chars, Math.floor((t - typeStart) / CH));
+  resEls.typed.textContent = RES_TYPE_TEXT.slice(0, nTyped);
+  const typing = t >= typeStart - 0.05 && t < typeEnd + 0.4;
+  if (resEls.caret) resEls.caret.style.opacity = (typing && (t * 1.8) % 1 < 0.55) ? 1 : 0;
+  /* 下線プレースホルダ: 見出しと一緒に薄く出て、打ち終わりでスッと消える(最終は下線なしのクリーンな見た目に) */
+  if (resEls.ghost) {
+    const uFade = clamp01((t - (typeEnd - 0.1)) / 0.45);   // タイピング終わり際から0.45秒でフェードアウト
+    const uAlpha = 0.22 * l1k * (1 - uFade);
+    resEls.ghost.style.setProperty('--res-uline', 'rgba(17,17,17,' + uAlpha.toFixed(3) + ')');
+  }
+
+  const restAt = typeStart + (c.restGap != null ? c.restGap : 0.1);      // ③ その他(区切り線/数値/価値)がフェード
+  const restK = easeOutQ(clamp01((t - restAt) / (c.softDur * 0.8)));
+  rv(resEls.hr, restK, 0, 0);
+  rv(resEls.stats, restK, 0, 0);
+  rv(resEls.vals, restK, 0, 0);
+
+  /* ④ スロット: 数値が出てきたら(restK≒出そろい)0から回す */
+  const nr = rectOf(resEls.stats);
+  if (slotT0 === null) {
+    if (restK >= 0.6 && nr.top < innerHeight * resFxSlotEnter(c.slotEnterAt) && nr.bottom > 0) slotT0 = elapsed;   /* 案5/11 は帯が下端なので条件を緩める */
+  } else if (nr.top > innerHeight * 1.2) {
+    slotT0 = null;
+  }
+  /* 【2026-09-08】静的モバイル: スロットは回さず最終値(実数字)で固定 */
+  renderSlots(resFxSlotTs(slotT0 === null ? -1 : elapsed - slotT0));   /* 【2026-09-14 比較検証】案1: スロットも読む区間のスクロールで進む */
+  resFxFrame(t);   /* 【2026-09-13 比較検証】実績の演出案(既定=現行は何もしない)。暗転/白反転は下の既存処理のまま */
+
+  /* ===== 実績 → 開発者体験 のつなぎ(黒せり上がり + 白反転) ===== */
+  const devTop = rectOf(SECS.dev).top;
+  const handed = clamp01((-devTop) / (innerHeight * 0.25));
+  /* 【2026-08-26 ヒデさん指定】黒オブジェクトは「実績のリビール(タイピング/スロット)が終わってから」上げる。
+     固定追従なし(smooth)でスクロールが速くても、リビール途中で黒が出るのを防ぐ。
+     リビール完了時のスクロール位置を anchor にして、そこから outTo まででフルに覆う(dev1との受け渡しは維持)。 */
+  const revealDone = t >= resTotal() - 0.05;
+  if (!revealDone) resGrinAnchor = null;
+  else if (resGrinAnchor == null) resGrinAnchor = Math.min(p, c.outTo - 0.15);
+  const gStart = resGrinAnchor == null ? c.outTo : resGrinAnchor;
+  const grin    = clamp01((p - gStart) / Math.max(0.05, c.outTo - gStart));
+  /* 【2026-08-26 ヒデさん指定・あべこべ修正】ゆったりの“時間追従”は【固定追従なし(smooth)だけ】。
+     「固定」モードは前の実装どおりスクロール駆動(=grin をそのまま)。固定がゆっくりになる問題を解消。 */
+  if ((params.scrollHold || 'lock') === 'smooth') {
+    const gentleTC = Math.max(0.12, c.blackTC != null ? c.blackTC : 0.6);   // 時定数(秒)。大きいほどゆったり
+    grinShown += (grin - grinShown) * (1 - Math.exp(-frameDt / gentleTC));
+    if (Math.abs(grin - grinShown) < 0.001) grinShown = grin;
+  } else {
+    grinShown = grin;   // 固定モード: レート制限なし(従来どおり)
+  }
+  resBlackK = grinShown;   // dev1 の出現ゲート用に共有
+  if (resSmooth()) {
+    /* 【2026-08-29 ヒデさん指定】スムーズフェードでも、背景が暗くなるぶんだけ上に残る実績の文字を
+       徐々に白へ色調反転する(黒オブジェクトは無し)。暗さは updateDev の dev-bg と同じ「dev の入り」で。 */
+    resBlackK = 0;
+    if (resEls.grow) resEls.grow.style.opacity = 0;
+    resEls.dark.style.opacity = 0;
+    /* 【2026-09-08 ヒデさん指定・根治】文字/図/タグの白反転は、実際の背景の暗さ(devDarkK=updateDevのbgK)に
+       そのまま追従させる。updateDev が updateResults より前に走るので devDarkK は最新。
+       これで「背景は暗いのに文字が暗いまま」のズレが構造的に起きない。暗転カーブ等はdevDarkK側(updateDev)で反映済み。 */
+    const darkK = devDarkK;
+    if (darkK > 0.002) {
+      resInvertOn = true;
+      const white = b => `rgb(${Math.round(b[0] + (255 - b[0]) * darkK)},${Math.round(b[1] + (255 - b[1]) * darkK)},${Math.round(b[2] + (255 - b[2]) * darkK)})`;
+      resInvertEls().forEach(el => { if (el) el.style.color = white([30, 34, 42]); });
+      resFadeTags(darkK);   // for SaaS/for AI タグも白へ(2026-09-08)
+      valInkCur = white([17, 17, 17]);   // ピクトグラムの黒い図形(#111)も同じ白反転に揃える
+      const lc = `rgba(${Math.round(209 + (255 - 209) * darkK)},${Math.round(213 + (255 - 213) * darkK)},${Math.round(220 + (255 - 220) * darkK)},${(0.6 + 0.4 * darkK).toFixed(2)})`;
+      if (resEls.hr) resEls.hr.style.background = lc;
+      SECS.results.querySelectorAll('.res2-vline').forEach(v => v.style.background = lc);
+    } else if (resInvertOn) {
+      resInvertOn = false;
+      resInvertEls().forEach(el => { if (el) el.style.color = ''; });
+      resClearTags();
+      valInkCur = VAL_INK;
+      if (resEls.hr) resEls.hr.style.background = '';
+      SECS.results.querySelectorAll('.res2-vline').forEach(v => v.style.background = '');
+    }
+    return;
+  }
+  const gv = grinShown;
+  const riseK   = easeOutC(clamp01(gv / 0.40));
+  const spreadK = easeIO(clamp01((gv - 0.36) / 0.64));
+  if (resEls.grow) {
+    const gy = (1 - riseK) * 82;
+    const sx = 0.07 + spreadK * 0.93;
+    const sy = 0.55 + spreadK * 0.45;
+    resEls.grow.style.transform = `translateY(${gy.toFixed(2)}%) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`;
+    resEls.grow.style.opacity = (clamp01(riseK * 4) * (1 - handed)).toFixed(3);
+  }
+  resEls.dark.style.opacity = 0;
+  /* 黒が来た所の“濃い文字”は白へ反転(色付きタグ for Saas/for AI は反転しない) → 全画面黒で消す。 */
+  const invK  = easeIO(clamp01((gv - 0.18) / 0.34));
+  /* dev1 のモック出現と被らないよう、実績の消えは早め(gv 0.45→0.72 で消える)。 */
+  const fadeK = clamp01((gv - 0.45) / 0.27);
+  if (gv > 0.001) {
+    resInvertOn = true;
+    const white = b => `rgb(${Math.round(b[0] + (255 - b[0]) * invK)},${Math.round(b[1] + (255 - b[1]) * invK)},${Math.round(b[2] + (255 - b[2]) * invK)})`;
+    resInvertEls().forEach(el => { if (el) el.style.color = white([30, 34, 42]); });
+    resFadeTags(invK);   // for SaaS/for AI タグも白へ(2026-09-08)
+    valInkCur = white([17, 17, 17]);   // ピクトグラムの黒い図形(#111)も同じ白反転に揃える
+    const lc = `rgba(${Math.round(209 + (255 - 209) * invK)},${Math.round(213 + (255 - 213) * invK)},${Math.round(220 + (255 - 220) * invK)},${(0.6 + 0.4 * invK).toFixed(2)})`;
+    if (resEls.hr) resEls.hr.style.background = lc;
+    SECS.results.querySelectorAll('.res2-vline').forEach(v => v.style.background = lc);
+    const fo = (1 - fadeK).toFixed(3);
+    [resEls.hl1, resEls.head, resEls.stats, resEls.vals, resEls.hr].forEach(el => { if (el) setStyle(el, 'opacity', fo); });
+  } else if (resInvertOn) {
+    /* 反転を掛けていない位置に戻ったら、インライン color を掃除(次の再生で白く残らない) */
+    resInvertOn = false;
+    resInvertEls().forEach(el => { if (el) el.style.color = ''; });
+    resClearTags();
+    valInkCur = VAL_INK;
+    if (resEls.hr) resEls.hr.style.background = '';
+    SECS.results.querySelectorAll('.res2-vline').forEach(v => v.style.background = '');
+  }
+}
+
+/* ---------- 開発者体験 (ダーク・ピン留め) ---------- */
+const devBg2 = document.getElementById('devBg2');
+/* 【2026-08-30 ヒデさん指定】反転ルールの統一: dev の暗幕(dev-bg)の濃さ。updateDev が毎フレーム更新し、
+   導入事例(cases)など「暗幕の上に見える黒テキスト」はこれに連動して白へ反転する(実績と同じルール)。 */
+let devDarkK = 0;
+const devEls = {
+  sec: document.getElementById('dev'),
+  bg: document.querySelector('#dev .dev-bg'),      // 暗い地色(fixed 100vh)。可視時のみ opacity を上げる
+  h1: document.getElementById('devH1'),
+  h2: document.getElementById('devH2'),
+  block1: document.getElementById('devBlock1'),   // dev1 (Strength01)
+  block2: document.getElementById('devBlock2'),   // dev2 (Strength02)
+  in1: document.querySelector('#devBlock1 .dev-blk-in'),   // 固定(sticky)される内側。pin時はこの位置で出現/保持を測る
+  in2: document.querySelector('#devBlock2 .dev-blk-in'),
+  mock1: document.getElementById('devMock1'),     // dev1 の単体パネル枠(JSが #dmPanel を複製)
+  mock: document.getElementById('devMock'),        // dev2 の手前パネル枠
+  panel: document.getElementById('dmPanel'),
+  list: document.getElementById('devList'),
+  listItems: [...document.querySelectorAll('#devList .dl-item')],
+  /* 【2026-08-29】DEV_SCREENS の順(api,cli,sdk)に合わせて並べる。cards の席割りがこの順に対応する */
+  ghosts: [document.getElementById('dmGhost2'), document.getElementById('dmGhost0'), document.getElementById('dmGhost1')],
+};
+/* 絵コンテのコマ順:
+   ①真っ黒→「自動生成で開発スピードを加速」(1行)がブラー出現・下にモックちら見え
+   ②スクロールでモックが中央へ上がりながら実寸まで拡大 (規定位置までは中身は空)
+   ③規定位置でモック内アニメ開始 (右チャットに入力→返答→左でコード生成)
+   ④ブラーで消える →⑤「開発環境に/柔軟に適用」出現 →⑥上下に分割しその間からモック
+   →⑦右へ移動し、文字はブラーで消え、左に CLI → API → SDK が入れ替わる */
+/* ⚠️ 尺は「見せ場の数 × 1つあたり 50〜70vh」で決まる。参考36サイトで固定が2画面を
+   超えるサイトは1つも無かったので、2026-08-14 に【1巡目のモック(せり上がり〜保持〜退場)
+   を廃止】して 800vh → 500vh に圧縮した。1つ1つの間合いは緩めたまま総尺だけ減らせる、
+   いちばん効く削り方。※ スクロール可能量は 400vh なので「%×400」が実際の vh */
+/* 尺 850vh ＝ スクロール可能量 750vh。「%×750」が実際の vh。
+   1つの見せ場に 50〜120vh を配って、どこを回しても必ず何かが動くようにしてある。
+   ※ 2026-08-14: 1巡目のモックを一度消したが「無くなった」と指摘があり復活。
+     代わりに各フェーズの間合いを広げて、急に出る感じを解消した。 */
+/* ===== 開発者体験の時間割 (カンプ 14791:29575 の新レイアウト) =====
+   ヒデさん指定の筋書き:
+     ①下からスケールアップでモックが出る → 「Strength 01 / 自動生成で…」の文字 → 中身のアニメ
+     ②モックが出直す → カンプの位置(左)へ移動 → 「Strength 02 / 開発環境に…」の文字
+       → 右に API / CLI / SDK のリスト → 以降はホバーで左のモックが切り替わる */
+/* ===== 開発者体験の時間割 =====
+   ①モックが下からスケールアップ → 見出し① → 中の会話とコード
+   ②【見出し①だけ】ブラーで消え、モックは消えずにそのまま左へスライド
+     → 見出し② → 右の API/CLI/SDK がブラーで出現 */
+/* ===== 開発者体験の時間割 =====
+   ①モックが下からスケールアップ → 見出し① → 中の会話とコード
+   ②見出し①だけブラーで消え、モックは消えずに左へスライド。
+     【2026-08-15】のっそりしていたので短縮し、見出し②とリストは移動と重ねて同時に出す */
+/* 【案1「横に回る」】ヒデさん採用 (2026-08-15)
+   3枚が横一列の輪の上を回り、選ばれたカードが手前へ回り込んでくる。
+   席は カンプ 14924:21985 の実測（手前0.905 / 中0.814 / 奥0.733 倍）を土台に、
+   Y軸まわりの回転と奥行き(Z)を足して輪に見せている。
+   動きの速さはサイト共通の「大きい移動 1.3秒 + ぬるっと止まるカーブ」。 */
+/* ⚠️ perspective は枠の中心(x=720)を基準に効くので、奥へ引いた(dz)カードは
+   【横方向にも中心へ寄る】。カンプの位置に着地させるには、その分を見込んで
+   dx を外側へ大きめに取っておく必要がある（縮み係数 f = 1600/(1600+120) = 0.930）。
+     必要な dx = (カンプの中心 - 720) / f - (手前の中心 - 720)
+   sc も同じ f で縮むぶんを割り戻してある。 */
+const DEV_STACK = [
+  { sc: 0.905, dx:      0, dy:     0, dz:    0, ry:   0, op: 1.00, z: 3 },   /* 手前 */
+  { sc: 0.875, dx: -118.1, dy:   3.2, dz: -120, ry:  22, op: 0.55, z: 2 },   /* 左後ろ */
+  { sc: 0.788, dx:  121.7, dy: -17.6, dz: -120, ry: -22, op: 0.38, z: 1 },   /* 右後ろ */
+];
+/* 【2026-08-27 ヒデさん指定】カルーセルから「右にAIチャットが入っているモック(API)」を削除。
+   ⚠️ #dmPanel(API本体) は dev1(Strength 01)の単体パネルの複製元なので、DOMからは消さない。
+      dev2 では隠して、カルーセルの席にも並べない。 */
+/* 【2026-08-29 ヒデさん指定】「APIの場合」を復活(左のコードだけ・AIチャット無し)。API を先頭(既定・手前)に。 */
+const DEV_SCREENS = ['api', 'cli', 'sdk'];
+/* ===== カードが入れ替わる時の動き出し方 (2026-08-19) =====
+   「半分まで進むのに全体の何割の時間を使うか」で急さが決まる。
+   ⚠️【2026-08-19 ヒデさん指定】右のリストのホバー表示（縦バー・下線・文字色）は、
+      このカーブと秒数に【連動】させること。別々に持つと、リストは一瞬で切り替わったのに
+      モックはまだ回っている、という「ちぐはぐ」になる。
+      css: は同じカーブの CSS 版。JS 側と CSS 側で必ず対にしておく */
+const DEV_SWAP_EASES = [
+  { name: '①元の動き',   fn: easeOutQ, css: 'cubic-bezier(.22,1,.36,1)',
+    desc: 'パッと動いて、ゆっくり止まる。いちばん反応が良く見える（既定）。' },
+  { name: '②すっと動く', fn: easeOutC, css: 'cubic-bezier(.33,1,.68,1)',
+    desc: '動き出しは早め、止まりはなめらか。①より少し落ち着いた感じ。' },
+  { name: '③ゆったり',   fn: easeIO,   css: 'cubic-bezier(.65,0,.35,1)',
+    desc: 'そっと動き出して、そっと止まる。いちばん落ち着いて見える。' },
+];
+/* 保存値の範囲チェックはここで行う。
+   ⚠️ load() の中でやると DEV_SWAP_EASES がまだ定義されておらず ReferenceError になり、
+      保存値がまるごと捨てられる（2026-08-19 に実際に起きた） */
+if (!(params.sections.dev.swapEase >= 1 && params.sections.dev.swapEase <= DEV_SWAP_EASES.length))
+  params.sections.dev.swapEase = DEFAULTS.sections.dev.swapEase;
+
+/* カンプ位置(左寄せ)から見て「画面中央に置くための X オフセット」。
+   ①では中央、②でここから 0 へ動かすとカンプの位置に着く */
+/* モックは 1230px の枠の左端にいる。枠は画面中央にあるので、
+   モック単体を画面中央に見せるためのズラし量は (1230 - 840.6) / 2 で【画面幅によらず一定】 */
+
+
+/* ===== モックの中身: 画面ごとの実コード (ダミー) =====
+   [クラス, 文字列] のトークン列。kw=キーワード / id=識別子 / st=文字列 / cm=コメント / ok=成功表示 */
+const DM_CODE = {
+  /* 【2026-08-30 エンジニアレビュー(大久保さん・FigJam 553:3892)】実際のワークフローコードに差し替え */
+  editor: [
+    [['kw', 'import type'], ['pl', ' { '], ['id', 'TriggerOutput'], ['pl', ', '], ['id', 'WorkflowContext'], ['pl', ' }']],
+    [['pl', '  '], ['kw', 'from'], ['st', ' "@anyflowinc/embed-types"'], ['pl', ';']],
+    [['kw', 'import'], ['pl', ' { '], ['id', 'Kintone'], ['pl', ' } '], ['kw', 'from'], ['st', ' "@anyflowinc/kintone"'], ['pl', ';']],
+    [],
+    [['kw', 'export async function'], ['pl', ' '], ['id', 'workflow'], ['pl', '(']],
+    [['pl', '  triggerOutput: '], ['id', 'TriggerOutput'], ['pl', ',']],
+    [['pl', '  _context: '], ['id', 'WorkflowContext'], ['pl', ',']],
+    [['pl', '): '], ['id', 'Promise'], ['pl', '<'], ['kw', 'void'], ['pl', '> {']],
+    [['pl', '  '], ['kw', 'const'], ['pl', ' client = '], ['kw', 'new'], ['pl', ' '], ['id', 'Kintone'], ['pl', '();']],
+    [['pl', '  '], ['kw', 'await'], ['pl', ' client.record.'], ['id', 'addRecord'], ['pl', '({']],
+    [['pl', '    app: _context.endUserInputs.'], ['id', 'kintoneAppId'], ['pl', ',']],
+    [['pl', '    record: '], ['id', 'toKintoneRecord'], ['pl', '(triggerOutput.payload),']],
+    [['pl', '  });']],
+    [['pl', '}']],
+    [],
+    [['cm', '/** Webhook の payload を']],
+    [['cm', '    kintone のレコード形式に変換する */']],
+    [['kw', 'export function'], ['pl', ' '], ['id', 'toKintoneRecord'], ['pl', '(']],
+    [['pl', '  payload: '], ['id', 'TriggerOutput'], ['pl', '['], ['st', '"payload"'], ['pl', ']) {']],
+    [['pl', '  '], ['kw', 'return'], ['pl', ' {']],
+    [['pl', '    '], ['st', '"名前"'], ['pl', ': { value: payload?.name },']],
+    [['pl', '    '], ['st', '"メールアドレス"'], ['pl', ': { value: payload?.email }']],
+    [['pl', '  };']],
+    [['pl', '}']],
+  ],
+  /* 【2026-08-30 エンジニアレビュー(FigJam 557:4090)】embed CLI の実フローに差し替え */
+  cli: [
+    [['kw', '%'], ['pl', ' embed version']],
+    [['ok', '    ______          __             __   ________    ____']],
+    [['ok', '   / ____/___ ___  / /_  ___  ____/ /  / ____/ /   /  _/']],
+    [['ok', '  / __/ / __ `__ \\/ __ \\/ _ \\/ __  /  / /   / /    / /']],
+    [['ok', ' / /___/ / / / / / /_/ /  __/ /_/ /  / /___/ /____/ /']],
+    [['ok', '/_____/_/ /_/ /_/_.___/\\___/\\__,_/   \\____/_____/___/']],
+    [['cm', '                                              v0.1.2']],
+    [],
+    [['kw', '$'], ['pl', ' embed pull']],
+    [['ok', '  \u2714'], ['cm', ' 4 files synced']],
+    [],
+    [['kw', '$'], ['pl', ' claude '], ['st', '"CSV\u306e\u9867\u5ba2\u30c7\u30fc\u30bf\u3092HubSpot\u3078"']],
+    [['ok', '  \u270e'], ['cm', ' main.ts generated']],
+    [],
+    [['kw', '$'], ['pl', ' embed push']],
+    [['ok', '  \u2714'], ['cm', ' ready for test run']],
+  ],
+  /* 【2026-08-30 エンジニアレビュー(FigJam 557:4184)】request_trigger の実リクエストに差し替え */
+  api: [
+    [['kw', 'POST'], ['pl', ' /request_trigger HTTP/1.1']],
+    [['pl', 'Host: '], ['id', 'embed-vender-api.anyflow.jp']],
+    [['pl', 'Authorization: '], ['kw', 'Bearer'], ['st', ' YOUR_SECRET_TOKEN']],
+    [['pl', 'Content-Type: '], ['st', 'application/json']],
+    [],
+    [['pl', '{']],
+    [['pl', '  '], ['st', '"solution_instance_id"'], ['pl', ': '], ['st', '"123"'], ['pl', ',']],
+    [['pl', '  '], ['st', '"payload"'], ['pl', ': {']],
+    [['pl', '    '], ['st', '"action"'], ['pl', ': '], ['st', '"add_lead"'], ['pl', ',']],
+    [['pl', '    '], ['st', '"name"'], ['pl', ': '], ['st', '"Dummy Corp"'], ['pl', ',']],
+    [['pl', '    '], ['st', '"employees"'], ['pl', ': '], ['id', '30']],
+    [['pl', '  }']],
+    [['pl', '}']],
+    [],
+    [['ok', '200 OK'], ['cm', '  \u00b7 128ms']],
+    [['pl', '{ '], ['st', '"job"'], ['pl', ': { '], ['st', '"id"'], ['pl', ': '], ['st', '"456"'], ['pl', ', '], ['st', '"state"'], ['pl', ': '], ['ok', '"succeeded"'], ['pl', ' },']],
+    [['pl', '  '], ['st', '"payload"'], ['pl', ': { '], ['st', '"records"'], ['pl', ': '], ['id', '1'], ['pl', ' } }']],
+  ],
+  /* 【2026-08-30 エンジニアレビュー(FigJam 556:4025)】SDK＝ウィザード埋め込みの実コードに差し替え */
+  sdk: [
+    [['cm', '// SDK \u3092\u521d\u671f\u5316']],
+    [['kw', 'const'], ['pl', ' sdk = '], ['id', 'AnyflowSDK'], ['pl', '.'], ['id', 'init'], ['pl', '('], ['id', 'fetchJwt'], ['pl', ');']],
+    [],
+    [['cm', '// iframe\u5185\u306b\u30a6\u30a3\u30b6\u30fc\u30c9\u753b\u9762\u3092\u8868\u793a']],
+    [['kw', 'const'], ['pl', ' iframe = document.'], ['id', 'getElementById'], ['pl', '('], ['st', '"wizard"'], ['pl', ');']],
+    [['kw', 'const'], ['pl', ' solutionWizard: '], ['id', 'SolutionWizard'], ['pl', ' =']],
+    [['pl', '  sdk.'], ['id', 'createWizard'], ['pl', '(iframe);']],
+    [['id', 'solutionWizard'], ['pl', '.'], ['id', 'load'], ['pl', '('], ['id', 'solution_id'], ['pl', ');']],
+  ],
+};
+/* 画面ごとのテンポ: chat=会話パートの有無 / load=ローディング開始 / hold=溜め / burst=一気に書く */
+const DM_TIMING = {
+  /* load=ローディング開始 / loadDur=ゆったり見せる時間 / holdT=書き出す前の溜め
+     step,dur=一気に書き出すテンポ */
+  editor: { chat: true,  load: 4.2, loadDur: 1.5, holdT: 0.3, step: 0.045, dur: 0.13, loop: 12.5 },
+  cli:    { chat: false, load: 0.4, loadDur: 1.8, holdT: 0.4, step: 0.05, dur: 0.14, loop: 9 },
+  api:    { chat: false, load: 0.4, loadDur: 1.8, holdT: 0.4, step: 0.05, dur: 0.14, loop: 9 },
+  sdk:    { chat: false, load: 0.4, loadDur: 1.8, holdT: 0.4, step: 0.05, dur: 0.14, loop: 9 },
+};
+
+/* SDK画面の右ペイン。AIペインと同じ角丸・同じ余白でトンマナを踏襲しつつ中身だけ変える */
+/* ⚠️ この一覧は innerHTML で組み立てている。'<' をそのまま書くとタグとして
+   解釈されて消えるので、必ず &lt; で書くこと (2026-08-18 にこれで1回消えた) */
+const DM_SDK_ROWS = [
+  ['&lt;ConnectButton', ' />', 'Component'],
+  ['&lt;ConnectorList', ' />', 'Component'],
+  ['&lt;FlowBuilder', ' />', 'Component'],
+  ['useConnections', '()', 'Connection[]'],
+  ['useFlowRun', '()', 'Run'],
+  ['client.flows', '.run()', 'Promise<Run>'],
+];
+const dmSdkRowEls = (() => {
+  const root = document.getElementById('dmSdkList');
+  if (!root) return [];   /* 2026-08-25 リデザイン: 新デザインのパネルは editor+chat のみ(SDK Reference無し) */
+  return DM_SDK_ROWS.map(([ns, m, t]) => {
+    const el = document.createElement('div');
+    el.className = 'dm-sdk-row';
+    el.innerHTML = `<span class="dot"></span><span><span class="k">${ns}</span>${m}</span><span class="t">${t}</span>`;
+    root.appendChild(el);
+    return el;
+  });
+})();
+
+/* ---- 後ろに控える2枚(CLI / SDK)の中身。手前に回ってきた時に見た目が変わらないよう
+       本物と同じ組み方で、静止した状態で置いておく ---- */
+function dmFillStatic(rootId, key) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  root.innerHTML = '';
+  (DM_CODE[key] || []).forEach(tokens => {
+    const line = document.createElement('div');
+    line.className = 'dm-line';
+    if (!tokens.length) line.innerHTML = '&nbsp;';
+    else tokens.forEach(([cls, text]) => {
+      const sp = document.createElement('span');
+      sp.className = cls; sp.textContent = text; line.appendChild(sp);
+    });
+    root.appendChild(line);
+  });
+}
+function dmFillSdkList(rootId) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  root.innerHTML = '';
+  DM_SDK_ROWS.forEach(([ns, m, t]) => {
+    const el = document.createElement('div');
+    el.className = 'dm-sdk-row';
+    el.style.opacity = 1;
+    el.innerHTML = `<span class="dot"></span><span><span class="k">${ns}</span>${m}</span><span class="t">${t}</span>`;
+    root.appendChild(el);
+  });
+}
+
+/* ===== 章②のモック内アニメ (2026-08-18) =====
+   API / CLI / SDK それぞれ、中身が1行ずつ出てくる。
+   CLI は途中で印がくるくる回ってから ✔ が付き、SDK は右の一覧も順に出る。 */
+const DM_SPIN = '\u280b\u2819\u2839\u2838\u283c\u2834\u2826\u2827\u2807\u280f';
+const DM2 = {
+  lineGap: 0.13,   // 1行ずつずらす間隔(秒)
+  lineDur: 0.30,   // 1行が出きるまで(秒)
+  rowGap:  0.09,   // SDK 一覧の行ごとの間隔(秒)
+  rowsAt:  0.35,   // コードが出はじめてから、右の一覧が出るまで(秒)
+  spinPer: 0.08,   // くるくるの1コマ(秒)
+};
+/* API は「送ってから返ってくる」間を作りたいので、レスポンス行だけ待たせる */
+const DM2_PAUSE = { api: { from: 11, add: 0.55 } };
+let dmSpinEl = null, dmSpinLine = -1;
+let dm2Spin, dm2SpinLine = -1;
+
+/* ⚠️ 手前に来るカードは画面ごとに違う。
+   API は本体パネル(#dmCode)、CLI と SDK は「ゴースト」と呼んでいる複製カードが前に回ってくる。
+   本体を animate しても後ろに隠れていて見えないので、必ず手前のカードを動かすこと。 */
+/* 【2026-08-29 ヒデさん指定】API は「左のコードだけ」の静止ゴースト(#dmCodeApi)に付け替え。
+   以前は本体パネル(#dmCode+AIチャット)だったが、チャットは削除したので専用ゴーストへ。 */
+const DM2_ROOT = { api: 'dmCodeApi', cli: 'dmCodeCli', sdk: 'dmCodeSdk' };
+const dm2Cache = {};
+function dm2Lines(screen) {
+  const id = DM2_ROOT[screen];
+  if (!id) return [];
+  if (!dm2Cache[id]) dm2Cache[id] = [...document.getElementById(id).children];
+  return dm2Cache[id];
+}
+let dm2SdkRows2 = null;
+
+/* ループの終わり際、次の周へ戻る前にすっと消す時間(秒)。
+   これが無いと「全部出ている状態」から一瞬で空に戻り、パチッと切れて見える */
+const DM2_OUT = 0.6;
+function dmAnimScreen(screen, ts) {
+  const pause = DM2_PAUSE[screen];
+  const lines = dm2Lines(screen);
+  /* 【2026-08-19 ヒデさん指定】モック内のアニメーションはすべてループ再生にする。
+     ⚠️ 章①のチャット(devMockContent)は t % loop でもともと繰り返していたが、
+        章②のコード書き出し(ここ)だけ ts をそのまま使っていて【1回きり】だった。
+        右のパネル側と同じ DM_TIMING[screen].loop で回して、2つの周期をそろえる */
+  const tm = DM_TIMING[screen] || DM_TIMING.editor;
+  const loop = tm.loop > 0 ? tm.loop : 0;
+  if (loop > 0 && ts > 0) ts = ts % loop;
+  /* 周の終わり際のフェードアウト量 (0=そのまま / 1=消えきり) */
+  const outK = (loop > 0 && ts > loop - DM2_OUT) ? clamp01((ts - (loop - DM2_OUT)) / DM2_OUT) : 0;
+  for (let i = 0; i < lines.length; i++) {
+    const at = i * DM2.lineGap + (pause && i >= pause.from ? pause.add : 0);
+    const k = easeOutQ(clamp01((ts - at) / DM2.lineDur));
+    const el = lines[i];
+    /* ⚠️ .dm-line は既定で clip-path: inset(0 100% 0 0)（＝全部隠れている）。
+       ここを開かないと、文字があっても一切見えない。
+       章①のエディタと同じく、左から右へ拭くように出す */
+    setStyle(el, 'clipPath', k >= 1 ? 'none' : `inset(0 ${((1 - k) * 100).toFixed(1)}% 0 0)`);
+    setStyle(el, 'opacity', k <= 0 ? '0' : (1 - outK).toFixed(3));
+  }
+  /* CLI: 次の行(✔)が出はじめるまで、印を回し続ける */
+  if (screen === 'cli') {
+    if (dm2Spin === undefined) {
+      dm2Spin = null;
+      lines.forEach((l, li) => { for (const sp of l.children)
+        if (sp.textContent.indexOf(DM_SPIN[0]) >= 0) { dm2Spin = sp; dm2SpinLine = li; } });
+    }
+    if (dm2Spin) {
+      const doneAt = (dm2SpinLine + 1) * DM2.lineGap;
+      if (ts >= 0 && ts < doneAt) {
+        const f = Math.floor(ts / DM2.spinPer) % DM_SPIN.length;
+        const want = '  ' + DM_SPIN[f];
+        if (dm2Spin.textContent !== want) dm2Spin.textContent = want;
+      }
+    }
+  }
+  /* SDK: 右の一覧も1行ずつ (手前に来るのはゴースト側の一覧) */
+  if (screen === 'sdk') {
+    if (!dm2SdkRows2) { const _sl = document.getElementById('dmSdkList2'); dm2SdkRows2 = _sl ? [..._sl.children] : []; }  /* 2026-08-29: SDK Reference 列を削除したので無い場合あり */
+    dm2SdkRows2.forEach((el, i) => {
+      const k = easeOutQ(clamp01((ts - DM2.rowsAt - i * DM2.rowGap) / DM2.lineDur));
+      setStyle(el, 'opacity', (k * (1 - outK)).toFixed(3));   /* コードと一緒に消えて、一緒に出直す */
+      setStyle(el, 'transform', k >= 1 ? '' : `translateY(${((1 - k) * 8).toFixed(2)}px)`);
+    });
+  }
+}
+
+const dmCodeRoot = document.getElementById('dmCode');
+const dmLoadRoot = document.getElementById('dmLoad');
+let dmLineEls = [], dmCurScreen = null;
+(function buildLoader() {
+  [180, 240, 150, 210, 120, 190].forEach(w => {
+    const b = document.createElement('div');
+    b.className = 'sk';
+    b.style.width = w + 'px';
+    dmLoadRoot.appendChild(b);
+  });
+})();
+const dmSkEls = [...dmLoadRoot.children];
+
+function dmBuildScreen(key) {
+  if (dmCurScreen === key) return;
+  dmCurScreen = key;
+  dmCodeRoot.className = 'dm-code code';
+  dmCodeRoot.innerHTML = '';
+  dmLineEls = [];
+  dmSpinEl = null; dmSpinLine = -1;
+  DM_CODE[key].forEach(tokens => {
+    const line = document.createElement('div');
+    line.className = 'dm-line';
+    if (!tokens.length) line.innerHTML = '&nbsp;';
+    else tokens.forEach(([cls, text]) => {
+      const sp = document.createElement('span');
+      sp.className = cls;
+      sp.textContent = text;
+      line.appendChild(sp);
+    });
+    dmCodeRoot.appendChild(line);
+    /* CLI の「くるくる回る印」を覚えておく (あとで回すため) */
+    for (const sp of line.children) {
+      if (sp.textContent.indexOf(DM_SPIN[0]) >= 0) { dmSpinEl = sp; dmSpinLine = dmLineEls.length; }
+    }
+    dmLineEls.push(line);
+  });
+}
+dmBuildScreen('editor');
+/* dev2 カルーセルの後ろ2枚(CLI/SDK)の中身を静止で充填(V1.0踏襲)。 */
+dmFillStatic('dmCodeCli', 'cli');
+dmFillStatic('dmCodeSdk', 'sdk');
+dmFillStatic('dmCodeApi', 'api');   /* 【2026-08-29】APIゴーストのコードを充填 */
+if (document.getElementById('dmSdkList2')) dmFillSdkList('dmSdkList2');  /* 2026-08-29: SDK Reference 列は削除したので存在時のみ */
+/* dev1(Strength01) 用に本体パネルを複製して単体で置く（中身は同じエディタ+チャット）。 */
+let dev1Refs = null;   /* dev1(章①)の複製パネルの参照。updateDev がループ駆動に使う */
+(function cloneDev1Panel() {
+  const src = document.getElementById('dmPanel');
+  const dst = document.getElementById('devMock1');
+  if (src && dst) {
+    const clone = src.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    dst.appendChild(clone);
+    dev1Refs = dmRefs(clone);   /* class で拾うので複製でも使える */
+  }
+})();
+
+/* ---- モック内アニメ: ローディング → 溜め → 一気にコードを書き出す ---- */
+/* 【2026-08-30 エンジニアレビュー(FigJam 557:4145)】実際のユースケースに近づける: 入力文言を変更 */
+const DM_TEXT = 'kintone にユーザデータを連携したい';
+const DM_REPLY = 'Webhook のユーザデータを kintone のレコードに変換して登録するワークフローを作成します。';
+/* ⚠️ id ではなく class で拾う（写しでも同じコードが使えるようにするため）。
+   dmRefs は関数宣言なので、下で定義していてもここから呼べる */
+const dmEls = dmRefs(document.getElementById('dmPanel')).els;
+
+/* 【2026-08-25 リデザイン】モックは「静止した完成状態」で出しっぱなし（KVと同様・カンプも静止）。
+   コードは全行表示、チャットは 質問→AI回答 まで出た状態、入力欄はプレースホルダに戻す。 */
+function dmFillComplete(root) {
+  const r = dmRefs(root), e = r.els;
+  r.lines.forEach(l => { l.style.clipPath = 'inset(0 0 0 0)'; l.style.opacity = 1; l.style.filter = ''; });
+  if (r.load) r.load.style.opacity = 0;
+  if (e.userText) e.userText.textContent = DM_TEXT;
+  if (e.userMsg) e.userMsg.style.opacity = 1;
+  if (e.think) e.think.style.opacity = 0;
+  if (e.botText) e.botText.textContent = DM_REPLY;
+  if (e.botMsg) e.botMsg.style.opacity = 1;
+  if (e.typed) e.typed.textContent = '';
+  if (e.cursor) e.cursor.style.opacity = 0;
+  if (e.ph) e.ph.style.opacity = 1;
+  root.classList.remove('is-blank');
+}
+/* 本体(dev2)と複製(dev1)の両方を完成状態に */
+[document.getElementById('dmPanel'), (devEls.mock1 && devEls.mock1.querySelector('.dm-panel'))]
+  .forEach(p => { if (p) dmFillComplete(p); });
+
+
+/* モック1台ぶんの参照をまとめて拾う。id ではなく class で拾うので【写し】でも使える。
+   固定追従なしモードでは章①用にもう1台（写し）を置き、そこにも同じアニメを流す */
+function dmRefs(root) {
+  const q = sel => root.querySelector(sel);
+  const load = q('.dm-load');
+  const code = q('.dm-code');
+  return {
+    els: {
+      typed: q('.dm-typed'), cursor: q('.dm-cursor'), ph: q('.dm-ph'),
+      send: q('.dm-send'), userMsg: q('.dm-user'), userText: q('.dm-user p'),
+      botMsg: q('.dm-botmsg'), botText: q('.dm-botmsg p'), think: q('.dm-thinkmsg'),
+    },
+    lines: code ? [...code.children] : [],
+    load, sks: load ? [...load.children] : [],
+    sdkRows: [...root.querySelectorAll('.dm-sdk-list > *')],
+    panel: root.classList.contains('dm-panel') ? root : q('.dm-panel'),
+  };
+}
+
+/* R を渡すとそのモックを動かす。省略時は本物（#devMock）を動かす */
+function devMockContent(mode, t, screen, R) {
+  const E = R ? R.els : dmEls;
+  const LINES = R ? R.lines : dmLineEls;
+  const LOAD = R ? R.load : dmLoadRoot;
+  const SKS = R ? R.sks : dmSkEls;
+  const SDKR = R ? R.sdkRows : dmSdkRowEls;
+  const tm = DM_TIMING[screen] || DM_TIMING.editor;
+  if (mode === 'empty') {
+    E.typed.textContent = '';
+    E.ph.style.display = '';
+    E.cursor.style.opacity = 0;
+    E.userMsg.style.opacity = 0;
+    E.botMsg.style.opacity = 0;
+    E.userText.textContent = '';
+    E.botText.textContent = '';
+    E.send.classList.remove('is-hit');
+    E.think.style.display = 'none';
+    LOAD.style.opacity = 0;
+    SDKR.forEach(e => { e.style.opacity = 0; });
+    LINES.forEach(l => { l.style.clipPath = 'inset(0 100% 0 0)'; l.style.opacity = 1; l.style.filter = ''; });
+    return;
+  }
+  const T = t % tm.loop;
+
+  if (tm.chat) {
+    /* 【2026-08-15】空の状態 → 入力欄にタイピング → 送信ボタンを押す
+       → 打った文字がそのまま履歴に入る（アイコンなし）
+       → AIが普通のテキストで返す → そのあと左のコードが流れる */
+    /* 2026-08-15: もっとスピーディーにとの指定で全体を詰めた */
+    const typeFrom = 0.25, typeTo = typeFrom + DM_TEXT.length * 0.046;
+    const sendAt = typeTo + 0.22;          // 送信ボタンを押す
+    const postAt = sendAt + 0.16;          // 履歴に反映
+    const thinkTo = postAt + 0.75;         // 考え中
+    const replyTo = thinkTo + DM_REPLY.length * 0.028;
+
+    const sent = T >= sendAt;
+    const n = sent ? 0 : Math.floor(clamp01((T - typeFrom) / (typeTo - typeFrom)) * DM_TEXT.length);
+    E.typed.textContent = DM_TEXT.slice(0, n);
+    E.ph.style.display = n > 0 ? 'none' : '';
+    E.cursor.style.opacity = (!sent && T > typeFrom - 0.1 && (T * 1.8) % 1 < 0.55) ? 1 : 0;
+    E.send.classList.toggle('is-hit', T >= sendAt && T < sendAt + 0.22);
+
+    E.userMsg.style.opacity = clamp01((T - postAt) / 0.3).toFixed(3);
+    E.userText.textContent = T >= postAt ? DM_TEXT : '';
+
+    const thinkOn = T > postAt + 0.35 && T < thinkTo;
+    E.think.style.display = thinkOn ? 'flex' : 'none';
+    E.think.querySelectorAll('.dm-think-b i').forEach((d, i) => {
+      d.style.opacity = (0.3 + 0.7 * (0.5 + 0.5 * Math.sin(T * 7 - i * 1.1))).toFixed(2);
+    });
+    E.botMsg.style.opacity = clamp01((T - thinkTo) / 0.25).toFixed(3);
+    const rn = Math.floor(clamp01((T - thinkTo) / (replyTo - thinkTo)) * DM_REPLY.length);
+    E.botText.textContent = T >= thinkTo ? DM_REPLY.slice(0, rn) : '';
+  } else {
+    E.typed.textContent = '';
+    E.ph.style.display = '';
+    E.cursor.style.opacity = 0;
+    E.userMsg.style.opacity = 0;
+    E.botMsg.style.opacity = 0;
+    E.think.style.display = 'none';
+  }
+
+  /* ① ローディング: スケルトンに光が走る */
+  const loadIn = clamp01((T - tm.load) / 0.5);
+  const burstAt = tm.load + tm.loadDur + tm.holdT;
+  const loadOut = clamp01((T - (burstAt - 0.35)) / 0.3);
+  LOAD.style.opacity = (loadIn * (1 - loadOut)).toFixed(3);
+  SKS.forEach((b, i) => {
+    /* ゆっくり光が横切る (0.55周/秒) */
+    const ph = (((T - tm.load) * 0.55 - i * 0.1) % 1 + 1) % 1;
+    b.style.backgroundPositionX = (170 - ph * 240).toFixed(1) + '%';
+  });
+
+  /* SDK画面: 右のリファレンス一覧がコードと同じテンポで並んでいく */
+  const sdkOn = screen === 'sdk';
+  SDKR.forEach((el, i) => {
+    if (!sdkOn) { el.style.opacity = 0; return; }
+    const k = clamp01((T - (tm.load + tm.loadDur + tm.holdT) - i * 0.12) / 0.35);
+    el.style.opacity = k.toFixed(3);
+    el.style.transform = `translateY(${((1 - k) * 8).toFixed(2)}px)`;
+  });
+
+  /* ② 溜め → ③ 一気に書き出す */
+  const pat = params.patterns.mock;
+  LINES.forEach((line, i) => {
+    const at = burstAt + i * tm.step;
+    const k = clamp01((T - at) / tm.dur);
+    if (k <= 0) { line.style.clipPath = 'inset(0 100% 0 0)'; line.style.filter = ''; line.style.opacity = 1; return; }
+    line.style.clipPath = k >= 1 ? 'none' : `inset(0 ${((1 - k) * 100).toFixed(1)}% 0 0)`;
+    if (pat === 'B') {
+      /* 案B: 書き出した直後だけ白くにじむ */
+      line.style.filter = k < 1 ? `brightness(${(1 + (1 - k) * 1.6).toFixed(2)})` : '';
+      line.style.opacity = 1;
+    } else if (pat === 'C') {
+      /* 案C: 発光しながら現れる */
+      line.style.filter = k < 1
+        ? `drop-shadow(0 0 ${((1 - k) * 7).toFixed(1)}px rgba(120,220,255,.9)) brightness(${(1 + (1 - k)).toFixed(2)})` : '';
+      line.style.opacity = 1;
+    } else {
+      line.style.filter = '';
+      line.style.opacity = 1;
+    }
+  });
+}
+
+let devHoldT0 = null, devScreenT0 = null, devStarted = false;
+/* ②で選ばれている画面。既定は API (カンプで選択状態になっているもの)。ホバーで変わる */
+let devScreen2 = 'api', devSwapT0 = null;   /* 【2026-08-29】API(左コードのみ)を復活し既定=API(手前) */
+/* 開発者体験の「暗い背景 → 明るい背景」の進み具合 (0→1)。導入事例が参照する */
+let devFin = 0;
+
+/* ---- 右リストのホバー: 左のモックがブラーで切り替わる ---- */
+(function bindDevList() {
+  const pick = el => {
+    const it = el && el.closest('.dl-item');
+    if (!it || it.dataset.screen === devScreen2) return;
+    devScreen2 = it.dataset.screen;
+    devSwapT0 = elapsed;
+    /* 活性(左罫線+不透明1)を移す。カルーセルの席回転(updateDev2Stack)と連動する */
+    devEls.listItems.forEach(x => x.classList.toggle('is-on', x === it));
+  };
+  if (devEls.list) {
+    devEls.list.addEventListener('pointerover', e => pick(e.target));
+    devEls.list.addEventListener('click', e => pick(e.target));
+  }
+})();
+
+/* ---- スキップ: いまの章を終わらせて、次の章の位置までスクロールする ----
+   「見終わらないと進めない」のが不安との指摘への動線。目立たないテキストリンク */
+
+/* 【2026-08-25 ヒデさん指定】dev2 の3枚カルーセル(V1.0踏襲)。右の API/CLI/SDK をホバーして
+   devScreen2 が変わると席が回り、3Dっぽく入れ替わって見える。dev2 が画面に入っている間だけ毎フレーム位置を書く。
+   全体を DEV2_SCALE で dev2 に収める。 */
+/* 【2026-08-29 ヒデさん指定】テキストスライド案は手前のモックが dev1 と同サイズ(840×504)になるよう
+   1/0.905(front席のsc)=1.105 で等倍化。list案は従来どおり 0.6。 */
+function dev2Scale() { return (params.sections.dev.ds2 === 'slide') ? 1.105 : 0.6; }
+function updateDev2Stack() {
+  if (!devEls.block2 || !devEls.mock) return;
+  const r = rectOf(devEls.block2);
+  if (r.bottom < -100 || r.top > (innerHeight || 1) + 100) return;   // 画面外はスキップ
+  const c = params.sections.dev;
+  const swapE = DEV_SWAP_EASES[(c.swapEase || 1) - 1] || DEV_SWAP_EASES[0];
+  const sel = Math.max(0, DEV_SCREENS.indexOf(devScreen2));
+  /* 【2026-08-29 ヒデさん指定】API(左コードのみ)を復活し 3枚に。ghosts=api,cli,sdk の順。席は手前/左後ろ/右後ろ */
+  const cards = [devEls.ghosts[0], devEls.ghosts[1], devEls.ghosts[2]];   // 0=API 1=CLI 2=SDK
+  const nSeat = cards.length;
+  cards.forEach((el, i) => {
+    if (!el) return;
+    const seatI = (i - sel + nSeat) % nSeat;
+    if (el._seat !== seatI) { el._from = el._cur || DEV_STACK[seatI]; el._seat = seatI; el._t0 = elapsed; }
+    el.classList.toggle('dm-back', seatI !== 0);   /* 2026-09-15: 手前以外＝ガラス案ではぼかす(すりガラスの見え方) */
+    const to = DEV_STACK[seatI];
+    const kk = el._t0 == null ? 1 : swapE.fn(clamp01((elapsed - el._t0) / c.stackDur));
+    /* すれ違い中の透け防止(V1.0の対策＋2026-09-03): 暗くなる側は動きがほぼ終わってから暗くし、
+       明るくなる側(前面に入るカード)は逆に早め(最初の30%)に不透明化する。
+       これで前面には常にどちらか不透明なカードが居て、背景が透けなくなる。 */
+    const dimming = to.op < el._from.op;
+    const opK = dimming ? easeOutQ(clamp01((kk - 0.85) / 0.15)) : easeOutQ(clamp01(kk / 0.30));
+    const cur = {
+      sc: el._from.sc + (to.sc - el._from.sc) * kk,
+      dx: el._from.dx + (to.dx - el._from.dx) * kk,
+      dy: el._from.dy + (to.dy - el._from.dy) * kk,
+      dz: el._from.dz + (to.dz - el._from.dz) * kk,
+      ry: el._from.ry + (to.ry - el._from.ry) * kk,
+      op: el._from.op + (to.op - el._from.op) * opK,
+    };
+    el._cur = cur;
+    const swing = Math.sin(Math.PI * clamp01(kk));   // 回っている最中だけ傾く(止まると0=フラット)
+    el.style.opacity = cur.op.toFixed(3);
+    el.style.zIndex = Math.round(cur.sc * 1000);
+    el.style.transform =
+      `translate3d(${(cur.dx * dev2Scale()).toFixed(1)}px, ${(cur.dy * dev2Scale()).toFixed(1)}px, ${(cur.dz * dev2Scale()).toFixed(1)}px)` +
+      ` rotateY(${(cur.ry * swing).toFixed(2)}deg) scale(${(cur.sc * dev2Scale()).toFixed(4)})`;
+  });
+}
+
+/* ===== dev モックのループ駆動 (2026-08-26 ヒデさん指定「表示されたら流れっぱなし」) =====
+   V1.0 と同じく、ブロックが画面に入っている間は devMockContent を t%loop で回し続ける。
+   dev1 = 複製パネル(dev1Refs) / dev2 = 本体 dmPanel(API/editor) ＋ CLI/SDK ゴースト。 */
+const devMockT0 = { dev1: null, dev2: null };
+function driveEditorLoop(refs, visible, key) {
+  const panel = refs ? refs.panel : devEls.panel;
+  const lines = refs ? refs.lines : (typeof dmLineEls !== 'undefined' ? dmLineEls : []);
+  if (!lines || !lines.length) return;
+  if (visible) {
+    if (devMockT0[key] == null) devMockT0[key] = elapsed;
+    if (panel) panel.classList.remove('is-blank');
+    devMockContent('anim', elapsed - devMockT0[key], 'editor', refs);
+  } else {
+    devMockT0[key] = null;
+    devMockContent('empty', 0, 'editor', refs);
+  }
+}
+/* 個別要素のブラー+フェード出現 (rise は任意)。dev2 の順次出現に使う */
+function revealEl(el, k, blurMax, riseMax) {
+  if (!el) return;
+  el.style.opacity = k.toFixed(3);
+  const bl = (1 - k) * (blurMax == null ? 14 : blurMax);
+  el.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : '';
+  if (riseMax) el.style.transform = k < 0.999 ? `translateY(${((1 - k) * riseMax).toFixed(1)}px)` : '';
+}
+let dev2SeqT0 = null, dev2StackEl = null;
+/* dev2(章②): 見出し → モック → 右テキスト の順で出現。モックはビューポート中はループ再生。 */
+/* ===== 開発者体験2「テキストスライド案」(2026-08-29 ヒデさん指定) =====
+   見出しの箱が CLI→SDK→API と切り替わり(スロット風)、モックのカルーセルも同期して回る。
+   スクロール駆動: セクションが画面下部に来たら発火し、スクロールで箱が開いて語が切り替わる。
+   モック内のアニメーション(タイピング)はオフ＝全要素が出た静止状態。 */
+const dsEls = {
+  box: document.getElementById('dsBox'), roll: document.getElementById('dsRoll'),
+  out: document.getElementById('dsOut'), in: document.getElementById('dsIn'),
+};
+const DS_WORDS = ['CLI', 'SDK', 'API'], DS_SCREENS = ['cli', 'sdk', 'api'];
+const DS_WH = 34;
+/* 【2026-09-02】箱の幅はJSがインライン指定するのでCSSでは縮められない→ここで画面幅分岐 */
+const dsBoxW = () => (window.innerWidth <= 780 ? 76 : 112);
+function dsSnapEase(t, k) { return Math.pow(clamp01(t), k); }
+let dsStaticFilled = false;
+function dsFillStaticAll() {
+  /* テキストスライド案はモック内アニメOFF＝全行を出しきった状態にする(clip全開) */
+  if (dsStaticFilled) return;
+  ['api', 'cli', 'sdk'].forEach(scr => {
+    const root = document.getElementById(DM2_ROOT[scr]); if (!root) return;
+    [...root.children].forEach(l => { l.style.clipPath = 'none'; l.style.opacity = '1'; });
+  });
+  dsStaticFilled = true;
+}
+/* 【2026-08-29 ヒデさん指定・改】スクロール連動をやめて【時間駆動の自動カルーセル】に。
+   ビューポートに入ったら(=dev2の入場クロック s)、①語が左右に分かれて箱がマスクで開く →
+   ②CLI→SDK→API と一定間隔(slideEvery)で自動で切り替わり続ける(ループ)。モックも同期。 */
+/* 【2026-08-29 改】箱の開き(左右に分かれる)はスクロール駆動(openK)、語の CLI→SDK→API 切替は
+   時間駆動の自動カルーセル(s)。openK/s は updateDev2Reveal が算出して渡す。 */
+function updateDevSlide(openK, s) {
+  const d = params.sections.dev;
+  if (!dsEls.box) return;
+  /* ① 箱が左右に分かれて開く = スクロール位置(openK 0→1)。 */
+  const ok = clamp01(openK);
+  dsEls.box.style.width = (dsBoxW() * ok).toFixed(2) + 'px';   /* 2026-08-30: 0.1→0.01px精度でカタつき低減 */
+  dsEls.box.style.margin = ok > 0.02 ? '0 12px' : '0';
+  /* ② 語の自動カルーセル = 時間 s。箱が開ききって一呼吸おいてから回り始める。 */
+  const N = DS_WORDS.length;
+  const every = Math.max(1.2, d.slideEvery != null ? d.slideEvery : 3.0);
+  const dur = Math.max(0.2, Math.min(every - 0.3, d.slideDur != null ? d.slideDur : 0.5));
+  let idx = 0, tr = 0;
+  const tSlot = (s < 0 || ok < 0.9) ? -1 : s - 0.35;
+  if (tSlot > 0) {
+    const cyc = tSlot / every;
+    idx = Math.floor(cyc) % N;
+    const within = cyc - Math.floor(cyc);
+    const trStart = 1 - dur / every;          /* 各サイクルの終わり dur 秒で切り替える(それまでホールド) */
+    tr = within < trStart ? 0 : (within - trStart) / (dur / every);
+  }
+  const nextIdx = (idx + 1) % N;
+  dsEls.out.textContent = DS_WORDS[idx]; dsEls.in.textContent = DS_WORDS[nextIdx];
+  applyDsMotion(d.slideMotion || 'snap', tr, d);
+  const shownIdx = tr >= 0.5 ? nextIdx : idx;
+  const scr = DS_SCREENS[shownIdx];
+  if (devScreen2 !== scr) { devScreen2 = scr; }   /* カルーセルが updateDev2Stack で同期して回る */
+}
+/* スロット(語)の切替モーション。スナップ/フリップ/ブラー＋横押し/ズーム/キューブ(2026-08-29 +3種)。 */
+function applyDsMotion(motion, tr, d) {
+  const o = dsEls.out, ins = dsEls.in, H = DS_WH, W = dsBoxW();
+  const e = motion === 'snap' ? dsSnapEase(tr, d.slideSnapK || 3.4) : tr;
+  o.style.filter = ''; ins.style.filter = '';
+  if (motion === 'flip') {
+    dsEls.roll.style.perspective = '300px';
+    o.style.transform = `rotateX(${(e * 90).toFixed(1)}deg)`; o.style.opacity = (1 - Math.min(1, e * 1.6)).toFixed(2);
+    ins.style.transform = `rotateX(${(-(1 - e) * 90).toFixed(1)}deg)`; ins.style.opacity = Math.min(1, e * 1.6).toFixed(2);
+  } else if (motion === 'blur') {
+    o.style.transform = 'none'; o.style.opacity = (1 - e).toFixed(2); o.style.filter = `blur(${(e * 7).toFixed(1)}px)`;
+    ins.style.transform = 'none'; ins.style.opacity = e.toFixed(2); ins.style.filter = `blur(${((1 - e) * 7).toFixed(1)}px)`;
+  } else if (motion === 'push') {
+    o.style.transform = `translateX(${(-e * W).toFixed(1)}px)`; o.style.opacity = (1 - e).toFixed(2);
+    ins.style.transform = `translateX(${((1 - e) * W).toFixed(1)}px)`; ins.style.opacity = e.toFixed(2);
+  } else if (motion === 'zoom') {
+    o.style.transform = `scale(${(1 - 0.5 * e).toFixed(3)})`; o.style.opacity = (1 - e).toFixed(2);
+    ins.style.transform = `scale(${(0.5 + 0.5 * e).toFixed(3)})`; ins.style.opacity = e.toFixed(2);
+  } else if (motion === 'cube') {
+    dsEls.roll.style.perspective = '340px';
+    o.style.transform = `rotateY(${(e * 90).toFixed(1)}deg)`; o.style.opacity = (1 - Math.min(1, e * 1.5)).toFixed(2);
+    ins.style.transform = `rotateY(${(-(1 - e) * 90).toFixed(1)}deg)`; ins.style.opacity = Math.min(1, e * 1.5).toFixed(2);
+  } else { // snap
+    o.style.transform = `translateY(${(-e * H).toFixed(1)}px)`; o.style.opacity = '1';
+    ins.style.transform = `translateY(${((1 - e) * H).toFixed(1)}px)`; ins.style.opacity = '1';
+  }
+}
+function dsResetBox() { if (dsEls.box) { dsEls.box.style.width = '0'; dsEls.box.style.margin = '0'; } }
+
+function updateDev2Reveal() {
+  const b2 = devEls.block2; if (!b2) return;
+  const b2m = devPinOn() ? devEls.in2 : b2;   /* pin時は固定される内側で測る(保持中は出しきりで張り付く) */
+  if (!dev2StackEl) dev2StackEl = b2.querySelector('.dev2-stack');
+  const d = params.sections.dev;
+  /* 【2026-08-29】テキストスライド案の切替: #dev に .ds2-slide を付け、箱アニメを駆動、モックは静止。 */
+  const slide = d.ds2 === 'slide';
+  if (devEls.sec) devEls.sec.classList.toggle('ds2-slide', slide);
+  const vh = innerHeight || 1;
+  const r = rectOf(b2m);
+  const refY = r.top + r.height / 2;   // ブロック中心(pin時は内側=画面中央付近で張り付く)
+  /* 【2026-08-29 ヒデさん指定・重要修正】dev2 の出入りを dev1 と同じ【スクロール位置駆動】に統一。
+     以前は kBlock を越えた瞬間に時計(dev2SeqT0)で見出し→モック→右を再生していたため、上に戻ると
+     時計が -1 にリセットされて【パッと消える／変なスクロールリプレイ】になっていた。
+     ここでは revealK(スクロール位置)で3要素をずらして出す＝出も入りもなめらか＆対称。
+     vpMode=出しきる基準位置(bottom=早め/center=dev1と同じ/top=遅め)。 */
+  const FULL = { bottom: 0.72, center: 0.58, top: 0.44 };
+  const full = FULL[d.vpMode] || FULL.center;   // ブロック中心がこの高さ(画面上端からの割合)まで来たら出しきり
+  const revealK = easeOutQ(clamp01((vh - refY) / (vh * (1 - full))));
+  b2.style.opacity = '1'; b2.style.filter = ''; b2.style.transform = '';
+  /* 【2026-08-29 ヒデさん指定・再修正】dev1 と挙動を完全一致に。以前は revealK で easeOutQ を1回、
+     さらに段差(stag)でもう1回 easeOutQ を掛けて【二重イージング】になっていた。easeOutQ=1-(1-t)^5 は
+     非常に急峻なので、二重に掛かると極小のスクロール幅で一気に出入り＝スクロールバックで“パッと消える”。
+     段差も二重イージングもやめ、dev1 と同じ単一 easeOutQ の revealK で3要素をまとめて出入りさせる。 */
+  revealEl(devEls.h2, revealK, 16, 24);
+  revealEl(dev2StackEl, revealK, 16, 0);
+  revealEl(devEls.list, revealK, 16, 24);
+  const on = revealK > 0.35;
+  if (slide) {
+    /* テキストスライド案: モック内アニメーションはオフ(全要素を出しきった静止状態)。 */
+    dsFillStaticAll();
+    /* 時計 s: セクションが十分見えている間だけ進める(箱の割れ＝時間再生の起点)。 */
+    if (revealK > 0.5) { if (dev2SeqT0 == null) dev2SeqT0 = elapsed; }
+    else if (revealK < 0.12) dev2SeqT0 = null;
+    const s = dev2SeqT0 == null ? -1 : elapsed - dev2SeqT0;
+    /* 【2026-08-29 ヒデさん指定】箱が左右に割れて開く所は【時間再生】でゆったり。
+       splitDelay 秒おいてから splitDur 秒かけて easeIO でなめらかに開く(スクロール駆動をやめる)。 */
+    const splitDelay = d.splitDelay != null ? d.splitDelay : 0.45;
+    const splitDur = Math.max(0.2, d.splitDur != null ? d.splitDur : 1.2);
+    const openK = s < 0 ? 0 : easeIO(clamp01((s - splitDelay) / splitDur));
+    updateDevSlide(openK, s);
+  } else {
+    dsResetBox();
+    driveEditorLoop(null, on, 'dev2');
+    if (on && typeof dmAnimScreen === 'function') {
+      const t = elapsed - (devMockT0.dev2 == null ? elapsed : devMockT0.dev2);
+      dmAnimScreen('api', t); dmAnimScreen('cli', t); dmAnimScreen('sdk', t);
+    }
+  }
+}
+
+/* 【2026-09-16 ヒデさん指定】開発者体験①②の「中央で一旦止まる(sticky保持)」が有効か。PC のみ・パネルで on/off。
+   pin時は出現/保持の判定を .dev-blk-in(=固定される内側)の位置で測る＝固定中は rect.top≈0 で「出しきった状態」に張り付く=止まって見える。 */
+function devPinOn() { return !isMobile && devEls.in1 && devEls.in2 && (params.sections.dev.pinStops !== 'off'); }
+function updateDev(pRaw) {
+  /* 【2026-08-26 リデザイン】固定追従なし・縦スクロール。ブロックが画面に入ったら
+     ブラー+フェードで上品に出現。モックは表示中ずっとループ再生(V1.0踏襲)。 */
+  const vh = innerHeight || 1;
+  /* ブロックの中心が画面下端(=0)→画面の45%地点(=1) へ上がるまでに出しきる。
+     45%を過ぎたら 1 で頭打ち＝出っ放し。画面の下にある間は 0＝隠す。 */
+  const reveal = (el) => {
+    if (!el) return 1;
+    /* 【2026-09-09 ヒデさん指定】開発者体験のブラー出現も PC と同じに戻す(入場で1回だけ再生) */
+    const r = rectOf(el);
+    const centerY = r.top + r.height / 2;
+    /* ブロックの上端が画面上端に来た時点でほぼ出しきる(=黒背景の直後に自動で出て見える)。0.5 で top=0 のとき k≒1 */
+    return easeOutQ(clamp01((vh - centerY) / (vh * 0.5)));
+  };
+  const applyBlock = (el, k) => {
+    if (!el) return;
+    el.style.opacity = k.toFixed(3);
+    const bl = (1 - k) * 16;
+    el.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : '';
+    el.style.transform = k < 0.999 ? `translateY(${((1 - k) * 24).toFixed(1)}px)` : '';
+  };
+  /* dev1(章①): ブロックを出現＋モックをループ駆動(表示中は流れっぱなし)。
+     【2026-08-26】実績尾部に重ねているので、dev1 は「中央に着いてから」フェードインさせ、
+     下からのせり上がりは黒(resGrow)の裏に隠す（黒がフェードするのと入れ替わりで“その場”に出る）。 */
+  /* 【2026-08-29 ヒデさん指定】開発者体験①(開発スピード加速)は「もっと早めにブラーで出す」。
+     下から上がってくる間に出しはじめ、中下部〜中央(center が vh*0.58 付近)でブラー0=一番くっきり。 */
+  const b1r = rectOf(devPinOn() ? devEls.in1 : devEls.block1);
+  const b1c = b1r.top + b1r.height / 2;
+  const posK = easeOutQ(clamp01((vh - b1c) / (vh * 0.42)));   // center が vh*0.58 でくっきり(=1)
+  /* 固定追従なし(smooth)は黒がゆったり時間追従なので、dev1 も“黒が覆う瞬間(resBlackK)”に合わせて出す
+     (せり上がりを黒の裏に隠す)。「固定」モードは前の実装どおり位置だけで出す(黒はスクロール駆動)。 */
+  /* 【2026-08-29】スムーズフェード時は黒オブジェクトが無いので、dev1 は位置(posK)だけで出す(黒待ちにしない)。 */
+  const blackK = resSmooth() ? 1 : ((params.scrollHold === 'smooth') ? easeOutQ(clamp01((resBlackK - 0.55) / 0.35)) : 1);
+  const k1 = posK * blackK;
+  applyBlock(devEls.block1, k1);
+  driveEditorLoop(dev1Refs, k1 > 0.35, 'dev1');
+  /* dev2(章②): 見出し→モック→右テキストの順で出現＋モックをループ駆動 */
+  updateDev2Reveal();
+
+  /* 暗い地色(fixed 100vh)。
+     ⚠️【2026-08-26 ヒデさん指定】黒トランジション中に「後ろも暗くなる」のを防ぐ。
+        実績尾部に #dev を重ねているため、以前の (vh - r.top)/… だと #dev が入ってくる早い段階で
+        dev-bg が全面を暗くし、resGrow(黒オブジェクト)がまだ小さいのに背景が暗く見えていた。
+        → dev-bg は「dev1 が中央付近に着いてから(=resGrow が黒を渡す点)」だけ出す。
+        それまでは背景は元の地色(#e7e7e7)のまま、resGrow オブジェクトだけが展開して黒になる。 */
+  if (devEls.bg && devEls.sec) {
+    const r = rectOf(devEls.sec);
+    let bgK = 0;
+    if (r.bottom > 0 && r.top < vh) {
+      /* 【2026-08-29】スムーズフェード= dev が入ってくる分だけ背景を自然にクロスフェード(黒の裏に隠さない)。
+         従来(黒オブジェクト)= dev1 が中央付近に来てから出す。 */
+      /* 【2026-09-08 ヒデさん指定・根治】背景の暗幕もパネルの darkFrom/darkTo/darkVar に従わせる。
+         これで“背景の暗さ”と“文字の白反転(darkKはこのdevDarkKに追従)”が必ず同期する
+         (以前は背景=旧式・文字=新カーブでズレ、暗い背景に暗い文字が残っていた)。 */
+      const _rc = params.sections.results || {};
+      const _df = _rc.darkFrom != null ? _rc.darkFrom : 0;
+      const _dt = _rc.darkTo != null ? _rc.darkTo : 0.7;
+      const _dvv = _rc.darkVar || 1;
+      const _uu = clamp01(((vh - r.top) / vh - _df) / Math.max(0.05, _dt - _df));
+      const enter = resSmooth()
+        ? (_dvv === 2 ? Math.pow(_uu, 2.4) : _dvv === 3 ? 1 - Math.pow(1 - _uu, 2.4) : _dvv === 4 ? _uu : easeIO(_uu))
+        : clamp01((vh * 0.15 - r.top) / (vh * 0.25));
+      /* 【2026-08-29 ヒデさん指定】dev→導入事例の境界を「実績→dev」と同じく境界を感じないフェードに。
+         導入事例(下端=cases上端)がせり上がってくる分だけ、暗幕をゆっくり(easeIO)引いていく。 */
+      const leave = resSmooth()
+        ? easeIO(clamp01(r.bottom / (vh * 0.85)))
+        : clamp01(r.bottom / (vh * 0.4));                          // 下端が抜けていく
+      bgK = Math.min(enter, leave);
+    }
+    devEls.bg.style.opacity = bgK.toFixed(3);
+    devDarkK = bgK;   /* 【2026-08-30 ヒデさん指定】暗幕の濃さを共有 → 導入事例の黒テキストも同じルールで白反転 */
+  }
+
+  /* 導入事例(cases)の見出しゲートに使われる devFin は、もう開発者体験に依存させない。
+     cases 側は自分の再生進捗で見出しを出すよう変更済みなので、ここは 1 固定で無害化する。 */
+  devFin = 1;
+}
+
+/* ---------- 導入事例 (カードスタック) ---------- */
+const caseEls = {
+  vp: document.querySelector('#cases .pin-vp'),
+  title: document.getElementById('caseTitle'),
+  eyebrow: document.getElementById('caseEyebrow'),
+  hlines: [0, 1, 2].map(i => document.getElementById('cgH' + i)),   // 水平線(上→下)
+  vline: document.getElementById('cgV'),                             // 中央の垂直線
+  grid: document.getElementById('caseGrid'),
+  cards: [0, 1, 2, 3].map(i => document.getElementById('caseCard' + i)),  // 4セル
+};
+
+function updateCases(pRaw) {
+  const c = params.sections.cases;
+  /* 所定の位置(固定)に着いたら1本の映像として自動再生 */
+  let tc = playT('cases', c.playSec, canPlay(pRaw), SECS.cases, pRaw);
+  /* 【2026-09-09 ヒデさん指定】導入事例のブラー出現も PC と同じ時間再生に戻す */
+  const p = tc < 0 ? 0 : clamp01(tc / c.playSec);
+
+  /* 「導入事例」ラベルと1枚目は、セクションが画面下から入ってくる助走のうちに出しきる。
+     こうしないと、前の開発者体験セクションの固定が外れてから
+     ここが固定され始めるまでの1画面ぶんが、まるまる何も起きない空スクロールになる */
+  const pre = progOverride.casesPre != null ? progOverride.casesPre : preP(SECS.cases);
+  /* 「導入事例」の文字は乗り換え区間に入った直後から出す。
+     こうすると黒いセクションを抜けた瞬間にもう文字が見えていて、
+     真っさらな画面を挟まずに次の話へ移れる */
+  /* 【2026-08-18 指定】助走(pre)は「まだ背景が暗いうち」に終わってしまうので使えない。
+     開発者体験の暗転の進み具合(devFin)を基準にして、明るくなりきってから中身を出す */
+  /* ⚠️【2026-08-18 真因】.pin-vp には不透明な明るい背景(#f2f2f2)が入っている。
+     導入事例は margin-top:-100vh で開発者体験と重なり、DOM で後ろにあるため
+     【白い板が開発者体験を下から覆いながら上がってくる】。
+     これが「暗い面の下に何も無い明るい帯」の正体だった。
+     開発者体験が実績に対して同じ手当てをしているのと同様に、
+     定位置(top:0)に着くまでは板そのものを透明にしておく。 */
+  const casTop = rectOf(SECS.cases).top;
+  /* 【2026-08-29】固定追従なしでは「top:0 に着くまで隠す」をやめ、入場で普通に見せる。 */
+  const casHidden = (!CASES_NOPIN && params.pin !== 'off' && casTop > 2);
+  setStyle(caseEls.vp, 'opacity', casHidden ? '0' : '1');
+  /* ⚠️【2026-08-19 バグ修正】透明でもマウスの当たり判定は生きている。
+     導入事例の板は margin-top:-100vh で開発者体験の上に重なっているので、
+     透明なまま【右の API / CLI / SDK リストを覆って】ホバーが効かなくなっていた
+     （ヒデさん報告「SDK部分のホバーが効かない」。実測では CLI も効いていなかった）。
+     見えていない間は当たり判定も切る。
+     ⚠️ .pin-vp だけでは足りない。section 自体が -100vh で重なっているので、
+        section にも掛けないと「section が受け取ってしまう」（実測で確認） */
+  setStyle(caseEls.vp, 'pointerEvents', casHidden ? 'none' : '');
+  setStyle(SECS.cases, 'pointerEvents', casHidden ? 'none' : '');
+
+  const noPin = params.pin === 'off';
+  /* 固定なし: ブロックが画面に入ってからの秒数で流す（位置に直結させると
+     スクロールを止めた所で止まり、カードがブラーのまま残る） */
+  const npT = noPin ? npBlockT('cases', caseEls.vp) : -1;
+  /* 【2026-08-25】開発者体験を非pin化したので devFin ゲートは廃止。
+     見出しはこのセクションの再生進捗 p の頭でブラー→フェードで出す(自動再生の先頭)。 */
+  const intro = noPin ? easeOutQ(clamp01(npT / 0.55))
+                      : seg(p, 0, 0.12, easeOutQ);
+  rv(caseEls.title, intro, 8, 8);
+  rv(caseEls.eyebrow, intro, 8, 8);   /* 2026-09-15: 英語ラベルも見出しと同じ出方 */
+  /* 【2026-08-30 ヒデさん指定】反転ルールの統一: dev の暗幕がまだ濃いうちに見えている「導入事例」は
+     実績と同じく暗さに連動して白へ反転(明るくなったら元の黒に戻る)。 */
+  [caseEls.title, caseEls.eyebrow].forEach(el => {
+    if (!el) return;
+    if (devDarkK > 0.002) {
+      const b = [16, 24, 40];   // .case-title の元色 #101828
+      el.style.color = `rgb(${Math.round(b[0] + (255 - b[0]) * devDarkK)},${Math.round(b[1] + (255 - b[1]) * devDarkK)},${Math.round(b[2] + (255 - b[2]) * devDarkK)})`;
+    } else if (el.style.color) {
+      el.style.color = '';
+    }
+  });
+
+  /* 【2026-08-25 刷新・カンプ 15800:24258】
+     水平線3本(上→下でディレイ) が左から引かれる → 中央の垂直線が上から引かれる → カード4枚がブラーで登場。
+     線は CSS の scaleX / scaleY を 0→1 にして「左から / 上から引く」。線・カードは再生進捗 p 基準。 */
+  /* 【2026-08-30 ヒデさん指定】固定追従なし(no-pin)でもパネルの値で動くよう共通化。
+     ⚠️ 以前は no-pin だと npT(秒)のハードコード(0.25s/0.7s/0.9s…)で、パネルのつまみが効いていなかった。
+     いまは no-pin では q = npT / playSec(再生尺に対する割合)にして、pin と同じ lineAt/vlineAt/cardAt を使う。 */
+  const q = noPin ? clamp01(npT / Math.max(0.1, c.playSec)) : p;
+  /* 水平線: 上(i=0)が先。下へ行くほど lineStagger だけ遅れて引き始める */
+  caseEls.hlines.forEach((el, i) => {
+    if (!el) return;
+    const a = c.lineAt + i * c.lineStagger;
+    const k = seg(q, a, a + c.lineDur, easeOutQ);
+    el.style.transform = `scaleX(${k.toFixed(4)})`;
+  });
+  /* 中央の垂直線: 上から下へ (水平線が進んだあと) */
+  if (caseEls.vline) {
+    const vk = seg(q, c.vlineAt, c.vlineAt + c.vlineDur, easeOutQ);
+    caseEls.vline.style.transform = `scaleY(${vk.toFixed(4)})`;
+  }
+  /* カード4枚: 罫線が引けたあと、左上→右上→左下→右下 の順にブラーで登場。
+     ⚠️ 固定なしではブロックごと（.pin-stage）にブラーで出しているので、カード側には掛けない(二重防止) */
+  /* 【2026-09-19 ヒデさん依頼】カードは1枚ずつ: それぞれが「自分が画面に入った時点」(npBlockT)を起点に、1→2→3→4 の順に
+     cardStagger 秒ずつ遅れてブラーで出る(旧 2026-08-30: 4枚同時・no-pin ではブラー無し)。
+     同じ行の2枚は同時に画面に入るのでディレイで前後する。下の行が遅れて入った分はディレイから差し引く(待たせすぎない)。
+     画面から出ると npBlockT が時計を戻すので、戻ってくるとまた1枚ずつ出る(他セクションと同じリプレイ) */
+  const stag = c.cardStagger != null ? c.cardStagger : 0.18;
+  const cardT = caseEls.cards.map((el, i) => el ? npBlockT('caseCard' + i, el) : -1);
+  const ent0 = (npClocks.caseCard0 && npClocks.caseCard0.t0 != null) ? npClocks.caseCard0.t0 : null;
+  caseEls.cards.forEach((el, i) => {
+    if (!el) return;
+    const t = cardT[i];
+    const st = npClocks['caseCard' + i];
+    const late = (ent0 != null && st && st.t0 != null) ? Math.max(0, st.t0 - ent0) : 0;   /* 1枚目より遅れて画面に入った秒数 */
+    const delay = Math.max(0, i * stag - late);
+    const k = t < 0 ? 0 : easeOutQ(clamp01((t - delay) / Math.max(0.05, c.cardDur)));
+    el.style.opacity = k.toFixed(3);
+    const bl = (1 - k) * c.inBlur;
+    el.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : '';
+  });
+}
+
+/* 各セクションの「自動再生の開始時刻」をまとめて初期化する。
+   通常はリプレイさせないので触らないが、「↺ 最初から」と検証用フックからだけ呼ぶ */
+/* ===== スクロールリプレイ (2026-08-15 復活) =====
+   セクションが画面から完全に外れたら時計を巻き戻す。戻ってくるともう一度アニメが流れる。
+   ⚠️ 画面に半分でも残っているうちに巻き戻すと、見ている最中に頭へ戻ってしまうので
+      「上下に1画面ぶん離れたら」という余裕を持たせている */
+function replayCheck() {
+  if (!params.replay) return;
+  for (const k in SECS) {
+    if (!secPlay[k]) continue;
+    if (progOverride[k] != null) continue;   /* 検証で進捗を固定している時は巻き戻さない */
+    const r = rectOf(SECS[k]);
+    /* 完全に画面の外へ出たら巻き戻す。再生が始まるのは固定された時(top≒0)なので、
+       これでも「見ている最中に頭へ戻る」ことはない */
+    if (r.bottom <= 0 || r.top >= innerHeight) resetSectionClock(k);
+  }
+}
+function resetSectionClock(k) {
+  delete secPlay[k];
+  delete storyP[k];
+  if (k === 'vision')  { visAutoT0 = null; visAutoDone = false; visMoveT0 = null; visT = -1; }
+  if (k === 'results') { resT0 = null; resT = -1; }
+  if (k === 'dev')     { devHoldT0 = null; devScreenT0 = null; devStarted = false;
+                         devScreen2 = 'api'; devSwapT0 = null; dmBuildScreen('editor'); }
+}
+
+function resetSectionClocks() {
+  visAutoT0 = null; visAutoDone = false; visMoveT0 = null; visT = -1;
+  resT0 = null; resT = -1;
+  for (const k in storyP) delete storyP[k];
+  for (const k in secPlay) delete secPlay[k];
+  scrollLocked = false; if (lenis) lenis.start();
+  devHoldT0 = null; devScreenT0 = null; devStarted = false;
+}
+
+/* スクロール慣性補間: 生のスクロール進捗を毎フレーム少しずつ追いかける (lenis風のぬるっと感) */
+const smoothP = { vision: -1, dev: -1, cases: -1, results: -1 };   // -1 = 未初期化
+/* ⚠️ 2026-08-14: 一度「1秒あたりの進捗上限(maxRate)」を入れたが、
+   スクロールしても画面が進まない“のっそり”した感じになり不採用。元の追従に戻した。
+   早送り対策は、進捗を鈍らせるのではなく【上限だけ決めて時間で進める】方向で解いた。 */
+function smoothTo(key, target) {
+  const k = params.sections.common.smooth;
+  if (k <= 0 || smoothP[key] < 0) { smoothP[key] = target; return target; }
+  const a = 1 - Math.exp(-frameDt * k);
+  smoothP[key] += (target - smoothP[key]) * a;
+  if (Math.abs(target - smoothP[key]) < 0.0004) smoothP[key] = target;
+  return smoothP[key];
+}
+
+/* ---------- キービジュアルの登場 (ヘッダー → 小見出し → タイピング → グラフィック) ---------- */
+const kvEls = {
+  header: document.querySelector('.header'),
+  eyebrow: document.getElementById('hlEyebrow'),
+  lines: [document.getElementById('hlL1'), document.getElementById('hlL2'), document.getElementById('hlL3')].filter(Boolean),
+  orbit: document.querySelector('.orbit'),
+  logos: document.querySelector('.logos'),
+  chars: [[], []],
+  carets: [],
+};
+/* ⚠️ CSS で .headline を消してあるのは「JS が動く前の素の文字」を出さないため。
+   1文字ずつの箱を組み終えたら、器そのものは表示に戻す（中身の出現は JS が管理する） */
+(function unhideHeadline() {
+  const h = document.querySelector('.headline');
+  if (h) h.style.opacity = '1';
+})();
+/* 【2026-09-17 ヒデさん依頼】タイピング演出は残しつつ「1文字スパン」をやめ、DOM は "表示中の部分文字列(普通のテキスト)＋キャレット" だけにする。
+   ＝ ソースHTMLの素のテキスト(例: <span id="hlL1">AIと事業を<i class="hl-caret"></i>)をそのまま編集でき、本番で検証ツールでも普通のテキストとして置き換えられる。 */
+kvEls.text = ['', ''];
+kvEls.textNodes = [null, null];
+(function buildKvType() {
+  kvEls.lines.forEach((line, i) => {
+    const caret = line.querySelector('.hl-caret');
+    const first = line.firstChild;
+    const full = (first && first.nodeType === 3) ? first.textContent : '';   // ソースの素テキストを保持
+    kvEls.text[i] = full;
+    if (first && first.nodeType === 3) line.removeChild(first);
+    const tn = document.createTextNode('');   // 表示中の部分文字列を入れる普通のテキストノード(スパンではない)
+    line.insertBefore(tn, caret);
+    kvEls.textNodes[i] = tn;
+    kvEls.carets.push(caret);
+  });
+})();
+
+/* 【2026-09-26 整理】旧KV(iframe の kv/embed.html・A案/B案)の遅延読み込み・案の切替・入場の合図(postMessage)は撤去。
+   KV は惑星だけ(params.kvDesign は読み込み時に 'planet' へそろえる)。 */
+document.documentElement.classList.toggle('kv-planet', params.kvDesign === 'planet');
+/* 【2026-08-30 ヒデさん指定】ナビ項目の左右の間隔(px)。パネルの「ナビ項目の間隔」から変えられる */
+function applyNavGap() {
+  document.documentElement.style.setProperty('--nav-gap', (params.kv.navGap != null ? params.kv.navGap : 32) + 'px');
+}
+applyNavGap();
+/* 【2026-08-31 ヒデさん指定】KVコピーの文字設定(サイズ/サブの罫線)をCSS変数へ反映。
+   【2026-09-17 大掃除】太さ・字間は「文字」(params.edits)へ一本化したのでここでは扱わない。
+   コピー左端は「ヘッダーロゴの左端」が基準(--kv-copy-base を実測で入れる)。copyX はそこからのずらし。 */
+/* 【2026-09-18 ヒデさん依頼】ハンバーガーメニュー(左寄せ大)の余白・間隔・文字サイズ → CSS 変数 */
+const LOGO_KEYS = ['hennge', 'upsider', 'np', 'akerun', 'smaregi', 'andpad', 'icare', 'contracts', 'sweeep'];
+/* 【2026-09-18 ヒデさん依頼】ロゴ帯の目視の微調整(上下・左右の余白)を両セットの img に当てる */
+function applyLogoTune() {
+  const T = params.logoTune || {};
+  document.querySelectorAll('.mq-set').forEach(set => { Array.from(set.querySelectorAll('img')).forEach((img, i) => { const k = LOGO_KEYS[i]; const t = (k && T[k]) || {}; img.style.setProperty('--dy', (t.dy || 0) + 'px'); img.style.marginLeft = (t.mx || 0) + 'px'; img.style.marginRight = (t.mx || 0) + 'px'; }); });
+}
+function applyDrawerTune() {
+  const d = Object.assign({ padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
+  r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
+  r.setProperty('--drw-gap', d.gap + 'px'); r.setProperty('--drw-fs', d.fs + 'px'); r.setProperty('--drw-num-fs', d.numFs + 'px');
+  r.setProperty('--hdr-nav-blur', (d.navBlur != null ? d.navBlur : 8) + 'px');
+  /* 【2026-09-18 ヒデさん依頼】ハンバーガーアイコン(2本線)の長さ・太さ・間隔(html.bi-2 の CSS より優先させるため要素に直接) */
+  document.querySelectorAll('.hdr-burger, .cta-burg').forEach(b => { b.style.setProperty('--bg-w', (d.barW != null ? d.barW : 20) + 'px'); b.style.setProperty('--bg-h', (d.barH != null ? d.barH : 2) + 'px'); b.style.setProperty('--bg-gap', (d.barGap != null ? d.barGap : 7) + 'px'); });
+}
+function applyKvCopy() {
+  const r = document.documentElement.style, k = params.kv;
+  /* 【2026-09-20 #3】KV見出しの文字サイズもSP独立。実機SPは params.mb 直読み＋SP既定(main34/jump60/eyebrow12=SPカンプ由来の --fs-hero/--fs-hero-jump/--fs-caption)、PCは70/120/20。
+     SP CSS(.hl-main 等)もこの変数を読むよう変更済み＝スマホモードのパネル数値と実機が一致する。isMobile確定後(fit)にも再実行。 */
+  const _mbK = (params && params.mb) || {};
+  const _isMbK = (typeof isMobile !== 'undefined' && isMobile);
+  const effK = (f, pc, sp) => _isMbK ? (_mbK['kv.' + f] != null ? _mbK['kv.' + f] : sp) : (k[f] != null ? k[f] : pc);
+  r.setProperty('--kv-main-size', effK('mainSize', 70, 34) + 'px');
+  r.setProperty('--kv-jump-size', effK('jumpSize', 120, 60) + 'px');   /* 最終行「競争力を」(PC調整版 120px / SP 60px) */
+  r.setProperty('--kv-eyebrow-size', effK('eyebrowSize', 20, 12) + 'px');
+  /* 【2026-09-20 ヒデさん依頼】ヘッダー↔コピーの距離。基準top(PC208/SP434)に足すオフセット。PC/SP独立(mbKey)。 */
+  r.setProperty('--kv-hl-off', (k.hlOff != null ? k.hlOff : 0) + 'px');
+  /* 【2026-09-20 ヒデさん依頼】スマホ版: ヘッダー↔コンテンツの距離(KV全体=グラフィック＋コピー＋ロゴ帯を下げる)。PCのレイアウトは未使用。 */
+  r.setProperty('--kv-sp-top', (k.spTop != null ? k.spTop : 0) + 'px');
+  /* 【2026-09-18】案ごとの書体(太さ/行間)。PC だけ CSS 変数で効かせる(スマホは 9/9 トレースのまま) */
+  r.setProperty('--kv-main-weight', String(k.mainWeight != null ? k.mainWeight : 800));
+  r.setProperty('--kv-main-lh', String(k.mainLh != null ? k.mainLh : 1.4));
+  r.setProperty('--kv-last-weight', String(k.lastWeight != null ? k.lastWeight : 700));
+  r.setProperty('--kv-last-lh', String(k.lastLh != null ? k.lastLh : 1.2));
+  r.setProperty('--kv-eyebrow-weight', String(k.eyebrowWeight != null ? k.eyebrowWeight : 500));
+  r.setProperty('--kv-eyebrow-lh', (k.eyebrowLh ? String(k.eyebrowLh) : 'normal'));
+  document.documentElement.classList.toggle('kvv-eyebrow-col', k.eyebrowLayout === 'col');
+  /* 【2026-09-20 ヒデさん依頼】KVを中央配置に。コピーは #stage(1440px・中央寄せ) の中にあるので、
+     ステージが中央に寄る幅(ウィンドウ>1440＝stage.left>0)では base を設計値(50px・ステージ基準)に固定する。
+     こうするとグラフィック(同じ #stage 内)と同じだけ中央へ寄り、コピー↔グラフィックの余白を保ったまま全体が中央に集まる。
+     1440以下は従来どおりロゴ左端に合わせる(ステージが幅いっぱいなので見た目は不変)。 */
+  try {
+    const logo = document.querySelector('.logo'), st = document.getElementById('stage');
+    let base = 50;
+    const sr = st ? st.getBoundingClientRect() : null;
+    if (sr && sr.left > 1) {
+      base = 50;   /* 広い画面: ステージが中央寄せ → コピーもステージ基準の設計値で中央へ */
+    } else if (logo && sr) {
+      const sc = sr.width > 0 ? (sr.width / 1440) : 1;
+      const lr = logo.getBoundingClientRect();
+      if (lr.width > 0 && sr.width > 0) base = Math.round((lr.left - sr.left) / sc);
+    }
+    r.setProperty('--kv-copy-base', base + 'px');
+  } catch (e) { r.setProperty('--kv-copy-base', '50px'); }
+  r.setProperty('--kv-copy-dir', k.copyOrder === 'sub' ? 'column-reverse' : 'column');
+  r.setProperty('--kv-eyebrow-dash', (k.eyebrowDash === false) ? 'none' : 'block');
+  r.setProperty('--kv-eyebrow-dash-w', (k.eyebrowDashW != null ? k.eyebrowDashW : 26) + 'px');
+  r.setProperty('--kv-dash-gap', (k.dashGap != null ? k.dashGap : 10) + 'px');
+  r.setProperty('--kv-copy-gap', (k.copyGap != null ? k.copyGap : 16) + 'px');
+  r.setProperty('--kv-copy-x', (k.copyX || 0) + 'px');
+  r.setProperty('--kv-copy-y', (k.copyY || 0) + 'px');
+}
+applyKvCopy();
+applyDrawerTune();
+applyLogoTune();
+/* (旧フォントテスト FONT_TEST_PRESETS / applyFontTest は 2026-09-17 の大掃除で撤去。⑪調整版の値は CSS(.hl-main 等)・DEFAULTS.kv・applySway(KV_GFX) に焼き込み済み) */
+/* ポイント1・2の文字サイズ(2026-09-03) */
+function applyVpSize() {
+  const v = (params.sections && params.sections.vision) || {};
+  const r = document.documentElement.style;
+  const mb = (params && params.mb) || {};
+  const isMb = (typeof isMobile !== 'undefined' && isMobile);   /* 実機SP(幅≤600) */
+  /* 【2026-09-20 ヒデさん#3】SPは既定トークン(msg26/見出し20/本文12)を基準にし、SP上書き(params.mb)があればそれを使う。
+     PCは従来どおり(50/26/14)。SP CSS 側もこの変数を読むよう変更済み＝パネルの数値と実機の見た目が一致する。
+     ※実機では PC値が v.* に流れ込んでいる(applyMbToParams)が、SPは params.mb を直接見るので PC値は漏れない。 */
+  const eff = (field, pcDef, spDef) => isMb
+    ? (mb['sections.vision.' + field] != null ? mb['sections.vision.' + field] : spDef)
+    : (v[field] != null ? v[field] : pcDef);
+  r.setProperty('--vp-h-size', eff('pHSize', 26, 20) + 'px');
+  r.setProperty('--vp-p-size', eff('pPSize', 14, 12) + 'px');
+  r.setProperty('--vp-width', (v.pWidth != null ? v.pWidth : 328) + 'px');
+  r.setProperty('--vis-msg-size', eff('msgSize', 50, 26) + 'px');
+  r.setProperty('--vis-emph-gap', eff('emphGap', 119, 50) + 'px');
+  try { applyCtaArrow(); } catch (e) {}   /* 【2026-09-26】お問い合わせボタンの矢印の線幅(PC/SP別)もここで一緒に反映＝起動・スマホ判定後・ライブ同期で取り直される */   /* 【2026-09-25】強調案の1↔2行目の行間(PC既定119/SP既定50・PC/SP独立) */
+}
+/* 【2026-09-26 ヒデさん依頼】お問い合わせボタンの矢印の線幅(実寸px)。PC=params.cv.ctaArrowW / SP=params.mb['cv.ctaArrowW']。未設定は2px */
+function applyCtaArrow() {
+  const isMb = (typeof isMobile !== 'undefined' && isMobile), mb = (params && params.mb) || {}, cv = (params && params.cv) || {};
+  const w = isMb ? (mb['cv.ctaArrowW'] != null ? mb['cv.ctaArrowW'] : 2) : (cv.ctaArrowW != null ? cv.ctaArrowW : 2);
+  document.documentElement.style.setProperty('--cta-arrow-w', (+w || 2) + 'px');
+}
+applyVpSize();
+/* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)。params.grid → html.grid-on と CSS変数(--grid-cell/-w/-line)へ。 */
+function applyGrid() {
+  const g = (params && params.grid) || {};
+  const el = document.documentElement;
+  try { el.classList.toggle('grid-on', !!g.on); } catch (e) {}
+  const s = el.style;
+  s.setProperty('--grid-cell', (g.cell != null ? g.cell : 40) + 'px');
+  s.setProperty('--grid-w', (g.w != null ? g.w : 1) + 'px');
+  const op = (g.op != null ? g.op : 0.45);
+  let rgb = '172,172,172';
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(g.color || '#ACACAC');
+  if (m) { const n = parseInt(m[1], 16); rgb = ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255); }
+  s.setProperty('--grid-line', 'rgba(' + rgb + ',' + op + ')');
+  /* 【2026-09-21 ヒデさん「もっと合わせたい」】方眼のタテ線を画面の中央に合わせる=中身の中央にある仕切り線(for SaaS/AI)が
+     どの画面幅(1440以外の1512等)でもマス目に乗る。中央にマス線が来るよう左オフセットを (画面幅/2)%マス で算出。 */
+  const cell = (g.cell != null ? g.cell : 40);
+  const vw = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1440;
+  s.setProperty('--grid-pos-x', (Math.round(((vw / 2) % cell) * 100) / 100) + 'px');
+}
+applyGrid();
+/* 【2026-09-01】実績: Anyflowと「が」の間(px)をCSS変数へ */
+function applyResSlotGap() {
+  const v = params.sections && params.sections.results ? params.sections.results.slotGap : 4;
+  document.documentElement.style.setProperty('--res-slot-gap', (v != null ? v : 4) + 'px');
+}
+applyResSlotGap();
+/* 【2026-09-15 ヒデさん指定】案24 系: 2つの価値のブロックと区切り線の間の余白(px) */
+/* 【2026-09-15 ヒデさん指定】開発者体験②のスロットの箱の位置・高さ */
+function applyDsBox() {
+  const d = (params.sections && params.sections.dev) || {};
+  const r = document.documentElement.style;
+  r.setProperty('--ds-box-y', (d.slotBoxY != null ? d.slotBoxY : 0) + 'px');
+  r.setProperty('--ds-box-h', (d.slotBoxH != null ? d.slotBoxH : 42) + 'px');
+}
+applyDsBox();
+function applyResHrGap() {
+  const r = (params.sections && params.sections.results) || {};
+  document.documentElement.style.setProperty('--rfx-hr-gap', (r.hrGap != null ? r.hrGap : 100) + 'px');
+  document.documentElement.style.setProperty('--rfx-hr-gap2', (r.hrGap2 != null ? r.hrGap2 : 0) + 'px');
+}
+applyResHrGap();
+applyPfGradStops();   /* 【2026-09-01】軌道グラデの色ストップを保存値で反映 */
+/* 【2026-08-31 ヒデさん指定・バグ修正】バリエーションの「いまの設定で上書き」がリロード後に
+   見た目へ反映されない問題: 上書き自体は保存されていたが、開いた直後は誰も適用していなかった。
+   起動時、選択中の案に上書き(または昇格プリセット)があれば、その数値で開く。 */
+/* ⚠️ ここで即時実行すると、applyGfxVariant→markDirty が後方で let 宣言される変数(syncPresetPills等)に
+   触れて TDZ の ReferenceError になり、リセット(net3d=false)の直後に中断していた(実際に発生)。
+   setTimeout(0) でスクリプト評価が全部終わってから適用する。 */
+setTimeout(function applyOverrideOnBoot() {
+  try {
+    const m = params.converge || 'off';
+    const i = (params.gfxVariantOn || {})[m];
+    if (i == null) return;
+    const v = (GFX_VARIANTS[m] || [])[i];
+    if (!v) return;
+    const ov = ((params.gfxVarOverride || {})[m] || {})[v.name];
+    if (ov || v.preset) applyGfxVariant(i);
+  } catch (e) {}
+}, 0);
+/* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
+setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof applyVisEmph === 'function') applyVisEmph(); } catch (e) {}   /* 【2026-09-20】ビジョンのバリエーション(強調/デフォルト)を焼き込み/保存値で組み直す */ try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
+/* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
+function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
+/* 【2026-09-22 ヒデさん依頼】導入事例カードの上下パディング(スマホ)を調整パネルから可変に。--cg-pad-y を設定。
+   SP の .cg-cell だけが読む(PCのカードは別レイアウトで未使用)ので PC の見た目には影響しない。値は
+   params.sections.cases.cardPadY(SPは params.mb 経由で applyMbToParams が流し込む)。既定24px。 */
+function applyCasesPad() {
+  try {
+    const c = params.sections && params.sections.cases;
+    const v = (c && c.cardPadY != null) ? c.cardPadY : 24;
+    document.documentElement.style.setProperty('--cg-pad-y', Math.round(v) + 'px');
+  } catch (e) {}
+}
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {} try { applyCasesPad(); } catch (e) {}   /* 【2026-09-22】SP上書き後、カードの上下パディングも取り直す */   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+applyCasesPad();   /* 【2026-09-22】起動時に --cg-pad-y の既定を入れる(PC/SP共通・PCは未使用) */
+
+function updateKV() {
+  const c = params.kv, t = elapsed;
+  /* 【2026-09-09 ヒデさん指定】スマホも KV の入場(タイピング→グラフィックのブラー出現)は PC と同じ。
+     2026-09-08 の「最初から最終状態で固定」は撤回。スクロールで動く要因(揺れ/再レイアウト)は
+     applySway の sway 無効化と fit() のガードで別途止めている。ロゴ帯だけは JS で触らず CSS で出す(下の rv 参照)。 */
+  /* 【2026-09-09 ヒデさん指摘「ボタン/サブコピーに影」】ヘッダー(お問い合わせボタン)とサブコピーの
+     entrance blur は iOS で合成レイヤーの残像(=影)になる。スマホは blur=0(フェード+スライドのみ)にする。
+     グラフィックの登場ブラーは“望まれた演出”なので残す。 */
+  rv(kvEls.header, easeOutQ(clamp01((t - c.headerAt) / T_IN)), isMobile ? 0 : 8, 10);
+
+  /* 1文字ずつ打ち込む */
+  const tt = t - c.typeAt;
+  /* 緩急: 最初はゆっくり、だんだん速くなる。i文字目までの所要時間 = charDur * n * (i/n をイーズインした値) */
+  const e = c.typeEase;
+  const ease = x => x * (1 - e) + e * x * x;          // 0→1 を前半ゆっくりに
+  const timeOf = (i, n, dur) => dur * n * ease(i / Math.max(1, n));
+  /* 【2026-09-17】行数可変(2〜3行など)に一般化: 各行の開始時刻を累積で出す。1行目は素早く charDur、以降はゆったり charDur2。行間は lineGap */
+  const durOf = li => (li === 0 ? c.charDur : c.charDur2);
+  const starts = []; let acc = 0;
+  kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
+  const typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
+  kvEls.textNodes.forEach((tn, li) => {
+    if (!tn) return;
+    const full = kvEls.text[li], n = full.length, base = starts[li], dur = durOf(li);
+    /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後)。スパンは使わない */
+    let count = 0;
+    for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
+    if (tn.data.length !== count) tn.data = full.slice(0, count);
+  });
+  const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
+  const typing = tt > -0.15 && tt < typeEnd + 0.5;
+  /* いま打っている行のキャレットだけ点滅(その行の開始〜次の行の開始まで) */
+  kvEls.carets.forEach((car, li) => {
+    if (!car) return;
+    const on0 = starts[li] - c.lineGap * 0.4;
+    const on1 = (li + 1 < starts.length) ? starts[li + 1] - c.lineGap * 0.4 : typeEnd + 0.5;
+    car.style.opacity = (typing && tt >= on0 && tt < on1) ? blink : 0;
+  });
+
+  /* 打ち終わってから小ラベル(罫線ごと) → グラフィック → ロゴ の順で出す
+     (2026-08-14: 以前は小ラベルが先に出ていたが、タイピングの後に変更) */
+  /* ブラーで出てくる所の速さはここでまとめて決める (2026-08-15: 速すぎるとの指摘でゆったりへ) */
+  const RD = c.revealDur;
+  const eyeAt = c.typeAt + typeEnd + c.eyebrowGap;
+  rv(kvEls.eyebrow, easeOutQ(clamp01((t - eyeAt) / RD)), isMobile ? 0 : 8, 8);   /* サブコピーの影対策(上記) */
+  const gAt = eyeAt + c.graphicGap;
+  const _orbReveal = easeOutQ(clamp01((t - gAt) / (RD * 1.5)));
+  if (kvRevealElapsed == null && _orbReveal > 0.5) kvRevealElapsed = elapsed;
+  rv(kvEls.orbit, _orbReveal, 12);
+  /* スマホのロゴ帯は JS(rv)で触らない: iOS で inline の blur/opacity 書き込みが合成レイヤーを落とすため。
+     スマホは常時表示(CSS の .logos opacity:1)＝チカチカ/一瞬消える対策(2026-09-09、遅延フェードは撤去)。 */
+  if (!isMobile) rv(kvEls.logos, easeOutQ(clamp01((t - gAt - RD * 0.6) / RD)), 8);
+  /* 【2026-09-26 整理】旧KV iframe への入場合図(1行目の打ち終わり＋introLead)は iframe ごと撤去 */
+}
+
+function updateSections() {
+  const nowY = window.scrollY || window.pageYOffset || 0;
+  const dY = nowY - lastScrollY;
+  if (Math.abs(dY) > 0.5) scrollDir = dY < 0 ? -1 : 1;
+  lastScrollY = nowY;
+  updateScrollLock();
+  clampScroll();
+  /* 【2026-09-02】診断記録は8フレームに1回へ間引き。elementFromPoint+rect取得×6が毎フレーム
+     強制レイアウトを誘発していた(プロファイル実測2.2%+α)。240行リングは約32秒ぶんに伸びる */
+  if ((frameCount & 7) === 0) diagWatch();
+  fastForward();
+  replayCheck();
+  updateKV();
+  /* ⚠️ 固定追従なしではセクションの高さが 100vh なので pinP の分母が 0 ＝ 常に 0 になる。
+     その結果「スクロール量に紐づく見た目」（軌道の移動・拡大、暗転、カードの重なり）が
+     一切進まず、軌道が小さいまま止まる（2026-08-18 ヒデさん報告）。
+     固定なしの時は「セクションが画面下から上がってくる分」を進行度として渡す。 */
+  const prog = el => (params.pin === 'off' ? clamp01(preP(el)) : pinP(el));
+  /* 【2026-08-29】Vision だけは固定追従なし＝入場進捗(preP)で自動再生。実績・事例は従来どおり。 */
+  /* 【2026-08-29 ヒデさん指定】固定追従なしは「入った瞬間に発火」だと画面外(下に peek)で
+     もう再生されてしまう。セクションがある程度画面に入ってから(上端が約75%より上)発火させる。 */
+  const NOPIN_ENTER = 0.45;   // preP をこのぶん遅らせて発火(大きいほど中に入ってから)。0.45=セクションが半分以上入ってから
+  const visProg = VIS_NOPIN ? clamp01(preP(SECS.vision) - NOPIN_ENTER) : prog(SECS.vision);
+  updateVision(progOverride.vision != null ? progOverride.vision : smoothTo('vision', visProg));
+  updateDev(progOverride.dev != null ? progOverride.dev : smoothTo('dev', prog(SECS.dev)));
+  updateDev2Stack();   /* dev2 の3枚カルーセル(ホバー切替) */
+  /* 【2026-08-29】導入事例も固定追従なし＝入場進捗(preP)で自動再生。 */
+  const casesProg = CASES_NOPIN ? clamp01(preP(SECS.cases) - NOPIN_ENTER) : prog(SECS.cases);
+  updateCases(progOverride.cases != null ? progOverride.cases : smoothTo('cases', casesProg));
+  /* 【2026-08-29】スムーズフェード時は実績も固定追従なし＝入場進捗(preP)で自動再生。 */
+  const resProg = resSmooth() ? clamp01(preP(SECS.results) - NOPIN_ENTER) : prog(SECS.results);
+  updateResults(progOverride.results != null ? progOverride.results : smoothTo('results', resProg));
+  if (params.pin === 'off') renderNoPin();
+}
+
+/* ================= 球体 (WebGL / 2Dグラデを3D回転) ================= */
+const sphereCanvas = document.getElementById('sphere');
+let sphereGL = null;
+
+function initSphere() {
+  /* ⚠️【2026-08-28】preserveDrawingBuffer が無いと、描いた直後以外は canvas の中身を読めない。
+     エコー(残像)は毎フレーム drawImage で惑星の絵を複製するので、これが無いと複製が空になり
+     「残像が全く見えない」状態になっていた(実測: 濃さ0.855でも画面に何も出ない)。 */
+  const gl = sphereCanvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: true, preserveDrawingBuffer: true });
+  if (!gl) { sphereFallback(); return; }
+
+  const vs = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+  /* 共通部にデザイン専用の仕上げ(finish)・補助関数(helpers)・粒の細かさを差し込み、惑星ごとに別シェーダーを作る */
+  const fsTemplate = (grainScale, finish, helpers) => `
+precision highp float;
+uniform vec2 uRes;
+uniform float uAngle;    /* 主回転 (rad) */
+uniform float uAngle2;   /* 2軸目の回転 (rad) */
+uniform float uNoise;    /* 追い粒の強さ (カンプ由来の質感に上乗せ) */
+uniform float uLight;    /* 1=なし / 2=右上光源 */
+uniform sampler2D uTex;  /* カンプの惑星画像 (4倍解像度) */
+
+mat3 rotAxis(vec3 a, float t){
+  float c = cos(t), s = sin(t);
+  vec3 u = normalize(a);
+  return mat3(
+    c+u.x*u.x*(1.-c),      u.x*u.y*(1.-c)-u.z*s,  u.x*u.z*(1.-c)+u.y*s,
+    u.y*u.x*(1.-c)+u.z*s,  c+u.y*u.y*(1.-c),      u.y*u.z*(1.-c)-u.x*s,
+    u.z*u.x*(1.-c)-u.y*s,  u.z*u.y*(1.-c)+u.x*s,  c+u.z*u.z*(1.-c)
+  );
+}
+float hash(vec3 p){
+  p = fract(p * vec3(127.1, 311.7, 74.7));
+  p += dot(p, p.yzx + 19.19);
+  return fract((p.x + p.y) * p.z);
+}
+${helpers || ''}
+void main(){
+  vec2 p = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;
+  float R = 0.884615; /* 230px / 260px */
+  float len = length(p);
+  float px = 2.0 / uRes.y;
+  float alpha = 1.0 - smoothstep(R - 1.5 * px, R + 1.5 * px, len);
+  if (alpha <= 0.0) { gl_FragColor = vec4(0.0); return; }
+  float z = sqrt(max(R * R - dot(p, p), 1e-5));
+  vec3 n = normalize(vec3(p, z));
+
+  /* 回転軸: 軌道の傾き(-23°)とはずらした斜め軸 + ゆっくり別軸 → 多面的 */
+  vec3 ax1 = normalize(vec3(0.53, 0.85, 0.35));
+  vec3 ax2 = normalize(vec3(-0.62, 0.22, 0.76));
+  vec3 d = rotAxis(ax2, uAngle2) * rotAxis(ax1, uAngle) * n;
+
+  /* カンプ画像を球面に貼る: 回転後の向き d から画像の色を拾う。
+     無回転ならカンプがピクセルそのまま出る。裏側(d.z<0)はカンプに無いので鏡映で生成 */
+  vec2 uv = vec2(0.5 + d.x * 0.47, 0.5 - d.y * 0.47);
+  vec3 col = texture2D(uTex, uv).rgb;
+
+  /* 球の表面に張り付いた粒 (球と一緒に回る) */
+  float grain = hash(floor(d * ${grainScale}) + 0.5) - 0.5;
+
+  /* ---- デザイン専用の仕上げ ---- */
+  ${finish}
+
+  /* ---- 右上光源モード: 白を「光の反射」として陰影をつける ---- */
+  if (uLight > 1.5) {
+    vec3 Ldir = normalize(vec3(0.62, 0.62, 0.48));
+    float diff = clamp(dot(n, Ldir), 0.0, 1.0);
+    float lightAmt = 0.45 + 0.55 * diff;
+    vec3 shadowCol = col * vec3(0.55, 0.60, 0.85); /* 影はグレーでなく青みに沈める */
+    col = mix(shadowCol, col, lightAmt);
+    col += vec3(0.95, 0.96, 1.0) * pow(diff, 8.0) * 0.25;
+  }
+
+  gl_FragColor = vec4(col * alpha, alpha);
+}`;
+
+  function compile(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(sh));
+      return null;
+    }
+    return sh;
+  }
+  const v = compile(gl.VERTEX_SHADER, vs);
+  if (!v) { sphereFallback(); return; }
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+  const _spSP = !!(window.matchMedia && window.matchMedia('(max-width: 600px)').matches);   /* 【2026-09-21】isMobile確定前でも判定できるよう matchMedia で直接。惑星は初期化時に一度サイズ決定→echo-canがそれを基準に作られるため timing 非依存にする */
+  const dpr = Math.min(_spSP ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】惑星canvasの解像度を2→1.5に。残像(echo-can)も惑星幅×2なので連鎖で軽く(1040→780=約44%省) */
+  sphereCanvas.width = 260 * dpr;
+  sphereCanvas.height = 260 * dpr;
+  gl.viewport(0, 0, sphereCanvas.width, sphereCanvas.height);
+
+  const progs = {};
+  for (const [key, ds] of Object.entries(DESIGNS)) {
+    /* fragment があるデザインは完全カスタムシェーダー (テクスチャ不使用) */
+    const fsSrc = ds.fragment || fsTemplate(ds.grainScale, ds.finish, ds.helpers);
+    const f = compile(gl.FRAGMENT_SHADER, fsSrc);
+    if (!f) { sphereFallback(); return; }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, v);
+    gl.attachShader(prog, f);
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    const loc = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform2f(gl.getUniformLocation(prog, 'uRes'), sphereCanvas.width, sphereCanvas.height);
+    progs[key] = {
+      prog,
+      needsTex: !ds.fragment,
+      uAngle: gl.getUniformLocation(prog, 'uAngle'),
+      uAngle2: gl.getUniformLocation(prog, 'uAngle2'),
+      uNoise: gl.getUniformLocation(prog, 'uNoise'),
+      uTime: gl.getUniformLocation(prog, 'uTime'),
+      uDither: gl.getUniformLocation(prog, 'uDither'),
+      uLight: gl.getUniformLocation(prog, 'uLight'),
+    };
+    if (!ds.fragment) {
+      gl.uniform1i(gl.getUniformLocation(prog, 'uTex'), 0);
+      /* 【2026-08-30 ヒデさん指定・軽量化】カンプ画像はここでは読まない(遅延ロード)。
+         ⚠️ 以前は全デザイン(B/C/D)の画像を起動時に全部ロードしていて、表示に使わない
+         2.6MB を毎回ダウンロードしていた。いまは「選ばれているデザインだけ」読む
+         (下の loadSphereTex。パネルで切り替えたらその時に読む)。 */
+      progs[key].src = ds.src;
+    }
+  }
+  sphereGL = { gl, progs };
+  loadSphereTex(params.design);   /* 現在のデザインの画像だけ先に読む */
+}
+/* テクスチャのオンデマンド読み込み。多重ロード防止に loading フラグを持つ */
+function loadSphereTex(key) {
+  if (!sphereGL) return;
+  const pr = sphereGL.progs[key];
+  if (!pr || !pr.needsTex || pr.tex || pr.loading || !pr.src) return;
+  pr.loading = true;
+  const gl = sphereGL.gl;
+  const tex = gl.createTexture();
+  const img = new Image();
+  img.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    pr.tex = tex;
+    pr.loading = false;
+    renderSphere();
+  };
+  img.src = pr.src;
+}
+
+/* WebGLが使えない環境: カンプ画像をそのまま表示 */
+function sphereFallback() {
+  sphereGL = null;
+  sphereCanvas.classList.add('fallback');
+  const ds = DESIGNS[params.design] || DESIGNS[Object.keys(DESIGNS)[0]];
+  sphereCanvas.style.backgroundImage = `url('${ds.src}')`;
+}
+
+/* 球体の回転角 (主回転, 2軸目) */
+function sphereAngles() {
+  const sp = params.sphere;
+  let t = elapsed;   /* 【2026-09-09】惑星の自転は PC と同じ(スマホで止めていたのを戻す。揺れ(sway)だけ止める) */
+  /* ランダム: 周期の違う3つの波を重ねて、繰り返しに聞こえない不規則さを作る
+     (乱数を毎フレーム引くとガタガタになるので、なめらかな擬似ランダムにしている) */
+  if (sp.random > 0) {
+    t += sp.random * sp.duration / (2 * Math.PI) *
+         (Math.sin(elapsed * 0.31) * 0.6 + Math.sin(elapsed * 0.73 + 1.7) * 0.3 + Math.sin(elapsed * 1.27 + 3.1) * 0.1);
+  }
+  const a = 2 * Math.PI * t / sp.duration * (sp.dir || 1);
+  return [a + sp.tilt * Math.PI / 180, a * sp.tumble];
+}
+
+function renderSphere() {
+  if (!sphereGL) {
+    if (sphereCanvas.classList.contains('fallback')) {
+      const ds = DESIGNS[params.design] || DESIGNS[Object.keys(DESIGNS)[0]];
+      sphereCanvas.style.backgroundImage = `url('${ds.src}')`;
+    }
+    return;
+  }
+  const { gl, progs } = sphereGL;
+  const pr = progs[params.design] || progs[Object.keys(progs)[0]];
+  if (!pr) return;
+  if (pr.needsTex && !pr.tex) { loadSphereTex(params.design); return; }   /* 遅延: 選ばれた時に画像を読む(読み終わるまで描かない) */
+  const [ang, ang2] = sphereAngles();
+  gl.useProgram(pr.prog);
+  if (pr.tex) {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, pr.tex);
+  }
+  gl.uniform1f(pr.uAngle, ang);
+  gl.uniform1f(pr.uAngle2, ang2);
+  gl.uniform1f(pr.uNoise, params.sphere.noise);
+  if (pr.uTime) gl.uniform1f(pr.uTime, elapsed);
+  if (pr.uDither) gl.uniform1f(pr.uDither, params.dither || 1);
+  if (pr.uLight) gl.uniform1f(pr.uLight, 1);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+initSphere();
+
+/* ロゴカルーセルへパラメーターを反映 */
+const marqueeTrack = document.getElementById('marqueeTrack');
+/* 【2026-08-27 ヒデさん指定】導入事例のホバー案を反映する。
+   案の実体は CSS 側([data-hover=...])。ここでは属性を書き替えるだけ */
+/* 【2026-09-15 ヒデさん指定】導入事例の見せ方(罫線あり/なし)とホバーの案 */
+const CASE_LAYOUTS = [
+  { key: '0', name: '現行（罫線あり）', fixed: true, tip: 'カンプどおり。画面いっぱいの罫線で4つに区切る。' },
+  { key: '1', name: '罫線なし', tip: '罫線を全部消して、カードだけを2×2で並べる。ホバー「カードの周りに線が引かれる」と相性がよい。' },
+];
+const CASE_HOVERS = [
+  { key: 'trim',      name: '現行（サムネイルに枠が引かれる）', fixed: true, tip: '写真の4辺が四隅から同時に伸びて枠を閉じる。写真は少しだけ寄る。' },
+  { key: 'cardtrim',  name: 'カードの周りに線が引かれる', tip: '写真ではなく【カードの外周】を、4辺同時のトリミングで閉じる。サムネイルの枠は出ません。罫線なしの案と相性がよい。' },
+  /* 線を引かない5案: 影の付け方と面のグレー／色みだけで見せる */
+  { key: 'ct-lift',   name: '影でふわっと浮く', tip: '線は引かず、大きく遠い影で6px 持ち上がる。いちばん「浮く」。' },
+  { key: 'ct-tight',  name: '影が近くに締まる', tip: '小さく近い影で2px だけ持ち上がる。カチッとした手触り。' },
+  { key: 'ct-panel',  name: '面が白く浮く（＋やわらかい影）', tip: '面が白くなり、やわらかい影で紙のように地から離れる。' },
+];
+function caseLayoutKey() { const v = String((params.patterns && params.patterns.caseLayout) || '0'); return (CASE_LAYOUTS.some(c => c.key === v) && !variantRemovedKey('caseLayout', v)) ? v : '0'; }
+function caseHoverKey() { const v = String((params.patterns && params.patterns.caseHover) || 'trim'); return (CASE_HOVERS.some(c => c.key === v) && !variantRemovedKey('caseHover', v)) ? v : 'trim'; }
+function applyCaseLayout() {
+  const sec = document.getElementById('cases'); if (!sec) return;
+  const k = caseLayoutKey();
+  CASE_LAYOUTS.forEach(c => sec.classList.toggle('cl-' + c.key, c.key === k));
+}
+function applyCaseHover() {
+  const g = caseEls && caseEls.grid;
+  if (!g) return;
+  g.dataset.hover = caseHoverKey();
+  /* 【2026-09-15】カードの外周の線(4辺)を、まだ無ければ各カードに入れる */
+  (caseEls.cards || []).forEach(c => {
+    if (!c) return;
+    ['t', 'r', 'b', 'l'].forEach(side => {
+      if (!c.querySelector('.cg-ce-' + side)) { const i = document.createElement('i'); i.className = 'cg-cedge cg-ce-' + side; c.appendChild(i); }
+    });
+  });
+  /* C案「下線が伸びる」で使う線を、まだ無ければ各カードに1本ずつ入れる */
+  (caseEls.cards || []).forEach(c => {
+    if (c && !c.querySelector('.cg-uline')) {
+      const i = document.createElement('i');
+      i.className = 'cg-uline';
+      c.appendChild(i);
+    }
+    /* F案「パスのトリミング」で使う4辺の線を、まだ無ければサムネイルに入れる(実体要素) */
+    const img = c && c.querySelector('.cg-img');
+    if (img && !img.querySelector('.cg-edge')) {
+      ['t', 'r', 'b', 'l'].forEach(side => {
+        const e = document.createElement('span');
+        e.className = 'cg-edge cg-e-' + side;
+        img.appendChild(e);
+      });
+    }
+  });
+}
+function applyMarquee() {
+  if (!marqueeTrack) return;   /* 2026-08-31: ロゴは支給iframeに差し替え済み(自前マーキー廃止)。要素が無ければ何もしない */
+  /* 【2026-09-09】モバイルは 1セット幅≒720px を 8s ≒ 90px/s で流す(CSSアニメ・滑らか)。
+     JS駆動時代に書いた inline transform が残っていると CSS アニメの transform を上書きするので消す。 */
+  if (isMobile) marqueeTrack.style.transform = '';
+  marqueeTrack.style.animationDuration = (isMobile ? 20 : params.marquee.duration) + 's';   /* 【2026-09-20 ヒデさん依頼】SP のロゴティッカーをさらに減速(14→20s・720px/20s≒36px/s) */   /* モバイル 11→14s にさらに減速(720px/14s≒51px/s・ヒデさん指定「やや速い」2026-09-09) */
+  marqueeTrack.style.animationDirection = params.marquee.direction === 1 ? 'normal' : 'reverse';
+  /* 【2026-09-09】静的モバイルでは KV 以下の演出を止めているが、ロゴティッカーだけは常に流す。
+     params.running は調整パネル/古いlocalStorage由来で false のことがあり、それに引きずられて
+     実機で「ティッカーが止まる」事故が出たため、モバイルは running 状態に依存させず必ず走らせる。 */
+  marqueeTrack.style.animationPlayState = (isMobile || params.running) ? 'running' : 'paused';
+  document.documentElement.style.setProperty('--logo-gap', params.marquee.gap + 'px');
+}
+
+/* ===== 慣性スクロール =====
+   ホイールを回した分をそのまま反映せず、毎フレーム少しずつ追いつかせる。
+   参考36サイト中21サイトが採用していた「なめらかさ」の土台。
+   ・スマホ(タッチ)は端末標準の慣性の方が自然なので掛けない
+   ・OS側で「視差効果を減らす」にしている人には掛けない
+   ・native の scroll を動かす方式なので position:sticky はそのまま生きる */
+let lenis = null;
+if (window.Lenis && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  lenis = new window.Lenis({
+    /* 【2026-08-29 ヒデさん指定】以前は duration:1.1 固定で、調整パネルの「慣性の強さ」を
+       0付近にしても実スクロールの慣性が全く弱まらなかった。lerp 方式に変え、下の raf で
+       毎フレーム params.sections.common.smooth から lerp を出して実スクロールの慣性へ反映する。
+       lerp 大=すぐ止まる(慣性弱) / lerp 小=長く流れる(慣性強)。 */
+    lerp: 0.1,
+    smoothWheel: true,
+    syncTouch: false,                               // スマホは端末標準に任せる
+    /* ⚠️ 調整パネルの中でホイールを回した時にページが動かないようにする。
+       これが無いと Lenis が wheel を全部さらってしまい、パネル内スクロールが効かない */
+    prevent: node => !!(node && node.closest && node.closest('.tools')),
+  });
+}
+
+/* ⚠️ 描画中に例外が1回でも出ると、以前は requestAnimationFrame の再予約に
+   到達できず【全アニメーションが永久に止まった】。画面が途中で固まる症状の原因。
+   次フレームの予約は try の外に置き、何があっても回り続けるようにする。 */
+let frameErrLogged = false;
+/* ===== 実績「2つの価値」の右側ピクトグラム (2026-08-28 ヒデさん指定) =====
+   仮置きの SVG 画像をやめ、【塗りなし・枠線だけの単純な幾何学】で動くピクトグラムにする。
+   使う形: 円 / 正方形・長方形 / 三角 / 線 のみ。図形の数はどの案も 4〜9個に揃えてある(密度を合わせる)。
+   for SaaS = リアルタイムにデータ同期 / for AI = コンテキスト取得から実行(一方向の流れ)
+   案は調整パネル(実績 > ピクトグラム)で選ぶ。 */
+const VAL_VB = 220;                    /* 描画の座標系。表示は 220×220 */
+const VAL_INK = '#111';
+const VAL_ACC = '#0EBBFF';
+const VAL_PINK = '#FF5D97';
+/* 【2026-08-30 ヒデさん指定】黒せり上がりの白反転を、ピクトグラムの「黒い図形」にも効かせる(色付きACC/PINKは維持)。
+   updateResults が毎フレーム valInkCur をセット(反転中=白寄り / 通常=VAL_INK)。valTake/valStyle が #111 を検知して差し替える。 */
+let valInkCur = VAL_INK;
+let valStrokeMul = 1;   /* 【2026-09-02 ヒデさん指定】実績ピクトグラムの線幅の倍率(パネル調整)。全ての線幅×この値 */
+const valSvgs = {};                    /* { saas:{svg, pool}, ai:{...} } */
+function valEnsure(key, id) {
+  if (valSvgs[key]) return valSvgs[key];
+  const host = document.getElementById(id);
+  if (!host) return null;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${VAL_VB} ${VAL_VB}`);
+  host.innerHTML = '';
+  host.appendChild(svg);
+  valSvgs[key] = { svg, pool: [], used: 0 };
+  return valSvgs[key];
+}
+/* 形を1つ借りる。使い回すので、毎フレーム作り直さない */
+function valTake(st, tag) {
+  let el = st.pool[st.used];
+  if (!el || el.tagName !== tag) {
+    if (el) el.remove();
+    el = document.createElementNS(SVG_NS, tag);
+    st.svg.appendChild(el);
+    st.pool[st.used] = el;
+  }
+  st.used++;
+  el.setAttribute('opacity', '1');
+  el.setAttribute('stroke', valInkCur);
+  el.setAttribute('stroke-width', (1 * valStrokeMul).toFixed(2));   /* 2026-08-30: 基準1px ×倍率(パネル・2026-09-02) */
+  el.removeAttribute('transform');
+  return el;
+}
+function valDone(st) {
+  for (let i = st.used; i < st.pool.length; i++) st.pool[i].setAttribute('opacity', '0');
+  st.used = 0;
+}
+/* --- 便利関数(すべて枠線だけ) --- */
+function vCircle(st, cx, cy, r, o) { const e = valTake(st, 'circle');
+  e.setAttribute('cx', cx.toFixed(1)); e.setAttribute('cy', cy.toFixed(1)); e.setAttribute('r', Math.max(0.1, r).toFixed(1));
+  e.__len = 2 * Math.PI * Math.max(0.1, r);
+  if (o) valStyle(e, o); return e; }
+function vRect(st, cx, cy, w, h, o) { const e = valTake(st, 'rect');
+  e.setAttribute('x', (cx - w / 2).toFixed(1)); e.setAttribute('y', (cy - h / 2).toFixed(1));
+  e.setAttribute('width', Math.max(0.1, w).toFixed(1)); e.setAttribute('height', Math.max(0.1, h).toFixed(1));
+  e.setAttribute('rx', (o && o.rx != null ? o.rx : 0));
+  e.__len = 2 * (Math.max(0.1, w) + Math.max(0.1, h));
+  if (o) valStyle(e, o); return e; }
+function vTri(st, cx, cy, r, rot, o) { const e = valTake(st, 'polygon');
+  const p = [];
+  for (let i = 0; i < 3; i++) { const a = (rot + i * 120 - 90) * Math.PI / 180;
+    p.push((cx + Math.cos(a) * r).toFixed(1) + ',' + (cy + Math.sin(a) * r).toFixed(1)); }
+  e.setAttribute('points', p.join(' '));
+  e.__len = 3 * (r * Math.sqrt(3));
+  if (o) valStyle(e, o); return e; }
+function vLine(st, x1, y1, x2, y2, o) { const e = valTake(st, 'line');
+  e.setAttribute('x1', x1.toFixed(1)); e.setAttribute('y1', y1.toFixed(1));
+  e.setAttribute('x2', x2.toFixed(1)); e.setAttribute('y2', y2.toFixed(1));
+  e.__len = Math.hypot(x2 - x1, y2 - y1);
+  if (o) valStyle(e, o); return e; }
+/* 楕円。縦を潰すと「寝ている」＝奥行きが出る。2Dのままで立体に見せる要 */
+function vEll(st, cx, cy, rx, ry, rot, o) { const e = valTake(st, 'ellipse');
+  e.setAttribute('cx', cx.toFixed(1)); e.setAttribute('cy', cy.toFixed(1));
+  e.setAttribute('rx', Math.max(0.1, rx).toFixed(1)); e.setAttribute('ry', Math.max(0.1, ry).toFixed(1));
+  if (rot) e.setAttribute('transform', `rotate(${rot.toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)})`);
+  /* 楕円の周長(ラマヌジャンの近似)。トリミングに使う */
+  const a = Math.max(0.1, rx), b = Math.max(0.1, ry), h = Math.pow(a - b, 2) / Math.pow(a + b, 2);
+  e.__len = Math.PI * (a + b) * (1 + 3 * h / (10 + Math.sqrt(4 - 3 * h)));
+  if (o) valStyle(e, o); return e; }
+/* 楕円の上の点(deg)。傾きも効かせる。奥(上半分)か手前(下半分)かも返す */
+function vOn(cx, cy, rx, ry, deg, rot) {
+  const t = deg * Math.PI / 180, r = (rot || 0) * Math.PI / 180;
+  const lx = rx * Math.cos(t), ly = ry * Math.sin(t);
+  return { x: cx + lx * Math.cos(r) - ly * Math.sin(r),
+           y: cy + lx * Math.sin(r) + ly * Math.cos(r),
+           front: Math.sin(t) > 0, depth: (Math.sin(t) + 1) / 2 };
+}
+/* 折れ線。ストーリーの「道筋」を描くのに使う */
+function vPath(st, pts, o) { const e = valTake(st, 'path');
+  e.setAttribute('d', 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L'));
+  let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]);
+  e.__len = L; if (o) valStyle(e, o); return e; }
+/* 【2026-08-28 ヒデさん指定】パスのトリミング。
+   線を「今どこまで描かれたか」で見せると、時間の経過やストーリーが表せる。
+   k=0 で何も描かれていない / k=1 で全部描かれた。from を渡すと途中から。 */
+function vTrim(e, k, from) {
+  const L0 = e.__len || 0;
+  if (!L0) return e;
+  /* 【2026-09-15 ヒデさん指摘「For AI のパスが途中で途切れる」の根治】線は vector-effect:non-scaling-stroke なので dasharray は画面px。
+     ピクトが 220px より大きく表示される案(300/325/340/420px など)では、座標系(220)の長さのままだと表示の途中で切れていた
+     → その svg の表示倍率(画面幅 ÷ 220。ステージ縮小や拡大の transform も含む)を毎フレーム1回だけ測って掛ける */
+  const svg = e.ownerSVGElement;
+  if (svg && svg.__scF !== frameSeq) { const w = svg.getBoundingClientRect().width; svg.__sc = w > 0 ? (w / VAL_VB) : 1; svg.__scF = frameSeq; }
+  const L = L0 * ((svg && svg.__sc) || 1);
+  const a = Math.max(0, Math.min(1, from || 0)), b = Math.max(a, Math.min(1, k));
+  const on = L * (b - a);
+  e.setAttribute('stroke-dasharray', on.toFixed(2) + ' ' + L.toFixed(2));
+  e.setAttribute('stroke-dashoffset', (-L * a).toFixed(2));
+  return e;
+}
+function valStyle(e, o) {
+  if (o.c) e.setAttribute('stroke', o.c === VAL_INK ? valInkCur : o.c);
+  if (o.w != null) e.setAttribute('stroke-width', (o.w * valStrokeMul).toFixed(2));
+  if (o.a != null) e.setAttribute('opacity', Math.max(0, Math.min(1, o.a)).toFixed(3));
+  if (o.dash) e.setAttribute('stroke-dasharray', o.dash); else e.removeAttribute('stroke-dasharray');
+  e.removeAttribute('stroke-dashoffset');
+  if (o.rot != null) e.setAttribute('transform', `rotate(${o.rot.toFixed(1)} ${o.rx0 || 110} ${o.ry0 || 110})`);
+}
+const vE = k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;   /* なめらかな出入り */
+/* 【2026-09-08 ヒデさん指定・強化】緩急をさらに強く。両端が“ぐっと”遅く、中央で一気に速い
+   シグモイド型(指数3.4)。「最初ゆっくり→ぐっと速く→また遅く」。for AI の矢印の線の伸びに使う。 */
+const vEIO = u => { u = u < 0 ? 0 : u > 1 ? 1 : u; const a = Math.pow(u, 3.4); return a / (a + Math.pow(1 - u, 3.4)); };
+/* 【2026-08-28 ヒデさん指定】全体的にゆったりすぎたので、緩急の強い動きを足す。
+   vE2 = 一気に動いて、終わりでぴたっと止まる(見せ場に使う)
+   vE3 = 少し行き過ぎて戻る(重なる・刺さる瞬間の気持ちよさ)
+   vHold = 前半は止まって待ち、後半で一気に動く(ためを作る) */
+const vE2 = k => 1 - Math.pow(1 - Math.max(0, Math.min(1, k)), 3.4);
+const vE3 = k => { const c = 1.7; const x = Math.max(0, Math.min(1, k));
+  return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const vHold = (k, wait) => { const w = wait == null ? 0.4 : wait;
+  return k <= w ? 0 : vE2((k - w) / (1 - w)); };
+/* 矢印(実行を表すのに使う)。dir は度(0=右) */
+function vArrow(st, x, y, len, dir, o) {
+  const a = (dir || 0) * Math.PI / 180;
+  const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+  const h = Math.max(5, len * 0.30);
+  const p = [[x, y], [ex, ey]];
+  vTrim(vPath(st, p, o), 1);
+  const b1 = a + Math.PI * 0.82, b2 = a - Math.PI * 0.82;
+  vPath(st, [[ex + Math.cos(b1) * h, ey + Math.sin(b1) * h], [ex, ey],
+             [ex + Math.cos(b2) * h, ey + Math.sin(b2) * h]], o);
+  return { x: ex, y: ey };
+}
+const vLoop = (t, T) => (t % T) / T;                                     /* 0→1 のくり返し */
+
+/* ===================== for SaaS: リアルタイムにデータ同期 ===================== */
+const VAL_SAAS = {
+  /* S1 【2026-08-30 ヒデさん指定・新規】点線が左→右へ伸びてから、青→ピンクの粒が後追いで流れる。
+     最初は点線は出ておらず、伸びきってから粒が追いかける。すべて1pxの枠線。 */
+  /* S2 双方向のやり取り: 2つの箱の間を小さな正方形が行き来し、届くと受け手の枠が太くなる */
+  S2(st, t) {
+    const C = VAL_VB / 2, L = 46, R = 174;
+    const k = vLoop(t, 2.6), fwd = k < 0.5;
+    const u = vE(fwd ? k / 0.5 : (k - 0.5) / 0.5);
+    const x = fwd ? L + (R - L) * u : R - (R - L) * u;
+    const hitL = !fwd && u > 0.86, hitR = fwd && u > 0.86;
+    vRect(st, L, C, 46, 60, { rx: 4, w: 1, c: hitL ? VAL_ACC : VAL_INK });
+    vRect(st, R, C, 46, 60, { rx: 4, w: 1, c: hitR ? VAL_ACC : VAL_INK });
+    for (let i = 0; i < 3; i++) vLine(st, L - 14, C - 16 + i * 16, L + 14, C - 16 + i * 16, { a: 0.3 });
+    for (let i = 0; i < 3; i++) vLine(st, R - 14, C - 16 + i * 16, R + 14, C - 16 + i * 16, { a: 0.3 });
+    vRect(st, x, C, 13, 13, { c: fwd ? VAL_ACC : VAL_PINK, w: 1, rot: u * 180, rx0: x, ry0: C });
+  },
+  /* S4 一斉にそろう: 3×3 の升目がバラバラに光り、最後に全部が同じ状態へ揃う */
+  /* S5 すれ違う2本の流れ: 上下の線を、円と正方形が逆向きに流れる。交差で一瞬ふくらむ */
+  /* ===== ここから 2026-08-28 追加分 =====
+     ヒデさん指定の方向: 複数が1つになる / 重なり合う / 時系列が分かる / 緩急がある。
+     S6〜S10 はパスのトリミング(線が描かれていく)を使い、時間の経過とストーリーを出す。 */
+
+  /* S6 描かれてつながる: 左から右へ線が引かれ、届いた瞬間に受け手の枠が一周描かれる */
+  /* S7 4つが1つに: 四隅の四角が中央へ集まり、重なって1つになる。合流の瞬間に外周が一周描かれる */
+  S7(st, t) {
+    const C = VAL_VB / 2, T = 4.2, k = vLoop(t, T);
+    const come = Math.min(1, k / 0.5), hold = Math.max(0, (k - 0.52) / 0.24), back = Math.max(0, (k - 0.82) / 0.18);
+    const d = 62 * (1 - vE(come)) + 62 * vE(back);
+    for (let i = 0; i < 4; i++) {
+      const a = (i * 90 + 45) * Math.PI / 180;
+      vRect(st, C + Math.cos(a) * d, C + Math.sin(a) * d, 30, 30,
+        { rx: 3, w: 1, c: i % 2 ? VAL_ACC : VAL_PINK, a: 0.9 });
+    }
+    vTrim(vCircle(st, C, C, 52, { w: 1, c: VAL_ACC, a: hold > 0 ? 1 - back : 0 }), vE(hold));
+  },
+  /* S8 満ちて同期: 外周が0→100%まで描かれ(進捗)、満ちた瞬間に内側の四角がパッと出る */
+  /* S9 2つの弧が噛み合う: 左右から弧が伸びて1つの円になる。噛み合った瞬間だけ太くなる */
+  S9(st, t) {
+    const C = VAL_VB / 2, T = 3.6, k = vLoop(t, T);
+    const grow = Math.min(1, k / 0.55), lock = Math.max(0, (k - 0.55) / 0.2), off = Math.max(0, (k - 0.85) / 0.15);
+    const R = 56;
+    const arc = (a0, a1, kk, col) => {
+      const pts = []; const seg = 26;
+      for (let i = 0; i <= seg; i++) { const a = (a0 + (a1 - a0) * (i / seg)) * Math.PI / 180;
+        pts.push([C + Math.cos(a) * R, C + Math.sin(a) * R]); }
+      vTrim(vPath(st, pts, { c: col, w: 1, a: 1 - off }), vE(kk));
+    };
+    arc(180, 360, grow, VAL_ACC);
+    arc(0, 180, grow, VAL_PINK);
+    vCircle(st, C, C, R, { a: 0.14, dash: '4 6' });
+    /* 常設の印(左右の合わせ目)。どの場面でも密度が落ちないように */
+    vLine(st, C - R - 12, C, C - R + 2, C, { a: 0.25 });
+    vLine(st, C + R - 2, C, C + R + 12, C, { a: 0.25 });
+    if (lock > 0) vCircle(st, C, C, 12 + vE(Math.min(1, lock * 2)) * 6, { c: VAL_ACC, w: 1, a: 1 - lock });
+  },
+  /* S10 積層して重なる: 3つの円がずれて重なっていき、完全に重なると1つに見える */
+  /* ===== ここから 2026-08-28 追加分(躍動感・回転・奥行き) =====
+     2Dのフラットなまま立体に見せる手: 楕円を寝かせる / 手前を大きく奥を小さく /
+     回転しながら大小を変える / 前後の重なりを入れ替える。 */
+
+  /* S11 二軸のジャイロ: 直交する2つの輪が転がる。交点に印。いちばん躍動感がある */
+  /* S12 立方体が回る: 前後2枚の正方形を線で結んだ枠。横幅の伸び縮みで回転して見せる */
+  /* S13 手前と奥をめぐる: 寝かせた輪の上を四角が周回。手前で大きく前面、奥で小さく背面 */
+  /* S14 盤が立ち上がる: 寝かせた盤が周期的に立ち上がり、上に乗った3つが一緒に回る */
+  /* S15 逆回転して噛み合う: 2つの正方形が逆に回りながら近づき、45°ずれて重なる */
+  /* ===== 2026-08-28 追加: 開く → グリンと回る → 重なる =====
+     ヒデさん指定「一旦上下に開いた後に右回転でグリンとスピンして、また重なる」。
+     緩急を効かせるため、開く/回る/戻る をはっきり分けて、間に“ため”を入れている。 */
+
+  /* S16 開いて回って重なる: 3枚が上下に開き、右へグリンと回って、また1つに重なる */
+  /* S17 花のように開いて閉じる: 4枚が放射状に開き、全体が回ってから中央へ戻る */
+  /* S18 カードを配って束ねる: 3枚が扇に開き、グリンと回って、パチンと束に戻る */
+  S18(st, t) {
+    const C = VAL_VB / 2, T = 3.6, k = vLoop(t, T);
+    const fan = vE2(Math.max(0, Math.min(1, k / 0.2)));
+    const spin = vHold(Math.max(0, Math.min(1, (k - 0.24) / 0.36)), 0.12) * 360;
+    const back = vE3(Math.max(0, Math.min(1, (k - 0.68) / 0.24)));
+    const sp = (1 - back) * fan;
+    for (let i = 0; i < 3; i++) {
+      const off = (i - 1) * 34 * sp;
+      const tilt = (i - 1) * 16 * sp + spin;
+      vRect(st, C + off, C, 66, 88, { rx: 5, w: 1,
+        c: [VAL_PINK, VAL_INK, VAL_ACC][i], rot: tilt, rx0: C + off, ry0: C });
+    }
+    vLine(st, C - 74, C + 56, C + 74, C + 56, { a: 0.25 });
+    const lock = Math.max(0, (back - 0.88) / 0.12);
+    if (lock > 0) vRect(st, C, C, 66 + lock * 12, 88 + lock * 12, { rx: 6, c: VAL_ACC, w: 1, a: 1 - lock });
+  },
+};
+
+/* ===================== for AI: コンテキスト取得から実行 ===================== */
+const VAL_AI = {
+  /* A1 一方向のパイプライン: 円(取得)→正方形(処理)→三角(実行)。粒が左から右へ一方向に流れ、段ごとに形が変わる */
+  /* A20 レーダー(2026-09-08 ヒデさん指定): 縦の棒が上下するだけのループ。
+     長方形の収縮も水色の再生マークが右へずれる動きも無し。棒が波打つのを延々くり返す。 */
+  A20(st, t) {
+    const C = VAL_VB / 2;
+    const N = 5, span = 132, x0 = C - span / 2, gap = span / (N - 1);
+    const baseY = C + 48;                 /* 棒の下端(共通の底) */
+    const minH = 22, maxH = 100;
+    /* 底の基準線(うっすら)。空っぽに見えないように常設 */
+    vLine(st, x0 - 12, baseY, x0 + span + 12, baseY, { a: 0.25, w: 1 });
+    for (let i = 0; i < N; i++) {
+      const x = x0 + i * gap;
+      /* 位相を1本ずつずらして波打たせる＝レーダー/イコライザ風の上下 */
+      const s = 0.5 + 0.5 * Math.sin(t * 2.2 - i * 0.8);
+      const h = minH + (maxH - minH) * s;
+      vLine(st, x, baseY, x, baseY - h, { w: 1, a: 0.9 });
+      vCircle(st, x, baseY - h, 2.5, { c: VAL_ACC, w: 1, a: 0.9 });   /* 先端の信号点(水色) */
+    }
+  },
+  /* ===== 2026-09-08 ヒデさん指定・新規7案(コンテキスト取得→実行)。矢印の三角は
+     「パスのトリミング」ではなく【線が伸びきる直前にフェードイン】で出す(＝延長線上に矢じりが現れる) ===== */
+  /* 共通: 線の終点付近に三角矢じりをフェードインで置く。dir=度(0=右) */
+  A21(st, t) {   /* 折れて進む・改(既定): 左下から折れ線→伸びきる直前に三角がフェードイン。
+                   線の伸びは緩急強め(vEIO)=最初ゆっくり→速く→また遅く(2026-09-08 ヒデさん指定) */
+    const C = VAL_VB / 2, T = 4.4, k = vLoop(t, T);
+    const draw = vEIO(Math.min(1, k / 0.72));   /* 進み具合そのものに緩急を掛ける */
+    const P = [[36, C + 46], [78, C + 46], [78, C], [130, C], [130, C - 44], [172, C - 44]];
+    vPath(st, P, { a: 0.14, dash: '4 6' });
+    vTrim(vPath(st, P, { c: VAL_ACC, w: 1 }), draw);
+    for (let i = 1; i < P.length - 1; i++) {
+      const at = i / (P.length - 1);
+      vRect(st, P[i][0], P[i][1], 8, 8, { w: 1, a: draw > at ? 0.9 : 0.18 });
+    }
+    const tri = vE(clamp01((draw - 0.78) / 0.22));   /* 伸びきる直前にフェードイン */
+    vTri(st, 186, C - 44, 20, 90, { c: VAL_ACC, w: 1, a: 0.14 + 0.86 * tri });
+  },
+  /* A2 形が変わる: 円 → 正方形 → 三角 と姿を変え、三角になった瞬間に外へ線が飛ぶ＝実行 */
+  /* A3 集めて撃つ: 散らばった小さな正方形が中央の円へ集まり、満ちたら右へ三角が飛ぶ */
+  /* A5 積んで実行 (2026-08-28 ヒデさん指定で作り直し):
+     ・フェードインをやめ、【下から入ってくる】動きにした
+     ・あとから入ってきた板が、先にあった板を【下から押し上げる】
+     ・三角は出さない。積み上がる動きだけで「溜まっていく」を見せる
+     ・緩急: 入るのは一気に(vE2)、押し上げは少し行き過ぎて戻る(vE3) */
+  /* ===== ここから 2026-08-28 追加分 =====
+     A6〜A10 はパスのトリミングで「道筋が描かれていく」＝時間の経過とストーリーを出す。
+     どれも 取得 → 処理 → 実行 の順番が読み取れるようにしてある。 */
+
+  /* A6 経路が描かれて実行: 円から三角へ折れ線が引かれ、描き切った瞬間に三角が一周描かれて発火 */
+  /* A7 3ステップ: 取得→解釈→実行の枠が順に描かれて満ちる。最後に三角。時系列そのもの */
+  /* A8 満ちて発射 (2026-08-28 ヒデさん指定): 発射は三角ではなく【矢印】に。
+     円弧が満ちるまでが「取得」。満ちた瞬間に矢印が右へ飛ぶ＝いちばん緩急が強い */
+  /* A9 重なって答えになる: 3つの円(文脈の断片)が中央で重なり、重なりから四角→三角へ変わって抜ける */
+  /* A10 一本の線が折れて進む: 線が描かれながら3回折れ、先端が三角になって抜ける */
+  /* ===== ここから 2026-08-28 追加分(躍動感・回転・奥行き) ===== */
+
+  /* A11 回り込んで発射: 寝かせた軌道を粒が回り、1周したら中央から三角が飛ぶ。奥は小さく手前は大きく */
+  /* A12 球を走査する: 寝かせた輪を何本も重ねて球の骨組みに。走査線が上から下へ、終わると三角 */
+  /* A13 カードがめくれる: 長方形が横幅の伸び縮みで3回めくれる。
+     【2026-08-30 ヒデさん指定】最後の三角は削除・角丸もすべて無し。 */
+  A13(st, t) {
+    /* 【2026-08-31 ヒデさん指定】for SaaS(S9: 円R56=上端54〜下端166)とサイズ感・高さを揃える。
+       カードを116×86に拡大し、カード上端54・バー下端166.5に配置(全体の占有と中心をS9と一致)。 */
+    const C = VAL_VB / 2, T = 4.8, k = vLoop(t, T), W = 116, H = 86, CY = 97, BARY = 163;
+    const step = Math.min(2, Math.floor(k / 0.3));
+    const u = Math.min(1, (k - step * 0.3) / 0.3);
+    const w = W * Math.abs(Math.cos(u * Math.PI));       /* 0 を通る＝真横を向く */
+    vRect(st, C, CY, W, H, { rx: 0, a: 0.14, dash: '4 6' });
+    vRect(st, C, CY, Math.max(2, w), H, { rx: 0, w: 1, c: [VAL_INK, VAL_ACC, VAL_PINK][step] });
+    for (let i = 0; i < 3; i++)
+      vRect(st, C - 42 + i * 42, BARY, 28, 7, { rx: 0, w: 1, a: i <= step ? 0.9 : 0.2 });
+  },
+  /* A14 螺旋で落ちて撃つ: 粒が寝かせた軌道を回りながら中心へ。着いた瞬間に三角が上へ抜ける */
+  /* A15 板が立ち上がる: 寝ていた3枚が順に立ち上がり、揃うと三角に変わって抜ける */
+  /* ===== 2026-08-28 追加: 矢印で「実行」を表す3案 =====
+     ヒデさん指定。三角だけでなく、ふつうの矢印も使ってよいとのこと。 */
+
+  /* A16 伸びて刺さる: 左から矢印が伸びていき、右の枠に刺さると枠が一瞬太くなる */
+  /* A17 三方向へ配信: 中央の四角から矢印が3本、同時に外へ飛ぶ */
+  /* A18 向きを決めて飛ぶ: 矢印が中心でぐるっと回り、止まった向きへシュッと飛ぶ */
+  /* A19 ひし形を貫く (2026-08-28 ヒデさん指定・Figma 15888:25154 のピクトグラムをもとに)
+     ひし形が左から順に現れて右へ4つまで増え、そこを矢印が左から右へ貫く。
+     カンプの比率を実測して合わせた(900×520の描画で計測):
+       全体の幅 400 に対して ひし形の並びが 45% / 高さが 66% / 矢印は右から24%
+       → こちらの 220 の座標系では 全体180(x15〜195) / ひし形の並び81 /
+         半幅16.5・半高59 / 中心 x=86,104.6,123.2,141.8 / 中心 y=110
+     緩急: ひし形は一気に(vE2)、矢印は ためてから一気に(vHold) */
+};
+function drawValueIcons() {
+  const p = params.patterns || {};
+  const _rs = params.sections && params.sections.results;
+  /* 【2026-09-02】ピクト線幅の倍率。【2026-09-21 Y10】スマホは既定を細く(0.6px)。
+     SP専用の上書き(params.mb['sections.results.pictoW'])があればそれを優先＝パネルのSP調整は効いたまま。PCは従来通り(pictoW/1)。 */
+  {
+    const _isMbSw = (typeof isMobile !== 'undefined' && isMobile) || (typeof _vfPhoneOn === 'function' && _vfPhoneOn());
+    const _mbPw = params.mb && params.mb['sections.results.pictoW'];
+    valStrokeMul = _isMbSw ? ((_mbPw != null) ? _mbPw : 0.6) : ((_rs && _rs.pictoW != null) ? _rs.pictoW : 1);
+  }
+  /* 【2026-09-08 ヒデさん指定】ピクトの速度をSaaS/AI共通で調整(全バリエーションに適用)。
+     時間を一律で伸縮＝どの案も同じテンポ感になる。 */
+  const _sp = (_rs && _rs.pictoSpeed != null) ? _rs.pictoSpeed : 1;
+  const _et = elapsed * _sp;
+  const a = valEnsure('saas', 'valSaas');
+  if (a) { const f = VAL_SAAS[p.valSaas] || VAL_SAAS.S9;   /* 【2026-09-26 整理】完全削除した案(S1ほか)は表から外したので、保存値が消した案なら既定(S9)で描く */ try { f(a, rfxValT(valTOv.saas, _et)); } catch (e) {} valDone(a); }
+  const b = valEnsure('ai', 'valAi');
+  if (b) { const f = VAL_AI[p.valAi] || VAL_AI.A21;   /* 同上: 消した案(A1ほか)なら既定(A21) */ try { f(b, rfxValT(valTOv.ai, _et)); } catch (e) {} valDone(b); }
+}
+
+let _rafPaused = false;   /* 【2026-09-22】タブ非表示で描画ループを止めているか */
+function frame(ts) {
+  try {
+    if (lenis) {
+      /* 【2026-08-29】実スクロールの慣性を「慣性の強さ」スライダー(smooth)に連動。
+         smooth 12(=つまみ左/弱)→lerp 0.5(すぐ止まる) / smooth 1(=つまみ右/強)→lerp 0.045(長く流れる)。 */
+      const sm = Math.max(1, Math.min(12, params.sections.common.smooth || 3));
+      lenis.options.lerp = 0.045 + (sm - 1) / 11 * (0.5 - 0.045);
+      lenis.raf(ts);
+    }
+    if (lastTs !== null) {
+      frameDt = Math.min(0.1, (ts - lastTs) / 1000);
+      if (params.running) elapsed += frameDt;
+    }
+    lastTs = ts;
+    renderFrame();
+    drawValueIcons();
+  } catch (e) {
+    /* 【2026-09-01】診断用: 最後の例外を保持(A2ドット停止の調査。__anim.health() で読める) */
+    window.__lastFrameErr = String((e && e.stack) || e);
+    frameErrCount++;
+    if (!frameErrLogged) { frameErrLogged = true; console.error('[anyflow] 描画中の例外:', e); }
+  }
+  frameCount++;
+  /* 【2026-09-22 ヒデさん依頼】タブが見えていない時(別タブ/最小化/アプリ切替)は描画ループを止める＝
+     放置中の連続レンダリング(canvas×3＋WebGL＋毎フレーム更新)による発熱・電力の無駄を断つ。
+     復帰は visibilitychange で。時間(elapsed)は止めている間は進めず、戻った瞬間の dt 飛びは lastTs リセットで吸収。 */
+  if (document.hidden) { _rafPaused = true; return; }
+  requestAnimationFrame(frame);   /* ← try の外。絶対に止めない(表示中は) */
+}
+requestAnimationFrame(frame);
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden && _rafPaused) { _rafPaused = false; lastTs = null; requestAnimationFrame(frame); }   /* 復帰: lastTs=null で時間の飛びを防いでから再開 */
+});
+renderFrame();
+
+/* デバッグ用フック（rAFが動かない環境で手動で時間を進める） */
+window.__anim = {
+  /* 【2026-09-01】ドット停止の現場診断: 症状が出た直後にコンソールで await __anim.health() 。
+     1秒間のフレーム数・時計の進み・例外の有無をまとめて返す(これをそのまま貼ってもらえば原因が分かる) */
+  health() {
+    const f0 = frameCount, e0 = elapsed, err0 = frameErrCount;
+    return new Promise(res => setTimeout(() => res({
+      framesPerSec: frameCount - f0,
+      clockAdvanced: +(elapsed - e0).toFixed(3),
+      running: params.running,
+      converge: params.converge,
+      net3d: params.conv && params.conv.net3d,
+      netSpd: params.net3d && params.net3d.spd,
+      netSpin: params.net3d && params.net3d.spin,
+      errorsInLastSec: frameErrCount - err0,
+      lastError: window.__lastFrameErr || null,
+    }), 1000));
+  },
+  step(dt) { elapsed += dt; renderFrame(); drawValueIcons(); },
+  setElapsed(v) { elapsed = v; renderFrame(); },
+  _params() { return params; },   /* 検証用: 現在の params を返す(PC/SP独立の実測・青印の確認に使う) */
+  mb() { return params.mb ? JSON.parse(JSON.stringify(params.mb)) : {}; },   /* 検証用: SP専用の上書き一覧(mbKey→値) */
+  /* 各セクションの自動再生を頭からやり直す (通常はリプレイしないので検証用) */
+  replay() { elapsed = 0; resetSectionClocks(); renderFrame(); },
+  setSway(n) { params.sway = n; renderFrame(); },
+  setDesign(k) { params.design = k; renderFrame(); },
+  setDither(n) { params.dither = n; renderFrame(); },
+  /* セクション進捗を固定して確認する: __anim.setProgress('dev', 0.5) / 解除は null */
+  setProgress(key, v) { if (v == null) delete progOverride[key]; else progOverride[key] = v; renderFrame(); },
+  setPattern(sec, key) { params.patterns[sec] = key; renderFrame(); },
+  startResults() { resT0 = elapsed; resT = -1; renderFrame(); },
+  getState() { return { elapsed, params }; },
+  /* 実機で起きた「セクションが抜ける」瞬間の記録を取り出す */
+  /* 現象が出た直後に打つと、直近4秒ぶんの推移が出る。
+     読み方: 各セクションは「上端/下端:固定枠の下端」。dev_st は P=再生中 D=完了 S=開始済 と章番号 */
+  diag(n) { return diagRing.slice(-(n || 60)); },
+  diagText(n) { return diagRing.slice(-(n || 60)).map(r =>
+    `y${r.y} vh${r.vh} ${r.drive} res${r.results} dev${r.dev} cas${r.cases} fin${r.fin} ttl${r.title} ${r.dev_st} @${r.at78}`).join('\n'); },
+  /* 検証用: いま何が再生中でスクロールが止まっているか */
+  lockState() { return { locked: scrollLocked, playing: anyPlaying(), sections: JSON.parse(JSON.stringify(secPlay)) }; },
+};
+
+/* ================= ステージのスケーリング =================
+   高さ921pxのカンプ座標系はそのままに、幅だけ画面いっぱいへ広げる（フィル）。
+   左右の要素は left:120px / right:120px でアンカーしているので余白は常に120px */
+const stage = document.getElementById('stage');
+function fit() {
+  /* 描画前などで 0 が返る環境があるのでフォールバックを噛ませる (NaN 防止) */
+  const w = window.innerWidth || document.documentElement.clientWidth || 1440;
+  const h = window.innerHeight || document.documentElement.clientHeight || 921;
+  /* 【2026-09-09 ヒデさん指定・根治】iOS Safari はスクロールでアドレスバーが開閉すると innerHeight だけが
+     変わり resize が飛ぶ。そのたびに再レイアウト(scale再計算・セクション高さ再設定)すると、静的なはずの
+     コンテンツがスクロールのたびにガクッと動いて見える。モバイルで『幅は同じ・高さだけ変わった』時は
+     再レイアウトせずに抜ける(幅が変わる=回転や本当のリサイズの時だけ組み直す)。 */
+  /* 【2026-09-09】静的モバイルは初回レイアウトが最終形。iOS Safari はスクロールでアドレスバーが
+     開閉して innerHeight(と時に幅サブピクセル)が変わり、それを拾って再レイアウトすると中身が
+     ガクッと動く。幅が実質変わらない(±2px)限り一切再レイアウトしない=揺れを完全に断つ。
+     本当の回転(幅が2pxより大きく変化)のときだけ通常の fit を通す。 */
+  if (isMobile && fitReady && Math.abs(w - lastFitW) <= 2) { lastFitH = h; return; }
+  lastFitW = w; lastFitH = h;
+  /* スマホは 390×780 の設計フレームに切り替える (PCの1440×921をそのまま縮めると
+     本文が4pxくらいになって読めないため、座標系ごと差し替える) */
+  /* 【2026-09-08】iOS Safari は読み込み直後に innerWidth が一瞬 980px 等を返すことがあり、
+     それを拾うと isMobile を誤判定して固定化する。CSS の @media と同じ matchMedia を基準にして確実化。 */
+  isMobile = (window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches) || w <= MOBILE_MAX;
+  DW = isMobile ? 390 : 1440;
+  DH = isMobile ? 780 : 921;
+  document.documentElement.classList.toggle('mb', isMobile);
+  try { applyVfFade(); } catch (e) {}   /* 【2026-09-20】SP/PC 確定後にビジョンの図の位置を取り直す(スマホ専用の見た目) */
+  try { applyVpSize(); } catch (e) {}   /* 【2026-09-20 #3】isMobile 確定後にビジョンの文字サイズを取り直す(SP は SP 既定/上書きで、PC は PC 値で) */
+  try { applyKvCopy(); } catch (e) {}   /* 【2026-09-20 #3】KV見出しの文字サイズも同様に isMobile 確定後に取り直す */
+  try { applyGrid(); } catch (e) {}   /* 【2026-09-21】画面幅が変わったら方眼の中央合わせ(--grid-pos-x)を取り直す */
+  try { if (typeof applyVisEmphLeft === 'function') applyVisEmphLeft(); } catch (e) {}   /* 【2026-09-21】強調案の見出しを画面左120pxへ(幅が変わったら逆算し直す) */
+  /* 【2026-09-09】isMobile が確定したこの時点でロゴティッカーの再生を再アサート。
+     初回に applyMarquee が isMobile 未確定(=false)＋params.running=false で走ると
+     ティッカーが止まったままになるため、モバイル確定後に必ず running へ戻す。 */
+  if (isMobile && typeof marqueeTrack !== 'undefined' && marqueeTrack) marqueeTrack.style.animationPlayState = 'running';
+  /* 【2026-09-09】ロゴ帯のぼやけ対策: 初期フレーム(isMobile 未確定=false)で rv() が
+     inline に filter:blur(8px)/opacity:0 を書いてしまい、モバイル確定後は誰も消さないため
+     帯がぼやけたまま残っていた。確定時に一度だけ inline を空にする(表示は CSS の .logos に委ねる)。 */
+  if (isMobile && typeof kvEls !== 'undefined' && kvEls.logos && !kvEls.logos.dataset.mbCleared) {
+    kvEls.logos.style.filter = ''; kvEls.logos.style.opacity = ''; kvEls.logos.style.transform = ''; kvEls.logos.style.pointerEvents = '';
+    kvEls.logos.dataset.mbCleared = '1';
+  }
+  const s = Math.min(1, w / DW);                   // 設計幅以上では等倍(100%表示)
+  const sp = Math.min(1, w / DW, h / DH);          // ピンは縦も収まるように
+  /* 【2026-09-15 ヒデさん指定・レスポンシブ】設計幅(1440)より広い画面では、ステージを画面幅まで広げず 1440 のまま中央に置く
+     (広げると絶対配置の要素(ビジョンの見出しなど)が左に寄ったまま動かない。縮小する時は従来どおり画面幅ぴったり)。スマホは従来どおり */
+  stageW = (!isMobile && s >= 1) ? DW : Math.max(DW, w / s);
+  /* 固定(pin)のステージも PC は常に設計幅(1440)。横長で縦が低い窓(例 1512×828・1920×800)では以前 w/sp まで広げていたため、
+     縮小はしても中身が左に寄ったままだった(ビジョンの見出しが中央から −118〜−329px)。1440×sp の枠を中央に置く(枠の外は pin-vp の地色) */
+  stagePinW = isMobile ? Math.max(DW, w / sp) : DW;
+  const st = document.documentElement.style;
+  st.setProperty('--s', s);
+  st.setProperty('--sp', sp);
+  st.setProperty('--sw', stageW + 'px');
+  st.setProperty('--swp', stagePinW + 'px');
+  /* 【2026-09-15 ヒデさん指摘】設計幅(1440)のステージを中央に置いたため、縦が低い窓では
+     ステージが画面より狭くなり、罫線やロゴ帯が画面の端まで届かなくなっていた。
+     「画面幅いっぱい」で見せたい要素のために、ステージ内の設計px で画面幅ぶんの幅と左位置を渡す。
+     (bleed-w = 画面幅 ÷ 縮小率 / bleed-x = それをステージ中央に置くための左オフセット) */
+  { const bwp = w / sp, bws = w / s;
+    st.setProperty('--bleed-w', bwp.toFixed(1) + 'px');
+    st.setProperty('--bleed-x', ((stagePinW - bwp) / 2).toFixed(1) + 'px');
+    st.setProperty('--bleed-w-s', bws.toFixed(1) + 'px');
+    st.setProperty('--bleed-x-s', ((stageW - bws) / 2).toFixed(1) + 'px'); }
+  st.setProperty('--dh', DH + 'px');
+  /* 【2026-09-09 ヒデさん指定】dev2(ds2-slide)モックの横フィット。dev は --s スケール外(設計px)で
+     dev1 は max-width:100% で縮むのに dev2(840px固定)は縮まず左右にはみ出す。dev-block は padding 120×2 なので
+     使える幅 ≒ viewport − 240、左右余白ぶん −64 して 840px を収める倍率を算出し、dev1 と同様に余白を保つ。
+     モバイル(≤600)は @media の scale(0.42) が優先されるので影響しない。 */
+  st.setProperty('--dev2-fit', isMobile ? '1' : String(Math.max(0.3, Math.min(1, (w - 160) / 840)).toFixed(3)));
+  /* 【2026-09-09 カンプSP 準拠】スマホの KV は次セクション(Our Vision y741 = section 667 + label 74)の
+     直前で切る。設計フレーム DH=780 のままだと下に空白が残り、KV→ビジョンが空きすぎていた。
+     .stage-wrap は overflow:hidden なので、はみ出す分(ロゴ帯 664 より下の空白)は見えない。 */
+  /* 【2026-09-20 ヒデさん報告・ロゴが下半分見切れる】KV高さ667だと、器の下端(667)がロゴ帯(≈642–692)の途中に来て、
+     次セクションがロゴの下半分を覆っていた(.stage-wrap は 2026-09-17 に overflow:visible 化済み＝クリップでなく被さり)。
+     ロゴ帯の下端＋余白まで器を伸ばし、ロゴが必ず全部見えるようにする(その分 KV→ビジョンの間が少し空く)。 */
+  const KV_MB_H = 704;
+  stage.parentElement.style.height = ((isMobile ? KV_MB_H : DH) * s) + 'px';
+  /* スクロール尺 (調整パネルから変えられる) */
+  /* 固定追従なしの時は 100vh（貼りつけないので余分な尺は要らない）。
+     スクロール駆動の時は尺を driveLen 倍に伸ばして、進み方をゆったりにする */
+  const noPin = params.pin === 'off';
+  document.documentElement.classList.toggle('nopin', noPin);
+  buildNoPin(noPin);
+  /* 尺の倍率はセクションごとに持つ（章の数や再生時間が違うので、まとめると噛み合わない） */
+  const lenMul = key => (params.drive === 'scroll'
+    ? Math.max(1, params.sections[key].driveLen || 1) : 1);
+  /* 固定なしでは 1ブロック=100vh。ビジョンと開発者体験は2ブロック積むので 200vh 必要 */
+  const NP_BLOCKS = { vision: 2, dev: 2, results: 1, cases: 1 };
+  const H = key => (noPin ? 100 * NP_BLOCKS[key] : Math.round(params.sections[key].lenVh * lenMul(key))) + 'vh';
+  /* 【2026-09-09 ヒデさん指定】タブレット(デスクトップ層で幅が --s に縮む)は「1画面=100vh」の中に
+     幅縮小(--sp)されたコンテンツが中央寄せされ、上下に大きな余白ができる。NOPIN(非ピン)の各セクションは
+     ピン走路が不要なので、タブレットだけ 1画面ぶんの高さを詰めて余白を減らす。PC(--s=1)は 100vh のまま。
+     コンテンツ高さ(≒DH×--sp)が収まる範囲で、少し余裕(×1.25・最低62vh)を持たせてクリップを防ぐ。 */
+  const isTablet = !isMobile && s < 0.92;
+  document.documentElement.classList.toggle('tab', isTablet);
+  const nopinSecVh = isTablet
+    ? Math.max(62, Math.min(100, Math.round((sp * DH / h) * 100 * 1.25))) + 'vh'
+    : '100vh';
+  document.documentElement.style.setProperty('--nopin-vh', nopinSecVh);   /* NOPINセクションの pin-vp 高さをCSSから連動(タブレットで詰める) */
+  /* 【2026-08-29】Vision は常に固定追従なし＝1画面(100vh)で普通に流す(スクロールジャックしない)。
+     登場は入場トリガーで updateVision が時間で自動再生する。 */
+  SECS.vision.style.height = VIS_NOPIN ? nopinSecVh : H('vision');
+  /* 【2026-08-25 リデザイン】開発者体験は非pin・2ブロック(各min-height:100vh)なので、
+     中身なりの高さ(auto=約200vh)にする。pin用の H('dev')(=600vh)は使わない。 */
+  SECS.dev.style.height = 'auto';   /* pin時は .dev-block が各(100vh+dwell)なので auto でも自動で伸びる */
+  /* 【2026-09-16 ヒデさん指定】開発者体験①②の「中央で一旦止まる(sticky)」。PC のみ。dwell=止まっている長さ(vh) */
+  SECS.dev.classList.toggle('dev-pin', !isMobile && (params.sections.dev.pinStops !== 'off'));
+  SECS.dev.style.setProperty('--dev-dwell', (params.sections.dev.devDwell != null ? params.sections.dev.devDwell : 90) + 'vh');
+  /* 【2026-08-29 ヒデさん指定】スムーズフェード時は実績に被せない＝#dev の -100vh 重なりを外して普通に下へ置く。 */
+  SECS.dev.style.marginTop = resSmooth() ? '0' : '';
+  /* 【2026-08-29】導入事例も固定追従なし＝1画面(100vh)。長いピン尺(最大600vh)の余分スクロールを解消。 */
+  SECS.cases.style.height = CASES_NOPIN ? nopinSecVh : H('cases');
+  /* 【2026-08-29】スムーズフェード時は実績も固定追従なし＝1画面(100vh)で普通に流す。 */
+  SECS.results.style.height = resSmooth() ? nopinSecVh : H('results');
+  SECS.results.classList.toggle('res-smooth', resSmooth());
+  /* 【2026-09-13 比較検証】実績の演出案(resFx)。固定して読む区間がある案は sticky に戻し、セクション高さを伸ばす。
+     #dev は実績直後に続くので、伸ばした尺の終端がそのまま既存の暗転入口(devDarkK)になる。 */
+  document.documentElement.classList.toggle('rfx-short', resFxShort());   /* SP で縦が短い(≤600px): 固定案を縦流れに */
+  applyResFx();
+  { const _k = resFxActive(), _vh = resFxVh(_k);
+    if (resFxFlowMode(_k)) SECS.results.style.height = 'auto';   /* 自然に流れる案(4、縦が短い端末の固定案): 中身なりの高さ */
+    else if (_vh) SECS.results.style.height = _vh + 'vh'; }
+  /* 【2026-09-09 ヒデさん指定・見切れ根治】静的モバイル: pin-vp(100vh)より中身が高いセクションは
+     下が見切れる。最下要素の位置から実コンテンツ高さを測り、section と pin-vp に明示的に設定して
+     クリップを解除する(絶対配置でも最下要素のrectで測れる)。 */
+  if (isMobile) requestAnimationFrame(() => {
+    const fixH = (id, lastSel, pad) => {
+      const sec = SECS[id]; if (!sec) return;
+      const vp = sec.querySelector('.pin-vp'); if (!vp) return;
+      const lasts = sec.querySelectorAll(lastSel);
+      if (!lasts.length) return;
+      const secTop = sec.getBoundingClientRect().top;
+      let maxB = 0;
+      lasts.forEach(el => { const b = el.getBoundingClientRect().bottom; if (b > maxB) maxB = b; });
+      const hh = Math.ceil(maxB - secTop + (pad || 40));
+      if (hh > 100) { vp.style.position = 'relative'; vp.style.overflow = 'visible'; vp.style.height = hh + 'px'; sec.style.height = hh + 'px'; }
+    };
+    fixH('vision', '#valP1, #valP2', 16);   /* 【2026-09-16 ヒデさん依頼】ビジョン末尾の余白=実績「事業の推進力を」の上。85→16(=--space-16。スペーシングガイドライン準拠)。ビジョン上部は意図的なので不変 */
+    if (resFxActive() === 'default') fixH('results', '#resVals, .r2v:last-child', 56);   /* 【2026-09-14】案の時は案の CSS/JS が高さを決める */
+    fixH('cases', '.cg-cell', 64);
+    try { initSpResultLines(); } catch (e) {}   /* 【2026-09-22】SP: 実績の罫線3本を入場アニメ(左→右トリム・ディレイ)にする */
+  });
+}
+fitReady = true;
+/* 【2026-09-22 ヒデさん依頼】SP のみ: 実績の罫線(res2-hr-top / res2-vline / res2-hr の3本)を
+   「ビューポートに入った段階で左→右にパスのトリミング＋3本ディレイ」で出す。
+   軽量化で SP は --rfx-hr/--rfx-vline=1 固定＋rfx-flow で transform:none となり最初から全部表示だった。
+   PC はスクロール駆動(--rfx-hr)のまま＝一切触らない。inline!important で CSS の transform:none !important に勝つ。 */
+let _spLineIO = null;
+function initSpResultLines() {
+  const on = (typeof isMobile !== 'undefined' && isMobile);
+  const res = document.getElementById('results'); if (!res) return;
+  if (_spLineIO) { _spLineIO.disconnect(); _spLineIO = null; }
+  let lines = [].slice.call(res.querySelectorAll('.res2-hr-top, .res2-vline, .res2-hr'))
+    .filter(el => getComputedStyle(el).display !== 'none');
+  if (!on) {   /* PC: 何もしない(万一 inline が付いていたら剥がして従来のスクロール駆動へ) */
+    lines.forEach(el => { ['transform', 'transform-origin', 'transition', 'transition-delay'].forEach(k => el.style.removeProperty(k)); delete el.dataset.lnShown; });
+    return;
+  }
+  lines.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);   /* 上から順にディレイ */
+  lines.forEach((el, i) => {
+    if (el.dataset.lnShown === '1') return;   /* 既に出したものは触らない(リサイズで戻さない) */
+    el.style.setProperty('transform', 'scaleX(0)', 'important');
+    el.style.transformOrigin = 'left center';
+    el.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
+    el.style.transitionDelay = (i * 0.12).toFixed(2) + 's';
+  });
+  _spLineIO = new IntersectionObserver((ents) => {
+    ents.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.style.setProperty('transform', 'scaleX(1)', 'important');   /* 左→右トリム */
+      e.target.dataset.lnShown = '1';
+      _spLineIO.unobserve(e.target);
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -22% 0px' });   /* ビューポートの上寄り78%に入ったら描く */
+  lines.forEach(el => { if (el.dataset.lnShown !== '1') _spLineIO.observe(el); });
+}
+window.addEventListener('resize', fit);
+window.addEventListener('load', fit);
+/* リロードしたら必ずキービジュアルの先頭から。
+   ブラウザ既定の「前回のスクロール位置を復元」を切っておかないと、
+   途中から復元されて各セクションの自動再生が中途半端な状態で始まってしまう */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+/* ヘッダーのアンカーリンクも慣性スクロールで飛ばす */
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const el = document.querySelector(a.getAttribute('href'));
+  if (!el) return;
+  e.preventDefault();
+  if (lenis) lenis.scrollTo(el, { duration: 1.6 }); else el.scrollIntoView();
+});
+window.addEventListener('load', () => window.scrollTo(0, 0));
+window.scrollTo(0, 0);
+if (window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
+fit();
+
+/* ================= 調整パネル UI ================= */
+const body = document.getElementById('panelBody');
+const PANEL_TAB_KEY = 'anyflow-panel-tab-v1';   /* 【2026-09-15】調整パネルで選んだタブ(大カテゴリ)の記憶 */
+
+/* 既定値をそのまま読むためのヘルパー。
+   スライダーの get は params を参照する閉包なので、一瞬だけ params を初期値に差し替えて呼ぶ */
+
+/* ===== 「その場で反映」と「頭から流し直し」の使い分け (2026-08-19 ヒデさん指摘) =====
+   ⚠️ これまではパネルを触ると必ず replayHere() が走り、
+      キービジュアルにいる時は elapsed が 0 に戻っていた。
+      つまり【ヘッダーのブラー → タイピング → グラフィック出現】が全部やり直しになる。
+      惑星の柄を選んだだけで画面がリセットされるので、リロードしたようにしか見えない。
+      実測: 柄のピルを押すと elapsed 20s → 0s、ヘッダーの不透明度 1 → 0。
+
+   見た目そのものを変える項目（惑星の柄・自転・軌道の見え方）は、時計を戻さず
+   その場で描き直すだけでよい。逆に「登場の順番やタイミング」を触る項目は
+   頭から流し直さないと結果が見えないので、従来どおり流し直す。
+
+   liveEdit = true の間に作られた項目は「その場で反映」になる。 */
+let liveEdit = false;
+function applyEdit(isLive, now) {
+  /* 【2026-08-27 ヒデさん指定】「パネルを触るとリロードが走る」の根治。
+     これまでは liveEdit=false の項目を触るたびに replayHere() で
+     セクションの時計を 0 に戻していた（＝頭から再生し直し）。
+     今後はどの項目でも時計を戻さず、いまの時刻のまま描き直すだけにする。
+     つまみを動かした瞬間に、その場で結果が変わる。 */
+  renderFrame();
+}
+
+/* ===== アニメ案ごとの「グラフィックの形」 (2026-08-27 ヒデさん指定) =====
+   ⚠️ これまでは軌道と惑星の位置・サイズが【全案で共通】だったので、
+      ①で輪を潰すと②③でも潰れたままだった。
+      これからは案ごとに別々に持ち、案を切り替えると【その案の形】に入れ替わる。
+      いま画面に出ている値は今までどおり params.orbits / params.planet。
+      案を離れる時にそれを params.gfxByMode[案] へしまい、入る時に取り出す。 */
+function gfxSnapshot() {
+  const pick = o => ({ dx: o.dx, dy: o.dy, scale: o.scale, flat: o.flat == null ? 1 : o.flat, angle: o.angle, behind: !!o.behind });
+  const P = params.planet;
+  return {
+    layout: params.orbitLayout,
+    outer: pick(params.orbits.outer),
+    inner: pick(params.orbits.inner),
+    planet: { dx: P.dx, dy: P.dy, scale: P.scale, flat: P.flat == null ? 1 : P.flat },
+  };
+}
+/* 「最初に実装した位置関係」= DEFAULTS の値。案ごとの既定はこれ */
+function gfxDefault() {
+  const pick = o => ({ dx: o.dx, dy: o.dy, scale: o.scale, flat: o.flat == null ? 1 : o.flat, angle: o.angle });
+  const P = DEFAULTS.planet;
+  return {
+    layout: DEFAULTS.orbitLayout,
+    outer: pick(DEFAULTS.orbits.outer),
+    inner: pick(DEFAULTS.orbits.inner),
+    planet: { dx: P.dx, dy: P.dy, scale: P.scale, flat: P.flat == null ? 1 : P.flat },
+  };
+}
+function gfxApply(d) {
+  if (!d) return;
+  if (d.layout) params.orbitLayout = d.layout;
+  for (const key of ['outer', 'inner']) {
+    if (!d[key]) continue;
+    for (const k of ['dx', 'dy', 'scale', 'flat', 'angle']) {
+      if (typeof d[key][k] === 'number') params.orbits[key][k] = d[key][k];
+    }
+    if (typeof d[key].behind === 'boolean') params.orbits[key].behind = d[key].behind;
+  }
+  if (d.planet) {
+    for (const k of ['dx', 'dy', 'scale', 'flat']) {
+      if (typeof d.planet[k] === 'number') params.planet[k] = d.planet[k];
+    }
+  }
+  markDirty();
+  renderFrame();
+}
+/* いまの形を、いまの案の引き出しへしまう */
+function gfxStash() {
+  if (!params.gfxByMode) params.gfxByMode = {};
+  params.gfxByMode[params.converge || 'reel'] = gfxSnapshot();
+}
+/* ===== プリセットに入れる中身 (2026-08-27 ヒデさん指摘で拡張) =====
+   ⚠️ これまでプリセットは【形】(軌道と惑星の位置・大きさ・傾き)しか覚えていなかったので、
+      アニメのつまみをいくら調整して保存しても、呼び出した時に再現されなかった。
+      いまは「その時にパネルで見えている値」をまるごと覚える:
+        形 / 惑星の模様 / ゆらぎ / 共通の見せ方 / いま選んでいる案のつまみ一式 */
+function gfxSnapshotFull() {
+  const mode = params.converge || 'reel';
+  const pk = CONV_PARAM_KEY[mode];
+  const C = params.conv;
+  return {
+    ...gfxSnapshot(),
+    design: params.design,
+    sway: params.sway,
+    swayAmp: params.swayAmp,            /* ゆらぎの強さ */
+    swayDir: params.swayDir || 'tilt',  /* 揺らぎの動き(2026-08-30) */
+    duration: params.duration,          /* ドットが軌道を1周する秒数 */
+    globalSpeed: params.globalSpeed,
+    /* 【2026-08-29 ヒデさん指定】自由回転(全体の回転)は案ごとに独立させる。
+       案(バリエーション)ごとに保存し、切替時に復元・未設定は0へ戻す。 */
+    kv: { rotX: (params.kv && params.kv.rotX) || 0, rotY: (params.kv && params.kv.rotY) || 0, rotZ: (params.kv && params.kv.rotZ) || 0 },
+    common: {
+      showOuter: C.showOuter, showInner: C.showInner, showDots: C.showDots,
+      dotSize: C.dotSize, dotPersp: C.dotPersp, perspK: C.perspK, perspScope: C.perspScope, glow: C.glow, frontCut: C.frontCut,
+      glowKind: C.glowKind, glowHold: C.glowHold, glowEcho: C.glowEcho,
+      echoSpeed: C.echoSpeed, echoShells: C.echoShells, echoSpread: C.echoSpread,
+      echoStart: C.echoStart, echoFade: C.echoFade, echoAlpha: C.echoAlpha,
+      fxMode: C.fxMode, fxCount: C.fxCount, fxEvery: C.fxEvery, fxInertia: C.fxInertia, echoCrisp: C.echoCrisp,
+      ringCount: C.ringCount, ringShape: C.ringShape, ringSpin: C.ringSpin, ringFlat: C.ringFlat, ringSize: C.ringSize, ringTumble: C.ringTumble, ringWidth: C.ringWidth, ringRotate: C.ringRotate, startPhase: C.startPhase,
+      dotRandom: C.dotRandom, orbitSpin: C.orbitSpin, orbitDrift: C.orbitDrift,
+      dotMove: C.dotMove ? C.dotMove[mode] : undefined,
+      orbitSpin: convOrbitSpinAmt(),          /* 案ごとの軌道回転 */
+      gyroMix: (C.gyroMixBy || {})[mode] || 0, /* 案ごとのジャイロ混ぜ具合 */
+      orbitWidth: (C.orbitWidthBy || {})[mode], /* 案ごとの軌道の線の太さ */
+      orbitScale: (C.orbitScaleBy || {})[mode], /* 案ごとの軌道のサイズ */
+      net3d: !!C.net3d,                        /* 【2026-08-31】ネットワーク3Dフラグ(欠けると上書き復元で標準軌道に化けた) */
+      hsway: C.hsway ? { ...C.hsway } : undefined,   /* 【2026-09-01】横揺れ(B3) */
+    },
+    net3dNT: params.net3d ? { ...params.net3d } : null,   /* 【2026-08-31】ネットワーク3D専用つまみ一式 */
+    mode: pk && C[pk] ? { ...C[pk] } : null,
+    meshPts: (C.mesh && C.mesh.pts) ? C.mesh.pts.map(q => ({ x: q.x, y: q.y })) : null,
+    gyro: C.gyro ? { ...C.gyro } : null,   /* ジャイロの転がり方 */
+    /* ※「登場(出てくる順番)」は 2026-08-27 に削除。モックKV(iframe)専用で、
+         惑星案では何も効かない値だったため、プリセットにも入れない */
+  };
+}
+function gfxApplyFull(d) {
+  if (!d) return;
+  gfxApply(d);                                  /* まず形 (古いプリセットはここだけ入っている) */
+  if (typeof d.design === 'string') params.design = d.design;
+  if (typeof d.sway === 'number') params.sway = d.sway;
+  if (typeof d.swayAmp === 'number') params.swayAmp = d.swayAmp;
+  if (typeof d.swayDir === 'string') params.swayDir = d.swayDir;
+  if (typeof d.duration === 'number') params.duration = d.duration;
+  if (typeof d.globalSpeed === 'number') params.globalSpeed = d.globalSpeed;
+  /* 【2026-08-29】自由回転(全体の回転)を案ごとに復元。無い案は0(=正面)。 */
+  if (params.kv) {
+    params.kv.rotX = (d.kv && typeof d.kv.rotX === 'number') ? d.kv.rotX : 0;
+    params.kv.rotY = (d.kv && typeof d.kv.rotY === 'number') ? d.kv.rotY : 0;
+    params.kv.rotZ = (d.kv && typeof d.kv.rotZ === 'number') ? d.kv.rotZ : 0;
+  }
+  const mode = params.converge || 'reel';
+  const C = params.conv;
+  if (d.net3dNT && params.net3d) Object.assign(params.net3d, d.net3dNT);   /* 2026-08-31: ネットワーク3Dつまみ復元 */
+  if (d.common) {
+    for (const k of ['showOuter', 'showInner', 'showDots', 'dotSize', 'dotPersp',
+                     'perspK', 'perspScope', 'glow', 'dotRandom', 'orbitSpin', 'orbitDrift', 'frontCut',
+                     'glowKind', 'glowHold', 'glowEcho',
+                     'echoSpeed', 'echoShells', 'echoSpread', 'echoStart', 'echoFade', 'echoAlpha',
+                     'fxMode', 'fxCount', 'fxEvery', 'fxInertia', 'echoCrisp',
+                     'ringCount', 'ringShape', 'ringSpin', 'ringFlat', 'ringSize', 'ringTumble', 'ringWidth', 'ringRotate', 'startPhase']) {
+      if (d.common[k] !== undefined) C[k] = d.common[k];
+    }
+    if (d.common.dotMove !== undefined) {
+      if (!C.dotMove) C.dotMove = {};
+      C.dotMove[mode] = d.common.dotMove;
+    }
+    if (d.common.net3d !== undefined) C.net3d = !!d.common.net3d;   /* 2026-08-31 */
+    if (d.common.hsway) C.hsway = { ...JSON.parse(JSON.stringify(DEFAULTS.conv.hsway)), ...d.common.hsway };   /* 2026-09-01: 横揺れ復元 */
+    if (typeof d.common.orbitSpin === 'number') {
+      if (!C.orbitSpinBy) C.orbitSpinBy = {};
+      C.orbitSpinBy[mode] = d.common.orbitSpin;
+    }
+    if (typeof d.common.gyroMix === 'number') {
+      if (!C.gyroMixBy) C.gyroMixBy = {};
+      C.gyroMixBy[mode] = d.common.gyroMix;
+    }
+    if (typeof d.common.orbitWidth === 'number') {
+      if (!C.orbitWidthBy) C.orbitWidthBy = {};
+      C.orbitWidthBy[mode] = d.common.orbitWidth;
+    }
+    if (typeof d.common.orbitScale === 'number') {
+      if (!C.orbitScaleBy) C.orbitScaleBy = {};
+      C.orbitScaleBy[mode] = d.common.orbitScale;
+    }
+  }
+  const pk = CONV_PARAM_KEY[mode];
+  if (d.mode && pk && C[pk]) Object.assign(C[pk], d.mode);
+  if (C.mesh) C.mesh.pts = d.meshPts ? d.meshPts.map(q => ({ x: q.x, y: q.y })) : null;
+  if (d.gyro && C.gyro) Object.assign(C.gyro, d.gyro);
+  markDirty();
+  renderFrame();
+}
+
+/* 【2026-08-27 ヒデさん指定】確認は window.confirm ではなく、パネルのトーンに合わせた小さなモーダルで出す */
+function askModal(title, body, okLabel, onOk) {
+  const bg = document.createElement('div');
+  bg.className = 'mdl-bg';
+  const m = document.createElement('div');
+  m.className = 'mdl';
+  const h = document.createElement('h4'); h.textContent = title;
+  const p = document.createElement('p'); p.textContent = body;
+  const row = document.createElement('div'); row.className = 'mdl-btns';
+  const no = document.createElement('button'); no.type = 'button'; no.textContent = 'やめる';
+  const yes = document.createElement('button'); yes.type = 'button'; yes.className = 'danger'; yes.textContent = okLabel || '削除する';
+  const close = () => { bg.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  no.onclick = close;
+  yes.onclick = () => { close(); onOk(); };
+  bg.onclick = e => { if (e.target === bg) close(); };
+  document.addEventListener('keydown', onKey, true);
+  row.append(no, yes); m.append(h, p, row); bg.appendChild(m); document.body.appendChild(bg);
+  yes.focus();
+}
+
+/* 【2026-08-28 ヒデさん指定】消した案は「全部戻す」だとややこしいので、
+   一覧を出して1つずつ選んで戻せるようにする */
+function pickModal(title, body, items, onPick) {
+  const bg = document.createElement('div');
+  bg.className = 'mdl-bg';
+  const m = document.createElement('div');
+  m.className = 'mdl';
+  const h = document.createElement('h4'); h.textContent = title;
+  const p = document.createElement('p'); p.textContent = body;
+  const list = document.createElement('div'); list.className = 'mdl-list';
+  const row = document.createElement('div'); row.className = 'mdl-btns';
+  const close = () => { bg.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  const draw = () => {
+    list.innerHTML = '';
+    if (!items.length) { close(); return; }
+    items.slice().forEach(name => {
+      const li = document.createElement('div'); li.className = 'mdl-li';
+      const t = document.createElement('span'); t.textContent = name;
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = '戻す';
+      b.onclick = () => { onPick(name); draw(); };
+      li.append(t, b); list.appendChild(li);
+    });
+  };
+  const done = document.createElement('button'); done.type = 'button'; done.textContent = '閉じる';
+  done.onclick = close;
+  row.appendChild(done);
+  bg.onclick = e => { if (e.target === bg) close(); };
+  document.addEventListener('keydown', onKey, true);
+  m.append(h, p, list, row); bg.appendChild(m); document.body.appendChild(bg);
+  draw();
+}
+
+/* --- 案ごとのグラフィック3案 (2026-08-27 ヒデさん指定) --- */
+function applyGfxVariant(i) {
+  const mode = params.converge || 'reel';
+  const v = (GFX_VARIANTS[mode] || [])[i];
+  if (!v) return;
+  applyingVariant = true;
+  /* 【2026-08-28 ヒデさん指定・根治】案を選び直したら、その案が指定しない「回転・スピン系」は
+     必ず 0 へ戻す。こうしないと、前に選んだジャイロ案やスピンの保存値がブラウザに残って
+     「A カンプ通り」を選んでも回り続けてしまう。このあと root / gyro / common / conv が
+     上書きするので、回転を指定している案(ジャイロ案など)はちゃんと効く。 */
+  if (!params.conv.orbitSpinBy) params.conv.orbitSpinBy = {};
+  if (!params.conv.gyroMixBy) params.conv.gyroMixBy = {};
+  params.conv.orbitSpinBy[mode] = 0;
+  params.conv.gyroMixBy[mode] = 0;
+  params.conv.ringCount = 0;   /* シェイプ(複数軌道)は、それを指定する案でだけオンにする */
+  if (mode === 'reel' && params.conv.reel) params.conv.reel.spinUp = 0;
+  /* 【2026-08-29 ヒデさん指定】案ごとに独立させるため、案を選ぶ瞬間に「シェイプ共通」と
+     「この案のつまみ」を一旦すべて既定へ戻す。このあと 定義(common/conv) → 保存した調整 の順に
+     重ねるので、他の案でいじった値が漏れて残らない。 */
+  for (const rk of ['ringShape', 'ringSpin', 'ringFlat', 'ringSize', 'ringTumble', 'ringWidth', 'ringRotate', 'startPhase'])
+    params.conv[rk] = DEFAULTS.conv[rk];
+  /* 【2026-08-29 ヒデさん指定・全項目を案ごとに独立】表示(外の輪/内の輪/ドット)・ドット設定・
+     光り方・エフェクト・遠近 なども、案を選ぶ瞬間に一旦すべて既定へ戻す。
+     このあと 定義(v.common) → その案で保存した調整 の順に重ねるので、他の案の値が漏れない。 */
+  for (const k of ['showOuter', 'showInner', 'showDots', 'dotSize', 'dotPersp', 'perspK', 'perspScope',
+                   'glow', 'frontCut', 'glowKind', 'glowHold', 'glowEcho',
+                   'echoSpeed', 'echoShells', 'echoSpread', 'echoStart', 'echoFade', 'echoAlpha',
+                   'fxMode', 'fxCount', 'fxEvery', 'fxInertia', 'echoCrisp', 'dotRandom', 'orbitDrift', 'net3d'])
+    if (DEFAULTS.conv[k] !== undefined) params.conv[k] = DEFAULTS.conv[k];
+  /* 横揺れ(B3専用)も一旦既定(オフ)へ。B3を選んだ時だけ下で有効化される */
+  params.conv.hsway = JSON.parse(JSON.stringify(DEFAULTS.conv.hsway));
+  /* 案ごとの引き出し(per-mode)も既定へ */
+  if (params.conv.orbitWidthBy) params.conv.orbitWidthBy[mode] = (DEFAULTS.conv.orbitWidthBy || {})[mode];
+  if (params.conv.orbitScaleBy) params.conv.orbitScaleBy[mode] = (DEFAULTS.conv.orbitScaleBy || {})[mode];
+  if (params.conv.dotMove)      params.conv.dotMove[mode]      = (DEFAULTS.conv.dotMove || {})[mode];
+  /* 自由回転(全体の回転)も案ごとに独立＝既定は正面(0) */
+  if (params.kv) { params.kv.rotX = 0; params.kv.rotY = 0; params.kv.rotZ = 0; }
+  /* 【2026-08-29 ヒデさん指定・フォーマット統一】揺らぎも案ごとに独立＝既定はオン(②シーソー)。
+     この案で保存した値があれば、このあと gfxApplyFull で復元される。 */
+  params.sway = DEFAULTS.sway;
+  params.swayAmp = DEFAULTS.swayAmp;
+  params.swayDir = DEFAULTS.swayDir;
+  {
+    const pk0 = CONV_PARAM_KEY[mode];
+    if (pk0 && DEFAULTS.conv[pk0] && params.conv[pk0])
+      for (const kk in DEFAULTS.conv[pk0]) params.conv[pk0][kk] = DEFAULTS.conv[pk0][kk];
+  }
+  /* 【2026-08-30 ヒデさん指定・再修正】プリセット昇格バリエーション:
+     上の「一旦すべて既定へ」を通した上で、プリセットの全設定(gfxApplyFull)をそのまま重ねる。
+     ⚠️ 以前は既定リセットを通さない別分岐だったため、プリセットに無い古い項目(ringRotate等)へ
+        直前の案の値が漏れて「プリセットの数値と違う」が起きていた。 */
+  /* 【2026-08-30 ヒデさん指定】「この設定で上書き」した案は、その控え(全設定)が最優先。
+     無ければ昇格プリセットの数値。どちらも既定リセット後にフル適用＝決定的。 */
+  const _ov = ((params.gfxVarOverride || {})[mode] || {})[v.name];
+  if (_ov || v.preset) {
+    gfxApplyFull(JSON.parse(JSON.stringify(_ov || v.preset)));
+    /* 【2026-08-31】古い上書きスナップショットに net3d が無くても、案の定義から必ず立て直す
+       (欠けているとネットワーク3D案が標準軌道の姿で開いてしまう) */
+    if (params.conv) params.conv.net3d = convVarIsNetwork(v) || !!(_ov && _ov.common && _ov.common.net3d);
+    if (!params.gfxVariantOn) params.gfxVariantOn = {};
+    params.gfxVariantOn[mode] = i;
+    /* 上書き/昇格は「保存した数値で開く」が正。調整の控え(gfxTweaks)は復元しない(汚染上書き防止) */
+    applyingVariant = false;
+    markDirty();
+    renderFrame();
+    return;
+  }
+  if (v.hsway) params.conv.hsway.on = true;   /* B3「J 地平線・横揺れ」: 横揺れを既定オン */
+  const base = gfxDefault(), g = v.gfx || {};
+  gfxApply({
+    layout: g.layout || base.layout,
+    outer:  { ...base.outer,  ...(g.outer  || {}) },
+    inner:  { ...base.inner,  ...(g.inner  || {}) },
+    planet: { ...base.planet, ...(g.planet || {}) },
+  });
+  const pk = CONV_PARAM_KEY[mode];
+  if (v.conv && pk && params.conv[pk]) Object.assign(params.conv[pk], v.conv);
+  /* 【2026-08-27 ヒデさん指定】ゆったりさせるには、ドットが軌道を1周する時間そのものを
+     変える必要がある。root は params の直下(duration など)へ書く */
+  if (v.root) for (const k in v.root) params[k] = v.root[k];
+  /* ⑦の転がりの設定は共通の引き出し(conv.gyro)へ */
+  if (v.gyro && params.conv.gyro) Object.assign(params.conv.gyro, v.gyro);
+  /* common は params.conv の直下(共通の見せ方)へ。
+     orbitSpin と gyroMix だけは案ごとの引き出しへ入れる */
+  if (v.common) {
+    for (const k in v.common) {
+      if (k === 'orbitSpin') {
+        /* 【2026-08-29 ヒデさん指定・フォーマット統一】軌道の回転は全案とも既定オフに統一する。
+           案が持っていた回転量は「回転をオンにした時に使う速さ」として控えておくだけで、
+           アクティブな値(orbitSpinBy)は 0(オフ)のまま。オンにするのはパネルのトグル。 */
+        if (!params.conv.spinDefBy) params.conv.spinDefBy = {};
+        params.conv.spinDefBy[mode] = v.common[k];
+        /* orbitSpinBy[mode] は上のリセットで 0(オフ)のまま。この案で回転オンを保存していれば後で復元 */
+      } else if (k === 'gyroMix') {
+        /* 【2026-08-29 ヒデさん指定】ジャイロの転がりも既定オフに統一。値は「オンにした時用」に控える(gyroMixByは0のまま)。 */
+        if (!params.conv.gyroMixDefBy) params.conv.gyroMixDefBy = {};
+        params.conv.gyroMixDefBy[mode] = v.common[k];
+      } else if (k === 'orbitWidth') {
+        if (!params.conv.orbitWidthBy) params.conv.orbitWidthBy = {};
+        params.conv.orbitWidthBy[mode] = v.common[k];
+      } else if (k === 'orbitScale') {
+        if (!params.conv.orbitScaleBy) params.conv.orbitScaleBy = {};
+        params.conv.orbitScaleBy[mode] = v.common[k];
+      } else params.conv[k] = v.common[k];
+    }
+  }
+  if (!params.gfxVariantOn) params.gfxVariantOn = {};
+  params.gfxVariantOn[mode] = i;
+  /* 【2026-08-29 ヒデさん指定】この案で前に調整した値があれば重ねて復元(案ごとに独立) */
+  const tw = params.gfxTweaks && params.gfxTweaks[mode] && params.gfxTweaks[mode][i];
+  if (tw) gfxApplyFull(tw);
+  applyingVariant = false;
+  markDirty();
+  renderFrame();
+}
+function gfxVariantOn() { return (params.gfxVariantOn || {})[params.converge || 'reel']; }
+
+/* --- 案ごとのプリセット --- */
+function defaultOf(get) {
+  const keep = params;
+  try { params = DEFAULTS; return get(); }
+  catch (e) { return null; }
+  finally { params = keep; }
+}
+/* 【2026-09-20 ヒデさん依頼】リセット(↺)は「このブラウザでページを開いた時の値」に戻す。
+   起動時(load＋案の適用＋SP流し込みが済んだ直後)の params を丸ごと控えておき、
+   defaultOf と同じ手(params を一時的に控えへ差し替えて get() を呼ぶ)で、パス無しでも各つまみの開始値を引く。
+   反転式(13-v など)や sv()/kg()/editPos() 経由のつまみも、get がそのまま控えを読むので正しく戻る。 */
+let SESSION_START = null;
+function sessionOf(get) {
+  if (!SESSION_START) return defaultOf(get);
+  const keep = params;
+  try { params = SESSION_START; return get(); }
+  catch (e) { return null; }
+  finally { params = keep; }
+}
+/* 各項目のリセット(↺)。既定値は defaultOf() で DEFAULTS から引く。
+   2026-08-26 ヒデさん指定: 行ごとに戻せるようにし、下の「元に戻す」は廃止 */
+function mkReset(get, set, sync, isLive) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'rst';
+  b.textContent = '↺';
+  b.title = 'このセッションを開いた時の値に戻す';
+  const d = defaultOf(get);
+  if (d === undefined || d === null) { b.classList.add('off'); return b; }   /* 既定が無い項目はリセット対象外(ボタンを無効に) */
+  b.onclick = (e) => {
+    e.stopPropagation();
+    let t = sessionOf(get);                       /* このセッションを開いた時の値 */
+    if (t === undefined || t === null) t = d;     /* 無ければ焼き込み既定へフォールバック */
+    set(typeof t === 'object' ? structuredClone(t) : t);
+    markDirty();
+    if (sync) sync();
+    applyEdit(!!isLive, true);
+  };
+  return b;
+}
+/* ===== 【2026-09-17 大掃除・ヒデさん依頼】ページ上の全テキストの台帳(文字システム) =====
+   sec=どのタブの「文字」に出すか(kv/vis/res/dev/case/cv) / multi=同じ見た目の要素が複数(まとめて同じ値を当てる) /
+   text=打ち替え可 / font=太さ・行間・字間を変えられる(0=位置だけ) / move=端をつかんで位置移動(0=不可)。
+   値の置き場は params.edits[key]={fw,lh,ls,fs,dx,dy,pt…} の一つだけ。パネルの「文字」と ✏️編集(クリック→浮きバー)は同じ値を触る。 */
+const TEXT_SPEC = [
+  // --- ヘッダー(KVタブに出す) ---
+  { key: 'navLogo',   sel: '.logo',                  name: 'ロゴ',                          sec: 'kv',  text: 0, font: 0 },
+  { key: 'navLinks',  sel: 'header nav a:not(.cta)', name: 'ヘッダーのナビ',                sec: 'kv',  text: 0, multi: 1, move: 0 },
+  { key: 'navCta',    sel: 'header .cta',            name: 'ヘッダーのボタン',              sec: 'kv',  text: 1 },
+  // --- キービジュアル ---
+  { key: 'kvMain',    sel: '.hl-main',   name: 'KVメインコピー（データ連携で〜）',        sec: 'kv',  text: 0 },
+  { key: 'kvMainLast', sel: '.hl-main .hl-line:last-child', name: 'KVメイン 最終行（競争力を）', sec: 'kv', text: 0, move: 0 },   /* 【2026-09-18】Figma 17707:26040 では最終行だけ Bold(700) */
+  { key: 'kvEyebrow', sel: '#hlEyebrow', name: 'KVサブコピー（AI/プロダクト企業の〜）',    sec: 'kv',  text: 0 },
+  { key: 'kvLogos',   sel: '.logos',     name: 'KVロゴ帯（位置だけ）',                      sec: 'kv',  text: 0, font: 0 },
+  // --- ビジョン ---
+  { key: 'visLabel',  sel: '#visLabel',      name: 'Our Vision',                         sec: 'vis', text: 1 },
+  { key: 'visMsg',    sel: '.vis-l1, .vis-l2', name: 'メッセージ（データをつなぐことが〜）', sec: 'vis', text: 0, multi: 1 },   /* 【2026-09-20】太さ等を1行目・2行目の両方に当てる(強調案の2行対応) */
+  { key: 'vfWrap',    sel: '#vfWrap',        name: '図（網目のドーム・位置だけ）',        sec: 'vis', text: 0, font: 0 },   /* 【2026-09-19】Figma 18004:38228 */
+  /* 【2026-09-19 ヒデさん依頼】図の機能名と補足は1つずつ(太さ・行間・字間・サイズ・文字・位置)。カンプ: 機能名 Noto Medium 16px / 補足 Regular 8px */
+  { key: 'vfLab1',    sel: '#vfLab1',       name: '図の機能名①（コネクタ・組ごと位置）', sec: 'vis', text: 0, font: 0 },
+  { key: 'vfL1',      sel: '#vfL1',         name: '図の機能名① コネクタ',        sec: 'vis', text: 1 },
+  { key: 'vfL1s',     sel: '#vfL1s',        name: '図の補足① 外部サービスをつなぐ',          sec: 'vis', text: 1 },
+  { key: 'vfLab2',    sel: '#vfLab2',       name: '図の機能名②（認証ウィザード・組ごと位置）', sec: 'vis', text: 0, font: 0 },
+  { key: 'vfL2',      sel: '#vfL2',         name: '図の機能名② 認証ウィザード',        sec: 'vis', text: 1 },
+  { key: 'vfL2s',     sel: '#vfL2s',        name: '図の補足② 認証設定を支える',          sec: 'vis', text: 1 },
+  { key: 'vfLab3',    sel: '#vfLab3',       name: '図の機能名③（SDK・組ごと位置）', sec: 'vis', text: 0, font: 0 },
+  { key: 'vfL3',      sel: '#vfL3',         name: '図の機能名③ SDK',        sec: 'vis', text: 1 },
+  { key: 'vfL3s',     sel: '#vfL3s',        name: '図の補足③ 開発環境に組み込む',          sec: 'vis', text: 1 },
+  { key: 'vfLab4',    sel: '#vfLab4',       name: '図の機能名④（ワークフロー・組ごと位置）', sec: 'vis', text: 0, font: 0 },
+  { key: 'vfL4',      sel: '#vfL4',         name: '図の機能名④ ワークフロー',        sec: 'vis', text: 1 },
+  { key: 'vfL4s',     sel: '#vfL4s',        name: '図の補足④ 連携処理を組み立てる',          sec: 'vis', text: 1 },
+  { key: 'vfLab5',    sel: '#vfLab5',       name: '図の機能名⑤（実行エンジン・組ごと位置）', sec: 'vis', text: 0, font: 0 },
+  { key: 'vfL5',      sel: '#vfL5',         name: '図の機能名⑤ 実行エンジン',        sec: 'vis', text: 1 },
+  { key: 'vfL5s',     sel: '#vfL5s',        name: '図の補足⑤ 処理を実行する',          sec: 'vis', text: 1 },
+  { key: 'vfLogo',    sel: '#vfLogo',        name: '図のロゴ（位置だけ。大きさはビジョンタブ③）', sec: 'vis', text: 0, font: 0 },
+  { key: 'p1tag',     sel: '#valP1 .vp-tag', name: 'Point 01 ラベル',                    sec: 'vis', text: 1 },
+  { key: 'p1h',       sel: '#valP1 h3',      name: 'Point 01 見出し',                    sec: 'vis', text: 1 },
+  { key: 'p1p',       sel: '#valP1 p',       name: 'Point 01 本文',                      sec: 'vis', text: 1 },
+  { key: 'p2tag',     sel: '#valP2 .vp-tag', name: 'Point 02 ラベル',                    sec: 'vis', text: 1 },
+  { key: 'p2h',       sel: '#valP2 h3',      name: 'Point 02 見出し',                    sec: 'vis', text: 1 },
+  { key: 'p2p',       sel: '#valP2 p',       name: 'Point 02 本文',                      sec: 'vis', text: 1 },
+  // --- 実績 ---
+  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for SaaS / for AI（小ラベル）',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for SaaS / for AI（小ラベル）の Product', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for SaaS / for AI（大きい英字）',            sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for SaaS / for AI（大）の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
+  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（リアルタイムに〜／コンテキスト取得〜）', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vP',      sel: '.r2v-p',     name: '価値の本文',                                 sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'resHl1',    sel: '#resHl1',    name: '推進力の見出し 1行目（事業の推進力を、）',    sec: 'res', text: 1 },
+  { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
+  { key: 'statsLab',  sel: '.res2-stats .r2s b',    name: '数字のラベル（導入企業 など）',    sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'statsVal',  sel: '.res2-stats .r2s span', name: '数字（100+ など）',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
+  { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
+  /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
+  { key: 'figSaas',   sel: '#valSaas',   name: 'for SaaS の図（位置だけ）',                  sec: 'res', text: 0, font: 0, rel: 1 },
+  { key: 'figAi',     sel: '#valAi',     name: 'for AI の図（位置だけ）',                    sec: 'res', text: 0, font: 0, rel: 1 },
+  // --- 開発者体験 ---
+  { key: 'dcLabel',   sel: '.dc-label',  name: 'Strength 01 / 02',                          sec: 'dev', text: 0, multi: 1 },
+  { key: 'dcOne',     sel: '.dc-one',    name: '見出し（自動生成で〜／開発環境〜）',          sec: 'dev', text: 0, multi: 1 },
+  { key: 'dsWord',    sel: '.ds-word',   name: '見出しのスロット（CLI / SDK / API）',          sec: 'dev', text: 0, multi: 1, move: 0 },   /* 2026-09-18 コンプ: SF Pro Medium(500) 34px */
+  { key: 'dlHead',    sel: '.dl-head b', name: 'リストの見出し（CLI / SDK / API）',           sec: 'dev', text: 0, multi: 1, move: 0 },
+  { key: 'dlBody',    sel: '.dl-item p', name: 'リストの説明文',                              sec: 'dev', text: 0, multi: 1, move: 0 },
+  { key: 'devMock1',  sel: '#devMock1',  name: 'Strength 01 のモック（位置だけ）',           sec: 'dev', text: 0, font: 0, rel: 1 },
+  { key: 'devMock',   sel: '#devMock',   name: 'Strength 02 のモック（位置だけ）',           sec: 'dev', text: 0, font: 0, rel: 1 },
+  // --- 導入事例 ---
+  { key: 'caseEyebrow', sel: '#caseEyebrow', name: 'Use Case',                              sec: 'case', text: 1 },
+  { key: 'caseTitle', sel: '#caseTitle',  name: '導入事例（見出し）',                        sec: 'case', text: 1 },
+  { key: 'cgQuote',   sel: '.cg-quote',   name: 'カードの一言',                              sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'cgTag',     sel: '.cg-tag',     name: 'カードの業種タグ',                          sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'cgCompany', sel: '.cg-company', name: 'カードの会社名',                            sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'caseGrid',  sel: '#caseGrid',   name: '事例カード4枚（位置だけ）',                 sec: 'case', text: 0, font: 0, rel: 1 },
+  // --- お問い合わせ ---
+  { key: 'cvEyebrow', sel: '.cv-eyebrow', name: 'Contact',                                  sec: 'cv',  text: 1 },
+  { key: 'cvHead',    sel: '.cv-head',    name: 'お問い合わせ（見出し）',                    sec: 'cv',  text: 1 },
+  { key: 'cvSub',     sel: '.cv-sub',     name: 'お問い合わせの本文',                        sec: 'cv',  text: 0 },
+  { key: 'cvfLab',    sel: '.cvf-lab',    name: 'フォームの項目名',                          sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'cvfIn',     sel: '.cvf-in',     name: 'フォームの入力欄',                          sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'cvfFine',   sel: '.cvf-fine',   name: 'メルマガの注記',                            sec: 'cv',  text: 1 },
+  { key: 'cvfSubmit', sel: '.cvf-submit', name: '送信ボタン',                                sec: 'cv',  text: 1 },
+  { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
+  { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
+  // --- フッター(お問い合わせタブに出す) ---
+  { key: 'footNav',   sel: '.cv-foot-nav a', name: 'フッターのナビ',                         sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所',                         sec: 'cv',  text: 1 },
+  { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト',                           sec: 'cv',  text: 1 },
+  // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---
+  { key: 'drwNav',    sel: '.hdr-drawer-nav a:not(.hdr-drawer-cta)', name: 'メニューの項目（ビジョン など）', sec: 'menu', text: 0, multi: 1, move: 0 },
+  { key: 'drwNum',    sel: '.hdr-drawer-nav .hdr-drawer-num', name: 'メニューの番号（01〜04）',           sec: 'menu', text: 0, multi: 1, move: 0 },
+  { key: 'drwCta',    sel: '.hdr-drawer-cta', name: 'メニューのお問い合わせボタン',              sec: 'menu', text: 0, move: 0 },
+];
+
+function slider(label, min, max, step, get, set, fmt, hint, opts) {
+  opts = opts || {};
+  /* 【2026-09-20 ヒデさん依頼・PC/SP独立】mbKey を持つつまみは、スマホモード中は params.mb[mbKey](スマホ専用の値)だけを読み書きする。
+     PCの値(_rawSet の書き込み先)は触らない＝スマホでいじってもPCに出ない。スマホ実機(isMobile)は起動時に applyMbToParams で
+     params.mb を本体 params の該当パスへ流し込むので、SPだけがスマホ用の値で描画される。青印/リセットも mbKey から自動で用意。 */
+  if (opts.mbKey) {
+    const _mbk = opts.mbKey, _g = get, _s = set;
+    const _pon = () => { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } };
+    get = () => (_pon() && params.mb && params.mb[_mbk] != null) ? params.mb[_mbk] : ((_pon() && opts.mbDefault != null) ? opts.mbDefault : _g());   /* 【2026-09-20 #3】opts.mbDefault があれば、スマホモードで上書き未設定の時は SP 既定値を表示(フォントサイズ等・SP既定≠PC既定の項目用) */
+    set = (v) => { if (_pon()) { if (!params.mb) params.mb = {}; params.mb[_mbk] = v; } else { _s(v); } };
+    if (!opts.mbActive) opts.mbActive = () => !!(params.mb && params.mb[_mbk] != null);
+    if (!opts.mbClear) opts.mbClear = () => { if (params.mb) delete params.mb[_mbk]; };
+  }
+  /* ⚠️ 既定値が左端だと、そこから下げられない。既定がツマミの真ん中に来るよう上限を取り直す
+     (2026-08-15 指定)。既定が最小と同じもの(0など)は中央に置けないのでそのまま。
+
+     ⚠️【2026-08-19 ヒデさん指摘】この自動調整は「もっと右へ伸ばしたい」項目では邪魔になる。
+        例: 見せる長さ は 1〜12 のつもりで書いていたのに、既定3を中央に置くために
+            上限が 5 まで縮められていて、指定した 12 がまったく効いていなかった。
+        opts.fixedMax = true を渡した項目は、書いた上限をそのまま使う。 */
+  /* ===== つまみの範囲の決め方 (2026-08-27 ヒデさん指定で全面的に作り直し) =====
+     「いまの値を真ん中に置く。上にも下にも、変化がちゃんと出るだけの幅を持たせる」
+
+     ⚠️ これまでの作り
+        ・既定値を中央に置くために【上限を縮めて】いた → 書いた上限まで動かせない事故
+          (例: 見せる長さ 1〜12 のつもりが実際は 5 まで) → fixedMax で個別に逃がしていた
+        ・端に張り付いた時だけ少し広げる後付けだったので、中央には来なかった
+
+     ⚠️ 新しい作り (fixedMax はもう不要。付いていても同じ結果になる)
+        1. いまの値を中央に置く。半幅 = いまの値と【床】の差 (＝左右が同じだけ動かせる)
+        2. 床(それ以上下げられない値)は守る:
+             書いた下限が 0 → 0 / 正の数 → その半分 / 負を含む → 制限なし
+           床に張り付いている値(0本・0秒など)は、原理的に中央には置けない。
+           そのぶん上へ幅を取って、少し動かすだけで変化が出るようにする
+        3. 端(8%未満/92%超)まで動かして手を離したら、その値を中央に取り直す
+           → どんな値にも届く。上限を縮めても行き止まりにならない(昔の事故の再発防止) */
+  const dMin0 = min, dMax0 = max;
+  function rangeFor(cur) {
+    if (typeof cur !== 'number' || !isFinite(cur)) cur = dMin0;
+    /* 【2026-08-28 ヒデさん指定】0 が左端に張り付く項目は、左側にマイナスを置いて 0 を中央にする。
+       マイナスに意味がある項目(逆回り・逆向きのゆらぎ・逆方向のずらし)だけ signed を付けている。 */
+    const signed = !!(opts && opts.signed);
+    const floor = signed ? -Infinity
+      : (dMin0 < 0 ? -Infinity : (dMin0 > 0 ? Math.min(dMin0 * 0.5, Math.abs(cur) * 0.4) : 0));
+    /* 【2026-08-27 ヒデさん指定・精査】いまの値を真ん中に置くことを最優先にする。
+       ・下へ動かせる余地(いまの値 − 床)がそのまま半幅。これで左右が同じだけ動かせる＝中央
+       ・余地が刻み2つぶんも無い時(＝値が床に張り付いている)は中央に置けないので、
+         代わりに「少し動かすだけで変化が出る」幅を取る */
+    const room = signed ? Math.max(Math.abs(cur), (dMax0 - dMin0) * 0.5)
+               : (isFinite(floor) ? (cur - floor) : (dMax0 - dMin0) * 0.5);
+    const half = (room >= step * 2) ? room
+               : Math.max(step * 4, (dMax0 - dMin0) * 0.15);
+    let lo = cur - half, hi = cur + half;
+    if (lo < floor) { lo = floor; hi = lo + half * 2; }
+    const q = v => Math.round(v / step) * step;
+    lo = q(lo); hi = q(hi);
+    if (hi - lo < step * 4) hi = lo + step * 4;
+    if (cur < lo) lo = q(cur - step);
+    if (cur > hi) hi = q(cur + step);
+    return { lo, hi };
+  }
+  { const r = rangeFor(get()); min = r.lo; max = r.hi; }
+  const row = document.createElement('div');
+  row.className = 'row';
+  const lab = document.createElement('label');
+  lab.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'range';
+  input.min = min; input.max = max; input.step = step;
+  input.value = get();
+  const val = document.createElement('span');
+  val.className = 'val';
+  const f = fmt || (v => v);
+  val.textContent = f(get());
+  const isLive = liveEdit;   /* 作った時点の設定を覚えておく (押した時ではなく) */
+  input.addEventListener('input', () => {
+    set(parseFloat(input.value));
+    val.textContent = f(parseFloat(input.value));
+    markDirty();
+    applyEdit(isLive);       /* 見た目だけの項目は即反映 / それ以外は手が止まってから流し直す */
+    /* 【2026-09-20 ヒデさん依頼】スマホモード中は、触った瞬間にSP上書きのブルー印を付け直す(STUDIO風)。触れば元と同じでも光る */
+    try { row.classList.toggle('mb-override', !!_mbOn()); } catch (e) {}
+  });
+  input.addEventListener('change', () => {
+    applyEdit(isLive, true);
+    /* 端に達したまま離したら、その値を中央にして範囲を取り直す(行き止まりを作らない) */
+    const v = parseFloat(input.value), lo = +input.min, hi = +input.max;
+    const k = (hi - lo) ? (v - lo) / (hi - lo) : 0.5;
+    if (k < 0.1 || k > 0.9) {
+      const r = rangeFor(v);
+      /* 端まで動かしたのに範囲が狭くなるのは困る。いまの幅より狭くしない */
+      const span = Math.max(r.hi - r.lo, hi - lo);
+      const c = Math.min(Math.max(v, r.lo), r.hi);
+      let nlo = c - span / 2, nhi = c + span / 2;
+      if (nlo < r.lo) { nlo = r.lo; nhi = nlo + span; }
+      input.min = nlo; input.max = nhi; input.value = v;
+    }
+  });
+  const _mbOn = () => { try { return (opts && typeof opts.mbActive === 'function') && (typeof _vfPhoneOn === 'function') && _vfPhoneOn() && opts.mbActive(); } catch (e) { return false; } };
+  row._sync = () => {
+    /* 外から値が変わった時(プリセット・案の切替・直接編集)も、範囲から外れないようにする */
+    const v = get();
+    if (v < +input.min || v > +input.max) { const r = rangeFor(v); input.min = r.lo; input.max = r.hi; }
+    input.value = v; val.textContent = f(v);
+    /* 【2026-09-20 ヒデさん依頼・#2】スマホモード中に SP 専用の上書きがある項目はブルーで印(row.mb-override) */
+    try { row.classList.toggle('mb-override', !!_mbOn()); } catch (e) {}
+  };
+  const _rst = mkReset(get, set, () => row._sync(), isLive);
+  /* 【2026-09-20 ヒデさん依頼・リセット統一】スマホモード中は必ず「SP専用の上書きを解除(PC値に戻す)」＝base(PC値)は触らない。
+     通常モードは mkReset が「このセッションを開いた時の値」に戻す。 */
+  if (opts && typeof opts.mbClear === 'function') { const _oc = _rst.onclick; _rst.onclick = (e) => { if (typeof _vfPhoneOn === 'function' && _vfPhoneOn()) { if (e) e.stopPropagation(); opts.mbClear(); markDirty(); row._sync(); } else if (_oc) _oc(e); }; }
+  row.append(lab, input, val, _rst);
+  /* セクション単位のリセット対象に登録 */
+  if (subItems) subItems.push({ reset: () => {
+    if (typeof _vfPhoneOn === 'function' && _vfPhoneOn()) { if (opts.mbClear) opts.mbClear(); row._sync(); }   /* スマホモード=SP上書きだけ解除 */
+    else { let t = sessionOf(get); if (t == null) t = defaultOf(get); if (t != null) { set(typeof t === 'object' ? structuredClone(t) : t); row._sync(); } }   /* 通常=開いた時の値へ */
+  } });
+  mount.appendChild(row);
+  if (hint) {
+    lab.title = hint;          /* 出さない代わりに、項目名にマウスを乗せれば読める */
+    const h = document.createElement('div');
+    h.className = 'row-hint';
+    h.textContent = hint;
+    mount.appendChild(h);
+  }
+  return row;
+}
+
+/* 【2026-09-01 ヒデさん指定】色を選ぶ行(カラーピッカー)。sliderと同じ見た目・リセット対応 */
+function colorRow(label, get, set, hint) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const lab = document.createElement('label');
+  lab.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.style.cssText = 'width:44px;height:24px;padding:0;border:1px solid #ddd;border-radius:6px;background:none;cursor:pointer;';
+  input.value = get();
+  const val = document.createElement('span');
+  val.className = 'val';
+  val.textContent = get();
+  const isLive = liveEdit;
+  input.addEventListener('input', () => {
+    set(input.value);
+    val.textContent = input.value;
+    markDirty();
+    applyEdit(isLive);
+  });
+  row._sync = () => { input.value = get(); val.textContent = get(); };
+  row.append(lab, input, val, mkReset(get, set, () => row._sync(), isLive));
+  if (subItems) subItems.push({ reset: () => { const d = defaultOf(get); if (d != null) { set(d); row._sync(); } } });
+  mount.appendChild(row);
+  if (hint) {
+    lab.title = hint;
+    const h = document.createElement('div');
+    h.className = 'row-hint';
+    h.textContent = hint;
+    mount.appendChild(h);
+  }
+  return row;
+}
+
+
+const rows = [];
+/* ドラッグで params が変わった時に、開いているパネルの表示も追いつかせる */
+function syncPanelRows() {
+  for (const r of rows) { if (r && r._sync) r._sync(); }
+  body.querySelectorAll('.row').forEach(r => { if (r._sync) r._sync(); });
+  body.querySelectorAll('.txt-row').forEach(r => { if (r._sync) r._sync(); });   /* 【2026-09-21 Y11】フォント行も再sync(スマホモードでSP実サイズを表示し直す) */
+}
+
+/* ===== 【2026-09-15 ヒデさん依頼】グラデーション編集ギズモ(Figma風の棒＋両端ハンドル) =====
+   「グラデーションを棒で編集」で編集モードに入ると、お問い合わせのグラデの上に棒が出る。
+   両端(青い四角)をドラッグ=角度と広がり、棒の途中をドラッグ=位置(中心)を動かす。
+   内部は params.cv の gcx/gcy(中心 0..1・画面と同じ向き) / gAng(角度・度) / gr(広がり=棒の長さ) を書き換える。
+   実測(2026-09-15): gcx↑で右へ・gcy↑で下へ・角度は画面(y下向き)の atan2 と一致・gr=棒の長さ÷画面幅。 */
+const cvGizmo = (function () {
+  let wrap = null, svg = null, line = null, hit = null, hA = null, hB = null, nA = null, nB = null;
+  let editing = false;
+  const sec = () => document.getElementById('conversion');
+  const cvEl = () => document.getElementById('cvCanvas');
+  function build() {
+    if (wrap) return;
+    wrap = document.createElement('div'); wrap.className = 'cv-gizmo'; wrap.hidden = true;
+    wrap.innerHTML =
+      '<svg><line class="cvg-line"/><line class="cvg-hit"/></svg>' +
+      '<span class="cvg-node cvg-nodeA"></span><span class="cvg-node cvg-nodeB"></span>' +
+      '<button class="cvg-h cvg-a" type="button" aria-label="グラデの始点"></button>' +
+      '<button class="cvg-h cvg-b" type="button" aria-label="グラデの終点"></button>' +
+      '<div class="cvg-bar"><span>棒をドラッグして角度・位置・広がりを調整</span>' +
+      '<button class="cvg-reset" type="button">リセット</button>' +
+      '<button class="cvg-done" type="button">完了</button></div>';
+    sec().appendChild(wrap);
+    svg = wrap.querySelector('svg'); line = wrap.querySelector('.cvg-line'); hit = wrap.querySelector('.cvg-hit');
+    hA = wrap.querySelector('.cvg-a'); hB = wrap.querySelector('.cvg-b');
+    nA = wrap.querySelector('.cvg-nodeA'); nB = wrap.querySelector('.cvg-nodeB');
+    wrap.querySelector('.cvg-done').onclick = () => toggle(false);
+    wrap.querySelector('.cvg-reset').onclick = () => { const c = params.cv; c.gcx = 0.60; c.gcy = 0.00; c.gAng = 0; c.gr = 0.9; apply(); placeFromParams(); };
+    dragHandle(hA, 'a'); dragHandle(hB, 'b'); dragHandle(hit, 'line');
+  }
+  function fit() {   /* ギズモの箱を canvas にぴったり重ねる(#conversion 基準の px) */
+    const c = cvEl(), sr = sec(); if (!c || !sr) return;
+    const cr = c.getBoundingClientRect(), srr = sr.getBoundingClientRect();
+    wrap.style.left = (cr.left - srr.left) + 'px'; wrap.style.top = (cr.top - srr.top) + 'px';
+    wrap.style.width = cr.width + 'px'; wrap.style.height = cr.height + 'px';
+  }
+  function dims() { const c = cvEl().getBoundingClientRect(); return { W: c.width, H: c.height }; }
+  /* params → 棒の両端(px, ギズモ箱内・y下向き) */
+  function endpoints() {
+    const { W, H } = dims(); const c = params.cv;
+    const cx = (c.gcx != null ? c.gcx : 0.6) * W, cy = (c.gcy != null ? c.gcy : 0) * H;
+    const ang = (c.gAng || 0) * Math.PI / 180, L = Math.max(0.2, c.gr != null ? c.gr : 0.9) * W;
+    const dx = Math.cos(ang) * L / 2, dy = Math.sin(ang) * L / 2;
+    return { A: { x: cx - dx, y: cy - dy }, B: { x: cx + dx, y: cy + dy } };
+  }
+  let A = { x: 0, y: 0 }, B = { x: 0, y: 0 };
+  function draw() {
+    line.setAttribute('x1', A.x); line.setAttribute('y1', A.y); line.setAttribute('x2', B.x); line.setAttribute('y2', B.y);
+    hit.setAttribute('x1', A.x); hit.setAttribute('y1', A.y); hit.setAttribute('x2', B.x); hit.setAttribute('y2', B.y);
+    hA.style.left = A.x + 'px'; hA.style.top = A.y + 'px'; hB.style.left = B.x + 'px'; hB.style.top = B.y + 'px';
+    nA.style.left = A.x + 'px'; nA.style.top = A.y + 'px'; nB.style.left = B.x + 'px'; nB.style.top = B.y + 'px';
+  }
+  function placeFromParams() {
+    /* 【2026-09-16 ヒデさん指摘】開いた時は「表示されているグラデそのまま」を映す。
+       中心が画面外でも、既定の棒に置き換えない(位置が変わって見えるため)。棒は本当の中心・角度・広がりに一致する。 */
+    fit(); const e = endpoints(); A = e.A; B = e.B; draw();
+  }
+  /* 棒の両端 → params(中心・角度・広がり) */
+  function paramsFromEnds() {
+    const { W, H } = dims(); const c = params.cv;
+    const cx = (A.x + B.x) / 2, cy = (A.y + B.y) / 2;
+    c.gcx = Math.max(0, Math.min(1, cx / W)); c.gcy = Math.max(0, Math.min(1, cy / H));
+    const vx = B.x - A.x, vy = B.y - A.y, L = Math.hypot(vx, vy);
+    c.gAng = ((Math.atan2(vy, vx) * 180 / Math.PI) % 360 + 360) % 360;
+    c.gr = Math.max(0.2, Math.min(2.5, L / W));
+  }
+  function apply(persist) { if (typeof applyCvStyle === 'function') applyCvStyle(); if (typeof renderFrame === 'function') renderFrame();
+    if (typeof syncPanelRows === 'function') syncPanelRows(); if (persist && typeof markDirty === 'function') markDirty(); }
+  function dragHandle(el, which) {
+    el.addEventListener('pointerdown', ev => {
+      ev.preventDefault(); el.setPointerCapture && el.setPointerCapture(ev.pointerId);
+      const r = wrap.getBoundingClientRect();
+      const start = { mx: ev.clientX, my: ev.clientY, A: { ...A }, B: { ...B } };
+      const move = e => {
+        const px = e.clientX - r.left, py = e.clientY - r.top;
+        if (which === 'a') A = { x: px, y: py };
+        else if (which === 'b') B = { x: px, y: py };
+        else { const dx = e.clientX - start.mx, dy = e.clientY - start.my;
+          A = { x: start.A.x + dx, y: start.A.y + dy }; B = { x: start.B.x + dx, y: start.B.y + dy }; }
+        draw(); paramsFromEnds(); apply(false);
+      };
+      const up = e => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); apply(true); };
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+    });
+  }
+  function toggle(on) {
+    build(); editing = (on == null) ? !editing : !!on;
+    wrap.hidden = !editing;
+    if (editing) { placeFromParams(); window.addEventListener('resize', placeFromParams); window.addEventListener('scroll', fit, true);
+      document.addEventListener('keydown', onKey); }
+    else { window.removeEventListener('resize', placeFromParams); window.removeEventListener('scroll', fit, true); document.removeEventListener('keydown', onKey); }
+    const btn = document.getElementById('cvGizmoBtn'); if (btn) { btn.textContent = editing ? '✓ 編集を終える' : '🎯 グラデーションを棒で編集'; btn.classList.toggle('on', editing); }
+    return editing;
+  }
+  function onKey(e) { if (e.key === 'Escape') toggle(false); }
+  return { toggle, isEditing: () => editing, refresh: () => { if (editing) placeFromParams(); } };
+})();
+
+let mount = null;   // slider() などの追加先 (現在の小カテゴリの親)
+let syncPresetPills = null;   // プリセットの点灯を今の値で塗り直す(fillPresetRow の中で差し替え)
+
+/* 大カテゴリ (開閉できる箱) */
+/* ⚠️ 惑星やライトのピルを押すと buildPanel() でパネルを作り直すため、
+   何もしないと【開いていたカテゴリが閉じ、見ていた位置も先頭に飛ぶ】。
+   開閉状態はここで覚えておき、スクロール位置は buildPanel() の前後で退避・復元する */
+const catOpen = {};
+function category(title, open) {
+  const isOpen = (catOpen[title] !== undefined) ? catOpen[title] : open;
+  catOpen[title] = isOpen;
+  const cat = document.createElement('div');
+  cat.className = 'cat' + (isOpen ? '' : ' closed');
+  const head = document.createElement('div');
+  head.className = 'cat-head';
+  head.innerHTML = `<span>${title}</span><span class="cat-chev">▾</span>`;
+  const content = document.createElement('div');
+  content.className = 'cat-body';
+  head.onclick = () => {
+    const nowClosed = cat.classList.toggle('closed');
+    catOpen[title] = !nowClosed;
+    /* 【2026-08-27 ヒデさん指定】カテゴリを開いた時は、中の小見出しも全部開いた状態にする */
+    if (!nowClosed) {
+      content.querySelectorAll('.grp').forEach(g => {
+        g.classList.remove('closed');
+        const t = g.querySelector('.grp-title span');
+        if (t) subOpen[t.textContent.trim()] = true;
+      });
+    }
+  };
+  cat.append(head, content);
+  body.appendChild(cat);
+  return content;
+}
+
+/* 小カテゴリ (見出し行) — 以降の slider は同じカテゴリに追加される */
+/* 小見出し。deep=true で一段内側の見出しになる */
+/* 小見出しもアコーディオンにする (2026-08-26 ヒデさん指定・既定は閉じる)。
+   開閉状態は見出しテキストをキーに覚え、パネルを作り直しても保つ */
+const subOpen = {};
+/* いま組み立て中のセクションに属する項目(リセット用)。sub() のたびに新しくする */
+let subItems = null;
+let subDefaultOpen = false;   /* true の間に作る小見出しは、既定で開いた状態にする */
+/* 【2026-09-20 ヒデさん依頼・パネル整理】小見出しを「グループ」に分類し、タブが切り替わっても
+   いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)で並ぶようにする。
+   分類は見出しの言葉から自動判定。合わない所は sub(..., { grp:'basic' }) のように明示で上書きできる。 */
+/* 【2026-09-20 大改修・ヒデさん依頼】新5カテゴリに統一: バリエーション→基本→フォント→エフェクト＆テクスチャ→アニメーション→その他。
+   旧 color/texture は fxtex(エフェクト＆テクスチャ)に統合。ルールは settings/docs/anyflow/ANYFLOW-PANEL-STRUCTURE.md。 */
+const GRP_ORDER = { variation: 0, basic: 1, font: 2, fxtex: 3, anim: 4, other: 5 };
+const GRP_LABEL = { variation: 'バリエーション', basic: '基本', font: 'フォント', fxtex: 'エフェクト＆テクスチャ', anim: 'アニメーション', other: 'その他' };
+/* 【2026-09-21 ヒデさん依頼】1つのタブに複数のバリエーションセクション(例: 実績＝演出＋ピクトグラム案)がある時、
+   セクションごとに 基本/フォント/エフェクト＆テクスチャ/アニメーション を入れ子で分ける。
+   パネル構築中に panelVarsec('id','見出し') を呼ぶと、それ以降に作る .grp に dataset.varsec を刻む。
+   applyPanelGroupOrder が varsec ごとに束ね直す。null で解除(タブ共通=従来のタブ単位)。 */
+let PANEL_VARSEC = null;
+function panelVarsec(id, label) { PANEL_VARSEC = id ? { id: String(id), label: String(label || id) } : null; }
+let _grpSeq = 0;   /* 同じグループ内は元の順を保つための連番(安定ソート) */
+function grpFromLabel(k) {
+  if (/🔤|文字（太/.test(k)) return 'font';
+  if (/バリエーション|演出の案|スタイル|案.*：/.test(k)) return 'variation';
+  if (/配色|カラー|色の移ろい|ディザ|ガラス|立体感|網目|質感|テクスチャ|マテリアル|エフェクト/.test(k)) return 'fxtex';
+  if (/タイミング|アニメ|演出|順番|登場|揺らぎ|つなぎ|一旦止まる|出入り|入場|切替|ディレイ|出てくる|回って/.test(k)) return 'anim';
+  return 'basic';
+}
+/* 【2026-09-20 大改修・ヒデさん依頼】各タブ(.cat-body)の中を、カテゴリ順(バリエ→基本→フォント→エフェクト＆テクスチャ→アニメ→その他)の
+   「見出し付きアコーディオン節(.cat-section)」に束ねる。各節の中はオブジェクト小見出し(.grp)。既定は全開き。開閉はタブ×カテゴリで記憶。
+   ※ buildPanel は毎回 body を作り直すので、この関数は毎回まっさらな .grp を束ね直す。 */
+const catSecOpen = {};
+function applyPanelGroupOrder() {
+  try {
+    /* カテゴリ節(基本/フォント/エフェクト/アニメーション/バリエーション)を container に組む共通処理。
+       nested=true(バリエーションセクションの中)の時は、選択UI(variation)は節を作らず見出し直下にそのまま置き、
+       残り4カテゴリは入れ子見出し(H2)の開閉節にする。 */
+    const buildCats = (container, list, keyPrefix, nested) => {
+      const keyed = list.map((el, i) => {
+        const cat = (GRP_ORDER[el.dataset.grp] != null) ? el.dataset.grp : 'basic';
+        return { el, cat, o: GRP_ORDER[cat], i: +(el.dataset.seq || i) };
+      });
+      keyed.sort((a, b) => (a.o - b.o) || (a.i - b.i));
+      let curCat = null, secBody = null;
+      keyed.forEach(k => {
+        if (nested && k.cat === 'variation') { container.appendChild(k.el); curCat = null; secBody = null; return; }   /* セクション見出し直下に選択UIをそのまま */
+        if (k.cat !== curCat) {
+          curCat = k.cat;
+          const sec = document.createElement('div');
+          sec.className = 'cat-section cs-' + curCat + (curCat === 'variation' ? ' cs-variation' : '') + (nested ? ' cs-nested' : '');
+          const openKey = keyPrefix + '::' + curCat;
+          const open = (catSecOpen[openKey] === undefined) ? true : catSecOpen[openKey];   /* 既定は全開き */
+          catSecOpen[openKey] = open;
+          if (!open) sec.classList.add('closed');
+          const head = document.createElement('div');
+          head.className = 'cat-section-head';
+          const isVar = (curCat === 'variation');   /* 【2026-09-20】バリエーションは開閉しない・▾なし */
+          head.innerHTML = '<span>' + (GRP_LABEL[curCat] || curCat) + '</span>' + (isVar ? '' : '<span class="cs-chev">▾</span>');
+          if (!isVar) head.onclick = () => { catSecOpen[openKey] = !sec.classList.toggle('closed'); };
+          secBody = document.createElement('div');
+          secBody.className = 'cat-section-body';
+          sec.append(head, secBody);
+          container.appendChild(sec);
+        }
+        secBody.appendChild(k.el);
+      });
+    };
+    document.querySelectorAll('.cat-body').forEach(bodyEl => {
+      const catEl = bodyEl.closest('.cat');
+      const tabTitle = (((catEl && catEl.querySelector('.cat-head > span')) || {}).textContent || '').trim();
+      const notes = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('cat-note'));
+      const grps = Array.from(bodyEl.children).filter(el => el.classList && el.classList.contains('grp'));
+      if (!grps.length) return;
+      const hasVarsec = grps.some(el => el.dataset.varsec);
+      if (!hasVarsec) {
+        buildCats(bodyEl, grps, tabTitle, false);   /* 従来: タブ単位で1組の4カテゴリ */
+      } else {
+        /* 【2026-09-21 ヒデさん依頼】varsec(演出/ピクトグラム等)ごとに束ね直し、各セクションの中に4カテゴリを入れ子で置く */
+        const order = [], byVs = {};
+        grps.forEach(el => { const vs = el.dataset.varsec || ''; if (!(vs in byVs)) { byVs[vs] = []; order.push(vs); } byVs[vs].push(el); });
+        order.forEach(vs => {
+          if (vs === '') { buildCats(bodyEl, byVs[vs], tabTitle, false); return; }   /* varsec無し=タブ共通は従来通り上に */
+          const label = (byVs[vs][0] && byVs[vs][0].dataset.varseclabel) || vs;
+          const secWrap = document.createElement('div');
+          secWrap.className = 'cat-section cs-variation vs-section';
+          const head = document.createElement('div');
+          head.className = 'cat-section-head';
+          head.innerHTML = '<span>' + label + '</span>';   /* バリエーションセクション見出し(H1・▾なし) */
+          const secBody = document.createElement('div');
+          secBody.className = 'cat-section-body vs-body';
+          secWrap.append(head, secBody);
+          bodyEl.appendChild(secWrap);
+          buildCats(secBody, byVs[vs], tabTitle + '::' + vs, true);   /* この中に4カテゴリを入れ子で */
+        });
+      }
+      /* タブの説明文(cat-note)は最上部に残す */
+      for (let n = notes.length - 1; n >= 0; n--) bodyEl.insertBefore(notes[n], bodyEl.firstChild);
+    });
+  } catch (e) {}
+}
+function sub(target, html, deep, opts) {
+  const key = String(html).replace(/<[^>]*>/g, '').trim();
+  const fixed = !!(opts && opts.fixed);   /* たためない＝常に開いたコンパクト表示 */
+  /* 既定はたたむ。ただし「グラフィック」とその中の小見出しは開いた状態で始める
+     (2026-08-27 ヒデさん指定) */
+  const GRAPHIC_OPEN = ['グラフィック', '',
+                        '軌道（輪）', 'ドット（粒）', '惑星',
+                        '表示', '表示・大きさ', '模様',
+                        'この案の調整（輪が縮んで吸収）', 'この案の調整（粒が渦で吸収）',
+                        'この案の調整（粒の渦）', 'この案の調整（網でつながる）',
+                        'この案の調整（点が並ぶ軌道）', 'この案の調整（線で行き来）',
+                        'この案の調整（ジャイロ回転）', '動き（この案）'];
+  /* 【2026-08-27 ヒデさん指定】グラフィックのセクションは、たためる所も既定で開いておく */
+  /* 【2026-09-20 ヒデさん依頼】オブジェクト小見出し(.grp)は開閉なし＝常に全開き。開閉できるのはカテゴリ節(.cat-section)だけ */
+  const open = true;
+  const bare = !!(opts && opts.bare);   /* 見出しそのものを出さない(中身だけ並べる) */
+  const g = document.createElement('div');
+  g.className = (deep ? 'grp sub2' : 'grp') + (open ? '' : ' closed') + (fixed ? ' fixed' : '') + (bare ? ' bare' : '');
+  g.dataset.grp = String((opts && opts.grp) || grpFromLabel(key));   /* 【2026-09-20】並べ替え用のグループ印 */
+  g.dataset.seq = String(_grpSeq++);
+  if (PANEL_VARSEC) { g.dataset.varsec = PANEL_VARSEC.id; g.dataset.varseclabel = PANEL_VARSEC.label; }   /* 【2026-09-21】どのバリエーションセクションに属すか(実績の演出/ピクトグラム等) */
+  const title = document.createElement('div');
+  title.className = 'grp-title';
+  const lab = document.createElement('span');
+  lab.innerHTML = html;
+  const chev = document.createElement('span');
+  chev.className = 'grp-chev';
+  chev.textContent = '▾';
+  /* 【2026-08-26 ヒデさん指定】セクションごとに「リセット」と「保存」を置く */
+  const acts = document.createElement('div');
+  acts.className = 'grp-acts';
+  const items = [];
+  const rs = document.createElement('button');
+  rs.className = 'gbtn'; rs.type = 'button'; rs.textContent = '↺';
+  rs.title = 'このまとまりを、このセッションを開いた時の値に戻す（スマホモード中はスマホ用の上書きを解除）';
+  rs.onclick = (e) => {
+    e.stopPropagation();
+    for (const it of items) { if (it.reset) it.reset(); }
+    markDirty(); renderFrame();
+    if (typeof syncPanelRows === 'function') syncPanelRows();
+    rs.classList.add('done'); rs.textContent = '✓ 戻しました';
+    setTimeout(() => { rs.classList.remove('done'); rs.textContent = '↺'; }, 1200);
+  };
+  /* 【2026-08-28 ヒデさん指定】各まとまりの 💾(保存) は削除。
+     グラフィックはプリセットで、それ以外は下の「これをデフォルトに設定」で残せるため。 */
+  acts.append(rs);
+  title.append(lab, acts, chev);   /* [タイトル][リセット・保存][開閉] の順 */
+  /* 【2026-08-27 ヒデさん指定】戻す値を持たないセクション(プリセットなど)にはボタンを出さない。
+     組み立てが終わってから項目の有無で判断する */
+  setTimeout(() => { if (!items.length) acts.remove(); }, 0);
+  const inner = document.createElement('div');
+  inner.className = 'grp-body';
+  /* 【2026-09-20 ヒデさん依頼】小見出しは開閉しない: ▾を消し、タイトルは非クリックに */
+  chev.style.display = 'none'; title.style.cursor = 'default';
+  if (bare) title.style.display = 'none';
+  g.append(title, inner);
+  target.appendChild(g);
+  mount = inner;      /* 以降の slider / note はこの中に入る = たためる */
+  subItems = items;   /* 以降の項目は、このセクションのリセット対象になる */
+}
+/* グループのすぐ下に置く注釈 */
+/* ⚠️ mount は sub() が呼ばれて初めて決まる。sub() より前に note() を呼ぶと
+   mount が null で落ちる（2026-08-19 に実際に踏んだ）。保険で body に逃がす */
+function note(text) {
+  const d = document.createElement('div');
+  d.className = 'grp-note';
+  d.textContent = text;
+  (mount || body).appendChild(d);
+  return d;
+}
+/* 選んだ内容で文言が変わる説明。パネルを作り直さずに文字だけ差し替えるための版。
+   (2026-08-27 ヒデさん指定「リロードは一切挟まない」)
+   高さを固定枠にしてあるので、文言が変わっても下の行は動かない。 */
+function noteLive(getText, minH) {
+  const d = note(getText());
+  d.style.minHeight = minH || '2.6em';
+  const sync = () => { d.textContent = getText(); };
+  if (rows) rows.push({ _sync: sync });
+  return sync;
+}
+/* カテゴリを開いてすぐ、小見出しより前に置く「このカテゴリは何か」の説明 */
+function catNote(target, text) {
+  const d = document.createElement('div');
+  d.className = 'grp-note cat-note';
+  d.textContent = text;
+  target.appendChild(d);
+}
+
+/* 方向切替の2択ボタン行 */
+/* 【2026-09-15】色のつまみ(カラーピッカー＋16進)。slider と同じ行の見た目で、パネルの同期(rows._sync)にも乗る */
+function colorRow(label, get, set, tip) {
+  const norm = v => { const m = /^#?([0-9a-f]{6})$/i.exec(String(v || '').trim()); return m ? ('#' + m[1].toLowerCase()) : null; };
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('label'); lab.textContent = label; if (tip) lab.title = tip;
+  const inp = document.createElement('input'); inp.type = 'color'; inp.value = norm(get()) || '#000000';
+  const hex = document.createElement('input'); hex.type = 'text'; hex.className = 'hexin'; hex.value = inp.value; hex.maxLength = 7; hex.spellcheck = false;
+  inp.oninput = () => { hex.value = inp.value; set(inp.value); markDirty(); renderFrame(); };
+  hex.onchange = () => { const v = norm(hex.value); if (v) { inp.value = v; set(v); markDirty(); renderFrame(); } else hex.value = inp.value; };
+  row.append(lab, inp, hex);
+  const sync = () => { const v = norm(get()); if (v) { inp.value = v; hex.value = v; } };
+  row._sync = sync; if (rows) rows.push({ _sync: sync });
+  (mount || body).appendChild(row);
+  return row;
+}
+function segRow(label, opts, getDir, setDir) {
+  const row = document.createElement('div');
+  row.className = 'row seg-row';
+  row.innerHTML = `<label>${label}</label>`;
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  const isLive = liveEdit;
+  const bs = opts.map(([text, value]) => {
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.onclick = () => { setDir(value); sync(); applyEdit(isLive, true); };
+    seg.appendChild(b);
+    return [b, value];
+  });
+  function sync() { bs.forEach(([b, value]) => b.classList.toggle('on', getDir() === value)); }
+  sync();
+  if (rows) rows.push({ _sync: sync });
+  row.appendChild(seg);
+  row.appendChild(mkReset(getDir, v => { setDir(v); sync(); }, null, isLive));
+  if (subItems) subItems.push({ reset: () => { const d = defaultOf(getDir); if (d != null) { setDir(d); sync(); } } });
+  mount.appendChild(row);
+}
+
+/* ===== 【2026-09-17 大掃除・ヒデさん依頼】「文字」の1行: 太さ(プルダウン)・行間・字間 =====
+   TEXT_SPEC の1項目につき1行。値は params.edits[key] (✏️編集の浮きバーと同じ置き場)。
+   空欄＝今のCSSの値をそのまま使う(カッコ内に実測値を出して「今いくつか」が読めるようにする)。 */
+function textRow(sp) {
+  if (!document.getElementById('txtRowCss')) {
+    const st = document.createElement('style'); st.id = 'txtRowCss';
+st.textContent = '.txt-row{align-items:flex-start}'
+      + '.txt-row > label{flex:0 0 86px;font-size:10px;line-height:1.25;padding-top:3px}'   /* 名前は詰めて折り返し可。つまみは1行に収める */
+      + '.txt-row .txt-ctl{display:flex;gap:4px 6px;align-items:center;flex-wrap:wrap;flex:1;min-width:0}'   /* 【2026-09-20】収まらない時は折り返して欠けさせない */
+      + '.txt-row .txt-pair{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto}'                  /* ラベル＋入力は必ずセットで折り返す */
+      + '.txt-row select.txt-w{font-size:11px;padding:2px 16px 2px 4px;max-width:none;width:74px;flex:0 0 auto;text-overflow:clip}'
+      + '.txt-row input.txt-n{width:38px;font-size:11px;padding:2px 3px;flex:0 0 auto;box-sizing:border-box}'   /* 【2026-09-20 ヒデさん依頼】数字の幅ぶんだけにスリム化(右の余りを詰める。旧50px) */
+      + '.txt-row .txt-lab{font-size:10px;opacity:.6;margin-left:0;flex:0 0 auto;white-space:nowrap}'
+      + '.txt-row input.txt-n.is-auto{color:inherit}'   /* 【2026-09-20 ヒデさん依頼】薄い色での色分けは不要→通常色で統一 */
+      + '.txt-row{gap:2px}'                              /* 【2026-09-20】↺の分を詰める */
+      + '.txt-row > label{flex:0 0 104px}'               /* 【2026-09-20 ヒデさん依頼】入力をスリムにした分、ラベル幅を広げて折り返しを減らす(旧74px) */
+      + '.txt-row > .rst{flex:0 0 18px;width:18px;height:22px;line-height:20px;font-size:12px;border-radius:5px;margin-left:1px}';
+    document.head.appendChild(st);
+  }
+  const row = document.createElement('div');
+  row.className = 'row txt-row';
+  const lab = document.createElement('label'); lab.textContent = sp.name; lab.title = sp.sel; row.appendChild(lab);
+  const box = document.createElement('div'); box.className = 'txt-ctl';
+  row.dataset.key = sp.key;   /* 【2026-09-20】スマホ上書きの印付け(markMbOverrides)で使う */
+  /* 【2026-09-20 ヒデさん依頼・PC/SP独立】書き込み先を切り替える:
+     スマホモード中は「スマホだけの上書き」params.editsMb[key] へ、通常は共有の params.edits[key] へ。
+     → スマホモードでいじってもPC(共有値)は変わらない。適用は textTools.applyAll が isMobile の時だけ mb を base に重ねる。 */
+  const phoneOn = () => { try { return document.documentElement.classList.contains('phone-mode'); } catch (e) { return false; } };
+  const edBase = () => { if (!params.edits) params.edits = {}; return params.edits[sp.key] || (params.edits[sp.key] = {}); };
+  const edMob  = () => { if (!params.editsMb) params.editsMb = {}; return params.editsMb[sp.key] || (params.editsMb[sp.key] = {}); };
+  const ed = () => phoneOn() ? edMob() : edBase();
+  /* 【2026-09-21 ヒデさん指摘・Y11】スマホモード中は「見えている実サイズ」をプレビュー枠(iframe=SP文脈)から測る。
+     パネルは PC ページなので getComputedStyle は PC サイズを返し、SP プレビューの見た目と食い違っていた。 */
+  const cs = () => {
+    try { if (phoneOn()) { const f = document.getElementById('ppFrame'); if (f && f.contentDocument && f.contentWindow) { const el2 = f.contentDocument.querySelector(sp.sel); if (el2) return f.contentWindow.getComputedStyle(el2); } return null; /* 【2026-09-22】スマホモード中はSPプレビュー(iframe)からのみ読む。iframe未ロード時に親(=PC表示)の値を誤って拾わない(拾うと入力がPC値へ飛ぶ) */ } } catch (e) {}
+    const el = document.querySelector(sp.sel); return el ? getComputedStyle(el) : null;
+  };
+  const apply = () => { try { textTools.applyAll(); textTools.refresh(); } catch (e) {} markDirty(); };
+  const wSel = document.createElement('select'); wSel.className = 'txt-w'; wSel.title = '太さ(ウェイト)。自動＝CSSのまま';
+  wSel.innerHTML = '<option value="">自動</option>' + [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => `<option value="${w}">${w}</option>`).join('');
+  wSel.onchange = () => { const e = ed(); if (wSel.value === '') delete e.fw; else e.fw = +wSel.value; apply(); sync(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
+  const numIn = (title, step, min, max, key) => {
+    const i = document.createElement('input'); i.type = 'number'; i.className = 'txt-n'; i.title = title; i.step = step; i.min = min; i.max = max;
+    i.oninput = () => { const e = ed(); const v = i.value === '' ? null : parseFloat(i.value); if (v == null || isNaN(v)) delete e[key]; else e[key] = v; i.classList.toggle('is-auto', v == null); apply(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
+    i.onpointerdown = ev => ev.stopPropagation();
+    return i;
+  };
+  const fsz = numIn('文字サイズ(px)。いまの大きさが入っているので、そこから上下できます。消すとCSSのまま(自動)に戻る', '1', '6', '200', 'fs');   /* 【2026-09-19 ヒデさん依頼】サイズは現在値からの相殺に */
+  const lh = numIn('行間(倍)。空欄＝CSSのまま', '0.05', '0.8', '3', 'lh');
+  const ls = numIn('字間(px)。空欄＝CSSのまま', '0.1', '-5', '20', 'ls');
+  fsz.dataset.prop = 'font-size'; wSel.dataset.prop = 'font-weight'; lh.dataset.prop = 'line-height'; ls.dataset.prop = 'letter-spacing';   /* 【2026-09-19】スマホモードで「モバイルで値が変わる」ものをオレンジに */
+  const mkLab = (t, el, title) => { const pair = document.createElement('span'); pair.className = 'txt-pair'; const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; pair.append(l, el); box.append(pair); };
+  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(px)');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に */
+  function sync() {
+    /* スマホモード中は「共有(base)＋スマホ上書き(mb)」を表示。通常は共有だけ */
+    const _base = (params.edits && params.edits[sp.key]) || {};
+    const _mob = (params.editsMb && params.editsMb[sp.key]) || {};
+    const e = phoneOn() ? Object.assign({}, _base, _mob) : _base, c = cs();
+    const _eff = c ? Math.round(parseFloat(c.fontSize)) : '';
+    /* 【2026-09-21 ヒデさん報告・導入事例で「40pxと出るのに見た目が違う」】文字サイズ(fs)は SP(実機 isMobile＝狭幅／スマホモード)では
+       PC(base=edits)の fs を無視して描く(applyAll と同じ)。なのでパネルの表示も SP では base.fs を出さず、SP専用(editsMb.fs)か
+       実際の描画サイズ(_eff)を出す＝「表示値＝見た目」を一致させる。太さ/行間/字間(fw/lh/ls)は共通なので従来どおり e を使う。 */
+    const _isMbRow = (typeof isMobile !== 'undefined' && isMobile) || phoneOn();
+    const _fsShown = _isMbRow ? (_mob.fs != null ? _mob.fs : null) : (e.fs != null ? e.fs : null);
+    fsz.value = _fsShown != null ? _fsShown : (c ? _eff : fsz.value);   /* 【2026-09-19】いまの大きさを入れておく → そこから上下。触っていない間は未設定(=CSSのまま)。【2026-09-22】cs()がnull(スマホモードでiframe未ロード)なら現在値を保持=PC値へ飛ばさない */
+    fsz.placeholder = _eff + '';
+    fsz.classList.toggle('is-auto', _fsShown == null);   /* 自動(未変更)は薄く */
+    wSel.value = e.fw != null ? String(e.fw) : '';
+    wSel.options[0].textContent = c ? `自動(${c.fontWeight})` : '自動';
+    /* 【2026-09-20 ヒデさん依頼・#12】lh/ls も「いまの値」を入れておく → そこから上下できる(空欄起点で変な値へ飛ぶのを防ぐ)。触っていない間は e.lh/e.ls 未設定(=CSSのまま)で薄く表示 */
+    const _lhCur = c ? ((parseFloat(c.lineHeight) && parseFloat(c.fontSize)) ? +(parseFloat(c.lineHeight) / parseFloat(c.fontSize)).toFixed(2) : '') : '';
+    lh.value = e.lh != null ? e.lh : (c ? _lhCur : lh.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
+    lh.placeholder = _lhCur + '';
+    lh.classList.toggle('is-auto', e.lh == null);
+    const _lsCur = c ? (c.letterSpacing === 'normal' ? 0 : +parseFloat(c.letterSpacing).toFixed(1)) : '';
+    ls.value = e.ls != null ? e.ls : (c ? _lsCur : ls.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
+    ls.placeholder = _lsCur + '';
+    ls.classList.toggle('is-auto', e.ls == null);
+  }
+  sync();
+  row._sync = sync;   /* 【2026-09-21 Y11】syncPanelRows から再syncできるように(スマホモードでSP実サイズを表示) */
+  row.appendChild(box);
+  /* 【2026-09-20 ヒデさん依頼】各フォント行に↺リセット。押した時のモードのストア(通常=共有/スマホモード=スマホ上書き)の
+     文字設定(サイズ・太さ・行間・字間)だけを消す。位置(dx/dy)やパディングは触らない。
+     ＝スマホモードでいじってPCに移ってしまった値も、通常モードで↺を押せば既定へ戻せる。 */
+  const resetFont = () => {
+    /* 【2026-09-20 ヒデさん依頼・リセット統一】スマホモード中はSP専用の上書き(editsMb)だけ解除＝PC(共有)の文字設定に戻す。
+       通常モードは「このセッションを開いた時の値」(SESSION_START.edits)に戻す(無ければ未設定=CSSのまま)。 */
+    if (phoneOn()) {
+      const store = params.editsMb && params.editsMb[sp.key];
+      if (store) ['fs', 'fw', 'lh', 'ls'].forEach(k => { delete store[k]; });
+    } else {
+      const start = SESSION_START && SESSION_START.edits && SESSION_START.edits[sp.key];
+      const store = (params.edits[sp.key] || (params.edits[sp.key] = {}));
+      ['fs', 'fw', 'lh', 'ls'].forEach(k => { if (start && start[k] != null) store[k] = start[k]; else delete store[k]; });
+    }
+    apply(); sync();
+    try { if (typeof window.__markMbOverrides === 'function') window.__markMbOverrides(); } catch (e) {}
+  };
+  const rst = document.createElement('button'); rst.type = 'button'; rst.className = 'rst'; rst.textContent = '↺';
+  rst.title = 'このセッションを開いた時の文字設定に戻す（スマホモード中はスマホ用の上書きを解除）';
+  rst.onpointerdown = ev => ev.stopPropagation();
+  rst.onclick = ev => { ev.stopPropagation(); resetFont(); };
+  row.appendChild(rst);
+  if (subItems) subItems.push({ reset: resetFont });
+  row._sync = sync;
+  if (rows) rows.push({ _sync: sync });
+  (mount || body).appendChild(row);
+  return row;
+}
+/* セクション(sec)の文字を全部並べる。font:0(位置だけの要素)は出さない */
+function textRowsFor(secs) {
+  TEXT_SPEC.filter(sp => secs.includes(sp.sec) && sp.font !== 0).forEach(textRow);
+}
+
+/* 【2026-09-18 ヒデさん指定】する/しない以外の「案を選ぶ」行は、全部 ⋯(削除)付きの varRowX に統一する。
+   opts=[[表示名, 値]]。値は文字列キーとして扱う(数値は set 側で戻す)。bucket は params.gfxVariantHidden の鍵(完全削除リストにも出る)。 */
+function optRow(bucket, label, opts, get, set, o) {
+  const lab = document.createElement('div'); lab.className = 'row opt-row'; lab.innerHTML = `<label>${label}</label>`; (mount || body).appendChild(lab);
+  return varRowX(bucket, opts.map(([name, key]) => ({ key: String(key), name })), () => String(get()), k => set(k), o || {});
+}
+
+/* 【2026-08-27 ヒデさん指定・コンパクト化】オン/オフの2択をいくつか横に並べて1行に収める。
+   これまで「外の輪」「内の輪」「ドット」で3行使っていたものが1行になる。 */
+function chipRow(label, items) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const lab = document.createElement('label');
+  lab.textContent = label;
+  const box = document.createElement('div');
+  box.className = 'chip-box';
+  const bs = items.map(it => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-b';
+    b.textContent = it.name;
+    b.title = (it.hint || it.name) + '（押すと表示・非表示が切り替わります）';
+    b.onclick = () => { it.set(!it.get()); sync(); markDirty(); renderFrame(); };
+    box.appendChild(b);
+    return [b, it];
+  });
+  function sync() { bs.forEach(([b, it]) => b.classList.toggle('on', !!it.get())); }
+  sync();
+  if (rows) rows.push({ _sync: sync });
+  if (subItems) subItems.push({ reset: () => {
+    items.forEach(it => { const d = defaultOf(it.get); if (d != null) it.set(d); });
+    sync();
+  } });
+  /* 2026-08-29 ヒデさん指定: この行にもリセット(↺)を置く(全チップを既定へ) */
+  const rst = document.createElement('button');
+  rst.type = 'button'; rst.className = 'rst'; rst.textContent = '↺'; rst.title = '既定に戻す';
+  rst.onclick = (e) => {
+    e.stopPropagation();
+    items.forEach(it => { const d = defaultOf(it.get); if (d != null) it.set(d); });
+    sync(); markDirty(); renderFrame();
+  };
+  row.append(lab, box, rst);
+  (mount || body).appendChild(row);
+}
+
+/* 【2026-08-28 ヒデさん指定】ピクトグラムやエフェクトも「バリエーション」なので、
+   アニメーションのバリエーションと同じ見た目・同じ削除UIで並べられるようにする。
+   ・記号(A,B,C… / 1,2,3…)は【残っている中の順番】で毎回振り直す
+   ・× で削除 → 確認モーダル → 一覧の最後に「↺ 消した案を戻す(n)」
+   ・消した控えはプリセットと同じ保管場所に置くので、パネルを作り替えても残る
+   key = 控えを入れる引き出しの名前 / items = [{key,name,tip}] / mark = 記号の振り方 */
+/* ===== 【2026-09-15 ヒデさん指定】バリエーション行の共通仕様(KV のバリエーションと同じ): 見えている順の連番(自動採番)・★ピン留め(おすすめ)・
+   ⤓この設定で上書き・↺上書き解除・🗑削除・↺消した案を戻す。実績／ピクト(For SaaS・For AI)／エコー／光り方／輪の形／惑星の質感／ビジョンの登場 に共通 =====
+   bucket : 保存の入れ物の鍵(params.gfxVariantHidden / gfxFav / gfxVarOverride。完全削除 VARIANT_REMOVED_EXTRA の鍵にもなる)
+   items  : [{ key, name, tip, fixed }] fixed=消せない・番号なし(実績の「現行」)
+   getSel / setSel : いま選んでいる key / 選ぶ(値の代入だけ。反映は共通で行う)
+   o.snap : { get(), set(obj), reset() } 「いまの設定で上書き」で控える範囲(無ければ上書きは出ない)
+   o.after: 選択・上書き適用のあとに呼ぶ(fit など) / o.reset: { get, set } 行の右端の ↺ / o.onFill: 並び直しのたびに呼ぶ
+   番号は見えている順に 1 から振り直す(消した案・焼き込み済み・ピン留め中は飛ばす)。元の ID はツールチップに出す */
+const VAR_VIEW = {};   /* bucket → [{ key, no }] いまの表示番号(実績の小見出し「案◯」の同期に使う) */
+/* ===== 【2026-09-18 ヒデさん依頼】キービジュアルのバリエーション（案） =====
+   normal=ノーマル(Figma 17707:26544。文字はネイティブデータ、グラフィックは画像トレース) / strong=強調(2026-09-17 調整版)。
+   1案＝コピーのサイズ/位置/書体(kv)＋右グラフィックの拡大・移動(kvGfx)＋惑星(planet)＋カゴ(mesh)の束。
+   ★ピン留め・⋯(この設定で上書き/解除/削除)は varRowX 共通(値は params.gfxVarOverride.kvVar / gfxFav / gfxVariantHidden)。 */
+const KV_VARIANTS = [
+  { key: 'normal', name: 'ノーマル', tip: 'Figma 17707:26544。コピー 50px/90px(ExtraBold/Bold)・罫線を上に置いた2行のサブ・小さめのグラフィック。',
+    /* 値の出どころ: コピー＝Figma ネイティブ(x136/y232、本文50px・140%・ExtraBold、最終行90px・120%・Bold、罫線40px、サブ20px・160%・Medium、
+       本文→罫線 40px(実装は行箱248なので42で合わせる)、罫線→サブ 21px(罫線1px込みで20))。
+       グラフィック＝コンプ画像(2倍スクショ 1508×1258 を 774×646 に配置)を画素で測り、球の中心(1009,426.5)・直径227、カゴ(線)の範囲 557×549 に
+       自動で寄せた実測値(2026-09-18: 球は完全一致、カゴは 543×566 で平均一致・縦横比は回転位相の差)。 */
+    data: { kv: { mainSize: 50, jumpSize: 90, eyebrowSize: 20, copyX: 86, copyY: 24, copyGap: 42, eyebrowDash: true, eyebrowDashW: 40, dashGap: 20,
+                  mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 1.6, eyebrowLayout: 'col' },
+            kvGfx: { scale: 1, dx: 31.9, dy: 15 }, planet: { scale: 1.004, dx: 31, dy: 45, flat: 1 },
+            mesh: { cageR: 2.22, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
+  { key: 'strong', name: '強調', tip: '2026-09-17 の調整版(Figma 17435:22386)。コピー 70px/120px・大きいグラフィック(1.21倍)。',
+    data: { kv: { mainSize: 70, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0, copyGap: 32, eyebrowDash: true, eyebrowDashW: 14, dashGap: 10,
+                  mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row' },
+            kvGfx: { scale: 1.21, dx: 148, dy: 184 }, planet: { scale: 1.3, dx: 31, dy: 45, flat: 1 },
+            mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
+];
+const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
+const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread', 'msx', 'msy', 'msz', 'mpinch', 'meshShape'];   /* msx/msy/msz/mpinch/meshShape=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
+/* 【2026-09-21 ヒデさん依頼】KVメッシュの形状(基本のメッシュ)。ビジョンと同じ5案(VIS_MESH_SHAPES を流用) */
+/* 【2026-09-20 ヒデさん依頼・#7】KV要素の「位置移動(dx/dy)・パディング」も案別に独立させる(強調でずらした位置がノーマルに効かないように)。
+   文字(fs/fw/lh/ls)は含めない=別系統(editsMb/共通)。対象要素は sec:'kv' の全て。 */
+const KV_VAR_EDIT_ELS = ['navLogo', 'navLinks', 'navCta', 'kvMain', 'kvMainLast', 'kvEyebrow', 'kvLogos'];
+const KV_VAR_EDIT_PROPS = ['dx', 'dy', 'pt', 'pr', 'pb', 'pl'];
+function kvVarEditsSnapshot() { const r = {}; if (!params.edits) return r; KV_VAR_EDIT_ELS.forEach(k => { const e = params.edits[k]; if (!e) return; const o = {}; KV_VAR_EDIT_PROPS.forEach(p => { if (e[p] != null) o[p] = e[p]; }); if (Object.keys(o).length) r[k] = o; }); return r; }
+function kvClearEdits() { if (!params.edits) return; KV_VAR_EDIT_ELS.forEach(k => { const e = params.edits[k]; if (e) KV_VAR_EDIT_PROPS.forEach(p => { delete e[p]; }); }); }
+function kvAssignEdits(ed) { if (!ed) return; if (!params.edits) params.edits = {}; for (const k in ed) { if (!params.edits[k]) params.edits[k] = {}; Object.assign(params.edits[k], ed[k]); } }
+function kvVarKey() { const v = String((params && params.kvVar) || 'normal'); if (KV_VARIANTS.some(x => x.key === v) && !variantRemovedKey('kvVar', v)) return v; const f = KV_VARIANTS.find(x => !variantRemovedKey('kvVar', x.key)); return (f || KV_VARIANTS[0]).key; }
+function kvVarSnapshot() { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; return { kv: pick(params.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, params.kvGfx), planet: Object.assign({}, params.planet), mesh: pick(params.conv && params.conv.mesh, KV_VAR_MESH_KEYS), edits: kvVarEditsSnapshot() }; }
+function kvVarAssign(sn) { if (!sn) return; if (sn.kv) Object.assign(params.kv, sn.kv); if (sn.kvGfx) params.kvGfx = Object.assign(params.kvGfx || {}, sn.kvGfx); if (sn.planet) Object.assign(params.planet, sn.planet); if (sn.mesh && params.conv && params.conv.mesh) Object.assign(params.conv.mesh, sn.mesh); if (sn.edits) kvAssignEdits(sn.edits); }
+function kvVarRefresh() { try { document.documentElement.classList.toggle('kv-strong', kvVarKey() === 'strong'); } catch (e) {}   /* 【2026-09-20 ヒデさん依頼】強調案の時だけビジョン以下を下げる(PCのみ)。CSS: html.kv-strong:not(.mb) #vision */ try { applyKvCopy(); } catch (e) {} try { textTools.applyAll(); } catch (e) {} try { renderFrame(); } catch (e) {} try { if (editHandles.on) editHandles.place(); } catch (e) {} }
+/* 案の値(＋⋯で上書き保存した控え)を params へ流し込む。quiet=起動時(未保存扱いにしない) */
+function applyKvVariant(key, quiet) {
+  const v = KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0];
+  kvClearEdits();   /* 【2026-09-20 #7】案の位置移動は案別。切替時にいったん0へ戻し、下の控え(ov.edits)で案ごとの位置を入れ直す */
+  kvVarAssign(structuredClone(v.data));
+  const ov = ((params.gfxVarOverride || {}).kvVar || {})[v.key];
+  if (ov) kvVarAssign(structuredClone(ov));
+  kvVarRefresh();
+  if (!quiet) { try { markDirty(); } catch (e) {} }
+}
+/* 【2026-09-21 ヒデさん依頼・Y14】ビジョンのメッセージ(データをつなぐ〜)の「フォント行」で変えた
+   見た目(サイズ fs / 行間 lh / 字間 ls)を、案(デフォルト/強調)ごとに独立させるためのヘルパー。
+   太さ fw・位置 dx/dy は両案で共通なので巻き込まない(ここには入れない)。
+   なぜ必要か: これまで大きさは params.edits.visMsg(＝全案で共有の1つの入れ物)に入っていたため、
+   デフォルトで大きさを変えると強調にも移っていた(＝連動)。案ごとに控え(gfxVarOverride.visEmph)へ
+   grab して切替時に put で入れ替える。 */
+const VIS_MSG_ED_KEYS = ['fs', 'lh', 'ls'];
+function visEmphGrabMsg(store) { if (!store || !store.visMsg) return null; const o = {}; VIS_MSG_ED_KEYS.forEach(k => { if (store.visMsg[k] != null) o[k] = store.visMsg[k]; }); return Object.keys(o).length ? o : null; }
+function visEmphPutMsg(store, src) { if (!store) return; const t = store.visMsg || (store.visMsg = {}); VIS_MSG_ED_KEYS.forEach(k => { delete t[k]; }); if (src) VIS_MSG_ED_KEYS.forEach(k => { if (src[k] != null) t[k] = src[k]; }); }
+const VAR_SNAP = {
+  kvVar:   { get: () => kvVarSnapshot(), set: sn => { kvVarAssign(sn); kvVarRefresh(); }, reset: () => applyKvVariant(kvVarKey()) },
+  results: { get: () => ({ results: params.sections.results, valSaas: params.patterns.valSaas, valAi: params.patterns.valAi }),
+             set: s => { if (s.results) Object.assign(params.sections.results, s.results); if (s.valSaas) params.patterns.valSaas = s.valSaas; if (s.valAi) params.patterns.valAi = s.valAi; },
+             reset: () => varResetResults() },
+  picto:   { get: () => ({ results: params.sections.results }), set: s => { if (s.results) Object.assign(params.sections.results, s.results); },
+             reset: () => varResetResults() },
+  conv:    { get: () => params.conv, set: s => Object.assign(params.conv, s), reset: () => Object.assign(params.conv, structuredClone(DEFAULTS_PRISTINE.conv)) },
+  planet:  { get: () => params.planet, set: s => Object.assign(params.planet, s), reset: () => Object.assign(params.planet, structuredClone(DEFAULTS_PRISTINE.planet)) },
+  vision:  { get: () => params.sections.vision, set: s => Object.assign(params.sections.vision, s), reset: () => Object.assign(params.sections.vision, structuredClone(DEFAULTS_PRISTINE.sections.vision)) },
+  /* 【2026-09-19】揺らぎのグラデは「グラデに関わるキーだけ」を控える(dome や余白を巻き込まない) */
+  visGrad: { get: () => { const v = params.sections.vision, o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (v[k] != null) o[k] = v[k]; }); return o; },
+             set: s => Object.assign(params.sections.vision, s), reset: () => { visApplyGrad(visGradKey()); applyVisGrad(); } },
+  /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調=emph)ごとに、メッセージ/ポイントの文字サイズを独立させる。
+     dome(メッシュ)や grad は別バケット管理なので巻き込まない=サイズ系だけ控える。 */
+  visEmph: { get: () => { const v = params.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (v[k] != null) o[k] = v[k]; });
+               /* 【2026-09-21 Y14】メッセージのフォント行(サイズ/行間/字間)も案ごとに控える。PC=edits / スマホ=editsMb を別々に。 */
+               o.__vm = visEmphGrabMsg(params.edits); o.__vmMb = visEmphGrabMsg(params.editsMb); return o; },
+             set: s => { if (!s) return; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (s[k] != null) params.sections.vision[k] = s[k]; });
+               if ('__vm' in s) visEmphPutMsg(params.edits || (params.edits = {}), s.__vm);
+               if ('__vmMb' in s) visEmphPutMsg(params.editsMb || (params.editsMb = {}), s.__vmMb);
+               applyVpSize(); try { textTools.applyAll(); } catch (e) {} try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} }, reset: () => {} },
+  cv:      { get: () => params.cv, set: s => Object.assign(params.cv, s), reset: () => Object.assign(params.cv, structuredClone(DEFAULTS_PRISTINE.cv)) },
+  /* 【2026-09-15】揺らぎの案は「動きに関わるキーだけ」を控える(余白や色の設定を巻き込まない) */
+  cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; }); return o; },
+             set: s => Object.assign(params.cv, s), reset: () => cvApplySway(cvSwayKey()) },
+  /* 【2026-09-19】ビジョンのメッシュの案(描き方に関わるキーだけ。大きさ・フェード・ロゴは巻き込まない) */
+  resSlotFx: { get: () => { const r = params.sections.results, o = {}; RES_SLOT_KEYS.forEach(k => { if (r[k] != null) o[k] = r[k]; }); return o; },
+               set: s => { Object.assign(params.sections.results, s); applyResSlotFade(); }, reset: () => resApplySlotFx(resSlotFxKey()) },
+  visLogo: { get: () => { const c = vfCfg(), o = {}; VF_LOGO_KEYS.forEach(k => { if (c[k] != null) o[k] = c[k]; }); return o; },
+             set: s => { const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, s); applyVfFade(); }, reset: () => vfApplyLogoVariant(vfLogoKey()) },
+  visMesh: { get: () => { const c = vfCfg(), o = {}; VF_VAR_KEYS.forEach(k => { if (c[k] != null) o[k] = c[k]; }); return o; },
+             set: s => { const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, s); vfMesh = null; applyVfFade(); }, reset: () => vfApplyVariant(vfVarKey()) },
+  dev:     { get: () => params.sections.dev, set: s => Object.assign(params.sections.dev, s), reset: () => Object.assign(params.sections.dev, structuredClone(DEFAULTS_PRISTINE.sections.dev)) },
+};
+
+/* ===== 【2026-09-19 ヒデさん依頼・最重要】バリエーションの上書きが「選び直す/リロードで戻る」バグの根治 =====
+   仕組み: 案ごとの上書き控え params.gfxVarOverride[bucket][key] を『常にいまの見た目』に保つ。
+   ・つまみを触る → markDirty の自動保存で、選択中の案の控えを更新(varAutoCapture)
+   ・案を切り替える → 離れる案の控えも即更新(varRowX の choose 内)/選んだ案は控えを重ねる(既存)
+   ・起動時 → 選択中の案の控えを適用(varApplyOverridesAtStartup)
+   これで『触った値=案の値』になり、選び直しても・リロードしても戻らない。
+   snap は必ず『その案が持つキーだけ』の狭いものにすること(広いと別の設定を巻き込む)。 */
+const VAR_AUTOSAVE = [
+  { bucket: 'visMesh',   sel: () => vfVarKey(),     snap: () => VAR_SNAP.visMesh,   base: (key) => { const m = (VIS_MESHES.find(x => x.key === key) || VIS_MESHES[0]); const g = Object.assign({}, VF_DEF, m.cfg || {}), o = {}; VF_VAR_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
+  { bucket: 'visLogo',   sel: () => vfLogoKey(),    snap: () => VAR_SNAP.visLogo,   base: (key) => { const m = (VIS_LOGOS.find(x => x.key === key) || VIS_LOGOS[0]); const o = {}; VF_LOGO_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
+  { bucket: 'visGrad',   sel: () => visGradKey(),   snap: () => VAR_SNAP.visGrad,   base: (key) => { const g = (VIS_GRADS.find(x => x.key === key) || VIS_GRADS[0]); const m = Object.assign({ gradVar: key, gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v || {}), o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (m[k] != null) o[k] = m[k]; }); return o; } },
+  /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調)ごとにメッセージ/ポイントの文字サイズを独立(案別に控える) */
+  { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: () => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; return o; } },
+  { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
+  { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
+  /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
+     起動時の applyKvVariant で案の焼き込み値が再適用されるため、上書き控えを常に最新にしておかないと『デフォルトにしても戻る』。
+     ここに入れることで、保存のたびに gfxVarOverride.kvVar[案] = いまの値 になり、起動時にそれが勝つ。 */
+  { bucket: 'kvVar',     sel: () => kvVarKey(),     snap: () => VAR_SNAP.kvVar,     base: (key) => { const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); return r; }; const d = ((KV_VARIANTS.find(x => x.key === key) || KV_VARIANTS[0]).data) || {}; return { kv: pick(d.kv, KV_VAR_KV_KEYS), kvGfx: Object.assign({}, d.kvGfx), planet: Object.assign({}, d.planet), mesh: pick(d.mesh, KV_VAR_MESH_KEYS), edits: {} }; } },
+];
+function varAutoInfo(bucket) { return VAR_AUTOSAVE.find(b => b.bucket === bucket) || null; }
+/* いまの見た目を、選択中の案の控えへ書き込む(自動保存のたびに)
+   skipStore=true のときは localStorage 書き込み(重い presetStoreSave)を省いて【メモリ内の控えだけ】即時更新する。
+   → つまみを触った瞬間に控えが最新になるので、0.8秒の自動保存を待たずに案を選び直しても・再描画されても戻らない。 */
+function varAutoCapture(skipStore) {
+  if (!params) return; if (!params.gfxVarOverride) params.gfxVarOverride = {};
+  for (const b of VAR_AUTOSAVE) { try { const snap = b.snap(); if (!snap) continue; const key = String(b.sel()); if (!params.gfxVarOverride[b.bucket]) params.gfxVarOverride[b.bucket] = {}; params.gfxVarOverride[b.bucket][key] = JSON.parse(JSON.stringify(snap.get())); } catch (e) {} }
+  if (!skipStore) { try { presetStoreSave(); } catch (e) {} }
+}
+/* 起動時: 選択中の案の控えを画面へ適用(リロードで戻らないように) */
+function varApplyOverridesAtStartup() {
+  for (const b of VAR_AUTOSAVE) { try { const snap = b.snap(); if (!snap) continue; const key = String(b.sel()); const ov = ((params.gfxVarOverride || {})[b.bucket] || {})[key]; if (ov) snap.set(JSON.parse(JSON.stringify(ov))); } catch (e) {} }
+}
+/* 実績の調整を「コード既定」へ(既定に無い後付けの鍵(fx21 など案ごとの値)は消す＝コード側の初期値に戻る) */
+function varResetResults() { const r = params.sections.results, d = structuredClone(DEFAULTS_PRISTINE.sections.results); for (const k in r) { if (!(k in d)) delete r[k]; } Object.assign(r, d); }
+function varRowX(bucket, items, getSel, setSel, o) {
+  o = o || {};
+  const box = document.createElement('div'); box.className = 'var-box'; box.dataset.bucket = bucket;
+  /* 【2026-09-16 ヒデさん依頼】ピン留めした案は、通常の案に紛れないよう【上部に見出し付きの別セクション】で出す(全バリエーション共通) */
+  const favHead = document.createElement('div'); favHead.className = 'var-favhead'; favHead.textContent = '★ ピン留め'; favHead.hidden = true;
+  const favRow = document.createElement('div'); favRow.className = 'sw-row sw-favrow'; favRow.hidden = true;
+  const row = document.createElement('div'); row.className = 'sw-row';
+  box.append(favHead, favRow, row); (mount || body).appendChild(box);
+  const K = v => String(v);
+  const hidden = () => { if (!params.gfxVariantHidden) params.gfxVariantHidden = {}; return params.gfxVariantHidden[bucket] || (params.gfxVariantHidden[bucket] = []); };
+  const favs = () => { if (!Array.isArray(params.gfxFav)) params.gfxFav = []; return params.gfxFav; };
+  const isFav = it => favs().some(f => f.m === bucket && K(f.name) === K(it.key));
+  const ovOf = it => ((params.gfxVarOverride || {})[bucket] || {})[K(it.key)];
+  const autoInfo = (typeof varAutoInfo === 'function') ? varAutoInfo(bucket) : null;   /* 【2026-09-19】この案は自動控え対象か */
+  /* 「上書き済み」と見なすのは、控えが素の案の値と実際に違う時だけ(自動控えで素の値が入っただけの時は隠す) */
+  const ovCustom = it => { const ov = ovOf(it); if (!ov) return false; if (!autoInfo) return true; try { return JSON.stringify(ov) !== JSON.stringify(autoInfo.base(K(it.key))); } catch (e) { return true; } };
+  const gone = it => hidden().includes(K(it.key)) || variantRemovedKey(bucket, K(it.key));
+  const plainName = it => String(it.name).replace(/^(\d+(?:-\d+)?|[A-Za-z]{1,2}\d{0,2})\s+/, '');
+  const choose = it => {
+    /* 【2026-09-19】自動控え対象は、いま離れる案の見た目を控えへ即保存してから切り替える(選び直しで戻らない) */
+    if (autoInfo && o.snap) { try { const cur = K(getSel()); if (!params.gfxVarOverride) params.gfxVarOverride = {}; if (!params.gfxVarOverride[bucket]) params.gfxVarOverride[bucket] = {}; params.gfxVarOverride[bucket][cur] = JSON.parse(JSON.stringify(o.snap.get())); } catch (e) {} }
+    setSel(it.key);
+    const ov = ovOf(it);
+    if (ov && o.snap) { try { o.snap.set(JSON.parse(JSON.stringify(ov))); } catch (e) {} }   /* 上書き済みの案は、その控えを重ねる */
+    markDirty(); renderFrame();
+    if (o.after) o.after(it);
+    if (typeof syncPanelRows === 'function') syncPanelRows();
+    fill();
+  };
+  const menuFor = (x, it, label) => ev => {
+    ev.stopPropagation();
+    const old = document.querySelector('.pmenu'); if (old) old.remove();
+    const menu = document.createElement('div'); menu.className = 'pmenu';
+    const close = () => menu.remove();
+    const mk = (lbl, fn, cls) => { const m = document.createElement('button'); m.type = 'button'; m.textContent = lbl; if (cls) m.className = cls; m.onclick = () => { close(); fn(); }; menu.appendChild(m); };
+    const fav = isFav(it);
+    mk(fav ? '★ ピン留めを解除（元の位置に戻す）' : '★ お気に入りにピン留め（おすすめ）', () => {
+      if (fav) params.gfxFav = favs().filter(f => !(f.m === bucket && K(f.name) === K(it.key)));
+      else favs().push({ m: bucket, name: K(it.key) });
+      presetStoreSave(); markDirty(); fill();
+    });
+    if (o.snap) {
+      mk('⤓ いまの設定で上書き', () => {
+        if (!params.gfxVarOverride) params.gfxVarOverride = {};
+        if (!params.gfxVarOverride[bucket]) params.gfxVarOverride[bucket] = {};
+        params.gfxVarOverride[bucket][K(it.key)] = JSON.parse(JSON.stringify(o.snap.get()));
+        presetStoreSave(); markDirty(); fill();
+      });
+      if (ovCustom(it)) mk('↺ 上書きを解除（元の設定に戻す）', () => {
+        delete params.gfxVarOverride[bucket][K(it.key)];
+        if (o.snap.reset && K(getSel()) === K(it.key)) { try { o.snap.reset(); } catch (e) {} }   /* 選択中なら画面もその場で元へ */
+        presetStoreSave(); markDirty(); renderFrame(); if (o.after) o.after(it); if (typeof syncPanelRows === 'function') syncPanelRows(); fill();
+      });
+    }
+    mk('🗑 削除', () => {
+      /* 【V5.0 2026-09-16 ヒデさん依頼】セクション自体は消せない=最後の1案は削除不可(消せるのは各案のみ) */
+      const _aliveNow = items.filter(q => !gone(q));
+      if (_aliveNow.length <= 1) { askModal('削除できません', 'このまとまりの最後の1案です。セクション自体は消せません（消せるのは各案のみ）。', 'OK', () => {}); return; }
+      askModal('削除しますか？', `「${label}」を一覧から消します。以降の番号は自動で詰めます。あとで「消した案を戻す」で戻せます。`, '削除する', () => {
+        hidden().push(K(it.key));
+        params.gfxFav = favs().filter(f => !(f.m === bucket && K(f.name) === K(it.key)));
+        if (K(getSel()) === K(it.key)) { const alive = items.find(q => !gone(q)); if (alive) choose(alive); }
+        presetStoreSave(); markDirty(); renderFrame(); fill();
+      });
+    }, 'danger');
+    document.body.appendChild(menu);
+    const r = x.getBoundingClientRect();
+    menu.style.left = Math.min(r.left, innerWidth - menu.offsetWidth - 8) + 'px';
+    menu.style.top = Math.min(r.bottom + 4, innerHeight - menu.offsetHeight - 8) + 'px';
+    setTimeout(() => document.addEventListener('click', close, { once: true }), 0);
+  };
+  const pill = (it, label, no, target) => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.key = K(it.key); b.dataset.no = no || '';
+    b.className = 'var-pill' + (K(getSel()) === K(it.key) ? ' on' : '') + (isFav(it) ? ' fav' : '');
+    b.title = plainName(it) + (it.tip ? ' — ' + it.tip : '') + `（ID ${it.key}）` + (ovCustom(it) ? '（⤓ 上書き済み・⋯から解除できます）' : '');
+    b.append(document.createTextNode(label));
+    b.onclick = () => choose(it);
+    { /* 【2026-09-18 ヒデさん指定】現行(fixed)の案にも ⋯ を出して削除できるようにする(最後の1案だけは削除不可) */ const x = document.createElement('button'); x.type = 'button'; x.className = 'var-x'; x.textContent = '⋯'; x.title = 'ピン留め / この設定で上書き / 削除'; x.onclick = menuFor(x, it, label); b.appendChild(x); }
+    (target || row).appendChild(b);
+  };
+  const fill = () => {
+    row.innerHTML = ''; favRow.innerHTML = '';
+    const alive = items.filter(it => !gone(it)), view = [];
+    /* 【2026-09-18 ヒデさん指定】案が1つしか残っていない欄は選ぶ意味が無いので欄ごと隠し、その1案を既定にする(0なら隠すだけ) */
+    box.hidden = alive.length <= 1;
+    if (alive.length === 1 && K(getSel()) !== K(alive[0].key)) { try { const it1 = alive[0]; setSel(it1.key); markDirty(); setTimeout(() => { try { if (o.after) o.after(it1); renderFrame(); } catch (e) {} }, 0); } catch (e) {} }
+    const pinned = favs().filter(f => f.m === bucket).map(f => alive.find(it => K(it.key) === K(f.name))).filter(Boolean);
+    /* ピン留めは上部の別セクション(favRow)へ。番号(★1..)や VAR_VIEW の順は従来どおり(固定→ピン→その他) */
+    favHead.hidden = favRow.hidden = pinned.length === 0;
+    alive.filter(it => it.fixed).forEach(it => { pill(it, plainName(it), '', row); view.push({ key: K(it.key), no: plainName(it) }); });
+    pinned.forEach((it, i) => { const no = '★' + (i + 1); pill(it, no + ' ' + plainName(it), no, favRow); view.push({ key: K(it.key), no }); });
+    let n = 0;
+    alive.forEach(it => { if (it.fixed || pinned.includes(it)) return; n++; pill(it, n + ' ' + plainName(it), String(n), row); view.push({ key: K(it.key), no: String(n) }); });
+    VAR_VIEW[bucket] = view;
+    const restorable = hidden().filter(kk => !variantRemovedKey(bucket, kk) && items.some(it => K(it.key) === kk));
+    if (restorable.length) {
+      const back = document.createElement('button'); back.type = 'button'; back.className = 'var-pill var-back';
+      back.textContent = `↺ 消した案を戻す (${restorable.length})`;
+      back.onclick = () => pickModal('消した案を戻す', '戻したい案の「戻す」を押してください。まとめて全部は戻しません。',
+        restorable.map(kk => plainName(items.find(it => K(it.key) === kk))),
+        nm => { const it = items.find(q => plainName(q) === nm); const i2 = it ? hidden().indexOf(K(it.key)) : -1; if (i2 >= 0) hidden().splice(i2, 1); presetStoreSave(); markDirty(); fill(); });
+      row.appendChild(back);
+    }
+    if (o.reset) row.appendChild(mkReset(o.reset.get, v => { o.reset.set(v); fill(); }, null, false));
+    if (o.onFill) o.onFill();
+  };
+  fill();
+  if (rows) rows.push({ _sync: fill });
+  if (o.reset && subItems) subItems.push({ reset: () => { const d = defaultOf(o.reset.get); if (d != null) { o.reset.set(d); fill(); } } });
+  return fill;
+}
+/* 実績の案の表示番号(ID → いまの番号)。見えていなければ null / ID◯ */
+function rfxNo(key, strict) { const v = (VAR_VIEW.resFx || []).find(x => x.key === String(key)); return v ? v.no : (strict ? null : 'ID' + key); }
+function rfxNos(keys) { const a = keys.map(k => rfxNo(k, true)).filter(Boolean); return a.length ? a.join('・') : 'ID' + keys.join('/'); }
+const RFX_TITLES = [];   /* [要素, 文言を作る関数] 実績の案別グループの小見出し(番号が変わったら書き直す) */
+/* 【2026-09-16】お問い合わせのデザイン案を「一体型」で確定し、案を選ぶ項目を削除したので、
+   「案によってまとまりを出し分ける」仕掛け(CV_DYN / CV_DYN10 / syncCvDyn)も不要になった。 */
+function subT(cat, fn) { sub(cat, fn(), true, { fixed: true }); const el = cat.lastElementChild && cat.lastElementChild.querySelector('.grp-title span'); if (el) RFX_TITLES.push([el, fn]); }
+function syncRfxTitles() { RFX_TITLES.forEach(([el, fn]) => { el.textContent = fn(); }); }
+function resFxRow(opts) {
+  return varRowX('resFx', opts.map(([name, key, tip]) => ({ key, name, tip, fixed: key === 'default' })), () => resFxKey(), key => { params.patterns.resFx = key; },
+    { snap: VAR_SNAP.results, after: () => { fit(); renderFrame(); syncRfxDyn(); }, onFill: () => syncRfxTitles() });
+}
+
+/* 【2026-09-14 ヒデさん指定】案ごとの調整は「その案を選んだ時だけ」出す(動的表示)。パネルを組み立てる時に登録し、案の切替で同期 */
+const RFX_DYN = [];
+function rfxDyn(el, keys) { if (el) RFX_DYN.push({ el, keys }); }
+function syncRfxDyn() { const k = resFxKey(); RFX_DYN.forEach(d => { d.el.style.display = d.keys.includes(k) ? '' : 'none'; }); }
+
+
+
+/* ===== Figma のプロパティパネル風「数値パネル」(2026-08-27 ヒデさん指定) =====
+   直接編集で選んだオブジェクトの X / Y / W / H / 角度 を数値で表示し、直接入力もできる。
+   ドラッグ中はリアルタイムで数値が追いつく。スライダー(プログレスバー)は使わない。 */
+function buildNumPanel(host) {
+  const wrap = document.createElement('div');
+  host.appendChild(wrap);
+  const NAMES = { outer: ['外の輪', '#FF5D97'], inner: ['内の輪', '#0EBBFF'], planet: ['惑星', '#111'] };
+  let fields = {};
+
+  function mkField(label, unit, get, set, step) {
+    const f = document.createElement('div');
+    f.className = 'np-f';
+    const l = document.createElement('label');
+    l.textContent = label;
+    const i = document.createElement('input');
+    i.type = 'number';
+    i.step = step || 1;
+    i.value = get();
+    const u = document.createElement('span');
+    u.className = 'np-u';
+    u.textContent = unit || '';
+    /* 入力したら即反映。↑↓キーでも動く */
+    const apply = () => {
+      const v = parseFloat(i.value);
+      if (!isFinite(v)) return;
+      set(v);
+      markDirty();
+      renderFrame();
+      if (editHandles.on) editHandles.place();
+    };
+    i.addEventListener('input', apply);
+    i.addEventListener('change', () => { apply(); if (typeof editHistory !== 'undefined') { editHistory.push(); editBar.sync(); } });
+    f.append(l, i, u);
+    return { el: f, input: i, get };
+  }
+
+  /* 選んだ対象に合わせて中身を作り直す */
+  function render(key) {
+    wrap.innerHTML = '';
+    fields = {};
+    if (!editHandles.on) return;
+    if (!key) {
+      const e = document.createElement('div');
+      e.className = 'np-empty';
+      e.textContent = '右のグラフィックで「外の輪 / 内の輪 / 惑星」をクリックすると、ここに数値が出ます。';
+      wrap.appendChild(e);
+      return;
+    }
+    const [name, color] = NAMES[key] || [key, '#888'];
+    const head = document.createElement('div');
+    head.className = 'np-head';
+    const dot = document.createElement('span');
+    dot.className = 'np-dot';
+    dot.style.background = color;
+    head.append(dot, document.createTextNode(name));
+    wrap.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'np';
+    wrap.appendChild(grid);
+
+    if (key === 'planet') {
+      const P = params.planet;
+      fields.x = mkField('X', 'px', () => Math.round(P.dx), v => P.dx = Math.round(v));
+      fields.y = mkField('Y', 'px', () => Math.round(P.dy), v => P.dy = Math.round(v));
+      /* 【2026-08-27 ヒデさん指定】惑星も縦横比を保たないので、W と H を別々に出す */
+      fields.w = mkField('W', 'px', () => Math.round(convPlanetR() * 2),
+        v => P.scale = clamp01x(v / 2 / 130, 0.2, 3));
+      fields.h = mkField('H', 'px', () => Math.round(convPlanetRY() * 2),
+        v => P.flat = clamp01x(v / 2 / Math.max(1, 130 * P.scale), 0.05, 3));
+      grid.append(fields.x.el, fields.y.el, fields.w.el, fields.h.el);
+    } else {
+      const O = params.orbits[key], b = orbitBase(key);
+      fields.x = mkField('X', 'px', () => Math.round(O.dx), v => O.dx = Math.round(v));
+      fields.y = mkField('Y', 'px', () => Math.round(O.dy), v => O.dy = Math.round(v));
+      /* W/H は実寸(px)で出す。中で scale / flat に直す = Figma と同じ感覚で触れる */
+      fields.w = mkField('W', 'px', () => Math.round(orbitGeom(key).rx * 2),
+        v => O.scale = clamp01x(v / 2 / b.rx, 0.2, 2.5));
+      fields.h = mkField('H', 'px', () => Math.round(orbitGeom(key).ry * 2),
+        v => O.flat = clamp01x(v / 2 / (b.ry * O.scale), 0.05, 3));
+      fields.r = mkField('角度', '°', () => +(b.rot + O.angle).toFixed(1),
+        v => O.angle = +(v - b.rot).toFixed(1), 0.5);
+      grid.append(fields.x.el, fields.y.el, fields.w.el, fields.h.el, fields.r.el);
+      /* 【2026-08-28 ヒデさん指定】この軌道を手動で 前/裏 に。自動ボタンで両方裏になった時などの個別調整 */
+      const fbRow = document.createElement('div');
+      fbRow.className = 'np-fb';
+      const fbLab = document.createElement('span'); fbLab.className = 'np-fb-lab'; fbLab.textContent = '前後';
+      const bFront = document.createElement('button'); bFront.type = 'button'; bFront.textContent = '前に出す'; bFront.className = 'np-fb-b';
+      const bBack = document.createElement('button'); bBack.type = 'button'; bBack.textContent = '裏に回す'; bBack.className = 'np-fb-b';
+      const syncFB = () => { bFront.classList.toggle('on', !O.behind); bBack.classList.toggle('on', !!O.behind); };
+      const setFB = back => {
+        O.behind = back; markDirty(); renderFrame(); syncFB();
+        if (typeof editBar !== 'undefined' && editBar.sync) editBar.sync();
+        if (typeof editHistory !== 'undefined') { editHistory.push(); editBar.sync(); }
+      };
+      bFront.onclick = () => setFB(false);
+      bBack.onclick = () => setFB(true);
+      syncFB();
+      fbRow.append(fbLab, bFront, bBack);
+      wrap.appendChild(fbRow);
+    }
+  }
+  function clamp01x(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  /* ドラッグ中: 入力欄に触っていない時だけ数値を追いつかせる */
+  function sync() {
+    for (const k in fields) {
+      const f = fields[k];
+      if (document.activeElement === f.input) continue;
+      f.input.value = f.get();
+    }
+  }
+  editHandles.bind(render, sync);
+  render(editHandles.selected);
+}
+
+/* ページの流れと同じ順番で並べる:
+   全体 → キービジュアル → ビジョン → 実績 → 開発者体験 → 導入事例 */
+
+function buildPanel() {
+  const keepScroll = body.scrollTop;   // 作り直しでスクロール位置が飛ばないように退避
+  body.innerHTML = '';
+  rows.length = 0;
+  hiddenListRefresh();   /* 【2026-09-15】焼き込み済みの案を「消した案」の控えから外す(完全削除リストの最新化) */
+  /* 【2026-09-15 ヒデさん指定】大カテゴリのタブ列。先頭に置き、カテゴリを全部組み立てた後(末尾)で中身を埋める */
+  const panTabs = document.createElement('div'); panTabs.className = 'pan-tabs'; body.appendChild(panTabs);
+  liveEdit = false;                    // 既定は「頭から流し直す」。見た目だけの所で true にする
+  const sv = () => params.sections;
+
+  /* セクションの長さ。スクロール駆動の時は倍率、時間で再生の時は画面何個ぶんか。
+     ⚠️ 中の値（driveLen / lenVh）は別物なので、モードごとに触る先を切り替える */
+  /* ⚠️【2026-08-19 ヒデさん指摘】「もっと右へ動かしたいのに端で止まる」問題。
+     原因は slider() の自動上限調整（既定を中央に置くために上限を縮める）で、
+     スクロール駆動は 1〜12 と書いていたのに実際は 5 まで、
+     時間再生は 110〜800 と書いていたのに実際は 190vh までしか動かせなかった。
+     ここは書いた上限をそのまま使う（fixedMax）。 */
+  const sectionLenSlider = (key, maxVh) => {
+    if (params.drive === 'scroll') {
+      rows.push(slider('表示時間', 1, 12, 0.25,
+        () => sv()[key].driveLen, v => { sv()[key].driveLen = v; fit(); },
+        v => '×' + v.toFixed(2),
+        '見終わるのに必要なスクロール量。大きいほどゆっくり、じっくり見せます。',
+        { fixedMax: true, mbKey: 'sections.' + key + '.driveLen' }));
+    } else {
+      rows.push(slider('表示時間', 110, maxVh, 10,
+        () => sv()[key].lenVh, v => { sv()[key].lenVh = v; fit(); },
+        v => (v / 100).toFixed(1) + '画面',
+        'モーションが終わってから次へ抜けるまでの長さ。大きいほど余韻が残ります。',
+        { fixedMax: true, mbKey: 'sections.' + key + '.lenVh' }));
+    }
+  };
+
+  /* ========== 🌊 全体 ========== */
+  const catAll = category('全体（サイト全体のモーション）', false);
+
+  /* 【2026-09-17 大掃除】「文字の太さ(一括±)」は削除。太さは各タブの「文字」か ✏️編集 で個別に。 */
+
+  /* 【2026-08-30 ヒデさん指定・パネル整理】「モーションの進み方(時間/スクロール駆動)」と
+     「スクロールの固定(固定/固定追従なし)」の項目は削除。
+     自動再生(時間)×固定追従なしで確定し、値もコード側で固定している。 */
+
+  sub(catAll, '慣性スクロール', null, { fixed: true, grp: 'fxtex' });   /* スクロールの効き＝エフェクト扱い(ヒデさん指定) */
+  /* ⚠️【2026-08-28 ヒデさん指定】ここは「値が小さいほど慣性が強い」逆向きの作りで、
+     右へ動かすほど弱くなっていた。表示も「強め/中/弱め」の言葉だけで向きが読めなかった。
+     内部の値はそのまま(13 から引く)で、つまみだけ【右＝強い】に直し、数字を出す。 */
+  rows.push(slider('慣性の強さ', 1, 12, 0.5,
+    () => 13 - params.sections.common.smooth,
+    v => sv().common.smooth = Math.min(12, Math.max(1, 13 - v)),   /* ⚠️ 範囲が広がってもマイナスにしない */
+    v => '×' + v.toFixed(1),
+    '右へ動かすほど、指を離しても長く流れ続けます。左でピタッと止まります。'));
+
+  /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)テクスチャ。オン/オフ＋オンの時だけ細かさ等のつまみを出す(動的) */
+  sub(catAll, 'グリッド（背景の方眼）', null, { fixed: true, grp: 'fxtex' });
+  segRow('グリッド', [['オン', 1], ['オフ', 0]],
+    () => (params.grid && params.grid.on ? 1 : 0),
+    v => { if (!params.grid) params.grid = {}; params.grid.on = !!v; applyGrid(); markDirty(); buildPanel(); });
+  if (params.grid && params.grid.on) {
+    rows.push(slider('細かさ（マスの大きさ）', 8, 120, 1, () => (params.grid.cell != null ? params.grid.cell : 40),
+      v => { params.grid.cell = v; applyGrid(); markDirty(); }, v => Math.round(v) + 'px',
+      '方眼1マスの大きさ。小さいほど細かい方眼になります。'));
+    rows.push(slider('線の太さ', 0.5, 4, 0.5, () => (params.grid.w != null ? params.grid.w : 1),
+      v => { params.grid.w = v; applyGrid(); markDirty(); }, v => v.toFixed(1) + 'px', '方眼の線の太さ。'));
+    rows.push(slider('線の濃さ', 0.05, 1, 0.05, () => (params.grid.op != null ? params.grid.op : 0.45),
+      v => { params.grid.op = v; applyGrid(); markDirty(); }, v => Math.round(v * 100) + '%', '方眼の線の濃さ(透明度)。うすいほど背景になじみます。'));
+  }
+
+  /* くり返しは慣性とは別の話なので独立させる(ヒデさん指定 2026-08-27) */
+  sub(catAll, 'くり返し再生', null, { fixed: true, grp: 'anim' });   /* 再生＝アニメーション扱い(ヒデさん指定) */
+  segRow('くり返し', [['する', 1], ['しない', 0]], () => params.replay ? 1 : 0, v => { params.replay = !!v; markDirty(); });
+  note('一度見たセクションも、戻ってくるともう一度流れます。');
+
+  /* 【2026-09-19 ヒデさん依頼】見出し部品(英字ラベル＋見出し)の共通つまみ。4か所(Our Vision/Use Case/Contact/Strength)を一括で */
+  sub(catAll, 'セクション見出し（共通の部品）', null, { fixed: true });
+  rows.push(slider('ラベル→見出しの間隔', 0, 30, 1, () => (params.secHeadGap != null ? params.secHeadGap : 6), v => { params.secHeadGap = v; applySecHeadGap(); markDirty(); }, v => Math.round(v) + 'px', 'Our Vision / Use Case / Contact / Strength 01・02 の英字ラベルと、その下の見出しの間。4か所いっしょに変わります(既定 6px は仮置き)。', { mbKey: 'secHeadGap', fixedMax: true }));
+
+  /* 【2026-09-17 大掃除・ヒデさん指定】ヘッダー(案12 分離型・なめらか・1.65秒)/ハンバーガー(2本線・クロス)/浮くピルの質感(標準)/
+     押した先の画面(左寄せ大) は【今の値で固定＝焼き込み】。選択UIは削除(DEFAULTS/SHIPPED/移行で値を固定)。 */
+
+  /* ========== 🖼 キービジュアル ========== */
+  /* 【2026-08-27 ヒデさん指定】既定は全部たたむ。キービジュアルだけ開いて「グラフィック」を見せる */
+  /* (旧「フォントテスト」タブは 2026-09-17 の大掃除で撤去。⑪調整版を正として基本値へ焼き込み、
+     代わりに各タブの「文字（太さ・行間・字間）」で全テキストを個別に変えられるようにした) */
+
+  const catKv = category('キービジュアル（いちばん上の画面）', true);
+  panelVarsec('kv', 'キービジュアル（案）');   /* 【2026-09-21 ヒデさん依頼】主役案をセクションに→配下に基本/フォント/エフェクト/アニメーション */
+
+  /* 【2026-09-18 ヒデさん依頼】KVのバリエーション(ノーマル/強調)。★ピン留めは上の別セクション、⋯で「この設定で上書き」「解除」「削除」 */
+  sub(catKv, 'バリエーション（案）', true, { fixed: true, bare: true });   /* 【2026-09-20 ヒデさん依頼】カテゴリ節「バリエーション」と重複する小見出しは出さず、案の選択だけ見せる */
+  varRowX('kvVar', KV_VARIANTS, () => kvVarKey(), k => { params.kvVar = String(k); applyKvVariant(String(k)); },
+    { snap: VAR_SNAP.kvVar, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); if (typeof fillAnimBody === 'function') fillAnimBody(); } });
+  note('ノーマル＝Figma 17707:26544（コピー50/90px・小さめのグラフィック）／強調＝9/17の調整版（70/120px・大きいグラフィック）。案を選んでから下のつまみ(コピー・惑星・メッシュ)や「文字」で調整し、⋯「この設定で上書き」でその案に保存できます。');
+  note('⚠️【調整パネルの絶対ルール】値は①バリエーション別（案ごと）②PC/SP別 で独立します。強調でいじった位置・数値はノーマルに出ません。スマホモード中に変えた値はPCに出ず、その項目はブルーで印が付きます（案を作り直す時もこの2軸の独立を必ず残すこと）。');
+
+  /* 【2026-09-20 ヒデさん依頼】KVの余白: ヘッダー↔コピー / グラフィック↔コピー の距離。PC/SP独立(mbKey)。既存の「位置 縦/横」は別に残す */
+  liveEdit = true;
+  sub(catKv, '余白（ヘッダー・グラフィックとのギャップ）');
+  slider('ヘッダー↔コピーのギャップ', -160, 300, 2, () => (params.kv.hlOff || 0), v => { params.kv.hlOff = v; applyKvCopy(); markDirty(); },
+    v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'コピー(見出し)をヘッダーから上下にずらします。0＝いまの位置。プラスで下へ。PC・スマホは別々に持てます(スマホモード中に変えるとスマホだけに効く)。', { signed: true, mbKey: 'kv.hlOff' });
+  slider('グラフィック↔コピーのギャップ', -200, 200, 2, () => (params.kv.gfxY || 0), v => { params.kv.gfxY = v; try { applySway(); } catch (e) {} markDirty(); },
+    v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '右グラフィック(惑星)を上下にずらして、コピーとの間隔を変えます。0＝いまの位置。プラスで下へ、マイナスで上へ(離す)。PC・スマホは別々に持てます。', { signed: true, mbKey: 'kv.gfxY' });
+  slider('ヘッダー↔コンテンツの距離（スマホ）', -200, 400, 4, () => (params.kv.spTop || 0), v => { params.kv.spTop = v; applyKvCopy(); markDirty(); },
+    v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'スマホ版で、ヘッダーからKVコンテンツ全体(グラフィック＋コピー＋ロゴ帯)をまとめて下げる距離。0＝いまの位置。プラスで下へ。PCのレイアウトには影響しません。', { signed: true });
+
+  /* ===== グラフィック (2026-08-26 ヒデさん指定・整理) =====
+     右側のグラフィックの設定をここに集約する。いちばん上が「直接編集」。
+     以下は全部この中の入れ子: 案を選ぶ / 出てくるタイミング / 惑星のアニメーション / 軌道 */
+  liveEdit = true;
+  subDefaultOpen = true;      /* ここから下(グラフィック)は既定で開く */
+  sub(catKv, 'グラフィック');
+  /* 【2026-09-19 ヒデさん依頼】右グラフィック(惑星＋カゴ)を XYZ で動かす。真ん中(0)＝いまの位置。Z は手前(+)/奥(−)＝大きく/小さく(PCのみ) */
+  note('▼ 右グラフィック全体（惑星＋メッシュ）の位置。真ん中(0)＝いまの位置。傾き・向きは下の「メッシュ」の組');
+  { const kg = () => (params.kvGfx || (params.kvGfx = { scale: 1.21, dx: 148, dy: 184 })); const ks = (label, key, min, max, step, fmt, tip) => slider(label, min, max, step, () => kg()[key] || 0, v => { kg()[key] = v; try { applySway(); } catch (e) {} markDirty(); }, fmt, tip, { signed: true, mbKey: 'kvGfx.' + key });
+    const px = v => (v > 0 ? '+' : '') + Math.round(v) + 'px', pc = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
+    ks('位置 X', 'ox', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を左右(X)に。0＝いまの位置。');
+    ks('位置 Y', 'oy', -300, 300, 2, px, '右グラフィック(惑星＋メッシュ)を上下(Y)に。0＝いまの位置。');
+    ks('位置 Z', 'oz', -60, 60, 1, pc, '奥行き(Z)。手前(+)で大きく、奥(−)で小さく。0＝いまの大きさ。'); }
+  const gRoot = mount;
+  /* 【2026-08-29 ヒデさん指定】右グラフィックの登場タイミングは「左側コピー>タイミング」だと
+     見つけにくいので、ここ(グラフィック直下)にも同じスライダーを置く(同じ params.kv.graphicGap)。 */
+  liveEdit = true;
+  sub(catKv, 'グラフィック', false, { grp: 'anim' });   /* 【2026-09-20 大改修】出現アニメはアニメ節へ(基本の位置とは分ける) */
+  slider('出るタイミング', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v,
+    v => v.toFixed(2) + '秒', 'マイナスにすると早く（タイピング中に）出ます。0で小ラベルと同時。', { mbKey: 'kv.graphicGap', signed: true });
+  note('※ 同じ設定は「左側コピー > タイミング」にもあります。');
+
+  /* ═══ ① アニメーションを選ぶ ── いちばん上の考え方 (2026-08-27 ヒデさん指定) ═══
+     ここで選んだ案が、以下すべての土台になる。
+     ⚠️ グラフィックの形(軌道と惑星の位置・サイズ・傾き)も、プリセットも【案ごと】に分かれている。
+        案を切り替えると、その案の形に入れ替わる(前の案の形は引き継がない)。 */
+  liveEdit = true;
+  /* 【2026-08-27 ヒデさん指定】見出しの番号も「アニメーションを選ぶ」の文言も出さず、
+     選択ピルからいきなり始める */
+  sub(gRoot, '', true, { fixed: true, bare: true });
+  const aRoot = mount;
+  let fillPresetRow = null;   /* ②のプリセット行を作り直す関数(案が変わったら中身を入れ替える) */
+  /* 【2026-09-17 大掃除・ヒデさん指定】起動案(軌道と粒/ネットワーク)の切替ピル・カテゴリ絞り込みは削除。
+     案は ネットワーク★1「D 大きいケージ」(converge=mesh) に固定＝焼き込み。 */
+
+  /* 【2026-09-17 大掃除・ヒデさん指定】バリエーション(ネットワークC1〜C3 など)の選択UIは削除(★1 D 大きいケージ に固定)。 */
+  /* ═══ グラフィックを編集 ── 直接編集とプリセット ═══
+     【2026-08-27 ヒデさん指定】見出しは出さず、選択ピルのすぐ下にボタンを置く。
+     ⚠️ 置き場所は aRoot(選択ピルと同じ箱)。gRoot に入れると、案ごとの調整より
+        あとに回ってしまい「ピルの下」にならない */
+  liveEdit = true;
+  sub(aRoot, '', true, { fixed: true, bare: true });
+  {
+    /* 【2026-08-29 ヒデさん指定】パネル内の「グラフィックを編集する」ボタンは削除。
+       グラフィック編集は調整パネル右上の ✏️編集 ボタンが担う(押すと editHandles＋siteEdit が入る)。
+       ここには編集モード中に動的に出る数値パネル(X/Y/W/H/角度)と、行き先の案内だけ残す。 */
+    const n2 = document.createElement('div');
+    n2.className = 'grp-note';
+    n2.textContent = '右上の ✏️編集 を押すと編集モード。メッシュ全体はドラッグで移動、惑星はクリック → 辺で幅・高さ、角で大きさ。文字は端をつかんで移動、中をクリックで太さ・行間・打ち替え。';
+    (mount || body).appendChild(n2);
+    buildNumPanel(mount || body);
+  }
+
+  /* 【2026-09-17 大掃除・ヒデさん指定】プリセット(＋保存/呼び出し)のUIは削除。 */
+  liveEdit = false;
+
+  liveEdit = false;
+  const animBody = document.createElement('div');
+  aRoot.appendChild(animBody);
+  /* 【2026-08-27 リロード感の解消】説明文は要素を使い回して文字だけ差し替え、
+     作り直すのは「この案の調整」の箱だけにする。共通の項目は一度きり作って触らない。
+     こうすると案を押しても、見ていた場所が動かず、アニメだけがすぐ切り替わる。 */
+  /* 【2026-08-27 ヒデさん指定】案の説明は常時出さない(縦が伸びるため)。
+     文面は選択ピルにマウスを乗せた時の吹き出しで読める */
+  const animModeBox = document.createElement('div');
+  animBody.appendChild(animModeBox);
+  /* 【2026-08-29 ヒデさん指定】案ごとに「効く項目だけ」出す仕組み。グループ要素と表示条件を控え、
+     案切替(fillAnimBody)のたびに表示/非表示を同期する。使わない案では丸ごと隠す。 */
+  const dynGroups = [];   /* {el, vis:()=>bool} */
+  const effectApplies = () => (params.converge && params.converge !== 'off') && !(params.conv && params.conv.net3d);
+  /* 【2026-08-29 ヒデさん指定】汎用の「軌道(輪)」「ドット(粒)」調整が“描画に効く”案かどうか。
+     render 側(convFrame)の hideAll と同じ判定: ネットワーク3D(固定再現)・網でつながる(mesh)・
+     粒が並ぶ(beads)・粒の渦(accre で軌道を出していない)は、輪もドットも自動で隠れるので調整は無効。 */
+  const orbitsUsed = () => {
+    if (params.conv && params.conv.net3d) return false;
+    const cv = params.converge;
+    const accreShows = cv === 'accre' && !!(params.conv && params.conv.accre && params.conv.accre.showOrbit);
+    const hideAll = (cv === 'accre' && !accreShows) || cv === 'mesh' || cv === 'beads';
+    return !hideAll;
+  };
+  const addDynGroup = (vis) => { if (mount && mount.parentElement) { const el = mount.parentElement; dynGroups.push({ el, vis }); el.style.display = vis() ? '' : 'none'; } };
+  {
+    const CONV_DESC = {
+      off:    '軌道をただ回り続けます。集約の動きはしません。',
+      reel:   '内側の輪がドットごと惑星へ縮んで吸い込まれ、外側の輪が内側へ下りてきて、空いた外側に新しい輪が現れる…をくり返します。',
+      spiral: '粒がしばらく軌道の上を回ったあと、渦を描きながら内側へ落ちて惑星に吸い込まれます。吸われた粒はまた軌道に生まれ直します。',
+      accre:  '軌道の代わりに、たくさんの細かい粒が惑星のまわりで渦を巻きます（土星の輪のような円盤）。粒は回りながら少しずつ内側へ落ちて取り込まれます。輪とドットは自動で隠れます。',
+      mesh:   '軌道の代わりに、ゆらぎ漂うノードの網ができます。データがノードからノードへ渡り歩いて惑星へ届きます。輪とドットは自動で隠れます。',
+      beads:  '軌道の線を消して、点だけを密に並べて輪の形を作ります。並んだ点のうち一部が順に惑星へ吸い込まれます（輪の形は崩れません）。',
+      duplex: '惑星とドットを線で結び、その線の上を粒が行き来します。青＝軌道から惑星へ、ピンク＝惑星から軌道へ。惑星に入った粒は消えます。',
+      gyro:   '2本の輪が独楽(ジャイロスコープ)のように立体的に転がります。輪を真横から見る瞬間があり、周期的に惑星へ引き寄せられて集約します。ドットは輪に乗ったまま一緒に転がります。',
+    };
+    window.__convDesc = CONV_DESC;
+  }
+  function fillAnimBody() {
+    const keepScroll = body.scrollTop;      /* 見ていた位置を保つ */
+    const keepMount = mount, keepLive = liveEdit, keepOpen = subDefaultOpen;
+    subDefaultOpen = true;                  /* 案を切り替えても、中の小見出しは開いたまま */
+    animModeBox.innerHTML = '';
+    mount = animModeBox;
+    liveEdit = true;                        /* ここのつまみは触っても頭出ししない */
+
+    const pctF = v => Math.round(v * 100) + '%';
+    const cvMode = params.converge || 'reel';
+    /* 【2026-08-27 ヒデさん指定】「ドットの周回」と「スピン」は同じ話なので1つのまとまりに置く。
+       案ごとに中身が変わるので、ここで案別に足していく */
+    /* 【2026-08-29 ヒデさん指定・フォーマット統一】どの案でも「揺らぎ」「軌道の回転」を
+       ON/OFF トグルで揃える。既定は 揺らぎON・回転OFF。速さ等の細かい調整はトグルONの時だけ出す。
+       (以前は off 群だけこの「動き」セクションが無く、B/C/D 等は回転が焼き込みでいじれなかった) */
+    /* 【2026-09-19 ヒデさん指定】「動き（揺らぎ）」の節(揺らぎ する/しない・揺らぎの動き/強さ・軌道の回転・転がり・回り方・粒の連動・ドットの周回・3D網の細目・横揺れ・軌道のサイズ・軌道の線の太さ)は削除。
+       値は削除時点の保存値のまま固定(揺らぎ しない=sway1・揺らぎの強さ0 / 軌道の回転 しない / ドットの周回 する / 軌道のサイズ×1.00 / 線 4.1px)。戻したい時は git 履歴(2026-09-19 以前)の fillAnimBody を参照 */
+    if (cvMode === 'reel') {
+      const R = params.conv.reel;
+      sub(animModeBox, 'この案の調整（輪が縮んで吸収）', true);
+      slider('周期', 2, 10, 0.1, () => params.conv.reel.T, v => R.T = v, v => v.toFixed(1) + '秒',
+        '1循環の長さ。「吸収→もう1本が移動→空いた位置に新しい輪」のくり返し。', { mbKey: 'conv.reel.T' });
+      slider('収縮を始める', 0.05, 0.6, 0.01, () => params.conv.reel.shrinkAt, v => R.shrinkAt = v, pctF,
+        'ここまでは全周サイズでドットが回る。', { mbKey: 'conv.reel.shrinkAt' });
+      slider('吸収し終わる', 0.4, 0.9, 0.01, () => params.conv.reel.endAt, v => R.endAt = v, pctF,
+        'ここで吸収が完了し、もう1本が移動を始める。', { mbKey: 'conv.reel.endAt' });
+      /* 【2026-08-30 ヒデさん指定・統一】「移り変わりの回転」「移る長さ」はここから削除。
+         『動き(この案)』の「入れ替わりの回転(する/しない)+入れ替わりの速さ(秒)」に一本化した。 */
+      slider('新しい輪が出る', 0.04, 0.3, 0.01, () => params.conv.reel.inDur, v => R.inDur = v, pctF,
+        '空いた位置に新しい輪がフェードインする時間。', { mbKey: 'conv.reel.inDur' });
+      slider('どこまで縮むか', 0.5, 1, 0.01, () => params.conv.reel.depth, v => R.depth = v, pctF, '100%で惑星の中心まで縮む。', { mbKey: 'conv.reel.depth' });
+      slider('中間の輪の数', 0, 12, 1, () => params.conv.reel.blend, v => R.blend = v, v => v + '本',
+        '外の輪と内の輪の間を、この本数だけ埋めます（イラレのブレンドのイメージ）。0で無し。'
+        + '軌道をそのまま複製したくっきりした線で出ます。', { mbKey: 'conv.reel.blend', fixedMax: true });
+      /* 【2026-08-30 ヒデさん指定】「粒（吸い込み）」は収縮だけでなく A(軌道)全案の共通オプションへ移動(下の共通ブロック)。 */
+      /* 【2026-08-28 ヒデさん指定】「中間の輪の濃さ」は削除。薄くせず、くっきり出すため。 */
+      /* 【2026-08-27 ヒデさん指定】ここにあった機能は全削除:
+           ・消え方の3択(前面カット / 圧縮グロー / データ粒)とその説明
+           ・圧縮グロー専用のつまみ(光り方5種・光の強さ・線の太さ)
+           ・データ粒専用のつまみ(線の太さ・点の密度・つながり始め/きる・点が回る速さ・ゆらぎ)
+           ・「透過し始め」「透過率(残す濃さ)」
+         消え方は【前面カット】固定になった(エンジン側の他の道筋は残してあるが選べない)。 */
+    } else if (cvMode === 'spiral') {
+      const S = params.conv.spiral;
+      sub(animModeBox, 'この案の調整（粒が渦で吸収）', true);
+      slider('粒の数', 1, 200, 1, () => params.conv.spiral.count, v => S.count = v, v => v + '個', null, { mbKey: 'conv.spiral.count', fixedMax: true });
+      slider('軌道にいる秒数', 0.2, 12, 0.1, () => params.conv.spiral.stay, v => S.stay = v, v => v.toFixed(1) + '秒',
+        '粒はまず軌道上を回り、このくらい経ってから吸い込まれ始める。', { mbKey: 'conv.spiral.stay', fixedMax: true });
+      slider('吸い込みの秒数', 0.5, 16, 0.1, () => params.conv.spiral.life, v => S.life = v, v => v.toFixed(1) + '秒',
+        '軌道から離れて惑星に届くまでの秒数。', { mbKey: 'conv.spiral.life', fixedMax: true });
+      slider('回転の速さ', 0.1, 5, 0.05, () => params.conv.spiral.speed, v => S.speed = v, v => '×' + v.toFixed(2), null, { mbKey: 'conv.spiral.speed', fixedMax: true });
+      slider('粒の大きさ', 0.2, 3, 0.05, () => params.conv.spiral.size, v => S.size = v, v => '×' + v.toFixed(2),
+        '粒1つの大きさ。大きくすると「コメット」のような大きめの粒になります。', { mbKey: 'conv.spiral.size', fixedMax: true });
+    } else if (cvMode === 'accre') {
+      const AC = params.conv.accre;
+      sub(animModeBox, 'この案の調整（粒の渦）', true);
+      segRow('軌道を出す', [['出す', 1], ['消す', 0]], () => params.conv.accre.showOrbit ? 1 : 0,
+        v => { AC.showOrbit = !!v; markDirty(); renderFrame(); });
+      note('この案は既定では軌道を消しています。「出す」にすると輪とドットも一緒に見せられます（共通の表示スイッチに従います）。');
+      slider('粒の数', 5, 2000, 5, () => params.conv.accre.count, v => AC.count = v, v => v + '個',
+        '密度そのもの。多いほど渦が濃くなります。', { mbKey: 'conv.accre.count', fixedMax: true });
+      slider('粒の大きさ', 0.05, 3, 0.01, () => params.conv.accre.size, v => AC.size = v, v => '×' + v.toFixed(2),
+        'この案の粒だけの大きさ（共通の「ドットの大きさ」に掛かります）。', { mbKey: 'conv.accre.size', fixedMax: true });
+      slider('粒の揺らぎ', 0, 3, 0.05, () => params.conv.accre.wobble, v => AC.wobble = v, v => v.toFixed(2),
+        '回りながら外側・内側へゆらゆら揺れます。0でぴたっと回ります。', { mbKey: 'conv.accre.wobble', fixedMax: true });
+      slider('落ちる速さ', 0.05, 6, 0.05, () => params.conv.accre.fall, v => AC.fall = v, v => '×' + v.toFixed(2),
+        '内へ落ちていく速さ。', { mbKey: 'conv.accre.fall', fixedMax: true });
+      slider('回る速さ', 0.05, 6, 0.05, () => params.conv.accre.speed, v => AC.speed = v, v => '×' + v.toFixed(2), null, { mbKey: 'conv.accre.speed', fixedMax: true });
+      slider('円盤の大きさ', 0.3, 3, 0.01, () => params.conv.accre.scale, v => AC.scale = v, v => '×' + v.toFixed(2), null, { mbKey: 'conv.accre.scale', fixedMax: true });
+      slider('きらめき', 0, 1, 0.02, () => params.conv.accre.twinkle, v => AC.twinkle = v, v => v.toFixed(2),
+        '粒の明滅の強さ。0で一定の明るさ。', { mbKey: 'conv.accre.twinkle', fixedMax: true });
+    } else if (cvMode === 'mesh') {
+      const M = params.conv.mesh;
+      /* 【2026-09-20 大改修・ヒデさん依頼】惑星はメッシュと別パラメータ→別見出し「惑星」に分離。旧「メッシュ（網）の形」→「メッシュ（網）」。カゴ→メッシュに命名統一・見出しにモノ名があるので子は短縮。 */
+      sub(animModeBox, '惑星', true);
+      slider('大きさ', 0.2, 3, 0.02, () => params.planet.scale, v => { params.planet.scale = v; if (editHandles.on) editHandles.place(); },
+        v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。', { mbKey: 'planet.scale' });
+      sub(animModeBox, 'メッシュ', true);
+      /* 【2026-09-17 大掃除・ヒデさん指定】「頂点は自動配置」ボタンと案内は削除(ケージは立体並びで手置き不可のため常に空振りだった) */
+      slider('ノードの数', 3, 60, 1, () => params.conv.mesh.nodes,
+        v => { M.nodes = v; if (M.pts && M.pts.length !== Math.round(v)) M.pts = null; },
+        v => v + '個', '「散らばり（フィボナッチ）」の時の点の数。「整った網（測地線）」では下の「面の数」で決まります。', { mbKey: 'conv.mesh.nodes', fixedMax: true });
+      slider('ノードの大きさ', 0.1, 3, 0.02, () => params.conv.mesh.size, v => M.size = v, v => '×' + v.toFixed(2),
+        'この案のノードだけの大きさ（全体の「ドットの大きさ」に掛かります）。', { mbKey: 'conv.mesh.size', fixedMax: true });
+      /* 惑星の大きさは上の「惑星」見出しへ移動(2026-09-20 大改修) */
+      /* 【2026-08-27 ヒデさん指定】包囲ケージ専用のつまみ */
+      if ((M.style || 'organic') === 'cage') {
+        slider('大きさ', 1.05, 4, 0.05, () => params.conv.mesh.cageR, v => M.cageR = v, v => '×' + v.toFixed(2),
+          '惑星の半径の何倍でメッシュを組むか。大きいほど大きく取り囲みます。', { mbKey: 'conv.mesh.cageR' });
+        /* 【2026-09-25 ヒデさん依頼】メッシュの形状バリエーション(丸み/横長/ひし形/縦長)＋横/縦のふくらみ＋尖りのつまみは削除。
+           現状(焼き込み済みの msx/msy/mpinch)を既定として固定。形状はいじらせず、面の数(下)だけ残す。 */
+        slider('回る速さ', 0, 3, 0.05, () => params.conv.mesh.cageSpin, v => M.cageSpin = v,
+          v => '×' + v.toFixed(2), '右へ動かすほどメッシュが速く回ります。0(左端)で止まります。', { mbKey: 'conv.mesh.cageSpin' });
+        slider('傾き（前後）', -60, 60, 1, () => params.conv.mesh.cageTilt, v => M.cageTilt = v, v => v + '°',
+          'メッシュの軸を手前/奥へ倒す。0で真横から見た形になります。', { mbKey: 'conv.mesh.cageTilt' });
+        /* 【2026-09-19 ヒデさん依頼】傾きを3軸に(前後・左右・向き) */
+        slider('傾き（左右）', -60, 60, 1, () => (params.conv.mesh.cageRoll || 0), v => M.cageRoll = v, v => (v > 0 ? '+' : '') + v + '°',
+          'メッシュの軸を左右に倒す(画面の面内で回す)。0＝いまの向き。', { mbKey: 'conv.mesh.cageRoll', signed: true });
+        slider('向き（回転の位置）', -180, 180, 1, () => (params.conv.mesh.cageYaw || 0), v => M.cageYaw = v, v => (v > 0 ? '+' : '') + v + '°',
+          '縦軸まわりの向きをずらす。回っている時は「どこから回り始めるか」、止めている時は「どの面を見せるか」。', { mbKey: 'conv.mesh.cageYaw', signed: true });
+        /* 【2026-09-18 ヒデさん依頼「メッシュの面の数などを変えられるように」】カゴの形(整った網/散らばり)を選べるようにし、
+           整った網は「面の数」を段階スライダーに(旧: 粗い/ふつう/細かい の3択)。表示は実際の点・線の数。 */
+        optRow('cageShape', '形', [['整った網（点が飛び飛び）', 'geo'], ['散らばり（1個ずつ）', 'fibo']],   /* 【2026-09-25】散らばりは三角網になり面の数を1個ずつ調整できる */
+          () => (M.cageShape || 'fibo'), v => { M.cageShape = v; markDirty(); renderFrame(); fillAnimBody(); });
+        if (M.cageShape === 'geo') {
+          /* 【2026-09-02 ヒデさん指定】整った網(測地線)は面の細かさで密度を決める */
+          slider('面の数（網の細かさ）', 1, 4, 1, () => (M.cageFreq == null ? 2 : M.cageFreq),
+            v => { M.cageFreq = Math.round(v); renderFrame(); },
+            v => { try { const g = buildGeodesic(Math.round(v)); return `段階${Math.round(v)}（点${g.verts.length}・線${g.edges.length}）`; } catch (e) { return String(Math.round(v)); } },
+            '惑星を覆う網(測地線球)の細かさ。1=20面 / 2=80面 / 3=320面 / 4=1280面。4は点が600を超えるので少し重くなります。', { fixedMax: true, mbKey: 'conv.mesh.cageFreq' });
+        } else {
+          /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】散らばり＝三角網。点の数を1個ずつ(旧「1点から出る骨」は三角網では不要になったので置き換え) */
+          slider('面の数（点の数・1個ずつ）', 12, 300, 1, () => (M.cageFiboN == null ? 42 : M.cageFiboN),
+            v => { M.cageFiboN = Math.round(v); renderFrame(); },
+            v => { const k = Math.round(v); return '点' + k + '・線' + (3 * k - 6); },
+            '散らばり(三角網)の点の数。1個ずつ増減できます。42＝整った網の面の数2と同じ点・線の数、92＝面の数3相当。多いほど細かく丸く。', { fixedMax: true, mbKey: 'conv.mesh.cageFiboN' });
+        }
+      }
+      slider('全体の広がり', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
+        v => '×' + v.toFixed(2), '網ぜんたいの広がり。大きいほどノードが外へ広がって大きな網になります。', { mbKey: 'conv.mesh.spread', fixedMax: true });
+      slider('線の濃さ', 0, 1, 0.01, () => params.conv.mesh.lineAlpha, v => M.lineAlpha = v, v => v.toFixed(2), null, { mbKey: 'conv.mesh.lineAlpha', fixedMax: true });
+      slider('線の太さ', 0.3, 6, 0.1, () => params.conv.mesh.lineWidth, v => M.lineWidth = v, v => v.toFixed(1) + 'px', null, { mbKey: 'conv.mesh.lineWidth', fixedMax: true });
+      slider('つながる範囲', 0.05, 1.2, 0.01, () => params.conv.mesh.span, v => M.span = v, v => v.toFixed(2),
+        '大きいほど線が増えて網が濃くなります。', { mbKey: 'conv.mesh.span', fixedMax: true });
+      slider('ランダムさ', 0, 2.5, 0.05, () => params.conv.mesh.random, v => M.random = v, v => '×' + v.toFixed(2),
+        'ノードがどれだけ大きく漂うか。0でぴたっと止まります。', { mbKey: 'conv.mesh.random', fixedMax: true });
+      slider('漂う速さ', 0, 3, 0.05, () => params.conv.mesh.drift, v => M.drift = v, v => '×' + v.toFixed(2), null, { mbKey: 'conv.mesh.drift', fixedMax: true });
+      slider('1ホップの時間', 0.05, 2, 0.05, () => params.conv.mesh.hop, v => M.hop = v, v => v.toFixed(2) + '秒', null, { mbKey: 'conv.mesh.hop', fixedMax: true });
+      slider('パケットの頻度', 0.1, 8, 0.1, () => params.conv.mesh.rate, v => M.rate = v, v => v.toFixed(1) + '個/秒', null, { mbKey: 'conv.mesh.rate', fixedMax: true });
+    } else if (cvMode === 'beads') {
+      const B = params.conv.beads;
+      sub(animModeBox, 'この案の調整（点が並ぶ軌道）', true);
+      /* 【2026-08-28 ヒデさん指定】楕円の端で点が詰まって見える問題への対処 */
+      segRow('並べ方', [['見た目そろえ', 1], ['等角(従来)', 0]],
+        () => (params.conv.beads.even === false) ? 0 : 1,
+        v => { B.even = !!v; markDirty(); renderFrame(); });
+      note('「見た目そろえ」＝弧の長さで等分するので、輪の端でも点が詰まって見えません。「等角」＝角度で等分する昔の並べ方。');
+      slider('ドットの密度', 6, 1200, 2, () => params.conv.beads.count, v => B.count = v, v => v + '個',
+        '多いほど点が詰まって軌道の線に見えます。', { mbKey: 'conv.beads.count', fixedMax: true });
+      slider('同時に吸われる割合', 0.02, 1, 0.01, () => params.conv.beads.ratio, v => B.ratio = v, pctF,
+        '小さいほど輪の形が保たれ、大きいほど一斉に吸い込まれます。', { mbKey: 'conv.beads.ratio', fixedMax: true });
+      slider('吸収にかかる秒数', 0.5, 12, 0.1, () => params.conv.beads.life, v => B.life = v, v => v.toFixed(1) + '秒', null, { mbKey: 'conv.beads.life', fixedMax: true });
+      slider('回る速さ', 0.02, 2, 0.02, () => params.conv.beads.speed, v => B.speed = v, v => '×' + v.toFixed(2), null, { mbKey: 'conv.beads.speed', fixedMax: true });
+      slider('並びの乱れ', 0, 3, 0.05, () => params.conv.beads.jitter, v => B.jitter = v, v => v.toFixed(2),
+        '0できっちり等間隔。上げるほど並びがばらつきます。', { mbKey: 'conv.beads.jitter', fixedMax: true });
+      slider('戻ってくる時間', 0.1, 5, 0.1, () => params.conv.beads.backIn, v => B.backIn = v, v => v.toFixed(1) + '秒',
+        '吸い込まれた点が、空いた場所にゆっくり現れるまでの時間。', { mbKey: 'conv.beads.backIn', fixedMax: true });
+    } else if (cvMode === 'gyro') {
+      const G = params.conv.gyro;
+      sub(animModeBox, 'この案の調整（ジャイロ回転）', true);
+      slider('転がる速さ', 0, 3, 0.05, () => params.conv.gyro.tumble, v => G.tumble = v,
+        v => '×' + v.toFixed(2), '右へ動かすほど輪が速く転がります。0(左端)で止まります。', { mbKey: 'conv.gyro.tumble' });
+      slider('面が回る速さ', 0, 3, 0.05, () => params.conv.gyro.spin, v => G.spin = v,
+        v => '×' + v.toFixed(2), '右へ動かすほど輪の向きが速く回ります。外と内は逆回りです。', { mbKey: 'conv.gyro.spin' });
+      slider('2本のずれ', 0, 180, 5, () => params.conv.gyro.phase, v => G.phase = v, v => v + '°',
+        '外と内の転がりをどれだけずらすか。90°で直交して、いちばんジャイロらしくなります。', { mbKey: 'conv.gyro.phase' });
+      /* ⚠️ 値が大きいほど【厚く】なるのに名前が「薄さ」で、向きが逆に読めた(2026-08-28) */
+      slider('真横の厚み', 0.01, 0.5, 0.01, () => params.conv.gyro.thin, v => G.thin = v, v => v.toFixed(2),
+        '真横から見た瞬間の厚み。左へ動かすほど線に近くなり、右へ動かすほど厚みが残ります。', { mbKey: 'conv.gyro.thin' });
+      slider('吸い寄せの強さ', 0, 0.8, 0.02, () => params.conv.gyro.pull, v => G.pull = v, v => Math.round(v * 100) + '%',
+        '周期的に輪が惑星へ引き寄せられる量。0で引き寄せません。', { mbKey: 'conv.gyro.pull' });
+      slider('吸い寄せの周期', 1, 14, 0.2, () => params.conv.gyro.pullT, v => G.pullT = v, v => v.toFixed(1) + '秒',
+        '引き寄せをくり返す間隔。', { mbKey: 'conv.gyro.pullT' });
+    } else if (CONV_LINKED.includes(cvMode)) {
+      const L = params.conv.link;
+      sub(animModeBox, 'この案の調整（線で行き来）', true);
+      note('惑星のエリアに入った粒は完全に消えます。手前で縮みながら薄くなるので、吸い込まれるように見えます。');
+      slider('吸い込まれる範囲', 0, 1.2, 0.02, () => params.conv.link.vanishK, v => L.vanishK = v, v => '×' + v.toFixed(2),
+        '惑星の縁のどれくらい手前から縮み始めるか。0でエリアに触れた瞬間に消えます。', { mbKey: 'conv.link.vanishK', fixedMax: true });
+      slider('流れる速さ', 0.1, 4, 0.05, () => params.conv.link.speed, v => L.speed = v, v => '×' + v.toFixed(2), null, { mbKey: 'conv.link.speed', fixedMax: true });
+      slider('1周の秒数', 0.5, 10, 0.1, () => params.conv.link.T, v => L.T = v, v => v.toFixed(1) + '秒', null, { mbKey: 'conv.link.T', fixedMax: true });
+      slider('粒の密度', 0.3, 6, 0.1, () => params.conv.link.density, v => L.density = v, v => '×' + v.toFixed(1),
+        '1本の線に流す粒の数。', { mbKey: 'conv.link.density', fixedMax: true });
+      slider('線の反り', 0, 1, 0.01, () => params.conv.link.curve, v => L.curve = v, v => v.toFixed(2),
+        '0で直線、大きいほど弧を描きます。', { mbKey: 'conv.link.curve', fixedMax: true });
+      slider('線の濃さ', 0, 0.6, 0.01, () => params.conv.link.lineAlpha, v => L.lineAlpha = v, v => v.toFixed(2), null, { mbKey: 'conv.link.lineAlpha' });
+      slider('線の太さ', 0.2, 4, 0.1, () => params.conv.link.lineWidth, v => L.lineWidth = v, v => v.toFixed(1) + 'px',
+        '惑星とドットを結ぶ線の太さ。', { mbKey: 'conv.link.lineWidth' });
+    }
+
+    /* 【2026-08-30 ヒデさん指定】「粒（吸い込み）」を A(軌道)グループの全案の共通オプションに。
+       (以前は収縮=reelだけだった)。渦(spiral)は元々この動きが本体なので出さない。ネットワーク3D中も対象外。 */
+    if (convGroupOf(cvMode).key === 'orbit' && cvMode !== 'spiral' && cvMode !== 'mesh' && !params.conv.net3d) {
+      /* 2026-08-31: mesh(ネットワーク)は対象外(自前のノード粒とぶつかりデザインが破綻するため) */
+      sub(animModeBox, '粒（吸い込み）— どの案でも重ねられる', true);
+      const RP = params.conv.reelP || (params.conv.reelP = { on: false, count: 12, life: 8, speed: 0.55, size: 0.62, stay: 5, swirl: 1, fallCurve: 1 });
+      segRow('粒（吸い込み）', [['なし', 0], ['あり', 1]],
+        () => RP.on ? 1 : 0,
+        v => { RP.on = !!v; markDirty(); renderFrame(); fillAnimBody(); });
+      if (RP.on) {
+        /* 連動の切替は「動き(この案) > 粒も一緒に回す」に統一(2026-08-30) */
+        slider('粒の数', 2, 40, 1, () => RP.count, v => { RP.count = v; renderFrame(); }, v => Math.round(v) + '個',
+          '軌道の上を回って惑星へ吸い込まれる粒の数。', { mbKey: 'conv.reelP.count', fixedMax: true });
+        slider('粒の大きさ', 0.2, 1.5, 0.02, () => RP.size, v => { RP.size = v; renderFrame(); }, v => '×' + v.toFixed(2), '粒の大きさ。', { mbKey: 'conv.reelP.size' });
+        slider('回る速さ', 0.1, 2, 0.05, () => RP.speed, v => { RP.speed = v; renderFrame(); }, v => '×' + v.toFixed(2), '軌道を回る速さ。', { mbKey: 'conv.reelP.speed' });
+        slider('吸い込みの秒数', 2, 16, 0.5, () => RP.life, v => { RP.life = v; renderFrame(); }, v => v.toFixed(1) + '秒', '吸い込まれきるまでの時間。長いほどゆっくり。', { mbKey: 'conv.reelP.life', fixedMax: true });
+        slider('軌道で待つ秒数', 1, 10, 0.5, () => RP.stay, v => { RP.stay = v; renderFrame(); }, v => v.toFixed(1) + '秒', '吸い込まれる前に軌道を回っている時間。', { mbKey: 'conv.reelP.stay' });
+        slider('巻き具合', 0, 3, 0.05, () => RP.swirl, v => { RP.swirl = v; renderFrame(); }, v => '×' + v.toFixed(2), '吸い込まれる間の渦の巻き。0でまっすぐ。', { mbKey: 'conv.reelP.swirl' });
+        slider('落ち方のカーブ', 0.1, 3, 0.05, () => RP.fallCurve, v => { RP.fallCurve = v; renderFrame(); }, v => '×' + v.toFixed(2), '大きいほど中心の近くで一気に吸い込まれる。', { mbKey: 'conv.reelP.fallCurve' });
+      }
+    }
+
+
+    /* 【2026-08-29 ヒデさん指定】案ごとに「効く項目だけ」出す。使わない案では丸ごと隠す。
+       例: エフェクトは吸収する案だけ / 汎用の軌道・ドット調整はネットワーク3D(固定再現)では効かない。 */
+    for (const g of dynGroups) if (g.el) g.el.style.display = g.vis() ? '' : 'none';
+    mount = keepMount;
+    subDefaultOpen = keepOpen;
+    liveEdit = keepLive;
+    body.scrollTop = keepScroll;
+  }
+  fillAnimBody();
+
+  /* ═══ ③〜⑤ ここから下は【モノ(オブジェクト)ごと】の調整 (2026-08-27 ヒデさん指定) ═══
+     どの案を選んでいても効く、パーツそのものの設定。案ごとの細かいつまみは ① の中にある。 */
+
+  /* ---------- ③ 軌道（輪） ---------- */
+  liveEdit = true;
+  sub(gRoot, '軌道（輪）', true);
+  addDynGroup(orbitsUsed);   /* 2026-08-29: 輪が自動で隠れる案(net3d/mesh/beads/accre)では軌道調整が効かないので隠す */
+  /* 【2026-08-27 ヒデさん指定】「表示」の中に「表示」の行、のような入れ子の重複をやめ、
+     モノの箱の中は小見出しを置かずにフラットに並べる */
+  chipRow('表示', [
+    { name: '外の輪', get: () => params.conv.showOuter, set: v => params.conv.showOuter = v,
+      hint: '外側の輪' },
+    { name: '内の輪', get: () => params.conv.showInner, set: v => params.conv.showInner = v,
+      hint: '内側の輪' },
+    { name: 'ドット', get: () => params.conv.showDots,  set: v => params.conv.showDots = v,
+      hint: '輪の上を回っている点' },
+  ]);
+  note('輪を消すと、その輪のドットも消えます。粒の渦・網の案では自動で隠れます。軌道の回転は案ごとなので「動き（この案）」にあります。');
+  slider('漂う量', -3, 3, 0.05, () => params.conv.orbitDrift, v => params.conv.orbitDrift = v,
+    v => '×' + v.toFixed(2),
+    '真ん中(0)で固定。右へ動かすほど大きく漂い、左へ動かすと逆向きに漂います。', { mbKey: 'conv.orbitDrift', signed: true });
+  /* 【2026-08-29 ヒデさん指定・フォーマット統一】「揺らぎ」「軌道の回転」の ON/OFF は
+     案ごとに独立させたので「グラフィック > 動き（この案）」へ移動した。ここには置かない。 */
+  note('揺らぎ・軌道の回転の ON/OFF は、案ごとに「グラフィック」タブの「動き（この案）」にあります（既定は 揺らぎON・回転OFF）。');
+
+  /* 【2026-08-28 ヒデさん指定】複数軌道(リピート): 本数を増やすと惑星の中心に軌道を張る(アトム型など) */
+  slider('軌道の本数', 0, 12, 1, () => params.conv.ringCount || 0,
+    v => { params.conv.ringCount = v; markDirty(); renderFrame(); fillRingSub(); },
+    v => (v < 2 ? '通常(2本)' : Math.round(v) + '本'),
+    '0〜1で通常の2本のまま。2以上にすると、惑星の中心に複数の軌道を張ります（アトム型など）。', { mbKey: 'conv.ringCount', fixedMax: true });
+  const ringSubBox = document.createElement('div');
+  (mount || body).appendChild(ringSubBox);
+  var fillRingSub = function () {
+    const keep = mount; mount = ringSubBox; ringSubBox.innerHTML = '';
+    if ((params.conv.ringCount || 0) >= 2) {
+      const SHAPES = [
+        { key: 'atom', name: 'アトム' }, { key: 'saturn', name: '土星' },
+        { key: 'rosette', name: '花' }, { key: 'globe', name: '地球儀' },
+      ];
+      varRowX('ringShape', SHAPES, () => params.conv.ringShape || 'atom', v => { params.conv.ringShape = v; },
+        { snap: VAR_SNAP.conv, after: (isLive => () => applyEdit(isLive, true))(liveEdit), reset: { get: () => params.conv.ringShape, set: v => { params.conv.ringShape = v; renderFrame(); } } });
+      segRow('回転', [['する', 1], ['しない', 0]], () => (params.conv.ringRotate === false ? 0 : 1),
+        v => { params.conv.ringRotate = !!v; markDirty(); renderFrame(); });
+      note('「しない」にすると、輪が回らず・奥行きも動かず、その向きでぴたっと止まります（下の「回る速さ」「奥行きの動き」は回転オンの時だけ効きます）。');
+      slider('回る速さ', 0, 2, 0.05, () => params.conv.ringSpin, v => params.conv.ringSpin = v, v => '×' + v.toFixed(2), '軌道全体の回る速さ。', { mbKey: 'conv.ringSpin' });
+      slider('奥行きの動き', 0, 1.5, 0.05, () => params.conv.ringTumble, v => params.conv.ringTumble = v, v => '×' + v.toFixed(2), 'アトム型・地球儀型で、奥行きの伸び縮みの速さ。', { mbKey: 'conv.ringTumble' });
+      slider('つぶし', 0.15, 0.8, 0.02, () => params.conv.ringFlat, v => params.conv.ringFlat = v, v => v.toFixed(2), '軌道の縦のつぶし具合。小さいほど細長い輪。', { mbKey: 'conv.ringFlat' });
+      slider('大きさ', 0.5, 1.6, 0.02, () => params.conv.ringSize, v => params.conv.ringSize = v, v => '×' + v.toFixed(2), '軌道全体の大きさ。', { mbKey: 'conv.ringSize' });
+      slider('線の太さ', 0.5, 8, 0.1, () => params.conv.ringWidth, v => params.conv.ringWidth = v, v => v.toFixed(1) + 'px', '複数軌道の線の太さ。', { mbKey: 'conv.ringWidth' });
+    }
+    mount = keep;
+  };
+  fillRingSub();
+
+  /* ---------- ④ ドット（粒） ---------- */
+  sub(gRoot, 'ドット（粒）', true);
+  addDynGroup(orbitsUsed);   /* 2026-08-29: ドットが自動で隠れる案(net3d/mesh/beads/accre)では汎用ドット調整が効かないので隠す */
+  slider('大きさ', 0.1, 4, 0.02, () => params.conv.dotSize, v => params.conv.dotSize = v,
+    v => '×' + v.toFixed(2), 'すべての案のドット・粒にまとめて効きます。', { mbKey: 'conv.dotSize' });
+  {
+    /* もとは「グラフィック」の見出しの右にあったアイコン。
+       モノごとの整理にあわせて、ドットの持ちものとしてここへ移した */
+    const wrap = document.createElement('div');
+    wrap.className = 'gmode gmode-row';
+    const ICONS = {
+      flat: '<svg viewBox="0 0 22 14" width="22" height="14" aria-hidden="true">'
+          + '<circle cx="4" cy="7" r="2.6"/><circle cx="11" cy="7" r="2.6"/><circle cx="18" cy="7" r="2.6"/></svg>',
+      persp: '<svg viewBox="0 0 22 14" width="22" height="14" aria-hidden="true">'
+          + '<circle cx="4.5" cy="7" r="4"/><circle cx="13" cy="7" r="2.4"/><circle cx="19" cy="7" r="1.3"/></svg>',
+    };
+    const perspBox = document.createElement('div');
+    const fillPersp = () => {
+      perspBox.innerHTML = '';
+      const keep = mount; mount = perspBox;
+      if ((params.conv.dotPersp || 'flat') === 'persp') {
+        slider('遠近の強さ', 0, 0.9, 0.02, () => params.conv.perspK, v => params.conv.perspK = v, v => v.toFixed(2),
+          '手前と奥の大きさ・太さの差。大きいほど立体感が強くなります。', { mbKey: 'conv.perspK' });
+        /* 【2026-08-29 ヒデさん指定】遠近を効かせる対象を選べる（ドット/軌道の線/両方）。
+           軌道は「手前(下)の線を太く・奥(上)を細く」で遠近を出す。 */
+        segRow('対象', [['ドット', 'dots'], ['軌道', 'orbit'], ['両方', 'both']],
+          () => params.conv.perspScope || 'dots',
+          v => { params.conv.perspScope = v; markDirty(); renderFrame(); });
+        note('「軌道」を選ぶと、手前(下)の線が太く・奥(上)の線が細くなって、輪にも奥行きが出ます。');
+      }
+      mount = keep;
+    };
+    for (const [key, label] of [['flat', 'どこでも同じ大きさ'], ['persp', '手前が大きく、奥が小さい（遠近）']]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gmode-b' + ((params.conv.dotPersp || 'flat') === key ? ' on' : '');
+      b.innerHTML = ICONS[key];
+      b.title = label;
+      b.onclick = () => {
+        params.conv.dotPersp = key;
+        markDirty(); renderFrame();
+        wrap.querySelectorAll('.gmode-b').forEach((el, j) => el.classList.toggle('on', j === (key === 'flat' ? 0 : 1)));
+        fillPersp();
+        fillAnimBody();
+      };
+      wrap.appendChild(b);
+    }
+    const prow = document.createElement('div');
+    prow.className = 'row';
+    const plab = document.createElement('label');
+    plab.textContent = '遠近';
+    plab.title = '左＝どこでも同じ大きさ／右＝手前が大きく、奥が小さい';
+    /* 2026-08-29 ヒデさん指定: 遠近トグルにもリセット(↺)を置く */
+    const perspRst = mkReset(() => (params.conv.dotPersp || 'flat'), v => {
+      params.conv.dotPersp = v;
+      wrap.querySelectorAll('.gmode-b').forEach((el, j) => el.classList.toggle('on', j === (v === 'flat' ? 0 : 1)));
+      markDirty(); renderFrame(); fillPersp();
+    }, null, false);
+    prow.append(plab, wrap, perspRst);
+    (mount || body).appendChild(prow);
+    (mount || body).appendChild(perspBox);
+    fillPersp();
+  }
+  slider('ランダムさ', -3, 3, 0.05, () => params.conv.dotRandom, v => params.conv.dotRandom = v, v => v.toFixed(2),
+    '真ん中(0)できっちり等間隔。左右どちらへ動かしてもばらつきます（向きが逆になります）。', { mbKey: 'conv.dotRandom', signed: true });
+  note('「軌道にそって回るかどうか」は案ごとの設定なので、① の中にあります。');
+
+  /* ---------- ⑤ 惑星 ---------- */
+  /* 【2026-08-28 ヒデさん指定】エフェクトを「惑星(模様)」の【上】へ。独立したセクションにする。 */
+  sub(gRoot, 'エフェクト（吸収のされ方）', true);
+  /* 【2026-08-29 ヒデさん指定】この節は「吸収する案」でだけ出す。 */
+  addDynGroup(effectApplies);
+  {
+    /* パルス / 波紋 / エコー = エフェクトの種類。ここは「選択ピル」で、下の番号ピルと役割を分ける */
+    const GLOWS = [
+      { key: 'pulse',  name: 'パルス', tip: '届いた瞬間だけ、ふっと明るくなります。' },
+      { key: 'echo',   name: 'エコー', tip: '惑星の丸いシルエットが、ひと回り大きくなった残像として外へ広がります。線ではなく“面”の波紋。' },
+    ];
+    varRowX('glowKind', GLOWS, () => params.conv.glowKind || 'pulse', v => { params.conv.glowKind = v; },
+      { snap: VAR_SNAP.conv, after: (isLive => () => { fillGlowSub(); applyEdit(isLive, true); })(liveEdit), reset: { get: () => params.conv.glowKind, set: v => { params.conv.glowKind = v; renderFrame(); } } });
+
+    /* 【2026-08-28 ヒデさん指定】エフェクトの出方(タイミング)。データが取り込まれるたびに毎回だと、
+       粒がパラパラ入る案ではエフェクトが出っぱなしになる。「N回に1回」「N秒に1回」でまびける。 */
+    segRow('エフェクトの出方', [['毎回', 'every'], ['回数で', 'count'], ['秒で', 'time']],
+      () => params.conv.fxMode || 'every',
+      v => { params.conv.fxMode = v; markDirty(); renderFrame(); fillFxPeriod(); });
+    const fxPeriodBox = document.createElement('div');
+    (mount || body).appendChild(fxPeriodBox);
+    var fillFxPeriod = function () {
+      const keep = mount; mount = fxPeriodBox; fxPeriodBox.innerHTML = '';
+      const m = params.conv.fxMode || 'every';
+      if (m === 'count') {
+        slider('何回に1回', 1, 30, 1, () => params.conv.fxCount, v => params.conv.fxCount = v,
+          v => Math.round(v) + '回に1回',
+          '取り込みが何回起きるごとに1回エフェクトを出すか。大きいほど間引かれます。', { mbKey: 'conv.fxCount' });
+      } else if (m === 'time') {
+        slider('何秒に1回', 0.5, 15, 0.5, () => params.conv.fxEvery, v => params.conv.fxEvery = v,
+          v => v.toFixed(1) + '秒に1回',
+          '前に出してからこの秒数がたつまで、次のエフェクトを出しません。', { mbKey: 'conv.fxEvery' });
+      }
+      mount = keep;
+    };
+
+    /* 【2026-08-28 ヒデさん指定】広がりの慣性(波紋・エコー共通)。水面の波紋のように、勢いよく広がってスッと落ち着く */
+    slider('広がりの慣性', 0, 1, 0.05, () => params.conv.fxInertia, v => params.conv.fxInertia = v,
+      v => v.toFixed(2),
+      '0＝一定の速さ（機械的）。右へ動かすほど、最初は勢いよく広がってだんだん減速します（自然な波紋）。波紋・エコーに効きます。', { mbKey: 'conv.fxInertia' });
+
+    /* エコーを選んだ時だけ、下に「バリエーション」の番号ピルと細かいつまみを出す */
+    const echoBox = document.createElement('div');
+    (mount || body).appendChild(echoBox);
+    const ECHOES = [
+      { key: 'k1', name: '1 うしろに重ねる', tip: '惑星の絵をそのまま複製して、ひと回り大きく後ろへ。ふちにリムのように出ます。いちばん自然。' },
+      { key: 'k2', name: '2 ぼかして広がる', tip: '複製にぼかしをかけながら大きく広がります。やわらかい残像。' },
+      { key: 'k3', name: '3 手前にゴースト', tip: '複製を惑星の手前へ薄く重ねます。透けた残像がいちばんはっきり見えます。' },
+      { key: 'k4', name: '4 色が変わる面',   tip: '単色の面の残像。取り込むたびに色が変わります（青・ピンク・水色・藤・白からランダム）。' },
+      { key: 'k5', name: '5 連続ディゾルブ', tip: '惑星を少しずつ大きくしながら何十枚も薄く重ねます。段差が消えて、尾を引くように滑らかに溶けます。' },
+      { key: 'k6', name: '6 内から溶ける',   tip: '同じ重ね方をしたうえで内側を抜き、外へ広がる輪にします。いちばん波紋らしい溶け方。' },
+      { key: 'k7', name: '7 ぼけて溶ける',   tip: '重ねたうえで強くぼかします。輪郭が完全に消えて、光がにじむように広がります。' },
+      { key: 'k8', name: '8 くっきり尾を引く', tip: '1と同じで惑星をそのまま複製するのでハッキリ見えます。1コマぶんの進みを細かく重ねるので、段差が出ずになめらかです。' },
+      { key: 'k9', name: '9 連なる波',       tip: '殻を等間隔でずっと回し続けます。生まれる瞬間が無いので、途切れずに波が外へ流れ続けます（この案だけ間引きの対象外）。' },
+    ];
+    var fillGlowSub = function () {
+      const keep = mount; mount = echoBox; echoBox.innerHTML = '';
+      /* 【2026-09-19 ヒデさん依頼】エコーの「バリエーション／残像の輪郭／詳細つまみ」は削除(使わないため)。エコーの見た目は現在の params.conv のまま固定。 */
+      mount = keep;
+    };
+    fillFxPeriod();
+    fillGlowSub();
+  }
+  slider('光の強さ', 0, 1, 0.05, () => params.conv.glow, v => params.conv.glow = v, v => v.toFixed(2),
+    '右へ動かすほど強く光ります。0で光りません。', { mbKey: 'conv.glow' });
+  slider('溜まりの残り方', 1, 20, 0.5, () => params.conv.glowHold, v => params.conv.glowHold = v, v => v.toFixed(1) + '秒',
+    '取り込んだぶんが半分に戻るまでの時間。右へ動かすほど、強くなった状態が長く残ります（Aパルス以外で効きます）。', { mbKey: 'conv.glowHold' });
+
+  /* 【2026-09-17 大掃除・ヒデさん指定】「自由回転」(XYZ回転の枠・開始地点ボタン)は削除。メッシュ案では使っていない。 */
+  /* 【2026-09-19 ヒデさん依頼】「惑星（模様）」の案の欄は削除(使わないため)。惑星スキンは現在の params.design のまま固定。 */
+  /* 【2026-09-17 ヒデさん指定】「大きさ」のつまみは「メッシュ（網）の形」の中(ノードの数の下・カゴの大きさの上)へ移動 */
+  /* 【2026-09-09 ヒデさん指定】惑星の「つぶし」項目は削除。真円(flat=1)に固定＝焼き込み。
+     実装は params.planet.flat 未設定時 1(真円) が既定なので挙動不変。 */
+
+  /* 【2026-08-27 ヒデさん指摘・削除】「登場（出てくる順番）」の節はここにあったが丸ごと削除。
+     理由: 中身(入場の起点 / モックが出る / アイコンが出る・ばらけ / 軌道が出る)は
+     すべて iframe のモックKV(kv/embed.html)へ postMessage するだけの値だった。
+     惑星案に絞った今、その iframe は表示されていないので何も効かない。
+     実測: 4つのつまみを動かしても、描画中の円・楕円の位置と濃さが1つも変わらなかった。 */
+  subDefaultOpen = false;     /* グラフィックはここまで */
+  /* 【2026-09-19 ヒデさん依頼】「ロゴ帯（目視の微調整）」の欄は削除(使わないため)。位置は現在の params.logoTune のまま固定。 */
+  /* 【2026-08-27 ヒデさん指定】「左側コピー」に改名し、順番 / タイミング に分ける */
+  /* 【2026-09-20 大改修・ヒデさん依頼】「左側コピー」の器を廃止し、コピー(基本)＋コピー(順番)/コピー(打つ速さ)=アニメに分割。 */
+  const copyRoot = catKv;
+  /* 【2026-09-20 大改修・ヒデさん依頼】コピー＝基本(位置・罫線・ギャップ)／フォント(サイズ)／アニメ(出現・タイピング)に分割。「上下の並び」は削除。位置はX/Y表記。 */
+  sub(copyRoot, 'コピー', false);   /* 基本: 位置・罫線・ギャップ */
+  rows.push(slider('位置 X', -120, 300, 2, () => (params.kv.copyX || 0),
+    v => { params.kv.copyX = v; applyKvCopy(); }, v => v + 'px',
+    'コピー全体（メイン＋サブ）を左右にずらします。0でヘッダーのロゴの左端と同じ位置(窓幅が変わっても揃います)。', { mbKey: 'kv.copyX', signed: true }));
+  rows.push(slider('位置 Y', -200, 300, 2, () => (params.kv.copyY || 0),
+    v => { params.kv.copyY = v; applyKvCopy(); }, v => v + 'px',
+    'コピー全体を上下にずらします。0で調整版(Figma)の位置。', { mbKey: 'kv.copyY', signed: true }));
+  segRow('サブの罫線（—）', [['あり', 1], ['なし', 0]],
+    () => (params.kv.eyebrowDash === false ? 0 : 1),
+    v => { params.kv.eyebrowDash = !!v; applyKvCopy(); markDirty(); buildPanel(); });
+  if (params.kv.eyebrowDash !== false) {
+    rows.push(slider('罫線の長さ', 8, 80, 1, () => (params.kv.eyebrowDashW != null ? params.kv.eyebrowDashW : 26),
+      v => { params.kv.eyebrowDashW = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+      'サブコピー先頭の罫線(—)の長さ。カンプは26px。', { mbKey: 'kv.eyebrowDashW' }));
+    rows.push(slider('罫線と文字のギャップ', 0, 40, 1, () => (params.kv.dashGap != null ? params.kv.dashGap : 10),
+      v => { params.kv.dashGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+      '罫線(—)とサブコピー文字の間隔。', { mbKey: 'kv.dashGap' }));
+  }
+  rows.push(slider('メイン↔サブのギャップ', 0, 60, 1, () => (params.kv.copyGap != null ? params.kv.copyGap : 16),
+    v => { params.kv.copyGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+    'メインコピーとサブコピーの縦の間隔。', { mbKey: 'kv.copyGap' }));
+  sub(copyRoot, 'コピー', false, { grp: 'font' });   /* フォント: 文字サイズ(太さ/行間/字間は🔤文字) */
+  rows.push(slider('1〜2行目のサイズ', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
+    v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「文字」で。', { mbKey: 'kv.mainSize', mbDefault: 34 }));
+  rows.push(slider('最終行「競争力を」のサイズ', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
+    v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+    '見出し3行目「競争力を」だけのサイズ。1〜2行目とは別の独立した値(ここだけ大きくできる)。調整版は120px。', { mbKey: 'kv.jumpSize', mbDefault: 60 }));
+  rows.push(slider('サブのサイズ', 10, 28, 1, () => (params.kv.eyebrowSize != null ? params.kv.eyebrowSize : 20),
+    v => { params.kv.eyebrowSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
+    '「AI/プロダクト企業のための〜」の文字サイズ。調整版は20px。太さ・字間は「文字」で。', { mbKey: 'kv.eyebrowSize', mbDefault: 12 }));
+  sub(copyRoot, 'コピー（出現）', false, { grp: 'anim' });
+  note('数字はページを開いてから何秒後か。上から出る順です。');
+  /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
+     選択パネル(5案ずつ)は削除。実装は header の data-navhover="roll" / data-btnhover="arrow" 固定(下のJS)。 */
+  rows.push(slider('ナビ項目の間隔', 12, 64, 1, () => (params.kv.navGap != null ? params.kv.navGap : 32),
+    v => { params.kv.navGap = v; applyNavGap(); }, v => Math.round(v) + 'px',
+    'ヘッダーのナビ(ビジョン/提供できること…)の左右の間隔。', { mbKey: 'kv.navGap' }));
+  rows.push(slider('ヘッダーが出る', 0, 3, 0.05, () => params.kv.headerAt, v => params.kv.headerAt = v, v => v.toFixed(2) + '秒後',
+    'いちばん上のロゴとメニューが、ぼけた状態から現れるまで。', { mbKey: 'kv.headerAt' }));
+  rows.push(slider('文字を打ち始める', 0, 6, 0.05, () => params.kv.typeAt, v => params.kv.typeAt = v, v => v.toFixed(2) + '秒後',
+    '「AIと事業を強くする」を1文字ずつ打ち始めるまで。', { mbKey: 'kv.typeAt' }));
+  sub(copyRoot, 'コピー（タイピング）', false, { grp: 'anim' });
+  note('打つ速さと間の取り方。触ると先頭から流し直します。');
+  rows.push(slider('1行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur, v => params.kv.charDur = v, v => v.toFixed(2) + 's/字',
+    '1文字あたりの時間。小さいほどタタタッと速く打ちます。', { mbKey: 'kv.charDur' }));
+  rows.push(slider('2行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur2, v => params.kv.charDur2 = v, v => v.toFixed(2) + 's/字',
+    'ゆっくりにすると、最後の一言が印象に残ります。', { mbKey: 'kv.charDur2' }));
+  rows.push(slider('タイピング速度の変化', 0, 1, 0.05, () => params.kv.typeEase, v => params.kv.typeEase = v, v => Math.round(v * 100) + '%',
+    '大きいほど「最初は速く、最後はゆっくり」に。0で一定。', { mbKey: 'kv.typeEase' }));
+  rows.push(slider('行と行の間', 0, 1.5, 0.05, () => params.kv.lineGap, v => params.kv.lineGap = v, v => v.toFixed(2) + '秒',
+    '1行目を打ち終わってから、2行目を打ち始めるまでの間。', { mbKey: 'kv.lineGap' }));
+  rows.push(slider('打ち終わり→一言', 0, 3, 0.05, () => params.kv.eyebrowGap, v => params.kv.eyebrowGap = v, v => v.toFixed(2) + '秒',
+    '打ち終わってから、上の「APIでデータを繋ぐ〜」が出るまで。', { mbKey: 'kv.eyebrowGap' }));
+  rows.push(slider('→ 右のグラフィックが出る', -2, 2, 0.05, () => params.kv.graphicGap, v => params.kv.graphicGap = v, v => v.toFixed(2) + '秒',
+    '小ラベル基準で、右のモック→アイコン→軌道が出るタイミング。マイナスにすると小ラベルより前（タイピング中）に前倒しできます。', { mbKey: 'kv.graphicGap', signed: true }));
+  rows.push(slider('ブラー解除の時間', 0.4, 3, 0.05, () => params.kv.revealDur, v => params.kv.revealDur = v, v => v.toFixed(2) + '秒',
+    'ぼやけた状態からくっきりするまで。大きいほどゆったり。', { mbKey: 'kv.revealDur' }));
+
+  /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
+
+  /* 【2026-09-17 大掃除・ヒデさん依頼】このセクションの全テキストの 太さ／行間／字間(値の置き場は params.edits＝✏️編集と共通) */
+  sub(catKv, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('ヘッダーとキービジュアルの文字ごとに 太さ(100〜900)・行間(倍)・字間(px) を変えます。空欄＝今のCSSの値(カッコ内)。位置や打ち替えは右上の ✏️編集 で文字をクリック。');
+  textRowsFor(['kv']);
+
+  /* ========== 📖 ビジョン ========== */
+  panelVarsec(null);   /* 【2026-09-21】KVタブ終わり */
+  const catVis = category('ビジョン（つなぐことが、強みになる時代へ）', false);
+  catNote(catVis, 'Our Vision(ブラー) → メッセージがマスクで出る → 下に図(SVG書き出し)がブラーで出る → 右に Point 01/02。');
+  panelVarsec('vis', 'ビジョン（案）');   /* 【2026-09-21 ヒデさん依頼】主役案をセクションに→配下に4カテゴリ */
+
+  /* 【2026-09-20 ヒデさん依頼】ビジョンのバリエーション(デフォルト/強調)。強調＝2行・左揃え・大きめ */
+  sub(catVis, 'バリエーション（案）', true, { fixed: true, grp: 'variation', bare: true });   /* 【2026-09-21 ヒデさん依頼】カテゴリ節「バリエーション」と重複する小見出しは出さず、案の選択だけ見せる(KVと統一) */
+  varRowX('visEmph', VIS_EMPH_VARIANTS, () => visEmphMode(), k => {
+    params.sections.vision.emph = String(k);
+    /* 【2026-09-21 Y14・連動の根治】案を切り替える瞬間に、メッセージ等のサイズ系を「素の既定」へ戻す。
+       この直後に varRowX.choose が『その案の上書き控え』を重ねる(あれば)。
+       → 控えあり=その案だけの独立した大きさ / 控えなし=素の既定。どちらでも「離れた案でいじった大きさ」は残らない。
+       これが無いと、控えの無い案へ移った時に params.edits.visMsg(全案共有)へ残った大きさをそのまま表示していた(＝連動の正体)。 */
+    try { const d = DEFAULTS_PRISTINE.sections.vision; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(kk => { if (d[kk] != null) params.sections.vision[kk] = d[kk]; }); } catch (e) {}
+    visEmphPutMsg(params.edits || (params.edits = {}), null);
+    visEmphPutMsg(params.editsMb || (params.editsMb = {}), null);
+    applyVisEmph(); try { applyVpSize(); } catch (e) {} try { textTools.applyAll(); } catch (e) {}
+  }, { snap: VAR_SNAP.visEmph, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });   /* 【2026-09-21 ヒデさん依頼】案(デフォルト/強調)を切り替えたら、離れる案の文字サイズを控え→選んだ案の控えを適用=それぞれ独立 */
+  note('強調＝メッセージを2行(データをつなぐことが、／強みになる時代へ)に・左揃え・文字+20px・見出しの左をKVコピーに合わせる・1行目→2行目のマスク出現。デフォルト＝現状(1行・中央)。');
+
+  /* 【2026-08-30 ヒデさん指定】「強み」の強調はグラデ揺らぎで確定。他の案とこのセクション自体を削除した */
+
+  /* 【2026-08-26 整理】1項目だけの見出しが並んで冗長だったので「基本」にまとめた */
+  /* 【2026-09-20 大改修】基本(余白)＋ぼかし(エフェクト)＋表示時間(アニメ)に分割。図→グラフィック、距離→ギャップ表記。 */
+  sub(catVis, 'セクションの余白', false);
+  rows.push(slider('実績とのギャップ', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
+    'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。既定 200px 仮置き。', { mbKey: 'visResPull' }));
+  rows.push(slider('見出し→グラフィック・ポイントのギャップ（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
+    'メッセージの下の余白。グラフィック(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px 仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
+  rows.push(slider('グラフィックとポイントの左右ギャップ', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+    '左のグラフィックと Point 01/02 の横の間隔。＋で右・−で左。0＝いまの位置(PCのみ)。', { mbKey: 'sections.vision.pointsX', signed: true }));
+  sub(catVis, '出現のぼかし', false, { grp: 'fxtex' });
+  rows.push(slider('強さ', 0, 30, 1, () => sv().vision.blur, v => sv().vision.blur = v, v => v + 'px',
+    '文字・グラフィックが出る時/消える時のぼやけの強さ。', { mbKey: 'sections.vision.blur' }));
+  sub(catVis, 'セクション（再生）', false, { grp: 'anim' });
+  sectionLenSlider('vision', 800);
+
+  /* 【2026-08-29 ヒデさん指定】固定追従なし(時間再生)の「ブロックの表示タイミング」を細かく調整。
+     塊＝メッセージ / グラフィック / ポイント1 / ポイント2。メッセージ自体は上の「1行目が出るまで」。 */
+  sub(catVis, '表示タイミング（メッセージ→グラフィック→ポイント）', true);
+  note('実装の時系列: ②メッセージ開始 →(出現時間×下の発火%＋間)→ グラフィック →(③「出きるまで」で出きる)→(＋ポイント1/2の間)→ ポイント。');
+  rows.push(slider('グラフィック発火（メッセージの何割で）', 0, 1, 0.05, () => (sv().vision.npFireK != null ? sv().vision.npFireK : 0.70),
+    v => sv().vision.npFireK = v, v => Math.round(v * 100) + '%',
+    'メッセージがどこまで出た時点でグラフィックが動き出すか。100%=出きってから / 70%=途中で先行発火(既定)。実装に元々あった隠れ係数をパネルへ公開(2026-09-02)。', { mbKey: 'sections.vision.npFireK' }));
+  rows.push(slider('メッセージ→グラフィック', 0, 3, 0.05, () => sv().vision.npGap, v => sv().vision.npGap = v, v => v.toFixed(2) + '秒',
+    '上の発火タイミングから、さらに追加で待つ間。0=発火と同時(既定)。', { mbKey: 'sections.vision.npGap' }));
+  rows.push(slider('グラフィック→ポイント1', 0, 4, 0.05, () => sv().vision.npP1, v => sv().vision.npP1 = v, v => v.toFixed(2) + '秒',
+    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 01 が出るまでの間。0=出きったと同時。', { mbKey: 'sections.vision.npP1' }));
+  rows.push(slider('グラフィック→ポイント2', 0, 5, 0.05, () => sv().vision.npP2, v => sv().vision.npP2 = v, v => v.toFixed(2) + '秒',
+    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 02 が出るまでの間。', { mbKey: 'sections.vision.npP2' }));
+  rows.push(slider('ポイントの出現時間', 0.2, 3, 0.05, () => (sv().vision.npPointDur != null ? sv().vision.npPointDur : 0.8),
+    v => sv().vision.npPointDur = v, v => v.toFixed(2) + '秒',
+    'Point 01/02(と見出し)がブラーから出きるまでの長さ。大きいほどゆったり。', { mbKey: 'sections.vision.npPointDur' }));
+
+  sub(catVis, 'Our Vision（出現）', false, { grp: 'anim' });
+  note('メッセージの上に出る小さいラベル「Our Vision」。いまは消えず出しっぱなしです。');
+  rows.push(slider('出るまで', 0, 3, 0.05, () => sv().vision.labelAt, v => sv().vision.labelAt = v, v => v.toFixed(2) + '秒後',
+    'セクションに入って(発火して)から「Our Vision」が出るまでの時間。', { mbKey: 'sections.vision.labelAt' }));
+  rows.push(slider('出きるまで', 0.4, 4, 0.1, () => sv().vision.labelDur, v => sv().vision.labelDur = v, v => v.toFixed(1) + '秒',
+    'ぼやけた状態からくっきりするまで。大きいほどゆったり。', { mbKey: 'sections.vision.labelDur' }));
+
+  /* 【2026-08-29 ヒデさん指定・整理】いまは「1行・分裂なし・その場で出す(固定追従なし)」なので、
+     旧「2行/消える・分裂/左下へ移動」の節は廃止。塊は メッセージ / 左グラフィック / ポイント1・2 だけ。 */
+  /* 【2026-09-20 大改修】② メッセージ: 基本(メッセージ:サイズ/位置X/Y ・ Our Vision:位置X/Y)＋アニメ(メッセージ出現) に分割。文字サイズはビジョンでは基本のまま(ヒデさん指定)。 */
+  const editPos = (key) => { if (!params.edits) params.edits = {}; return params.edits[key] || (params.edits[key] = {}); };
+  sub(catVis, 'メッセージ', false);
+  rows.push(slider('位置 X', -400, 600, 2, () => (editPos('visMsg').dx || 0),
+    v => { editPos('visMsg').dx = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの左右位置。', { mbKey: 'edits.visMsg.dx', signed: true }));
+  rows.push(slider('位置 Y', -400, 600, 2, () => (editPos('visMsg').dy || 0),
+    v => { editPos('visMsg').dy = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの上下位置。', { mbKey: 'edits.visMsg.dy', signed: true }));
+  sub(catVis, 'メッセージ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
+  rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
+    v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize', mbDefault: 26 }));
+  /* 【2026-09-25 ヒデさん依頼】強調案の行間(1行目↔2行目の縦の間隔)。強調案だけに効く独立値。PC/SP独立(mbKey)。数値=1行目の頭からの距離(px) */
+  rows.push(slider('行間（強調案・1↔2行目）', 30, 260, 2, () => (sv().vision.emphGap != null ? sv().vision.emphGap : 119),
+    v => { sv().vision.emphGap = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    '強調案の「データをつなぐことが、」と「強みになる時代へ」の行の間隔。この案だけに効きます（デフォルト案・他バリエーションには影響しません）。PCとスマホで別々に調整できます。', { mbKey: 'sections.vision.emphGap', mbDefault: 50 }));
+  sub(catVis, 'Our Vision', false);
+  rows.push(slider('位置 X', -400, 600, 2, () => (editPos('visLabel').dx || 0),
+    v => { editPos('visLabel').dx = v; textTools.applyAll(); }, v => v + 'px',
+    'Our Vision の左右位置。編集モードで枠の端をドラッグしても動きます。', { mbKey: 'edits.visLabel.dx', signed: true }));
+  rows.push(slider('位置 Y', -400, 600, 2, () => (editPos('visLabel').dy || 0),
+    v => { editPos('visLabel').dy = v; textTools.applyAll(); }, v => v + 'px', 'Our Vision の上下位置。', { mbKey: 'edits.visLabel.dy', signed: true }));
+  sub(catVis, 'メッセージ（出現）', false, { grp: 'anim' });
+  rows.push(slider('出るまで', 0.2, 5, 0.05, () => sv().vision.line1At, v => sv().vision.line1At = v, v => v.toFixed(2) + '秒後',
+    'セクションに入って(発火して)からメッセージが出るまでの時間。', { mbKey: 'sections.vision.line1At' }));
+  rows.push(slider('出きるまで', 0.4, 3, 0.05, () => sv().vision.revealDur, v => sv().vision.revealDur = v, v => v.toFixed(2) + '秒',
+    'ぼけた状態から出きるまでの時間。', { mbKey: 'sections.vision.revealDur' }));
+  rows.push(slider('1文字ずつずらす', -0.9, 0.9, 0.05, () => sv().vision.charLag, v => sv().vision.charLag = v, v => Math.round(v * 100) + '%',
+    '真ん中(0)で行まるごと同時。左右どちらへ動かしても1文字ずつバラバラに出ます。', { mbKey: 'sections.vision.charLag', signed: true }));
+  /* 【2026-09-15 ヒデさん指定】「つなぐ／強み」の揺らぎのグラデ: くすまない鮮やかな配色 3案(色味はブランド色のまま)＋つまみ */
+  sub(catVis, '揺らぎのグラデ（つなぐ／強み）の配色', true, { fixed: true });
+  varRowX('visGrad', VIS_GRADS, () => visGradKey(), v => { visApplyGrad(String(v)); }, { autosave: true, snap: VAR_SNAP.visGrad, after: () => { applyVisGrad(); } });
+  note('選ぶとその案の彩度・明るさが下のつまみに入ります。細かく変えたら ⋯「いまの設定で上書き」でその案に保存できます。');
+  rows.push(slider('彩度', 0.6, 2.2, 0.02, () => (sv().vision.gradSat != null ? sv().vision.gradSat : 1), v => { sv().vision.gradSat = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の彩度。100%が元の色。', { mbKey: 'sections.vision.gradSat' }));
+  rows.push(slider('明るさ', 0.8, 1.3, 0.01, () => (sv().vision.gradBri != null ? sv().vision.gradBri : 1), v => { sv().vision.gradBri = v; applyVisGrad(); }, v => Math.round(v * 100) + '%', 'グラデ文字の明るさ。', { mbKey: 'sections.vision.gradBri' }));
+  rows.push(slider('流れる速さ', 3, 14, 0.5, () => (sv().vision.gradDur != null ? sv().vision.gradDur : 7), v => { sv().vision.gradDur = v; applyVisGrad(); }, v => v.toFixed(1) + '秒/往復', 'グラデが往復する時間。短いほど速い。', { mbKey: 'sections.vision.gradDur' }));
+  rows.push(slider('角度', 0, 180, 1, () => (sv().vision.gradAng != null ? sv().vision.gradAng : 67), v => { sv().vision.gradAng = v; applyVisGrad(); }, v => Math.round(v) + '°', 'グラデの向き。カンプは 67°。', { mbKey: 'sections.vision.gradAng' }));
+
+  /* 【2026-09-20 大改修・ヒデさん依頼】③「図（網目のドーム）」→ グラフィックの「メッシュ」に統一。案(visMesh)を削除し現在の見た目を既定に。位置/向き/半径=基本、線/点/パケット/フェード=エフェクト、回転=アニメ、透明度=エフェクト に振り分け。機能名の個別位置はX/Yスライダーに。 */
+  sub(catVis, 'メッシュ', false);
+  note('Figma 18004:38228 のグラフィックをコードで描画(正二十面体を分割した球)。位置は ✏️編集でもドラッグ可。');
+  const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfgVal(key), v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true, mbActive: () => { const _v = params.sections.vision; return !!(_v && _v.domeMb && _v.domeMb[key] != null); }, mbClear: () => { const _v = params.sections.vision; if (_v && _v.domeMb) { delete _v.domeMb[key]; applyVfFade(); } } }, o || {})));
+  /* 【2026-09-25 ヒデさん依頼】メッシュの形状バリエーション＋横/縦のふくらみ＋尖りのつまみは削除。
+     現状(焼き込み済み)を既定として固定。形状はいじらせず、細かさ(面の数)だけ下に残す。 */
+  note('▼ セット（メッシュ＋ロゴ＋機能名）');
+  vfS('セットの位置 X', 'dx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セット(メッシュ・ロゴ・機能名)を左右に。Point 01/02 は動きません。PCのみ。0＝いまの位置。', { signed: true });
+  vfS('セットの位置 Y', 'dy', -100, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'セットを上下に。Point 01/02 は動きません。既定 +30px 仮置き。');
+  vfS('セットの大きさ', 'scale', 0.5, 1.6, 0.02, v => Math.round(v * 100) + '%', 'メッシュとロゴを球の中心から拡大縮小。機能名は文字サイズを変えず位置だけ外へ。既定 115% 仮置き。');
+  note('▼ メッシュ本体（位置・向き）');
+  vfS('位置 X', 'mx', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'メッシュだけを左右に。ロゴと機能名は動きません。0＝いまの位置。', { signed: true });
+  vfS('位置 Y', 'my', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'メッシュだけを上下に(下のフェードも一緒)。0＝いまの位置。', { signed: true });
+  vfS('位置 Z', 'mz', -60, 60, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '%', '奥行き。手前(+)＝大きく／奥(−)＝小さく。0＝いまの大きさ。', { signed: true });
+  vfS('半径', 'r', 150, 360, 2, v => Math.round(v) + 'px', 'メッシュの球だけの半径(ロゴ・機能名は動かない)。カンプ 262px。');
+  vfS('傾き（前後）', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
+  vfS('傾き（左右）', 'roll', -45, 45, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'メッシュの軸を左右に倒す。0＝いまの向き。', { signed: true });
+  vfS('向き（回転の位置）', 'yaw', -180, 180, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '縦軸まわりの向きをずらす。', { signed: true });
+  /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】形: 整った網(測地線・点が飛び飛び)／散らばり(三角網・点を1個ずつ)。既定は今の整った網。KVとは別の値 */
+  segRow('形', [['整った網', 'geo'], ['散らばり（1個ずつ）', 'fibo']], () => (vfCfg().meshKind === 'fibo' ? 'fibo' : 'geo'), v => { vfSet('meshKind', v); markDirty(); });
+  vfS('細かさ（整った網）', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '形が「整った網」の時の球の分割数。3=カンプと同じ密度(点92・線270)。');
+  vfS('面の数（散らばり・1個ずつ）', 'fn', 12, 300, 1, v => '点' + Math.round(v) + '・線' + (3 * Math.round(v) - 6), '形が「散らばり」の時の点の数。1個ずつ増減できます。92＝整った網の細かさ3(カンプ)と同じ点・線の数。');
+  /* --- 基本: 機能名 --- */
+  sub(catVis, '機能名', false);
+  vfS('全機能 X', 'labGX', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '5つの機能名をまとめて左右に。＋で右。', { signed: true });
+  vfS('全機能 Y', 'labGY', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '5つの機能名をまとめて上下に。＋で下。', { signed: true });
+  vfS('球との距離', 'labelDist', 0.6, 1.3, 0.02, v => Math.round(v * 100) + '%', '機能名(コネクタ・SDK等)を球の中心へ寄せる/離す。100%=いまの位置。');
+  { const LABN = ['コネクタ', '認証ウィザード', 'SDK', 'ワークフロー', '実行エンジン'];
+    LABN.forEach((nm, i) => {
+      const dm = () => { const v = params.sections.vision; if (!v.dome) v.dome = {}; if (!v.dome.labOff) v.dome.labOff = []; if (!v.dome.labOff[i]) v.dome.labOff[i] = { x: 0, y: 0 }; return v.dome.labOff[i]; };
+      rows.push(slider(nm + ' X', -150, 150, 1, () => (dm().x || 0), v => { dm().x = v; applyVfFade(); markDirty(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', nm + ' の左右位置。＋で右。', { signed: true }));
+      rows.push(slider(nm + ' Y', -150, 150, 1, () => (dm().y || 0), v => { dm().y = v; applyVfFade(); markDirty(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', nm + ' の上下位置。＋で下。', { signed: true }));
+    });
+  }
+  /* --- 基本: ロゴ(表示・大きさ・位置。傾き/角度は撤去=独立フラット化。透明度はエフェクトへ) --- */
+  sub(catVis, 'ロゴ', false);
+  segRow('表示', [['表示', 1], ['非表示', 0]], () => (vfCfg().logoOn === 0 ? 0 : 1), v => { vfSet('logoOn', v ? 1 : 0); markDirty(); });
+  vfS('大きさ', 'logoScale', 0.4, 2.5, 0.02, v => Math.round(v * 100) + '%', '中央のロゴだけの大きさ(メッシュの大きさに掛かる)。');
+  vfS('位置 X', 'logoDx', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを左右へ。✏️編集モードのドラッグでも動きます。');
+  vfS('位置 Y', 'logoDy', -300, 300, 1, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ロゴを上下へ。');
+  /* --- エフェクト＆テクスチャ: メッシュの見た目＋フェード --- */
+  sub(catVis, 'メッシュ', false, { grp: 'fxtex' });
+  vfS('線の濃さ', 'lineAlpha', 0.05, 0.8, 0.01, v => Math.round(v * 100) + '%', '手前の線の濃さ。奥ほど自動で薄く。');
+  vfS('線の太さ', 'lineWidth', 0.5, 3, 0.1, v => v.toFixed(1) + 'px', '手前の線の太さ。奥は少し細く。');
+  vfS('奥の線の薄さ', 'depthFade', 0, 1, 0.05, v => v === 0 ? 'なし' : Math.round(v * 100) + '%', '球の奥側の線・点をどれだけ薄く・細くするか。手前はそのまま。');
+  vfS('点の大きさ', 'dot', 1, 5, 0.1, v => v.toFixed(1) + 'px', '節目の点(ピンク/シアン/紺/薄い青灰)の大きさ。');
+  vfS('パケット（骨を走る光）', 'pk', 0, 12, 0.5, v => v === 0 ? 'なし' : v.toFixed(1) + '/秒', '線の上を走る光の数(1秒あたり)。0でなし。');
+  vfS('下のフェード 始まり', 'fadeA', 0, 1, 0.02, v => Math.round(v * 100) + '%', 'ここから下が薄くなり始める(図の高さに対する%)。');
+  vfS('下のフェード 終わり', 'fadeB', 0, 1, 0.02, v => Math.round(v * 100) + '%', 'ここで完全に消える。');
+  sub(catVis, 'ロゴ', false, { grp: 'fxtex' });
+  vfS('透明度', 'logoOpacity', 0.2, 1, 0.02, v => Math.round(v * 100) + '%', '薄くすると後ろのメッシュが透けて馴染む。');
+  /* --- アニメーション: メッシュの回転＋グラフィックの出現 --- */
+  sub(catVis, 'メッシュ', false, { grp: 'anim' });
+  segRow('回転', [['あり', 1], ['なし', 0]], () => (vfCfg().spinOn === 0 ? 0 : 1), v => { vfSet('spinOn', v ? 1 : 0); markDirty(); });
+  vfS('回転の速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '「回転 あり」の時の速さ。0.35 で約2分半で1周。');
+  sub(catVis, 'グラフィックの出現', false, { grp: 'anim' });
+  rows.push(slider('出きるまで', 0.4, 3, 0.1, () => sv().vision.miniDur, v => sv().vision.miniDur = v, v => v.toFixed(1) + '秒',
+    'ぼけた状態からくっきり出るまでの時間。', { mbKey: 'sections.vision.miniDur' }));
+
+  sub(catVis, 'ポイント1・2', true);
+  rows.push(slider('横幅', 220, 560, 4, () => (sv().vision.pWidth != null ? sv().vision.pWidth : 328),
+    v => { sv().vision.pWidth = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    'ポイント1・2のブロックの横幅。狭いほど本文の折り返しが増えます。カンプは328px。', { mbKey: 'sections.vision.pWidth' }));
+  sub(catVis, 'ポイント1・2', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
+  rows.push(slider('見出しサイズ', 16, 44, 1, () => (sv().vision.pHSize != null ? sv().vision.pHSize : 26),
+    v => { sv().vision.pHSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。', { mbKey: 'sections.vision.pHSize', mbDefault: 20 }));
+  rows.push(slider('本文サイズ', 10, 24, 0.5, () => (sv().vision.pPSize != null ? sv().vision.pPSize : 14),
+    v => { sv().vision.pPSize = v; applyVpSize(); }, v => v.toFixed(1) + 'px',
+    'ポイントの説明文の文字サイズ。カンプは14px。', { mbKey: 'sections.vision.pPSize', mbDefault: 12 }));
+
+  /* 【2026-08-26 整理】見出しだけが空で、中身(見出し/Point01/Point02)が同じ階層に並んでいたので入れ子に直した */
+  sub(catVis, '2つの価値', false);
+  const vpRoot = mount;
+  note('デザイン位置からのズレ。＋で右／下へ。');
+  [['ポイント1', 'p1X', 'p1Y'], ['ポイント2', 'p2X', 'p2Y']]
+    .forEach(([label, kx, ky]) => {
+      sub(vpRoot, label, true);
+      rows.push(slider('位置 X', -400, 400, 2, () => sv().vision[kx], v => sv().vision[kx] = v, v => v + 'px', 'プラスで右へ、マイナスで左へ。', { mbKey: 'sections.vision.' + kx }));
+      rows.push(slider('位置 Y', -400, 400, 2, () => sv().vision[ky], v => sv().vision[ky] = v, v => v + 'px', 'プラスで下へ、マイナスで上へ。', { mbKey: 'sections.vision.' + ky }));
+    });
+
+  sub(catVis, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('ビジョンの文字ごとに 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。位置や打ち替えは ✏️編集 で文字をクリック。');
+  textRowsFor(['vis']);
+
+  /* ========== 📈 実績 ========== */
+  panelVarsec(null);   /* 【2026-09-21】ビジョンタブ終わり */
+  const catRes = category('実績（導入企業◯◯社などの数字）', false);
+  RFX_DYN.length = 0;   /* 案ごとの動的パネルの登録をやり直す(組み立てのたび) */
+  RFX_TITLES.length = 0;
+  try { Object.keys(DEV_DYN).forEach(k => { delete DEV_DYN[k]; }); } catch (e) {}   /* 2026-09-15: モックの案ごとのつまみも作り直す */
+  catNote(catRes, '見出し → 数字と本文 → 見終わると暗くなって次のセクションへ。');
+  panelVarsec('fx', '演出');   /* 【2026-09-21 ヒデさん依頼】ここから「演出」セクション(この中に 基本/フォント/エフェクト/アニメーションを入れ子で) */
+
+  /* 【2026-09-13 ヒデさん指定・比較検証】実績セクションの演出案(Codex 1/4/5/6。7・9 は 2026-09-14 に削除)。既定=現行。
+     各ボタンのツールチップ(title)に狙いを表示。?resFx=1 などURLでも指定可。 */
+  sub(catRes, '演出の案（比較検証・PCのみ）', true, { fixed: true });
+  {
+    const RFX_OPTS = [
+      ['24-4 for SaaS/for AI から入る(要素移動)', '24-4', '【2026-09-17 新】ピクトを大きくズームさせず、ほぼ最終サイズのままフェード＋位置移動だけで終点へ運ぶ版。3枚カードが途中で「別の絵柄に切り替わって見える」印象を消し、絵(SVG)は同じまま要素の移動で補完する(固定・240vh)。'],
+      ['26 数値→線→下段が横へ', '26', '絵コンテ(Figma 17283:23622): 3つの数値が中央に大きく→上段の終点(見出し 左・数値 右)へ→横線が伸びきる→下段(説明・ピクト)がブラーで→横に動いて for AI→縦に戻る(固定・560vh)。'],
+    ];
+    /* 【2026-09-14 ヒデさん指定】案は × で消せる(KV のバリエーションと同じ仕組み。「現行」は消せない・番号は振り直さない) */
+    resFxRow(RFX_OPTS);
+    note('比較用(採用前)。番号は「見えている案の連番」(消すと自動で詰まる)。元の ID と狙いはボタンに乗せると出ます。⋯ から ★ピン留め(おすすめ・先頭に出る)／いまの設定で上書き／削除。SP は各案を縦積みで再現(縦600px以下の端末は固定案も縦流れ)。実績→開発者体験の暗転・白反転は全案共通(伸ばした尺の終端が入口)。');
+    rows.push(slider('固定の長さ', 100, 700, 10,
+      () => { const k = resFxKey(); return resFxVh(k) || (RES_FX[k] && RES_FX[k].vh) || 100; },
+      v => { const k = resFxKey(); if (!(RES_FX[k] && RES_FX[k].vh)) return; const r = params.sections.results; r.rfxVh = r.rfxVh || {}; r.rfxVh[k] = v; fit(); },
+      v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
+      '固定して読む区間の長さ(固定のある案のみ。4・12・30・33・38〜41 は固定なし)。大きいほどゆっくり進みます。'));
+    { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
+      rfxDyn(_vr, ['24-4', '26']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
+    /* 【2026-09-26 整理】完全削除した案だけの調整(主役ピクト系・案14・案20・案21〜23)は削除。
+       主役ピクト系のぼかし(hero.pictoBlur)は案24-4 が今も読むので値の既定(RFX_HERO_DEF)は残す */
+    const pct = v => Math.round(v * 100) + '%';
+    /* 案24: ピクトの大きさと文字の動き(その案の時だけ出す) */
+    subT(catRes, () => '案' + rfxNos(['24-4']) + '：ピクトの大きさと文字の動き');
+    const _g24 = catRes.lastElementChild;
+    const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
+    const F24 = { heroScale: 1.7, labelUp: 190, prodSize: 38 };
+    /* 【2026-09-21 ヒデさん依頼】主役の大きさ/文字が上へ/Product は PC のスクロール登場演出専用で、スマホ(flow)では効かない。
+       → スマホモード中は隠す(.pc-only-row)。PC編集時は今まで通り表示。区切り線の余白はスマホ用の効く版を下に用意。 */
+    const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
+    const s24 = (label, key, min, max, step, fmt, tip) => rows.push(pcOnly(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key })));
+    s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。※PCのスクロール登場演出専用(スマホでは効きません)。');
+    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
+    /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
+    rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
+      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
+    rows.push(pcOnly(slider('区切り線の上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
+      '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。※PCのみ(スマホは下の「区切り線まわりの余白(スマホ)」で)。', { mbKey: 'sections.results.hrGap', fixedMax: true })));
+    rows.push(pcOnly(slider('区切り線の下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
+      '区切り線と「事業の推進力を、Anyflowが支えます。」＋数値との間隔。0 でいままで(上段の padding 28px ぶんだけ空いています)。※PCのみ。', { mbKey: 'sections.results.hrGap2', fixedMax: true })));
+    /* 【2026-09-21 ヒデさん依頼】スマホ用に効く「区切り線まわりの余白」。SP は縦積みなので、各ブロック↔線の間隔をまとめて調整(既定16px＝現状) */
+    const _spGap = slider('区切り線まわりの余白（スマホ）', 8, 40, 1, () => (sv().results.spGap != null ? sv().results.spGap : 16), v => { sv().results.spGap = v; applyResSpGap(); markDirty(); }, v => Math.round(v) + 'px', 'スマホの実績で、for SaaS / for AI / 数値の各ブロックと区切り線との上下の間隔をまとめて調整します。既定16px。', { fixedMax: true });
+    try { _spGap.classList.add('sp-only-row'); } catch (e) {} rows.push(_spGap);
+    rfxDyn(_g24, ['24-4']);
+    /* 案26: 数値の大きさ・線・横移動(その案の時だけ出す) */
+    subT(catRes, () => '案' + rfxNo('26') + '：数値の大きさ・線・横移動');
+    const _g26 = catRes.lastElementChild;
+    const f26 = () => { const r = params.sections.results; r.fx26 = r.fx26 || {}; return r.fx26; };
+    const F26 = { numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 };
+    const s26 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f26()[key] != null ? f26()[key] : F26[key]), v => { f26()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx26.' + key }));
+    s26('数値の大きさ', 'numScale', 1.2, 3, 0.05, v => '×' + v.toFixed(2), '最初に中央へ大きく出す倍率(70px に対して。絵コンテは 120px=1.71倍)。');
+    s26('数値が収まり始める位置', 'settleAt', 0, 0.3, 0.01, pct, '固定区間のどこから上段の終点へ動き始めるか。');
+    s26('収まる長さ', 'settleLen', 0.05, 0.5, 0.01, pct, '終点に収まり切るまでの長さ。');
+    s26('線が伸び始める位置', 'lineAt', 0.1, 0.6, 0.01, pct, '横線が左から伸び始める位置。伸びきると下段がブラーで現れます。');
+    s26('線が伸びる長さ', 'lineLen', 0.03, 0.4, 0.01, pct, '線が伸びきるまでの長さ。');
+    s26('横に動き始める位置', 'panAt', 0.3, 0.85, 0.01, pct, '下段が for SaaS → for AI へ動き始める位置。');
+    s26('横移動の長さ', 'panLen', 0.05, 0.5, 0.01, pct, '横移動にかける長さ。');
+    rfxDyn(_g26, ['26']);
+    syncRfxDyn();
+  }
+
+  /* 【2026-08-30 ヒデさん指定】実績→開発者体験の切替は「スムーズフェード」固定(既定)。選択UIは廃止。 */
+
+  /* ⚠️【2026-08-26 ヒデさん指定】「レイアウトを選ぶ」(案A/B/C)は削除。実績は新デザイン1本に統一。 */
+  /* 【2026-09-20 大改修】長さ→アニメ(再生)・ぼかし→エフェクト に分割(ビジョンと統一) */
+  sub(catRes, 'セクション（再生）', false, { grp: 'anim' });
+  sectionLenSlider('results', 600);
+  sub(catRes, '画像のぼかし', false, { grp: 'fxtex' });
+  rows.push(slider('強さ', 0, 40, 1, () => sv().results.imgBlur, v => sv().results.imgBlur = v, v => v + 'px',
+    '大きいほど、写真がぼんやりした状態から現れます。', { mbKey: 'sections.results.imgBlur' }));
+
+  /* 【2026-09-19 ヒデさん依頼】for SaaS / for AI の大きな文字は、画面の下に見えている間はぼけていて、上がってくるにつれてはっきり */
+  sub(catRes, '入場のぼかし（for SaaS / for AI が下から上がる間）');
+  note('セクションが画面下から入ってくる進み具合(0%=下端に顔を出す / 50%=大きな文字が画面の下端に出る / 100%=所定の位置)に連動。所定の位置に着いたら効きません。');
+  rows.push(slider('24-4 のぼかしの強さ（強め）', 0, 60, 1, () => (sv().results.entryBlur44 != null ? sv().results.entryBlur44 : 26), v => sv().results.entryBlur44 = v, v => Math.round(v) + 'px', '演出の案が 24-4 の時の、入ってきた直後のぼけ(強め)。0でぼかし無し。', { mbKey: 'sections.results.entryBlur44' }));
+  rows.push(slider('24-5 のぼかしの強さ', 0, 60, 1, () => (sv().results.entryBlur != null ? sv().results.entryBlur : 16), v => sv().results.entryBlur = v, v => Math.round(v) + 'px', '演出の案が 24-5(と 24/24-2/24-3)の時の、入ってきた直後のぼけ。0でぼかし無し。', { mbKey: 'sections.results.entryBlur' }));
+  rows.push(slider('はっきりし始める', 0, 1, 0.05, () => (sv().results.entryFrom != null ? sv().results.entryFrom : 0.4), v => sv().results.entryFrom = v, v => Math.round(v * 100) + '%', 'ここまでは最大のぼけのまま。「出だしの高さ」と同じ%＝文字が画面の下端に出た時。', { mbKey: 'sections.results.entryFrom', fixedMax: true }));
+  rows.push(slider('はっきりしきる', 0.05, 1, 0.05, () => (sv().results.entryTo != null ? sv().results.entryTo : 0.95), v => sv().results.entryTo = v, v => Math.round(v * 100) + '%', 'ここで完全にくっきり。100%=所定の位置に着いた時。', { mbKey: 'sections.results.entryTo', fixedMax: true }));
+  rows.push(slider('出だしの薄さ', 0, 1, 0.05, () => (sv().results.entryOp != null ? sv().results.entryOp : 1), v => sv().results.entryOp = v, v => Math.round(v * 100) + '%', '入ってきた直後の不透明度。100%=薄くしない(ぼかしだけ)。', { mbKey: 'sections.results.entryOp', fixedMax: true }));
+  rows.push(slider('出だしの高さ', 0.2, 0.6, 0.02, () => (sv().results.bigStartY != null ? sv().results.bigStartY : 0.4), v => sv().results.bigStartY = v, v => Math.round(v * 100) + '%', '着地前の for SaaS / for AI の中心を、画面の上から何%の位置に置くか。50%=ど真ん中(旧)。小さいほど上＝ビジョンとの空白が詰まる。着地の位置(タグ)は変わりません。', { mbKey: 'sections.results.bigStartY', fixedMax: true }));
+
+  sub(catRes, '出てくる順番とタイミング');
+  note('「事業の推進力を、」(見出し1行目) → タイピング「Anyflow」→「が支えます。」 → その他(区切り線・3数値・2つの価値)。それぞれの間隔を分けて調整できます。');
+  /* 【2026-09-09 ヒデさん指定】「Anyflowの見せ方」(下線に打ち込む/押し広げる)の選択UIは削除。
+     下線に打ち込む(slot)に固定＝焼き込み。実装は (c.typeStyle || 'slot') が既定 slot なので挙動不変。 */
+  rows.push(slider('見出し1行目が出るまで', 0, 2, 0.05, () => sv().results.typeAt, v => sv().results.typeAt = v, v => v.toFixed(2) + '秒後',
+    'セクションに入って(発火して)から「事業の推進力を、」が出るまで。', { mbKey: 'sections.results.typeAt' }));
+  rows.push(slider('→ タイピングが始まる', 0, 2.5, 0.05, () => (sv().results.typeGap != null ? sv().results.typeGap : 0.55), v => sv().results.typeGap = v, v => v.toFixed(2) + '秒',
+    '見出し1行目からタイピング「Anyflowが支えます。」が始まるまでの間。', { mbKey: 'sections.results.typeGap' }));
+  rows.push(slider('Anyflowと「が」の間', 0, 24, 1,
+    () => (sv().results.slotGap != null ? sv().results.slotGap : 4),
+    v => { sv().results.slotGap = v; applyResSlotGap(); }, v => Math.round(v) + 'px',
+    'タイピングされる「Anyflow」と、続く「が支えます。」の間隔。', { mbKey: 'sections.results.slotGap' }));
+  /* 【2026-09-21 ヒデさん依頼・構造整理】ピクトの線幅/速さ/大きさは「ピクトグラム」セクションへ移動(下の panelVarsec('picto') 配下)。
+     重複していた旧「ピクトグラムの線の太さ」(0.5〜4px版)はここで削除(新しい「ピクトの線の太さ」×倍率に一本化)。 */
+  rows.push(slider('→ その他の要素が出る', -0.5, 3, 0.05, () => (sv().results.restGap != null ? sv().results.restGap : 0.1), v => sv().results.restGap = v, v => v.toFixed(2) + '秒',
+    'タイピング開始から、区切り線・3数値・2つの価値が出るまでの間。マイナスでタイピングより前に。', { mbKey: 'sections.results.restGap', signed: true }));
+  rows.push(slider('見出しの1文字の時間', 0.02, 0.2, 0.005, () => sv().results.charDur, v => sv().results.charDur = v, v => v.toFixed(3) + 's/字',
+    '案Bのみ。1文字あたりの時間。小さいほど速く打ちます。', { mbKey: 'sections.results.charDur' }));
+  rows.push(slider('数字が出るまで', 0, 1.2, 0.05, () => sv().results.numsGap, v => sv().results.numsGap = v, v => Math.round(v * 100) + '%',
+    '見出しが何割出たら数字が出るか。大きいほど後から出ます。', { mbKey: 'sections.results.numsGap' }));
+  rows.push(slider('数字と本文が出る', 0.4, 4, 0.1, () => sv().results.softDur, v => sv().results.softDur = v, v => v.toFixed(1) + '秒',
+    '線・数字・本文がぼけから出きるまで。', { mbKey: 'sections.results.softDur' }));
+  /* 【2026-08-30 ヒデさん指定】「写真が出るまで」「写真の奥行き」は、いま写真を置いていないので廃止。 */
+
+  sub(catRes, '数字が回って止まる演出');
+  note('数字が桁ごとに回り、左の桁から順に止まります。');
+  /* 【2026-09-19 ヒデさん依頼】スロットの案(案1=現状 / 案2=ぼかして消える)。⋯で上書き/削除可 */
+  varRowX('resSlotFx', RES_SLOT_FX, () => resSlotFxKey(), v => { resApplySlotFx(String(v)); markDirty(); }, { autosave: true, snap: VAR_SNAP.resSlotFx, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  note('案を選ぶと「上下のなじませ・ぼかしの強さ・ぼかしの範囲・窓の高さ」に値が入ります。細かく変えたら ⋯「この設定で上書き」。');
+  rows.push(slider('回り出すまで', 0, 2, 0.05, () => sv().results.slotAt, v => sv().results.slotAt = v, v => v.toFixed(2) + '秒後',
+    'セクションが始まってから回り出すまで。0で即。', { mbKey: 'sections.results.slotAt' }));
+  rows.push(slider('1桁が止まるまで', 0.3, 3, 0.05, () => sv().results.slotDur, v => sv().results.slotDur = v, v => v.toFixed(2) + '秒',
+    '長いほどゆっくり回って止まります。', { mbKey: 'sections.results.slotDur' }));
+  rows.push(slider('次の桁のディレイ', 0, 0.4, 0.01, () => sv().results.slotStagger, v => sv().results.slotStagger = v, v => v.toFixed(2) + '秒',
+    '大きいほど「左からパタパタ」に。0で全桁同時。', { mbKey: 'sections.results.slotStagger' }));
+  rows.push(slider('何周まわすか', 1, 6, 1, () => sv().results.slotCycles, v => sv().results.slotCycles = v, v => v + '周',
+    '0〜9 を何回流すか。多いほど勢いよく見えます。', { mbKey: 'sections.results.slotCycles' }));
+  rows.push(slider('スロットの上下のなじませ', 0, 30, 1, () => (sv().results.slotFade != null ? sv().results.slotFade : 14), v => { sv().results.slotFade = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%', '数字の窓の上下を透明へグラデで消す幅(窓の高さに対する%)。0でパツッと切れる(従来)。', { mbKey: 'sections.results.slotFade', fixedMax: true }));
+  rows.push(slider('上下のぼかしの強さ', 0, 8, 0.5, () => (sv().results.slotBlur != null ? sv().results.slotBlur : 0), v => { sv().results.slotBlur = v; applyResSlotFade(); markDirty(); }, v => v === 0 ? 'なし' : v.toFixed(1) + 'px',
+    '案2/3用。窓の上下に重ねるぼかしの強さ(端ほど強い)。0でぼかし無し。', { mbKey: 'sections.results.slotBlur' }));
+  rows.push(slider('上下のぼかしの範囲', 10, 60, 1, () => (sv().results.slotBlurZone != null ? sv().results.slotBlurZone : 45), v => { sv().results.slotBlurZone = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%',
+    '案2/3用。窓の高さの何%までぼかしを重ねるか(上下それぞれ)。', { mbKey: 'sections.results.slotBlurZone' }));
+  rows.push(slider('窓の高さ', 1, 2, 0.02, () => (sv().results.slotWin != null ? sv().results.slotWin : 1.6), v => { sv().results.slotWin = v; applyResSlotFade(); markDirty(); }, v => v.toFixed(2) + '文字分',
+    '案2/3用。回っている間だけ広がる窓の高さ(1＝数字ぴったり)。高いほど前後の数字がのぞく。止まると 1.24 に戻ります。行の高さは変わりません。', { mbKey: 'sections.results.slotWin' }));
+  rows.push(slider('消える長さ', 0.6, 2, 0.05, () => (sv().results.slotRamp != null ? sv().results.slotRamp : 1), v => { sv().results.slotRamp = v; applyResSlotFade(); markDirty(); }, v => '×' + v.toFixed(2),
+    '案2/3/4用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける(止まった時の数字には影響しない範囲で自動で縮む)。', { mbKey: 'sections.results.slotRamp' }));
+  rows.push(slider('ドラムの丸み（分割数）', 8, 20, 1, () => (sv().results.slotDrumN != null ? sv().results.slotDrumN : 12), v => { sv().results.slotDrumN = v; markDirty(); }, v => Math.round(v) + '分割',
+    '案4用。円筒を何分割して数字を貼るか。少ないほど丸みが強く(前後の数字が大きく傾く)、多いほど平らに近づく。', { mbKey: 'sections.results.slotDrumN' }));
+  rows.push(slider('ドラムの端の薄さ', 0.5, 3, 0.1, () => (sv().results.slotDrumFade != null ? sv().results.slotDrumFade : 1.3), v => { sv().results.slotDrumFade = v; markDirty(); }, v => '×' + v.toFixed(1),
+    '案4用。端(傾いた数字)をどれだけ薄くするか。大きいほど早く薄くなる。', { mbKey: 'sections.results.slotDrumFade' }));
+  rows.push(slider('回り出す位置', 0.4, 1, 0.05, () => sv().results.slotEnterAt, v => sv().results.slotEnterAt = v, v => Math.round(v * 100) + '%',
+    '100%＝画面の下に出た瞬間 / 50%＝真ん中まで来てから。', { mbKey: 'sections.results.slotEnterAt' }));
+  rows.push(slider('止まり際の粘り', 2, 9, 0.5, () => sv().results.slotEase, v => sv().results.slotEase = v, v => '×' + v.toFixed(1),
+    '大きいほど「最初は勢いよく、最後はじりじり」に。', { mbKey: 'sections.results.slotEase' }));
+
+  /* 【2026-08-28 ヒデさん指定】2つの価値の右側ピクトグラム(各5案) */
+  liveEdit = true;
+  panelVarsec('picto', 'ピクトグラム');   /* 【2026-09-21 ヒデさん依頼】ここから「ピクトグラム」セクション(選択UI＋基本/エフェクト/アニメーションを入れ子で) */
+  sub(catRes, 'ピクトグラム（2つの価値の右）', true, { fixed: true, grp: 'variation' });   /* For SaaS/For AI のピクト案選択＝バリエーション扱い */
+  {
+    const SAAS = [
+      { key: 'S2', name: 'S2 双方向のやり取り', tip: '2つの箱の間を小さな四角が行き来し、届くと受け手の枠が太くなります。' },
+      /* 2026-08-28 追加: 合流・重なり・時系列・パスのトリミング */
+      { key: 'S7', name: 'S7 4つが1つに',      tip: '四隅の四角が中央へ集まって重なり、合流した瞬間に外周が一周描かれます。' },
+      { key: 'S9', name: 'S9 弧が噛み合う',    tip: '左右から弧が伸びてきて、中央で1つの円になります。噛み合った瞬間だけ太くなります。' },
+      /* 2026-08-28 追加: 躍動感・回転・奥行き */
+      /* 2026-08-28 追加: 開く → グリンと回る → 重なる */
+      { key: 'S18', name: 'S18 配って束ねる',     tip: '3枚が扇に開き、グリンと回って、パチンと束に戻ります。' },
+    ];
+    const AI = [
+      /* 2026-08-28 追加: パスのトリミングで「道筋が描かれていく」＝時間の経過とストーリー */
+      /* 2026-08-28 追加: 躍動感・回転・奥行き */
+      { key: 'A13', name: 'A13 カードがめくれる', tip: '長方形が横幅の伸び縮みで3回めくれ、3枚目で三角が現れます。' },
+      /* 2026-08-28 追加: 実行を「矢印」で表す */
+      /* 2026-09-08 ヒデさん指定・追加。矢印の三角は「線が伸びきる直前にフェードイン」(トリミングしない) */
+      { key: 'A21', name: 'A21 折れて進む・改（既定）', tip: '左下から折れ線が伸び、伸びきる直前に三角矢印がフェードインします（トリミングしない）。' },
+      { key: 'A20', name: 'A20 レーダー', tip: '縦の棒が位相をずらして上下するだけのループ（矢印・三角なし）。' },
+    ];
+    /* 【2026-08-28 ヒデさん指定】どちらの案か分かるよう、見出しを付けて分ける。
+       ⚠️ もとは note() で書いていたが、補足文は既定で隠しているので見えていなかった */
+    const picRoot = mount;
+    sub(picRoot, 'For Saas', true, { fixed: true });
+    varRowX('valSaas', SAAS, () => params.patterns.valSaas || 'S9', v => { params.patterns.valSaas = v; }, { snap: VAR_SNAP.picto });
+    sub(picRoot, 'For AI', true, { fixed: true });
+    varRowX('valAi', AI, () => params.patterns.valAi || 'A21', v => { params.patterns.valAi = v; }, { snap: VAR_SNAP.picto });
+  }
+  liveEdit = false;
+
+  /* 【2026-09-21 ヒデさん依頼・構造整理】ピクトの見た目つまみを「ピクトグラム」セクションの中へ(基本＝大きさ/線幅、アニメーション＝速さ) */
+  sub(catRes, 'ピクトの大きさ・線', true, { fixed: true, grp: 'basic' });
+  rows.push(slider('ピクトの大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
+  rows.push(slider('ピクトの線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
+  sub(catRes, 'ピクトの動き', true, { fixed: true, grp: 'anim' });
+  optRow('pictoSpeed', 'ピクトの速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
+    () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
+    v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
+
+  panelVarsec('fx', '演出');   /* 【2026-09-21】以降(つなぎ・文字)は「演出」セクションへ戻す */
+
+  sub(catRes, '次のセクションへのつなぎ（明→黒）');
+  note('実績セクションの背景が、下へスクロールするほど白→黒へ変わり、開発者体験(黒画面)へつながります。'
+    + '「%」は“開発者体験セクションが画面の下から上へどれだけ入ってきたか”の割合です（0%=まだ画面外／100%=画面上端まで来た）。'
+    + '暗くなると文字・図・for SaaS/for AI タグは自動で白へ反転します（どの案・どのピクトでも同じ）。');
+  /* 【2026-09-08 ヒデさん指定】smoothモードの暗転を4カーブ＋開始/終了で調整＋補足を丁寧に */
+  optRow('darkVar', '暗転のしかた', [['なめらか', '1'], ['ためて一気に', '2'], ['早めにゆっくり', '3'], ['直線', '4']],
+    () => String(sv().results.darkVar || 2),
+    v => { sv().results.darkVar = +v; markDirty(); renderFrame(); });
+  note('暗転カーブ: なめらか=全体を等しくふわっと／ためて一気に=しばらく明るいまま→後半でグッと黒（ヒデさん既定）／早めにゆっくり=最初にサッと暗くなり後半ゆっくり／直線=一定速度。');
+  rows.push(slider('明るいままの範囲', 0, 0.6, 0.02, () => (sv().results.darkFrom != null ? sv().results.darkFrom : 0.18),
+    v => { sv().results.darkFrom = v; renderFrame(); }, v => Math.round(v * 100) + '%',
+    '開発者体験がここまで画面に入るまでは明るいまま（暗転しない）。右へ動かすほど、明るい状態が長く続いてから黒へ切り替わります。0%=すぐ暗くなり始める。', { mbKey: 'sections.results.darkFrom' }));
+  rows.push(slider('黒くなりきる位置', 0.3, 1, 0.02, () => (sv().results.darkTo != null ? sv().results.darkTo : 0.82),
+    v => { sv().results.darkTo = v; renderFrame(); }, v => Math.round(v * 100) + '%',
+    '開発者体験がここまで入ると真っ黒になりきります。「明るいまま」との差が小さいほどパッと、大きいほどゆっくり暗くなります。', { mbKey: 'sections.results.darkTo' }));
+  /* 黒レクタングル案(scrollHold=固定/resTrans=black)専用スライダーは、その案の時だけ出す(紛らわしさ回避・2026-09-08) */
+  if ((params.patterns && params.patterns.resTrans) === 'black') {
+    note('↓は黒レクタングル案専用のスライダーです。');
+    rows.push(slider('暗くなり始める', 0, 0.9, 0.02, () => sv().results.outFrom, v => sv().results.outFrom = v, v => Math.round(v * 100) + '%',
+      '何割スクロールしたら黒矩形が出始めるか。', { mbKey: 'sections.results.outFrom' }));
+    rows.push(slider('暗くなりきる', 0.2, 1, 0.02, () => sv().results.outTo, v => sv().results.outTo = v, v => Math.round(v * 100) + '%',
+      'ここで黒矩形が全面を覆います。上との差が小さいほどパッと切り替わります。', { mbKey: 'sections.results.outTo' }));
+    rows.push(slider('消える時のぼかし', 0, 40, 1, () => sv().results.outBlur, v => sv().results.outBlur = v, v => v + 'px',
+      '大きいほど強くぼけながら消えます。', { mbKey: 'sections.results.outBlur' }));
+  }
+
+  sub(catRes, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('実績の文字ごとに 太さ・行間・字間(for SaaS/AI・価値の見出し・本文・数字も)。空欄＝今のCSSの値(カッコ内)。位置や打ち替えは ✏️編集 で文字をクリック。');
+  textRowsFor(['res']);
+
+  /* ========== 🖥 開発者体験 ========== */
+  panelVarsec(null);   /* 【2026-09-21】実績タブ終わり。次タブへ持ち越さない */
+  const catDev = category('開発者体験（暗い画面のコード紹介）', false);
+  catNote(catDev, '暗い背景で CLI / SDK の画面が順に切り替わります。');
+  panelVarsec('dev', 'モック（スタイル案）');   /* 【2026-09-21 ヒデさん依頼】主役案(モック)をセクションに→配下に基本/フォント/エフェクト/アニメーション */
+  /* 【2026-09-15 ヒデさん指定】モックのスタイル案(立体感 5案・リキッドグラス含む)と配色。★ピン留め／上書き／削除は他のバリエーションと同じ */
+  sub(catDev, 'モックのスタイル（立体感）', true, { fixed: true, grp: 'variation' });   /* スタイルの選択＝案の切替なのでバリエーション扱い(先頭へ) */
+  varRowX('devStyle', DEV_STYLES, () => devStyleKey(), v => { params.devStyle = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); syncDevDyn(); } });
+  note('正面のまま(傾け・重ねなし)で立体感を出す10案(1〜10)と、AI らしい5案(11〜15: 光が縁を走る／オーロラ／スキャン／粒／脈)。案を選ぶと下の「この案の調整」が入れ替わります。配色とも組み合わせられます。');
+  sub(catDev, 'モックの配色（スタイル案のすぐ下で選ぶ）', true, { fixed: true });
+  varRowX('devTone', DEV_TONES, () => devToneKey(), v => { params.devTone = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); } });
+  /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
+  Object.keys(DEV_DYN_SPEC).forEach(g => {
+    const sp = DEV_DYN_SPEC[g];
+    sub(catDev, sp.title, true, { fixed: true, grp: 'variation' });   /* 各スタイル案の調整＝案に紐づくのでバリエーション扱い(選択のすぐ下) */
+    DEV_DYN[g] = catDev.lastElementChild;
+    if (g === 'glass') {
+      note('ガラス案は、後ろのカードを実際にぼかして「すりガラス越し」に見せています(ブラウザの仕様で backdrop-filter だけでは後ろのカードがぼけないため)。');
+      rows.push(slider('ガラスのぼかし', 0, 48, 1, () => (sv().dev.mockBlur != null ? sv().dev.mockBlur : 24), v => { sv().dev.mockBlur = v; applyDevStyle(); }, v => Math.round(v) + 'px', '板ごしの地のぼけ具合(効く環境では backdrop-filter も併用)。', { mbKey: 'sections.dev.mockBlur', fixedMax: true }));
+    }
+    sp.rows.forEach(r => {
+      if (r.seg) { segRow(r.label, r.seg, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); markDirty(); renderFrame(); }); return; }
+      rows.push(slider(r.label, r.min, r.max, r.step, () => devDynGet(g, r), v => { devStv(g)[r.k] = v; applyDevStyle(); }, r.fmt, r.hint, { fixedMax: true, mbKey: 'sections.dev.stv.' + g + '.' + r.k }));
+    });
+  });
+  syncDevDyn();
+  sub(catDev, '全部の案に効く調整', true, { fixed: true });
+  rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。', { mbKey: 'sections.dev.mockInner', fixedMax: true }));
+  rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。', { mbKey: 'sections.dev.mockShadow', fixedMax: true }));
+
+  /* 【2026-09-20 ヒデさん依頼・#10】①②それぞれ 見出し↔モックの間隔・モックの大きさ(PCのみ。SPは別スケール) */
+  sub(catDev, '①② 見出しとモックの間隔・大きさ（PC）');
+  rows.push(slider('① 見出し↔モックの間隔', 0, 90, 2, () => (sv().dev.dev1Gap != null ? sv().dev.dev1Gap : 36), v => { sv().dev.dev1Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験①の見出しとモックの上下の間隔。', { mbKey: 'sections.dev.dev1Gap', fixedMax: true }));
+  rows.push(slider('① モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev1Scale != null ? sv().dev.dev1Scale : 1.1), v => { sv().dev.dev1Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験①のモックの拡大率。', { mbKey: 'sections.dev.dev1Scale', fixedMax: true }));
+  rows.push(slider('② 見出し↔モックの間隔', 0, 120, 2, () => (sv().dev.dev2Gap != null ? sv().dev.dev2Gap : 36), v => { sv().dev.dev2Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験②の見出しと、正面のモック(カード)の上下の間隔(見た目どおり)。①と同じ意味で、既定36px＝①と同じ。', { mbKey: 'sections.dev.dev2Gap', fixedMax: true }));
+  rows.push(slider('② モックの大きさ', 0.7, 1.6, 0.02, () => (sv().dev.dev2Scale != null ? sv().dev.dev2Scale : 1.1), v => { sv().dev.dev2Scale = v; applyDevTune(); }, v => Math.round(v * 100) + '%', '開発者体験②のモックの拡大率。', { mbKey: 'sections.dev.dev2Scale', fixedMax: true }));
+
+  sub(catDev, '基本（長さ）');
+  sectionLenSlider('dev', 1600);
+
+  /* 【2026-09-16 ヒデさん指定】①②で中央に来たら一旦止まる(固定スクロール) */
+  sub(catDev, '①②で一旦止まる（固定スクロール）');
+  note('①「開発スピードを加速」と②「開発環境に柔軟に適応」が、中央に来たら固定されて一旦止まり、スクロールすると次へ進みます（PC のみ）。');
+  optRow('devPinStops', '①②で止まる', [['止まる', 'on'], ['止まらない（通常）', 'off']],
+    () => ((sv().dev.pinStops !== 'off') ? 'on' : 'off'),
+    v => { sv().dev.pinStops = v; fit(); renderFrame(); });
+  rows.push(slider('止まっている長さ', 30, 160, 5, () => (sv().dev.devDwell != null ? sv().dev.devDwell : 90), v => { sv().dev.devDwell = v; fit(); }, v => Math.round(v) + 'vh',
+    '各章が中央で止まっている距離。長いほど、しっかり止まって見えます。', { mbKey: 'sections.dev.devDwell', fixedMax: true }));
+
+  /* 【2026-08-30 ヒデさん指定】② はテキストスライド固定(既定)。リスト/スライドの選択UIは廃止。 */
+  sub(catDev, '② の見出しのスロット（API / CLI / SDK の箱）', true, { fixed: true });
+  rows.push(slider('箱の上下の位置', -30, 30, 1, () => (sv().dev.slotBoxY != null ? sv().dev.slotBoxY : 0), v => { sv().dev.slotBoxY = v; applyDsBox(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+    'マイナスで上へ、プラスで下へ。文字の並びには影響しません(見た目だけ動かします)。', { mbKey: 'sections.dev.slotBoxY', signed: true, fixedMax: true }));
+  rows.push(slider('箱の高さ', 24, 64, 1, () => (sv().dev.slotBoxH != null ? sv().dev.slotBoxH : 42), v => { sv().dev.slotBoxH = v; applyDsBox(); }, v => Math.round(v) + 'px',
+    'グレーの箱の高さ。文字(34px)より少し大きいと収まりがよくなります。', { mbKey: 'sections.dev.slotBoxH', fixedMax: true }));
+
+  sub(catDev, '② の出入り（スクロール位置）');
+  note('② は dev1 と同じくスクロール位置で出入りします（時間再生ではないので上に戻っても急に消えません）。');
+  const dsVpNote = noteLive(() => { const m = sv().dev.vpMode || 'center';
+    return m === 'bottom' ? '下部基準: 画面に入ってすぐ出しきる（早め）。' : m === 'top' ? '上部基準: 中央より上まで来てから出しきる（遅め）。' : '中央基準: dev1 と同じタイミング。'; });
+  optRow('devVpMode', '② の出入りの基準', [['下部で出す', 'bottom'], ['中央で出す', 'center'], ['上部で出す', 'top']],
+    () => (sv().dev.vpMode || 'center'),
+    v => { sv().dev.vpMode = v; dsVpNote(); renderFrame(); });
+  note('↓ CLI/SDK/API の箱が「左右に割れて開く」動きは時間再生（ゆったり）。登場後に自動で開きます。');
+  rows.push(slider('割れ始めるまでの間', 0, 2, 0.05, () => sv().dev.splitDelay, v => sv().dev.splitDelay = v, v => v.toFixed(2) + '秒',
+    '② が登場してから、箱が左右に割れ始めるまでの待ち時間。', { mbKey: 'sections.dev.splitDelay' }));
+  rows.push(slider('割れきる時間（ゆったり）', 0.2, 3, 0.05, () => sv().dev.splitDur, v => sv().dev.splitDur = v, v => v.toFixed(2) + '秒',
+    '箱が完全に開ききるまでの時間。大きいほどゆったり開きます。', { mbKey: 'sections.dev.splitDur' }));
+
+  sub(catDev, 'スロット（切替タイミング）');
+  /* 【2026-09-09 ヒデさん指定】切替モーションは「スナップ」に固定＝焼き込み。フリップ/ブラー/横押し/ズーム/キューブと
+     選択UIは削除。実装は applyDsMotion(d.slideMotion || 'snap') が既定 snap なので挙動不変。 */
+  rows.push(slider('スナップのキレ', 1, 6, 0.2, () => sv().dev.slideSnapK, v => sv().dev.slideSnapK = v, v => '×' + v.toFixed(1),
+    'スナップの切替の急さ。大きいほどメリハリが強く（スナップ選択時）。', { mbKey: 'sections.dev.slideSnapK' }));
+  rows.push(slider('自動で切り替わる間隔', 1.5, 8, 0.1, () => sv().dev.slideEvery, v => sv().dev.slideEvery = v, v => v.toFixed(1) + '秒',
+    'CLI→SDK→API が自動で次へ進む間隔。', { mbKey: 'sections.dev.slideEvery' }));
+  rows.push(slider('切り替えにかける時間', 0.2, 1.5, 0.05, () => sv().dev.slideDur, v => sv().dev.slideDur = v, v => v.toFixed(2) + '秒',
+    '1回の切替アニメの長さ。短いほどパキッと。', { mbKey: 'sections.dev.slideDur' }));
+
+  /* 【2026-08-30 ヒデさん指定】リスト案用の「画面が切り替わる見え方 / 後ろに重なるカード / コードの見せ方」は廃止
+     (② はテキストスライド固定のため)。関連パラメータは既定のまま残るが、パネルからは出さない。 */
+
+  sub(catDev, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('開発者体験の文字ごとに 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。');
+  textRowsFor(['dev']);
+
+  /* ========== 🗂 導入事例 ========== */
+  panelVarsec(null);   /* 【2026-09-21】開発者体験タブ終わり */
+  const catCase = category('導入事例（2×2グリッド）', false);
+  catNote(catCase, '見出し → 水平線が左から3本 → 中央の縦線 → カードが画面に入った順に1枚ずつブラーで登場。');
+
+  /* 【2026-09-17 大掃除・ヒデさん指定】罫線(あり/なし)とホバーの動きの選択UIは削除。罫線なし(caseLayout=1)・影でふわっと浮く(ct-lift)に固定＝焼き込み。 */
+  /* 【2026-09-20 大改修】再生時間→アニメ・ぼかし→エフェクト に分割(ビジョンと統一) */
+  sub(catCase, 'セクション（再生）', false, { grp: 'anim' });
+  sectionLenSlider('cases', 1000);
+  rows.push(slider('全体の再生時間', 3, 20, 0.5, () => sv().cases.playSec, v => sv().cases.playSec = v, v => v.toFixed(1) + '秒',
+    '見出し〜カードまで出そろうのにかける時間。小さいほどキビキビ。', { mbKey: 'sections.cases.playSec' }));
+  sub(catCase, '出現のぼかし', false, { grp: 'fxtex' });
+  rows.push(slider('強さ', 0, 40, 1, () => sv().cases.inBlur, v => sv().cases.inBlur = v, v => v + 'px',
+    '大きいほど強くぼけた状態から現れます。※貼りつけない時は無効。', { mbKey: 'sections.cases.inBlur' }));
+
+  sub(catCase, '① 見出し「導入事例」', null, { grp: 'anim' });   /* 中身は出現タイミングのみ＝アニメーション */
+  note('「%」は、前の暗い画面が明るく戻る動きの進み具合です。');
+  rows.push(slider('見出しが出る', 0, 1, 0.02, () => sv().cases.introAt, v => sv().cases.introAt = v, v => Math.round(v * 100) + '%',
+    '何割進んだら見出しが出はじめるか。小さいほど早く見えます。', { mbKey: 'sections.cases.introAt' }));
+  rows.push(slider('見出しが出きるまで', 0.05, 1, 0.02, () => sv().cases.introDur, v => sv().cases.introDur = v, v => v.toFixed(2) + '秒',
+    '「導入事例」の文字がぼけから出きるまでの時間。', { mbKey: 'sections.cases.introDur' }));
+
+  /* 【2026-09-17 大掃除】「② 罫線が引かれる」のつまみは削除(罫線なしに固定したので効かない) */
+  sub(catCase, '② カードが1枚ずつブラーで登場');
+  /* 【2026-09-19 ヒデさん依頼】4枚同時(2026-08-30 確定)→ 1枚ずつに変更。起点は再生進捗ではなく「カード自身が画面に入った時点」 */
+  note('カードはそれぞれ「自分が画面に入った時点」を起点に、1枚目→2枚目→3枚目→4枚目の順にディレイしてブラーで出ます(旧: 4枚同時)。ぼけの強さは上の「基本」。');
+  rows.push(slider('次のカードのディレイ', 0, 0.6, 0.02, () => (sv().cases.cardStagger != null ? sv().cases.cardStagger : 0.18), v => sv().cases.cardStagger = v, v => v.toFixed(2) + '秒',
+    '1枚目が出はじめてから次のカードが出はじめるまでの間。同じ行の2枚はこの間隔で前後します。下の行が遅れて画面に入った分は差し引かれます。', { mbKey: 'sections.cases.cardStagger' }));
+  rows.push(slider('1枚が出きるまで', 0.05, 1, 0.02, () => sv().cases.cardDur, v => sv().cases.cardDur = v, v => v.toFixed(2),
+    '1枚がぼけから出きるまでの長さ。', { mbKey: 'sections.cases.cardDur' }));
+
+  /* 【2026-09-22 ヒデさん依頼】カードの上下パディング(スマホ)。カードが縦積みなので、この値×2＝カード間の余白。詰めるとカードが近づく。--cg-pad-y へ */
+  sub(catCase, 'カード（スマホ）', null, { grp: 'basic' });
+  rows.push(slider('上下パディング', 4, 48, 2, () => (sv().cases.cardPadY != null ? sv().cases.cardPadY : 24), v => { sv().cases.cardPadY = v; applyCasesPad(); markDirty(); }, v => Math.round(v) + 'px',
+    'スマホの導入事例カードの上下の余白。カードは縦積みなので、この値×2 がカード同士の隙間になります。詰めるとカードが近づきます。既定24px。', { mbKey: 'sections.cases.cardPadY', grp: 'basic' }));
+
+  /* 【2026-08-30 ヒデさん指定】カードのホバーは「パスのトリミング(trim)」固定(既定)。選択UIは廃止。
+     ホバーは case-grid の data-hover(= params.patterns.caseHover)で常に適用される。 */
+  liveEdit = false;
+
+  /* 【2026-08-30 ヒデさん指定】コンバージョンは導入事例の下（ページ順と同じ並び）に置く。 */
+  sub(catCase, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('導入事例の文字ごとに 太さ・行間・字間(見出し・Use Case・カードの一言/タグ/会社名)。空欄＝今のCSSの値(カッコ内)。');
+  textRowsFor(['case']);
+
+  const catCv = category('コンバージョン（お問い合わせの流れる背景）', false);
+  catNote(catCv, 'カンプのラジアルグラデを、惑星と同じ発想で流れさせ、Bayerディザで粒立たせています。');
+  panelVarsec('cv', 'お問い合わせ（案）');   /* 【2026-09-21 ヒデさん依頼】主役案をセクションに→配下に4カテゴリ */
+  const cvv = () => (params.cv || (params.cv = {}));
+  /* 【2026-09-21 ヒデさん依頼】お問い合わせ背景グラデの「ウェーブ」調整(速さ/強さ/うねり)。エフェクト節に格納。値はシェーダのuniformで毎フレーム反映 */
+  sub(catCv, 'ウェーブ（流れる背景）', null, { fixed: true, grp: 'fxtex' });   /* ※「流れる速さ」は既存(下の別ブロック)にあるので重複させない */
+  rows.push(slider('波の速さ', 0, 0.4, 0.005, () => (cvv().waveSpd != null ? cvv().waveSpd : 0.11), v => { cvv().waveSpd = v; markDirty(); }, v => v.toFixed(3), 'うねり(波)が動く速さ。', { mbKey: 'cv.waveSpd', fixedMax: true }));
+  rows.push(slider('波の強さ', 0, 0.6, 0.01, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; markDirty(); }, v => v.toFixed(2), '大きなうねりの振幅。大きいほど波打ちます。', { mbKey: 'cv.wave', fixedMax: true }));
+  rows.push(slider('うねりの長さ', 0.1, 2, 0.05, () => (cvv().waveLen != null ? cvv().waveLen : 0.85), v => { cvv().waveLen = v; markDirty(); }, v => v.toFixed(2), 'うねりの波長。小さいほど細かく波打ちます。', { mbKey: 'cv.waveLen', fixedMax: true }));
+  rows.push(slider('うねり（ふくらみ）', 0, 0.4, 0.01, () => (cvv().swell != null ? cvv().swell : 0.12), v => { cvv().swell = v; markDirty(); }, v => v.toFixed(2), '色のふくらみ(swell)。', { mbKey: 'cv.swell', fixedMax: true }));
+  /* 【2026-09-21 ヒデさん依頼】フォームの磨りガラス(バックドロップ・ぼかし/彩度)は「エフェクト」節へ */
+  sub(catCv, 'フォーム（磨りガラス）', null, { fixed: true, grp: 'fxtex' });
+  const _cg = () => (params.cvfGlass = params.cvfGlass || {});
+  rows.push(slider('フォームのぼかし（バックドロップ）', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 22), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'フォームの磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
+  rows.push(slider('フォームの彩度', 1, 2.2, 0.05, () => (_cg().sat != null ? _cg().sat : 1.5), v => { _cg().sat = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(2), 'フォームの磨りガラスの彩度。上げると背景の色が残ります。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
+  /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
+     案を選ぶ項目はパネルから削除し、既定値として固定した。
+     ⚠️ CV_STYLES の他の案(0/11/12/13)の定義と CSS は残してあるので、
+        比べ直したくなったら URL ?cv=0 などで一時的に切り替えられる。 */
+  /* 【2026-09-15 ヒデさん指定】カラー案(10案)。選ぶとその案の値が下のつまみに入る。つまみで細かく変えたら ⋯「いまの設定で上書き」でその案に保存 */
+  /* 【2026-09-16 ヒデさん依頼】カラー案・グラデの色・暗さ・明るさコントラストのセクションは削除(デザインカンプで確定)。値は焼き込み(cvColorBy CK / ramp comp)に残るので見た目は不変 */
+  /* 【V5.0 2026-09-16 ヒデさん依頼】UX再設計: 部品化して「見せ方3案」で組み替える。似た項目(グラデの形が2箇所 等)を1つの“もの”にまとめ、必要な時だけ出す。 */
+  const isForm = () => String(params.cvCta || 'button') === 'form';
+  const gizmoBtn = () => { const gb = document.createElement('button'); gb.type = 'button'; gb.id = 'cvGizmoBtn'; gb.className = 'cvg-editbtn'; gb.textContent = '🎯 グラデーションを棒で編集'; gb.onclick = () => { const sec = document.getElementById('conversion'); if (sec) sec.scrollIntoView({ block: 'center', behavior: 'smooth' }); cvGizmo.toggle(); }; (mount || body).appendChild(gb); };
+  const B = {
+    cta() {
+      varRowX('cvCta', CV_CTAS, () => String(params.cvCta || 'button'), v => { params.cvCta = String(v); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof buildPanel === 'function') buildPanel(); } });
+      note('現行はボタン遷移。「フォーム（直置き）」にすると、見出し・本文の下に自作フォームを置きます(送信先は無し=見た目のみ)。切り替えると下に必要な項目だけ出ます。');
+    },
+    formStyle() {
+      /* 【2026-09-17 大掃除・ヒデさん指定】リキッドグラス5案の選択は削除。「リキッドグラス（明）」(formStyle=1) に固定＝焼き込み。横幅と細かい調整だけ残す */
+      rows.push(slider('フォームの横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { mbKey: 'formWidth', fixedMax: true }));
+      /* 【2026-09-17 ヒデさん依頼】背景・バックドロップフィルター・プレースホルダーの色味を後から個別調整できるように(白飛び対策) */
+      const _g = () => (params.cvfGlass = params.cvfGlass || {});
+      /* 【2026-09-18 ヒデさん指定】「フォーム裏の明るさ上限」は見た目が想像と違うため取り下げ(既定 100%=効かない)。代わりに上の「流れ・ゆらゆら」の白い光の案(7〜9)で対応 */
+      rows.push(slider('フォームの角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 22), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { mbKey: 'cvfGlass.radius', fixedMax: true }));
+      rows.push(slider('入力欄の角丸', 0, 30, 1, () => (_g().inR != null ? _g().inR : 10), v => { _g().inR = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '入力欄・セレクトの角の丸さ。', { mbKey: 'cvfGlass.inR', fixedMax: true }));
+      /* 【2026-09-18 ヒデさん依頼】外枠の線とプレースホルダーも変えられるように */
+      optRow('cvfCardBorder', 'カードの枠線の色', [['白系', 'w'], ['黒系', 'k']], () => (_g().bDark ? 'k' : 'w'), v => { _g().bDark = v === 'k'; applyCvfGlass(); });
+      rows.push(slider('カードの枠線の太さ', 0, 4, 0.5, () => (_g().bw != null ? _g().bw : 1), v => { _g().bw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', 'フォームのカードの外枠の線の太さ。0で線なし。', { mbKey: 'cvfGlass.bw', fixedMax: true }));
+      rows.push(slider('カードの枠線の濃さ', 0, 1, 0.02, () => (_g().ba != null ? _g().ba : 0.66), v => { _g().ba = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '外枠の線の不透明度。', { mbKey: 'cvfGlass.ba', fixedMax: true }));
+      optRow('cvfInBorder', '入力欄の枠線の色', [['白系', 'w'], ['黒系', 'k']], () => (_g().inBDark ? 'k' : 'w'), v => { _g().inBDark = v === 'k'; applyCvfGlass(); });
+      rows.push(slider('入力欄の枠線の太さ', 0, 4, 0.5, () => (_g().inBw != null ? _g().inBw : 1), v => { _g().inBw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', '入力欄・セレクトの枠線の太さ。0で線なし。', { mbKey: 'cvfGlass.inBw', fixedMax: true }));
+      rows.push(slider('入力欄の枠線の濃さ', 0, 1, 0.02, () => (_g().inBa != null ? _g().inBa : 0.72), v => { _g().inBa = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の枠線の不透明度。', { mbKey: 'cvfGlass.inBa', fixedMax: true }));
+      optRow('cvfPh', 'プレースホルダーの色', [['黒系', 'k'], ['白系', 'w']], () => (_g().phDark === false ? 'w' : 'k'), v => { _g().phDark = v !== 'w'; applyCvfGlass(); });
+      rows.push(slider('カードの色の透過率', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの色の濃さ(透過率)。下げるほど背景が透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
+      colorRow('カードの色', () => (_g().bgColor || '#ffffff'), v => { _g().bgColor = v; applyCvfGlass(); markDirty(); }, 'フォームカードの色そのもの。既定は白。透過率は上のつまみで。');   /* 【2026-09-21 ヒデさん依頼】色自体を変えられるように */
+      /* 【2026-09-21 ヒデさん依頼】ぼかし(バックドロップ)と彩度は「エフェクト」節へ移動(下の別 sub フォーム(磨りガラス)) */
+      rows.push(slider('入力欄の白さ', 0, 0.9, 0.02, () => (_g().inA != null ? _g().inA : 0.56), v => { _g().inA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の地色の白さ。', { mbKey: 'cvfGlass.inA', fixedMax: true }));
+      rows.push(slider('プレースホルダーの濃さ', 0.1, 0.6, 0.02, () => (_g().phA != null ? _g().phA : 0.32), v => { _g().phA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '「Anyflow株式会社」等の見本文字の濃さ。白飛びで見えにくい時は上げる。', { mbKey: 'cvfGlass.phA', fixedMax: true }));
+      note('セクション自体の色味・グラデーションは、下の「背景グラデーション」「色の移ろい」「粒（ディザ）」で調整できます。');
+    },
+    gradForm() {
+      varRowX('cvForm', CV_FORMS, () => cvFormKey(), v => { cvApplyForm(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      note('グラデの“形”。放射(現行)／縦グラデ／放射やわらか／斜め。色は現行のまま。');
+    },
+    gradGeom() {
+      segRow('形（詳細）', [['カンプ', 0], ['放射', 1], ['線形', 2]], () => (cvv().gMode || 0), v => { cvv().gMode = v; markDirty(); renderFrame(); });
+      gizmoBtn();
+      note('棒編集: 両端で角度・広がり、途中で中心。下の数値と連動します。');
+      rows.push(slider('中心 横', 0, 1, 0.01, () => (cvv().gcx != null ? cvv().gcx : 0.60), v => { cvv().gcx = v; }, v => Math.round(v * 100) + '%', '明るい中心の横位置。0=左端 / 100%=右端。', { mbKey: 'cv.gcx' }));
+      rows.push(slider('中心 縦', 0, 1, 0.01, () => (cvv().gcy != null ? cvv().gcy : 0.00), v => { cvv().gcy = v; }, v => Math.round(v * 100) + '%', '明るい中心の縦位置。0=上端 / 100%=下端。', { mbKey: 'cv.gcy' }));
+      rows.push(slider('広がり', 0.2, 2.5, 0.02, () => (cvv().gr != null ? cvv().gr : 0.9), v => { cvv().gr = v; }, v => '×' + v.toFixed(2), '小さいほど色が早く変わり、大きいほどゆるやか。', { mbKey: 'cv.gr' }));
+      rows.push(slider('縦横比', 0.4, 2.5, 0.02, () => (cvv().gAspect != null ? cvv().gAspect : 1), v => { cvv().gAspect = v; }, v => '×' + v.toFixed(2), '放射を横長(>1)・縦長(<1)に。', { mbKey: 'cv.gAspect' }));
+      rows.push(slider('回転', 0, 360, 1, () => (cvv().gAng || 0), v => { cvv().gAng = v; }, v => Math.round(v) + '°', '楕円・線形の向き。', { mbKey: 'cv.gAng' }));
+    },
+    dither() {
+      rows.push(slider('粗さ（ドット）', 1, 8, 0.5, () => cvv().cell, v => { cvv().cell = v; }, v => v.toFixed(1) + 'px', '大きいほど粗い。1でカンプ。', { mbKey: 'cv.cell' }));
+      rows.push(slider('階調（レベル）', 2, 12, 1, () => cvv().levels, v => { cvv().levels = v; }, v => Math.round(v) + '段', '少ないほどディザが強く。カンプは3段。', { mbKey: 'cv.levels' }));
+      rows.push(slider('ディザの散り', 0, 2, 0.05, () => cvv().spread, v => { cvv().spread = v; }, v => '×' + v.toFixed(2), '大きいほど粒感。', { mbKey: 'cv.spread' }));
+    },
+    flow() {
+      /* 【2026-09-18 ヒデさん依頼】白い光の居場所(右上を漂う)の案。⋯で削除/上書き可 */
+      varRowX('cvSway', CV_SWAYS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { autosave: true, snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      note('現行＝今の動き。案1〜3＝白い光が右上のあたりを漂い、フォームまで流れ込まないようにした案。案4＝白を軸に揺らす。案5・6＝案4の動き＋色の入れ替わり(白はそのまま)。どの案も「動き」と「色」を丸ごと決めるので、案を切り替えれば前の案の色設定は残らない。選んでから下のつまみで微調整→⋯「この設定で上書き」。');
+      /* 【2026-09-19】色の入れ替わり(案5・6)の細かい調整。案1〜4では効かない(hueMode=off) */
+      rows.push(slider('色の入れ替わり: 1周の時間', 8, 180, 2, () => (cvv().moodSec != null ? cvv().moodSec : 30), v => { cvv().moodSec = v; }, v => Math.round(v) + '秒', '案5・6で色が一周する時間。長いほどゆっくり。案1〜4では効きません。', { mbKey: 'cv.moodSec', fixedMax: true }));
+      rows.push(slider('色の入れ替わり: 留まる割合', 0, 0.9, 0.05, () => (cvv().swapHold != null ? cvv().swapHold : 0.45), v => { cvv().swapHold = v; }, v => Math.round(v * 100) + '%', '案5・6で、各状態に留まる時間の割合(1区間のうち)。0で常に移り変わり続ける。', { mbKey: 'cv.swapHold', fixedMax: true }));
+      rows.push(slider('揺らぎの軸（画面中心 ↔ 白い光）', 0, 1, 0.05, () => (cvv().swayPivot != null ? cvv().swayPivot : 0), v => { cvv().swayPivot = v; }, v => Math.round(v * 100) + '%', '0%=画面の中心を軸に傾ける(白い光は弧を描いて動く)／100%=白い光の中心を軸に(白は動かず周りだけ揺れる)。', { mbKey: 'cv.swayPivot', fixedMax: true }));
+      rows.push(slider('白を取る（中心の開始色）', 0, 0.6, 0.01, () => (cvv().coreSkip != null ? cvv().coreSkip : 0), v => { cvv().coreSkip = v; }, v => v === 0 ? '白から' : '×' + v.toFixed(2), 'いちばん明るい中心を、白ではなく色の途中から始める(0.26=淡ブルー / 0.34=案7 / 0.59=シアン)。白い領域が無くなる。', { mbKey: 'cv.coreSkip', fixedMax: true }));
+      rows.push(slider('白の縁のぼかし', 0, 0.25, 0.01, () => (cvv().coreSoft != null ? cvv().coreSoft : 0), v => { cvv().coreSoft = v; }, v => '×' + v.toFixed(2), '白い光の周りの色の切り替わりをやわらかく(白の大きさは変えない)。0=くっきり / 案7 は 0.12。', { mbKey: 'cv.coreSoft', fixedMax: true }));
+      rows.push(slider('白の絞り', 0, 3, 0.1, () => (cvv().core != null ? cvv().core : 0), v => { cvv().core = v; }, v => '×' + v.toFixed(1), '白い光の芯だけを小さくする(周りの色の広がりは変えない)。0=そのまま / 案7 は 1.2。', { mbKey: 'cv.core', fixedMax: true }));
+      rows.push(slider('白い光の近くのうねりを弱める', 0, 1, 0.05, () => (cvv().waveAnchor != null ? cvv().waveAnchor : 0), v => { cvv().waveAnchor = v; }, v => Math.round(v * 100) + '%', '白い光の周り(半径15〜55%)だけ「うねり」を弱めて、白がフォームへ流れ込まないようにする。', { mbKey: 'cv.waveAnchor', fixedMax: true }));
+      rows.push(slider('流れる速さ', 0, 1, 0.02, () => cvv().speed, v => { cvv().speed = v; }, v => '×' + v.toFixed(2), 'グラデが流れる速さ。0で停止。', { mbKey: 'cv.speed' }));
+      rows.push(slider('うねりの強さ', 0, 0.6, 0.02, () => cvv().swell, v => { cvv().swell = v; }, v => '×' + v.toFixed(2), '流れのゆらぎ。', { mbKey: 'cv.swell' }));
+      rows.push(slider('流れの細かさ', 0.3, 8, 0.1, () => cvv().flowScale, v => { cvv().flowScale = v; }, v => '×' + v.toFixed(1), '大きいほど細かい流れ。', { mbKey: 'cv.flowScale' }));
+      rows.push(slider('大きなうねり', 0, 0.35, 0.005, () => (cvv().wave != null ? cvv().wave : 0.13), v => { cvv().wave = v; }, v => '×' + v.toFixed(3), 'なめらかな大波。粒っぽくなりません。', { mbKey: 'cv.wave', fixedMax: true }));
+      rows.push(slider('ゆらゆら（傾き）', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; }, v => v.toFixed(1) + '°', '全体がゆっくり左右に傾く。0で停止。', { mbKey: 'cv.swayDeg', fixedMax: true }));
+      rows.push(slider('ゆらゆらの周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。', { mbKey: 'cv.swaySec', fixedMax: true }));
+    },
+    edge() {
+      varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+      rows.push(slider('溶け込みの深さ', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', '色が満色になるまでの距離。大きいほど徐々に溶け、境目の線が出ません。', { mbKey: 'cv.blend', fixedMax: true }));
+    },
+    spacing() {
+      rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px', '減らすほど導入事例との間が詰まります。', { mbKey: 'cv.headTop', fixedMax: true }));
+      rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '見出しの上に色の面を足す。', { mbKey: 'cv.addT', fixedMax: true }));
+      rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ボタンの下(フッターとの間)に足す。', { mbKey: 'cv.addB', fixedMax: true }));
+      rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'あいだの余白。マイナスは導入事例の下の空きを詰めます(カードが切れない所で自動停止)。', { mbKey: 'cv.gapTop', signed: true }));
+    },
+  };
+  /* 【V5.0 2026-09-16 ヒデさん依頼】要素別に固定。CTAの中に「フォーム」が入る等の“包含関係”を入れ子(cv-subg)で見せる。
+     絵文字・番号は付けない(後の改修がしやすいように)。階層の見せ方だけ5案(cvHier)で切替。 */
+  const subgroup = (label, fn) => {
+    const g = document.createElement('div'); g.className = 'cv-subg';
+    if (label) { const l = document.createElement('div'); l.className = 'cv-subg-lab'; l.textContent = label; g.appendChild(l); }
+    (mount || body).appendChild(g);
+    const prev = mount; mount = g; try { fn(); } finally { mount = prev; }
+  };
+  catCv.classList.add('hier-1');   /* 見せ方＝インデント固定(焼き込み) */
+  /* 【2026-09-17 大掃除・ヒデさん指定】見せ方(5案)/CTA案(ボタン↔フォーム)/リキッドグラス5案/背景グラデ案(0〜3)/形の詳細(中心・広がり・回転・棒で編集)/
+     境界(溶け込み)/余白・高さ の選択UIは削除。今の値(フォーム直置き・明るいリキッドグラス・放射グラデ・標準の溶け込み・余白120/0/0/60)に固定＝焼き込み。 */
+  sub(catCv, 'フォーム（横幅・磨りガラスの細かい調整）', false, { grp: 'basic' }); B.formStyle();
+  /* 【2026-09-26 ヒデさん依頼】ボタンの矢印の線幅(実寸px・PC/SP別)。ヘッダーの「お問い合わせ」とセクションの「フォームを記入」共通 */
+  sub(catCv, 'ボタン（矢印）', false, { grp: 'basic' });
+  rows.push(slider('矢印の線幅', 0.5, 4, 0.1, () => (cvv().ctaArrowW != null ? cvv().ctaArrowW : 2), v => { cvv().ctaArrowW = v; applyCtaArrow(); }, v => v.toFixed(1) + 'px',
+    'お問い合わせボタンの矢印の線の太さ(画面上の実寸)。ヘッダーの「お問い合わせ」とお問い合わせセクションの「フォームを記入」の両方に効きます。旧は0.9px。', { mbKey: 'cv.ctaArrowW', mbDefault: 2 }));   /* 横幅などフォームの基本設定なので基本扱い(文字より前へ) */
+  sub(catCv, '粒（ディザ）と流れ'); B.dither();
+  /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
+
+  sub(catCv, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('お問い合わせとフッターの文字ごとに 太さ・行間・字間(Contact・見出し・本文・フォームの項目名/入力欄・送信ボタン・フッター)。空欄＝今のCSSの値(カッコ内)。');
+  textRowsFor(['cv']);
+
+  /* ========== 🍔 ハンバーガーメニュー (2026-09-18 ヒデさん依頼) ========== */
+  panelVarsec(null);   /* 【2026-09-21】コンバージョンタブ終わり */
+  const catMenu = category('ハンバーガーメニュー（右上を押した先の画面）', false);
+  catNote(catMenu, '左寄せ大の暗いメニュー。余白・項目の間隔・文字サイズはここ、太さ/行間/字間は下の「文字」。右上の✏️編集でも触れます。');
+  sub(catMenu, '余白・間隔', null, { fixed: true });
+  { const D = () => (params.drawer = params.drawer || {});
+    const dv = (k, def) => (D()[k] != null ? D()[k] : def);
+    const ds = (label, k, def, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => dv(k, def), v => { D()[k] = v; applyDrawerTune(); markDirty(); }, fmt, tip, { fixedMax: true, signed: min < 0, mbKey: 'drawer.' + k }));
+    ds('上の余白', 'padT', 0, -200, 400, 4, v => Math.round(v) + 'px', 'メニュー全体の上の余白。マイナスで上へ寄せます。');
+    ds('下の余白', 'padB', 0, -200, 400, 4, v => Math.round(v) + 'px', 'メニュー全体の下の余白。');
+    ds('左の余白', 'padL', 130, 0, 600, 4, v => Math.round(v) + 'px', '左端からメニューまでの余白(以前は 9vw≒130px)。');
+    ds('右の余白', 'padR', 0, 0, 600, 4, v => Math.round(v) + 'px', 'メニューの右の余白。');
+    ds('項目の間隔（上下）', 'gap', 24, 0, 120, 2, v => Math.round(v) + 'px', 'ビジョン／提供できること… の行と行の間。以前は10px。');
+    sub(catMenu, '文字サイズ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
+    ds('項目の文字サイズ', 'fs', 56, 24, 120, 1, v => Math.round(v) + 'px', 'メニュー項目の文字サイズ。');
+    ds('番号の文字サイズ', 'numFs', 14, 8, 40, 1, v => Math.round(v) + 'px', '01〜04 の番号の文字サイズ。');
+    /* 【2026-09-20 ヒデさん依頼C】重複する「アイコンの線の」を小見出し「アイコンの線」にまとめ、中は 長さ/太さ/間隔 に(冗長排除) */
+    sub(catMenu, 'アイコンの線', false);   /* 右上のハンバーガー(2本線) */
+    ds('長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
+    ds('太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
+    ds('間隔', 'barGap', 7, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
+    sub(catMenu, 'その他', false);
+    ds('スクロール時のナビのぼかし', 'navBlur', 8, 0, 24, 1, v => Math.round(v) + 'px', 'スクロールでナビ(ビジョン〜導入事例)が右へ格納される時、徐々にかかるぼかしの最大量。0でぼかし無し。');
+  }
+  sub(catMenu, '文字（太さ・行間・字間）', null, { fixed: true });
+  note('メニューの項目・番号・お問い合わせボタンの 太さ・行間・字間。空欄＝今のCSSの値(カッコ内)。');
+  textRowsFor(['menu']);
+
+  /* 【2026-09-20 ヒデさん依頼・パネル整理】全カテゴリを組み終えたので、各タブの小見出しを
+     いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)に並べ替える。 */
+  applyPanelGroupOrder();
+
+  /* ボタン。
+     ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。
+        触った値がそのまま次回の既定になる自動保存もやめて、
+        【保存を押した時だけ残る】形にした。 */
+  const btns = document.createElement('div');
+  btns.className = 'btns';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'primary';
+  /* 【2026-08-26 ヒデさん指定】いまの値を「最初に出る状態」として確定させるボタン */
+  syncSaveBtn = () => {
+    saveBtn.textContent = dirty ? 'デフォルトに設定（未保存）' : 'デフォルトに設定';
+    saveBtn.classList.toggle('dirty', dirty);
+  };
+  saveBtn.onclick = () => {
+    save();
+    dirty = false;
+    syncSaveBtn();
+    try { if (typeof exitEditMode === 'function') exitEditMode(); } catch (e) {}   /* 【2026-09-19 ヒデさん依頼】保存したら編集モードを抜ける */
+    saveBtn.textContent = '✅ デフォルトにしました';
+    setTimeout(syncSaveBtn, 1600);
+  };
+  syncSaveBtn();
+  /* 【2026-09-01 ヒデさん指定】「デプロイしてもKVが反映されない」対策。
+     ローカルの調整・案の選択はこのブラウザ(localStorage)にしか残らないため、
+     本番に載せるには 書き出し→Claudeに渡す→焼き込みデプロイ が必要。
+     いままでコンソールで打っていたワンライナーをボタン1つにした(中身は同じダンプ形式)。 */
+  const exportBtn = document.createElement('button');
+  exportBtn.textContent = '設定書き出し';
+  exportBtn.title = 'いまのブラウザの設定ぜんぶを anyflow-settings.json としてダウンロードします。これをClaudeに渡すと、同じ見た目を本番に焼き込めます。';
+  exportBtn.onclick = () => {
+    try { save(); } catch (e) {}
+    const dump = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('anyflow-')) dump[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(dump)], { type: 'application/json' });
+    const aEl = document.createElement('a');
+    aEl.href = URL.createObjectURL(blob);
+    aEl.download = 'anyflow-settings.json';
+    aEl.click();
+    URL.revokeObjectURL(aEl.href);
+    try { if (typeof exitEditMode === 'function') exitEditMode(); } catch (e) {}   /* 【2026-09-19】書き出し=保存なので編集モードを抜ける */
+    exportBtn.textContent = '✅ 書き出しました（Claudeに渡してください）';
+    setTimeout(() => { exportBtn.textContent = '設定書き出し'; }, 2200);
+  };
+  /* 【2026-09-02 ヒデさん指定】案の完全削除リストのコピー。
+     パネルの「🗑削除」は隠すだけ(=「消した案を戻す」で復活できる)。コードから恒久的に消す(完全削除)には
+     Claudeに焼き込んでもらう必要があるので、いま隠している案の一覧をワンタップでコピーできるようにする。 */
+  const purgeBtn = document.createElement('button');
+  purgeBtn.textContent = 'バリエーション削除';
+  purgeBtn.title = 'いま「削除」で隠している案の一覧をコピーします。Claudeに貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。';
+  purgeBtn.onclick = () => {
+    try { save(); } catch (e) {}
+    /* 【2026-09-15 ヒデさん指定・最新化】焼き込み済み(コードから消えている)案は控えから外し、「まだ焼き込んでいない案」だけを出す。空のまとまりは載せない */
+    hiddenListRefresh();
+    const nonEmpty = v => Array.isArray(v) ? v.length > 0 : !!(v && typeof v === 'object' && Object.keys(v).length);
+    const pick = src => { const o = {}; for (const m in (src || {})) { if (nonEmpty(src[m])) o[m] = JSON.parse(JSON.stringify(src[m])); } return o; };
+    const payload = { hidden: pick(params.gfxVariantHidden), trash: pick(params.gfxPresetTrash) };
+    const nHid = Object.values(payload.hidden).reduce((a, b) => a + (Array.isArray(b) ? b.length : 1), 0);
+    const text = (nHid
+      ? '【完全削除の依頼】以下の案を VARIANT_REMOVED_EXTRA に焼き込んで、コードから恒久的に消してください。(焼き込み済みの案は含めていません)\n'
+      : '【完全削除の依頼】新しく消した案はありません(いま隠している案はすべて焼き込み済みです)。\n')
+      + JSON.stringify(payload, null, 1);
+    const done = () => {
+      purgeBtn.textContent = '✅ コピーしました（Claudeに貼ってください）';
+      setTimeout(() => { purgeBtn.textContent = 'バリエーション削除'; }, 2600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else fallbackCopy(text, done);
+    function fallbackCopy(t, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      ta.remove(); cb();
+    }
+  };
+  /* 【2026-08-26 ヒデさん指定】下の「元に戻す」は廃止。各項目の右端にある ↺ で個別に戻す */
+  /* 【2026-09-15 ヒデさん指定】タブの中身: body 直下の大カテゴリ(.cat)を集め、選んだ1つだけ出す。選択はブラウザに記憶(無ければ開いていたカテゴリ) */
+  { const cats = [...body.querySelectorAll(':scope > .cat')];
+    const titles = cats.map(c => ((c.querySelector('.cat-head > span') || {}).textContent || '').trim());
+    let cur = null; try { cur = localStorage.getItem(PANEL_TAB_KEY); } catch (e) {}
+    if (!titles.includes(cur)) { const iOpen = cats.findIndex(c => !c.classList.contains('closed')); cur = titles[iOpen >= 0 ? iOpen : 0] || ''; }
+    const showTab = t => {
+      cats.forEach((c, i) => { const onT = titles[i] === t; c.classList.toggle('tab-on', onT); if (onT) { c.classList.remove('closed'); catOpen[titles[i]] = true; } });
+      panTabs.querySelectorAll('.pan-tab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+      /* 【2026-09-20 ヒデさん依頼】タブは横1列＋横スクロール。選んだタブが画面外でも中央に寄せる */
+      try { const onB = panTabs.querySelector('.pan-tab.on'); if (onB && panTabs.clientWidth) { const target = onB.offsetLeft - (panTabs.clientWidth - onB.offsetWidth) / 2; panTabs.scrollTo({ left: Math.max(0, target), behavior: 'smooth' }); } } catch (e) {}
+      try { localStorage.setItem(PANEL_TAB_KEY, t); } catch (e) {}
+    };
+    panTabs.innerHTML = '';
+    titles.forEach(t => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pan-tab'; b.dataset.t = t;
+      b.textContent = t.split('（')[0].trim(); b.title = t;
+      b.onclick = () => { showTab(t); body.scrollTop = 0; };
+      panTabs.appendChild(b);
+    });
+    body.classList.toggle('tabbed', cats.length > 1);
+    if (cats.length > 1) showTab(cur);
+  }
+  btns.append(saveBtn, exportBtn, purgeBtn);
+  body.appendChild(btns);
+
+  /* 【2026-08-28 ヒデさん指定】「いまの設定をコピーする」ボタンは削除。 */
+  const saveNote = document.createElement('div');
+  saveNote.className = 'grp-note keep';
+  saveNote.style.margin = '6px 0 0';
+  saveNote.textContent = '調整は自動でこのブラウザに保存されます(リロード・ブラウザを閉じてもOK)。'
+    + '本番サイトに反映したい時は「⬇ 設定を書き出す」を押して、出てきたファイルをClaudeに渡してください。';
+  body.appendChild(saveNote);
+  body.scrollTop = keepScroll;         // 見ていた位置に戻す
+}
+buildPanel();
+applyMarquee();
+/* 【2026-09-15】URL でも切替: ?cl=0|1(罫線) / ?ch=trim|cardtrim|ct-lift|ct-tight|ct-panel(ホバー) */
+try { const _cl = location.search.match(/[?&]cl=(\d)(?:&|$)/); if (_cl && CASE_LAYOUTS.some(c => c.key === _cl[1])) params.patterns.caseLayout = _cl[1];
+      const _ch = location.search.match(/[?&]ch=([a-z-]+)(?:&|$)/); if (_ch && CASE_HOVERS.some(c => c.key === _ch[1])) params.patterns.caseHover = _ch[1]; } catch (e) {}
+applyCaseHover();   /* 導入事例のホバー案を初期反映 (2026-08-27) */
+applyCaseLayout();  /* 導入事例の罫線あり/なしを初期反映 (2026-09-15) */
+/* URL ?cvc=C1〜C11 でカラー案(選んでいるデザイン案に紐づく)。全部の定義が済んだここで読む(早い位置だと variantRemovedKey が未定義で黙って失敗していた・実測) */
+/* 【2026-09-15】開発者体験モックの案も URL で確認できるように: ?dev=0〜15 / ?devt=dark|graphite|blue|cyan|pink */
+try { const _dv = location.search.match(/[?&]dev=(\d{1,2})(?:&|$)/); if (_dv && DEV_STYLES.some(d => d.key === _dv[1])) params.devStyle = _dv[1];
+      const _dt = location.search.match(/[?&]devt=([a-z]+)(?:&|$)/); if (_dt && DEV_TONES.some(d => d.key === _dt[1])) params.devTone = _dt[1]; } catch (e) {}
+try { const _cvc = location.search.match(/[?&]cvc=(C\d{1,2})(?:&|$)/); if (_cvc && CV_COLORS.some(s => s.key === _cvc[1])) { params.cvColorBy = params.cvColorBy || {}; params.cvColorBy[cvStyleKey()] = _cvc[1]; cvApplyColorFull(_cvc[1]); } } catch (e) {}
+cvApplyForm(cvFormKey());   /* 【2026-09-16】グラデの形を初期反映(放射/縦/斜め) */
+applyCvEdge(cvEdgeKey());   /* 【2026-09-16】溶け込みの深さを初期反映(blend も案の値に) */
+applyHdrMode(hdrModeKey());  /* 【V5.0】追従ヘッダーの案を初期反映＋固定化 */
+applyHdrMotion();            /* 【V5.0 2026-09-17】ヘッダー変形のイージング/速さを初期反映 */
+applyKvCopy();               /* 【2026-09-17】ヘッダーが固定(全幅)になった後にロゴ左端を測り直す(KVコピーの左端をロゴに揃える) */
+addEventListener('resize', () => { try { applyKvCopy(); } catch (e) {} try { applyGrid(); } catch (e) {} });
+addEventListener('load', () => { try { applyKvCopy(); } catch (e) {} });
+/* 【2026-09-21 ヒデさん依頼・Y12】スマホプレビュー枠(iframe ?preview=1)を、親の保存(localStorage)に合わせてリアルタイム再適用。
+   同 origin なので storage イベントで受けられる(実機の別origin/SSEとは別経路)。パネルで数値を変える→親が save→iframe が即再描画。 */
+function __previewReapply() {
+  try {
+    var mainText = localStorage.getItem(STORAGE_KEY); if (!mainText) return;
+    var newP = JSON.parse(mainText); if (!newP || typeof newP !== 'object') return;
+    for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; }
+    Object.assign(params, newP);
+    try { var ps = localStorage.getItem('anyflow-gfx-presets'); if (ps) { var stp = JSON.parse(ps); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } } catch (e) {}
+    var C = function (fn) { try { fn(); } catch (e) {} };
+    try { vfMesh = null; } catch (e) {}
+    C(function () { applyKvVariant(kvVarKey(), true); });
+    C(function () { varApplyOverridesAtStartup(); });
+    C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
+    C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
+    C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
+    C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
+    C(function () { if (typeof applySway === 'function') applySway(); });
+    C(function () { if (typeof visApplyGrad === 'function') { visApplyGrad(visGradKey()); if (typeof applyVisGrad === 'function') applyVisGrad(); } });
+    C(function () { if (typeof resApplySlotFx === 'function') resApplySlotFx(resSlotFxKey()); });
+    C(function () { if (typeof applyResProd === 'function') applyResProd(); });
+    C(function () { if (typeof applyMarquee === 'function') applyMarquee(); });
+    C(function () { if (typeof fit === 'function') fit(); });
+    C(function () { renderFrame(); });
+  } catch (e) {}
+}
+window.__previewReapply = __previewReapply;
+addEventListener('storage', function (e) {
+  if (!document.documentElement.classList.contains('pp-inner')) return;   /* プレビューiframeの中だけ反応 */
+  if (e.key === STORAGE_KEY || e.key === 'anyflow-gfx-presets') { try { __previewReapply(); } catch (er) {} }
+});
+bindHdrScroll();             /* 【V5.0】追従ヘッダーのスクロール監視を設置 */
+bindDrawer();                /* 【V5.0】ハンバーガーのドロワー開閉を設置 */
+applyCvStyle();     /* お問い合わせのデザイン案を初期反映 (2026-09-15) */
+applyVisGrad();     /* ビジョンの揺らぎのグラデ案を初期反映 (2026-09-15) */
+try { applyDevTune(); } catch (e) {}   /* 【2026-09-20 #10】見出し↔モック間隔・モック拡大 */
+applyDevStyle();    /* 開発者体験モックのスタイル案を初期反映 (2026-09-15) */
+
+/* パネル開閉 */
+const panel = document.getElementById('panel');
+/* ===== 調整パネルの移動 (ヘッダーをドラッグ) =====
+   .tools は既定で right/bottom 固定。動かし始めたら left/top 指定に切り替える */
+const toolsEl = document.querySelector('.tools');
+/* パネルが画面からはみ出さないように、上端の位置を押し戻す。
+   ⚠️ right/bottom 固定のまま（＝一度も動かしていない）なら、
+      背が伸びた分は自然に上へ伸びるので何もしなくてよい */
+function keepPanelInView() {
+  if (!toolsEl.style.top || toolsEl.style.top === 'auto') return;
+  /* 下側ははみ出してよい。つまむヘッダーが画面に残るところまでを上限にする(2026-08-27 修正) */
+  const headEl = document.getElementById('panelHead');
+  const headH = (headEl && headEl.offsetHeight) || 44;
+  const max = Math.max(8, (window.innerHeight || 0) - headH - 8);
+  let top = parseFloat(toolsEl.style.top);
+  if (!isFinite(top)) return;
+  if (top > max) top = max;
+  if (top < 8) top = 8;
+  toolsEl.style.top = top + 'px';
+}
+window.addEventListener('resize', keepPanelInView);
+
+/* ===== 調整パネルのサイズ変更: 上下・左右の辺をつかむ (2026-08-27 ヒデさん指定) =====
+   ブラウザ標準の resize は右下だけなので、4辺ぶんのつまみを自前で足す。
+   上辺・左辺は「掴んだ端を動かす」ので、位置(top/left)も一緒に動かす。 */
+(() => {
+  const panelEl = document.getElementById('panel');
+  if (!panelEl) return;
+  const MINW = 240, MINH = 120;
+  for (const side of ['t', 'b', 'l', 'r']) {
+    const z = document.createElement('div');
+    z.className = 'pz pz-' + side;
+    panelEl.appendChild(z);
+    z.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation();
+      try { z.setPointerCapture(e.pointerId); } catch (_) {}
+      const r = toolsEl.getBoundingClientRect();
+      const st = { x: e.clientX, y: e.clientY, w: r.width, h: r.height, left: r.left, top: r.top };
+      /* 掴んだ瞬間に left/top 指定へ切り替える。中央そろえの transform も外す(飛び防止) */
+      toolsEl.style.transform = 'none';
+      toolsEl.style.left = r.left + 'px';
+      toolsEl.style.top = r.top + 'px';
+      toolsEl.style.right = 'auto';
+      toolsEl.style.bottom = 'auto';
+      const move = ev => {
+        const dx = ev.clientX - st.x, dy = ev.clientY - st.y;
+        if (side === 'r') panelEl.style.width = Math.max(MINW, st.w + dx) + 'px';
+        if (side === 'b') panelEl.style.height = Math.max(MINH, st.h + dy) + 'px';
+        if (side === 'l') {
+          const w = Math.max(MINW, st.w - dx);
+          panelEl.style.width = w + 'px';
+          toolsEl.style.left = (st.left + (st.w - w)) + 'px';
+        }
+        if (side === 't') {
+          const h = Math.max(MINH, st.h - dy);
+          panelEl.style.height = h + 'px';
+          toolsEl.style.top = (st.top + (st.h - h)) + 'px';
+        }
+      };
+      const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    });
+  }
+})();
+
+(() => {
+  const tools = toolsEl;
+  const head = document.getElementById('panelHead');
+  /* 【2026-08-27 ヒデさん指定】掴める場所が狭かったので、ヘッダーだけでなく
+     パネルの中身の「何も無い所」でも掴んで動かせるようにする。
+     スライダー・ボタン・入力欄など“操作するもの”の上では移動しない。 */
+  const dragZones = [head, document.getElementById('panelBody')].filter(Boolean);
+  const isControl = (t) => !!(t && t.closest && t.closest(
+    'input, button, select, textarea, .sw-pill, .rst, .gbtn, .seg, .np-f, .pz, .sw-copy, a'));
+  let sx = 0, sy = 0, ox = 0, oy = 0, moved = false, dragging = false;
+  const onDown = e => {
+    if (document.documentElement.classList.contains('mb')) return;   /* 【2026-09-09】スマホはボトムシート(グリップのスワイプ)操作なので、移動ドラッグは無効 */
+    if (e.button !== 0) return;
+    if (e.currentTarget !== head && isControl(e.target)) return;   /* 操作するものの上では動かさない */
+    /* ⚠️【2026-08-19 バグ修正】ここで left/top 指定へ切り替えていたのが原因で、
+       【ヘッダーを押しただけ】でも上端固定になっていた。
+       閉じている時は下の方にいるので、そこから開くと背が 46px → 520px に伸びて
+       下へ突き抜け、画面外へ458pxはみ出していた（実測）。
+       位置の記録だけして、実際に動かし始める(pointermove で3px超)まで CSS は触らない。 */
+    const r = tools.getBoundingClientRect();
+    sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+    moved = false; dragging = true;
+  };
+  const onMove = e => {
+    if (!dragging) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) + Math.abs(dy) <= 3) return;   /* まだ「押しただけ」。何もしない */
+    if (!moved) {
+      /* ここで初めて「動かしている」と判断して、left/top 指定へ切り替える。
+         ⚠️【2026-08-27 バグ修正】CSS の上下中央そろえ(transform: translateY(-50%))が
+            残ったまま top を指定すると、掴んだ瞬間に半分ぶん跳ねて【飛んで見えた】。
+            位置指定に切り替える時は transform を必ず外す。 */
+      moved = true;
+      tools.style.transform = 'none';
+      tools.style.left = ox + 'px';
+      tools.style.top = oy + 'px';
+      tools.style.right = 'auto';
+      tools.style.bottom = 'auto';
+    }
+    /* ⚠️【2026-08-27 バグ修正】以前は「パネル全体が画面に収まる」ところまでしか動かせず、
+       背の高いパネルだと下へほとんど動かせなかった(実測: 高さ361/画面392 で上限23px)。
+       Figma のパネルと同じく、下側ははみ出してよい。【つまむヘッダーが画面に残る】所までにする。 */
+    const w = tools.offsetWidth;
+    const headH = (head && head.offsetHeight) || 44;
+    tools.style.left = Math.min(Math.max(0, ox + dx), innerWidth - Math.min(w, 120)) + 'px';
+    tools.style.top = Math.min(Math.max(0, oy + dy), Math.max(8, innerHeight - headH - 8)) + 'px';
+  };
+  const onUp = () => { dragging = false; };
+  for (const z of dragZones) z.addEventListener('pointerdown', onDown);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  /* ドラッグした時は、開閉トグルなどのクリックを発火させない */
+  for (const z of dragZones) {
+    z.addEventListener('click', e => { if (moved) { e.stopImmediatePropagation(); moved = false; } }, true);
+  }
+})();
+
+/* 【2026-08-27 ヒデさん指定】アコーディオンは基本【下へ開く】。
+   画面の下の方にいて下へ伸ばせない時だけ【上へ開く】(上端を持ち上げる)。 */
+function openPanelDownward() {
+  /* right/bottom 固定のまま(＝一度も動かしていない)なら、CSS の上下中央そろえに任せる */
+  if (!toolsEl.style.top || toolsEl.style.top === 'auto') return;
+  const top = parseFloat(toolsEl.style.top);
+  if (!isFinite(top)) return;
+  const h = toolsEl.offsetHeight;
+  const room = (window.innerHeight || 0) - top - 8;
+  if (h <= room) return;                       /* 下に入るならそのまま(下開き) */
+  /* 下に入りきらない時だけ、入る範囲で上へ持ち上げる(上開き)。
+     持ち上げすぎて画面上端を越えないようにする */
+  const up = Math.max(0, Math.min(h - room, top - 8));
+  if (up > 0) toolsEl.style.top = (top - up) + 'px';
+}
+document.getElementById('panelHead').addEventListener('click', () => {
+  if (document.documentElement.classList.contains('mb')) return;   /* 【2026-09-09】スマホはグリップのスワイプで開閉するのでクリック開閉は無効 */
+  panel.classList.toggle('closed');
+  requestAnimationFrame(openPanelDownward);
+  /* 開いて背が伸びた分で画面外へ出ないように押し戻す（動かしたあとの位置の時だけ効く） */
+  keepPanelInView();
+});
+
+/* ===== 【2026-09-09 ヒデさん指定】スマホ: Googleマップ風ボトムシート =====
+   上部のグリップをスワイプ: 下げるとピーク(見出しだけ)/格納、上げると画面半分まで展開。スナップ付き。 */
+(() => {
+  const tools = toolsEl;
+  const panel = document.getElementById('panel');
+  const head = document.getElementById('panelHead');
+  if (!tools || !panel) return;
+  const grip = document.createElement('div');
+  grip.className = 'panel-grip';
+  panel.insertBefore(grip, panel.firstChild);
+  const isMB = () => document.documentElement.classList.contains('mb');
+  let dragging = false, startY = 0, startTY = 0, curTY = 0;
+  const sheetH = () => panel.getBoundingClientRect().height || 1;
+  const peekPx = () => (grip.offsetHeight || 12) + (head ? head.offsetHeight : 40);
+  const peekTY = () => Math.max(0, sheetH() - peekPx());
+  const syncPeekVar = () => document.documentElement.style.setProperty('--sheet-peek', peekPx() + 'px');
+  const applyTY = ty => { curTY = ty; tools.style.transform = 'translateY(' + ty + 'px)'; };
+  const snapOpen = () => { tools.classList.add('sheet-open'); tools.style.transform = ''; curTY = 0; };
+  const snapPeek = () => { tools.classList.remove('sheet-open'); tools.style.transform = ''; curTY = peekTY(); };
+  const hideSheet = () => { tools.classList.add('tools-hidden'); tools.classList.remove('sheet-open'); tools.style.transform = ''; try { sessionStorage.setItem('anyflow-tools-secret', '0'); } catch (_) {} };
+  syncPeekVar(); window.addEventListener('resize', syncPeekVar);
+  const start = e => {
+    if (!isMB()) return;
+    dragging = true; startY = e.clientY;
+    startTY = tools.classList.contains('sheet-open') ? 0 : peekTY();
+    curTY = startTY;
+    tools.classList.add('sheet-dragging'); tools.classList.remove('sheet-open');
+    tools.style.transform = 'translateY(' + startTY + 'px)';
+    try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault(); e.stopPropagation();
+  };
+  const move = e => {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    applyTY(Math.max(0, Math.min(peekTY() + 90, startTY + dy)));
+    e.preventDefault();
+  };
+  const end = e => {
+    if (!dragging) return;
+    dragging = false; tools.classList.remove('sheet-dragging');
+    const p = peekTY(); const dy = ((e && e.clientY) || startY) - startY;
+    if (curTY > p + 40 && dy > 40) hideSheet();     /* ピークからさらに下げた → 格納 */
+    else if (curTY < p * 0.5) snapOpen();           /* 半分以上上げた → 展開 */
+    else snapPeek();                                /* それ以外 → ピークへスナップ */
+  };
+  grip.addEventListener('pointerdown', start);
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
+})();
+
+/* ===== 【2026-09-09 ヒデさん指定】ヘッダーのホバーアニメ(ナビ5案/ボタン5案)＋ロゴでトップへ ===== */
+(() => {
+  const header = document.querySelector('.header');
+  if (!header) return;
+  /* ナビ(お問い合わせ以外)のテキストを2段構造にラップ(ロール用)。他の案でも同じ構造でOK。 */
+  header.querySelectorAll('.nav-links a').forEach(a => {
+    const t = a.textContent.trim();
+    a.innerHTML = '<span class="nlab"><span>' + t + '</span><span aria-hidden="true">' + t + '</span></span>';
+  });
+  /* 黒ボタンのテキストを <span> に(矢印/塗りの前面化用) */
+  const cta = header.querySelector('.cta');
+  if (cta && cta.children.length === 0) cta.innerHTML = '<span>' + cta.textContent.trim() + '</span>';
+  /* 【2026-09-09 ヒデさん確定】テキスト=上下ロール / ボタン=矢印 に固定(焼き込み・選択パネルは削除)。 */
+  header.dataset.navhover = 'roll';
+  header.dataset.btnhover = 'arrow';
+  /* コンバージョンの「フォームを記入」ボタンも同じ矢印アニメにする(テキストを <span> にラップ)。 */
+  const cvBtn = document.querySelector('.cv-btn');
+  if (cvBtn && cvBtn.children.length === 0) cvBtn.innerHTML = '<span>' + cvBtn.textContent.trim() + '</span>';
+  /* ロゴ(ヘッダー/フッター)クリックでホームのトップへ。透過フェード＋スムーズスクロール。 */
+  const toTop = e => {
+    if (e) e.preventDefault();
+    document.documentElement.classList.add('to-top-fade');
+    try { if (window.lenis && lenis.scrollTo) lenis.scrollTo(0, { duration: 1.0 }); else window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    catch (_) { window.scrollTo(0, 0); }
+    setTimeout(() => document.documentElement.classList.remove('to-top-fade'), 620);
+  };
+  const hlogo = header.querySelector('.logo');
+  if (hlogo) hlogo.addEventListener('click', toTop);
+  const flogo = document.querySelector('.ft-logo');
+  if (flogo) flogo.addEventListener('click', toTop);
+})();
+/* ===== サイト全体の直接編集 (2026-08-29 ヒデさん指定) =====
+   ✏️編集モード中は、KVだけでなくサイト内の主要オブジェクトをドラッグで直接動かせる。
+   動かした量は既存の位置パラメータへ書くので、「これをデフォルトに設定」で保存できる。
+   対象: Visionの軌道グラフィック(noPinX/noPinY) / Point01(p1X/p1Y) / Point02(p2X/p2Y) / KVグラフィック(kv.gx/gy) */
+const siteEdit = (() => {
+  const V = () => params.sections.vision;
+  const TARGETS = [
+    { el: () => document.getElementById('vfWrap'),  name: 'Visionグラフィック（SVG）',
+      /* 【2026-09-19】図は SVG 書き出し(#vfWrap)。位置ずらしは文字システムと同じ edits.vfWrap.dx/dy(旧 noPinX/noPinY は使わない) */
+      get: () => { const e = (params.edits && params.edits.vfWrap) || {}; return { x: e.dx || 0, y: e.dy || 0 }; },
+      set: (x, y) => { params.edits = params.edits || {}; params.edits.vfWrap = Object.assign(params.edits.vfWrap || {}, { dx: Math.round(x), dy: Math.round(y) }); if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); } },
+    { el: () => document.getElementById('valP1'), name: 'Point 01',
+      get: () => ({ x: V().p1X || 0, y: V().p1Y || 0 }),
+      set: (x, y) => { V().p1X = Math.round(x); V().p1Y = Math.round(y); } },
+    { el: () => document.getElementById('valP2'), name: 'Point 02',
+      get: () => ({ x: V().p2X || 0, y: V().p2Y || 0 }),
+      set: (x, y) => { V().p2X = Math.round(x); V().p2Y = Math.round(y); } },
+    { el: () => document.querySelector('.orbit'), name: 'KVグラフィック',
+      get: () => ({ x: params.kv.gx || 0, y: params.kv.gy || 0 }),
+      set: (x, y) => { params.kv.gx = Math.round(x); params.kv.gy = Math.round(y); } },
+  ];
+  let on = false;
+  function scaleOf(el) {
+    /* 画面px → 設計px の換算。要素の見かけ幅 ÷ レイアウト幅 = 祖先ぶくみの実効スケール */
+    const w = el.offsetWidth;
+    if (!w) return 1;
+    const k = el.getBoundingClientRect().width / w;
+    return k > 0.01 ? k : 1;
+  }
+  /* 【2026-08-29 ヒデさん指定】オブジェクトの複数選択。選択中(.se-sel)はまとめてドラッグできる。 */
+  const selection = new Set();
+  function syncSel() {
+    for (const t of TARGETS) { const el = t.el(); if (el) el.classList.toggle('se-sel', selection.has(t)); }
+  }
+  const SE_EDGE = 14;   /* 【2026-09-03 ヒデさん指定】この幅ぶんの外周が「移動をつかむ枠」 */
+  function nearEdge(el, e) {
+    const r = el.getBoundingClientRect();
+    return (e.clientX - r.left < SE_EDGE) || (r.right - e.clientX < SE_EDGE)
+        || (e.clientY - r.top < SE_EDGE) || (r.bottom - e.clientY < SE_EDGE);
+  }
+  function onDown(e) {
+    if (!on) return;
+    const t = this.__seTarget;
+    /* 【2026-09-03 ヒデさん指定】Figma風: バウンディングボックスの端(SE_EDGE)をつかむと移動、
+       中のテキストの上は移動せずテキスト編集(シングル=ツールバー / ダブル=打ち替え)に譲る。
+       テキストを含まないグラフィック(orbit等)は全面で移動。 */
+    const onText = e.target.closest && e.target.closest('.tt-hit');
+    if (onText && !nearEdge(this, e)) return;   /* 内側のテキスト → 移動しない(click/dblclickでtextToolsが処理) */
+    e.preventDefault(); e.stopPropagation();
+    /* Shift/⌘/Ctrlクリックで選択に足し引き。通常クリックは、そのオブジェクトだけを選択
+       (すでに選択済みなら、選択を保ったまま複数まとめてドラッグ)。 */
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      if (selection.has(t)) selection.delete(t); else selection.add(t);
+    } else if (!selection.has(t)) {
+      selection.clear(); selection.add(t);
+    }
+    syncSel();
+    if (!selection.has(t)) return;   /* Shiftで選択を外した時はドラッグしない */
+    /* 選択中の全オブジェクトの「今の位置・実効スケール」を控え、同じ移動量で一緒に動かす */
+    const starts = [...selection].map(tt => ({ t: tt, p: tt.get(), k: scaleOf(tt.el()) }));
+    const sx = e.clientX, sy = e.clientY;
+    const move = ev => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) window.__ttDragged = true;   /* 2026-09-03: ドラッグ後はテキスト選択しない */
+      for (const s of starts) s.t.set(s.p.x + dx / s.k, s.p.y + dy / s.k);
+      markDirty(); renderFrame();
+    };
+    const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up);
+  }
+  function set(v) {
+    on = !!v;
+    document.documentElement.classList.toggle('site-edit', on);
+    if (!on) selection.clear();
+    for (const t of TARGETS) {
+      const el = t.el(); if (!el) continue;
+      el.classList.toggle('se-hit', on);
+      if (!on) el.classList.remove('se-sel');
+      if (on && !el.__seBound) {
+        el.__seTarget = t;
+        el.addEventListener('pointerdown', onDown);
+        /* 端＝移動カーソル / 内側のテキスト＝テキストカーソル(Figma風の見え方) */
+        el.addEventListener('pointermove', ev => {
+          if (!on) return;
+          const onT = ev.target.closest && ev.target.closest('.tt-hit');
+          const c = nearEdge(el, ev) ? 'move' : (onT ? 'text' : 'move');
+          el.style.cursor = c;
+          if (onT) onT.style.cursor = c;   /* テキストの上でも端に近ければ移動カーソル */
+        });
+        el.__seBound = true;
+      }
+      if (!on) el.style.cursor = '';
+    }
+    if (on) syncSel();
+  }
+  return { set, get on() { return on; } };
+})();
+
+/* ===== 【2026-09-03 ヒデさん指定】汎用テキスト編集レイヤー =====
+   編集モード中、トップページの主要テキストをクリックすると浮きツールバーが出て、
+   Figmaのように サイズ / ウェイト / 行間 / 字間 / 余白 を数値で変えられ、打ち替えもできる。
+   保存は params.edits[key]（トップ全体で共有・案非依存）。rvAt が触るのは opacity/filter/transform
+   だけなので、font系プロパティは毎フレームのアニメと競合しない。 */
+const textTools = (() => {
+  /* key=保存キー / sel=要素セレクタ / name=表示名 / text=打ち替え可(子が純テキストのみ)
+     move=位置移動可(端ドラッグ。既定1) / font=font系編集可(既定1)。
+     【2026-09-03 ヒデさん指定】可能な限りページ全体の要素を対象にする。 */
+  /* 【2026-09-17 大掃除】対象の台帳は TEXT_SPEC(パネルの「文字」と共用)。multi の要素は同じ値をまとめて当てる。 */
+  const SPEC = TEXT_SPEC;
+  const specEls = sp => { try { return sp.multi ? Array.from(document.querySelectorAll(sp.sel)) : [document.querySelector(sp.sel)].filter(Boolean); } catch (e) { return []; } };
+  const specEl = sp => specEls(sp)[0] || null;
+  /* 保存先は params.edits ただ一つ(旧フォントテスト案ごとの保存は 2026-09-17 に撤去) */
+  function editsOf(key) {
+    if (!params.edits) params.edits = {};
+    return params.edits[key] || (params.edits[key] = {});
+  }
+  /* params.edits を全対象のDOMへ反映(起動時・変更時) */
+  function applyAll() {
+    if (!params.edits) params.edits = {};
+    /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ「スマホ上書き(editsMb)」を共有(edits)に重ねる。
+       PCでは editsMb を一切見ない＝スマホモードでいじった値がPCに出ない。 */
+    /* 【2026-09-22 ヒデさん報告・PC/SP連動の根治】スマホモード(phone-mode)中は editsMb を「この親ページ(=PC表示)」には重ねない。
+       重ねると PC ページの文字が SP の値に化けて「PCとSPが連動して見える」＋パネル入力(SP値)と食い違う原因になっていた。
+       SP のプレビューは右下の実機プレビュー枠(#phonePreview の iframe＝?preview=1・isMobile=true でSPとして描画)と、
+       ライブ同期した実機が担う。よって適用は「実機 isMobile の時だけ」に戻す＝PCページは常に PC(edits)のまま。 */
+    const _isMb = (typeof isMobile !== 'undefined' && isMobile);
+    const _mb = (_isMb && params.editsMb) ? params.editsMb : null;
+    for (const sp of SPEC) {
+      const _base = params.edits[sp.key] || {};
+      const _mob = _mb ? _mb[sp.key] : null;
+      const e = _mob ? Object.assign({}, _base, _mob) : Object.assign({}, _base);
+      /* 【2026-09-20 ヒデさん報告・修正】SP は文字サイズ(fs)を PC(base)から引き継がない。SP のサイズは CSS(--fs-hero 等) か
+         スマホモードで付けた SP 専用の上書き(editsMb)だけで決まる。→ PC のコピーのサイズをいじっても SP は連動しない。
+         太さ・行間・字間(fw/lh/ls)は共通デザインなので base を引き継ぐ(SP専用の上書きがあればそちらが勝つ)。 */
+      if (_isMb && (!_mob || _mob.fs == null)) delete e.fs;
+      for (const el of specEls(sp)) {
+        el.style.fontSize      = e.fs != null ? e.fs + 'px' : '';
+        el.style.fontWeight    = e.fw != null ? String(e.fw) : '';
+        el.style.lineHeight    = e.lh != null ? String(e.lh) : '';
+        el.style.letterSpacing = e.ls != null ? e.ls + 'px' : '';
+        const hasPad = ['pt', 'pr', 'pb', 'pl'].some(k => e[k] != null);
+        el.style.padding = hasPad
+          ? `${e.pt || 0}px ${e.pr || 0}px ${e.pb || 0}px ${e.pl || 0}px` : '';
+        /* 位置移動は margin で反映(transformアニメと非競合。left/top指定要素にも効く)。
+           【2026-09-17】rel の要素(margin:auto で中央寄せのフォーム等)は margin だと中央寄せが壊れるので、
+           position:relative + left/top でずらす(static/relative の時だけ。absolute はそのまま margin)。 */
+        let useRel = false;
+        if (sp.rel) { const pos = getComputedStyle(el).position; if (pos === 'static') { el.style.position = 'relative'; useRel = true; } else if (pos === 'relative') useRel = true; }
+        if (useRel) {
+          el.style.left = e.dx ? e.dx + 'px' : ''; el.style.top = e.dy ? e.dy + 'px' : '';
+          el.style.marginLeft = ''; el.style.marginTop = '';
+        } else {
+          el.style.marginLeft = e.dx ? e.dx + 'px' : '';
+          el.style.marginTop  = e.dy ? e.dy + 'px' : '';
+        }
+        if (sp.text && !sp.multi && e.text != null && el.textContent !== e.text) el.textContent = e.text;
+      }
+    }
+  }
+  function scaleOf(el) {
+    const w = el.offsetWidth; if (!w) return 1;
+    const k = el.getBoundingClientRect().width / w; return k > 0.01 ? k : 1;
+  }
+  const TT_EDGE = 14;
+  function nearEdge(el, e) {
+    const r = el.getBoundingClientRect();
+    return (e.clientX - r.left < TT_EDGE) || (r.right - e.clientX < TT_EDGE)
+        || (e.clientY - r.top < TT_EDGE) || (r.bottom - e.clientY < TT_EDGE);
+  }
+  /* 端をつかんだら margin で位置移動(Figma風。中央はテキスト編集に譲る) */
+  function onDown(e) {
+    if (!on) return;
+    const sp = this.__ttSpec; if (sp.move === 0) return;
+    /* 【2026-09-17 ヒデさん報告「編集で位置移動ができない」】文字の要素は端(TT_EDGE)をつかんだ時だけ移動
+       (内側はクリック→文字編集に譲る)。位置だけの要素(font:0＝図・モック・カード・かたまり)は面のどこをつかんでも移動。
+       ただし中の別の文字要素の上を押した時は、その文字側に譲る。 */
+    const innerText = e.target.closest && e.target.closest('.tt-hit');
+    if (sp.font !== 0) { if (!nearEdge(this, e)) return; }
+    else if (innerText && innerText !== this && !nearEdge(this, e)) return;
+    e.preventDefault(); e.stopPropagation();
+    const el = this, ed = editsOf(sp.key), k = scaleOf(el);
+    const sx = e.clientX, sy = e.clientY, dx0 = ed.dx || 0, dy0 = ed.dy || 0;
+    const move = ev => {
+      const ddx = (ev.clientX - sx) / k, ddy = (ev.clientY - sy) / k;
+      if (Math.abs(ev.clientX - sx) > 3 || Math.abs(ev.clientY - sy) > 3) window.__ttDragged = true;
+      ed.dx = Math.round(dx0 + ddx); ed.dy = Math.round(dy0 + ddy);
+      applyAll(); markDirty();
+      if (sel === sp) positionBar(el);
+    };
+    const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up);
+  }
+
+  let on = false, sel = null, bar = null;
+  function buildBar() {
+    if (bar) return bar;
+    bar = document.createElement('div');
+    bar.className = 'txt-bar';
+    document.body.appendChild(bar);
+    return bar;
+  }
+  function num(label, unit, get, setV, min, max, step) {
+    const wrap = document.createElement('label');
+    wrap.className = 'tb-num';
+    wrap.innerHTML = `<span>${label}</span>`;
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.min = min; inp.max = max; inp.step = step;
+    const cur = get();
+    inp.value = (cur == null ? '' : cur);
+    inp.placeholder = 'auto';
+    inp.oninput = () => {
+      const v = inp.value === '' ? null : parseFloat(inp.value);
+      setV(v); applyAll(); markDirty();
+    };
+    inp.onpointerdown = e => e.stopPropagation();
+    wrap.appendChild(inp);
+    if (unit) { const u = document.createElement('em'); u.textContent = unit; wrap.appendChild(u); }
+    return wrap;
+  }
+  function renderBar() {
+    const b = buildBar();
+    b.innerHTML = '';
+    if (!sel) { b.classList.remove('on'); return; }
+    const el = specEl(sel); if (!el) { b.classList.remove('on'); return; }
+    const e = editsOf(sel.key);
+    const cs = getComputedStyle(el);
+    const title = document.createElement('div');
+    title.className = 'tb-title'; title.textContent = sel.name;
+    b.appendChild(title);
+    /* 位置 X/Y(移動可の要素のみ) */
+    if (sel.move !== 0) {
+      b.appendChild(num('X', 'px', () => e.dx, v => { if (v == null) delete e.dx; else e.dx = v; }, -1200, 1200, 1));
+      b.appendChild(num('Y', 'px', () => e.dy, v => { if (v == null) delete e.dy; else e.dy = v; }, -1200, 1200, 1));
+    }
+    if (sel.font !== 0) {
+      /* サイズ */
+      b.appendChild(num('サイズ', 'px', () => e.fs, v => { if (v == null) delete e.fs; else e.fs = v; },
+        8, 200, 1));
+      /* ウェイト */
+      const wWrap = document.createElement('label'); wWrap.className = 'tb-num';
+      wWrap.innerHTML = '<span>太さ</span>';
+      const wSel = document.createElement('select');
+      wSel.innerHTML = '<option value="">auto</option>' +
+        [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => `<option value="${w}">${w}</option>`).join('');
+      wSel.value = e.fw != null ? String(e.fw) : '';
+      wSel.onchange = () => { if (wSel.value === '') delete e.fw; else e.fw = +wSel.value; applyAll(); markDirty(); };
+      wSel.onpointerdown = ev => ev.stopPropagation();
+      wWrap.appendChild(wSel); b.appendChild(wWrap);
+      /* 行間(倍) */
+      b.appendChild(num('行間', '', () => e.lh, v => { if (v == null) delete e.lh; else e.lh = v; },
+        0.8, 3, 0.05));
+      /* 字間 */
+      b.appendChild(num('字間', 'px', () => e.ls, v => { if (v == null) delete e.ls; else e.ls = v; },
+        -5, 20, 0.1));
+    }
+    /* 余白: 上右下左 */
+    const padWrap = document.createElement('div'); padWrap.className = 'tb-pad';
+    padWrap.innerHTML = '<span>余白</span>';
+    [['pt', '上'], ['pr', '右'], ['pb', '下'], ['pl', '左']].forEach(([k, lb]) => {
+      const i = document.createElement('input');
+      i.type = 'number'; i.title = lb + '余白(px)'; i.placeholder = lb;
+      i.value = e[k] != null ? e[k] : '';
+      i.oninput = () => { const v = i.value === '' ? null : parseFloat(i.value);
+        if (v == null) delete e[k]; else e[k] = v; applyAll(); markDirty(); };
+      i.onpointerdown = ev => ev.stopPropagation();
+      padWrap.appendChild(i);
+    });
+    b.appendChild(padWrap);
+    /* 打ち替え */
+    if (sel.text) {
+      const ed = document.createElement('button'); ed.className = 'tb-btn'; ed.textContent = '✎ 文字を打ち替え';
+      ed.onpointerdown = ev => ev.stopPropagation();
+      ed.onclick = () => startEditText(el, sel);
+      b.appendChild(ed);
+    }
+    /* リセット */
+    const rs = document.createElement('button'); rs.className = 'tb-btn'; rs.textContent = '↺ この要素をリセット';
+    rs.onpointerdown = ev => ev.stopPropagation();
+    rs.onclick = () => { params.edits[sel.key] = {}; applyAll(); markDirty(); renderBar(); };
+    b.appendChild(rs);
+    b.classList.add('on');
+    positionBar(el);
+  }
+  function positionBar(el) {
+    const r = el.getBoundingClientRect();
+    const bw = bar.offsetWidth || 300;
+    let left = r.left + r.width / 2 - bw / 2;
+    left = Math.max(8, Math.min(left, innerWidth - bw - 8));
+    let top = r.top - bar.offsetHeight - 10;
+    if (top < 8) top = r.bottom + 10;
+    bar.style.left = left + 'px';
+    bar.style.top = top + 'px';
+  }
+  function startEditText(el, sp) {
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('txt-editing');
+    el.focus();
+    const rng = document.createRange(); rng.selectNodeContents(el);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(rng);
+    const finish = () => {
+      el.removeAttribute('contenteditable');
+      el.classList.remove('txt-editing');
+      const t = el.textContent;
+      editsOf(sp.key).text = t;
+      applyAll(); markDirty();
+      el.removeEventListener('blur', finish); el.removeEventListener('keydown', onKey);
+    };
+    const onKey = ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); el.blur(); }
+      if (ev.key === 'Escape') { el.blur(); } };
+    el.addEventListener('blur', finish); el.addEventListener('keydown', onKey);
+  }
+  function select(sp) {
+    sel = sp;
+    for (const s of SPEC) { for (const el of specEls(s)) el.classList.toggle('tt-sel', s === sp); }
+    renderBar();
+  }
+  function onClick(e) {
+    if (!on) return;
+    const sp = this.__ttSpec;
+    /* ドラッグ(位置移動)と区別: siteEditが動かした直後は選択しない */
+    if (window.__ttDragged) { window.__ttDragged = false; return; }
+    e.stopPropagation();
+    select(sp);
+  }
+  /* 【2026-09-03 ヒデさん指定】ダブルクリックで打ち替え(contenteditable)へ */
+  function onDbl(e) {
+    if (!on) return;
+    const sp = this.__ttSpec;
+    if (!sp.text) return;   /* 打ち替え非対応(KVメイン/メッセージ等)はダブルクリック無視 */
+    e.stopPropagation(); e.preventDefault();
+    select(sp);
+    startEditText(this, sp);
+  }
+  function set(v) {
+    on = !!v;
+    document.documentElement.classList.toggle('txt-edit', on);
+    for (const sp of SPEC) {
+      for (const el of specEls(sp)) {   /* 【2026-09-17】multi(同じ見た目が複数)も全部クリックできる */
+        el.classList.toggle('tt-hit', on);
+        if (!on) el.classList.remove('tt-sel');
+        if (on && !el.__ttBound) {
+          el.__ttSpec = sp;
+          el.addEventListener('click', onClick);
+          el.addEventListener('dblclick', onDbl);
+          el.addEventListener('pointerdown', onDown);
+          el.addEventListener('pointermove', ev => {
+            if (!on) return;
+            el.style.cursor = (sp.move !== 0 && (sp.font === 0 || nearEdge(el, ev))) ? 'move' : (sp.text || sp.font !== 0 ? 'text' : 'default');
+          });
+          el.__ttBound = true;
+        }
+        if (!on) el.style.cursor = '';
+      }
+    }
+    if (!on) { sel = null; if (bar) bar.classList.remove('on'); }
+  }
+  function refresh() { if (on && sel) renderBar(); }
+  return { set, applyAll, refresh, get on() { return on; } };
+})();
+textTools.applyAll();
+
+/* 【2026-08-29 ヒデさん指定】タイトル横の✏️編集ボタン: 直接編集モードのオン/オフ(パネルの開閉はしない) */
+(() => {
+  const eb = document.getElementById('panelEditBtn');
+  if (!eb) return;
+  const syncEb = () => { eb.classList.toggle('on', !!editHandles.on); eb.textContent = editHandles.on ? '✏️ 編集中' : '✏️ 編集'; };
+  window.__syncEditBtn = syncEb;   /* パネル再構築後などに外から呼べるように */
+  /* 【2026-09-19 ヒデさん依頼】編集モードを確実に抜ける共通関数(保存/書き出し/パネル非表示から呼ぶ) */
+  window.exitEditMode = function () { try { if (editHandles.on) editHandles.set(false); } catch (e) {} try { siteEdit.set(false); } catch (e) {} try { textTools.set(false); } catch (e) {} syncEb(); };
+  eb.addEventListener('click', (e) => {
+    e.stopPropagation();                       /* パネルの開閉と喧嘩させない */
+    editHandles.set(!editHandles.on);
+    siteEdit.set(editHandles.on);              /* サイト全体のオブジェクトも同じモードで編集可に */
+    textTools.set(editHandles.on);             /* 2026-09-03: テキストのfont編集レイヤーも同期 */
+    syncEb();
+  });
+  eb.addEventListener('pointerdown', e => e.stopPropagation());   /* ドラッグ開始も抑止 */
+  syncEb();
+})();
+
+/* ===== 表示モード（2026-08-25 ヒデさん指定：V1.0同様に最初から表示） =====
+   パネルは V1.0 と同じく最初から右下に表示（closed=見出しだけ・クリックで開く）。
+   透明ボックス(.tools-secret-hot)は残してあり、隠したい時だけ押せる。
+   sessionStorage に明示的に '0'(隠す) が入っている時だけ隠した状態で始める。 */
+(() => {
+  /* 【2026-08-29 ヒデさん指定】リロードしたら必ず「非表示」から始める(前回の表示状態を復元しない)。
+     右上の空ボックス(.tools-secret-hot)を押すと出てくる。 */
+  const SKEY = 'anyflow-tools-secret';
+  let shown = false;
+  try { sessionStorage.removeItem(SKEY); } catch (e) {}
+  const panelEl2 = document.getElementById('panel');
+  const apply = () => {
+    toolsEl.classList.toggle('tools-hidden', !shown);
+    /* 【2026-08-27 ヒデさん指定】出したときはアコーディオンを開いた状態にする */
+    if (shown && panelEl2) panelEl2.classList.remove('closed');
+    /* 【2026-09-09】スマホ: 空ボックスをタップで出す時は必ず「ピーク(見出しだけ)」から。展開状態は持ち越さない。 */
+    if (shown && document.documentElement.classList.contains('mb')) { toolsEl.classList.remove('sheet-open'); toolsEl.style.transform = ''; }
+  };
+  apply();
+  const hot = document.createElement('div');
+  hot.className = 'tools-secret-hot';
+  document.body.appendChild(hot);
+  hot.addEventListener('click', () => {
+    shown = !shown;
+    if (!shown) { try { if (typeof exitEditMode === 'function') exitEditMode(); } catch (e) {} }   /* 【2026-09-19】隠す時は編集モードを抜ける */
+    try { sessionStorage.setItem(SKEY, shown ? '1' : '0'); } catch (e) {}
+    apply();
+  });
+})();
+/* カテゴリの開閉では外寸は変わらない作りだが、
+   ヒデさんが右下のつまみで背を伸ばしている場合に備えて、ここでも押し戻しておく */
+document.getElementById('panelBody').addEventListener('click', () => {
+  requestAnimationFrame(() => { openPanelDownward(); keepPanelInView(); });
+  if (document.documentElement.classList.contains('phone-mode') && typeof window.__markMbOverrides === 'function') setTimeout(window.__markMbOverrides, 40);   /* 【2026-09-19】タブ切替後もオレンジ印を付け直す */
+});
+
+/* ============================================================================
+   【2026-09-19 ヒデさん依頼】スマホ実機ライブ同期
+   ・?live=phone … スマホ側。PCの調整を受け取り、保存し直してリロード表示(スクロール位置は保つ)。
+   ・それ以外(PC) … 右下に「📱」ボタン。QR/URL を出し、同期ONでPCの保存のたびに設定を送る。
+   中継サーバ: node anyflow/v5/tools/live-sync.mjs (:8779)。本体ページは既存 :8778(LAN公開)。
+   ============================================================================ */
+(function liveSync() {
+  var SYNC = location.protocol + '//' + location.hostname + ':8779';
+  var mode = (new URLSearchParams(location.search).get('live') || '').toLowerCase();
+  /* 開発(ローカル/LAN)だけで動かす。本番(vercel等)では同期UIもスマホ処理も出さない */
+  var isDev = /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(location.hostname);
+  if (!isDev) return;
+
+  /* ---------------- スマホ側: 受信してリロード ---------------- */
+  if (mode === 'phone') {
+    try { document.documentElement.classList.add('live-phone'); } catch (e) {}
+    var st = document.createElement('style');
+    st.textContent = '.tools{display:none!important}'
+      + '.live-badge{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:2147483647;'
+      + 'background:rgba(17,24,39,.82);color:#fff;font:600 11px/1 -apple-system,system-ui,sans-serif;'
+      + 'padding:7px 10px;border-radius:999px;letter-spacing:.02em;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}'
+      + '.live-badge.off{background:rgba(190,40,40,.9)}';
+    document.head.appendChild(st);
+    var badge = document.createElement('div'); badge.className = 'live-badge'; badge.textContent = '📱 PCと接続中…';
+    document.body.appendChild(badge);
+    /* リロードをまたいでスクロール位置を保つ */
+    try { var sv = sessionStorage.getItem('anyflow-live-scroll'); if (sv != null) { var y = +sv; requestAnimationFrame(function () { window.scrollTo(0, y); setTimeout(function () { window.scrollTo(0, y); }, 60); }); } } catch (e) {}
+    var reloadT = null;
+    /* firstMsg はリロードすると再実行で毎回 true に戻ってしまうので、sessionStorage で「初回リロード済み」を持つ(以降はリロードせずソフト適用) */
+    var firstDone = false; try { firstDone = sessionStorage.getItem('anyflow-pm-firstdone') === '1'; } catch (e) {}
+    function applyIncoming(text) {
+      var d; try { d = JSON.parse(text); } catch (e) { return; }
+      if (!(d && typeof d === 'object' && 'main' in d)) return;
+      badge.classList.remove('off'); badge.textContent = '📱 PCと同期中';
+      /* 【2026-09-20 ヒデさん報告バグ修正】SSE は接続のたびに前回値(latest)を送ってくるので、
+         毎回リロードすると『チカチカ無限リロード』になる。前回適用した“生ペイロード”と同じなら何もしない。
+         (localStorage 比較だと起動時 migration が値を書き換えて常に不一致になり止まらないため、生ペイロードで判定) */
+      var last = null; try { last = sessionStorage.getItem('anyflow-pm-last'); } catch (e) {}
+      if (text === last) return;
+      try { sessionStorage.setItem('anyflow-pm-last', text); } catch (e) {}
+      try {
+        if (d.main != null) localStorage.setItem('anyflow-embed-anim-v81', d.main); else localStorage.removeItem('anyflow-embed-anim-v81');
+        if (d.preset != null) localStorage.setItem('anyflow-gfx-presets', d.preset); else localStorage.removeItem('anyflow-gfx-presets');
+        try { localStorage.setItem('anyflow-shipped-gen', '99999999999999'); } catch (e) {}
+      } catch (e) { return; }
+      clearTimeout(reloadT);
+      /* 【2026-09-20 ヒデさん依頼】スマホモードの調整をリロードせずリアルタイム反映(チカチカ解消)。
+         スマホ側はパネルが無い(閉じている)ので、params を差し替えて apply 関数群を直接呼ぶ＝ソフト再適用。
+         初回だけは確実さ優先でリロード、以降はリロード無しで即反映。失敗時はリロードに退避。 */
+      reloadT = setTimeout(function () {
+        if (!firstDone) { firstDone = true; try { sessionStorage.setItem('anyflow-pm-firstdone', '1'); sessionStorage.setItem('anyflow-live-scroll', String(window.scrollY || window.pageYOffset || 0)); } catch (e) {} location.reload(); return; }
+        try { liveApplyNoReload(d.main, d.preset); } catch (e) { try { location.reload(); } catch (e2) {} }
+      }, firstDone ? 40 : 120);
+    }
+    /* リロードせずに params を差し替えて描画系を全部呼び直す(KV・文字・メッシュ・実績・CV・ビジョン) */
+    function liveApplyNoReload(mainText, presetText) {
+      var newP; try { newP = JSON.parse(mainText); } catch (e) { location.reload(); return; }
+      if (!newP || typeof newP !== 'object') { location.reload(); return; }
+      try { for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; } } catch (e) {}
+      try { Object.assign(params, newP); } catch (e) {}
+      if (presetText) { try { var stp = JSON.parse(presetText); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } catch (e) {} }
+      var call = function (fn) { try { fn(); } catch (e) {} };
+      try { vfMesh = null; } catch (e) {}
+      call(function () { if (typeof applyKvVariant === 'function') applyKvVariant(kvVarKey(), true); });
+      call(function () { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); });
+      /* 【2026-09-20 ヒデさん報告・実機プレビューで線幅等をいじると惑星/カゴが変わる不具合の根治】
+         SP専用の値(mb)は、案の再適用(applyKvVariant/varApply=案の焼き込み値で base を上書き)より「後」に流し込む。
+         以前は前に流していたため、案の再適用が SP 値を上書きして戻してしまい、リロードするまで正しく見えなかった
+         (リロード時は varApply→applyMb の順で正しかった。ここも同じ順に揃える)。 */
+      call(function () { if (typeof applyMbToParams === 'function') applyMbToParams(); });
+      call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
+      call(function () { if (typeof applyVisEmph === 'function') applyVisEmph(); });   /* 【2026-09-20】ビジョンのバリエーションもライブ反映 */
+      call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
+      call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
+      call(function () { if (typeof applySway === 'function') applySway(); });
+      call(function () { if (typeof applyVisBelow === 'function') applyVisBelow(); });
+      call(function () { if (typeof applyVisPointsX === 'function') applyVisPointsX(); });
+      call(function () { if (typeof resApplySlotFx === 'function' && typeof resSlotFxKey === 'function') resApplySlotFx(resSlotFxKey()); });
+      call(function () { if (typeof applyResSlotFade === 'function') applyResSlotFade(); });
+      call(function () { if (typeof applyPictoDisp === 'function') applyPictoDisp(); });
+      call(function () { if (typeof applyResSpGap === 'function') applyResSpGap(); });
+      call(function () { if (typeof cvApplySway === 'function' && typeof cvSwayKey === 'function') cvApplySway(cvSwayKey()); });
+      call(function () { if (typeof visApplyGrad === 'function' && typeof visGradKey === 'function') { visApplyGrad(visGradKey()); if (typeof applyVisGrad === 'function') applyVisGrad(); } });
+      call(function () { if (typeof applyMarquee === 'function') applyMarquee(); });
+      call(function () { if (typeof fit === 'function') fit(); });
+      call(function () { if (typeof renderFrame === 'function') renderFrame(); });
+    }
+    function connect() {
+      var es;
+      try { es = new EventSource(SYNC + '/events'); } catch (e) { badge.classList.add('off'); badge.textContent = '📱 同期サーバに接続できません'; return; }
+      es.onmessage = function (ev) { if (ev && ev.data) applyIncoming(ev.data); };
+      es.onerror = function () { badge.classList.add('off'); badge.textContent = '📱 再接続中…'; };
+      es.onopen = function () { badge.classList.remove('off'); badge.textContent = '📱 PCと同期中'; };
+    }
+    connect();
+    return;
+  }
+
+  /* ---------------- PC側: QR/URL + 送信 ---------------- */
+  window.__liveSyncOn = false;
+  function liveSyncPush() {
+    if (!window.__liveSyncOn) return;
+    var payload;
+    try { payload = JSON.stringify({ main: localStorage.getItem('anyflow-embed-anim-v81'), preset: localStorage.getItem('anyflow-gfx-presets') }); } catch (e) { return; }
+    try { fetch(SYNC + '/push', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload }).catch(function () {}); } catch (e) {}   /* keepalive は付けない: 設定JSONが64KB超だと keepalive fetch は無言で失敗する(2026-09-19 実測) */
+  }
+  window.liveSyncPush = liveSyncPush;
+  /* 保存(save)のたびに送る。save は既存の関数。ラップして「保存 → 同期送信」に */
+  try { if (typeof save === 'function') { var _origSave = save; save = function () { var r = _origSave.apply(this, arguments); try { liveSyncPush(); } catch (e) {} return r; }; } } catch (e) {}
+
+  var css = document.createElement('style');
+  css.textContent =
+    '.live-pop{position:fixed;left:12px;bottom:64px;z-index:2147483000;width:250px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;'
+    + 'box-shadow:0 12px 40px rgba(16,24,40,.22);padding:14px;font:400 12px/1.5 -apple-system,system-ui,sans-serif;color:#222;display:none}'
+    + '.live-pop.show{display:block}.live-pop h4{margin:0 0 8px;font-size:12px;font-weight:700}'
+    + '.live-pop .qr{width:190px;height:190px;margin:2px auto 8px;display:block;background:#f4f4f5;border-radius:8px}'
+    + '.live-pop .url{word-break:break-all;background:#f4f4f5;border-radius:7px;padding:6px 8px;font-size:11px;color:#333;margin-bottom:8px}'
+    + '.live-pop .row{display:flex;gap:6px;align-items:center;margin-top:8px}'
+    + '.live-pop button{flex:1;border:1px solid rgba(0,0,0,.1);background:#fff;border-radius:8px;padding:7px;font:600 12px/1 inherit;cursor:pointer}'
+    + '.live-pop button.pri{background:#0e5cff;color:#fff;border-color:#0e5cff}.live-pop button.pri.on{background:#111;border-color:#111}'
+    + '.live-pop .st{font-size:11px;color:#666;margin-top:8px;min-height:15px}.live-pop .err{color:#c0392b}'
+    + '.live-pop .pm-prompt{display:none;width:100%;margin-top:8px;border:1px dashed rgba(14,92,255,.5);background:#eef8ff;color:#0b4bd6;border-radius:8px;padding:8px;font:600 11px/1.35 inherit;cursor:pointer;text-align:center}.live-pop .pm-prompt.show{display:block}'
+    /* ▼ スマホモード(同期中)の見た目 */
+    + '.phone-mode-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;color:#0b4bd6;background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.14));border-top:1px solid rgba(14,92,255,.22);border-bottom:1px solid rgba(14,92,255,.22);padding:7px 12px;text-align:center}'
+    + '.phone-mode-banner b{font-weight:800}'
+    + 'html.phone-mode .phone-mode-banner{display:flex}'
+    + 'html.phone-mode .panel-head{background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.12))}'
+    + 'html.phone-mode #panel{box-shadow:0 0 0 2px rgba(14,92,255,.45),0 14px 40px rgba(16,24,40,.22)}'
+    + 'html.phone-mode #panelLiveBtn{background:#0e5cff;border-color:#0e5cff;color:#fff}'
+    /* 【2026-09-19/09-20 ヒデさん依頼】スマホモード中に「SP専用に上書きした項目」を STUDIO 風にハイライト。
+       つまみも文字行も統一: 行の左に青いバー＋薄い青背景＋見出しに●。触った瞬間に付く(input/change で即更新)。 */
+    + '/* 【2026-09-21 ヒデさん依頼】スマホ上書きの左側の濃い青の装飾(背景＋左バー)は撤去。印は下の●と文字色だけの控えめ表示に */'
+    + 'html.phone-mode .row.mb-override .val,html.phone-mode .row.mb-override > label{font-weight:600}'
+    + 'html.phone-mode .txt-row.mb-override > label{font-weight:600}'
+    + 'html.phone-mode .pc-only-row{display:none!important}'   /* 【2026-09-21】PC演出専用のつまみはスマホモード中は隠す */
+    + 'html:not(.phone-mode) .sp-only-row{display:none!important}'   /* スマホ専用のつまみはPC編集時は隠す */
+    + 'html.phone-mode .txt-row .txt-n.mb-diff,html.phone-mode .txt-row .txt-w.mb-diff{border-color:#0EBBFF!important;background:#dff0ff;color:#0b4bd6;font-weight:600}';
+  document.head.appendChild(css);
+
+  var trigger = document.getElementById('panelLiveBtn');
+  if (trigger) { trigger.hidden = false; }
+  var pop = document.createElement('div'); pop.className = 'live-pop';
+  pop.innerHTML = '<h4>📱 スマホモード（実機プレビュー）</h4>'
+    + '<img class="qr" alt="QR">'
+    + '<div class="url">読み込み中…</div>'
+    + '<div class="st"></div>'
+    + '<button id="lvPrompt" class="pm-prompt">📋 起動プロンプトをコピー（Claudeに貼る）</button>'
+    + '<div class="row"><button id="lvCopy">URLコピー</button><button class="pri" id="lvStop">スマホモード終了</button></div>';
+  document.body.appendChild(pop);
+  /* パネル上部の「スマホモード」帯(同期中だけ表示) */
+  var banner = document.createElement('div'); banner.className = 'phone-mode-banner';
+  banner.innerHTML = '📱 <b>スマホモード</b>：この画面の調整が、同期中のスマホ実機に反映されます';
+  var pbody = document.getElementById('panelBody'); if (pbody && pbody.parentNode) pbody.parentNode.insertBefore(banner, pbody);
+  var qrImg = pop.querySelector('.qr'), urlEl = pop.querySelector('.url'), stEl = pop.querySelector('.st'),
+      copyBtn = pop.querySelector('#lvCopy'), stopBtn = pop.querySelector('#lvStop'), promptBtn = pop.querySelector('#lvPrompt');
+  var phoneUrl = '', ipInfo = null, statusT = null;
+
+  function refreshStatus() {
+    fetch(SYNC + '/ip').then(function (r) { return r.json(); }).then(function (j) {
+      ipInfo = j; phoneUrl = j.phoneUrl;
+      urlEl.textContent = phoneUrl; urlEl.classList.remove('err');
+      qrImg.src = SYNC + '/qr?t=' + Date.now();
+      var n = j.clients || 0;
+      stEl.classList.remove('err'); promptBtn.classList.remove('show');
+      stEl.textContent = window.__liveSyncOn
+        ? ('同期ON ・ つないでいるスマホ ' + n + '台')
+        : ('スマホでこのQRを読むと同期プレビューが開きます（' + n + '台接続中）');
+    }).catch(function () {
+      urlEl.textContent = '同期サーバが起動していません'; urlEl.classList.add('err');
+      qrImg.removeAttribute('src');
+      stEl.classList.add('err');
+      stEl.textContent = 'このボタンでプロンプトをコピーして Claude に貼ると起動できます↓';
+      promptBtn.classList.add('show');
+    });
+  }
+  function positionPop() {
+    if (pop.__dragged) return;   /* 【2026-09-20】手で動かした後は自動配置しない */
+    pop.style.right = ''; pop.style.bottom = 'auto';
+    var pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 320, pad = 12;
+    /* 【2026-09-20 ヒデさん依頼】パネルに重ならないよう、パネルの反対側に出す(左端なら右・右端なら左) */
+    var panel = document.getElementById('panel') || (trigger && trigger.closest('.tools'));
+    var pr = panel ? panel.getBoundingClientRect() : (trigger ? trigger.getBoundingClientRect() : null);
+    var left, top;
+    if (pr) {
+      var mid = pr.left + pr.width / 2;
+      left = (mid < window.innerWidth / 2) ? (pr.right + pad) : (pr.left - pw - pad);   /* パネルが左→右に / 右→左に */
+      if (left + pw > window.innerWidth - pad) left = pr.left - pw - pad;               /* 出した側がはみ出すなら反対へ */
+      if (left < pad) left = pr.right + pad;
+      top = pr.top;
+    } else { left = window.innerWidth - pw - pad; top = pad; }
+    left = Math.max(pad, Math.min(left, window.innerWidth - pw - pad));
+    top = Math.max(pad, Math.min(top, window.innerHeight - ph - pad));
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  }
+  function showPop() { pop.__dragged = false; pop.classList.add('show'); positionPop(); requestAnimationFrame(positionPop); refreshStatus(); clearInterval(statusT); statusT = setInterval(refreshStatus, 3000); window.addEventListener('resize', positionPop); }
+  function hidePop() { pop.classList.remove('show'); clearInterval(statusT); window.removeEventListener('resize', positionPop); }
+  /* 【2026-09-20 ヒデさん依頼】QRポップアップを見出しでドラッグ移動 */
+  (function () { var h = pop.querySelector('h4'); if (!h) return; h.style.cursor = 'move'; h.style.userSelect = 'none'; var sx, sy, sl, st, drag = false;
+    h.addEventListener('pointerdown', function (e) { drag = true; pop.__dragged = true; sx = e.clientX; sy = e.clientY; var r = pop.getBoundingClientRect(); sl = r.left; st = r.top; try { h.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    h.addEventListener('pointermove', function (e) { if (!drag) return; var pad = 6, nl = sl + (e.clientX - sx), nt = st + (e.clientY - sy); nl = Math.max(pad, Math.min(nl, window.innerWidth - pop.offsetWidth - pad)); nt = Math.max(pad, Math.min(nt, window.innerHeight - pop.offsetHeight - pad)); pop.style.left = nl + 'px'; pop.style.top = nt + 'px'; });
+    var end = function (e) { drag = false; try { h.releasePointerCapture(e.pointerId); } catch (x) {} }; h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  })();
+  /* 【2026-09-19 ヒデさん依頼】スマホ実機ボタン1つで「スマホモードON＋QRポップアップ＋パネル切替」をまとめて。もう一度押すとQRの開閉。終了はポップアップの「スマホモード終了」 */
+  /* 【2026-09-19 ヒデさん依頼・STUDIO風】スマホ(@media≤600 / html.mb)で文字プロパティを上書きしているルールを集め、
+     その要素の 🔤文字 行をオレンジで光らせる(=レスポンシブで値が変わっている印) */
+  function collectMobileFontRules() {
+    var FONT = ['font-size', 'font-weight', 'line-height', 'letter-spacing'], out = [];
+    function scan(rules, mob) { for (var i = 0; i < rules.length; i++) { var r = rules[i];
+      if (r.type === 4 && r.media) { var mm = (r.media.mediaText || '').match(/max-width:\s*(\d+)px/); scan(r.cssRules || [], mob || !!(mm && +mm[1] <= 640)); }
+      else if (r.type === 1 && r.selectorText) { var sel = r.selectorText; if (!(mob || /html\.mb\b/.test(sel))) continue; var pr = FONT.filter(function (q) { return r.style.getPropertyValue(q); }); if (pr.length) out.push({ sel: sel.replace(/html\.mb\b\s*/g, '').replace(/html:not\(\.mb\)\b\s*/g, ''), props: pr }); } } }
+    for (var k = 0; k < document.styleSheets.length; k++) { try { scan(document.styleSheets[k].cssRules || [], false); } catch (e) {} }
+    return out;
+  }
+  var _mbRulesCache = null;
+  function markMbOverrides() {
+    if (!document.documentElement.classList.contains('phone-mode')) return;
+    if (!_mbRulesCache) _mbRulesCache = collectMobileFontRules();
+    var rows = document.querySelectorAll('.txt-row');
+    for (var i = 0; i < rows.length; i++) { var row = rows[i], lab = row.querySelector('label'), sel = lab && lab.title, el = null;
+      try { el = sel ? document.querySelector(sel) : null; } catch (e) {}
+      var props = {};
+      if (el) for (var j = 0; j < _mbRulesCache.length; j++) { try { if (el.matches(_mbRulesCache[j].sel)) _mbRulesCache[j].props.forEach(function (q) { props[q] = 1; }); } catch (e) {} }
+      /* 【2026-09-20】CSSの@mediaだけでなく、実際にスマホモードで付けた上書き(editsMb)も青印にする */
+      var _mk = row.dataset.key, _mo = (params.editsMb && params.editsMb[_mk]) || null;
+      if (_mo) { var _MAP = { fs: 'font-size', fw: 'font-weight', lh: 'line-height', ls: 'letter-spacing' }; for (var _k in _MAP) { if (_mo[_k] != null) props[_MAP[_k]] = 1; } }
+      row.classList.toggle('mb-override', Object.keys(props).length > 0);
+      var inp = row.querySelectorAll('[data-prop]');
+      for (var m = 0; m < inp.length; m++) inp[m].classList.toggle('mb-diff', !!props[inp[m].dataset.prop]);
+    }
+  }
+  function clearMbOverrides() { var r = document.querySelectorAll('.txt-row.mb-override, .txt-row .mb-diff'); for (var i = 0; i < r.length; i++) { r[i].classList.remove('mb-override'); r[i].classList.remove('mb-diff'); } }
+  window.__markMbOverrides = markMbOverrides;
+  /* 【2026-09-21 ヒデさん依頼】スマホモードON時に「390×844のデバイス枠に実画面(iframe ?preview=1)」を出す。実スクロールできる。OFFで消す */
+  function ppApplyTransform() { var pp = document.getElementById('phonePreview'); if (!pp) return; pp.style.transform = 'translate(' + (pp._dx || 0) + 'px,' + (pp._dy || 0) + 'px) scale(' + (pp._sc != null ? pp._sc : 1) + ')'; }
+  function ppSync(on) {
+    var pp = document.getElementById('phonePreview'), ppf = document.getElementById('ppFrame');
+    if (!pp || !ppf) return;
+    if (document.documentElement.classList.contains('pp-inner')) return;   /* プレビューiframeの中では出さない(再帰回避) */
+    if (on) {
+      var u = location.pathname + '?preview=1';
+      /* 【2026-09-21 Y11】iframe(SP)読み込み完了後にパネルを再sync＝フォント行の「サイズ」がSP実サイズ(プレビューと一致)を表示するように */
+      ppf.onload = function () { setTimeout(function () { try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e) {} }, 350); };
+      if ((ppf.getAttribute('src') || '') !== u) ppf.setAttribute('src', u); else ppf.onload();
+      pp.classList.add('on');
+      pp._sc = Math.min(1, (window.innerHeight - 32) / 892);   /* 画面が低い時は枠ごと縮めて収める(bar36+frame844+余白) */
+      ppApplyTransform();
+    } else { pp.classList.remove('on'); ppf.setAttribute('src', 'about:blank'); }
+  }
+  (function () {
+    var rl = document.getElementById('ppReload'), cl = document.getElementById('ppClose'), ppf = document.getElementById('ppFrame'), bar = document.querySelector('#phonePreview .pp-bar'), pp = document.getElementById('phonePreview');
+    if (rl) rl.addEventListener('click', function () { if (ppf) ppf.setAttribute('src', location.pathname + '?preview=1&_t=' + Date.now()); });
+    if (cl) cl.addEventListener('click', function () { setActive(false); try { hidePop(); } catch (e) {} });
+    /* 【2026-09-21 ヒデさん依頼】プレビュー枠をバーでドラッグ移動 */
+    if (bar && pp) {
+      bar.style.cursor = 'move'; bar.style.touchAction = 'none';
+      var drag = null;
+      bar.addEventListener('pointerdown', function (e) {
+        if (e.target.closest('button')) return;   /* ↻/× はドラッグしない */
+        drag = { x: e.clientX, y: e.clientY, dx: pp._dx || 0, dy: pp._dy || 0 };
+        try { bar.setPointerCapture(e.pointerId); } catch (er) {} e.preventDefault();
+      });
+      bar.addEventListener('pointermove', function (e) {
+        if (!drag) return; pp._dx = drag.dx + (e.clientX - drag.x); pp._dy = drag.dy + (e.clientY - drag.y); ppApplyTransform();
+      });
+      var end = function (e) { drag = null; try { bar.releasePointerCapture(e.pointerId); } catch (er) {} };
+      bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+    }
+  })();
+  function setActive(on) {
+    window.__liveSyncOn = !!on;
+    try { document.documentElement.classList.toggle('phone-mode', !!on); } catch (e) {}   /* 帯・青枠はこのクラスで出す */
+    if (trigger) { trigger.classList.toggle('on', !!on); trigger.textContent = on ? '📱 スマホモード中' : '📱 スマホモード'; }
+    try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {}   /* パネルの値を読み直す */
+    if (on) { setTimeout(markMbOverrides, 60); } else { clearMbOverrides(); }
+    if (on) liveSyncPush();
+    try { ppSync(!!on); } catch (e) {}   /* 実機プレビュー枠の表示/非表示 */
+  }
+  if (trigger) {
+    trigger.addEventListener('click', function (e) { e.stopPropagation();
+      if (!window.__liveSyncOn) { setActive(true); showPop(); }        /* 初回: モードON＋QR */
+      else if (pop.classList.contains('show')) { hidePop(); }           /* 2回目: QRだけ隠す(モードは継続) */
+      else { showPop(); }                                              /* もう一度: QR再表示 */
+    });
+    trigger.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  }
+  if (stopBtn) stopBtn.addEventListener('click', function () { setActive(false); hidePop(); });
+  copyBtn.addEventListener('click', function () {
+    if (!phoneUrl) return;
+    try { navigator.clipboard.writeText(phoneUrl); copyBtn.textContent = 'コピーしました'; setTimeout(function () { copyBtn.textContent = 'URLコピー'; }, 1200); } catch (e) {}
+  });
+  promptBtn.addEventListener('click', function () {
+    var t = 'anyflow V5.0 のスマホモード(実機ライブ同期)の中継サーバが起動していないようです。起動してください。\n\ncd "/Users/hideyuki/Developer/Claude Code/anyflow/v5/tools" && (test -d node_modules || npm install) && node live-sync.mjs';
+    try { navigator.clipboard.writeText(t); promptBtn.textContent = '✅ コピーしました（Claudeに貼ってください）'; setTimeout(function () { promptBtn.textContent = '📋 起動プロンプトをコピー（Claudeに貼る）'; }, 2000); } catch (e) {}
+  });
+})();
