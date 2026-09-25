@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anyflow Embed Brand Movie</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0b0b}
+  body{display:flex;align-items:center;justify-content:center}
+  anyflow-brand-movie{width:min(100vw,calc(100vh*16/9))}
+  /* 書き出し用（?render）：等倍キャンバスをそのまま置く */
+  body.render{display:block;background:#000}
+  body.render canvas{display:block;width:1920px;height:1080px}
+</style>
+<script src="anyflow-brand-movie.js"></script>
+</head>
+<body>
+<script>
+/* 見る時：部品をそのまま置く（コントロール付き）
+   書き出し時（?render）：同じ描画エンジンを素のキャンバスで動かし、render.mjs から renderAt(t) を呼ぶ */
+if (new URLSearchParams(location.search).has('render')) {
+  document.body.classList.add('render');
+  const cv = document.createElement('canvas'); cv.id = 'c'; cv.width = 1920; cv.height = 1080;
+  document.body.appendChild(cv);
+  const m = AnyflowBrandMovie.createMovie(cv.getContext('2d'));
+  window.renderAt = m.renderAt; window.DURATION = m.DURATION;
+  window.ready = AnyflowBrandMovie.ensureFont().then(() => (m.renderAt(0), true));
+} else {
+  document.body.innerHTML = '<anyflow-brand-movie controls></anyflow-brand-movie>';
+}
+</script>
+</body>
+</html>

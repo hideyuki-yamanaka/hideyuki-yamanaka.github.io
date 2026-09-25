@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>埋め込みサンプル — Anyflow Brand Movie</title>
+<script src="anyflow-brand-movie.js" defer></script>
+<style>
+  body{margin:0;font-family:'Noto Sans JP',sans-serif;background:#E7E7E7;color:#101828}
+  main{max-width:1120px;margin:0 auto;padding:64px 16px}
+  h1{font-size:28px;margin:0 0 8px}
+  p{color:#545961;margin:0 0 32px}
+  anyflow-brand-movie{border-radius:20px;box-shadow:0 30px 80px rgba(14,68,151,.15)}
+  pre{background:#161616;color:#7CE7A6;padding:20px;border-radius:12px;overflow-x:auto;font-size:13px;margin-top:40px}
+  .spacer{height:80vh}
+</style>
+</head>
+<body>
+<main>
+  <h1>埋め込みサンプル</h1>
+  <p>下にスクロールして画面に入ると自動で再生されます（画面外では止まります）。</p>
+  <div class="spacer"></div>
+  <anyflow-brand-movie></anyflow-brand-movie>
+<pre>&lt;script src="anyflow-brand-movie.js" defer&gt;&lt;/script&gt;
+&lt;anyflow-brand-movie&gt;&lt;/anyflow-brand-movie&gt;
+
+&lt;!-- オプション --&gt;
+&lt;anyflow-brand-movie controls loop="false" autoplay="false"&gt;&lt;/anyflow-brand-movie&gt;</pre>
+</main>
+</body>
+</html>
