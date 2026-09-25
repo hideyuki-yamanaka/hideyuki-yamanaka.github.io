@@ -203,6 +203,8 @@ function Frame({
 
 /* ═══════════ 案31 流れる文字と重ね写真 ═══════════ */
 function MarqueeStack() {
+  /* 抜けている枚数（上向きの関所用。下から戻る時に1枚ずつ重ね直す） */
+  const out = useRef(0);
   /* ⚠️ ピン留めが要る。セクションの高さ（1画面ぶん）だけだと、
      セクションが見えた時点で進捗が 0.96 まで進んでいて
      【剥がれ終わった状態からしか見えない】（2026-09-17 実測）。
@@ -213,8 +215,8 @@ function MarqueeStack() {
   /* 2026-09-26：1回スクロール＝1枚になり、場面の中のスクロール量は見た目に
      関係しなくなった。貼りつく長さは短くして、行き帰りの“空スクロール”を減らす */
   return (
-    <PinStage length={STEP_STAGE_LEN} hold={hold}>
-      {(q, pinned) => <MarqueeScene q={q} pinned={pinned} hold={hold} />}
+    <PinStage length={STEP_STAGE_LEN} hold={hold} out={out}>
+      {(q, pinned) => <MarqueeScene q={q} pinned={pinned} hold={hold} out={out} />}
     </PinStage>
   );
 }
@@ -222,13 +224,15 @@ function MarqueeScene({
   q,
   pinned,
   hold,
+  out,
 }: {
   q: MotionValue<number>;
   pinned: React.RefObject<boolean>;
   hold: React.RefObject<number>;
+  out: React.RefObject<number>;
 }) {
   /* 1回スクロール＝1枚。流れ方は調整パネルの「流れ方」3案 */
-  const { ts, nudges, flow } = useStepCards(q, pinned, hold);
+  const { ts, nudges, flow } = useStepCards(q, pinned, hold, out);
   return (
     <Frame
       full={
@@ -263,9 +267,10 @@ function MarqueeScene({
 /* ═══════════ 案32 左右に文字 ═══════════ */
 function SideTextStack() {
   const hold = useRef(0);
+  const out = useRef(0);
   return (
-    <PinStage length={STEP_STAGE_LEN} hold={hold}>
-      {(q, pinned) => <SideTextScene q={q} pinned={pinned} hold={hold} />}
+    <PinStage length={STEP_STAGE_LEN} hold={hold} out={out}>
+      {(q, pinned) => <SideTextScene q={q} pinned={pinned} hold={hold} out={out} />}
     </PinStage>
   );
 }
@@ -273,12 +278,14 @@ function SideTextScene({
   q,
   pinned,
   hold,
+  out,
 }: {
   q: MotionValue<number>;
   pinned: React.RefObject<boolean>;
   hold: React.RefObject<number>;
+  out: React.RefObject<number>;
 }) {
-  const { ts, nudges, flow } = useStepCards(q, pinned, hold);
+  const { ts, nudges, flow } = useStepCards(q, pinned, hold, out);
   return (
     <Frame>
       <p

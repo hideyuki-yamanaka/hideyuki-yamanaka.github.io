@@ -216,6 +216,7 @@ export function PinStage({
   length = 2.6,
   children,
   hold,
+  out,
 }: {
   length?: number;
   /** pinned: いま場面が画面に貼りついているか（true の間だけ「1回＝1枚」を受け付ける） */
@@ -234,6 +235,9 @@ export function PinStage({
          そこで「流れ終わるまでは、この場面の下端より先へ行かせない」。
          上へ戻るのは自由（下向きだけ止める）。 */
   hold?: React.RefObject<number>;
+  /** いま抜けている（右へ流れていった）カードの枚数。0 より大きい間は、
+      場面の上端より上へ行かせない（下から戻ってきた時に、1枚ずつ重ね直すため） */
+  out?: React.RefObject<number>;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const q = usePinProgress(stage);
@@ -248,9 +252,20 @@ export function PinStage({
   /* いま場面が画面に貼りついているか。中の場面が「1回＝1枚」の受付に使う */
   const pinned = useRef(false);
 
+  /* 上向きの関所の保険：戻しの操作が効かないまま押し当て続けた時の逃げ道 */
+  const upSince = useRef(0);
+  const lastOut = useRef(-1);
+
   useAnimationFrame(() => {
     if (!hold) return;
-    const w = window as unknown as { __abashiriScrollGate?: number };
+    const w = window as unknown as {
+      __abashiriScrollGate?: number;
+      __abashiriScrollGateTop?: number;
+      __abashiriGateBypassUntil?: number;
+    };
+    const closeTop = () => {
+      if (w.__abashiriScrollGateTop !== undefined) delete w.__abashiriScrollGateTop;
+    };
     const openGate = () => {
       if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
       gateSince.current = 0;
@@ -271,6 +286,32 @@ export function PinStage({
     lastTop.current = now;
     const pinnedNow = now >= y - 2 && now <= limit + 2;
     pinned.current = pinnedNow;
+
+    /* ナビのジャンプ中は関所を張らない */
+    if ((w.__abashiriGateBypassUntil || 0) > performance.now()) {
+      openGate();
+      closeTop();
+      return;
+    }
+
+    /* ── 上向きの関所（2026-09-26）──
+       カードがまだ抜けている間は、場面の上端（y）より上へ行かせない。
+       下から戻ってくる時は3画面手前から張っておく（勢いで通り過ぎないように）。
+       最後の1枚を戻した瞬間（抜けている枚数が 0）にあける。
+       保険：押し当てたまま戻しが進まない状態が GATE_MAX_MS 続いたら通す */
+    const outN = out ? out.current : 0;
+    if (out && outN > 0 && now >= y - 2 && now <= limit + sc.clientHeight * 3) {
+      if (outN !== lastOut.current) { lastOut.current = outN; upSince.current = 0; }
+      const pressing = now <= y + 2;
+      if (pressing && !upSince.current) upSince.current = performance.now();
+      if (!pressing) upSince.current = 0;
+      if (upSince.current && performance.now() - upSince.current > GATE_MAX_MS) closeTop();
+      else w.__abashiriScrollGateTop = y;
+    } else {
+      lastOut.current = outN;
+      upSince.current = 0;
+      closeTop();
+    }
 
     /* まだ場面の手前にいる／もう通り過ぎた → 何もしない */
     if (now <= y - sc.clientHeight * 3 || now > limit + sc.clientHeight) {
@@ -340,7 +381,13 @@ export function PinStage({
        流れる時間とカーブは毎回同じなので、強く回しても弱く回しても同じ動きになる */
 
 /** ひと続きの操作とみなす間隔(ms)。これより空いたら「次の1回」 */
-const GESTURE_GAP = 220;
+const GESTURE_GAP = 160;
+/** 慣性の途中で指をもう一度動かした（＝量が急に増えた）とみなす倍率と、最短の間隔(ms) */
+const SPIKE_RATIO = 1.6;
+const SPIKE_MIN_MS = 300;
+/** カードが「抜けた」とみなす進み具合（すべる距離のこの割合まで来たら関所をあける）。
+    止まりきるまで待つと、見終わったのに下へ進めない時間ができる（実測 約2秒） */
+const LAUNCHED_AT = 0.35;
 
 /** 流れ方の3案（物理で作る）。何が違うかは note に書いてある（パネルにもそのまま出る）
     【2026-09-26 ヒデさん指示（2回目）】
@@ -349,6 +396,9 @@ const GESTURE_GAP = 220;
         カードを右にやった時の自然な挙動のバリエーションを。今のは削除」
       「慣性の法則を活かす。全体的にもうちょっとゆったり流れる感じで」
       「床に置いたカードを右にやると、最初は速くてゆっくり。物理の法則で自然な動きに」
+      （同日追加）「反応が遅くなりすぎた。スクロールしたらすぐ反応、横はゆったりめ」
+                  「ゆったりでもノロノロではない。スクロール1〜2秒以内に画面の外へ」
+      → すべる時間を 2.0〜2.4 → 1.4〜1.6 秒に。反応まわりは useStepCards を参照
     → 前の3案（ふわっと減速／しなり／風に流される）は削除。
       3案とも「最初がいちばん速く、摩擦でだんだん遅くなって止まる」「進みながら少しずつ
       右（時計回り）に回る」は共通。ちがいは【摩擦のかかり方】と【どこを押したか】。
@@ -383,8 +433,8 @@ const drag = (τ: number) => (1 - Math.exp(-DRAG_K * clamp01(τ))) / (1 - Math.e
 export const EV_FLOWS: Record<number, EvFlow> = {
   1: {
     name: "案1 床をすべる",
-    note: "【摩擦が一定】床に置いたカードを右へ押し出した動き。はじめがいちばん速く、摩擦で一定のペースで遅くなって止まる。進んだぶんだけ少しずつ右に回る（約2.0秒）",
-    duration: 2.0,
+    note: "【摩擦が一定】床に置いたカードを右へ押し出した動き。はじめがいちばん速く、摩擦で一定のペースで遅くなって止まる。進んだぶんだけ少しずつ右に回る（約1.4秒で画面の外へ）",
+    duration: 1.4,
     pos: friction,
     rot: friction,
     spin: 12,
@@ -394,8 +444,8 @@ export const EV_FLOWS: Record<number, EvFlow> = {
   },
   2: {
     name: "案2 惰性で長くすべる",
-    note: "【慣性が長く残る】つるっと軽く押した動き。出だしが速く、そのあと惰性で長くすべって、ふっと止まる。回転は押された瞬間より少し遅れてついてきて、止まる直前まで回り続ける（約2.4秒）",
-    duration: 2.4,
+    note: "【慣性が長く残る】つるっと軽く押した動き。出だしが速く、そのあと惰性で長くすべって、ふっと止まる。回転は押された瞬間より少し遅れてついてきて、止まる直前まで回り続ける（約1.6秒で画面の外へ）",
+    duration: 1.6,
     pos: drag,
     rot: (τ) => Math.pow(drag(clamp01((τ - 0.08) / 0.92)), 1.25),
     spin: 15,
@@ -405,8 +455,8 @@ export const EV_FLOWS: Record<number, EvFlow> = {
   },
   3: {
     name: "案3 角を押されて回る",
-    note: "【押した場所が左下の角】重心からずれた所を押したので、すべりながら大きめに右へ回り、回ったぶん少し下へそれていく。下のカードもつられて少しだけ動いて戻る（約2.2秒）",
-    duration: 2.2,
+    note: "【押した場所が左下の角】重心からずれた所を押したので、すべりながら大きめに右へ回り、回ったぶん少し下へそれていく。下のカードもつられて少しだけ動いて戻る（約1.5秒で画面の外へ）",
+    duration: 1.5,
     pos: (τ) => 1 - Math.pow(1 - clamp01(τ), 2.3),
     rot: (τ) => 1 - Math.pow(1 - clamp01(τ), 1.6),
     spin: 22,
@@ -455,7 +505,9 @@ export function useEvFlow(): EvFlow {
 export function useStepCards(
   q: MotionValue<number>,
   pinned: React.RefObject<boolean>,
-  hold: React.RefObject<number>
+  hold: React.RefObject<number>,
+  /** いま抜けている枚数（PinStage の上向きの関所に渡す） */
+  out?: React.RefObject<number>
 ) {
   const flow = useEvFlow();
   const steps = ITEMS.length - 1; /* 抜ける枚数（台紙の1枚は残す） */
@@ -463,6 +515,11 @@ export function useStepCards(
   const ts = useMemo(() => ITEMS.map(() => motionValue(0)), []);
   const nudges = useMemo(() => ITEMS.map(() => motionValue(0)), []);
   const step = useRef(0);
+  /* 操作の通し番号と、端（全部抜けた／全部重なった）に着いた操作の番号。
+     端に着いた操作の“勢い”では先へ進ませず、【次の1回】ですぐ抜けられるようにする
+     （そうしないと、最後の1枚が動く瞬間をスクロールで通り過ぎてしまう。2026-09-26 実測） */
+  const gid = useRef(0);
+  const endGid = useRef(-1);
   const flowRef = useRef(flow);
   flowRef.current = flow;
 
@@ -472,6 +529,7 @@ export function useStepCards(
     if (n === step.current) return;
     const prev = step.current;
     step.current = n;
+    if (n === steps || n === 0) endGid.current = gid.current;
     const f = flowRef.current;
     ITEMS.forEach((_, i) => {
       if (i === 0) return; /* 台紙は動かさない */
@@ -500,16 +558,38 @@ export function useStepCards(
 
   /* 操作の受付：ホイール・キー・スワイプ。貼りついている間だけ数える */
   useEffect(() => {
+    /* 【同日 ヒデさん指摘】「反応が遅い。スクロールしたらすぐ反応してほしい」
+       旧：ひと続きの操作の【最初の1回】だけ数えていた。すると
+         ・セクションに入ってきたスクロールは、入る前に始まっているので数えない
+           → 着いても何も起きず、もう1回スクロールが要った
+         ・トラックパッドは1回のスワイプで約1秒「慣性」の信号が続く。その途中の
+           2回目のスワイプも「同じ1回」とみなして無視していた
+       新：1つの操作につき1枚は変えずに、
+         ・その操作でまだ1枚も動かしていなければ、貼りついた瞬間に1枚動かす
+         ・慣性の途中で量が急に増えたら（＝指でもう一度払った）、新しい1回とみなす */
     let last = 0;
+    let prevAbs = 0;
+    let lastTrig = 0;
+    let usedThisGesture = false;
     const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 2 || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+      const a = Math.abs(e.deltaY);
+      if (a < 2 || a < Math.abs(e.deltaX)) return;
       const now = performance.now();
       const fresh = now - last > GESTURE_GAP;
+      const spike = !fresh && a > prevAbs * SPIKE_RATIO + 6 && now - lastTrig > SPIKE_MIN_MS;
+      if (fresh || spike) {
+        usedThisGesture = false;
+        gid.current++;
+      }
       last = now;
-      if (!fresh || !pinned.current) return;
+      prevAbs = a;
+      if (!pinned.current || usedThisGesture) return;
+      usedThisGesture = true;
+      lastTrig = now;
       goTo(step.current + (e.deltaY > 0 ? 1 : -1));
     };
     const onKey = (e: KeyboardEvent) => {
+      gid.current++;
       if (!pinned.current) return;
       if (["ArrowDown", "PageDown", " "].includes(e.key)) goTo(step.current + 1);
       else if (["ArrowUp", "PageUp"].includes(e.key)) goTo(step.current - 1);
@@ -520,6 +600,7 @@ export function useStepCards(
     };
     const onTouchEnd = (e: TouchEvent) => {
       const dy = (e.changedTouches[0]?.clientY ?? ty) - ty;
+      gid.current++;
       if (Math.abs(dy) < 30 || !pinned.current) return;
       goTo(step.current + (dy < 0 ? 1 : -1));
     };
@@ -539,9 +620,18 @@ export function useStepCards(
   /* 場面の上へ抜けたら全部戻す／関所へ「抜けきった割合」を渡す */
   useAnimationFrame(() => {
     if (q.get() <= 0.0005 && step.current > 0 && !pinned.current) goTo(0);
+    /* 各カードが「抜けた」とみなせるか（すべる距離の LAUNCHED_AT まで来たか）の平均。
+       最後の1枚がすべり出して少し進んだら 1 になり、すぐ下へ進める */
+    /* 端に着いた操作が終わって、次の操作が始まったか */
+    const passed = gid.current > endGid.current;
+    /* 上向きの関所：全部重なっても、重ねきった操作の勢いのうちは 1 のまま（＝止めておく） */
+    if (out) out.current = step.current > 0 ? step.current : passed ? 0 : 1;
+    const f = flowRef.current;
     let sum = 0;
-    for (let i = 1; i < ITEMS.length; i++) sum += Math.min(1, Math.max(0, ts[i].get()));
-    hold.current = steps > 0 ? sum / steps : 1;
+    for (let i = 1; i < ITEMS.length; i++) sum += Math.min(1, f.pos(ts[i].get()) / LAUNCHED_AT);
+    const h = steps > 0 ? sum / steps : 1;
+    /* 下向きの関所も同じ：全部抜けた操作の勢いでは抜けさせない（次の1回ですぐ抜ける） */
+    hold.current = step.current === steps && !passed ? Math.min(h, 0.9) : h;
   });
 
   return { ts, nudges, flow };

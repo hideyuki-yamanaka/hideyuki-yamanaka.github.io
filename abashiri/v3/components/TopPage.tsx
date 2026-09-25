@@ -564,15 +564,28 @@ export default function TopPage({
          ⚠️ 以前は場面の側が直接 scrollTop を書いて止めようとしたが、
             この慣性ループが毎フレーム上書きするため効かなかった。
             止めたい側は window.__abashiriScrollGate に「ここまで」を書く。 */
-      const w = window as unknown as { __abashiriScrollGate?: number };
+      const w = window as unknown as {
+        __abashiriScrollGate?: number;
+        __abashiriScrollGateTop?: number;
+        __abashiriGateBypassUntil?: number;
+      };
+      /* ナビのジャンプ（ホーム・グルメなど）の最中は、どちらの関所も素通り */
+      const bypass = (w.__abashiriGateBypassUntil || 0) > performance.now();
       const gate = w.__abashiriScrollGate;
-      if (typeof gate === "number" && targetY > gate) {
+      if (!bypass && typeof gate === "number" && targetY > gate) {
         targetY = gate;
         if (posY > gate) posY = gate;
       }
-      /* ⚠️ 2026-09-24: 上向きの関所は廃止した。
-         「スクロールバックで上に行けない」という不具合になっていたため
-         （逆再生は関所が無くても見える。戻る速さは一定なので絵は追いつく）。 */
+      /* 上向きの関所（2026-09-26 復活）。
+         ヒデさん「下から上に行った時は、画面固定のまま4,3,2,1と画像が重なっていく。
+         1枚目まで戻ったら上のセクションへ行ける」。
+         ⚠️ 9/24 に一度廃止した理由は「上に行けない」不具合。当時は“戻りきるまでの時間”で
+            あけていた。今は「1回＝1枚」なので、最後の1枚を戻した瞬間にあける（待たせない） */
+      const gateTop = w.__abashiriScrollGateTop;
+      if (!bypass && typeof gateTop === "number" && targetY < gateTop) {
+        targetY = gateTop;
+        if (posY < gateTop) posY = gateTop;
+      }
       /* 縦の慣性 */
       const dy = targetY - posY;
       if (Math.abs(dy) > 0.5) {
@@ -640,6 +653,10 @@ export default function TopPage({
       if (veil) veil.style.opacity = String(v);
     };
     const onJump = (e: Event) => {
+      /* ナビのジャンプは関所を素通りさせる（体験セクションの下にいてホームを押した時に
+         上向きの関所で止まらないように）。演出（幕）＋移動が終わるまでの間だけ */
+      (window as unknown as { __abashiriGateBypassUntil?: number }).__abashiriGateBypassUntil =
+        performance.now() + 2500;
       const d = (e as CustomEvent<{ y: number; instant?: boolean }>).detail;
       const y = d?.y;
       if (typeof y !== "number") return;
