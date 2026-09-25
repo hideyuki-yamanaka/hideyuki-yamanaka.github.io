@@ -122,18 +122,16 @@ function StackCard({
          0→1 へ動く。流れ方（カーブ・浮き上がり・回転の遅れ）は EV_FLOWS の3案 */
   const last = i === 0; /* 台紙になる1枚は残す */
   const X = FRAME_W * 0.86;
+  /* t＝押してからの経過時間（0→1）。位置・回転・ずれは物理の式（EV_FLOWS）で出す */
   const x = useTransform([t, nudge], ([tv, nv]: number[]) =>
-    (last ? 0 : tv * X) + nv * 16
+    (last ? 0 : flow.pos(tv) * X) + nv * 14
   );
-  /* 案3：弧を描いて浮き上がる（途中がいちばん高い） */
-  const y = useTransform(t, (tv) =>
-    last ? 0 : -Math.sin(Math.PI * Math.min(1, Math.max(0, tv))) * flow.lift
+  /* 案3：回ったぶん少し下へそれる */
+  const y = useTransform(t, (tv) => (last ? 0 : flow.pos(tv) * flow.drift));
+  /* 右（時計回り）へ少しずつ回る */
+  const rot = useTransform([t, nudge], ([tv, nv]: number[]) =>
+    s.rot + (last ? 0 : flow.rot(tv) * flow.spin) + nv * 1.6
   );
-  /* 回転。spinLag=2 だと移動よりあとから遅れてついてくる */
-  const rot = useTransform([t, nudge], ([tv, nv]: number[]) => {
-    const k = Math.min(1.2, Math.max(0, tv));
-    return s.rot + (last ? 0 : Math.pow(k, flow.spinLag) * flow.spin) + nv * 2.5;
-  });
   /* 消えるのは移動より遅らせる＝流れていくのが見える */
   const o = useTransform(t, [flow.fadeAt, 1], [1, last ? 1 : 0]);
   return (

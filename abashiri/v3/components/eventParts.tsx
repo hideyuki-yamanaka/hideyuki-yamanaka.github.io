@@ -342,56 +342,96 @@ export function PinStage({
 /** ひと続きの操作とみなす間隔(ms)。これより空いたら「次の1回」 */
 const GESTURE_GAP = 220;
 
-/** 流れ方の3案。何が違うかは note に書いてある（パネルにもそのまま出る） */
+/** 流れ方の3案（物理で作る）。何が違うかは note に書いてある（パネルにもそのまま出る）
+    【2026-09-26 ヒデさん指示（2回目）】
+      「今のバリエーションは多分速度だけで変えている。そうじゃなくて、右にやったら
+        右に行きながら、ちょっと右に回転していく、徐々に右に回転するとか、
+        カードを右にやった時の自然な挙動のバリエーションを。今のは削除」
+      「慣性の法則を活かす。全体的にもうちょっとゆったり流れる感じで」
+      「床に置いたカードを右にやると、最初は速くてゆっくり。物理の法則で自然な動きに」
+    → 前の3案（ふわっと減速／しなり／風に流される）は削除。
+      3案とも「最初がいちばん速く、摩擦でだんだん遅くなって止まる」「進みながら少しずつ
+      右（時計回り）に回る」は共通。ちがいは【摩擦のかかり方】と【どこを押したか】。
+    しくみ：t は「押してからの経過時間」（0→1 を duration 秒で等速に進める）。
+      位置・回転・ずれは、その時間の関数として物理の式で出す */
 export type EvFlow = {
   name: string;
   note: string;
-  /** 1枚がめくれる時の時間とカーブ */
-  move: Transition;
-  /** 流れる途中でふわっと浮き上がる量(px)。0＝まっすぐ横へ */
-  lift: number;
-  /** 流れながら回る量(度) */
+  /** 押してから止まるまでの秒数 */
+  duration: number;
+  /** 経過時間 τ(0〜1) → 進んだ割合(0〜1)。最初が速く、だんだん遅くなる */
+  pos: (τ: number) => number;
+  /** 経過時間 τ → 回転の進み(0〜1)。これに spin を掛ける */
+  rot: (τ: number) => number;
+  /** 止まるまでに右へ回る量(度) */
   spin: number;
-  /** 回転の遅れ。1＝移動と同時、2＝あとから遅れてついてくる */
-  spinLag: number;
-  /** 移動のどこから消え始めるか（0〜1） */
+  /** 回りながら下へそれる量(px)。0＝まっすぐ横へ */
+  drift: number;
+  /** 経過時間のどこから消え始めるか（0〜1） */
   fadeAt: number;
-  /** 1枚抜けたあと、残った束がしなって落ち着くか */
+  /** 下にあったカードが少しつられて動くか */
   settle: boolean;
 };
 
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+/* 動摩擦（摩擦が一定）：速さが時間とともにまっすぐ落ちる → 位置は 1-(1-τ)² */
+const friction = (τ: number) => 1 - Math.pow(1 - clamp01(τ), 2);
+/* 空気のような抵抗（速さに比例して減速）：出だしが最も速く、長い惰性の尾を引く */
+const DRAG_K = 4.2;
+const drag = (τ: number) => (1 - Math.exp(-DRAG_K * clamp01(τ))) / (1 - Math.exp(-DRAG_K));
+
 export const EV_FLOWS: Record<number, EvFlow> = {
   1: {
-    name: "案1 ふわっと減速",
-    note: "【違い＝止まり方】出だしだけ少し速く、あとは氷の上をすべるように長く減速して止まる。まっすぐ横へ。いちばん素直で静か（1枚あたり約1.1秒）",
-    move: { duration: 1.1, ease: [0.16, 1, 0.3, 1] },
-    lift: 0,
-    spin: 10,
-    spinLag: 1,
-    fadeAt: 0.5,
-    settle: false,
-  },
-  2: {
-    name: "案2 しなり",
-    note: "【違い＝手ざわり】ばねで引っぱられたように流れ、残った写真の束も小さく揺れてから落ち着く。紙の束をめくった時の“しなり”がある動き（1枚あたり約1秒）",
-    move: { type: "spring", stiffness: 95, damping: 14, mass: 1 },
-    lift: 0,
-    spin: 14,
-    spinLag: 1,
-    fadeAt: 0.6,
-    settle: true,
-  },
-  3: {
-    name: "案3 風に流される",
-    note: "【違い＝軌道】ゆっくり動き出し、ふわっと浮き上がって弧を描きながら右へ流れる。回転はあとから遅れてついてくる。いちばんゆったり（1枚あたり約1.6秒）",
-    move: { duration: 1.6, ease: [0.45, 0, 0.2, 1] },
-    lift: 70,
-    spin: 18,
-    spinLag: 2,
+    name: "案1 床をすべる",
+    note: "【摩擦が一定】床に置いたカードを右へ押し出した動き。はじめがいちばん速く、摩擦で一定のペースで遅くなって止まる。進んだぶんだけ少しずつ右に回る（約2.0秒）",
+    duration: 2.0,
+    pos: friction,
+    rot: friction,
+    spin: 12,
+    drift: 0,
     fadeAt: 0.55,
     settle: false,
   },
+  2: {
+    name: "案2 惰性で長くすべる",
+    note: "【慣性が長く残る】つるっと軽く押した動き。出だしが速く、そのあと惰性で長くすべって、ふっと止まる。回転は押された瞬間より少し遅れてついてきて、止まる直前まで回り続ける（約2.4秒）",
+    duration: 2.4,
+    pos: drag,
+    rot: (τ) => Math.pow(drag(clamp01((τ - 0.08) / 0.92)), 1.25),
+    spin: 15,
+    drift: 0,
+    fadeAt: 0.5,
+    settle: false,
+  },
+  3: {
+    name: "案3 角を押されて回る",
+    note: "【押した場所が左下の角】重心からずれた所を押したので、すべりながら大きめに右へ回り、回ったぶん少し下へそれていく。下のカードもつられて少しだけ動いて戻る（約2.2秒）",
+    duration: 2.2,
+    pos: (τ) => 1 - Math.pow(1 - clamp01(τ), 2.3),
+    rot: (τ) => 1 - Math.pow(1 - clamp01(τ), 1.6),
+    spin: 22,
+    drift: 26,
+    fadeAt: 0.55,
+    settle: true,
+  },
 };
+
+/** 戻る時（上へスクロール）も「はじめ速く・だんだん遅く」に見せるための逆算。
+    t（時間）を 1→0 へ戻すと、そのままでは“はじめ遅く・最後に速い”になるので、
+    位置が「1 - pos(u)」で減っていくように、時間の進め方を逆算して作る */
+function returnEase(pos: (τ: number) => number) {
+  const inv = (y: number) => {
+    let lo = 0;
+    let hi = 1;
+    for (let k = 0; k < 28; k++) {
+      const mid = (lo + hi) / 2;
+      if (pos(mid) < y) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  return (u: number) => 1 - inv(1 - pos(u));
+}
 
 /** いま選ばれている流れ方（CSS 変数 --ev-flow。調整パネルが書く） */
 export function useEvFlow(): EvFlow {
@@ -436,16 +476,23 @@ export function useStepCards(
     ITEMS.forEach((_, i) => {
       if (i === 0) return; /* 台紙は動かさない */
       const order = ITEMS.length - 1 - i; /* 0 が最初に抜ける */
-      animate(ts[i], n > order ? 1 : 0, f.move);
+      const to = n > order ? 1 : 0;
+      if (ts[i].get() === to) return;
+      /* t＝押してからの経過時間。等速で進め、形（速い→遅い）は pos/rot の式で出す */
+      animate(ts[i], to, {
+        duration: f.duration,
+        ease: to === 1 ? "linear" : returnEase(f.pos),
+      });
     });
     /* 案2：1枚抜けたら、次にいちばん上になったカードがしなって落ち着く */
     if (f.settle && n > prev) {
       const top = ITEMS.length - 1 - n; /* 次にいちばん上のカード */
       if (top >= 0) {
-        animate(nudges[top], [0, 1, -0.35, 0], {
-          duration: 0.9,
-          times: [0, 0.3, 0.65, 1],
-          ease: "easeInOut",
+        /* 上のカードに引きずられて少し右へ動き、摩擦で戻って落ち着く */
+        animate(nudges[top], [0, 1, 0.25, 0], {
+          duration: 1.4,
+          times: [0, 0.22, 0.6, 1],
+          ease: "easeOut",
         });
       }
     }
