@@ -2320,47 +2320,18 @@
     align-items: center;
     gap: var(--space-24);
   }
-  /* 【2026-09-26 ヒデさん依頼】サイドバーの丸ポチを画像(logo/side1/side2.svg)→CSSのドットに(色・形を案で変えられるように)。下の4行で旧画像と同じ見た目:
-     ロゴ=直径8pxの白10%の点×3(中心 4/20/36px)、アイコン=16px枠の中に直径10pxの点(1つ目ピンク #FF5D97・他は白10%) */
+  /* 【2026-09-26 ヒデさん確定】サイドバーの丸ポチ＝ブランド3色(5案から選定→切替は削除して固定)。CSSのドット(旧: logo/side1/side2.svg の画像)。
+     上の3点＝Anyflowマークの色(水色 #0EBBFF/青 #2E6FD8/ピンク #FF5D97)・選択中はピンク＋薄い輪・他は水色20%の点。CLIの上部バーの丸3つも同じ色(.dm-term-bar) */
   .dm-side .dm-logo { width: 8px; height: 40px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; flex: 0 0 auto; }
-  .dm-side .dm-logo i { display: block; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.1); }
+  .dm-side .dm-logo i { display: block; width: 8px; height: 8px; border-radius: 50%; }
+  .dm-side .dm-logo i:nth-child(1) { background: #0EBBFF; }
+  .dm-side .dm-logo i:nth-child(2) { background: #2E6FD8; }
+  .dm-side .dm-logo i:nth-child(3) { background: #FF5D97; }
   .dm-side .dm-divider { width: 24px; height: 1px; background: var(--glass-10); }
   .dm-side .dm-icons { display: flex; flex-direction: column; align-items: center; gap: var(--space-16); width: 100%; }
   .dm-side .dm-icons i { position: relative; width: 16px; height: 16px; display: grid; place-items: center; }
-  .dm-side .dm-icons i::before { content: ''; display: block; width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.1); }
-  .dm-side .dm-icons i.on::before { background: #FF5D97; }
-  /* 【2026-09-26 ヒデさん依頼】サイドバー(丸ポチ・色味)の5案。#dev に .dev-sb-1〜5(applyDevStyle)。0=現状は上の既定のまま */
-  /* 案1 ブランド3色: 上の3点をAnyflowマークの色(シアン/紺/ピンク)に・選択中はピンク＋薄い輪・他はシアン寄りの薄い点 */
-  #dev.dev-sb-1 .dm-side .dm-logo i:nth-child(1) { background: #0EBBFF; }
-  #dev.dev-sb-1 .dm-side .dm-logo i:nth-child(2) { background: #2E6FD8; }
-  #dev.dev-sb-1 .dm-side .dm-logo i:nth-child(3) { background: #FF5D97; }
-  #dev.dev-sb-1 .dm-side .dm-icons i::before { background: rgba(14,187,255,.2); }
-  #dev.dev-sb-1 .dm-side .dm-icons i.on::before { background: #FF5D97; box-shadow: 0 0 0 3px rgba(255,93,151,.2); }
-  /* 案2 輪っか: 点を細い輪に(軽く・UIアイコンらしく)。選択中はシアンの塗り＋フォーカスリング */
-  #dev.dev-sb-2 .dm-side .dm-logo i { background: transparent; box-shadow: inset 0 0 0 1.2px rgba(255,255,255,.3); }
-  #dev.dev-sb-2 .dm-side .dm-icons i::before { background: transparent; box-shadow: inset 0 0 0 1.2px rgba(255,255,255,.28); }
-  #dev.dev-sb-2 .dm-side .dm-icons i.on::before { background: #0EBBFF; box-shadow: 0 0 0 3px rgba(14,187,255,.22); }
-  /* 案3 縦バー(開発ツール風): サイドバーを一段暗く・点は小さく控えめ・選択中は白い点＋左端にピンクの縦バー */
-  #dev.dev-sb-3 .dm-side { background: rgba(0,0,0,.24); }
-  #dev.dev-sb-3 .dm-side .dm-logo i { width: 6px; height: 6px; background: rgba(255,255,255,.24); }
-  #dev.dev-sb-3 .dm-side .dm-icons { gap: 10px; }
-  #dev.dev-sb-3 .dm-side .dm-icons i { width: 100%; height: 22px; }
-  #dev.dev-sb-3 .dm-side .dm-icons i::before { width: 6px; height: 6px; background: rgba(255,255,255,.22); }
-  #dev.dev-sb-3 .dm-side .dm-icons i.on::before { width: 8px; height: 8px; background: #fff; }
-  #dev.dev-sb-3 .dm-side .dm-icons i.on::after { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; border-radius: 0 3px 3px 0; background: #FF5D97; }
-  /* 案4 タイル(アプリのドック風): 項目を角丸の四角に。選択中はピンクの淡い面＋縁。上はブランドのグラデのアイコンに白い「…」 */
-  #dev.dev-sb-4 .dm-side .dm-logo { width: 28px; height: 28px; border-radius: 8px; flex-direction: row; justify-content: center; gap: 3px; background: linear-gradient(135deg, #0EBBFF, #2E6FD8 55%, #FF5D97); }
-  #dev.dev-sb-4 .dm-side .dm-logo i { width: 4px; height: 4px; background: rgba(255,255,255,.95); }
-  #dev.dev-sb-4 .dm-side .dm-icons { gap: 10px; }
-  #dev.dev-sb-4 .dm-side .dm-icons i { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.05); }
-  #dev.dev-sb-4 .dm-side .dm-icons i::before { width: 8px; height: 8px; background: rgba(255,255,255,.22); }
-  #dev.dev-sb-4 .dm-side .dm-icons i.on { background: rgba(255,93,151,.14); box-shadow: inset 0 0 0 1px rgba(255,93,151,.38); }
-  #dev.dev-sb-4 .dm-side .dm-icons i.on::before { background: #FF5D97; }
-  /* 案5 発光: サイドバーに上から紺の淡いグラデ。点は小さく控えめ・選択中はシアン→ピンクのグラデ点がふわっと光る */
-  #dev.dev-sb-5 .dm-side { background: linear-gradient(180deg, rgba(46,111,216,.26), rgba(255,255,255,.04) 62%); }
-  #dev.dev-sb-5 .dm-side .dm-logo i { background: linear-gradient(180deg, #0EBBFF, #FF5D97); opacity: .8; }
-  #dev.dev-sb-5 .dm-side .dm-icons i::before { width: 6px; height: 6px; background: rgba(255,255,255,.16); }
-  #dev.dev-sb-5 .dm-side .dm-icons i.on::before { width: 10px; height: 10px; background: linear-gradient(135deg, #0EBBFF, #FF5D97); box-shadow: 0 0 10px 2px rgba(14,187,255,.5), 0 0 18px 4px rgba(255,93,151,.3); }
+  .dm-side .dm-icons i::before { content: ''; display: block; width: 10px; height: 10px; border-radius: 50%; background: rgba(14,187,255,.2); }
+  .dm-side .dm-icons i.on::before { background: #FF5D97; box-shadow: 0 0 0 3px rgba(255,93,151,.2); }
   /* editor-code-view: p32 / gap12 / 行h16 gap6 / バーh6 r3 */
   .dm-code {
     flex: 1 0 0;
@@ -2580,6 +2551,10 @@
   .dm-panel.is-term .dm-term-bar { display: flex; }
   .dm-panel.is-term .dm-code { padding-top: 62px; }
   .dm-term-bar i { width: 9px; height: 9px; border-radius: var(--radius-full); background: var(--glass-16); }
+  /* 【2026-09-26 ヒデさん依頼】CLIの上部バーの丸3つもサイドバー(ブランド3色)にそろえる: 左から水色/青/ピンク(旧: 白16%のグレー3つ) */
+  .dm-term-bar i:nth-child(1) { background: #0EBBFF; }
+  .dm-term-bar i:nth-child(2) { background: #2E6FD8; }
+  .dm-term-bar i:nth-child(3) { background: #FF5D97; }
   /* ===== SDK: 右ペインをリファレンス一覧に差し替える (トンマナはAIペインを踏襲) ===== */
   .dm-sdk { flex: 0 0 400px; border-left: 1px solid var(--glass-10); display: none; flex-direction: column; min-height: 0; }
   .dm-panel.is-sdk .dm-sdk { display: flex; }
@@ -7323,16 +7298,6 @@ const DEV_TONES = [
   { key: 'pink', name: 'ピンク', tip: 'ピンクをうっすら。' },
 ];
 function devStyleKey() { const v = String((params && params.devStyle) || '0'); return (DEV_STYLES.some(s => s.key === v) && !variantRemovedKey('devStyle', v)) ? v : '0'; }
-/* 【2026-09-26 ヒデさん依頼】モックの左サイドバー(丸ポチ・色味)の案。params.devSide。0=現状 */
-const DEV_SIDES = [
-  { key: '0', name: '現状', fixed: true, tip: '今のまま。白10%の点、選択中はピンクの点。' },
-  { key: '1', name: '1 ブランド3色', tip: '上の3点をAnyflowマークの色(シアン/紺/ピンク)に。選択中はピンク＋薄い輪、他はシアン寄りの薄い点。' },
-  { key: '2', name: '2 輪っか', tip: '点を細い輪に(軽く・アイコンらしく)。選択中はシアンの塗り＋フォーカスリング。' },
-  { key: '3', name: '3 縦バー', tip: '開発ツール風。サイドバーを一段暗く、点は小さく控えめ。選択中は白い点＋左端にピンクの縦バー。' },
-  { key: '4', name: '4 タイル', tip: 'アプリのドック風。項目を角丸の四角に。選択中はピンクの淡い面＋縁。上はブランドのグラデのアイコン。' },
-  { key: '5', name: '5 発光', tip: 'サイドバーに上から紺の淡いグラデ。選択中はシアン→ピンクのグラデ点がふわっと光る。' },
-];
-function devSideKey() { const v = String((params && params.devSide) || '0'); return (DEV_SIDES.some(s => s.key === v) && !variantRemovedKey('devSide', v)) ? v : '0'; }
 function devToneKey() { const v = String((params && params.devTone) || 'dark'); return (DEV_TONES.some(s => s.key === v) && !variantRemovedKey('devTone', v)) ? v : 'dark'; }
 /* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②の 見出し↔モックの間隔 とモックの拡大を CSS 変数へ(PCのみ) */
 function applyDevTune() {
@@ -7347,7 +7312,6 @@ function applyDevStyle() {
   const sk = devStyleKey(), tk = devToneKey();
   DEV_STYLES.forEach(st => sec.classList.toggle('dev-st-' + st.key, st.key === sk));
   DEV_TONES.forEach(t => sec.classList.toggle('dev-tone-' + t.key, t.key === tk));
-  const sbk = devSideKey(); DEV_SIDES.forEach(t => sec.classList.toggle('dev-sb-' + t.key, t.key === sbk));   /* 【2026-09-26】サイドバーの案 */
   const d = (params.sections && params.sections.dev) || {};
   sec.style.setProperty('--dm-blur', (d.mockBlur != null ? d.mockBlur : 24) + 'px');
   sec.style.setProperty('--dm-sh', String(d.mockShadow != null ? d.mockShadow : 1));
@@ -19531,10 +19495,6 @@ function buildPanel() {
   note('正面のまま(傾け・重ねなし)で立体感を出す10案(1〜10)と、AI らしい5案(11〜15: 光が縁を走る／オーロラ／スキャン／粒／脈)。案を選ぶと下の「この案の調整」が入れ替わります。配色とも組み合わせられます。');
   sub(catDev, 'モックの配色（スタイル案のすぐ下で選ぶ）', true, { fixed: true });
   varRowX('devTone', DEV_TONES, () => devToneKey(), v => { params.devTone = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); } });
-  /* 【2026-09-26 ヒデさん依頼】モックの左サイドバー(丸ポチ・色味)の5案。スタイル案・配色と組み合わせ可 */
-  sub(catDev, 'モックの左サイドバー（丸ポチ・色味）', true, { fixed: true, grp: 'variation' });   /* 案の切替なのでスタイル案と同じバリエーション欄へ */
-  varRowX('devSide', DEV_SIDES, () => devSideKey(), v => { params.devSide = String(v); }, { after: () => { applyDevStyle(); } });
-  note('左の縦帯(上の3点・区切り線・5つの丸ポチ)の見た目だけを変えます。1ブランド3色／2輪っか／3縦バー／4タイル／5発光。スタイル案・配色とは別に選べます。');
   /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
   Object.keys(DEV_DYN_SPEC).forEach(g => {
     const sp = DEV_DYN_SPEC[g];
