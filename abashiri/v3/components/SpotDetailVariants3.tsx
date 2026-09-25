@@ -48,7 +48,7 @@ const revealSlow = {
     opacity: 1,
     y: 0,
     filter: "blur(0px)",
-    transition: { duration: 1.9, ease: EASE },
+    transition: { duration: 1.0, ease: EASE },
   },
 };
 
@@ -59,7 +59,7 @@ const photoIn = {
     opacity: 1,
     scale: 1,
     filter: "blur(0px)",
-    transition: { duration: 1.7, ease: EASE },
+    transition: { duration: 0.9, ease: EASE },
   },
 };
 
@@ -104,7 +104,7 @@ function Photo({
         variants={photoIn}
         initial="hidden"
         whileInView="show"
-        viewport={{ root, once: true, amount: 0.2 }}
+        viewport={{ root, once: true, amount: 0.1 }}
       />
     </div>
   );
@@ -223,7 +223,7 @@ function QuietBlocks({
     variants: revealSlow,
     initial: "hidden" as const,
     whileInView: "show" as const,
-    viewport: { root, once: true, amount: 0.2 },
+    viewport: { root, once: true, amount: 0.1 },
   };
   const head =
     "text-[length:var(--dt-head)] font-thin leading-[1.6] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]";
@@ -681,7 +681,7 @@ function TocLayout({
                 variants={revealSlow}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ root: ref, once: true, amount: 0.3 }}
+                viewport={{ root: ref, once: true, amount: 0.15 }}
               >
                 <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                   {s.heading}
@@ -801,7 +801,7 @@ export function V37PinnedBlur({ spot }: VProps) {
                 variants={revealSlow}
                 initial="hidden"
                 whileInView="show"
-                viewport={{ root: ref, once: true, amount: 0.3 }}
+                viewport={{ root: ref, once: true, amount: 0.15 }}
               >
                 <h3 className="shrink-0 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 lg:w-[190px]">
                   {s.heading}
@@ -870,7 +870,7 @@ export function V38Grid({ spot }: VProps) {
               variants={revealSlow}
               initial="hidden"
               whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.3 }}
+              viewport={{ root: ref, once: true, amount: 0.15 }}
             >
               <h3 className="col-span-4 mb-4 text-body-14 font-light leading-[1.9] tracking-[0.18em] text-ink/55 lg:col-start-1 lg:col-end-4 lg:mb-0">
                 {s.heading}
@@ -925,7 +925,7 @@ export function V39FarHead({ spot }: VProps) {
               variants={revealSlow}
               initial="hidden"
               whileInView="show"
-              viewport={{ root: ref, once: true, amount: 0.25 }}
+              viewport={{ root: ref, once: true, amount: 0.15 }}
             >
               <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] tracking-[0.04em] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                 {s.heading}

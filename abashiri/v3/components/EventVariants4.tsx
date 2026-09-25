@@ -31,13 +31,13 @@
  */
 import Link from "next/link";
 import { useRef } from "react";
-import { cubicBezier, motion, useTransform, type MotionValue } from "framer-motion";
+import { motion, useTransform, type MotionValue } from "framer-motion";
 import {
   ITEMS,
   PinStage,
   afterHold,
-  useConstantSpeed,
-  useReportProgress,
+  useStepCards,
+  type EvFlow,
   type EventItem,
 } from "./eventParts";
 
@@ -45,7 +45,7 @@ export const EVENT_KV_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。スクロールすると上の1枚ずつ右へめくれて剥がれていく。中央のカードにカーソルを乗せると影が乗って情報が出る" },
+  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。1回スクロールするごとに上の1枚が右へめくれて剥がれる（強く回しても1枚ずつ・流れ方は3案から選べる）。中央のカードにカーソルを乗せると影が乗って情報が出る" },
   32: { name: "案32 左右に文字", note: "【ラフ再現】動きは案31と同じ。文字組みだけ違い、左に「意外と／オモロい、」右に「網走」を置いて、その間に写真の束がある" },
   33: { name: "案33 コピーから飛び出す", note: "【ラフ再現】中央に「意外とオモロい、網走。」。スクロールすると、その裏に隠れていた写真が大きくなりながら四方へ飛び出して散る" },
 };
@@ -102,45 +102,40 @@ function HoverInfo({ it }: { it: EventItem }) {
 function StackCard({
   it,
   i,
-  p,
+  t,
+  nudge,
+  flow,
 }: {
   it: EventItem;
   i: number;
-  p: MotionValue<number>;
+  /** このカードの進み（0＝束の中 → 1＝抜けた）。1回スクロールで時間どおりに進む */
+  t: MotionValue<number>;
+  /** 束の“しなり”（案2 だけ使う） */
+  nudge: MotionValue<number>;
+  flow: EvFlow;
 }) {
   const s = STACK[i % STACK.length];
-  /* めくる順番：上に乗っているもの（i が大きい）が先に抜ける。
-     【2026-09-17 ヒデさん指示】「右に行く挙動が素早すぎる。もっとゆったり」
-     → 1枚あたりの区間を 0.2 → 0.3 に広げ、始まりの間隔も 0.2 → 0.22 に。
-       あわせて PinStage の長さも 2.6 → 3.6画面ぶんに伸ばしてある。
-       これで1枚が抜けきるまでのスクロール量が約2倍になる */
-  /* 【2026-09-20 ヒデさん指示】
-       「今2枚目見終わったら下にスクロールできる感じになっているので、
-         ちゃんと4枚目まで見た後に、見終わったら下にスクロールできる感じに」
-     実測すると、貼りついている間の前半5割で1枚も剥がれず（死に区間）、
-     残り5割に4枚ぶんを詰め込んでいたため、剥がれきる前に貼りつきが切れていた
-     （実測: 進み0.95 の時点で剥がれたのは2枚だけ）。
-     → 始まりを早め（0.08→0.03）、間隔と1枚あたりの区間を詰めて、
-       【進み 0.82 までに3枚とも剥がれ終わる】ようにする。
-       残りの 0.18 は「4枚目をゆっくり見る」ための余韻。 */
-  /* 【2026-09-24 ヒデさん報告】「謎に3スクロールぐらい無駄にしないと下に行けない」
-     原因＝剥がれの配置と、関所をあける判定がズレていた。
-       ・実際に3枚とも剥がれ終わるのは進み具合 0.59
-       ・なのに関所は 0.96 まで開かない
-       → その差 0.37 のあいだ、スクロールしても進まない（実測: 1859ms の空待ち）
-     直し方＝【剥がれ終わり＝関所があく瞬間】になるよう、
-       3枚を区間いっぱい（0.96 まで）に広げて配る。
-       order 0→0.02〜0.49 / 1→0.255〜0.725 / 2→0.49〜0.96 */
-  const order = ITEMS.length - 1 - i;
-  const from = Math.min(0.5, 0.02 + order * 0.235);
-  const to = Math.min(0.98, from + 0.47);
+  /* 【2026-09-26 作り直し】「1回スクロール＝1枚」
+     旧：全カードが1本の進み具合 p を共有し、区間ごとに割り振っていた
+         （p はスクロール量で決まるので、強く回すと何枚もまとめて流れた）
+     新：カードごとに自分の進み t を持ち、出番が来たら【決まった時間とカーブ】で
+         0→1 へ動く。流れ方（カーブ・浮き上がり・回転の遅れ）は EV_FLOWS の3案 */
   const last = i === 0; /* 台紙になる1枚は残す */
-  /* 直線だと機械的に見えるので、出だしと終わりをやわらげる */
-  const EASE_OUT = cubicBezier(0.32, 0, 0.2, 1);
-  const x = useTransform(p, [from, to], [0, last ? 0 : FRAME_W * 0.86], { ease: EASE_OUT });
-  const rot = useTransform(p, [from, to], [s.rot, last ? s.rot : s.rot + 10], { ease: EASE_OUT });
+  const X = FRAME_W * 0.86;
+  const x = useTransform([t, nudge], ([tv, nv]: number[]) =>
+    (last ? 0 : tv * X) + nv * 16
+  );
+  /* 案3：弧を描いて浮き上がる（途中がいちばん高い） */
+  const y = useTransform(t, (tv) =>
+    last ? 0 : -Math.sin(Math.PI * Math.min(1, Math.max(0, tv))) * flow.lift
+  );
+  /* 回転。spinLag=2 だと移動よりあとから遅れてついてくる */
+  const rot = useTransform([t, nudge], ([tv, nv]: number[]) => {
+    const k = Math.min(1.2, Math.max(0, tv));
+    return s.rot + (last ? 0 : Math.pow(k, flow.spinLag) * flow.spin) + nv * 2.5;
+  });
   /* 消えるのは移動より遅らせる＝流れていくのが見える */
-  const o = useTransform(p, [from + (to - from) * 0.45, to], [1, last ? 1 : 0]);
+  const o = useTransform(t, [flow.fadeAt, 1], [1, last ? 1 : 0]);
   return (
     <motion.div
       className="group absolute"
@@ -150,6 +145,7 @@ function StackCard({
         width: CARD_W,
         height: CARD_H,
         x,
+        y,
         rotate: rot,
         opacity: o,
         zIndex: i + 1,
@@ -167,6 +163,10 @@ function StackCard({
     </motion.div>
   );
 }
+
+/** 重ね写真の案（31・32）の貼りつく長さ（画面の何倍か）。
+    1回スクロール＝1枚になり、場面の中のスクロール量は見た目に関係しないので短くてよい */
+const STEP_STAGE_LEN = 2;
 
 /** カンプの 1512×920 をそのまま置くための枠。
     ⚠️ カンプは「1画面まるごと」なので、体験セクションの上パディング(180px)を
@@ -212,17 +212,25 @@ function MarqueeStack() {
   /* 4枚めくり終わるまで下へ行かせない見張り（PinStage の hold）。
      場面の側が毎フレーム「今どこまで流れたか」を書き込む */
   const hold = useRef(0);
+  /* 2026-09-26：1回スクロール＝1枚になり、場面の中のスクロール量は見た目に
+     関係しなくなった。貼りつく長さは短くして、行き帰りの“空スクロール”を減らす */
   return (
-    <PinStage length={4.8} hold={hold}>
-      {(q) => <MarqueeScene q={q} hold={hold} />}
+    <PinStage length={STEP_STAGE_LEN} hold={hold}>
+      {(q, pinned) => <MarqueeScene q={q} pinned={pinned} hold={hold} />}
     </PinStage>
   );
 }
-function MarqueeScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObject<number> }) {
-  /* スクロールは「どこまで進んでよいか」を決めるだけ。
-     実際の流れは一定の速さ（--ev-peel-speed）で追いかける */
-  const p = useConstantSpeed(afterHold(q, 0.05, 0.9));
-  useReportProgress(p, hold);
+function MarqueeScene({
+  q,
+  pinned,
+  hold,
+}: {
+  q: MotionValue<number>;
+  pinned: React.RefObject<boolean>;
+  hold: React.RefObject<number>;
+}) {
+  /* 1回スクロール＝1枚。流れ方は調整パネルの「流れ方」3案 */
+  const { ts, nudges, flow } = useStepCards(q, pinned, hold);
   return (
     <Frame
       full={
@@ -248,7 +256,7 @@ function MarqueeScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObje
       }
     >
       {ITEMS.map((it, i) => (
-        <StackCard key={it.title} it={it} i={i} p={p} />
+        <StackCard key={it.title} it={it} i={i} t={ts[i]} nudge={nudges[i]} flow={flow} />
       ))}
     </Frame>
   );
@@ -258,14 +266,21 @@ function MarqueeScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObje
 function SideTextStack() {
   const hold = useRef(0);
   return (
-    <PinStage length={4.8} hold={hold}>
-      {(q) => <SideTextScene q={q} hold={hold} />}
+    <PinStage length={STEP_STAGE_LEN} hold={hold}>
+      {(q, pinned) => <SideTextScene q={q} pinned={pinned} hold={hold} />}
     </PinStage>
   );
 }
-function SideTextScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObject<number> }) {
-  const p = useConstantSpeed(afterHold(q, 0.05, 0.9));
-  useReportProgress(p, hold);
+function SideTextScene({
+  q,
+  pinned,
+  hold,
+}: {
+  q: MotionValue<number>;
+  pinned: React.RefObject<boolean>;
+  hold: React.RefObject<number>;
+}) {
+  const { ts, nudges, flow } = useStepCards(q, pinned, hold);
   return (
     <Frame>
       <p
@@ -283,7 +298,7 @@ function SideTextScene({ q, hold }: { q: MotionValue<number>; hold: React.RefObj
         網走
       </p>
       {ITEMS.map((it, i) => (
-        <StackCard key={it.title} it={it} i={i} p={p} />
+        <StackCard key={it.title} it={it} i={i} t={ts[i]} nudge={nudges[i]} flow={flow} />
       ))}
     </Frame>
   );

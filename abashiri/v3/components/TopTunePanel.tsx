@@ -44,6 +44,7 @@ import {
   PAGE_TRANSITION_EVENT,
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
+import { EV_FLOWS } from "./eventParts";
 import {
 } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
@@ -183,7 +184,7 @@ type Params = {
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
-  events: { pattern: number; tailPad: number; cardRatio: number; peelSpeed: number };
+  events: { pattern: number; tailPad: number; cardRatio: number; peelSpeed: number; flow: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
@@ -258,7 +259,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62 } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62, flow: 1 /* 2026-09-26 1回スクロール＝1枚。流れ方3案（既定は案1 ふわっと減速） */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
@@ -326,6 +327,8 @@ export default function TopTunePanel({
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
       /* 重ね写真が流れる速さ（1秒あたり全体の何割進むか）。単位なしの数 */
       root.style.setProperty("--ev-peel-speed", String(params.events.peelSpeed / 100));
+      /* 重ね写真の流れ方（1〜3）。eventParts.tsx の EV_FLOWS の番号 */
+      root.style.setProperty("--ev-flow", String(params.events.flow ?? 1));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
@@ -1327,16 +1330,21 @@ export default function TopTunePanel({
                 })),
               },
               {
-                slider: "写真が流れる速さ",
-                path: "events.peelSpeed",
-                min: 5,
-                max: 80,
-                step: 1,
-                unit: "%/秒",
+                /* 【2026-09-26 ヒデさん指示】「1回スクロールすれば一定の速度で流れる。
+                   リニアで機械的なので、自然に流れる案を3案。何が違うか明記」
+                   旧「写真が流れる速さ」のつまみは、スクロール量を一定速で追う方式の
+                   もの。1回＝1枚になって効かなくなったので、流れ方の3案に差し替えた */
+                pills: "流れ方",
+                path: "events.flow",
                 immediate: true,
                 /* 重ね写真の案だけ */
                 when: (p: Params) => p.events.pattern === 31 || p.events.pattern === 32,
-                hint: "重なった写真が右へ流れていく速さ。1秒あたり全体の何％進むか。スクロールの強さや長さに関わらず、いつもこの速さで流れます。",
+                options: Object.entries(EV_FLOWS).map(([v, f]) => ({
+                  name: f.name,
+                  value: Number(v),
+                  swatch: "#0070c9",
+                  desc: f.note,
+                })),
               },
               {
                 seg: "カードの縦横比",

@@ -6,13 +6,16 @@
  * 2026-09-16 に EventSection.tsx から切り出した。
  * 案が増えてファイルが太ってきたので、データ・文字組み・カードの枠だけをここに置く。
  */
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  animate,
+  motionValue,
   useAnimationFrame,
   useMotionValue,
   useTransform,
   type MotionValue,
+  type Transition,
 } from "framer-motion";
 
 export type EventItem = {
@@ -202,8 +205,11 @@ export function usePinProgress(stage: React.RefObject<HTMLElement | null>) {
 /** 4枚目が出たとみなす進み具合。ここまで来たら関所をあける
     （1.0 まで待つと「見終わったのに下へ行けない」になる。2026-09-24 ヒデさん報告） */
 const PEEL_DONE = 0.96;
-/** 関所で止めておく上限の時間(ms)。保険。これを過ぎたら必ず通す */
-const GATE_MAX_MS = 6000;
+/** 関所の保険。【貼りついたまま進みが止まって】この時間(ms)たったら通す。
+    2026-09-26：「1回スクロール＝1枚」になり、見る人が自分のペースで進めるので、
+    貼りつく前から数えていた旧仕様（6秒）だと読んでいる途中で勝手にあいてしまう。
+    → 貼りついている間だけ、最後に進んでからの時間で数える */
+const GATE_MAX_MS = 9000;
 
 export function PinStage({
   /** 貼りつけておく長さ。画面の高さの何倍か */
@@ -212,7 +218,11 @@ export function PinStage({
   hold,
 }: {
   length?: number;
-  children: (q: MotionValue<number>) => React.ReactNode;
+  /** pinned: いま場面が画面に貼りついているか（true の間だけ「1回＝1枚」を受け付ける） */
+  children: (
+    q: MotionValue<number>,
+    pinned: React.RefObject<boolean>
+  ) => React.ReactNode;
   /** 0〜1。1 になるまで【この場面から下へ抜けさせない】ための見張り。
       中の場面が毎フレーム書き込む（1 に達したら解除）。
       【2026-09-20 ヒデさん指示】
@@ -232,6 +242,11 @@ export function PinStage({
   const lastTop = useRef(-1);
   /* 関所を張り始めた時刻。長く止めすぎないための保険 */
   const gateSince = useRef(0);
+  /* 保険の判定用：最後に見た進み具合と、時間切れで通したかどうか */
+  const lastHold = useRef(0);
+  const timedOut = useRef(false);
+  /* いま場面が画面に貼りついているか。中の場面が「1回＝1枚」の受付に使う */
+  const pinned = useRef(false);
 
   useAnimationFrame(() => {
     if (!hold) return;
@@ -254,6 +269,8 @@ export function PinStage({
     const now = sc.scrollTop;
     const goingUp = lastTop.current >= 0 && now < lastTop.current - 0.5;
     lastTop.current = now;
+    const pinnedNow = now >= y - 2 && now <= limit + 2;
+    pinned.current = pinnedNow;
 
     /* まだ場面の手前にいる／もう通り過ぎた → 何もしない */
     if (now <= y - sc.clientHeight * 3 || now > limit + sc.clientHeight) {
@@ -271,9 +288,27 @@ export function PinStage({
     if (goingUp) { openGate(); return; }                      /* ① */
     if (hold.current >= PEEL_DONE) { openGate(); return; }    /* ② */
 
+    /* ③ 保険（2026-09-26 作り直し）
+       ・貼りつく前は数えない（関所だけ張っておく）
+       ・貼りついたら「最後に進んでから」の時間で数える
+       ・時間切れで一度あけたら、進むか場面を離れるまで【あけっぱなし】にする
+         （旧仕様は1フレームだけあけて、次のフレームでまた閉じていた） */
+    if (!pinnedNow) {
+      gateSince.current = 0;
+      timedOut.current = false;
+      lastHold.current = hold.current;
+      w.__abashiriScrollGate = limit;
+      return;
+    }
+    if (Math.abs(hold.current - lastHold.current) > 0.004) {
+      lastHold.current = hold.current;
+      gateSince.current = performance.now();
+      timedOut.current = false;
+    }
     if (!gateSince.current) gateSince.current = performance.now();
-    if (performance.now() - gateSince.current > GATE_MAX_MS) { /* ③ */
-      openGate();
+    if (timedOut.current || performance.now() - gateSince.current > GATE_MAX_MS) {
+      timedOut.current = true;
+      if (w.__abashiriScrollGate !== undefined) delete w.__abashiriScrollGate;
       return;
     }
     w.__abashiriScrollGate = limit;
@@ -288,10 +323,181 @@ export function PinStage({
       style={{ height: `${Math.round(length * 982)}px` }}
     >
       <div className="sticky top-0 h-[982px] w-full overflow-hidden bg-white">
-        {children(q)}
+        {children(q, pinned)}
       </div>
     </div>
   );
+}
+
+/* ═══════════ 1回スクロール＝1枚（案31・32 の重ね写真） ═══════════
+   【2026-09-26 ヒデさん指示】
+     「スクロールの強さによって進む距離が変わっている。写真が右にずれる挙動が
+       スクロールの強さに影響されずに、一回スクロールすれば一定の速度で流れる感じに」
+     「今すごくリニアで横にワーって機械的。もう少し自然に流れるアニメを3案」
+   旧：スクロールした【量】を行き先にして、一定の速さで追いかけていた
+       → 強くスクロールすると行き先が遠くなり、何枚もまとめて流れていた
+   新：スクロールの【回数】だけを見る。1回（ひと続きの操作）＝1枚。
+       流れる時間とカーブは毎回同じなので、強く回しても弱く回しても同じ動きになる */
+
+/** ひと続きの操作とみなす間隔(ms)。これより空いたら「次の1回」 */
+const GESTURE_GAP = 220;
+
+/** 流れ方の3案。何が違うかは note に書いてある（パネルにもそのまま出る） */
+export type EvFlow = {
+  name: string;
+  note: string;
+  /** 1枚がめくれる時の時間とカーブ */
+  move: Transition;
+  /** 流れる途中でふわっと浮き上がる量(px)。0＝まっすぐ横へ */
+  lift: number;
+  /** 流れながら回る量(度) */
+  spin: number;
+  /** 回転の遅れ。1＝移動と同時、2＝あとから遅れてついてくる */
+  spinLag: number;
+  /** 移動のどこから消え始めるか（0〜1） */
+  fadeAt: number;
+  /** 1枚抜けたあと、残った束がしなって落ち着くか */
+  settle: boolean;
+};
+
+export const EV_FLOWS: Record<number, EvFlow> = {
+  1: {
+    name: "案1 ふわっと減速",
+    note: "【違い＝止まり方】出だしだけ少し速く、あとは氷の上をすべるように長く減速して止まる。まっすぐ横へ。いちばん素直で静か（1枚あたり約1.1秒）",
+    move: { duration: 1.1, ease: [0.16, 1, 0.3, 1] },
+    lift: 0,
+    spin: 10,
+    spinLag: 1,
+    fadeAt: 0.5,
+    settle: false,
+  },
+  2: {
+    name: "案2 しなり",
+    note: "【違い＝手ざわり】ばねで引っぱられたように流れ、残った写真の束も小さく揺れてから落ち着く。紙の束をめくった時の“しなり”がある動き（1枚あたり約1秒）",
+    move: { type: "spring", stiffness: 95, damping: 14, mass: 1 },
+    lift: 0,
+    spin: 14,
+    spinLag: 1,
+    fadeAt: 0.6,
+    settle: true,
+  },
+  3: {
+    name: "案3 風に流される",
+    note: "【違い＝軌道】ゆっくり動き出し、ふわっと浮き上がって弧を描きながら右へ流れる。回転はあとから遅れてついてくる。いちばんゆったり（1枚あたり約1.6秒）",
+    move: { duration: 1.6, ease: [0.45, 0, 0.2, 1] },
+    lift: 70,
+    spin: 18,
+    spinLag: 2,
+    fadeAt: 0.55,
+    settle: false,
+  },
+};
+
+/** いま選ばれている流れ方（CSS 変数 --ev-flow。調整パネルが書く） */
+export function useEvFlow(): EvFlow {
+  const [n, setN] = useState(1);
+  useAnimationFrame(() => {
+    const v = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue("--ev-flow"),
+      10
+    );
+    const k = EV_FLOWS[v] ? v : 1;
+    if (k !== n) setN(k);
+  });
+  return EV_FLOWS[n];
+}
+
+/** 重ね写真の各カードの動き（0＝束の中 → 1＝抜けた）を「1回＝1枚」で進める。
+    - いちばん上（配列の最後）から順に抜ける。いちばん下（i=0）は台紙として残る
+    - 上向きの操作では1枚ずつ戻る
+    - 場面の上へ抜けたら全部戻す
+    hold には「抜けきった割合」を書き、PinStage の関所に使わせる */
+export function useStepCards(
+  q: MotionValue<number>,
+  pinned: React.RefObject<boolean>,
+  hold: React.RefObject<number>
+) {
+  const flow = useEvFlow();
+  const steps = ITEMS.length - 1; /* 抜ける枚数（台紙の1枚は残す） */
+  /* 各カードの進み（0→1）と、束の“しなり”用の値 */
+  const ts = useMemo(() => ITEMS.map(() => motionValue(0)), []);
+  const nudges = useMemo(() => ITEMS.map(() => motionValue(0)), []);
+  const step = useRef(0);
+  const flowRef = useRef(flow);
+  flowRef.current = flow;
+
+  /* 段を動かす。i 番目のカードは「上から何枚目か」で出番が決まる */
+  const goTo = (next: number) => {
+    const n = Math.max(0, Math.min(steps, next));
+    if (n === step.current) return;
+    const prev = step.current;
+    step.current = n;
+    const f = flowRef.current;
+    ITEMS.forEach((_, i) => {
+      if (i === 0) return; /* 台紙は動かさない */
+      const order = ITEMS.length - 1 - i; /* 0 が最初に抜ける */
+      animate(ts[i], n > order ? 1 : 0, f.move);
+    });
+    /* 案2：1枚抜けたら、次にいちばん上になったカードがしなって落ち着く */
+    if (f.settle && n > prev) {
+      const top = ITEMS.length - 1 - n; /* 次にいちばん上のカード */
+      if (top >= 0) {
+        animate(nudges[top], [0, 1, -0.35, 0], {
+          duration: 0.9,
+          times: [0, 0.3, 0.65, 1],
+          ease: "easeInOut",
+        });
+      }
+    }
+  };
+
+  /* 操作の受付：ホイール・キー・スワイプ。貼りついている間だけ数える */
+  useEffect(() => {
+    let last = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) < 2 || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+      const now = performance.now();
+      const fresh = now - last > GESTURE_GAP;
+      last = now;
+      if (!fresh || !pinned.current) return;
+      goTo(step.current + (e.deltaY > 0 ? 1 : -1));
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (!pinned.current) return;
+      if (["ArrowDown", "PageDown", " "].includes(e.key)) goTo(step.current + 1);
+      else if (["ArrowUp", "PageUp"].includes(e.key)) goTo(step.current - 1);
+    };
+    let ty = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      ty = e.touches[0]?.clientY ?? 0;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dy = (e.changedTouches[0]?.clientY ?? ty) - ty;
+      if (Math.abs(dy) < 30 || !pinned.current) return;
+      goTo(step.current + (dy < 0 ? 1 : -1));
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* 場面の上へ抜けたら全部戻す／関所へ「抜けきった割合」を渡す */
+  useAnimationFrame(() => {
+    if (q.get() <= 0.0005 && step.current > 0 && !pinned.current) goTo(0);
+    let sum = 0;
+    for (let i = 1; i < ITEMS.length; i++) sum += Math.min(1, Math.max(0, ts[i].get()));
+    hold.current = steps > 0 ? sum / steps : 1;
+  });
+
+  return { ts, nudges, flow };
 }
 
 /** 「ため」を作ってから 0→1 にする（貼りついた直後は動かさない） */
