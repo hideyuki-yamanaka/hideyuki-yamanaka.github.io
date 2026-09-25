@@ -3585,8 +3585,10 @@
   .pan-tabs { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: nowrap; gap: 16px; margin: 0 -10px; padding: 6px 10px 0;
               background: #fff; border-bottom: 1px solid #dcdcdc;   /* 【2026-09-25 ヒデさん依頼】ブラー撤去→スマホモード/編集ボタンと同じ白(#fff)の不透明地でスクロール中の後ろを隠す。下のグレー下線は維持 */
               overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
-  .pan-tabs::-webkit-scrollbar { height: 6px; }
-  .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+  .pan-tabs::-webkit-scrollbar { height: 3px; }   /* 【2026-09-25 ヒデさん依頼】タブ下のスクロールバーを細く(6→3px) */
+  .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 2px; }
+  /* Chrome121+ は scrollbar-width / scrollbar-color(親からの継承も含む)があると ::-webkit-scrollbar を無視して太めの標準バーを出す→ webkit 対応ブラウザでは両方 auto に戻して上の 3px を効かせる(Firefox は thin のまま) */
+  @supports selector(::-webkit-scrollbar) { .pan-tabs { scrollbar-width: auto; scrollbar-color: auto; } }   /* 親(#panelBody)の scrollbar-color が継承されても webkit 指定が無視されるので色も auto に戻す */
   .pan-tabs::-webkit-scrollbar-track { background: transparent; }
   /* 【2026-09-20 ヒデさん依頼】タブはピル型→アンダーライン型(X風): 透明地・選択は下線＋濃い文字 */
   .pan-tab { flex: 0 0 auto; height: 34px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #8a8a8a;
@@ -8617,7 +8619,7 @@ function sphereFiboHull(n) {
   }
   const es = new Set(), edges = [];
   for (const f of F) for (let k = 0; k < 3; k++) { const a = f.v[k], b = f.v[(k + 1) % 3]; const key = a < b ? a * 65536 + b : b * 65536 + a; if (!es.has(key)) { es.add(key); edges.push([Math.min(a, b), Math.max(a, b)]); } }
-  return { verts: P, edges };
+  return { verts: P, edges, faces: F.map(f => f.v) };
 }
 let convLine = null;   // 線(path)のプール。奥レイヤーに置く(惑星の後ろを通る線が自然に隠れる)
 /* 【2026-08-27 ヒデさん指定】惑星を「包囲する」ケージ用の線。
@@ -12483,13 +12485,13 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { meshKind: 'geo', fn: 92, r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { meshKind: 'geo', fn: 92, fcW: 0.34, fcH: 0.16, fcLogo: 0.78, fcLat: 17, fcLon: -18, persp: 0.3, fcFill: 0.92, fcShade: 0.2, r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
-const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
+const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha', 'fcW', 'fcH', 'fcLogo', 'fcLat', 'fcLon', 'persp', 'fcFill', 'fcShade'];   /* fc系・persp＝【2026-09-25】ロゴ追従の面・遠近感(案ごとに保存) */
 /* 【2026-09-25 ヒデさん依頼】ロゴの案は ノーマル(現状・フラット) / ロゴ追従(球の面に貼り付いて一緒に回る) の2つに整理。旧 案2〜4(球面パース/浮かせる/ガラス板)は削除 */
 const VIS_LOGOS = [
   { key: 'flat',  name: 'ノーマル', fixed: true, tip: '現状。ロゴはメッシュ中央の上に平面(傾き0)で固定。メッシュが回ってもロゴは動かない。', cfg: { logoTiltX: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 0 } },
-  { key: 'stick', name: 'ロゴ追従', fixed: true, tip: 'ロゴを球の面に貼り付け、網目と同じ回転で一緒に回す(右回転なら 左→右→裏→正面 と巡る)。裏側では薄く透ける(「裏側の濃さ」で調整・0で消える)。貼る位置は「ロゴ 位置X/Y」。', cfg: { logoTiltX: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 1, logoBackAlpha: 0.3 } },
+  { key: 'stick', name: 'ロゴ追従', fixed: true, tip: 'メッシュの一部の三角をまとめて大きな平面(面)にし、その面にロゴを焼き付けて網ごと回す(右回転なら 左→右→裏→正面)。奥の線は面に隠れ、遠近感と陰影つき。Figma 18064:33843 の造形。', cfg: { logoTiltX: 0, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoStick: 1, logoBackAlpha: 0.3 } },
 ];
 function vfLogoKey() { const v = String(vfCfg().logoVar || 'flat'); return (VIS_LOGOS.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visLogo', v))) ? v : 'flat'; }
 function vfApplyLogoVariant(key) { const m = VIS_LOGOS.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.logoVar = key; applyVfFade(); }   /* logoOn=ロゴの表示/非表示(2026-09-19 ヒデさん依頼。非表示なら後ろのぼかしも消す) */   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
@@ -12572,7 +12574,7 @@ function applyVfFade() {
   });
   /* ロゴ: 網目の一部として一緒に拡大(カンプ: 127,288 / 204×37) */
   const logoOn = !(c.logoOn === 0 || c.logoOn === false);
-  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = logoOn ? '' : 'none'; const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 80; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中より上に(独立)。【2026-09-21 ヒデさん依頼】SPはもう少し上へ(-72→-80) */ if (!c.logoStick) { lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; }   /* ロゴ追従中は位置・変形・濃さを vfDraw が毎フレーム決める */ lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
+  const lg = w.querySelector('.vf-logo'); if (lg) { lg.style.display = (logoOn && !c.logoStick) ? '' : 'none';   /* 【2026-09-25】ロゴ追従中は canvas の面にロゴを焼き付けるので DOM のロゴは隠す */ const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls; let lcx = VF_CX + (c.logoDx || 0), lcy = VF_CY + (c.logoDy || 0) - 50; if (_mb) { lcy = VF_CY + (c.logoDy || 0) - 80; }   /* 【2026-09-20 ヒデさん依頼】ロゴはメッシュのど真ん中より上に(独立)。【2026-09-21 ヒデさん依頼】SPはもう少し上へ(-72→-80) */ if (!c.logoStick) { lg.style.left = (lcx - lw / 2).toFixed(1) + 'px'; lg.style.top = (lcy - lh / 2).toFixed(1) + 'px'; }   /* ロゴ追従中は位置・変形・濃さを vfDraw が毎フレーム決める */ lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
     const ang = (c.logoAngle || 0), tx = (c.logoTiltX != null ? c.logoTiltX : 0), ty = (c.logoTiltY || 0); lg.style.transformOrigin = '50% 50%';
     const tf3 = '';   /* 【2026-09-20 ヒデさん依頼】ロゴはヘッダーのロゴと同じく常にフラット(傾き0)・メッシュの角度から独立。傾き系(logoTiltX/Y・角度)は無視する。 */ if (!c.logoStick) lg.style.transform = tf3;
     if (!c.logoStick) lg.style.opacity = (c.logoOpacity != null ? c.logoOpacity : 1).toFixed(3);
@@ -12591,17 +12593,119 @@ function vfBuild(f) {
   const faces = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
   const verts = [], idx = new Map(); const key = (v) => v.map(x => x.toFixed(4)).join(',');
   const add = (v) => { const k = key(v); if (idx.has(k)) return idx.get(k); verts.push(v); idx.set(k, verts.length - 1); return verts.length - 1; };
-  const edges = new Set(); const E = (a, b) => edges.add(a < b ? a * 65536 + b : b * 65536 + a);
+  const edges = new Set(); const E = (a, b) => edges.add(a < b ? a * 65536 + b : b * 65536 + a); const FC = [];   /* FC=三角(ロゴ追従の面づくりに使う) */
   for (const [ia, ib, ic] of faces) {
     const A = base[ia], B = base[ib], C = base[ic]; const grid = [];
     for (let i = 0; i <= f; i++) { grid[i] = []; for (let j = 0; j <= f - i; j++) { const u = i / f, w = j / f; grid[i][j] = add(nrm([A[0] + (B[0] - A[0]) * u + (C[0] - A[0]) * w, A[1] + (B[1] - A[1]) * u + (C[1] - A[1]) * w, A[2] + (B[2] - A[2]) * u + (C[2] - A[2]) * w])); } }
-    for (let i = 0; i < f; i++) for (let j = 0; j < f - i; j++) { E(grid[i][j], grid[i + 1][j]); E(grid[i][j], grid[i][j + 1]); E(grid[i + 1][j], grid[i][j + 1]); }
+    for (let i = 0; i < f; i++) for (let j = 0; j < f - i; j++) { E(grid[i][j], grid[i + 1][j]); E(grid[i][j], grid[i][j + 1]); E(grid[i + 1][j], grid[i][j + 1]); FC.push([grid[i][j], grid[i + 1][j], grid[i][j + 1]]); if (j < f - i - 1) FC.push([grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]]); }
   }
-  return { verts, edges: Array.from(edges).map(k => [Math.floor(k / 65536), k % 65536]) };
+  return { verts, edges: Array.from(edges).map(k => [Math.floor(k / 65536), k % 65536]), faces: FC };
 }
 let vfMesh = null, vfMeshFreq = 0, vfPk = [], vfPkNext = 0, vfLastT = null;
 function vfRgb(hex) { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')); const v = parseInt(m ? m[1] : 'a6a6a6', 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255].join(','); }
 const VF_LV_LINE = [0.2, 0.4, 0.6, 1.0], VF_LV_NODE = [0.2, 0.4, 0.7, 1.0];   /* 4段の濃淡(奥→手前)。カンプの opacity 分布に合わせた */
+/* 【2026-09-25 ヒデさん依頼】ロゴ追従＝メッシュの一部を大きな平面(面)に作り替えてロゴを焼き付ける(Figma 18064:33843 の造形)。
+   base(verts/edges/faces)から、面の中心方向 d の周りの楕円(横 A・縦 B)に重心が入る三角をまとめて1枚の面にする。
+   内側の辺・頂点は消し、縁の頂点を d を法線とする平面へ押し当てて平らにする(＝メッシュの一部の変形。Figmaは線を2本抜いて大きな面にしている)。
+   整った網(92点)なら 横0.34/縦0.16 で三角3枚→横長の面(幅≒半径×0.79)。既定の高さ17°＝ドーム下のフェードの外。縁が1本の輪にならない時は中心の三角1枚に縮退。 */
+function vfBuildFacet(base, o) {
+  const V = base.verts, FA = base.faces || []; if (!FA.length) return null;
+  const D2R = Math.PI / 180, la = (+o.lat || 0) * D2R, lo = (+o.lon || 0) * D2R;
+  const d = [Math.sin(lo) * Math.cos(la), Math.sin(la), Math.cos(lo) * Math.cos(la)];
+  const e1 = [Math.cos(lo), 0, -Math.sin(lo)];
+  const e2 = [d[1] * e1[2] - d[2] * e1[1], d[2] * e1[0] - d[0] * e1[2], d[0] * e1[1] - d[1] * e1[0]];
+  const dot = (p, q) => p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
+  const A = Math.max(0.05, +o.A || 0.34), B = Math.max(0.03, +o.B || 0.16);
+  const ek = (a, b) => a < b ? a * 65536 + b : b * 65536 + a;
+  const ef = new Map(); FA.forEach((f, i) => { for (let k = 0; k < 3; k++) { const key = ek(f[k], f[(k + 1) % 3]); if (!ef.has(key)) ef.set(key, []); ef.get(key).push(i); } });
+  const vf = new Map(); FA.forEach((f, i) => f.forEach(v => { if (!vf.has(v)) vf.set(v, []); vf.get(v).push(i); }));
+  const build = (sel) => {
+    const cnt = new Map(); for (const i of sel) { const f = FA[i]; for (let k = 0; k < 3; k++) { const key = ek(f[k], f[(k + 1) % 3]); cnt.set(key, (cnt.get(key) || 0) + 1); } }
+    const inner = new Set(), rim = []; for (const [key, n] of cnt) { if (n >= 2) inner.add(key); else rim.push([Math.floor(key / 65536), key % 65536]); }
+    const adj = new Map(); for (const [a, b] of rim) { if (!adj.has(a)) adj.set(a, []); if (!adj.has(b)) adj.set(b, []); adj.get(a).push(b); adj.get(b).push(a); }
+    for (const l of adj.values()) if (l.length !== 2) return null;
+    const ring = []; let prev = -1, cur = rim[0][0];
+    for (let gi = 0; gi < rim.length; gi++) { ring.push(cur); const l = adj.get(cur), nx = l[0] === prev ? l[1] : l[0]; prev = cur; cur = nx; if (cur === ring[0]) break; }
+    if (ring.length !== rim.length) return null;
+    return { inner, ring };
+  };
+  /* 面の中心に一番近い三角から始めて、目標の横幅(2A)に届くまで「楕円の中心に近い隣の三角」を1枚ずつ足す
+     (縦に伸びすぎる三角・縁が1本の輪にならない三角は足さない)。高さを変えても面の大きさが跳ねにくい */
+  const C = FA.map(f => [0, 1, 2].map(k => (V[f[0]][k] + V[f[1]][k] + V[f[2]][k]) / 3));
+  const score = C.map(p => { if (dot(p, d) < 0.3) return Infinity; const x = dot(p, e1) / A, y = dot(p, e2) / B; return x * x + y * y; });
+  let best = 0; for (let i = 1; i < FA.length; i++) if (dot(C[i], d) > dot(C[best], d)) best = i;
+  const extent = (set) => { let x0 = 9, x1 = -9, y0 = 9, y1 = -9; for (const i of set) for (const v of FA[i]) { const x = dot(V[v], e1), y = dot(V[v], e2); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } return [x1 - x0, y1 - y0]; };
+  let sel = new Set([best]); const tried = new Set([best]);
+  for (let step = 0; step < 14; step++) {
+    if (extent(sel)[0] >= 2 * A * 0.95) break;
+    let cand = -1, cs = Infinity;
+    for (const i of sel) { const f = FA[i]; for (let k = 0; k < 3; k++) for (const j of ef.get(ek(f[k], f[(k + 1) % 3])) || []) if (!sel.has(j) && !tried.has(j) && score[j] < cs) { cs = score[j]; cand = j; } }
+    if (cand < 0 || !isFinite(cs)) break;
+    tried.add(cand);
+    const next = new Set(sel); next.add(cand);
+    if (extent(next)[1] > 2 * B * 2.2) continue;
+    if (build(next)) sel = next;
+  }
+  let useSel = sel, r = build(sel); if (!r) { useSel = new Set([best]); r = build(useSel); }
+  const ringSet = new Set(r.ring), drop = new Set();
+  for (const [v, fs] of vf) if (!ringSet.has(v) && fs.every(i => useSel.has(i))) drop.add(v);
+  const cpl = r.ring.reduce((s2, v) => s2 + dot(V[v], d), 0) / r.ring.length;
+  const map = new Array(V.length).fill(-1), verts = [];
+  V.forEach((p, i) => { if (drop.has(i)) return; let q = p; if (ringSet.has(i)) { const off = dot(p, d) - cpl; q = [p[0] - off * d[0], p[1] - off * d[1], p[2] - off * d[2]]; } map[i] = verts.length; verts.push(q); });
+  const edges = []; for (const [a, b] of base.edges) { if (map[a] < 0 || map[b] < 0 || r.inner.has(ek(a, b))) continue; edges.push([map[a], map[b]]); }
+  const ring = r.ring.map(v => map[v]);
+  const Cf = [0, 1, 2].map(k => ring.reduce((s2, v) => s2 + verts[v][k], 0) / ring.length);
+  let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+  for (const v of ring) { const q = [verts[v][0] - Cf[0], verts[v][1] - Cf[1], verts[v][2] - Cf[2]]; const x = dot(q, e1), y = dot(q, e2); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return { verts, edges, facet: { ring, rimKeys: new Set(ring.map((v, i) => ek(v, ring[(i + 1) % ring.length]))), d, e1, e2, Cf, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 }};
+}
+/* ロゴ画像(ヘッダーと同じSVG)を 1024px 幅で一度だけラスタ化して、面に貼る絵にする */
+let vfLogoTex = null;
+function vfLogoTexture() {
+  if (vfLogoTex) return vfLogoTex.ready ? vfLogoTex.cv : null;
+  const cv = document.createElement('canvas'); vfLogoTex = { cv, ready: false };
+  const el = document.getElementById('vfLogo'); const src = (el && (el.currentSrc || el.getAttribute('src'))) || 'assets/header-logo.svg';
+  const img = new Image(); img.decoding = 'async';
+  img.onload = () => { const TW = 1024, TH = Math.round(TW * 37 / 204); cv.width = TW; cv.height = TH; const x = cv.getContext('2d'); x.clearRect(0, 0, TW, TH); x.drawImage(img, 0, 0, TW, TH); vfLogoTex.ready = true; };
+  img.src = src;
+  return null;
+}
+/* 面の塗りに使う地の色(ドームの後ろの背景色)。一度調べて覚える */
+let vfBgCache = null;
+function vfBgRgb() {
+  if (vfBgCache) return vfBgCache;
+  const rgb = (t) => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/.exec(String(t || '')); return (m && (m[4] == null || +m[4] > 0.5)) ? [+m[1], +m[2], +m[3]] : null; };
+  let el = document.getElementById('vfDome');
+  while (el && el.nodeType === 1) { const v = rgb(getComputedStyle(el).backgroundColor); if (v) return (vfBgCache = v); el = el.parentElement; }
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(getComputedStyle(document.documentElement).getPropertyValue('--surface') || '').trim());
+  return (vfBgCache = m ? [(parseInt(m[1], 16) >> 16) & 255, (parseInt(m[1], 16) >> 8) & 255, parseInt(m[1], 16) & 255] : [231, 231, 231]);
+}
+/* 絵(img)の三角 s0s1s2(画素座標) を 画面の三角 d0d1d2 へアフィンで貼る。0.7px 外へ広げて切り抜き＝隣の三角との継ぎ目を消す */
+function vfTexTri(g, img, s0, s1, s2, d0, d1, d2) {
+  const den = (s0[0] - s2[0]) * (s1[1] - s2[1]) - (s1[0] - s2[0]) * (s0[1] - s2[1]); if (Math.abs(den) < 1e-9) return;
+  const a = ((d0[0] - d2[0]) * (s1[1] - s2[1]) - (d1[0] - d2[0]) * (s0[1] - s2[1])) / den;
+  const cc = ((d1[0] - d2[0]) * (s0[0] - s2[0]) - (d0[0] - d2[0]) * (s1[0] - s2[0])) / den;
+  const e = d2[0] - a * s2[0] - cc * s2[1];
+  const b = ((d0[1] - d2[1]) * (s1[1] - s2[1]) - (d1[1] - d2[1]) * (s0[1] - s2[1])) / den;
+  const dd = ((d1[1] - d2[1]) * (s0[0] - s2[0]) - (d0[1] - d2[1]) * (s1[0] - s2[0])) / den;
+  const f = d2[1] - b * s2[0] - dd * s2[1];
+  const mx = (d0[0] + d1[0] + d2[0]) / 3, my = (d0[1] + d1[1] + d2[1]) / 3;
+  const ex = (q) => { const dx = q[0] - mx, dy = q[1] - my, l = Math.hypot(dx, dy) || 1; return [q[0] + dx / l * 0.7, q[1] + dy / l * 0.7]; };
+  const q0 = ex(d0), q1 = ex(d1), q2 = ex(d2);
+  g.save(); g.beginPath(); g.moveTo(q0[0], q0[1]); g.lineTo(q1[0], q1[1]); g.lineTo(q2[0], q2[1]); g.closePath(); g.clip();
+  g.transform(a, b, cc, dd, e, f); g.drawImage(img, 0, 0); g.restore();
+}
+let vfFacet = null, vfT0 = null, vfFacetWasOn = false, vfScratch = null, vfPkMesh = null, vfOvUsed = false;
+/* 【2026-09-25】ロゴ専用の重ね canvas。#vfDome は下へ向けて消えるマスク(上179px〜593px)がかかっていて、面の高さではロゴが約55%に薄まる。
+   ノーマルのロゴ(HTML)と同じくマスクの外でくっきり見せるため、正面を向いている間だけロゴをこちらに描く(網は今まで通りフェード) */
+function vfLogoOverlay(cv) {
+  let ov = document.getElementById('vfDomeLogo');
+  if (!ov) { ov = document.createElement('canvas'); ov.id = 'vfDomeLogo'; ov.setAttribute('aria-hidden', 'true'); cv.insertAdjacentElement('afterend', ov); }
+  const L = cv.offsetLeft + 'px', T = cv.offsetTop + 'px', Wd = cv.offsetWidth + 'px', Hd = cv.offsetHeight + 'px';
+  if (ov.style.left !== L || ov.style.top !== T || ov.style.width !== Wd || ov.style.height !== Hd) ov.style.cssText = 'position:absolute;left:' + L + ';top:' + T + ';width:' + Wd + ';height:' + Hd + ';pointer-events:none;';
+  if (ov.width !== cv.width || ov.height !== cv.height) { ov.width = cv.width; ov.height = cv.height; }
+  return ov;
+}
 function vfDraw(tSec) {
   const cv = document.getElementById('vfDome'); if (!cv) return;
   const sec = SECS && SECS.vision; if (sec) { const r = sec.getBoundingClientRect(); if (r.bottom < -50 || r.top > (window.innerHeight || 1) + 50) return; }   /* 画面外では描かない */
@@ -12609,55 +12713,118 @@ function vfDraw(tSec) {
   const _fibo = c.meshKind === 'fibo', _fn = Math.max(12, Math.min(400, Math.round(c.fn || 92)));   /* 【2026-09-25 ヒデさん依頼】形=散らばり(三角網・点を1個ずつ)。KVとは別の値 */
   const _mkey = _fibo ? 'f' + _fn : 'g' + f;
   if (!vfMesh || vfMeshFreq !== _mkey) { vfMesh = _fibo ? sphereFiboHull(_fn) : vfBuild(f); vfMeshFreq = _mkey; }
+  /* 【2026-09-25 ヒデさん依頼】ロゴ追従＝メッシュの一部を大きな平面に作り替えてロゴを焼き付け、網ごと回す(Figma 18064:33843)。本物の3D計算(投影・奥行きの順・遠近感・陰影) */
+  const facetOn = !!c.logoStick && !(c.logoOn === 0 || c.logoOn === false);
+  let M = vfMesh, FT = null;
+  if (facetOn) {
+    const fkey = _mkey + '|' + [c.fcW, c.fcH, c.fcLat, c.fcLon].map(x => (+x || 0).toFixed(3)).join(',');
+    if (!vfFacet || vfFacet.key !== fkey) vfFacet = Object.assign(vfBuildFacet(vfMesh, { A: c.fcW, B: c.fcH, lat: c.fcLat, lon: c.fcLon }) || { verts: vfMesh.verts, edges: vfMesh.edges, facet: null }, { key: fkey });
+    M = vfFacet; FT = vfFacet.facet;
+    if (!vfFacetWasOn || vfT0 == null) vfT0 = tSec;   /* ロゴ追従に入った時(見え始め)を0に＝最初は面(ロゴ)が手前の少し左から始まる */
+  }
+  vfFacetWasOn = facetOn;
+  if (vfPkMesh !== M) { vfPk.length = 0; vfPkMesh = M; }
   const W = 900, H = 900, dpr = Math.min((typeof isMobile !== 'undefined' && isMobile) ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】スマホはドームcanvasの解像度を2→1.5に(座標系はdprでスケール＝見た目ほぼ同じ・約44%省ピクセル) */
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
   const cx = VF_CX + 150 + (c.mx || 0), cy = VF_CY + 150 + (c.my || 0), R = c.r * (c.scale != null ? c.scale : 1) * (1 + (c.mz || 0) / 100);   /* canvas は容器の(−150,−150)から。半径×メッシュの大きさ。mx/my/mz=【2026-09-19】網目だけの XYZ ずらし(Z は %) */
   const spinOn = !(c.spinOn === 0 || c.spinOn === false);   /* 回転 あり/なし(速さの値は保持) */
-  const a = (spinOn ? tSec : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
+  const tRot = facetOn ? tSec - vfT0 : tSec;
+  const a = (spinOn ? tRot : 0) * c.spin * 0.12 + (c.yaw || 0) * Math.PI / 180, tl = c.tilt * Math.PI / 180, rl = (c.roll || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tl), st = Math.sin(tl), cr = Math.cos(rl), sr = Math.sin(rl);   /* yaw=向きのずらし / roll=左右の傾き【2026-09-19】 */
   /* 【2026-09-21 ヒデさん依頼】メッシュの形状(丸み/横長/ひし形/縦長)。頂点をワープしてから回転・投影する。
      msx/msy/msz=XYZの伸縮、mpinch=中心をふくらませ極を尖らせる(ひし形) */
   const _msx = c.msx != null ? c.msx : 1, _msy = c.msy != null ? c.msy : 1, _msz = c.msz != null ? c.msz : 1, _mpinch = c.mpinch || 0;
-  const P = vfMesh.verts.map(v => {
-    let wx = v[0], wy = v[1], wz = v[2];
+  const pp = facetOn ? Math.max(0, Math.min(1, c.persp != null ? c.persp : 0.3)) * 0.35 : 0;   /* 遠近感(ロゴ追従のみ)。0＝今までと同じ正射影 */
+  const T = (x, y, z) => { let wx = x, wy = y, wz = z;
     if (_mpinch) { const k = 1 - _mpinch * Math.abs(wy); wx *= k; wz *= k; }   /* 赤道は太く極は細く=ひし形シルエット */
     wx *= _msx; wy *= _msy; wz *= _msz;
-    const x1 = wx * ca + wz * sa, z1 = -wx * sa + wz * ca; const y2 = wy * ct - z1 * st, z2 = wy * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; return [cx + x3 * R, cy - y3 * R, (z2 + 1) / 2];
-  });
-  /* 【2026-09-25 ヒデさん依頼】ロゴ追従(VIS_LOGOS 'stick'＝旧・案5を復活)。ロゴを球の面に貼り、網目と同じ回転(spin→tilt→roll)で一緒に回す＝右回転なら 左→右→裏→正面。
-     貼る点＝ノーマル時のロゴ中心(メッシュ中心の上 50px・SP 80px ＋位置X/Y＝applyVfFade と同じ式)を球の手前側へ投影した点。
-     向きは面の法線に合わせて3Dで傾ける(パースなし＝網目と同じ正射影なので、縁ではロゴも網目と同じだけ潰れる)。裏側では logoBackAlpha まで薄く(裏返しに透ける)。 */
-  if (c.logoStick && !(c.logoOn === 0 || c.logoOn === false)) { const lg = document.getElementById('vfLogo'); if (lg) {
-    const _mbS = (typeof isMobile !== 'undefined' && isMobile);
-    const sc = (c.scale != null ? c.scale : 1); const ls = sc * (c.logoScale != null ? c.logoScale : 1); const lw = 204 * ls, lh = 37 * ls;
-    const ux = ((c.logoDx || 0) - (c.mx || 0)) / R, uy = -(((c.logoDy || 0) + (_mbS ? -80 : -50)) - (c.my || 0)) / R;
-    const n0 = Math.hypot(ux, uy), rr = Math.min(0.9, n0); const x0 = n0 > 1e-6 ? ux / n0 * rr : 0, y0 = n0 > 1e-6 ? uy / n0 * rr : 0, z0 = Math.sqrt(Math.max(0, 1 - x0 * x0 - y0 * y0));
-    const az0 = Math.atan2(x0, z0), el0 = Math.asin(Math.max(-1, Math.min(1, y0)));
-    const x1 = x0 * ca + z0 * sa, z1 = -x0 * sa + z0 * ca; const y2 = y0 * ct - z1 * st, z2 = y0 * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr;
-    const px = (cx - 150) + x3 * R, py = (cy - 150) - y3 * R;
-    lg.style.width = lw.toFixed(1) + 'px'; lg.style.height = lh.toFixed(1) + 'px';
-    lg.style.left = (px - lw / 2).toFixed(1) + 'px'; lg.style.top = (py - lh / 2).toFixed(1) + 'px'; lg.style.transformOrigin = '50% 50%';
-    const D = 180 / Math.PI; lg.style.transform = 'rotateZ(' + (-(c.roll || 0)).toFixed(2) + 'deg) rotateX(' + (-(c.tilt || 0)).toFixed(2) + 'deg) rotateY(' + ((a + az0) * D).toFixed(2) + 'deg) rotateX(' + (el0 * D).toFixed(2) + 'deg)';
-    const back = (c.logoBackAlpha != null ? c.logoBackAlpha : 0.3), t = Math.max(0, Math.min(1, (z2 + 0.15) / 0.3));   /* 縁(±0.15)でなめらかに裏側の濃さへ */
-    lg.style.opacity = ((c.logoOpacity != null ? c.logoOpacity : 1) * (back + (1 - back) * t)).toFixed(3); } }
+    const x1 = wx * ca + wz * sa, z1 = -wx * sa + wz * ca; const y2 = wy * ct - z1 * st, z2 = wy * st + z1 * ct; const x3 = x1 * cr - y2 * sr, y3 = x1 * sr + y2 * cr; const s2 = pp ? 1 / (1 - z2 * pp) : 1; return [cx + x3 * R * s2, cy - y3 * R * s2, (z2 + 1) / 2]; };
+  const P = M.verts.map(v => T(v[0], v[1], v[2]));
   g.lineCap = 'round';
   const lc = vfRgb(c.lineColor || '#A6A6A6'), lw = (c.lineWidth != null ? c.lineWidth : 1), quant = (c.levels == null ? 1 : c.levels) > 0.5;
   const bin = (k) => Math.min(3, Math.floor(k * 4));
   const df = c.depthFade || 0;   /* 【2026-09-19】案4: 奥(k→0)ほど薄く・細く */
-  for (const [i, j] of vfMesh.edges) { const A = P[i], B = P[j]; const k = (A[2] + B[2]) / 2;
+  const drawEdge = (i, j) => { const A = P[i], B = P[j]; const k = (A[2] + B[2]) / 2;
     const al = quant ? c.lineAlpha * VF_LV_LINE[bin(k)] : c.lineAlpha * (0.42 + 0.58 * k);   /* 案1=4段 / 案2(KV)=連続 */
-    g.strokeStyle = 'rgba(' + lc + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.lineWidth = (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k)); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
+    g.strokeStyle = 'rgba(' + lc + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.lineWidth = (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k)); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); };
   const PINK = '255,93,151', CYAN = '14,187,255', NAVY = '14,68,151', PALE = '157,176,201';
-  for (let i = 0; i < P.length; i++) { const [x, y, k] = P[i]; let col, al, rad;
+  const drawNode = (i) => { const [x, y, k] = P[i]; let col, al, rad;
     if ((c.nodeMode || 'alt') === 'alt') { col = (i % 2) ? PINK : CYAN; if (quant) { al = VF_LV_NODE[bin(k)]; rad = c.dot * (0.55 + 0.45 * k); } else { const dep = 0.72 + 0.5 * k; al = 0.5 + 0.5 * dep; rad = c.dot * dep; } }
     else { const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; col = h < 0.12 ? PINK : h < 0.24 ? CYAN : h < 0.28 ? NAVY : PALE; al = (col === PALE) ? (0.3 + 0.45 * k) : (0.45 + 0.55 * k); rad = c.dot * (0.55 + 0.45 * k); }
-    g.fillStyle = 'rgba(' + col + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad * (1 - 0.35 * df * (1 - k)), 0, Math.PI * 2); g.fill(); }
-  /* パケット(骨の上を走る光。案2=KV と同じ発想。pk=1秒あたりの数) */
+    g.fillStyle = 'rgba(' + col + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad * (1 - 0.35 * df * (1 - k)), 0, Math.PI * 2); g.fill(); };
+  /* パケット(骨の上を走る光。案2=KV と同じ発想。pk=1秒あたりの数)。状態の更新は1フレーム1回・描画は奥行きで振り分け */
   const dt = vfLastT == null ? 0 : Math.min(0.1, Math.max(0, tSec - vfLastT)); vfLastT = tSec;
-  if ((c.pk || 0) > 0) { vfPkNext -= dt; if (vfPkNext <= 0 && vfPk.length < 14) { vfPkNext = 1 / c.pk; const e = vfMesh.edges[(Math.random() * vfMesh.edges.length) | 0]; vfPk.push({ a: e[0], b: e[1], k: 0, dur: 0.7 + Math.random() * 0.5 }); } } else vfPk.length = 0;
-  for (let i = vfPk.length - 1; i >= 0; i--) { const q = vfPk[i]; q.k += dt / q.dur; if (q.k >= 1) { vfPk.splice(i, 1); continue; } const A = P[q.a], B = P[q.b]; if (!A || !B) { vfPk.splice(i, 1); continue; } const x = A[0] + (B[0] - A[0]) * q.k, y = A[1] + (B[1] - A[1]) * q.k, k = A[2] + (B[2] - A[2]) * q.k; const fade = Math.sin(q.k * Math.PI);
+  if ((c.pk || 0) > 0) { vfPkNext -= dt; if (vfPkNext <= 0 && vfPk.length < 14) { vfPkNext = 1 / c.pk; const e = M.edges[(Math.random() * M.edges.length) | 0]; vfPk.push({ a: e[0], b: e[1], k: 0, dur: 0.7 + Math.random() * 0.5 }); } } else vfPk.length = 0;
+  const pkLive = [];
+  for (let i = vfPk.length - 1; i >= 0; i--) { const q = vfPk[i]; q.k += dt / q.dur; if (q.k >= 1) { vfPk.splice(i, 1); continue; } const A = P[q.a], B = P[q.b]; if (!A || !B) { vfPk.splice(i, 1); continue; } pkLive.push(q); }
+  const pkK = (q) => P[q.a][2] + (P[q.b][2] - P[q.a][2]) * q.k;
+  const drawPk = (q) => { const A = P[q.a], B = P[q.b]; const x = A[0] + (B[0] - A[0]) * q.k, y = A[1] + (B[1] - A[1]) * q.k, k = A[2] + (B[2] - A[2]) * q.k; const fade = Math.sin(q.k * Math.PI);
     g.fillStyle = 'rgba(' + ((q.a % 2) ? PINK : CYAN) + ',' + ((0.35 + 0.5 * k) * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * (0.9 + 0.6 * k) * (0.6 + 0.4 * fade), 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); };
+  if (!FT) { if (vfOvUsed) { const ov0 = document.getElementById('vfDomeLogo'); if (ov0) ov0.getContext('2d').clearRect(0, 0, ov0.width, ov0.height); vfOvUsed = false; }
+    for (const [i, j] of M.edges) drawEdge(i, j); for (let i = 0; i < P.length; i++) drawNode(i); for (const q of pkLive) drawPk(q); return; }   /* ノーマル(従来と同じ順・同じ見た目) */
+  /* ---- ロゴ追従: 面(平面)＋ロゴを奥行きの順に ---- */
+  const ek = (a2, b2) => a2 < b2 ? a2 * 65536 + b2 : b2 * 65536 + a2;
+  const e1 = FT.e1, e2 = FT.e2, dN = FT.d;
+  const Lc = [0, 1, 2].map(q => FT.Cf[q] + FT.cx * e1[q] + FT.cy * e2[q]);   /* ロゴの中心(面の上) */
+  const cpl = Lc[0] * dN[0] + Lc[1] * dN[1] + Lc[2] * dN[2];   /* 面(平面)の中心からの距離 */
+  const R3 = (x, y, z) => { const x1 = x * ca + z * sa, z1 = -x * sa + z * ca; const y2 = y * ct - z1 * st, z2 = y * st + z1 * ct; return [x1 * cr - y2 * sr, x1 * sr + y2 * cr, z2]; };
+  const rn = R3(dN[0], dN[1], dN[2]);   /* 回った後の面の向き(法線) */
+  const nzE = rn[2] - cpl * pp;   /* >0 で面がこちらを向いている(遠近感ありは視線で判定) */
+  const kf = T(Lc[0], Lc[1], Lc[2])[2] - 0.03;
+  const ringSet = new Set(FT.ring);
+  const ov = vfLogoOverlay(cv), og = ov.getContext('2d'); og.setTransform(1, 0, 0, 1, 0, 0); og.clearRect(0, 0, ov.width, ov.height); og.setTransform(dpr, 0, 0, dpr, 0, 0); vfOvUsed = true;
+  const drawFacet = (isFront) => {
+    const bg = vfBgRgb(); const lam = rn[0] * -0.451 + rn[1] * 0.551 + rn[2] * 0.702;   /* 左上手前からの光。面が光を向くと明るく・外れると暗く */
+    const shd = Math.max(-0.3, Math.min(0.15, (c.fcShade != null ? c.fcShade : 0.2) * (lam - 0.6)));   /* 暗くなりすぎない(最大30%)・明るくなりすぎない(最大15%) */
+    const col = bg.map(v => Math.round(Math.max(0, Math.min(255, shd >= 0 ? v + (255 - v) * shd : v * (1 + shd)))));
+    const fa = (c.fcFill != null ? c.fcFill : 0.92) * (isFront ? 1 : 0.35);   /* 裏側は薄く(網の向こうに透ける板) */
+    if (fa > 0.004) { g.beginPath(); FT.ring.forEach((v, i) => { const q = P[v]; if (i) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); }); g.closePath(); g.fillStyle = 'rgba(' + col.join(',') + ',' + fa.toFixed(3) + ')'; g.fill(); }
+    const tex = vfLogoTexture(); if (!tex) return;
+    const back = (c.logoBackAlpha != null ? c.logoBackAlpha : 0.3), tt = Math.max(0, Math.min(1, (nzE + 0.08) / 0.16));   /* 縁でなめらかに裏側の濃さへ */
+    const al = (c.logoOpacity != null ? c.logoOpacity : 1) * (back + (1 - back) * tt); if (al < 0.01) return;
+    let Lw = (c.fcLogo != null ? c.fcLogo : 0.78) * FT.w, Lh = Lw * 37 / 204;
+    if (Lh > FT.h * 0.7) { Lh = FT.h * 0.7; Lw = Lh * 204 / 37; }
+    const S = (u, v) => { const px = (u - 0.5) * Lw, py = (0.5 - v) * Lh; return T(Lc[0] + px * e1[0] + py * e2[0], Lc[1] + px * e1[1] + py * e2[1], Lc[2] + px * e1[2] + py * e2[2]); };
+    const tw = tex.width, th = tex.height;
+    const lg2 = isFront ? og : g;   /* 正面=マスクの外(くっきり) / 裏=網の下(マスク込みで薄く透ける) */
+    lg2.imageSmoothingEnabled = true; lg2.imageSmoothingQuality = 'high';
+    if (!pp) {   /* 遠近感なし(正射影)なら 面→画面 はぴったりアフィン＝1回で正確に描ける。裏では自然に裏返る */
+      const p0 = S(0, 0), p1 = S(1, 0), p2 = S(0, 1);
+      lg2.save(); lg2.globalAlpha = al; lg2.transform((p1[0] - p0[0]) / tw, (p1[1] - p0[1]) / tw, (p2[0] - p0[0]) / th, (p2[1] - p0[1]) / th, p0[0], p0[1]); lg2.drawImage(tex, 0, 0); lg2.restore(); return;
+    }
+    /* 遠近感あり: 8×2 の三角に分けて貼る(下書き canvas に不透明で描いてから、まとめて濃さを掛ける＝継ぎ目が出ない) */
+    const NX = 8, NY = 2, Gp = [];
+    for (let iy = 0; iy <= NY; iy++) for (let ix = 0; ix <= NX; ix++) Gp.push(S(ix / NX, iy / NY));
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const q of Gp) { if (q[0] < x0) x0 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[0] > x1) x1 = q[0]; if (q[1] > y1) y1 = q[1]; }
+    x0 = Math.floor(x0 - 2); y0 = Math.floor(y0 - 2); x1 = Math.ceil(x1 + 2); y1 = Math.ceil(y1 + 2);
+    const bw = x1 - x0, bh = y1 - y0; if (bw < 2 || bh < 2) return;
+    const sw = Math.ceil(bw * dpr), shh = Math.ceil(bh * dpr);
+    const scv = vfScratch || (vfScratch = document.createElement('canvas'));
+    if (scv.width < sw || scv.height < shh) { scv.width = Math.max(scv.width, sw); scv.height = Math.max(scv.height, shh); }
+    const sg = scv.getContext('2d'); sg.setTransform(1, 0, 0, 1, 0, 0); sg.clearRect(0, 0, sw, shh); sg.setTransform(dpr, 0, 0, dpr, -x0 * dpr, -y0 * dpr); sg.imageSmoothingEnabled = true; sg.imageSmoothingQuality = 'high';
+    for (let iy = 0; iy < NY; iy++) for (let ix = 0; ix < NX; ix++) {
+      const i00 = iy * (NX + 1) + ix, i10 = i00 + 1, i01 = i00 + NX + 1, i11 = i01 + 1;
+      const u0 = ix / NX * tw, u1 = (ix + 1) / NX * tw, v0 = iy / NY * th, v1 = (iy + 1) / NY * th;
+      vfTexTri(sg, tex, [u0, v0], [u1, v0], [u0, v1], Gp[i00], Gp[i10], Gp[i01]);
+      vfTexTri(sg, tex, [u1, v0], [u1, v1], [u0, v1], Gp[i10], Gp[i11], Gp[i01]);
+    }
+    lg2.save(); lg2.globalAlpha = al; lg2.drawImage(scv, 0, 0, sw, shh, x0, y0, sw / dpr, shh / dpr); lg2.restore();
+  };
+  if (nzE > 0) {   /* 面がこちら向き: 面より奥の線・点 → 面(塗り＋ロゴ) → 面の縁と手前 */
+    for (const [i, j] of M.edges) { if (FT.rimKeys.has(ek(i, j))) continue; if ((P[i][2] + P[j][2]) / 2 < kf) drawEdge(i, j); }
+    for (let i = 0; i < P.length; i++) if (!ringSet.has(i) && P[i][2] < kf) drawNode(i);
+    for (const q of pkLive) if (pkK(q) < kf) drawPk(q);
+    drawFacet(true);
+    for (const [i, j] of M.edges) { if (FT.rimKeys.has(ek(i, j)) || (P[i][2] + P[j][2]) / 2 >= kf) drawEdge(i, j); }
+    for (let i = 0; i < P.length; i++) if (ringSet.has(i) || P[i][2] >= kf) drawNode(i);
+    for (const q of pkLive) if (pkK(q) >= kf) drawPk(q);
+  } else {   /* 面が向こう向き(裏): 面を先に描き(裏返しに薄く透ける)、網は全部その上に */
+    drawFacet(false);
+    for (const [i, j] of M.edges) drawEdge(i, j);
+    for (let i = 0; i < P.length; i++) drawNode(i);
+    for (const q of pkLive) drawPk(q);
+  }
 }
 applyVfFade();
 /* 【2026-09-21 ヒデさん依頼】実績ピクトの表示サイズ。#results に --r2v-disp を設定→ .r2v-graphic の zoom に反映。
@@ -19071,7 +19238,15 @@ function buildPanel() {
   /* 【2026-09-25 ヒデさん依頼】メッシュの中に「ロゴ」見出し→ロゴの案(ノーマル=現状／ロゴ追従=球の面に貼り付いて一緒に回る) */
   note('▼ ロゴ');
   varRowX('visLogo', VIS_LOGOS, () => vfLogoKey(), k => { vfApplyLogoVariant(String(k)); }, { snap: VAR_SNAP.visLogo, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  vfS('裏側の濃さ（ロゴ追従）', 'logoBackAlpha', 0, 1, 0.02, v => v === 0 ? '裏では消える' : Math.round(v * 100) + '%', 'ロゴ追従の時、裏側へ回ったロゴの濃さ。0で裏では見えない。ノーマルでは効きません。');
+  /* 【2026-09-25 ヒデさん依頼】ロゴ追従の面(メッシュの一部を大きな平面にしてロゴを焼き付け)。どれもロゴ追従の時だけ効く */
+  vfS('面の横幅（ロゴ追従）', 'fcW', 0.15, 0.6, 0.01, v => Math.round(v * 100) + '%', 'ロゴを載せる面の横幅(球の半径に対する割合)。広げるとまとめる三角が増えて面が大きくなる。整った網では34%で三角4枚の横長の面。');
+  vfS('面の縦幅（ロゴ追従）', 'fcH', 0.06, 0.4, 0.01, v => Math.round(v * 100) + '%', 'ロゴを載せる面の縦幅(球の半径に対する割合)。');
+  vfS('ロゴの大きさ（面に対して）', 'fcLogo', 0.4, 1, 0.01, v => Math.round(v * 100) + '%', '面の横幅に対するロゴの幅。');
+  vfS('面の位置（上下）', 'fcLat', -40, 40, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '面(ロゴ)を球のどの高さに作るか。＋で上。', { signed: true });
+  vfS('遠近感（ロゴ追従）', 'persp', 0, 1, 0.02, v => v === 0 ? 'なし' : Math.round(v * 100) + '%', '手前ほど大きく・奥ほど小さく見せる立体感。0＝ノーマルと同じ見え方。');
+  vfS('面の塗り', 'fcFill', 0, 1, 0.02, v => Math.round(v * 100) + '%', '面を地の色で塗る濃さ。上げるほど奥の線が面に隠れて「板」に見える。');
+  vfS('面の陰影', 'fcShade', 0, 1, 0.02, v => Math.round(v * 100) + '%', '面が回って光から外れると暗く・向くと明るく。0で陰影なし。');
+  vfS('裏側の濃さ（ロゴ追従）', 'logoBackAlpha', 0, 1, 0.02, v => v === 0 ? '裏では消える' : Math.round(v * 100) + '%', '裏側へ回った面のロゴの濃さ(裏返しに透ける)。0で裏では見えない。');
   /* --- 基本: 機能名 --- */
   sub(catVis, '機能名', false);
   vfS('全機能 X', 'labGX', -200, 200, 2, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '5つの機能名をまとめて左右に。＋で右。', { signed: true });
