@@ -53,6 +53,11 @@
 | [abashiri/V1.1-STATUS.md](abashiri/V1.1-STATUS.md) | v1.1 のいまの状態・仮置き一覧・実装の地雷・次にやること（引き継ぎ用） |
 | [abashiri/TASKS.md](abashiri/TASKS.md) | ヒデさんからの依頼台帳（依頼・進捗・概算時間。受けたら即追記） |
 
+### opus-metaverse（Opus 5.5 没入型コンセプトサイト）
+| ファイル | 中身 |
+|---|---|
+| [opus-metaverse/README.md](opus-metaverse/README.md) | 章構成とスクロール範囲・インタラクション一覧・仮置き一覧・明るさの注意（2026-09-25 新規） |
+
 ### anyflow
 | ファイル | 中身 |
 |---|---|

@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Opus 5.5 — Enter the World</title>
+<meta name="description" content="A concept experience: scroll into a living world rendered in reasoning.">
+<meta name="theme-color" content="#04030a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="tune-panel.js"></script>
+<style>
+/* =========================================================
+   トークン（色は調整パネルからも上書きされる：🟡仮置き）
+   ========================================================= */
+:root{
+  --bg:#04030a;
+  --a:#ff7a45;      /* 暖色（コーラル） */
+  --b:#8f7bff;      /* すみれ */
+  --c:#5fd4ff;      /* 差し色（シアン） */
+  --ink:#f3efe9;
+  --dim:rgba(243,239,233,.56);
+  --line:rgba(243,239,233,.14);
+  --glass:rgba(18,14,30,.42);
+  --sans:'Geist',ui-sans-serif,system-ui,sans-serif;
+  --mono:'Geist Mono',ui-monospace,monospace;
+  --serif:'Instrument Serif',Georgia,serif;
+  --v:0;            /* スクロール速度（JSが毎フレーム書く） */
+  --mx:0; --my:0;   /* マウス位置 -1..1 */
+  --gut:clamp(16px,4vw,56px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;scrollbar-width:none}
+html::-webkit-scrollbar{display:none}
+html.locked{overflow:hidden}
+body{background:var(--bg);overflow-x:hidden}
+@media (hover:hover) and (pointer:fine){ html, a, button{cursor:none} }
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+button{font:inherit;color:inherit;background:none;border:0}
+a{color:inherit;text-decoration:none}
+
+#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:0;touch-action:pan-y}
+#track{height:1100vh;position:relative;z-index:-1}
+
+/* ---------- ローダー ---------- */
+#loader{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;
+  transition:opacity 1.4s cubic-bezier(.7,0,.2,1), visibility 0s 1.4s}
+#loader.gone{opacity:0;visibility:hidden;pointer-events:none}
+.ld-in{width:min(560px,calc(100vw - 32px));display:flex;flex-direction:column;gap:22px}
+.ld-top{display:flex;justify-content:space-between;color:var(--dim)}
+.ld-num{font-size:clamp(72px,16vw,168px);font-weight:300;letter-spacing:-.06em;line-height:.85;font-variant-numeric:tabular-nums}
+.ld-num i{font-style:normal;font-size:.3em;color:var(--dim);margin-left:.1em;letter-spacing:0}
+.ld-bar{height:1px;background:var(--line);position:relative;overflow:hidden}
+.ld-bar i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--b),var(--a))}
+.ld-status{color:var(--dim);min-height:1.4em}
+.ld-enter{display:flex;gap:12px;flex-wrap:wrap;opacity:0;transform:translateY(12px);transition:.9s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.ld-enter.ready{opacity:1;transform:none;pointer-events:auto}
+.ld-note{color:var(--dim);opacity:.7}
+
+.btn{position:relative;display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 22px;border-radius:999px;
+  font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;transition:background .4s,color .4s,border-color .4s;will-change:transform}
+.btn.primary{background:var(--ink);color:#0a0810}
+.btn.primary:hover{background:var(--a);color:#0a0810}
+.btn.ghost{border:1px solid var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn .arr{transition:transform .4s}
+.btn:hover .arr{transform:translateX(4px)}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;z-index:20;pointer-events:none;opacity:0;transition:opacity 1.2s .6s}
+body.entered .hud{opacity:1}
+.hud *{pointer-events:auto}
+.hud-top{top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:22px var(--gut);padding-right:calc(var(--gut) + 64px)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:500;letter-spacing:.02em;font-size:15px}
+.brand b{font-weight:500;color:var(--a)}
+.brand svg{width:26px;height:26px}
+.top-meta{display:flex;gap:28px;color:var(--dim)}
+.top-meta span b{color:var(--ink);font-weight:400}
+
+#chapters{position:fixed;right:var(--gut);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;align-items:flex-end}
+#chapters button{display:flex;align-items:center;gap:12px;color:var(--dim);padding:4px 0;transition:color .4s}
+#chapters .l{opacity:0;transform:translateX(8px);transition:.5s cubic-bezier(.2,.8,.2,1)}
+#chapters:hover .l,#chapters button.on .l{opacity:1;transform:none}
+#chapters .d{width:22px;height:1px;background:currentColor;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+#chapters button.on{color:var(--ink)}
+#chapters button.on .d{width:44px;background:var(--a)}
+
+.hud-bl{left:var(--gut);bottom:22px;display:flex;gap:18px;align-items:center}
+#soundBtn{display:flex;align-items:center;gap:12px;color:var(--dim);height:32px}
+#soundBtn:hover{color:var(--ink)}
+.eq{display:flex;gap:2px;align-items:flex-end;height:12px}
+.eq i{width:2px;height:3px;background:currentColor;transition:height .2s}
+body.sound .eq i{animation:eq 1s ease-in-out infinite}
+body.sound .eq i:nth-child(2){animation-delay:-.3s}
+body.sound .eq i:nth-child(3){animation-delay:-.6s}
+body.sound .eq i:nth-child(4){animation-delay:-.15s}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
+
+.hud-br{right:var(--gut);bottom:22px;color:var(--dim);display:grid;grid-template-columns:auto auto;gap:4px 14px;text-align:right}
+.hud-br b{color:var(--ink);font-weight:400;font-variant-numeric:tabular-nums;min-width:7ch;display:inline-block}
+.progress{position:fixed;left:0;right:0;bottom:0;height:2px;z-index:21;background:transparent}
+.progress i{display:block;height:100%;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--b),var(--a),var(--c))}
+
+.scroll-hint{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:20;display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--dim);
+  opacity:0;transition:opacity .8s}
+body.entered .scroll-hint{opacity:1}
+body.scrolled .scroll-hint{opacity:0}
+.scroll-hint i{width:1px;height:44px;background:linear-gradient(var(--ink),transparent);animation:drip 2s cubic-bezier(.7,0,.3,1) infinite;transform-origin:top}
+@keyframes drip{0%{transform:scaleY(0)}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* ---------- カーソル ---------- */
+#cur,#curDot{position:fixed;left:0;top:0;z-index:60;pointer-events:none;border-radius:50%;mix-blend-mode:difference}
+#cur{width:38px;height:38px;margin:-19px 0 0 -19px;border:1px solid rgba(255,255,255,.8);transition:width .35s,height .35s,margin .35s,background .35s}
+#cur.big{width:74px;height:74px;margin:-37px 0 0 -37px;background:rgba(255,255,255,.9)}
+#curDot{width:4px;height:4px;margin:-2px 0 0 -2px;background:#fff}
+#curLbl{position:fixed;left:0;top:0;z-index:60;pointer-events:none;color:var(--dim);transform:translate(26px,14px);font-size:9px;transition:opacity .3s}
+@media (hover:none),(pointer:coarse){#cur,#curDot,#curLbl{display:none}}
+
+/* ---------- 章（固定レイヤー。JSが不透明度を操作） ---------- */
+#chs{position:fixed;inset:0;z-index:10;pointer-events:none}
+.ch{position:absolute;inset:0;padding:0 var(--gut);display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;will-change:opacity,transform}
+.ch.vis{visibility:visible}
+.ch::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 72%,transparent),transparent 62%)}
+#ch-hero::before{background:radial-gradient(ellipse 50% 30% at 50% 60%,color-mix(in srgb,var(--bg) 45%,transparent),transparent 100%)}
+#ch-depth::before,#ch-final::before{background:radial-gradient(ellipse 60% 48% at 50% 50%,color-mix(in srgb,var(--bg) 62%,transparent),transparent 100%)}
+#ch-connect::before{background:linear-gradient(270deg,color-mix(in srgb,var(--bg) 72%,transparent),transparent 62%)}
+#ch-worlds::before{background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 60%,transparent),transparent 40%,transparent 60%,color-mix(in srgb,var(--bg) 55%,transparent))}
+.ch a,.ch button,.ch .card{pointer-events:auto}
+.eyebrow{color:var(--a);margin-bottom:22px;display:flex;gap:12px;align-items:center}
+.eyebrow::before{content:'';width:28px;height:1px;background:currentColor}
+.t-xl{font-size:clamp(44px,8.4vw,140px);font-weight:400;letter-spacing:-.045em;line-height:.92}
+.t-l{font-size:clamp(38px,6vw,96px);font-weight:400;letter-spacing:-.04em;line-height:.95}
+.t-xl em,.t-l em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em;
+  background:linear-gradient(100deg,var(--a),var(--b) 60%,var(--c));-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.sub{margin-top:26px;max-width:440px;font-size:clamp(15px,1.25vw,18px);line-height:1.55;color:var(--dim);font-weight:300}
+.rgb{text-shadow:calc(var(--v)*7px) 0 rgba(255,70,90,.55),calc(var(--v)*-7px) 0 rgba(70,160,255,.55)}
+
+/* 単語ごとに下から出る */
+.reveal .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.reveal .w>span{display:inline-block;transform:translateY(105%) rotate(4deg);transform-origin:left bottom;transition:transform 1.2s cubic-bezier(.2,.8,.2,1) calc(var(--i)*55ms)}
+.ch.on .reveal .w>span{transform:none}
+.fade-up{opacity:0;transform:translateY(18px);transition:opacity 1s .35s,transform 1.2s .35s cubic-bezier(.2,.8,.2,1)}
+.ch.on .fade-up{opacity:1;transform:none}
+
+/* 00 ヒーロー */
+#ch-hero{align-items:center;text-align:center;justify-content:center}
+#ch-hero .eyebrow{justify-content:center}
+#ch-hero .eyebrow::after{content:'';width:28px;height:1px;background:currentColor}
+#heroTitle{font-size:clamp(84px,21vw,360px);font-weight:600;letter-spacing:-.075em;line-height:.8;white-space:nowrap;
+  transform:perspective(1200px) rotateX(calc(var(--my)*-8deg)) rotateY(calc(var(--mx)*10deg));--k:0}
+#heroTitle .c{display:inline-block;color:var(--ink);
+  transform:translate3d(calc(var(--d)*var(--k)*7vw),calc(var(--k)*-3vw),0) scale(calc(1 + var(--k)*.5));
+  opacity:calc(1 - var(--k)*1.7);filter:blur(calc(var(--k)*6px))}
+#heroTitle .c>span{display:inline-block;transform:translateY(110%);opacity:0;transition:transform 1.6s cubic-bezier(.2,.8,.2,1) calc(.3s + var(--i)*70ms),opacity 1.2s calc(.3s + var(--i)*70ms)}
+body.entered #heroTitle .c>span{transform:none;opacity:1}
+#heroTitle .sp{display:inline-block;width:.22em}
+#heroTitle .n{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.03em}
+#heroTitle .n>span{background:linear-gradient(100deg,var(--a),var(--b) 70%,var(--c));-webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .04em}
+.hero-sub{margin:28px auto 0;max-width:520px;color:var(--dim);font-size:clamp(15px,1.3vw,19px);font-weight:300;line-height:1.5}
+
+/* 02 ワールド：カード */
+#ch-worlds{justify-content:space-between;padding-top:120px;padding-bottom:70px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:1240px;perspective:1000px}
+.card{position:relative;padding:22px 22px 26px;border-radius:18px;background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);overflow:hidden;
+  opacity:0;transform:translateY(40px) rotateX(18deg);transition:opacity .9s,transform 1.2s cubic-bezier(.2,.8,.2,1),border-color .4s}
+.card.in{opacity:1;transform:translateY(0) rotateX(calc(var(--my)*-6deg)) rotateY(calc(var(--mx)*8deg))}
+.card::before{content:'';position:absolute;inset:0;background:radial-gradient(360px circle at var(--px,50%) var(--py,50%),color-mix(in srgb,var(--a) 28%,transparent),transparent 60%);opacity:0;transition:opacity .4s}
+.card:hover{border-color:color-mix(in srgb,var(--a) 60%,transparent)}
+.card:hover::before{opacity:1}
+.card .k{display:flex;justify-content:space-between;color:var(--dim);margin-bottom:54px;position:relative}
+.card h3{font-size:30px;font-weight:400;letter-spacing:-.03em;position:relative}
+.card p{margin-top:10px;font-size:14px;line-height:1.5;color:var(--dim);font-weight:300;position:relative}
+.card svg{width:22px;height:22px;stroke:var(--a);fill:none;stroke-width:1.3}
+
+/* 03 深さ：流れる言葉 */
+#ch-depth{align-items:center;text-align:center}
+#ch-depth .eyebrow{justify-content:center}
+#ch-depth .sub{margin-left:auto;margin-right:auto}
+.marquee{position:absolute;left:0;right:0;white-space:nowrap;font-size:clamp(40px,7vw,110px);font-weight:300;letter-spacing:-.04em;color:transparent;
+  -webkit-text-stroke:1px rgba(243,239,233,.18);pointer-events:none}
+.marquee.m1{top:12vh}.marquee.m2{bottom:10vh}
+.marquee span{display:inline-block;will-change:transform}
+
+/* 04 つながり */
+#ch-connect{align-items:flex-end;text-align:right;padding-right:calc(var(--gut) + 150px)}
+#ch-connect .eyebrow{flex-direction:row-reverse}
+#ch-connect .sub{margin-left:auto}
+.legend{margin-top:28px;display:flex;gap:18px;justify-content:flex-end;color:var(--dim)}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 12px var(--a)}
+.legend span:nth-child(2) i{background:var(--b);box-shadow:0 0 12px var(--b)}
+.legend span:nth-child(3) i{background:var(--c);box-shadow:0 0 12px var(--c)}
+
+/* 05 フィナーレ */
+#ch-final{align-items:center;text-align:center}
+#ch-final .eyebrow{justify-content:center}
+.term{margin:30px auto 0;width:min(460px,100%);text-align:left;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:rgba(8,6,16,.5);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--dim);min-height:88px}
+.term .p{color:var(--a)} .term .s{color:var(--c)} .term .ok{color:var(--ink)}
+.term .caret{display:inline-block;width:7px;height:14px;background:var(--ink);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.ctas{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.foot{position:absolute;left:0;right:0;bottom:22px;text-align:center;color:var(--dim);opacity:.6;font-size:10px}
+
+@media (max-width:900px){
+  .cards{grid-template-columns:1fr 1fr;gap:10px}
+  .card{padding:16px}
+  .card .k{margin-bottom:22px}
+  .card h3{font-size:22px}
+  .card p{font-size:12.5px}
+  #ch-worlds{padding-top:96px;padding-bottom:40px}
+  .hud-br,.top-meta{display:none}
+  #chapters{display:none}
+  .foot{font-size:9px;letter-spacing:.06em;padding:0 16px}
+  #ch-connect{align-items:flex-start;text-align:left;padding-right:var(--gut)}
+  #ch-connect .eyebrow{flex-direction:row}
+  #ch-connect .sub{margin-left:0}
+  .legend{justify-content:flex-start}
+  .hud-top{padding-right:calc(var(--gut) + 56px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .reveal .w>span,.fade-up,.card{transition-duration:.01s}
+}
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+<div id="track"></div>
+
+<!-- ============ ローダー ============ -->
+<div id="loader">
+  <div class="ld-in">
+    <div class="ld-top mono"><span>Opus 5.5 / World build</span><span id="ldClock">00:00:00</span></div>
+    <div class="ld-num"><span id="ldNum">000</span><i>%</i></div>
+    <div class="ld-bar"><i id="ldBar"></i></div>
+    <div class="ld-status mono" id="ldStatus">Seeding stardust…</div>
+    <div class="ld-enter" id="ldEnter">
+      <button class="btn primary" data-sound="1" data-mag>Enter with sound <span class="arr">→</span></button>
+      <button class="btn ghost" data-sound="0" data-mag>Enter silently</button>
+    </div>
+    <div class="ld-note mono">Headphones recommended · Scroll · Move · Click</div>
+  </div>
+</div>
+
+<!-- ============ HUD ============ -->
+<header class="hud hud-top">
+  <a class="brand" href="#" data-jump="0" aria-label="Back to start">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="var(--a)"/><ellipse cx="16" cy="16" rx="14" ry="6" fill="none" stroke="var(--ink)" stroke-width="1" transform="rotate(-24 16 16)"/><circle cx="28.4" cy="10.6" r="1.6" fill="var(--c)"/></svg>
+    <span>OPUS <b>5.5</b></span>
+  </a>
+  <div class="top-meta mono"><span>Sector <b id="sector">Genesis</b></span><span>Local <b id="clock">00:00:00</b></span></div>
+</header>
+
+<nav id="chapters" class="hud" aria-label="Chapters">
+  <button data-jump="0"><span class="l mono">Genesis</span><span class="n mono">00</span><span class="d"></span></button>
+  <button data-jump="0.16"><span class="l mono">Threshold</span><span class="n mono">01</span><span class="d"></span></button>
+  <button data-jump="0.335"><span class="l mono">Worlds</span><span class="n mono">02</span><span class="d"></span></button>
+  <button data-jump="0.555"><span class="l mono">Depth</span><span class="n mono">03</span><span class="d"></span></button>
+  <button data-jump="0.75"><span class="l mono">Connection</span><span class="n mono">04</span><span class="d"></span></button>
+  <button data-jump="1"><span class="l mono">Singularity</span><span class="n mono">05</span><span class="d"></span></button>
+</nav>
+
+<div class="hud hud-bl">
+  <button id="soundBtn" class="mono" data-mag><span class="eq"><i></i><i></i><i></i><i></i></span><span id="soundLbl">Sound off</span></button>
+</div>
+<div class="hud hud-br mono">
+  <span>Pos</span><span><b id="cz">0000.0</b></span>
+  <span>Vel</span><span><b id="cv">0.000</b></span>
+</div>
+<div class="progress"><i id="prog"></i></div>
+<div class="scroll-hint mono">Scroll to enter<i></i></div>
+
+<div id="cur"></div><div id="curDot"></div><div id="curLbl" class="mono">Click</div>
+
+<!-- ============ 章 ============ -->
+<div id="chs">
+  <section class="ch" id="ch-hero" data-s="-0.3" data-e="0.095">
+    <div class="eyebrow mono fade-up" data-scr>Introducing</div>
+    <h1 id="heroTitle" class="rgb" aria-label="Opus 5.5" data-split>Opus 5.5</h1>
+    <p class="hero-sub fade-up">Step inside the mind that builds with you.</p>
+  </section>
+
+  <section class="ch" id="ch-threshold" data-s="0.105" data-e="0.215">
+    <div class="eyebrow mono" data-scr>01 — Threshold</div>
+    <h2 class="t-xl reveal rgb">Beyond the <em>interface.</em></h2>
+    <p class="sub fade-up">No chat window. No edges. Just a world rendered in reasoning — and you, standing inside it.</p>
+  </section>
+
+  <section class="ch" id="ch-worlds" data-s="0.23" data-e="0.45">
+    <div>
+      <div class="eyebrow mono" data-scr>02 — Worlds</div>
+      <h2 class="t-l reveal rgb">It doesn't just answer.<br>It <em>builds.</em></h2>
+    </div>
+    <div class="cards">
+      <article class="card" data-card><div class="k mono"><span>01</span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg></div>
+        <h3>Reason</h3><p>Holds a hard problem the way you hold a room — all of it, at once.</p></article>
+      <article class="card" data-card><div class="k mono"><span>02</span><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></div>
+        <h3>Code</h3><p>Reads the repo, writes the patch, runs the tests, and tells you what changed.</p></article>
+      <article class="card" data-card><div class="k mono"><span>03</span><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>See</h3><p>Understands screens, sketches and diagrams as fluently as words.</p></article>
+      <article class="card" data-card><div class="k mono"><span>04</span><svg viewBox="0 0 24 24"><path d="M4 20L20 4M20 4h-8M20 4v8"/></svg></div>
+        <h3>Act</h3><p>Uses tools and agents to carry work from a first idea to a finished thing.</p></article>
+    </div>
+  </section>
+
+  <section class="ch" id="ch-depth" data-s="0.47" data-e="0.645">
+    <div class="marquee m1 mono-free"><span id="mq1"></span></div>
+    <div class="eyebrow mono" data-scr>03 — Depth</div>
+    <h2 class="t-xl reveal rgb">Stay in the <em>flow.</em></h2>
+    <p class="sub fade-up">Long-horizon focus: plan, act, verify, repeat — for hours, without ever losing the thread.</p>
+    <div class="marquee m2"><span id="mq2"></span></div>
+  </section>
+
+  <section class="ch" id="ch-connect" data-s="0.665" data-e="0.845">
+    <div class="eyebrow mono" data-scr>04 — Connection</div>
+    <h2 class="t-l reveal rgb">Every idea,<br><em>connected.</em></h2>
+    <p class="sub fade-up">Files, tools, agents and people — woven into one living system. Drag to turn it. Hover to wake it.</p>
+    <div class="legend mono fade-up"><span><i></i>Context</span><span><i></i>Tools</span><span><i></i>Agents</span></div>
+  </section>
+
+  <section class="ch" id="ch-final" data-s="0.875" data-e="1.3">
+    <div class="eyebrow mono" data-scr>05 — Singularity</div>
+    <h2 class="t-xl reveal rgb">Enter the <em>world.</em></h2>
+    <div class="term fade-up" id="term"></div>
+    <div class="ctas fade-up">
+      <a class="btn primary" href="https://claude.ai" target="_blank" rel="noopener" data-mag>Start building <span class="arr">→</span></a>
+      <button class="btn ghost" data-jump="0" data-mag>Fly again ↺</button>
+    </div>
+    <div class="foot mono">A concept experience · Not affiliated with Anthropic</div>
+  </section>
+</div>
+
+<!-- ============================================================
+     Three.js
+     ============================================================ -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* =========================================================
+   調整できる値（パネルはこの params を直接書き換える）
+   ========================================================= */
+const DEFAULTS = {
+  play:   { smooth: 3.2, speed: 1, parallax: 1 },
+  color:  { a: '#ff7a45', b: '#8f7bff', c: '#5fd4ff', bg: '#04030a' },
+  dust:   { size: 1, amount: 1 },
+  core:   { amp: 1, speed: 1, glow: 1 },
+  portal: { spin: 1 },
+  world:  { grid: 1, towers: 1 },
+  tunnel: { streaks: 1, roll: 1 },
+  net:    { lines: 1, hover: 1 },
+  final:  { pull: 1, disk: 1 },
+  fx:     { bloom: .85, radius: .5, threshold: .24, ca: 1, blur: 1, grain: .055, vignette: .6 },
+  sound:  { vol: .7 }
+};
+const params = structuredClone(DEFAULTS);
+
+const IS_MOBILE = matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rand = mulberry(7);
+function mulberry(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+
+/* ---------- レンダラ ---------- */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, IS_MOBILE ? 1.5 : 1.75));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(params.color.bg);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, .1, 900);
+
+/* ---------- 共有 uniform（参照を共有して一括更新） ---------- */
+const U = {
+  uTime: { value: 0 }, uPixel: { value: renderer.getPixelRatio() },
+  uA: { value: new THREE.Color() }, uB: { value: new THREE.Color() }, uC: { value: new THREE.Color() }, uBg: { value: new THREE.Color() },
+  uCam: { value: new THREE.Vector3() },
+  uPulseT: { value: -99 }, uPulseO: { value: new THREE.Vector3(0, 0, -45) },
+  uVel: { value: 0 }
+};
+const SING = new THREE.Vector3(0, 0, -615);   // ブラックホールの位置
+const CORE = new THREE.Vector3(0, 0, -45);    // 光る核の位置
+const NETC = new THREE.Vector3(0, 0, -500);   // 星座の中心
+
+const NOISE = /* glsl */`
+vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+  vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g; vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+2.0*C.xxx; vec3 x3=x0-1.0+3.0*C.xxx;
+  i=mod(i,289.0);
+  vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+  float n_=1.0/7.0; vec3 ns=n_*D.wyz-D.xzx;
+  vec4 j=p-49.0*floor(p*ns.z*ns.z); vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
+  vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}`;
+// クリックの波紋（全ての粒子系で共通）
+const PULSE = /* glsl */`
+uniform float uPulseT; uniform vec3 uPulseO;
+float pulseWave(vec3 p){
+  float age=uTime-uPulseT; if(age<0.0||age>4.0) return 0.0;
+  float d=length(p-uPulseO);
+  return exp(-pow(d-age*65.0,2.0)/70.0)*exp(-age*1.1);
+}`;
+
+function glowTexture(){
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.2, 'rgba(255,255,255,.45)');
+  gr.addColorStop(.5, 'rgba(255,255,255,.1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const GLOW = glowTexture();
+
+/* =========================================================
+   ① 星屑（道のり全体に漂う粒子。最後はブラックホールへ吸い込まれる）
+   ========================================================= */
+const dustU = { ...U, uSize: { value: 1 }, uConv: { value: 0 }, uSing: { value: SING } };
+function buildDust(){
+  const N = Math.round((IS_MOBILE ? 9000 : 20000) * params.dust.amount);
+  const pos = new Float32Array(N * 3), r4 = new Float32Array(N * 4);
+  for (let i = 0; i < N; i++){
+    const ang = rand() * Math.PI * 2, rad = 6 + Math.pow(rand(), .7) * 110;
+    pos[i*3] = Math.cos(ang) * rad; pos[i*3+1] = Math.sin(ang) * rad * .7; pos[i*3+2] = 40 - rand() * 700;
+    r4[i*4] = rand(); r4[i*4+1] = rand(); r4[i*4+2] = rand(); r4[i*4+3] = rand();
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aR', new THREE.BufferAttribute(r4, 4));
+  return g;
+}
+const dustMat = new THREE.ShaderMaterial({
+  uniforms: dustU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: /* glsl */`
+    uniform float uTime,uPixel,uSize,uConv; uniform vec3 uSing,uA,uB,uC;
+    attribute vec4 aR; varying vec3 vCol; varying float vA;
+    ${PULSE}
+    void main(){
+      vec3 p=position;
+      p.x+=sin(uTime*.12+aR.w*6.28)*1.6; p.y+=cos(uTime*.1+aR.x*6.28)*1.6;
+      float w=pulseWave(p); p+=normalize(p-uPulseO+1e-4)*w*7.0;
+      // 吸い込み：渦を巻きながら特異点へ
+      float k=clamp(uConv*1.6-aR.x*.6,0.,1.); k=k*k*(3.-2.*k);
+      vec3 q=p-uSing; float an=k*(3.0+aR.y*4.0); float cs=cos(an), sn=sin(an);
+      q.xy=mat2(cs,-sn,sn,cs)*q.xy;
+      float rr=7.0+aR.y*aR.y*22.0, ra=aR.w*6.2831+uTime*(9.0/rr);
+      vec3 ring=vec3(cos(ra)*rr,sin(ra)*rr*.32+sin(ra*3.+aR.x*9.)*.6,(aR.z-.5)*3.0);
+      p=uSing+mix(q,ring,k);
+      vec4 mv=modelViewMatrix*vec4(p,1.0); gl_Position=projectionMatrix*mv;
+      float tw=.55+.45*sin(uTime*(.8+aR.y*2.5)+aR.w*50.);
+      gl_PointSize=min(48.0,uSize*(.35+aR.y*aR.y*2.2)*uPixel*(140.0/-mv.z)*tw*(1.0+w*2.0));
+      vA=(smoothstep(300.,60.,-mv.z)*smoothstep(.6,4.,-mv.z)*(.35+.65*tw)*.75+w)*(1.0-k*.4);
+      vCol=mix(mix(vec3(1.),uB,.55),uA,step(.72,aR.z)); vCol=mix(vCol,uC,step(.93,aR.z));
+      vCol*=1.0+k*2.0+w*3.0;
+    }`,
+  fragmentShader: /* glsl */`
+    varying vec3 vCol; varying float vA;
+    void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,.0,d); gl_FragColor=vec4(vCol,a*a*vA); }`
+});
+let dust = new THREE.Points(buildDust(), dustMat); dust.frustumCulled = false; scene.add(dust);
+function rebuildDust(){ dust.geometry.dispose(); dust.geometry = buildDust(); }
+
+/* =========================================================
+   ② 光る核（ヒーロー）— ノイズで脈打つ、通り抜けられる球
+   ========================================================= */
+const coreGroup = new THREE.Group(); coreGroup.position.copy(CORE); scene.add(coreGroup);
+const coreU = { ...U, uAmp: { value: 1 }, uHover: { value: 0 }, uFade: { value: 1 }, uGlow: { value: 1 }, uCT: { value: 0 } };
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(12, IS_MOBILE ? 24 : 48), new THREE.ShaderMaterial({
+  uniforms: coreU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+  vertexShader: /* glsl */`
+    uniform float uCT,uAmp,uHover; varying vec3 vN,vW; varying float vD;
+    ${NOISE}
+    void main(){
+      vec3 n=normalize(position); float t=uCT*.25;
+      float d=snoise(n*1.5+vec3(t,t*.7,-t))*.65+snoise(n*4.2+vec3(-t*1.8))*.25+snoise(n*9.+t*2.)*.035;
+      d*=uAmp*(1.0+uHover*.9); vD=d;
+      vec4 wp=modelMatrix*vec4(position+n*d*2.1,1.0); vW=wp.xyz;
+      vN=normalize(mat3(modelMatrix)*n);
+      gl_Position=projectionMatrix*viewMatrix*wp;
+    }`,
+  fragmentShader: /* glsl */`
+    uniform vec3 uA,uB,uC,uCam; uniform float uCT,uFade,uGlow,uHover; varying vec3 vN,vW; varying float vD;
+    void main(){
+      vec3 V=normalize(uCam-vW); float f=1.0-abs(dot(normalize(vN),V)); f=pow(f,2.2);
+      float bands=.5+.5*sin(vD*16.0-uCT*1.6);
+      vec3 col=mix(uB,uA,smoothstep(-.45,.55,vD)); col=mix(col,uC,pow(bands,6.)*.5);
+      vec3 c=col*(.03+f*f*2.4*uGlow)+col*pow(bands,10.)*(.28+uHover*.9)+uC*pow(f,6.)*.6*uGlow;
+      gl_FragColor=vec4(c*uFade*.34,1.0);
+    }`
+}));
+coreGroup.add(core);
+const coreHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: .5 }));
+coreHalo.scale.setScalar(52); coreGroup.add(coreHalo);
+// 核のまわりを回る殻の粒子
+function shellPoints(n, rMin, rMax, flat = 0){
+  const pos = new Float32Array(n * 3), r4 = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++){
+    const u = rand() * 2 - 1, th = rand() * Math.PI * 2, r = lerp(rMin, rMax, Math.pow(rand(), 2));
+    const s = Math.sqrt(1 - u * u);
+    pos[i*3] = Math.cos(th) * s * r; pos[i*3+1] = u * r * (1 - flat); pos[i*3+2] = Math.sin(th) * s * r;
+    r4.set([rand(), rand(), rand(), rand()], i * 4);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aR', new THREE.BufferAttribute(r4, 4)); return g;
+}
+const sparkMat = (sizeK = 1) => new THREE.ShaderMaterial({
+  uniforms: { ...U, uAlpha: { value: 1 }, uK: { value: sizeK } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: /* glsl */`
+    uniform float uTime,uPixel,uAlpha,uK; uniform vec3 uA,uB,uC; attribute vec4 aR; varying vec3 vCol; varying float vA;
+    ${PULSE}
+    void main(){
+      vec4 wp=modelMatrix*vec4(position,1.0); float w=pulseWave(wp.xyz);
+      vec4 mv=viewMatrix*wp; gl_Position=projectionMatrix*mv;
+      float tw=.5+.5*sin(uTime*(1.+aR.y*3.)+aR.w*40.);
+      gl_PointSize=min(40.,uK*(.6+aR.y*1.6)*uPixel*(120./-mv.z)*(.4+tw)*(1.+w*2.));
+      vA=uAlpha*(.3+.7*tw)*smoothstep(.5,3.,-mv.z)+w;
+      vCol=mix(uA,uB,aR.z); vCol=mix(vCol,uC,step(.9,aR.x)); vCol*=1.2+w*3.;
+    }`,
+  fragmentShader: /* glsl */`varying vec3 vCol; varying float vA;
+    void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,0.,d); gl_FragColor=vec4(vCol,a*a*vA); }`
+});
+const coreShell = new THREE.Points(shellPoints(IS_MOBILE ? 2500 : 5000, 15, 26), sparkMat(1)); coreGroup.add(coreShell);
+
+/* =========================================================
+   ③ ポータル（核を抜けた先の光の輪）
+   ========================================================= */
+const portal = new THREE.Group(); portal.position.set(0, 0, -76); scene.add(portal);
+const portalRings = [];
+[[19, .5], [24, .9], [30, 1.4]].forEach(([R, spread], k) => {
+  const n = IS_MOBILE ? 1500 : 3200, pos = new Float32Array(n * 3), r4 = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++){
+    const a = rand() * Math.PI * 2, rr = R + (rand() - .5) * spread * 2, z = (rand() - .5) * spread * 2;
+    pos.set([Math.cos(a) * rr, Math.sin(a) * rr, z], i * 3); r4.set([rand(), rand(), rand(), rand()], i * 4);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aR', new THREE.BufferAttribute(r4, 4));
+  const pts = new THREE.Points(g, sparkMat(.8)); pts.userData.dir = k % 2 ? -1 : 1; pts.userData.sp = .12 / (k + 1);
+  portal.add(pts); portalRings.push(pts);
+});
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const portalHoop = new THREE.Mesh(new THREE.TorusGeometry(21.5, .06, 8, 220), ringMat); portal.add(portalHoop);
+
+/* =========================================================
+   ④ グリッドの世界（床・塔・浮かぶ結晶）
+   ========================================================= */
+const world = new THREE.Group(); scene.add(world);
+const gridU = { ...U, uGrid: { value: 1 } };
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(360, 240, 1, 1), new THREE.ShaderMaterial({
+  uniforms: gridU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: /* glsl */`varying vec3 vW; varying vec2 vUv; void main(){ vUv=uv; vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+  fragmentShader: /* glsl */`
+    uniform vec3 uA,uB,uC,uCam; uniform float uTime,uGrid; varying vec3 vW; varying vec2 vUv;
+    ${PULSE}
+    float gl(vec2 p,float s,float w){ vec2 q=p/s; vec2 g=abs(fract(q-.5)-.5)/fwidth(q); return 1.0-min(min(g.x,g.y)/w,1.0); }
+    void main(){
+      float g1=gl(vW.xz,4.0,1.0), g2=gl(vW.xz,24.0,1.4);
+      float dist=length(vW.xz-uCam.xz); float fade=smoothstep(150.,8.,dist);
+      float edge=smoothstep(0.,.18,vUv.y)*smoothstep(1.,.82,vUv.y)*smoothstep(0.,.25,vUv.x)*smoothstep(1.,.75,vUv.x);
+      float scan=exp(-pow((fract((vW.z-uTime*14.)/70.)-.5)*14.,2.));
+      float w=pulseWave(vec3(vW.x,uPulseO.y,vW.z))*2.0;
+      vec3 col=mix(uB,uA,smoothstep(-90.,90.,vW.x)*.7+.15);
+      float a=(g1*.22+g2*.75+scan*g1*.9+w*(.4+g1))*fade*edge*uGrid;
+      gl_FragColor=vec4(col*(1.0+w*3.0),a);
+    }`
+}));
+floor.rotation.x = -Math.PI / 2; floor.position.set(0, -16, -170); world.add(floor);
+const ceil = floor.clone(); ceil.position.y = 34; ceil.rotation.x = Math.PI / 2; ceil.material = floor.material.clone(); ceil.material.uniforms = { ...gridU, uGrid: { value: .25 } }; world.add(ceil);
+
+const towerU = { ...U, uTowers: { value: 1 } };
+const towers = [];
+for (let i = 0; i < 30; i++){
+  const side = i % 2 ? 1 : -1, w = 3 + rand() * 7, d = 3 + rand() * 7, h = 14 + Math.pow(rand(), 1.6) * 70;
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { ...towerU, uSeed: { value: rand() * 10 }, uDim: { value: new THREE.Vector2(w, h) }, uPick: { value: rand() } },
+    vertexShader: /* glsl */`varying vec2 vUv; varying vec3 vW; void main(){ vUv=uv; vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+    fragmentShader: /* glsl */`
+      uniform vec3 uA,uB,uC,uBg,uCam; uniform float uTime,uSeed,uPick,uTowers; uniform vec2 uDim; varying vec2 vUv; varying vec3 vW;
+      ${PULSE}
+      float h(vec2 p){return fract(sin(dot(p,vec2(41.3,289.1)))*43758.5);}
+      void main(){
+        float e=min(min(vUv.x,1.-vUv.x),min(vUv.y,1.-vUv.y));
+        float edge=1.0-smoothstep(0.,fwidth(e)*1.6,e);
+        vec3 col=uPick<.5?uA:(uPick<.85?uB:uC);
+        vec2 cell=floor(vUv*vec2(max(2.,uDim.x*.9),uDim.y*.9));
+        vec2 f=fract(vUv*vec2(max(2.,uDim.x*.9),uDim.y*.9));
+        float win=step(.78,h(cell+uSeed))*step(.18,f.x)*step(f.x,.82)*step(.3,f.y)*step(f.y,.7);
+        win*=.5+.5*sin(uTime*2.+h(cell)*30.);
+        float band=exp(-pow((fract(vW.y/60.-uTime*.18+uSeed)-.5)*16.,2.));
+        float w=pulseWave(vW);
+        vec3 c=vec3(.012,.01,.02)+col*(edge*2.6+win*.9+band*.35+w*2.)*uTowers;
+        float fog=smoothstep(40.,190.,length(vW-uCam));
+        gl_FragColor=vec4(mix(c,uBg,fog),1.0);
+      }`
+  });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  const x = side * (16 + rand() * 50), z = -92 - rand() * 170;
+  m.position.set(x, -16 + h / 2 - rand() * 4, z);
+  m.userData = { baseY: m.position.y, ph: rand() * 6 };
+  world.add(m); towers.push(m);
+}
+const shardMat = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false });
+const SHARDS = IS_MOBILE ? 90 : 180;
+const shards = new THREE.InstancedMesh(new THREE.OctahedronGeometry(1, 0), shardMat, SHARDS);
+const shardData = [];
+for (let i = 0; i < SHARDS; i++){
+  shardData.push({ p: new THREE.Vector3((rand() - .5) * 90, -12 + rand() * 40, -86 - rand() * 180), s: .3 + Math.pow(rand(), 3) * 2.2, r: new THREE.Euler(rand() * 6, rand() * 6, 0), sp: (rand() - .5) * 1.4, ph: rand() * 6 });
+}
+world.add(shards);
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
+
+/* =========================================================
+   ⑤ 光のトンネル（六角のリング＋流れる光の線）
+   ========================================================= */
+const tunnel = new THREE.Group(); scene.add(tunnel);
+const T0 = -262, T1 = -436, RINGS = 46;
+{
+  const pos = [], idx = [];
+  for (let r = 0; r < RINGS; r++){
+    const z = lerp(T0, T1, r / (RINGS - 1)), tw = r * .09, R = 13;
+    for (let k = 0; k < 6; k++){
+      const a0 = tw + k / 6 * Math.PI * 2, a1 = tw + (k + 1) / 6 * Math.PI * 2;
+      pos.push(Math.cos(a0) * R, Math.sin(a0) * R, z, Math.cos(a1) * R, Math.sin(a1) * R, z); idx.push(r, r);
+    }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aI', new THREE.Float32BufferAttribute(idx, 1));
+  tunnel.add(new THREE.LineSegments(g, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`uniform float uTime,uVel; uniform vec3 uCam; attribute float aI; varying float vA,vI;
+      void main(){ vI=aI; vec4 mv=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*mv;
+        float wave=pow(.5+.5*sin(aI*.55-uTime*5.-uVel*8.),10.);
+        vA=(.12+wave*1.6)*smoothstep(220.,20.,-mv.z)*smoothstep(1.,6.,-mv.z); }`,
+    fragmentShader: /* glsl */`uniform vec3 uA,uB; varying float vA,vI; void main(){ gl_FragColor=vec4(mix(uB,uA,fract(vI*.07))*1.6,vA); }`
+  })));
+}
+const streakU = { ...U, uSpd: { value: 30 }, uLen: { value: 3 }, uAmt: { value: 1 } };
+{
+  const N = IS_MOBILE ? 450 : 900, pos = [], a = [];
+  for (let i = 0; i < N; i++){
+    const ang = rand() * Math.PI * 2, R = 3.5 + Math.pow(rand(), .5) * 9, off = rand() * 200, pick = rand();
+    for (let e = 0; e < 2; e++){ pos.push(Math.cos(ang) * R, Math.sin(ang) * R, 0); a.push(off, e, pick, i / N); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aS', new THREE.Float32BufferAttribute(a, 4));
+  const ls = new THREE.LineSegments(g, new THREE.ShaderMaterial({
+    uniforms: streakU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`uniform float uTime,uSpd,uLen,uAmt; attribute vec4 aS; varying float vA; varying float vPick;
+      void main(){ vec3 p=position; float z=${T1.toFixed(1)}+mod(aS.x+uTime*uSpd,${(T0 - T1 + 30).toFixed(1)});
+        p.z=z-aS.y*uLen*(1.+aS.z*2.); vPick=aS.z;
+        vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv;
+        vA=uAmt*step(aS.w,uAmt)*smoothstep(${T1.toFixed(1)},${(T1 + 20).toFixed(1)},z)*smoothstep(${(T0 + 30).toFixed(1)},${(T0 + 5).toFixed(1)},z)*smoothstep(1.,8.,-mv.z); }`,
+    fragmentShader: /* glsl */`uniform vec3 uA,uB,uC; varying float vA; varying float vPick; void main(){ vec3 c=vPick<.6?uC:(vPick<.85?uA:uB); gl_FragColor=vec4(c*2.,vA); }`
+  }));
+  ls.frustumCulled = false; tunnel.add(ls);
+}
+
+/* =========================================================
+   ⑥ 星座（つながるネットワーク。ドラッグで回る・ホバーで目覚める）
+   ========================================================= */
+const net = new THREE.Group(); net.position.copy(NETC); scene.add(net);
+const NR = 34;
+const netU = { ...U, uMouse: { value: new THREE.Vector3(999, 999, 999) }, uHover: { value: 0 }, uAlpha: { value: 1 }, uLines: { value: 1 } };
+const NET_HOVER = /* glsl */`uniform vec3 uMouse; uniform float uHover;
+  float hov(vec3 p){ return smoothstep(13.0,0.0,distance(p,uMouse))*uHover; }`;
+{
+  const N = IS_MOBILE ? 900 : 1700, P = [];
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < N; i++){
+    let v;
+    if (i < N * .85){ const y = 1 - (i / (N * .85 - 1)) * 2, r = Math.sqrt(1 - y * y), th = golden * i; v = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r).multiplyScalar(NR * (.9 + rand() * .2)); }
+    else { v = new THREE.Vector3(rand() - .5, rand() - .5, rand() - .5).normalize().multiplyScalar(NR * Math.pow(rand(), .6) * .8); }
+    P.push(v);
+  }
+  const pos = new Float32Array(N * 3), r4 = new Float32Array(N * 4);
+  P.forEach((v, i) => { pos.set([v.x, v.y, v.z], i * 3); r4.set([rand(), rand(), rand(), rand()], i * 4); });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aR', new THREE.BufferAttribute(r4, 4));
+  const nodes = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: netU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`uniform float uTime,uPixel,uAlpha; uniform vec3 uA,uB,uC; attribute vec4 aR; varying vec3 vCol; varying float vA;
+      ${NET_HOVER}
+      void main(){ vec3 p=position; float h=hov(p); p+=normalize(p+1e-4)*h*3.0;
+        vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv;
+        float tw=.55+.45*sin(uTime*2.+aR.w*30.);
+        gl_PointSize=min(44.,(1.2+aR.y*aR.y*4.+h*7.)*uPixel*(110./-mv.z)*tw);
+        vA=uAlpha*(.4+h*2.)*smoothstep(1.,6.,-mv.z);
+        vCol=aR.z<.5?uA:(aR.z<.8?uB:uC); vCol*=.9+h*2.5; }`,
+    fragmentShader: /* glsl */`varying vec3 vCol; varying float vA; void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,0.,d); gl_FragColor=vec4(vCol,a*a*vA); }`
+  }));
+  net.add(nodes);
+  // 近い点同士を結ぶ
+  const lp = [], la = [];
+  for (let i = 0; i < N; i++){
+    const best = [[1e9, -1], [1e9, -1], [1e9, -1]];
+    for (let j = 0; j < N; j++){ if (i === j) continue; const d = P[i].distanceToSquared(P[j]); if (d < best[2][0]){ best[2] = [d, j]; best.sort((a, b) => a[0] - b[0]); } }
+    const ph = rand(), pick = rand();
+    best.forEach(([d, j], k) => { if (j < 0 || (k === 2 && rand() < .5)) return; const a = P[i], b = P[j];
+      lp.push(a.x, a.y, a.z, b.x, b.y, b.z); la.push(0, ph, pick, 1, ph, pick); });
+  }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3)); lg.setAttribute('aL', new THREE.Float32BufferAttribute(la, 3));
+  net.add(new THREE.LineSegments(lg, new THREE.ShaderMaterial({
+    uniforms: netU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`uniform float uAlpha; attribute vec3 aL; varying float vT,vPh,vPick,vH,vFade;
+      ${NET_HOVER}
+      void main(){ vec3 p=position; float h=hov(p); vH=h; p+=normalize(p+1e-4)*h*3.0; vT=aL.x; vPh=aL.y; vPick=aL.z;
+        vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv; vFade=uAlpha*smoothstep(1.,8.,-mv.z); }`,
+    fragmentShader: /* glsl */`uniform vec3 uA,uB,uC; uniform float uTime,uLines; varying float vT,vPh,vPick,vH,vFade;
+      void main(){ float s=exp(-pow((fract(uTime*.35+vPh)-vT)*9.,2.));
+        vec3 c=vPick<.5?uA:(vPick<.8?uB:uC);
+        gl_FragColor=vec4(c*(1.+s*1.6+vH*2.),(.05*uLines+s*.55+vH*.7)*vFade); }`
+  })));
+}
+
+/* =========================================================
+   ⑦ 特異点（ブラックホール＋降着円盤）
+   ========================================================= */
+const bh = new THREE.Group(); bh.position.copy(SING); scene.add(bh);
+const diskU = { ...U, uConv: { value: 0 }, uDisk: { value: 1 } };
+{
+  const N = IS_MOBILE ? 7000 : 14000, r4 = new Float32Array(N * 4), pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) r4.set([rand(), rand(), rand(), rand()], i * 4);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aR', new THREE.BufferAttribute(r4, 4));
+  const disk = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: diskU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`uniform float uTime,uPixel,uConv,uDisk; uniform vec3 uA,uB,uC; attribute vec4 aR; varying vec3 vCol; varying float vA;
+      void main(){ float r=6.2+pow(aR.x,1.8)*26.; float an=aR.y*6.2831+uTime*(14./pow(r,1.3))*(1.+uConv*1.5);
+        vec3 p=vec3(cos(an)*r,(aR.z-.5)*r*.05,sin(an)*r);
+        vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv;
+        gl_PointSize=min(30.,(.6+aR.w*1.6)*uPixel*(100./-mv.z));
+        float hot=smoothstep(22.,6.,r);
+        vCol=mix(uB,mix(uA,vec3(1.,.92,.8),hot*.6),smoothstep(30.,8.,r))*(1.+hot*3.);
+        vA=uDisk*(.25+.75*uConv)*smoothstep(33.,12.,r)*(.4+.6*aR.w); }`,
+    fragmentShader: /* glsl */`varying vec3 vCol; varying float vA; void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,0.,d); gl_FragColor=vec4(vCol,a*a*vA); }`
+  }));
+  disk.frustumCulled = false;
+  const tilt = new THREE.Group(); tilt.rotation.set(.32, 0, .18); tilt.add(disk); bh.add(tilt); bh.userData.tilt = tilt;
+}
+const horizon = new THREE.Mesh(new THREE.SphereGeometry(5.2, 48, 48), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+bh.add(horizon);
+const photon = new THREE.Mesh(new THREE.TorusGeometry(5.7, .07, 8, 160), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+bh.add(photon);
+const bhHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: .8 }));
+bhHalo.scale.setScalar(44); bhHalo.renderOrder = -1; bh.add(bhHalo);
+
+/* =========================================================
+   ポストエフェクト（光のにじみ → 色ずれ・速度ブラー・粒子ノイズ）
+   ========================================================= */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1, .55, .12);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const lens = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uCA: { value: 0 }, uBlur: { value: 0 }, uWarp: { value: 0 }, uVig: { value: .6 }, uGrain: { value: .05 }, uFlash: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: /* glsl */`
+    uniform sampler2D tDiffuse; uniform float uTime,uCA,uBlur,uWarp,uVig,uGrain,uFlash; varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+    void main(){
+      vec2 c=vUv-.5; float r=length(c);
+      vec2 uv=.5+c*(1.-uWarp*r*r);
+      vec3 col=vec3(0.);
+      for(int i=0;i<8;i++){
+        float s=1.-uBlur*float(i)*.012*r;
+        vec2 u=.5+(uv-.5)*s; vec2 o=(u-.5)*uCA*.022*r;
+        col+=vec3(texture2D(tDiffuse,u+o).r,texture2D(tDiffuse,u).g,texture2D(tDiffuse,u-o).b);
+      }
+      col/=8.;
+      col+=uFlash*.12*vec3(1.,.9,.85)*(1.-r);
+      col*=1.-uVig*smoothstep(.28,.9,r);
+      col+=(hash(vUv*vec2(1733.,997.)+fract(uTime*7.))-.5)*uGrain;
+      gl_FragColor=vec4(col,1.);
+    }`
+});
+composer.addPass(lens);
+
+/* =========================================================
+   カメラの道のり（スクロール割合 → 位置）
+   ========================================================= */
+const KEYS = [
+  { p: 0,    z: 0,    y: 0 },
+  { p: .12,  z: -26,  y: 0 },
+  { p: .22,  z: -84,  y: -3 },
+  { p: .45,  z: -252, y: -5 },
+  { p: .645, z: -420, y: 0 },
+  { p: .845, z: -445, y: 0 },
+  { p: 1,    z: -562, y: 0 }
+];
+function camAt(p){
+  p = clamp(p);
+  for (let i = 0; i < KEYS.length - 1; i++){
+    const a = KEYS[i], b = KEYS[i + 1];
+    if (p <= b.p){ const t = (p - a.p) / (b.p - a.p); const e = t * t * (3 - 2 * t) * .35 + t * .65; return { z: lerp(a.z, b.z, e), y: lerp(a.y, b.y, e) }; }
+  }
+  return KEYS[KEYS.length - 1];
+}
+
+/* =========================================================
+   入力（スクロール・マウス・クリック・ドラッグ）
+   ========================================================= */
+let P = 0, target = 0, velS = 0, vNorm = 0;
+const mouse = { x: 0, y: 0, sx: 0, sy: 0, px: innerWidth / 2, py: innerHeight / 2, cx: innerWidth / 2, cy: innerHeight / 2, in: false };
+addEventListener('pointermove', e => {
+  mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1; mouse.px = e.clientX; mouse.py = e.clientY; mouse.in = true;
+  if (drag.on){ drag.vy += (e.clientX - drag.lx) * .0022; drag.vx += (e.clientY - drag.ly) * .0016; drag.lx = e.clientX; drag.ly = e.clientY; }
+});
+const drag = { on: false, lx: 0, ly: 0, vx: 0, vy: 0, rx: 0, ry: 0 };
+let netActive = false;
+canvas.addEventListener('pointerdown', e => {
+  if (netActive && e.pointerType === 'mouse'){ drag.on = true; drag.lx = e.clientX; drag.ly = e.clientY; drag.moved = 0; }
+  drag.sx = e.clientX; drag.sy = e.clientY;
+});
+addEventListener('pointerup', () => { drag.on = false; });
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let flash = 0;
+canvas.addEventListener('click', e => {
+  if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) return;   // ドラッグ後のクリックは無視
+  ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight * 2 - 1));
+  ray.setFromCamera(ndc, camera);
+  U.uPulseO.value.copy(ray.ray.at(38, new THREE.Vector3()));
+  U.uPulseT.value = U.uTime.value; flash = 1;
+  Sound.ping();
+});
+
+/* ---------- 章の DOM ---------- */
+const chapters = [...document.querySelectorAll('.ch')].map(el => ({ el, s: +el.dataset.s, e: +el.dataset.e, on: false }));
+const navBtns = [...document.querySelectorAll('#chapters button')];
+const NAV_P = navBtns.map(b => +b.dataset.jump);
+const SECTORS = ['Genesis', 'Threshold', 'Worlds', 'Depth', 'Connection', 'Singularity'];
+document.querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', e => {
+  e.preventDefault(); const max = document.documentElement.scrollHeight - innerHeight;
+  scrollTo({ top: +b.dataset.jump * max, behavior: 'smooth' }); Sound.tick();
+}));
+
+// 単語ごとに分ける
+document.querySelectorAll('.reveal').forEach(el => {
+  let i = 0;
+  const walk = node => [...node.childNodes].forEach(n => {
+    if (n.nodeType === 3){
+      const frag = document.createDocumentFragment();
+      n.textContent.split(/(\s+)/).forEach(w => {
+        if (!w) return; if (/^\s+$/.test(w)){ frag.append(' '); return; }
+        const o = document.createElement('span'); o.className = 'w'; const s = document.createElement('span'); s.textContent = w; s.style.setProperty('--i', i++); o.append(s); frag.append(o);
+      });
+      n.replaceWith(frag);
+    } else if (n.nodeType === 1 && n.tagName !== 'BR'){
+      // <em> など：中身ごと1単語扱いにして、グラデを保つ
+      const o = document.createElement('span'); o.className = 'w'; const s = document.createElement('span'); s.style.setProperty('--i', i++);
+      n.replaceWith(o); s.append(n); o.append(s);
+    }
+  });
+  walk(el);
+});
+// ヒーローの文字を1字ずつに
+{
+  const h = document.getElementById('heroTitle'), txt = h.textContent; h.textContent = '';
+  const chars = [...txt], mid = (chars.length - 1) / 2;
+  chars.forEach((ch, i) => {
+    if (ch === ' '){ const sp = document.createElement('span'); sp.className = 'sp'; h.append(sp); return; }
+    const c = document.createElement('span'); c.className = 'c' + (i > 4 ? ' n' : ''); c.style.setProperty('--d', ((i - mid) / mid).toFixed(3));
+    const s = document.createElement('span'); s.textContent = ch; s.style.setProperty('--i', i); c.append(s); h.append(c);
+  });
+}
+// 文字化け→確定のスクランブル
+const GLYPH = '!<>-_\\/[]{}—=+*^?#01ABCDEF';
+function scramble(el){
+  const fin = el.dataset.fin || (el.dataset.fin = el.textContent);
+  const t0 = performance.now(), D = 900;
+  (function step(){
+    const t = (performance.now() - t0) / D; let out = '';
+    for (let i = 0; i < fin.length; i++){
+      const ch = fin[i];
+      out += (ch === ' ' || t > i / fin.length * .8 + .2) ? ch : GLYPH[(Math.random() * GLYPH.length) | 0];
+    }
+    el.textContent = out; if (t < 1) requestAnimationFrame(step); else el.textContent = fin;
+  })();
+}
+// 流れる言葉
+const WORDS = 'Plan · Search · Read · Write · Test · Refine · Verify · Ship · ';
+document.getElementById('mq1').textContent = WORDS.repeat(6);
+document.getElementById('mq2').textContent = 'Think · Build · Remember · Connect · Explore · Imagine · '.repeat(6);
+let mqX = 0;
+// ターミナルの打ち込み
+const TERM = [
+  ['<span class="p">$</span> enter --model <span class="s">claude-opus-5-5</span>', 34],
+  ['<span class="ok">✓ world ready.</span>', 10],
+  ['<span class="p">›</span> What shall we build?', 26]
+];
+let termTimer = null;
+function typeTerm(){
+  const el = document.getElementById('term'); clearTimeout(termTimer); el.innerHTML = '';
+  let line = 0;
+  const next = () => {
+    if (line >= TERM.length){ el.insertAdjacentHTML('beforeend', '<span class="caret"></span>'); return; }
+    const [html, spd] = TERM[line++]; const tmp = document.createElement('div'); tmp.innerHTML = html;
+    const div = document.createElement('div'); el.append(div);
+    const full = tmp.innerHTML, plain = tmp.textContent; let n = 0;
+    const tick = () => {
+      n++; div.textContent = plain.slice(0, n);
+      if (n < plain.length) termTimer = setTimeout(tick, spd + Math.random() * 30);
+      else { div.innerHTML = full; termTimer = setTimeout(next, 380); }
+    };
+    termTimer = setTimeout(tick, 200);
+  };
+  next();
+}
+// カード：スポットライト
+document.querySelectorAll('.card').forEach(c => {
+  c.addEventListener('pointermove', e => { const r = c.getBoundingClientRect(); c.style.setProperty('--px', (e.clientX - r.left) + 'px'); c.style.setProperty('--py', (e.clientY - r.top) + 'px'); });
+  c.addEventListener('pointerenter', () => { Sound.tick(); scramble(c.querySelector('h3')); });
+});
+// ボタン：吸い付き
+document.querySelectorAll('[data-mag]').forEach(b => {
+  b.addEventListener('pointermove', e => { const r = b.getBoundingClientRect(); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .25}px,${(e.clientY - r.top - r.height / 2) * .35}px)`; });
+  b.addEventListener('pointerleave', () => { b.style.transform = ''; });
+});
+// カーソル
+const cur = document.getElementById('cur'), curDot = document.getElementById('curDot'), curLbl = document.getElementById('curLbl');
+document.addEventListener('pointerover', e => { cur.classList.toggle('big', !!e.target.closest('a,button,.card')); });
+
+/* =========================================================
+   音（Web Audio で生成するドローン。ファイル不要）
+   ========================================================= */
+const Sound = {
+  ctx: null, on: false,
+  init(){
+    if (this.ctx) return;
+    const ctx = this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.master = ctx.createGain(); this.master.gain.value = 0; this.master.connect(ctx.destination);
+    const delay = ctx.createDelay(1); delay.delayTime.value = .38; const fb = ctx.createGain(); fb.gain.value = .42;
+    delay.connect(fb); fb.connect(delay); delay.connect(this.master); this.delay = delay;
+    this.filter = ctx.createBiquadFilter(); this.filter.type = 'lowpass'; this.filter.frequency.value = 380; this.filter.Q.value = 5;
+    this.filter.connect(this.master);
+    [[55, 'sawtooth', .10], [55.35, 'sawtooth', .10], [82.4, 'triangle', .07], [110.1, 'sine', .08], [27.5, 'sine', .22]].forEach(([f, t, g]) => {
+      const o = ctx.createOscillator(); o.type = t; o.frequency.value = f; const gg = ctx.createGain(); gg.gain.value = g; o.connect(gg); gg.connect(this.filter); o.start();
+    });
+    // きらめき
+    [659.3, 987.8, 1318.5].forEach((f, i) => {
+      const o = ctx.createOscillator(); o.frequency.value = f; const g = ctx.createGain(); g.gain.value = 0;
+      const l = ctx.createOscillator(); l.frequency.value = .07 + i * .05; const lg = ctx.createGain(); lg.gain.value = .012;
+      l.connect(lg); lg.connect(g.gain); o.connect(g); g.connect(delay); o.start(); l.start();
+    });
+    // 風切り（スクロール速度で鳴る）
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const ns = ctx.createBufferSource(); ns.buffer = buf; ns.loop = true;
+    this.nf = ctx.createBiquadFilter(); this.nf.type = 'bandpass'; this.nf.frequency.value = 900; this.nf.Q.value = .8;
+    this.ng = ctx.createGain(); this.ng.gain.value = 0; ns.connect(this.nf); this.nf.connect(this.ng); this.ng.connect(this.master); ns.start();
+  },
+  set(on){
+    this.on = on; document.body.classList.toggle('sound', on); document.getElementById('soundLbl').textContent = on ? 'Sound on' : 'Sound off';
+    if (on){ this.init(); this.ctx.resume(); }
+    if (this.ctx) this.master.gain.setTargetAtTime(on ? .32 * params.sound.vol : 0, this.ctx.currentTime, .6);
+  },
+  update(v, p){
+    if (!this.ctx || !this.on) return; const t = this.ctx.currentTime;
+    this.master.gain.setTargetAtTime(.32 * params.sound.vol, t, .3);
+    this.filter.frequency.setTargetAtTime(260 + p * 700 + v * 2600, t, .12);
+    this.ng.gain.setTargetAtTime(Math.min(.5, v * .9), t, .08);
+    this.nf.frequency.setTargetAtTime(500 + v * 2400, t, .1);
+  },
+  ping(){
+    if (!this.ctx || !this.on) return; const c = this.ctx, t = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain(); o.type = 'sine';
+    o.frequency.setValueAtTime(1180, t); o.frequency.exponentialRampToValueAtTime(160, t + .7);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .9);
+    o.connect(g); g.connect(this.master); g.connect(this.delay); o.start(t); o.stop(t + 1);
+  },
+  tick(){
+    if (!this.ctx || !this.on) return; const c = this.ctx, t = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = 2400 + Math.random() * 800;
+    g.gain.setValueAtTime(.06, t); g.gain.exponentialRampToValueAtTime(.0001, t + .06); o.connect(g); g.connect(this.master); o.start(t); o.stop(t + .08);
+  }
+};
+document.getElementById('soundBtn').addEventListener('click', () => Sound.set(!Sound.on));
+
+/* =========================================================
+   ローダー → 入場
+   ========================================================= */
+history.scrollRestoration = 'manual'; scrollTo(0, 0);
+document.documentElement.classList.add('locked');
+let entered = false, introT = 0;
+{
+  const num = document.getElementById('ldNum'), bar = document.getElementById('ldBar'), st = document.getElementById('ldStatus');
+  const MSG = ['Seeding stardust…', 'Folding space…', 'Waking the core…', 'Calibrating reasoning…', 'World ready.'];
+  const t0 = performance.now(); let fontsOk = false; document.fonts.ready.then(() => fontsOk = true);
+  (function tick(){
+    const k = clamp((performance.now() - t0) / 1900), e = fontsOk ? k : Math.min(k, .92), v = Math.round((1 - Math.pow(1 - e, 3)) * 100);
+    num.textContent = String(v).padStart(3, '0'); bar.style.transform = `scaleX(${v / 100})`;
+    st.textContent = MSG[Math.min(MSG.length - 1, Math.floor(v / 100 * (MSG.length - 1) + .001))];
+    if (v < 100) requestAnimationFrame(tick); else document.getElementById('ldEnter').classList.add('ready');
+  })();
+}
+document.querySelectorAll('#ldEnter button').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.sound === '1') Sound.set(true);
+  document.getElementById('loader').classList.add('gone');
+  document.documentElement.classList.remove('locked');
+  document.body.classList.add('entered'); entered = true;
+  U.uPulseO.value.copy(CORE); U.uPulseT.value = U.uTime.value + .9; setTimeout(() => { flash = .8; Sound.ping(); }, 900);
+}));
+
+/* =========================================================
+   毎フレーム
+   ========================================================= */
+let last = performance.now(), time = 0, frameN = 0;
+const clockEls = [document.getElementById('clock'), document.getElementById('ldClock')];
+const $prog = document.getElementById('prog'), $cz = document.getElementById('cz'), $cv = document.getElementById('cv'), $sector = document.getElementById('sector');
+const cards = [...document.querySelectorAll('[data-card]')];
+const heroTitle = document.getElementById('heroTitle');
+const netSphere = new THREE.Sphere(NETC, NR * 1.05), hit = new THREE.Vector3();
+const rootStyle = document.documentElement.style;
+let lastColors = '';
+
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  time += dt * params.play.speed; frameN++;
+  U.uTime.value = time;
+
+  // --- スクロール（なめらかに追いかける） ---
+  const max = document.documentElement.scrollHeight - innerHeight;
+  target = max > 0 ? clamp(scrollY / max) : 0;
+  const prev = P; P += (target - P) * (1 - Math.exp(-dt * params.play.smooth));
+  const vel = (P - prev) / Math.max(dt, 1e-4);
+  velS += (Math.abs(vel) - velS) * (1 - Math.exp(-dt * 5));
+  vNorm = clamp(velS * 3.2);
+  U.uVel.value = vNorm;
+  document.body.classList.toggle('scrolled', P > .015);
+
+  // --- マウス（なめらかに） ---
+  mouse.sx += (mouse.x - mouse.sx) * (1 - Math.exp(-dt * 3)); mouse.sy += (mouse.y - mouse.sy) * (1 - Math.exp(-dt * 3));
+  mouse.cx += (mouse.px - mouse.cx) * (1 - Math.exp(-dt * 14)); mouse.cy += (mouse.py - mouse.cy) * (1 - Math.exp(-dt * 14));
+  cur.style.transform = `translate(${mouse.cx}px,${mouse.cy}px)`; curDot.style.transform = `translate(${mouse.px}px,${mouse.py}px)`;
+  curLbl.style.transform = `translate(${mouse.cx + 26}px,${mouse.cy + 14}px)`;
+  rootStyle.setProperty('--mx', mouse.sx.toFixed(3)); rootStyle.setProperty('--my', mouse.sy.toFixed(3));
+  rootStyle.setProperty('--v', (vNorm * (REDUCED ? .3 : 1)).toFixed(3));
+
+  // --- 色 ---
+  const ck = params.color.a + params.color.b + params.color.c + params.color.bg;
+  if (ck !== lastColors){
+    lastColors = ck;
+    U.uA.value.set(params.color.a); U.uB.value.set(params.color.b); U.uC.value.set(params.color.c); U.uBg.value.set(params.color.bg);
+    scene.background.set(params.color.bg);
+    ['a', 'b', 'c', 'bg'].forEach(k => rootStyle.setProperty('--' + k, params.color[k]));
+    ringMat.color.set(params.color.a).multiplyScalar(3);
+    shardMat.color.set(params.color.c).multiplyScalar(1.6);
+    photon.material.color.set(params.color.a).lerp(new THREE.Color(1, 1, 1), .5).multiplyScalar(4);
+    coreHalo.material.color.set(params.color.a);
+    bhHalo.material.color.set(params.color.a);
+  }
+
+  // --- カメラ ---
+  if (entered) introT = Math.min(1, introT + dt / 3.2);
+  const ie = 1 - Math.pow(1 - introT, 4);
+  const c = camAt(P);
+  const tunnelK = sstep(.44, .5, P) * (1 - sstep(.62, .67, P));
+  const tunnelT = clamp((P - .45) / .195);
+  const par = params.play.parallax;
+  camera.position.set(mouse.sx * 3.2 * par, c.y - mouse.sy * 2 * par, c.z + (1 - ie) * 70);
+  const look = new THREE.Vector3(mouse.sx * 1.2 * par, c.y * .4 - mouse.sy * .8 * par, camera.position.z - 40);
+  if (P > .6) look.lerp(new THREE.Vector3(0, 0, Math.min(NETC.z, camera.position.z - 40)), sstep(.62, .7, P) * (1 - sstep(.84, .9, P)));
+  camera.lookAt(look);
+  const roll = REDUCED ? 0 : Math.sin(tunnelT * Math.PI) * .9 * params.tunnel.roll + Math.sin(time * .2) * .02;
+  camera.rotateZ(roll);
+  const portrait = camera.aspect < 1 ? lerp(1.3, 1, camera.aspect) : 1;   // 縦長画面は少し広角にして、物が大きくなりすぎないように
+  const fov = (58 + vNorm * 16 + tunnelK * 10 + (1 - ie) * 30) * portrait;
+  if (Math.abs(camera.fov - fov) > .01){ camera.fov = fov; camera.updateProjectionMatrix(); }
+  camera.updateMatrixWorld();
+  U.uCam.value.copy(camera.position);
+  const cz = camera.position.z;
+
+  // --- 星屑 ---
+  dustU.uSize.value = params.dust.size;
+  dustU.uConv.value = sstep(.86, 1, P) * params.final.pull;
+
+  // --- 核 ---
+  coreGroup.visible = cz > -130;
+  if (coreGroup.visible){
+    ndc.set(mouse.x, -mouse.y); ray.setFromCamera(ndc, camera);
+    const over = ray.ray.intersectsSphere(new THREE.Sphere(CORE, 13)) && P < .1 ? 1 : 0;
+    coreU.uHover.value += (over - coreU.uHover.value) * (1 - Math.exp(-dt * 4));
+    coreU.uCT.value += dt * params.play.speed * params.core.speed * (1 + coreU.uHover.value * 1.5 + vNorm * 3);
+    coreU.uAmp.value = params.core.amp; coreU.uGlow.value = params.core.glow;
+    const dCore = camera.position.distanceTo(CORE);
+    coreU.uFade.value = lerp(.28, 1, sstep(9, 22, dCore));
+    coreGroup.rotation.y = time * .06 + P * 3; coreGroup.rotation.x = time * .03;
+    coreShell.rotation.y = -time * .1; coreShell.material.uniforms.uAlpha.value = .55 * sstep(4, 16, dCore);
+    coreHalo.material.opacity = .22 * sstep(10, 30, dCore) * params.core.glow;
+    if (frameN % 8 === 0){ curLbl.textContent = over ? 'Touch the core' : 'Click'; }
+  }
+
+  // --- ポータル ---
+  portal.visible = cz > -170 && cz < 20;
+  if (portal.visible){
+    portalRings.forEach(r => { r.rotation.z += dt * r.userData.sp * r.userData.dir * params.portal.spin * (1 + vNorm * 6); });
+    const pk = sstep(-30, -60, cz);
+    portal.scale.setScalar(.85 + pk * .25 + vNorm * .1);
+    ringMat.opacity = .25 + pk * .75;
+  }
+
+  // --- グリッド世界 ---
+  world.visible = cz < -20 && cz > -330;
+  if (world.visible){
+    gridU.uGrid.value = params.world.grid; towerU.uTowers.value = params.world.towers;
+    towers.forEach(t => { t.position.y = t.userData.baseY + Math.sin(time * .4 + t.userData.ph) * .8; });
+    shardData.forEach((d, i) => {
+      d.r.x += dt * d.sp; d.r.y += dt * d.sp * .7;
+      _q.setFromEuler(d.r); _p.copy(d.p); _p.y += Math.sin(time * .6 + d.ph) * 1.2;
+      _s.setScalar(d.s * (1 + vNorm * .6)); _m.compose(_p, _q, _s); shards.setMatrixAt(i, _m);
+    });
+    shards.instanceMatrix.needsUpdate = true;
+  }
+
+  // --- トンネル ---
+  tunnel.visible = cz < -180 && cz > -470;
+  if (tunnel.visible){
+    streakU.uSpd.value = (26 + vNorm * 260) * params.tunnel.streaks;
+    streakU.uLen.value = 2 + vNorm * 18;
+    streakU.uAmt.value = clamp(params.tunnel.streaks);
+  }
+
+  // --- 星座 ---
+  net.visible = cz < -330;
+  netActive = P > .66 && P < .85;
+  if (net.visible){
+    drag.vx *= Math.exp(-dt * 2.5); drag.vy *= Math.exp(-dt * 2.5);
+    drag.rx = clamp(drag.rx + drag.vx, -1.1, 1.1); drag.ry += drag.vy;
+    net.rotation.set(drag.rx + Math.sin(time * .15) * .1, drag.ry + time * .05 + P * 4, 0);
+    netU.uLines.value = params.net.lines;
+    netU.uAlpha.value = (1 - sstep(.9, 1, P) * .85) * sstep(-360, -412, cz);
+    ndc.set(mouse.x, -mouse.y); ray.setFromCamera(ndc, camera);
+    const got = mouse.in && netActive && ray.ray.intersectSphere(netSphere, hit);
+    if (got){ net.worldToLocal(netU.uMouse.value.copy(hit)); }
+    netU.uHover.value += ((got ? 1 : 0) * params.net.hover - netU.uHover.value) * (1 - Math.exp(-dt * 5));
+  }
+  if (frameN % 8 === 0 && netActive) curLbl.textContent = 'Drag · Hover';
+  if (frameN % 8 === 0 && !netActive && P > .1) curLbl.textContent = 'Click';
+
+  // --- 特異点 ---
+  bh.visible = cz < -360;
+  if (bh.visible){
+    diskU.uConv.value = sstep(.8, 1, P); diskU.uDisk.value = params.final.disk;
+    bh.userData.tilt.rotation.y = time * .02;
+    photon.lookAt(camera.position);
+    bhHalo.material.opacity = (.35 + diskU.uConv.value * .6) * params.final.disk;
+  }
+
+  // --- 画面の質感 ---
+  flash *= Math.exp(-dt * 3);
+  bloom.strength = params.fx.bloom * (1 + flash * .8 + vNorm * .25);
+  bloom.radius = params.fx.radius; bloom.threshold = params.fx.threshold;
+  const L = lens.uniforms;
+  L.uTime.value = time; L.uFlash.value = flash;
+  L.uCA.value = params.fx.ca * (.35 + vNorm * 3.2 + flash);
+  L.uBlur.value = REDUCED ? 0 : params.fx.blur * (vNorm * 1.8 + tunnelK * .5);
+  L.uWarp.value = REDUCED ? 0 : tunnelK * .09 + vNorm * .08;
+  L.uVig.value = params.fx.vignette; L.uGrain.value = params.fx.grain;
+
+  // --- 章の文字 ---
+  chapters.forEach((ch, i) => {
+    const w = .022, a = sstep(ch.s, ch.s + w, P) * (1 - sstep(ch.e - w, ch.e, P));
+    const vis = a > .002;
+    ch.el.classList.toggle('vis', vis);
+    if (vis){
+      const mid = (ch.s + ch.e) / 2, off = (P - mid) / (ch.e - ch.s);
+      ch.el.style.opacity = a.toFixed(3);
+      ch.el.style.transform = i === 0 ? '' : `translate3d(0,${(-off * 60).toFixed(1)}px,0)`;
+    }
+    const on = a > .5 && entered;
+    if (on && !ch.on){
+      ch.on = true; ch.el.classList.add('on');
+      ch.el.querySelectorAll('[data-scr]').forEach(scramble);
+      if (ch.el.id === 'ch-final') typeTerm();
+      Sound.tick();
+    } else if (!on && ch.on && a < .05){ ch.on = false; ch.el.classList.remove('on'); }
+  });
+  heroTitle.style.setProperty('--k', sstep(.005, .09, P).toFixed(3));
+  const wT = (P - .23) / (.45 - .23);
+  cards.forEach((cd, i) => cd.classList.toggle('in', wT > .16 + i * .07 && wT < .97));
+  mqX += dt * (40 + vNorm * 900);
+  document.getElementById('mq1').style.transform = `translate3d(${-(mqX % 2000)}px,0,0)`;
+  document.getElementById('mq2').style.transform = `translate3d(${(mqX % 2000) - 2000}px,0,0)`;
+
+  // --- HUD ---
+  $prog.style.transform = `scaleX(${P.toFixed(4)})`;
+  if (frameN % 4 === 0){
+    $cz.textContent = (cz < 0 ? '−' : '+') + Math.abs(cz).toFixed(1).padStart(6, '0'); $cv.textContent = vNorm.toFixed(3);
+    let k = 0; NAV_P.forEach((np, i) => { if (P >= np - .06) k = i; });
+    navBtns.forEach((b, i) => b.classList.toggle('on', i === k)); $sector.textContent = SECTORS[k];
+  }
+  if (frameN % 30 === 0){ const t = new Date().toTimeString().slice(0, 8); clockEls.forEach(e => e && (e.textContent = t)); }
+
+  Sound.update(vNorm, P);
+  composer.render();
+}
+requestAnimationFrame(frame);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+  U.uPixel.value = renderer.getPixelRatio();
+});
+
+// 検証用（Playwright から位置を直接指定する）
+window.__opus = { setP: p => { P = p; }, params };
+
+/* =========================================================
+   調整パネル（右上の透明な四角をクリックで出る）
+   ========================================================= */
+try {
+  window.TunePanel && TunePanel.create({
+    title: '⚙️ Opus 5.5 調整', storageKey: 'opus-metaverse', version: 1, theme: 'dark',
+    params, defaults: DEFAULTS,
+    schema: [
+      { cat: '🎬 全体', open: true, items: [
+        { sub: '動き' },
+        { slider: '時間のスピード', path: 'play.speed', min: .2, max: 3, step: .05, fmt: 'x', hint: '粒子のまたたき・核の脈動など、全部の動きが同じ倍率で速く／遅くなります。' },
+        { slider: 'スクロールの追従', path: 'play.smooth', min: .8, max: 10, step: .1, fmt: 'n1', hint: '小さいほどヌルッと遅れてついてくる（重たい慣性）。大きいほどキビキビ。' },
+        { slider: 'マウスで視点が動く量', path: 'play.parallax', min: 0, max: 3, step: .05, fmt: 'x', hint: 'マウスを動かした時にカメラが首を振る量。0で固定。' },
+        { sub: '配色（🟡仮置き）' },
+        { color: 'メイン（暖色）', path: 'color.a', hint: '核の熱い部分・ポータルの輪・見出しのグラデ左側。' },
+        { color: 'サブ（すみれ）', path: 'color.b', hint: '核の冷たい部分・グリッド・グラデの中央。' },
+        { color: '差し色（シアン）', path: 'color.c', hint: '浮かぶ結晶・トンネルの光の線・グラデの右側。' },
+        { color: '背景（宇宙）', path: 'color.bg', hint: '一番奥の色。真っ黒より少し色を入れると深く見えます。' }
+      ]},
+      { cat: '✨ 星屑（全編）', items: [
+        { slider: '粒の大きさ', path: 'dust.size', min: .2, max: 3, step: .05, fmt: 'x', hint: '道のり全体に漂う粒の大きさ。' },
+        { slider: '粒の量', path: 'dust.amount', min: .2, max: 2, step: .05, fmt: 'x', hint: '手を離すと作り直します。多いほど重くなります。' }
+      ]},
+      { cat: '🔮 00 光る核', items: [
+        { slider: 'うねりの大きさ', path: 'core.amp', min: 0, max: 2.5, step: .05, fmt: 'x', hint: '球の表面がボコボコ波打つ量。' },
+        { slider: 'うねりの速さ', path: 'core.speed', min: 0, max: 4, step: .05, fmt: 'x', hint: 'マウスを核に乗せるとさらに加速します。' },
+        { slider: '輝き', path: 'core.glow', min: .2, max: 2.5, step: .05, fmt: 'x', hint: 'ふちの光と後光の強さ。' }
+      ]},
+      { cat: '🌀 01 ポータル', items: [
+        { slider: '輪の回転', path: 'portal.spin', min: 0, max: 5, step: .1, fmt: 'x', hint: '粒子の輪が回る速さ。スクロール中はさらに加速。' }
+      ]},
+      { cat: '🏙 02 グリッドの世界', items: [
+        { slider: '床と天井の線', path: 'world.grid', min: 0, max: 2.5, step: .05, fmt: 'x', hint: '格子の明るさ。0で消えます。' },
+        { slider: '塔の光', path: 'world.towers', min: 0, max: 2.5, step: .05, fmt: 'x', hint: '塔のふち・窓・上に流れる光の帯の明るさ。' }
+      ]},
+      { cat: '🚀 03 光のトンネル', items: [
+        { slider: '光の線', path: 'tunnel.streaks', min: 0, max: 2, step: .05, fmt: 'x', hint: '流れる光の線の量と速さ。' },
+        { slider: 'カメラの傾き', path: 'tunnel.roll', min: 0, max: 2.5, step: .05, fmt: 'x', hint: 'トンネルの中で画面がぐるっと傾く量。酔いやすい時は下げる。' }
+      ]},
+      { cat: '🧠 04 星座', items: [
+        { slider: '線の濃さ', path: 'net.lines', min: 0, max: 4, step: .05, fmt: 'x', hint: '点と点を結ぶ線の常時の濃さ（走る光は別）。' },
+        { slider: 'ホバーの反応', path: 'net.hover', min: 0, max: 2, step: .05, fmt: 'x', hint: 'マウスを乗せた所がふくらんで光る強さ。' }
+      ]},
+      { cat: '⚫️ 05 特異点', items: [
+        { slider: '吸い込み', path: 'final.pull', min: 0, max: 1.5, step: .05, fmt: 'x', hint: '最後に星屑がブラックホールへ渦を巻いて吸い込まれる量。' },
+        { slider: '円盤の明るさ', path: 'final.disk', min: 0, max: 2.5, step: .05, fmt: 'x', hint: 'ブラックホールのまわりを回る光の円盤。' }
+      ]},
+      { cat: '📺 画面の質感', items: [
+        { slider: '光のにじみ', path: 'fx.bloom', min: 0, max: 3, step: .05, fmt: 'x', hint: '明るい所からあふれる光（ブルーム）の強さ。' },
+        { slider: 'にじみの広がり', path: 'fx.radius', min: 0, max: 1, step: .01, fmt: 'n2', hint: '光がどこまで広がるか。' },
+        { slider: 'にじむ明るさの境目', path: 'fx.threshold', min: 0, max: .8, step: .01, fmt: 'n2', hint: '小さいほど暗い所までにじむ。' },
+        { slider: '色ずれ', path: 'fx.ca', min: 0, max: 3, step: .05, fmt: 'x', hint: '画面のふちの赤・青のずれ。速くスクロールすると強くなります。' },
+        { slider: '速度ブラー', path: 'fx.blur', min: 0, max: 3, step: .05, fmt: 'x', hint: '速くスクロールした時に中心へ向かって流れるブレ。' },
+        { slider: 'ザラつき', path: 'fx.grain', min: 0, max: .2, step: .005, fmt: 'n2', hint: 'フィルムのような粒子ノイズ。' },
+        { slider: '周辺減光', path: 'fx.vignette', min: 0, max: 1, step: .05, fmt: '%', hint: '四隅を暗くする量。' }
+      ]},
+      { cat: '🔊 音', items: [
+        { slider: '音量', path: 'sound.vol', min: 0, max: 1.5, step: .05, fmt: 'x', hint: '左下の「Sound」をオンにした時の音量。' }
+      ]}
+    ],
+    onSettle: info => { if (info && info.path === 'dust.amount') rebuildDust(); }
+  });
+  if (params.dust.amount !== 1) rebuildDust();
+} catch (e) { console.warn('tune-panel not loaded', e); }
+</script>
+</body>
+</html>
