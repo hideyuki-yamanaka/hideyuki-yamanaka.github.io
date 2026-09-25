@@ -898,6 +898,8 @@
   /* 【2026-09-20 ヒデさん依頼】ビジョン強調案(strong): 見出し・メッセージを左揃え／文字サイズ +20px／左位置は KV コピーの左(--kv-copy-base=50px)に合わせる。2行(visL1/visL2)＝既存のマスク出現で1行目→2行目。PC/タブレットのみ(スマホは別レイアウト) */
   html:not(.mb) #vision.vis-emph .vis-label { left: var(--vis-emph-left, 120px); right: auto; text-align: left; }   /* 【2026-09-21 修正】見出しは「画面左端から」120px。--vis-emph-left は applyVisEmphLeft() がステージ左端/スケールから逆算して入れる(幅が変わっても左120px) */
   html:not(.mb) #vision.vis-emph .vis-line { left: var(--vis-emph-left, 120px); right: auto; text-align: left; font-size: calc(var(--vis-msg-size, 50px) + 20px); }
+  /* 【2026-09-25 ヒデさん依頼】強調案の2行目(強みになる時代へ)の縦位置＝1行目との行間。パネル「行間」の --vis-emph-gap で調整(PC/SP独立)。強調案だけに効く(デフォルト案は #vision に .vis-emph が付かないので無効)。1行目top(=49+sec-head-gap≒55px)に gap(既定119) を足す */
+  html:not(.mb) #vision.vis-emph .vis-l2 { top: calc(49px + var(--sec-head-gap, 6px) + var(--vis-emph-gap, 119px)); }
   /* 【2026-09-20 ヒデさん依頼】強調案の時は KV 以下(ビジョン)を上に100px詰める(既存のKVノーマル-100/強調+100 にさらに-100)。PC/タブレットのみ。※当初-150は上げすぎだったので-100に */
   html:not(.kv-strong):not(.mb):not(.tab) #vision.vis-emph { margin-top: calc(var(--space-200) - 200px); }   /* KVノーマル(100) − 100 = 0px */
   html.kv-strong:not(.mb):not(.tab) #vision.vis-emph { margin-top: var(--space-200); }                       /* KV強調(300) − 100 = 200px */
@@ -3094,6 +3096,8 @@
        .vl-nagu / .vis-line.str-live .vl-strong がそのまま適用される＝ここでは上書きしない) */
     .vis-l1 { top: 96px; }    /* 【2026-09-20 #2】Our Vision↔メッセージの間隔を他セクションに合わせて詰める(106→96・約10px) */
     .vis-l2 { top: 146px; }   /* 【2026-09-21 ヒデさん依頼】1行目との間隔を詰める(160→140は詰めすぎ→146に少し戻す) */
+    /* 【2026-09-25 ヒデさん依頼】強調案の2行目の行間をSPでも独立調整。1行目top(96px・上の .vis-l1)＋--vis-emph-gap(SP既定50)。強調案だけに効く */
+    #vision.vis-emph .vis-l2 { top: calc(96px + var(--vis-emph-gap, 50px)); }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
     .vf-wrap { left: 49px; top: 235px; width: 640px; height: 600px; transform: scale(0.50); transform-origin: 0 0; }   /* 【2026-09-20 #4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に。【2026-09-21 ヒデさん依頼】見出し↔メッシュをもう少し詰める(255→235)。【2026-09-21 ヒデさん依頼】メッシュをもう少し小さく(0.555→0.50)。ラベルSDKは215→217でほぼ不動・下の Point を詰める。【2026-09-21 ヒデさん依頼・左寄り修正】0.50縮小(原点左上)で球中心が174pxと左へずれていた→left 28→49で球中心を画面中央195pxへ */
     .vf-wrap .vf-lab b { font-size: 23px; }        /* 【2026-09-20 #5】5つの機能名をSPで大きく(16→21)。【2026-09-21】メッシュ縮小(0.555→0.50)で機能名も小さくならないよう文字を+2(21→23・0.50で≈11.5px＝従来維持) */
@@ -5209,6 +5213,7 @@ const DEFAULTS = {
       pHSize: 26, pPSize: 14,   // ポイント1・2の見出し/本文の文字サイズ(px) 2026-09-03
       pWidth: 328,              // ポイント1・2の横幅(px) 2026-09-03
       msgSize: 50,              // 日本語メッセージの文字サイズ(px・カンプ50) 2026-09-03
+      emphGap: 119,             // 【2026-09-25】強調案の1行目↔2行目の行間(px・PC既定119/SP既定50)。強調案だけに効く
       npOrbitTextGap: 0, // パターン2: ドットが止まってから文字(役割名/Platform)が出るまでの間(秒)
       npPtLead: 0.6,     // 【2026-09-08 ヒデさん指定】ポイント1/2を回転が終わる何秒前から出すか(左グラフィックのアニメ終盤と被せる)
       blur: 18,          // 出現ブラー量 (2026-08-31: さらに強く 14→18)
@@ -14783,6 +14788,7 @@ function applyVpSize() {
   r.setProperty('--vp-p-size', eff('pPSize', 14, 12) + 'px');
   r.setProperty('--vp-width', (v.pWidth != null ? v.pWidth : 328) + 'px');
   r.setProperty('--vis-msg-size', eff('msgSize', 50, 26) + 'px');
+  r.setProperty('--vis-emph-gap', eff('emphGap', 119, 50) + 'px');   /* 【2026-09-25】強調案の1↔2行目の行間(PC既定119/SP既定50・PC/SP独立) */
 }
 applyVpSize();
 /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)。params.grid → html.grid-on と CSS変数(--grid-cell/-w/-line)へ。 */
@@ -18994,6 +19000,10 @@ function buildPanel() {
   rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
     v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
     '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize', mbDefault: 26 }));
+  /* 【2026-09-25 ヒデさん依頼】強調案の行間(1行目↔2行目の縦の間隔)。強調案だけに効く独立値。PC/SP独立(mbKey)。数値=1行目の頭からの距離(px) */
+  rows.push(slider('行間（強調案・1↔2行目）', 30, 260, 2, () => (sv().vision.emphGap != null ? sv().vision.emphGap : 119),
+    v => { sv().vision.emphGap = v; applyVpSize(); }, v => Math.round(v) + 'px',
+    '強調案の「データをつなぐことが、」と「強みになる時代へ」の行の間隔。この案だけに効きます（デフォルト案・他バリエーションには影響しません）。PCとスマホで別々に調整できます。', { mbKey: 'sections.vision.emphGap', mbDefault: 50 }));
   sub(catVis, 'Our Vision', false);
   rows.push(slider('位置 X', -400, 600, 2, () => (editPos('visLabel').dx || 0),
     v => { editPos('visLabel').dx = v; textTools.applyAll(); }, v => v + 'px',
