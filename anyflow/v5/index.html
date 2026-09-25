@@ -3622,6 +3622,22 @@
   .cat-section.cs-nested > .cat-section-head { font-size: 12px; font-weight: 600; color: #555; padding: 9px 2px 5px; letter-spacing: .02em; }
   .cat-section.cs-nested > .cat-section-head:hover { color: #222; }
 
+  /* 【2026-09-25 ヒデさん依頼】セクション区切りのデザイン比較3案。#panel[data-secdiv="1|2|3"] で切替。
+     今の極細(#ededed)より「はっきり」させる。案3はカード/ブロック表現。採用決定後に既定へ固定する。 */
+  /* 対象は「節」= .cat-section:not(.cs-variation)（案がある所では .cs-nested、無い所は直下）。案の見出し(.cs-variation=.vs-section)は装飾しない。
+     入れ子の節見出しは 12px/#555 と弱かったので、3案とも 13px/700/#111 に揃えて「はっきり」させる */
+  #panel[data-secdiv] .cat-section:not(.cs-variation) > .cat-section-head { font-size: 13px; font-weight: 700; color: #111; }
+  /* 案1: はっきりした線＋余白（フラット・軽い） */
+  #panel[data-secdiv="1"] .cat-section:not(.cs-variation) { border-top: 1px solid #cfcfcf; margin-top: 10px; padding-top: 2px; }
+  #panel[data-secdiv="1"] .cat-section:not(.cs-variation):first-child { border-top: none; margin-top: 2px; padding-top: 0; }
+  /* 案2: 見出しをグレーの帯に（バンド） */
+  #panel[data-secdiv="2"] .cat-section:not(.cs-variation) { border-top: none; margin-top: 8px; }
+  #panel[data-secdiv="2"] .cat-section:not(.cs-variation) > .cat-section-head { background: #eef0f3; border-radius: 7px; padding: 9px 10px; margin: 0 -6px 2px; }
+  #panel[data-secdiv="2"] .cat-section:not(.cs-variation) > .cat-section-head:hover { background: #e6e9ee; }
+  /* 案3: カード/ブロックとして分ける（枠＋角丸＋淡い地＋ごく薄い影） */
+  #panel[data-secdiv="3"] .cat-section:not(.cs-variation) { background: #f8f9fb; border: 1px solid #e4e7eb; border-radius: 10px; margin: 8px 0; padding: 0 11px 6px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  #panel[data-secdiv="3"] .cat-section:not(.cs-variation) > .cat-section-head { padding: 11px 2px 8px; }
+
   /* H2: オブジェクト小見出し(メッシュ/コピー/ロゴ 等)。開閉なし・区切り線なし・左線なし。余白だけで区切る */
   .grp { margin-top: 4px; }
   .cv-subg { margin: 2px 0 6px; }
