@@ -117,7 +117,8 @@ const LOGO_H = 379;
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <div
-      className="relative shrink-0 self-start"
+      /* 【2026-09-26 ヒデさん指示】スマホのフッターでは作字を中央に。PC は左のまま */
+      className="relative shrink-0 self-center sm:self-start"
       style={{
         /* 高さはつまみ（--ft-logo-h）。幅は比率から出す */
         height: "var(--ft-logo-h)",
@@ -284,10 +285,21 @@ function PhotoStage({
           top: -3,
           /* ⚠️ スマホは中身なりの高さになるので、1画面基準で伸ばすと
              作字までグラデが覆ってしまう。短めに抑える（2026-09-24） */
-          height: (isNarrow ? Math.min(H * fadeH, 110) : H * fadeH) + 3,
+          /* 【2026-09-26 ヒデさん指摘】スマホで「グラデが急。もっと自然に」
+             → 110px で白から濃い青空へ切り替えていたのが原因。240px に伸ばし、
+               薄くなり方もなめらかな曲線（白が長く残って、終わりはごく薄く消える）にした。
+               その分、作字を下げて（pt 128→200）白文字が白に埋もれないようにしてある */
+          /* 【同日 ヒデさん追加】「作字の部分に被っているので白みを上に」→ 240→180px。
+             作字（網走市観光サイトの上端 ≈ 206px）より上で消えきるようにした */
+          height: (isNarrow ? 180 : H * fadeH) + 3,
           /* 白のまま保つ割合（solid）から先を、少しずつ透明にしていく。
              solid を小さくすると早く写真が出る＝境目がやわらかくなる */
-          background: `linear-gradient(to bottom, #ffffff 0%, #ffffff ${solid}%, rgba(255,255,255,0.96) ${solid + (100 - solid) * 0.2}%, rgba(255,255,255,0.86) ${solid + (100 - solid) * 0.38}%, rgba(255,255,255,0.68) ${solid + (100 - solid) * 0.55}%, rgba(255,255,255,0.44) ${solid + (100 - solid) * 0.72}%, rgba(255,255,255,0.2) ${solid + (100 - solid) * 0.87}%, rgba(255,255,255,0) 100%)`,
+          background: isNarrow
+            ? "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0.97) 12%, rgba(255,255,255,0.9) 24%, rgba(255,255,255,0.78) 36%, rgba(255,255,255,0.62) 48%, rgba(255,255,255,0.45) 60%, rgba(255,255,255,0.29) 72%, rgba(255,255,255,0.16) 83%, rgba(255,255,255,0.06) 92%, rgba(255,255,255,0) 100%)"
+            /* 【2026-09-26 ヒデさん指摘】PC「フッター付近のグラデ、最後の方の白みが長い」
+               → 旧カーブは前半4割ほど白が 0.86 以上のまま残っていた。
+                 前半から早めに薄くなるカーブ（ease-out）に変更。長さ（--ft-fade-h）は変えない */
+            : `linear-gradient(to bottom, #ffffff 0%, #ffffff ${solid}%, rgba(255,255,255,0.9) ${solid + (100 - solid) * 0.1}%, rgba(255,255,255,0.74) ${solid + (100 - solid) * 0.24}%, rgba(255,255,255,0.55) ${solid + (100 - solid) * 0.38}%, rgba(255,255,255,0.37) ${solid + (100 - solid) * 0.53}%, rgba(255,255,255,0.22) ${solid + (100 - solid) * 0.68}%, rgba(255,255,255,0.1) ${solid + (100 - solid) * 0.82}%, rgba(255,255,255,0.03) ${solid + (100 - solid) * 0.92}%, rgba(255,255,255,0) 100%)`,
         }}
       />
 
@@ -305,7 +317,7 @@ function PhotoStage({
       <div
         className={`flex flex-col ${
           isNarrow
-            ? "relative z-10 px-6 pb-[56px] pt-[128px]"  /* 作字がグラデに埋もれないよう上を空ける */
+            ? "relative z-10 px-6 pb-[56px] pt-[200px]"  /* 作字がグラデに埋もれないよう上を空ける（グラデ240pxに合わせて 128→200） */
             : "absolute inset-x-0 bottom-0"
         } ${
           isNarrow
@@ -360,7 +372,8 @@ function MapColumn({
   return (
     <div className="flex min-w-0 flex-col">
       <div className={`border-b pb-3 ${line}`}>{Head}</div>
-      <ul className="mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)] pl-4">
+      {/* 【2026-09-26 ヒデさん指示】小項目の字下げ（pl-4）はやめ、見出しと左をそろえる（PC・スマホ共通） */}
+      <ul className="mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]">
         {col.items.map((n) => (
           <li key={n.label}>
             {n.href ? (
@@ -406,7 +419,7 @@ function Body() {
     <PhotoStage align="end" pad="wide">
       <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
         {/* 左の作字。サイトの顔なので大きく出す。SNS アイコンは無し */}
-        <div className="flex shrink-0 flex-col items-start">
+        <div className="flex shrink-0 flex-col items-center sm:items-start">
           <Logo light />
         </div>
         <div
