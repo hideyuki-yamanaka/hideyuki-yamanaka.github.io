@@ -8601,6 +8601,35 @@ function buildGeodesic(freq) {
   for (const [a, b, c] of faces) { addE(a, b); addE(b, c); addE(c, a); }
   return { verts, edges };
 }
+/* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】フィボナッチ球(n点)を凸包で三角形分割した網。
+   測地線球(buildGeodesic/vfBuild)は点が飛び飛び(12/42/92/162…)なので、点の数を1個ずつ変えたい時はこちら。
+   球面上の点の凸包＝ドロネー分割なので、線が交差せず穴も空かない「少しラフな整った網」になる(辺=3n-6・面=2n-4 を n=8〜400 で検証済み)。
+   向きは最初の四面体の重心(常に内側)から外向きに揃える。n=300 でも生成 約2ms・呼び出し側でキャッシュする。 */
+function sphereFiboHull(n) {
+  n = Math.max(8, Math.round(n));
+  const P = [];
+  for (let i = 0; i < n; i++) { const y = 1 - ((i + 0.5) / n) * 2, r = Math.sqrt(Math.max(0, 1 - y * y)), th = Math.PI * (1 + Math.sqrt(5)) * i; P.push([Math.cos(th) * r, y, Math.sin(th) * r]); }
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const i0 = 0, i1 = n - 1, i2 = Math.floor(n / 2), i3 = Math.floor(n / 4);
+  const C = [0, 1, 2].map(k => (P[i0][k] + P[i1][k] + P[i2][k] + P[i3][k]) / 4);
+  const mk = (a, b, c) => { let nv = crs(sub(P[b], P[a]), sub(P[c], P[a])); const l = Math.hypot(nv[0], nv[1], nv[2]) || 1; nv = [nv[0] / l, nv[1] / l, nv[2] / l];
+    if (dot(nv, sub(P[a], C)) < 0) { const t = b; b = c; c = t; nv = [-nv[0], -nv[1], -nv[2]]; } return { v: [a, b, c], n: nv, d: dot(nv, P[a]) }; };
+  let F = [mk(i0, i1, i2), mk(i0, i1, i3), mk(i0, i2, i3), mk(i1, i2, i3)];
+  const used = new Set([i0, i1, i2, i3]);
+  for (let p = 0; p < n; p++) { if (used.has(p)) continue;
+    const vis = [], keep = [];
+    for (const f of F) (dot(f.n, P[p]) - f.d > 1e-10 ? vis : keep).push(f);
+    if (!vis.length) continue;
+    const cnt = new Map();
+    for (const f of vis) for (let k = 0; k < 3; k++) { const a = f.v[k], b = f.v[(k + 1) % 3]; const key = a < b ? a + '_' + b : b + '_' + a; cnt.set(key, (cnt.get(key) || 0) + 1); }
+    F = keep;
+    for (const [key, c] of cnt) if (c === 1) { const [a, b] = key.split('_').map(Number); F.push(mk(a, b, p)); }
+  }
+  const es = new Set(), edges = [];
+  for (const f of F) for (let k = 0; k < 3; k++) { const a = f.v[k], b = f.v[(k + 1) % 3]; const key = a < b ? a * 65536 + b : b * 65536 + a; if (!es.has(key)) { es.add(key); edges.push([Math.min(a, b), Math.max(a, b)]); } }
+  return { verts: P, edges };
+}
 let convLine = null;   // 線(path)のプール。奥レイヤーに置く(惑星の後ろを通る線が自然に隠れる)
 /* 【2026-08-27 ヒデさん指定】惑星を「包囲する」ケージ用の線。
    convLinePool の線は奥レイヤーにしか置けず、必ず惑星の後ろを通ってしまう。
@@ -9661,13 +9690,14 @@ function convFrame(geoms) {
        デザインは変えない: 使うのは既存のドット(circle)と線(path)だけ。 */
     const M = C.mesh, cc = convCenter();
     const n = Math.max(6, Math.round(M.nodes));
+    const fiboN = Math.max(8, Math.min(400, Math.round(M.cageFiboN == null ? 42 : M.cageFiboN)));   /* 【2026-09-25】散らばり(三角網)の点の数。既定42＝整った網(面の数2)と同じ点・線の数 */
     const links = Math.max(1, Math.round(M.cageLinks == null ? 3 : M.cageLinks));
     /* 【2026-09-02 ヒデさん指定】geo=測地線球(整った面)。それ以外はフィボナッチ球(従来) */
     const shape = M.cageShape || 'fibo';
     const freq = Math.max(1, Math.round(M.cageFreq == null ? 2 : M.cageFreq));
     /* 球殻の上の位置は回しても関係が変わらないので、隣どうしの組は作る時に1回だけ決める */
     if (!convMesh || convMesh.style !== 'cage' || convMesh.shape !== shape ||
-        (shape !== 'geo' && convMesh.nodes.length !== n) || (shape === 'geo' && convMesh.freq !== freq) || convMesh.links !== links) {
+        (shape !== 'geo' && convMesh.nodes.length !== fiboN) || (shape === 'geo' && convMesh.freq !== freq)) {   /* 【2026-09-25】散らばりも三角網になったので骨の本数(links)は形に関係しない */
       let base, pairs;
       if (shape === 'geo') {
         /* 測地線球: 頂点も辺も「整った面」そのもの。最近傍接続や縦潰しをしないので歪まない。 */
@@ -9675,28 +9705,10 @@ function convFrame(geoms) {
         base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0 }));
         pairs = g.edges;
       } else {
-        base = [];
-        for (let i = 0; i < n; i++) {
-          /* フィボナッチ球: 球面に偏りなく散らす並べ方 */
-          const yy = 1 - ((i + 0.5) / n) * 2;
-          const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
-          const th = Math.PI * (1 + Math.sqrt(5)) * i;
-          base.push({ x: Math.cos(th) * rr, y: yy, z: Math.sin(th) * rr,
-                      c: i % 2 ? CONV_PINK : CONV_BLUE, tw: Math.random() * 6.28 });
-        }
-        pairs = [];
-        for (let i = 0; i < n; i++) {
-          const d = [];
-          for (let j = 0; j < n; j++) {
-            if (i === j) continue;
-            d.push([j, Math.hypot(base[i].x - base[j].x, base[i].y - base[j].y, base[i].z - base[j].z)]);
-          }
-          d.sort((a, b) => a[1] - b[1]);
-          for (let k = 0; k < links && k < d.length; k++) {
-            const j = d[k][0];
-            if (!pairs.some(q => (q[0] === j && q[1] === i))) pairs.push([i, j]);
-          }
-        }
+        /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】散らばり＝フィボナッチ球を凸包で三角網に(旧: 最寄りN点と結ぶ＝交差や穴が出てラフすぎた)。点の数は cageFiboN */
+        const g = sphereFiboHull(fiboN);
+        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0 }));
+        pairs = g.edges;
       }
       convMesh = { style: 'cage', shape, freq, nodes: base, pairs, links, pk: [], next: 0 };
     }
@@ -12482,7 +12494,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { meshKind: 'geo', fn: 92, r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 /* 【2026-09-25 ヒデさん依頼】ロゴの案は ノーマル(現状・フラット) / ロゴ追従(球の面に貼り付いて一緒に回る) の2つに整理。旧 案2〜4(球面パース/浮かせる/ガラス板)は削除 */
@@ -12605,7 +12617,9 @@ function vfDraw(tSec) {
   const cv = document.getElementById('vfDome'); if (!cv) return;
   const sec = SECS && SECS.vision; if (sec) { const r = sec.getBoundingClientRect(); if (r.bottom < -50 || r.top > (window.innerHeight || 1) + 50) return; }   /* 画面外では描かない */
   const c = vfCfg(); const f = Math.max(1, Math.min(4, Math.round(c.freq)));
-  if (!vfMesh || vfMeshFreq !== f) { vfMesh = vfBuild(f); vfMeshFreq = f; }
+  const _fibo = c.meshKind === 'fibo', _fn = Math.max(12, Math.min(400, Math.round(c.fn || 92)));   /* 【2026-09-25 ヒデさん依頼】形=散らばり(三角網・点を1個ずつ)。KVとは別の値 */
+  const _mkey = _fibo ? 'f' + _fn : 'g' + f;
+  if (!vfMesh || vfMeshFreq !== _mkey) { vfMesh = _fibo ? sphereFiboHull(_fn) : vfBuild(f); vfMeshFreq = _mkey; }
   const W = 900, H = 900, dpr = Math.min((typeof isMobile !== 'undefined' && isMobile) ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】スマホはドームcanvasの解像度を2→1.5に(座標系はdprでスケール＝見た目ほぼ同じ・約44%省ピクセル) */
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
@@ -18559,7 +18573,7 @@ function buildPanel() {
           '縦軸まわりの向きをずらす。回っている時は「どこから回り始めるか」、止めている時は「どの面を見せるか」。', { mbKey: 'conv.mesh.cageYaw', signed: true });
         /* 【2026-09-18 ヒデさん依頼「メッシュの面の数などを変えられるように」】カゴの形(整った網/散らばり)を選べるようにし、
            整った網は「面の数」を段階スライダーに(旧: 粗い/ふつう/細かい の3択)。表示は実際の点・線の数。 */
-        optRow('cageShape', '形', [['整った網（測地線）', 'geo'], ['散らばり（フィボナッチ）', 'fibo']],
+        optRow('cageShape', '形', [['整った網（点が飛び飛び）', 'geo'], ['散らばり（1個ずつ）', 'fibo']],   /* 【2026-09-25】散らばりは三角網になり面の数を1個ずつ調整できる */
           () => (M.cageShape || 'fibo'), v => { M.cageShape = v; markDirty(); renderFrame(); fillAnimBody(); });
         if (M.cageShape === 'geo') {
           /* 【2026-09-02 ヒデさん指定】整った網(測地線)は面の細かさで密度を決める */
@@ -18568,8 +18582,11 @@ function buildPanel() {
             v => { try { const g = buildGeodesic(Math.round(v)); return `段階${Math.round(v)}（点${g.verts.length}・線${g.edges.length}）`; } catch (e) { return String(Math.round(v)); } },
             '惑星を覆う網(測地線球)の細かさ。1=20面 / 2=80面 / 3=320面 / 4=1280面。4は点が600を超えるので少し重くなります。', { fixedMax: true, mbKey: 'conv.mesh.cageFreq' });
         } else {
-          slider('1点から出る骨', 1, 6, 1, () => params.conv.mesh.cageLinks, v => M.cageLinks = v, v => v + '本',
-            '多いほど骨が増えて、密なメッシュになります。', { mbKey: 'conv.mesh.cageLinks' });
+          /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】散らばり＝三角網。点の数を1個ずつ(旧「1点から出る骨」は三角網では不要になったので置き換え) */
+          slider('面の数（点の数・1個ずつ）', 12, 300, 1, () => (M.cageFiboN == null ? 42 : M.cageFiboN),
+            v => { M.cageFiboN = Math.round(v); renderFrame(); },
+            v => { const k = Math.round(v); return '点' + k + '・線' + (3 * k - 6); },
+            '散らばり(三角網)の点の数。1個ずつ増減できます。42＝整った網の面の数2と同じ点・線の数、92＝面の数3相当。多いほど細かく丸く。', { fixedMax: true, mbKey: 'conv.mesh.cageFiboN' });
         }
       }
       slider('全体の広がり', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
@@ -19058,7 +19075,10 @@ function buildPanel() {
   vfS('傾き（前後）', 'tilt', -45, 45, 1, v => Math.round(v) + '°', 'マイナスで上面が見える(手前に倒す)。');
   vfS('傾き（左右）', 'roll', -45, 45, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'メッシュの軸を左右に倒す。0＝いまの向き。', { signed: true });
   vfS('向き（回転の位置）', 'yaw', -180, 180, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '縦軸まわりの向きをずらす。', { signed: true });
-  vfS('細かさ', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '球の分割数。3=カンプと同じ密度(点92・線270)。');
+  /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】形: 整った網(測地線・点が飛び飛び)／散らばり(三角網・点を1個ずつ)。既定は今の整った網。KVとは別の値 */
+  segRow('形', [['整った網', 'geo'], ['散らばり（1個ずつ）', 'fibo']], () => (vfCfg().meshKind === 'fibo' ? 'fibo' : 'geo'), v => { vfSet('meshKind', v); markDirty(); });
+  vfS('細かさ（整った網）', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '形が「整った網」の時の球の分割数。3=カンプと同じ密度(点92・線270)。');
+  vfS('面の数（散らばり・1個ずつ）', 'fn', 12, 300, 1, v => '点' + Math.round(v) + '・線' + (3 * Math.round(v) - 6), '形が「散らばり」の時の点の数。1個ずつ増減できます。92＝整った網の細かさ3(カンプ)と同じ点・線の数。');
   /* 【2026-09-25 ヒデさん依頼】メッシュの中に「ロゴ」見出し→ロゴの案(ノーマル=現状／ロゴ追従=球の面に貼り付いて一緒に回る) */
   note('▼ ロゴ');
   varRowX('visLogo', VIS_LOGOS, () => vfLogoKey(), k => { vfApplyLogoVariant(String(k)); }, { snap: VAR_SNAP.visLogo, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
