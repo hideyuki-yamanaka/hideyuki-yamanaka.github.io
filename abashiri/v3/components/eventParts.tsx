@@ -649,42 +649,5 @@ export function afterHold(
   return useTransform(q, [hold, end], [0, 1], { clamp: true });
 }
 
-/** 進み具合を ref に毎フレーム写す。PinStage の hold（下へ行かせない見張り）へ渡す用 */
-export function useReportProgress(
-  p: MotionValue<number>,
-  ref: React.RefObject<number>
-) {
-  useAnimationFrame(() => {
-    ref.current = p.get();
-  });
-}
-
-/** 「一定の速さ」で追いかける進み具合を返す。
-    【2026-09-17 ヒデさん指示】
-      「スクロールの強さによってスピードを変えるのではなく、一定の速度に。
-        どんだけ強くスクロールしても、どうしても一定の速度で流れる」
-    → スクロールは【行き先】を決めるだけ。実際の位置は毎フレーム
-      「決められた速さ × 経った時間」ぶんしか進まない。
-      速く長くスクロールしても、流れる速さは変わらない。
-    速さは CSS 変数 --ev-peel-speed（1秒あたり全体の何割進むか）で変えられる。 */
-export function useConstantSpeed(
-  src: MotionValue<number>,
-  fallbackSpeed = 0.22
-) {
-  const out = useMotionValue(0);
-  useAnimationFrame((_t, deltaMs) => {
-    /* 長時間バックグラウンドだった後の巨大な delta は切る */
-    const dt = Math.min(0.05, Math.max(0.001, deltaMs / 1000));
-    const raw = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--ev-peel-speed")
-    );
-    const speed = Number.isFinite(raw) && raw > 0 ? raw : fallbackSpeed;
-    const target = src.get();
-    const cur = out.get();
-    const d = target - cur;
-    if (d === 0) return;
-    const step = speed * dt;
-    out.set(Math.abs(d) <= step ? target : cur + Math.sign(d) * step);
-  });
-  return out;
-}
+/* 2026-09-26：useReportProgress / useConstantSpeed（スクロール量を一定速で追う方式）は、
+   「1回スクロール＝1枚」（useStepCards）に置き換えて使わなくなったので削除した */

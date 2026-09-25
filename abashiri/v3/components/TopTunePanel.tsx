@@ -185,7 +185,7 @@ type Params = {
   msg: MsgTune;
   gourmet: { speed: number; pauseOnHover: boolean };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
-  events: { pattern: number; tailPad: number; cardRatio: number; peelSpeed: number; flow: number };
+  events: { pattern: number; tailPad: number; cardRatio: number; flow: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
@@ -260,7 +260,7 @@ export default function TopTunePanel({
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
       gourmet: { speed: 40, pauseOnHover: true },
-      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, peelSpeed: 62, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
@@ -326,8 +326,6 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
       root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
-      /* 重ね写真が流れる速さ（1秒あたり全体の何割進むか）。単位なしの数 */
-      root.style.setProperty("--ev-peel-speed", String(params.events.peelSpeed / 100));
       /* 重ね写真の流れ方（1〜3）。eventParts.tsx の EV_FLOWS の番号 */
       root.style.setProperty("--ev-flow", String(params.events.flow ?? 1));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
@@ -807,7 +805,7 @@ export default function TopTunePanel({
               /* ── 表情 ─────────────────────────── */
               { sub: "表情", deep: true },
               /* ホバーの縦バウンスは既定（案1 ぴょこっ）で確定（2026-08-22 ヒデさん指示。
-                 案ピルは撤去。パターン本体は hoverBouncePatterns.ts） */
+                 案ピルは撤去。パターン本体の hoverBouncePatterns.ts も使われていなかったので 2026-09-26 に削除） */
               {
                 note: "眉が上がり、口がぽかんと開きます（切替はパキッと・フェード無し）。位置調整は下の「出しっぱなし」をONにするとラクです。",
               },

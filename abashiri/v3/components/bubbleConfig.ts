@@ -3,7 +3,7 @@
  * - smooth: パスの歪みをならす平滑化処理の強さ
  * - tail:   しっぽ（下のとんがり）が伸びる登場演出
  * - puni:   ぷにぷに呼吸アニメ（案1）の動き
- * /mock/bubble/tune の調整パネルからも同じ構造でいじれる。
+ * /mock/bubble/tune の調整パネルからも同じ構造でいじれる（※比較用の mock ページは 2026-09-26 に削除済み）。
  */
 export type BubbleTune = {
   smooth: {

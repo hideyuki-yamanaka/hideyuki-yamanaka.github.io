@@ -5,5 +5,3 @@
  *    （ここを直せば両方に効く）。 */
 export const TOP_TUNE_KEY = "abashiri-top-tune";
 export const TOP_TUNE_VERSION = 41;
-/** localStorage のキー（tune-panel.js の _pKey と同じ形） */
-export const topTuneStorageKey = () => `tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}`;
