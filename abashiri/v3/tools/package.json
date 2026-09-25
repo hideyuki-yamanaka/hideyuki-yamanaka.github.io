@@ -1,0 +1,1 @@
+{ "name": "abashiri-live-sync", "private": true, "type": "module", "dependencies": { "qrcode": "^1.5.3" } }

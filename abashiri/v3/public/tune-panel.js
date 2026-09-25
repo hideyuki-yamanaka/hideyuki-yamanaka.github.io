@@ -419,7 +419,62 @@
     '.tp.dark .tp-seg button.on,.tp.dark .tp-pill.on{background:#fff;color:#111;border-color:#fff;}',
     '.tp.dark .tp-btns button.primary{background:#fff;color:#111;border-color:#fff;}',
     '.tp.dark .tp-foot{background:rgba(20,20,22,.6);border-top-color:#2e2e32;}',
-    '.tp.dark input[type=range]{accent-color:#fff;}'
+    '.tp.dark input[type=range]{accent-color:#fff;}',
+    /* ===== 2026-09-26 anyflow 調整パネルの完全踏襲（ヒデさん指示）=====
+       値はすべて anyflow/v5/index.html の .panel 系の実装値をそのまま写したもの */
+    /* ヘッダー右の小さいボタン（📱スマホモード／✏️編集）＝ .panel-edit-btn */
+    /* 見出しの帯もタブと同じ白の不透明地（2026-09-26 ヒデさん指示「ヘッダーのボックスにもタブと同じ白を」）。
+       半透明だと後ろの写真の色が透けて、タブの白と段差に見えていた */
+    '.tp-head{background:#fff;}',
+    /* スマホモードの帯は、スマホモード中だけ出す（開発時の CSS で出し分け） */
+    '.tp-phone-banner{display:none;}',
+    '.tp.dark .tp-head{background:#141416;}',
+    '.tp-head-btns{margin-left:auto;margin-right:10px;display:flex;gap:6px;align-items:center;flex:0 0 auto;}',
+    '.tp-head-btn{flex:0 0 auto;padding:4px 10px;font-size:11px;font-family:inherit;border:1px solid #d5d5d5;',
+    '  border-radius:6px;background:#fff;color:#444;cursor:pointer;}',
+    '.tp-head-btn:hover{border-color:#0EBBFF;color:#0aa2dd;}',
+    '.tp-head-btn.on{background:#0EBBFF;border-color:#0EBBFF;color:#fff;}',
+    '.tp-head-btn[hidden]{display:none;}',
+    /* タブ＝ .pan-tabs / .pan-tab（白の不透明地・下線 #dcdcdc・バー3px・選択は太字） */
+    '.tp-tabs{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;border-bottom:1px solid #dcdcdc;}',
+    '.tp-tabs::-webkit-scrollbar{height:3px;}',
+    '.tp-tabs::-webkit-scrollbar-thumb{background:#d0d0d0;border-radius:2px;}',
+    '.tp-tab{font-weight:500;transition:color .15s,border-color .15s,font-weight .15s;}',
+    '.tp-tab.on{font-weight:700;}',
+    /* H1（基本・フォント…）＝カード。 .cat-section:not(.cs-variation)
+       バリエーション（.plain）は装飾しない */
+    '.tp-cat:not(.plain){background:#f8f9fb;border:1px solid #e4e7eb;border-radius:10px;margin:8px 0;',
+    '  padding:0 11px 6px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',
+    '.tp-cat>.tp-cat-head{padding:11px 2px 8px;font-size:13px;font-weight:700;color:#111;}',
+    /* H2（オブジェクトのまとまり）：開閉なし・区切り線なし。右に28px角の「まとめて戻す」 */
+    '.tp-sec{margin-top:4px;padding-top:0;border-top:0;}',
+    '.tp-cat-body>.tp-sec:first-child{margin-top:0;}',
+    '.tp-sec-head{font-size:13px;font-weight:700;color:#111;margin:12px 0 5px;min-height:28px;cursor:default;}',
+    '.tp-sec-head:hover{color:#111;}',
+    '.tp-sec-chev{display:none;}',
+    '.tp-sec.closed .tp-sec-body{display:block;}',
+    /* H3（入れ子）＝ .grp.sub2：小さめ・muted */
+    '.tp-grp.deep .tp-grp-title{font-size:11px;font-weight:600;color:#777;margin:8px 0 4px;}',
+    /* まとまりの戻すボタン＝ .gbtn（28px角・枠 #e0e0e0・角丸8px） */
+    '.tp-gbtn{width:28px;height:28px;padding:0;border:1px solid #e0e0e0;border-radius:8px;background:#fff;',
+    '  line-height:26px;text-align:center;transition:background .15s,border-color .15s;}',
+    '.tp-gbtn:hover{background:#f4f4f4;border-color:#d5d5d5;}',
+    '.tp-gbtn.done{width:auto;padding:0 9px;background:#090909;color:#fff;border-color:#111;}',
+    /* 下のボタン＝ .btns（本文の最後・3つ同じ幅・1つ目だけ黒）。未保存はピンク */
+    '.tp-foot{padding:0;border-top:0;background:transparent;}',
+    '.tp-btns{flex-wrap:nowrap;gap:8px;margin-top:12px;}',
+    '.tp-btns button{flex:1 1 0;min-width:0;height:auto;padding:8px 0;font-size:11px;border-radius:8px;',
+    '  border:1px solid #d8d8d8;background:#fff;color:#101828;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.tp-btns button:hover{background:#f2f2f2;border-color:#d8d8d8;color:#101828;}',
+    '.tp-btns button.primary{background:#090909;color:#fff;border-color:#090909;}',
+    '.tp-btns button.primary:hover{background:#333;border-color:#333;color:#fff;}',
+    '.tp-btns button.primary.dirty{background:#FF5D97;border-color:#FF5D97;color:#fff;}',
+    '.tp-btns button.primary.dirty:hover{background:#ff4487;}',
+    /* 下の注意書き＝ .grp-note.keep（8.5px・#a6a6a6） */
+    '.tp-savenote{font-size:8.5px;line-height:1.5;color:#a6a6a6;margin:6px 0 0;}',
+    /* プリセットはカードの中へ（下のボタンの並びには入れない） */
+    '.tp-pset-card .tp-pset{margin:0 0 4px;}',
+    '.tp-pset-card .tp-pset-lab{display:none;}'
   ].join('\n');
 
   function injectCSS() {
@@ -462,6 +517,7 @@
     this._loadParams();
     this._loadUI();
     this.rebuild();
+    this._phoneInit();
   }
 
   /* ---------- 保存 ---------- */
@@ -584,7 +640,31 @@
     chev.className = 'tp-chev';
     chev.textContent = '▲';
     chev.title = '開閉';
-    head.append(title, chev);
+    /* タイトル横のボタン（anyflow の .panel-head-btns と同じ並び：左=スマホ実機／右=編集）。
+       📱スマホモード … ローカル確認用。本番（公開URL）では出さない
+       ✏️編集 ………… ページ側に編集の仕組みがある時だけ出す（cfg.onEdit） */
+    var hbtns = this.headBtns = document.createElement('span');
+    hbtns.className = 'tp-head-btns';
+    var phoneBtn = this.phoneBtn = document.createElement('button');
+    phoneBtn.type = 'button';
+    phoneBtn.className = 'tp-head-btn';
+    phoneBtn.textContent = '📱 スマホモード';
+    phoneBtn.title = 'スマホモード（実機とライブ同期・QR）';
+    phoneBtn.hidden = true;
+    var editBtn = this.editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'tp-head-btn';
+    editBtn.textContent = '✏️ 編集';
+    editBtn.title = 'オブジェクトを直接編集';
+    editBtn.hidden = typeof this.cfg.onEdit !== 'function';
+    editBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var on = !editBtn.classList.contains('on');
+      editBtn.classList.toggle('on', on);
+      try { self.cfg.onEdit(on, self); } catch (er) {}
+    });
+    hbtns.append(phoneBtn, editBtn);
+    head.append(title, hbtns, chev);
 
     var body = this.body = document.createElement('div');
     body.className = 'tp-body';
@@ -597,7 +677,9 @@
     var toast = this.toast = document.createElement('div');
     toast.className = 'tp-toast';
 
-    el.append(head, body, foot, toast);
+    /* ⚠️ 2026-09-26 anyflow 準拠：下のボタンは「パネルの床」ではなく【本文の最後】。
+       rebuild のたびに本文の末尾へ付け直す */
+    el.append(head, body, toast);
     /* 四辺リサイズのつまみ（2026-09-16 anyflow 準拠）。
        右下の標準つまみだけだと、左や上に広げたい時にいちど動かす手間がいる */
     ['t', 'b', 'l', 'r'].forEach(function (side) {
@@ -615,6 +697,7 @@
     var drag = null;
     head.addEventListener('pointerdown', function (e) {
       if (e.target === chev) return;
+      if (e.target.closest && e.target.closest('.tp-head-btn')) return;
       var r = el.getBoundingClientRect();
       drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false };
       head.setPointerCapture(e.pointerId);
@@ -729,9 +812,17 @@
   Panel.prototype._changed = function (info) {
     var self = this;
     if (this._muted) return;
-    /* 保存ボタン方式では、触っただけでは書かない（保存を押した時だけ確定） */
-    if (this.saveMode === 'button') this._markDirty(true);
-    else this.save();
+    /* 2026-09-26 anyflow 準拠：触った値は 0.8 秒後に自動でこのブラウザへ保存する
+       （リロードしても消えない）。「デフォルトに設定」を押すまではボタンがピンクのまま
+       ＝まだ確定していない印。保存と同時に、スマホモードの枠や実機へも知らせる */
+    if (this.saveMode === 'button') {
+      this._markDirty(true);
+      clearTimeout(this._autoSaveT);
+      this._autoSaveT = setTimeout(function () {
+        try { self.save(); self._saveVars(); } catch (e) {}
+        tpPhonePush();
+      }, TP_PHONE.on ? 120 : 800);
+    } else this.save();
     if (this.cfg.onChange) this.cfg.onChange(info);
     clearTimeout(this._settleTimer);
     if (info && info.immediate) {
@@ -822,7 +913,8 @@
         });
         bar.appendChild(b);
       });
-      this.body.appendChild(bar);
+      /* タブが1つだけなら帯は出さない（anyflow は 2つ以上の時だけタブにする） */
+      if (titles.length > 1) this.body.appendChild(bar);
       var activeCat = cats[titles.indexOf(this.activeTab)];
       if (activeCat) this._renderCatSections(activeCat);
     } else {
@@ -830,6 +922,7 @@
     }
 
     this._renderFoot();
+    if (this.foot.parentNode !== this.body) this.body.appendChild(this.foot);
     this.body.scrollTop = keepScroll;
     this._restoreScroll = 0;
     return this;
@@ -906,12 +999,13 @@
       if (item.sub !== undefined && !item.deep) {
         var title = String(item.sub);
         var key = (cat.cat || '') + '|' + title;
-        var isOpen = self.secOpen[key] === true; /* 既定は閉じる＝目次として見える */
+        /* 2026-09-26 anyflow 準拠：H2 は開閉なし（いつも開いている）。
+           右端に28px角の「まとめて戻す」ボタンだけを置く */
         var sec = document.createElement('div');
-        sec.className = 'tp-sec' + (isOpen ? '' : ' closed');
+        sec.className = 'tp-sec';
         var head = document.createElement('div');
         head.className = 'tp-sec-head';
-        head.innerHTML = '<span></span><span class="tp-sec-chev">▾</span>';
+        head.innerHTML = '<span></span>';
         head.firstChild.textContent = title;
         head.firstChild.style.flex = '1 1 auto';
         head.firstChild.style.minWidth = '0';
@@ -919,11 +1013,7 @@
         secBody.className = 'tp-sec-body';
         secBody.dataset.okey = key;
         /* このまとまりの項目を、ひとまとめに既定値へ戻す（anyflow 準拠） */
-        head.insertBefore(self._groupResetBtn(secBody, title), head.lastChild);
-        head.addEventListener('click', function () {
-          self.secOpen[key] = !sec.classList.toggle('closed');
-          self._saveUI();
-        });
+        head.appendChild(self._groupResetBtn(secBody, title));
         sec.append(head, secBody);
         catBodyOf(item.grp || grpFromLabel(title)).appendChild(sec);
         currentBody = secBody;
@@ -1898,10 +1988,25 @@
     var self = this;
     if (this.cfg.footer === false) { this.foot.style.display = 'none'; return; }
     this.foot.innerHTML = '';
-    this._renderPresets(this.foot);
+    /* プリセット（いまの値に名前を付けて残す）は、anyflow の下のボタン列には無い。
+       機能は残しつつ、本文の最後の「プリセット」カードに移す（2026-09-26） */
+    if (this._psetCard && this._psetCard.parentNode) this._psetCard.parentNode.removeChild(this._psetCard);
+    if (this.storageKey && this.cfg.presets !== false) {
+      var pc = this._psetCard = document.createElement('div');
+      pc.className = 'tp-cat tp-pset-card';
+      var ph = document.createElement('div');
+      ph.className = 'tp-cat-head';
+      ph.style.cursor = 'default';
+      ph.textContent = 'プリセット';
+      var pb = document.createElement('div');
+      pb.className = 'tp-cat-body';
+      pc.append(ph, pb);
+      this._renderPresets(pb);
+      if (this.foot.parentNode === this.body) this.body.insertBefore(pc, this.foot);
+      else this.body.appendChild(pc);
+    }
     var box = document.createElement('div');
     box.className = 'tp-btns';
-    box.style.marginTop = '0';
 
     /* 下のボタンは anyflow と同じ3つ（2026-09-16 ヒデさん指示で全面的に合わせた）。
          ① これをデフォルトに設定 …… いまの状態を「最初に出る形」として確定する
@@ -1913,16 +2018,18 @@
     /* ① これをデフォルトに設定 */
     if (this.storageKey) {
       defs.push({
-        label: this._dirty ? '💾 既定にする（未保存あり）' : '💾 既定にする',
+        label: this._dirty ? 'デフォルトに設定（未保存）' : 'デフォルトに設定',
+        title: 'いまの状態を「最初に出る形」として確定します。',
         primary: true, isSave: true,
         onClick: function (pnl, el) {
           self.save();
           self._saveVars();
+          tpPhonePush();
           self._markDirty(false);
           if (self.cfg.onSave) {
             try { self.cfg.onSave(self.params, self); } catch (e) {}
           }
-          el.textContent = '✅ 既定にしました';
+          el.textContent = '✅ デフォルトにしました';
           setTimeout(function () { self._syncSaveBtn(); }, 1600);
         }
       });
@@ -1932,8 +2039,8 @@
        ローカルで触った値はこのブラウザにしか残らない。本番へ載せるには
        書き出して Claude に渡し、tune-defaults.json へ焼き込む必要がある */
     defs.push({
-      label: '⬇️ 設定を書き出す（Claudeに渡す）',
-      title: 'いまのブラウザの設定ぜんぶをファイルに落とします。これを Claude に渡すと、同じ見た目を本番に焼き込めます。',
+      label: '設定書き出し',
+      title: 'いまのブラウザの設定ぜんぶをファイルとしてダウンロードします。これをClaudeに渡すと、同じ見た目を本番に焼き込めます。',
       onClick: function (pnl, el) {
         try { self.save(); self._saveVars(); } catch (e) {}
         var dump = {};
@@ -1953,11 +2060,11 @@
           a.download = name;
           a.click();
           setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-          el.textContent = '✅ コピーしました（Claudeに渡してください）';
+          el.textContent = '✅ 書き出しました（Claudeに渡してください）';
         } catch (e) {
           el.textContent = '書き出せませんでした';
         }
-        setTimeout(function () { el.textContent = '⬇️ 設定を書き出す（Claudeに渡す）'; }, 2200);
+        setTimeout(function () { el.textContent = '設定書き出し'; }, 2200);
       }
     });
 
@@ -1965,8 +2072,8 @@
        パネルの「削除」は隠しているだけ（戻せる）。コードから恒久的に消すには
        Claude に焼き込んでもらう必要があるので、いま隠しているものを一括でコピーする */
     defs.push({
-      label: '📋 削除リストをコピー（Claudeに貼る）',
-      title: 'いま「削除」で隠している案と項目の一覧をコピーします。Claude に貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。',
+      label: 'バリエーション削除',
+      title: 'いま「削除」で隠している案の一覧をコピーします。Claudeに貼って「完全削除して」と言えば、コードから恒久的に消してもらえます。',
       onClick: function (pnl, el) {
         try { self.save(); self._saveVars(); } catch (e) {}
         var v = self._vars();
@@ -1981,7 +2088,7 @@
           : '【完全削除の依頼】新しく消したものはありません。\n') + JSON.stringify(payload, null, 1);
         self._copy(text, function (ok) {
           el.textContent = ok ? '✅ コピーしました（Claudeに貼ってください）' : 'コピーできませんでした';
-          setTimeout(function () { el.textContent = '完全削除リストをコピー（Claude用）'; }, 2600);
+          setTimeout(function () { el.textContent = 'バリエーション削除'; }, 2600);
         });
       }
     });
@@ -1999,14 +2106,22 @@
       box.appendChild(el);
     });
     this.foot.appendChild(box);
+    /* ボタンの下の注意書き（anyflow の saveNote と同じ文面） */
+    if (this.storageKey) {
+      var note = document.createElement('div');
+      note.className = 'tp-savenote';
+      note.textContent = '調整は自動でこのブラウザに保存されます(リロード・ブラウザを閉じてもOK)。'
+        + '本番サイトに反映したい時は「設定書き出し」を押して、出てきたファイルをClaudeに渡してください。';
+      this.foot.appendChild(note);
+    }
   };
 
   /* 「これをデフォルトに設定」の文字を、未保存かどうかに合わせて書き換える */
   Panel.prototype._syncSaveBtn = function () {
     if (!this._saveBtn) return;
     this._saveBtn.textContent = this._dirty
-      ? 'これをデフォルトに設定（未保存あり）'
-      : 'これをデフォルトに設定';
+      ? 'デフォルトに設定（未保存）'
+      : 'デフォルトに設定';
     this._saveBtn.classList.toggle('dirty', this._dirty);
   };
 
@@ -2102,9 +2217,332 @@
   /* 【2026-09-16】項目の検索（_filter）は検索バーごと撤去した */
   Panel.prototype.destroy = function () {
     if (this._onKey) window.removeEventListener('keydown', this._onKey);
+    if (this._onRemote) {
+      window.removeEventListener('storage', this._onStorage);
+      window.removeEventListener('tp:remote-apply', this._onRemote);
+    }
+    var ix = TP_PHONE.panels.indexOf(this);
+    if (ix >= 0) TP_PHONE.panels.splice(ix, 1);
     if (this._hot) this._hot.remove();
     this.el.remove();
     return this;
+  };
+
+  /* ============================================================
+     スマホモード（実機ライブ同期）
+     2026-09-26 ヒデさん指示「Anyflow の調整パネルの仕様（ローカル環境でスマホモード）も全部真似して」
+     anyflow/v5/index.html の liveSync（PC側）と同じ動き：
+       ・📱スマホモード を押す → スマホモードON（パネルが青く縁取られ、帯が出る）
+                                 ＋ QR のポップアップ ＋ 390×844 のスマホ枠（中は本物のページ）
+       ・もう一度押す → QR だけ閉じる（モードは続く）／「スマホモード終了」で解除
+       ・触った値は自動保存され、スマホ枠（同じブラウザ）と、QR で開いた実機へ届く
+     中継サーバ: node abashiri/v3/tools/live-sync.mjs（:8780）
+     ⚠️ 開発（localhost / 同じ Wi-Fi のアドレス）でだけ出す。本番では出さない
+     ============================================================ */
+
+  var TP_PHONE = {
+    on: false,
+    panels: [],
+    dom: null,
+    port: 8780,
+    dev: (function () {
+      try {
+        var h = location.hostname;
+        return /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h) || /\.local$/.test(h);
+      } catch (e) { return false; }
+    })(),
+    /* スマホ枠の中身／本物のスマホ側では出さない（入れ子になるため） */
+    inner: (function () {
+      try { return /[?&](preview=1|live=phone)(&|$)/i.test(location.search); } catch (e) { return false; }
+    })()
+  };
+  var TP_SYNC = (function () {
+    try { return location.protocol + '//' + location.hostname + ':' + TP_PHONE.port; } catch (e) { return ''; }
+  })();
+
+  /* 保存のたびに、実機へ設定を投げる（スマホモード中だけ）。
+     送るのは調整パネルの保存値（localStorage の tp:*）と、いま開いているページ */
+  function tpPhonePush() {
+    if (!TP_PHONE.on || !TP_SYNC) return;
+    var ls = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('tp:') === 0) ls[k] = localStorage.getItem(k);
+      }
+    } catch (e) { return; }
+    var body = JSON.stringify({ ls: ls, path: location.pathname });
+    /* ⚠️ keepalive は付けない（64KB を超えると無言で失敗する。anyflow で実測） */
+    try { fetch(TP_SYNC + '/push', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }).catch(function () {}); } catch (e) {}
+  }
+
+  var TP_PHONE_CSS = [
+    /* QR のポップアップ（anyflow の .live-pop） */
+    '.tp-live-pop{position:fixed;left:12px;bottom:64px;z-index:2147483004;width:250px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;',
+    '  box-shadow:0 12px 40px rgba(16,24,40,.22);padding:14px;font:400 12px/1.5 -apple-system,system-ui,sans-serif;color:#222;display:none;}',
+    '.tp-live-pop.show{display:block;}',
+    '.tp-live-pop h4{margin:0 0 8px;font-size:12px;font-weight:700;cursor:move;user-select:none;}',
+    '.tp-live-pop .qr{width:190px;height:190px;margin:2px auto 8px;display:block;background:#f4f4f5;border-radius:8px;}',
+    '.tp-live-pop .url{word-break:break-all;background:#f4f4f5;border-radius:7px;padding:6px 8px;font-size:11px;color:#333;margin-bottom:8px;}',
+    '.tp-live-pop .url.err{color:#c0392b;}',
+    '.tp-live-pop .row{display:flex;gap:6px;align-items:center;margin-top:8px;}',
+    '.tp-live-pop button{flex:1;border:1px solid rgba(0,0,0,.1);background:#fff;border-radius:8px;padding:7px 4px;font:600 12px/1 -apple-system,system-ui,sans-serif;cursor:pointer;color:#222;white-space:nowrap;}',
+    '.tp-live-pop button.pri{background:#0e5cff;color:#fff;border-color:#0e5cff;}',
+    '.tp-live-pop .st{font-size:11px;color:#666;margin-top:8px;min-height:15px;}',
+    '.tp-live-pop .st.err{color:#c0392b;}',
+    '.tp-live-pop .pm-prompt{display:none;width:100%;margin-top:8px;border:1px dashed rgba(14,92,255,.5);background:#eef8ff;color:#0b4bd6;',
+    '  border-radius:8px;padding:8px;font:600 11px/1.35 -apple-system,system-ui,sans-serif;cursor:pointer;text-align:center;}',
+    '.tp-live-pop .pm-prompt.show{display:block;}',
+    /* スマホモード中の見た目（帯・青い縁・ボタンの青） */
+    '.tp-phone-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;',
+    '  color:#0b4bd6;background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.14));border-top:1px solid rgba(14,92,255,.22);',
+    '  border-bottom:1px solid rgba(14,92,255,.22);padding:7px 12px;text-align:center;flex:0 0 auto;}',
+    '.tp-phone-banner b{font-weight:800;}',
+    'html.phone-mode .tp:not(.closed) .tp-phone-banner{display:flex;}',
+    'html.phone-mode .tp-head{background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.12));}',
+    'html.phone-mode .tp{box-shadow:0 0 0 2px rgba(14,92,255,.45),0 14px 40px rgba(16,24,40,.22);}',
+    'html.phone-mode .tp-head-btn.tp-phone-btn{background:#0e5cff;border-color:#0e5cff;color:#fff;}',
+    /* スマホ枠（anyflow の #phonePreview。パネルが右下なので、枠は左下に出す） */
+    '#tp-pp{position:fixed;z-index:2147482990;left:20px;bottom:20px;display:none;flex-direction:column;width:390px;transform-origin:left bottom;}',
+    'html.phone-mode #tp-pp.on{display:flex;}',
+    '#tp-pp .pp-bar{display:flex;align-items:center;gap:8px;background:#111;color:#fff;border-radius:12px 12px 0 0;padding:7px 12px;',
+    '  font:600 12px/1.2 -apple-system,system-ui,sans-serif;cursor:move;touch-action:none;user-select:none;}',
+    '#tp-pp .pp-ttl{flex:1;}',
+    '#tp-pp .pp-bar button{width:24px;height:24px;border:0;border-radius:6px;background:#333;color:#fff;cursor:pointer;font-size:15px;line-height:1;}',
+    '#tp-pp .pp-bar button:hover{background:#4a4a4a;}',
+    '#tp-pp .pp-frame{width:390px;height:844px;background:#000;border-radius:0 0 28px 28px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.4);border:1px solid #222;}',
+    '#tp-pp iframe{width:390px;height:844px;border:0;background:#fff;display:block;}'
+  ].join('\n');
+
+  function tpPhoneDom() {
+    if (TP_PHONE.dom) return TP_PHONE.dom;
+    var st = document.createElement('style');
+    st.id = 'tune-panel-phone-css';
+    st.textContent = TP_PHONE_CSS;
+    document.head.appendChild(st);
+
+    /* QR のポップアップ */
+    var pop = document.createElement('div');
+    pop.className = 'tp-live-pop';
+    pop.innerHTML = '<h4>📱 スマホモード（実機プレビュー）</h4>'
+      + '<img class="qr" alt="QR">'
+      + '<div class="url">読み込み中…</div>'
+      + '<div class="st"></div>'
+      + '<button type="button" class="pm-prompt">📋 起動プロンプトをコピー（Claudeに貼る）</button>'
+      + '<div class="row"><button type="button" class="cp">URLコピー</button><button type="button" class="pri stop">スマホモード終了</button></div>';
+    document.body.appendChild(pop);
+
+    /* スマホ枠（中は本物のページ。?preview=1 で開き、中の調整パネルは隠す） */
+    var pp = document.createElement('div');
+    pp.id = 'tp-pp';
+    pp.setAttribute('aria-hidden', 'true');
+    pp.innerHTML = '<div class="pp-bar"><span class="pp-ttl">スマホプレビュー 390×844</span>'
+      + '<button type="button" class="rl" title="再読み込み">↻</button><button type="button" class="cl" title="閉じる">×</button></div>'
+      + '<div class="pp-frame"><iframe title="スマホプレビュー" src="about:blank"></iframe></div>';
+    document.body.appendChild(pp);
+
+    var d = TP_PHONE.dom = {
+      pop: pop, pp: pp,
+      qr: pop.querySelector('.qr'), url: pop.querySelector('.url'), st: pop.querySelector('.st'),
+      prompt: pop.querySelector('.pm-prompt'), copy: pop.querySelector('.cp'), stop: pop.querySelector('.stop'),
+      frame: pp.querySelector('iframe'), phoneUrl: '', timer: 0
+    };
+
+    d.stop.addEventListener('click', function () { tpPhoneSet(false); tpPopHide(); });
+    d.copy.addEventListener('click', function () {
+      if (!d.phoneUrl) return;
+      try {
+        navigator.clipboard.writeText(d.phoneUrl);
+        d.copy.textContent = 'コピーしました';
+        setTimeout(function () { d.copy.textContent = 'URLコピー'; }, 1200);
+      } catch (e) {}
+    });
+    d.prompt.addEventListener('click', function () {
+      var t = '網走V3 のスマホモード(実機ライブ同期)の中継サーバが起動していないようです。起動してください。\n\n'
+        + 'cd "/Users/hideyuki/Developer/Claude Code/abashiri/v3/tools" && (test -d node_modules || npm install) && node live-sync.mjs';
+      try {
+        navigator.clipboard.writeText(t);
+        d.prompt.textContent = '✅ コピーしました（Claudeに貼ってください）';
+        setTimeout(function () { d.prompt.textContent = '📋 起動プロンプトをコピー（Claudeに貼る）'; }, 2000);
+      } catch (e) {}
+    });
+    pp.querySelector('.rl').addEventListener('click', function () {
+      d.frame.setAttribute('src', location.pathname + '?preview=1&_t=' + Date.now());
+    });
+    pp.querySelector('.cl').addEventListener('click', function () { tpPhoneSet(false); tpPopHide(); });
+
+    /* ポップアップは見出しで、スマホ枠は上のバーでドラッグ移動（anyflow と同じ） */
+    tpDraggable(pop.querySelector('h4'), function (dx, dy, s) {
+      pop.__dragged = true;
+      var pad = 6;
+      pop.style.left = Math.max(pad, Math.min(s.l + dx, innerWidth - pop.offsetWidth - pad)) + 'px';
+      pop.style.top = Math.max(pad, Math.min(s.t + dy, innerHeight - pop.offsetHeight - pad)) + 'px';
+      pop.style.bottom = 'auto';
+    }, function () { var r = pop.getBoundingClientRect(); return { l: r.left, t: r.top }; });
+    tpDraggable(pp.querySelector('.pp-bar'), function (dx, dy, s) {
+      pp._dx = s.x + dx; pp._dy = s.y + dy; tpPpTransform();
+    }, function () { return { x: pp._dx || 0, y: pp._dy || 0 }; });
+
+    window.addEventListener('resize', function () { tpPopPlace(); if (TP_PHONE.on) tpPpFit(); });
+    return d;
+  }
+
+  function tpDraggable(handle, onMove, start) {
+    if (!handle) return;
+    var drag = null;
+    handle.addEventListener('pointerdown', function (e) {
+      if (e.target.closest && e.target.closest('button')) return;   /* ↻/× はドラッグしない */
+      drag = { x: e.clientX, y: e.clientY, s: start() };
+      try { handle.setPointerCapture(e.pointerId); } catch (er) {}
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      onMove(e.clientX - drag.x, e.clientY - drag.y, drag.s);
+    });
+    var end = function (e) { drag = null; try { handle.releasePointerCapture(e.pointerId); } catch (er) {} };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  }
+
+  function tpPpTransform() {
+    var pp = TP_PHONE.dom && TP_PHONE.dom.pp;
+    if (!pp) return;
+    pp.style.transform = 'translate(' + (pp._dx || 0) + 'px,' + (pp._dy || 0) + 'px) scale(' + (pp._sc != null ? pp._sc : 1) + ')';
+  }
+  /* 画面が低い時は枠ごと縮めて収める（バー36＋枠844＋余白） */
+  function tpPpFit() {
+    var pp = TP_PHONE.dom && TP_PHONE.dom.pp;
+    if (!pp) return;
+    pp._sc = Math.min(1, (innerHeight - 32) / 892);
+    tpPpTransform();
+  }
+  function tpPpSync(on) {
+    var d = tpPhoneDom();
+    if (on) {
+      var u = location.pathname + '?preview=1';
+      if ((d.frame.getAttribute('src') || '') !== u) d.frame.setAttribute('src', u);
+      d.pp.classList.add('on');
+      tpPpFit();
+    } else {
+      d.pp.classList.remove('on');
+      d.frame.setAttribute('src', 'about:blank');
+    }
+  }
+
+  /* QR のポップアップは、パネルと反対側（パネルの横）に出す */
+  function tpPopPlace() {
+    var d = TP_PHONE.dom;
+    if (!d || !d.pop.classList.contains('show') || d.pop.__dragged) return;
+    var pop = d.pop, pad = 12;
+    pop.style.right = ''; pop.style.bottom = 'auto';
+    var pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 320;
+    var panel = TP_PHONE.panels[0] && TP_PHONE.panels[0].el;
+    var pr = panel ? panel.getBoundingClientRect() : null;
+    var left, top;
+    if (pr && pr.width) {
+      var mid = pr.left + pr.width / 2;
+      left = (mid < innerWidth / 2) ? (pr.right + pad) : (pr.left - pw - pad);
+      if (left + pw > innerWidth - pad) left = pr.left - pw - pad;
+      if (left < pad) left = pr.right + pad;
+      top = pr.top;
+    } else { left = innerWidth - pw - pad; top = pad; }
+    left = Math.max(pad, Math.min(left, innerWidth - pw - pad));
+    top = Math.max(pad, Math.min(top, innerHeight - ph - pad));
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  }
+
+  function tpPopStatus() {
+    var d = TP_PHONE.dom;
+    if (!d) return;
+    var q = '?port=' + encodeURIComponent(location.port || (location.protocol === 'https:' ? '443' : '80'))
+      + '&path=' + encodeURIComponent(location.pathname);
+    fetch(TP_SYNC + '/ip' + q).then(function (r) { return r.json(); }).then(function (j) {
+      d.phoneUrl = j.phoneUrl;
+      d.url.textContent = j.phoneUrl; d.url.classList.remove('err');
+      d.qr.src = TP_SYNC + '/qr?u=' + encodeURIComponent(j.phoneUrl) + '&t=' + Date.now();
+      var n = j.clients || 0;
+      d.st.classList.remove('err'); d.prompt.classList.remove('show');
+      d.st.textContent = TP_PHONE.on
+        ? ('同期ON ・ つないでいるスマホ ' + n + '台')
+        : ('スマホでこのQRを読むと同期プレビューが開きます（' + n + '台接続中）');
+    }).catch(function () {
+      d.url.textContent = '同期サーバが起動していません'; d.url.classList.add('err');
+      d.qr.removeAttribute('src');
+      d.st.classList.add('err');
+      d.st.textContent = 'このボタンでプロンプトをコピーして Claude に貼ると起動できます↓';
+      d.prompt.classList.add('show');
+    });
+  }
+  function tpPopShow() {
+    var d = tpPhoneDom();
+    d.pop.__dragged = false;
+    d.pop.classList.add('show');
+    tpPopPlace(); requestAnimationFrame(tpPopPlace);
+    tpPopStatus();
+    clearInterval(d.timer);
+    d.timer = setInterval(tpPopStatus, 3000);
+  }
+  function tpPopHide() {
+    var d = TP_PHONE.dom;
+    if (!d) return;
+    d.pop.classList.remove('show');
+    clearInterval(d.timer);
+  }
+
+  function tpPhoneSet(on) {
+    TP_PHONE.on = !!on;
+    try { document.documentElement.classList.toggle('phone-mode', !!on); } catch (e) {}
+    TP_PHONE.panels.forEach(function (p) {
+      if (!p.phoneBtn) return;
+      p.phoneBtn.classList.toggle('on', !!on);
+      p.phoneBtn.textContent = on ? '📱 スマホモード中' : '📱 スマホモード';
+      /* スマホモード中は、いまの値をすぐ保存して枠・実機へ届ける */
+      if (on) { try { p.save(); p._saveVars(); } catch (e) {} }
+    });
+    if (on) tpPhonePush();
+    tpPpSync(!!on);
+  }
+
+  /* パネルごとの受付（constructor の最後で呼ぶ） */
+  Panel.prototype._phoneInit = function () {
+    var self = this;
+    /* 同じブラウザの別の画面（スマホ枠の中など）で保存された時／実機の受け手から
+       「読み直して」と言われた時に、保存値を読み直して反映する */
+    this._onStorage = function (e) { if (e && e.key === self._pKey()) self._remoteApply(); };
+    this._onRemote = function () { self._remoteApply(); };
+    window.addEventListener('storage', this._onStorage);
+    window.addEventListener('tp:remote-apply', this._onRemote);
+
+    /* スマホモードの帯（パネルの見出しのすぐ下） */
+    var banner = document.createElement('div');
+    banner.className = 'tp-phone-banner';
+    /* ⚠️ 帯は flex なので、文字を1つの span にまとめないと太字の所で段が割れる（実測で「スマホモー／ド」と折れた） */
+    banner.innerHTML = '<span>📱 <b>スマホモード</b>：この画面の調整が、スマホ枠と同期中のスマホ実機に反映されます</span>';
+    this.el.insertBefore(banner, this.body);
+
+    if (!TP_PHONE.dev || TP_PHONE.inner || !this.phoneBtn) return;
+    TP_PHONE.panels.push(this);
+    tpPhoneDom();   /* CSS を先に入れておく（帯などの見た目） */
+    this.phoneBtn.hidden = false;
+    this.phoneBtn.classList.add('tp-phone-btn');
+    this.phoneBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (!TP_PHONE.on) { tpPhoneSet(true); tpPopShow(); }                 /* 初回: モードON＋QR */
+      else if (TP_PHONE.dom && TP_PHONE.dom.pop.classList.contains('show')) tpPopHide();   /* 2回目: QRだけ隠す */
+      else tpPopShow();                                                     /* もう一度: QR 再表示 */
+    });
+  };
+
+  /* 保存値を読み直して、ページ側に反映させる（自分では保存しない＝行ったり来たりしない） */
+  Panel.prototype._remoteApply = function () {
+    try {
+      this._loadParams();
+      this.rebuild();
+      var info = { remote: true, immediate: true };
+      if (this.cfg.onChange) this.cfg.onChange(info);
+      if (this.cfg.onSettle) this.cfg.onSettle(info);
+    } catch (e) {}
   };
 
   /* ============================================================

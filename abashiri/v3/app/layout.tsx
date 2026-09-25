@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_JP, Inter } from "next/font/google";
 import SoundUi from "@/components/SoundUi";
 import PageTransition from "@/components/PageTransition";
+import LivePhone from "@/components/LivePhone";
 import "./globals.css";
 
 /* v1.1 のカンプ（15071:24641 / 15176:2415）で指定されている書体。
@@ -52,6 +53,8 @@ export default function RootLayout({
         <SoundUi askConsent />
         {/* ページ遷移の幕（ブラー5案）。レイアウト常駐で全ページに効く */}
         <PageTransition />
+        {/* スマホモード（実機ライブ同期）の受け手。開発時だけ動く（本番では何もしない） */}
+        <LivePhone />
       </body>
     </html>
   );
