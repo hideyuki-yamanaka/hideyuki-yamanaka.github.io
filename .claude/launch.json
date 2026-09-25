@@ -183,6 +183,15 @@
         "cd '/Users/hideyuki/Developer/Claude Code/anyflow/v5/tools' && (test -d node_modules || npm install --silent) && exec node live-sync.mjs"
       ],
       "port": 8779
+    },
+    {
+      "name": "cyberpunk-motion",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/hideyuki/Developer/Claude Code/cyberpunk-motion' && exec python3 -m http.server 8781"
+      ],
+      "port": 8781
     }
   ]
 }

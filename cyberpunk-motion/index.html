@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cyberpunk Motion</title>
+<meta name="description" content="夜の街・ネオン・グリッチで構成したサイバーパンクなモーショングラフィック">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Share+Tech+Mono&family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="tune-panel.js"></script>
+<script>
+/* =========================================================
+   調整できる値はここに集約（調整パネルもこれを書き換える）
+   ========================================================= */
+const DEFAULTS = {
+  play:  { speed: 1, boot: true },
+  color: { a: '#ff2bd6', b: '#00f0ff', c: '#fcee0a', sky: '#1a0433' },
+  sky:   { sun: true, sunSize: 1, kana: 1, cars: 1 },
+  title: {
+    en: 'CYBERPUNK', jp: 'サイバーパンク',
+    subEn: '電脳都市 // 2099', subJp: 'SYSTEM ONLINE // NIGHT NEVER ENDS',
+    size: 1, split: 1, hold: 7
+  },
+  city:  { speed: 1, windows: 1, signs: true },
+  grid:  { show: true, speed: 1, glow: 1 },
+  hud:   { show: true, opacity: 0.8 },
+  fx:    { rain: 1, glitch: 1, scan: 0.35, noise: 0.07, vignette: 0.75 }
+};
+const params = structuredClone(DEFAULTS);
+
+/* ---------- 小道具 ---------- */
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const buf = document.createElement('canvas');
+const bctx = buf.getContext('2d');
+let W = 0, H = 0, DPR = 1, HZ = 0, U = 1;  // HZ = 地平線のy / U = 画面サイズ倍率
+let clock = 0;
+
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const rand = (a = 0, b = 1) => a + Math.random() * (b - a);
+const easeOut = t => 1 - Math.pow(1 - clamp(t), 3);
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hexRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = [...h].map(c => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function rgba(hex, a) { const [r, g, b] = hexRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function mix(h1, h2, t) { const a = hexRgb(h1), b = hexRgb(h2); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`; }
+
+const KANA = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
+const GLYPHS = 'アカサタナハマヤラワ#$%&*<>/\\|01ΣΞΔ';
+const SIGN_JP = ['ネオン', '電脳', '酒場', '寿司', '夜市', 'ラーメン', 'ホテル', '義体', '電気街', '喫茶'];
+const SIGN_EN = ['BAR', 'HOTEL', '24H', 'NOODLE', 'CLINIC', 'ZERO', 'SYNTH', 'NEON'];
+
+/* =========================================================
+   静的パーツ（街・太陽・画面の質感）を下描きしておく
+   ========================================================= */
+let layers = [], sunCv = null, vigCv = null, scanPat = null, noisePats = [];
+let kanaCols = [], cars = [], drops = [], hexLines = [];
+
+function resize() {
+  W = innerWidth; H = innerHeight;
+  if (!W || !H) return;
+  DPR = Math.min(devicePixelRatio || 1, W * H > 1.2e6 ? 1.5 : 2);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  buf.width = cv.width; buf.height = cv.height;
+  HZ = Math.round(H * 0.64);
+  U = clamp(Math.min(W, H) / 900, 0.62, 1.4);
+  buildStatic();
+  buildPost();
+  buildMovers();
+}
+
+function buildStatic() { buildCity(); buildSun(); }
+
+function buildCity() {
+  const C = params.color;
+  const rnd = mulberry(7);
+  const tileW = Math.ceil(Math.max(W, 900) * 1.4);
+  const defs = [
+    { hMin: .16, hMax: .40, wMin: 26, wMax: 70,  speed: 6,  win: .16, s: .7,  body: mix(C.sky, '#000000', .25) },
+    { hMin: .22, hMax: .52, wMin: 34, wMax: 90,  speed: 14, win: .26, s: .85, body: mix(C.sky, '#000000', .62) },
+    { hMin: .26, hMax: .74, wMin: 44, wMax: 120, speed: 30, win: .32, s: 1,   body: '#05020a' }
+  ];
+  layers = defs.map((d, li) => {
+    const c = document.createElement('canvas');
+    c.width = Math.round(tileW * DPR); c.height = Math.round(HZ * DPR);
+    const g = c.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const signs = [], beacons = [];
+    let x = 0;
+    while (x < tileW) {
+      let w = d.wMin + rnd() * (d.wMax - d.wMin);
+      if (x + w > tileW) w = tileW - x;
+      const h = HZ * (d.hMin + rnd() * (d.hMax - d.hMin));
+      const top = HZ - h;
+      g.fillStyle = d.body;
+      g.fillRect(x, top, w, h);
+      // 段々の屋上
+      let roof = top;
+      if (rnd() < .35 && w > 30) {
+        const w2 = w * (.35 + rnd() * .3), h2 = 10 + rnd() * 40;
+        g.fillRect(x + (w - w2) / 2, top - h2, w2, h2);
+        roof = top - h2;
+      }
+      // アンテナ＋赤い点滅灯
+      if (rnd() < .3) {
+        const len = 18 + rnd() * 50, ax = x + w / 2;
+        g.strokeStyle = d.body; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(ax, roof); g.lineTo(ax, roof - len); g.stroke();
+        beacons.push({ x: ax, y: roof - len, p: rnd() * 6 });
+      }
+      // 屋上の縁の光
+      if (li > 0) { g.fillStyle = rgba(C.a, li === 2 ? .45 : .25); g.fillRect(x, top, w, 1); }
+      if (li === 2) { g.fillStyle = rgba(C.b, .22); g.fillRect(x, top, 1, h); }
+      // 窓
+      const cw = 3 * d.s + 1, ch = 5 * d.s + 1, gx = 7 * d.s, gy = 10 * d.s;
+      const pWin = clamp(d.win * params.city.windows, 0, .95);
+      for (let wy = top + 8; wy < HZ - 6; wy += gy) {
+        for (let wx = x + 5; wx < x + w - 5 - cw; wx += gx) {
+          if (rnd() < pWin) {
+            const k = rnd();
+            const col = k < .5 ? '#ffcf7a' : k < .8 ? C.b : C.a;
+            g.fillStyle = rgba(col, (.25 + rnd() * .6) * (li === 0 ? .55 : 1));
+            g.fillRect(wx, wy, cw, ch);
+          }
+        }
+      }
+      // 横一本のネオン帯
+      if (li > 0 && rnd() < .25 && h > 60) {
+        const sy = top + 12 + rnd() * h * .4, col = rnd() < .5 ? C.a : C.b;
+        g.fillStyle = rgba(col, .18); g.fillRect(x + 2, sy - 3, w - 4, 8);
+        g.fillStyle = rgba(col, .9);  g.fillRect(x + 4, sy, w - 8, 2);
+      }
+      // 看板（ライブで点滅させるので位置だけ控える）
+      if (li > 0 && w > 40 && rnd() < (li === 2 ? .45 : .25)) {
+        const horiz = rnd() < .35;
+        const word = horiz ? SIGN_EN[(rnd() * SIGN_EN.length) | 0] : SIGN_JP[(rnd() * SIGN_JP.length) | 0];
+        signs.push({
+          x: x + 6 + rnd() * Math.max(0, w - 40), y: top + 14 + rnd() * h * .35,
+          word, horiz, c: rnd() < .55 ? 'a' : 'b', size: (li === 2 ? 15 : 11) * (0.9 + rnd() * .5),
+          f1: 1 + rnd() * 3, f2: 2 + rnd() * 5, p: rnd() * 10, broken: rnd() < .18
+        });
+      }
+      x += w + (li === 0 ? 0 : rnd() * 6);
+    }
+    return { c, tileW, speed: d.speed, signs, beacons };
+  });
+}
+
+function buildSun() {
+  const C = params.color;
+  const S = Math.round(Math.min(W, H) * .5 * params.sky.sunSize);
+  sunCv = document.createElement('canvas');
+  sunCv.width = Math.round(S * DPR); sunCv.height = Math.round(S * DPR);
+  const g = sunCv.getContext('2d');
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const gr = g.createLinearGradient(0, 0, 0, S);
+  gr.addColorStop(0, C.c); gr.addColorStop(.55, C.a); gr.addColorStop(1, mix(C.a, C.sky, .5));
+  g.fillStyle = gr;
+  g.beginPath(); g.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); g.fill();
+  // 下に行くほど太くなる横縞で切り抜く
+  g.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 9; i++) {
+    const y = S * .5 + i * S * .058, hh = 1 + i * S * .0075;
+    g.fillRect(0, y, S, hh);
+  }
+}
+
+function buildPost() {
+  // 走査線
+  const sc = document.createElement('canvas'); sc.width = 1; sc.height = 3;
+  const sg = sc.getContext('2d'); sg.fillStyle = 'rgba(0,0,0,1)'; sg.fillRect(0, 0, 1, 1);
+  scanPat = ctx.createPattern(sc, 'repeat');
+  // ノイズ（数枚を順番に使う）
+  noisePats = [];
+  for (let k = 0; k < 4; k++) {
+    const n = document.createElement('canvas'); n.width = n.height = 128;
+    const ng = n.getContext('2d'), id = ng.createImageData(128, 128);
+    for (let i = 0; i < id.data.length; i += 4) { const v = Math.random() * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+    ng.putImageData(id, 0, 0);
+    noisePats.push(ctx.createPattern(n, 'repeat'));
+  }
+  // 周辺減光
+  vigCv = document.createElement('canvas'); vigCv.width = Math.round(W / 2); vigCv.height = Math.round(H / 2);
+  const vg = vigCv.getContext('2d');
+  const r = Math.hypot(W, H) / 4;
+  const gr = vg.createRadialGradient(W / 4, H / 4, r * .35, W / 4, H / 4, r);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,1)');
+  vg.fillStyle = gr; vg.fillRect(0, 0, W / 2, H / 2);
+}
+
+function newCar() {
+  const dir = Math.random() < .5 ? 1 : -1;
+  const C = params.color;
+  return {
+    x: dir > 0 ? -rand(20, W * .5) : W + rand(20, W * .5), y: rand(HZ * .12, HZ * .7),
+    v: dir * rand(60, 220), col: [C.a, C.b, '#ffffff', C.c][(Math.random() * 4) | 0], len: rand(40, 140)
+  };
+}
+function buildMovers() {
+  kanaCols = [];
+  const n = Math.round(W / 20);
+  for (let i = 0; i < n; i++) {
+    kanaCols.push({
+      x: i * 20 + rand(-4, 4), y: rand(-HZ, HZ), v: rand(40, 150), len: (rand(6, 20)) | 0,
+      chars: Array.from({ length: 22 }, () => KANA[(Math.random() * KANA.length) | 0])
+    });
+  }
+  cars = Array.from({ length: 10 }, newCar);
+  drops = Array.from({ length: Math.round(W * H / 5000) }, () => ({ x: rand(0, W * 1.2), y: rand(-H, H), len: rand(10, 28), v: rand(700, 1100) }));
+  hexLines = Array.from({ length: 40 }, () => Array.from({ length: 3 }, () => '0x' + ((Math.random() * 65535) | 0).toString(16).toUpperCase().padStart(4, '0')).join(' '));
+}
+
+/* =========================================================
+   描画パーツ
+   ========================================================= */
+function drawSky(t) {
+  const C = params.color;
+  const g = ctx.createLinearGradient(0, 0, 0, HZ);
+  g.addColorStop(0, '#030008');
+  g.addColorStop(.55, C.sky);
+  g.addColorStop(1, mix(C.sky, C.a, .35));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, HZ);
+}
+
+function drawKanaRain(dt) {
+  const amt = params.sky.kana;
+  if (amt <= 0) return;
+  const fs = 14;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, W, HZ); ctx.clip();
+  ctx.font = `${fs}px "Share Tech Mono", monospace`;
+  ctx.textAlign = 'center';
+  const every = Math.max(1, Math.round(1 / clamp(amt, .05, 1)));
+  const C = params.color;
+  kanaCols.forEach((col, i) => {
+    col.y += col.v * dt;
+    if (col.y - col.len * fs > HZ) { col.y = rand(-200, 0); col.v = rand(40, 150); }
+    if (Math.random() < .03) col.chars[(Math.random() * col.chars.length) | 0] = KANA[(Math.random() * KANA.length) | 0];
+    if (i % every) return;
+    for (let k = 0; k < col.len; k++) {
+      const y = col.y - k * fs;
+      if (y < -fs || y > HZ + fs) continue;
+      ctx.globalAlpha = (k === 0 ? .55 : .32 * (1 - k / col.len)) * Math.min(amt, 1.6);
+      ctx.fillStyle = k === 0 ? '#e8ffff' : C.b;
+      ctx.fillText(col.chars[k % col.chars.length], col.x, y);
+    }
+  });
+  ctx.restore();
+}
+
+function drawSun(t) {
+  if (!params.sky.sun || !sunCv) return;
+  const S = sunCv.width / DPR, cx = W / 2, cy = HZ - S * .5;
+  const glow = ctx.createRadialGradient(cx, cy, S * .2, cx, cy, S * 1.1);
+  glow.addColorStop(0, rgba(params.color.a, .35)); glow.addColorStop(1, rgba(params.color.a, 0));
+  ctx.fillStyle = glow; ctx.fillRect(cx - S * 1.1, cy - S * 1.1, S * 2.2, S * 2.2);
+  ctx.globalAlpha = .92;
+  ctx.drawImage(sunCv, cx - S / 2, cy - S / 2, S, S);
+  ctx.globalAlpha = 1;
+}
+
+function drawCars(dt) {
+  const n = Math.round(10 * params.sky.cars);
+  for (let i = 0; i < Math.min(n, cars.length); i++) {
+    const c = cars[i];
+    c.x += c.v * dt;
+    if ((c.v > 0 && c.x - c.len > W) || (c.v < 0 && c.x + c.len < 0)) { cars[i] = newCar(); continue; }
+    const tx = c.x - Math.sign(c.v) * c.len;
+    const g = ctx.createLinearGradient(tx, c.y, c.x, c.y);
+    g.addColorStop(0, rgba(c.col, 0)); g.addColorStop(1, rgba(c.col, .85));
+    ctx.strokeStyle = g; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(tx, c.y); ctx.lineTo(c.x, c.y); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(c.x - 1.5, c.y - 1.5, 3, 3);
+  }
+}
+
+function layerOffset(L, t) { return ((t * L.speed * params.city.speed) % L.tileW + L.tileW) % L.tileW; }
+
+function drawLayer(L, t, withLive) {
+  const off = layerOffset(L, t);
+  for (let k = 0; k < 2; k++) {
+    const ox = -off + k * L.tileW;
+    if (ox > W || ox + L.tileW < 0) continue;
+    ctx.drawImage(L.c, ox, 0, L.tileW, HZ);
+    if (!withLive) continue;
+    // 点滅灯
+    L.beacons.forEach(b => {
+      const x = b.x + ox; if (x < -10 || x > W + 10) return;
+      const on = Math.sin(t * 2.6 + b.p) > .55;
+      ctx.fillStyle = on ? 'rgba(255,40,60,1)' : 'rgba(120,10,20,.6)';
+      ctx.fillRect(x - 1.5, b.y - 1.5, 3, 3);
+      if (on) { ctx.fillStyle = 'rgba(255,40,60,.18)'; ctx.beginPath(); ctx.arc(x, b.y, 7, 0, 7); ctx.fill(); }
+    });
+    if (params.city.signs) L.signs.forEach(s => drawSign(s, s.x + ox, t));
+  }
+}
+
+function signLevel(s, t) {
+  if (s.broken && Math.sin(t * 1.3 + s.p) > .2) return Math.random() < .35 ? .12 : 1;
+  const v = Math.sin(t * s.f1 + s.p) + Math.sin(t * s.f2 * 1.7 + s.p * 2);
+  if (v > 1.8) return .12;
+  return .88 + .12 * Math.sin(t * 50 + s.p);
+}
+
+function drawSign(s, x, t) {
+  if (x < -80 || x > W + 80) return;
+  const col = params.color[s.c], fs = s.size, lv = signLevel(s, t);
+  const wid = s.horiz ? s.word.length * fs * .82 + fs * .9 : fs * 1.6;
+  const hgt = s.horiz ? fs * 1.6 : [...s.word].length * fs * 1.12 + fs * .6;
+  ctx.globalAlpha = lv;
+  ctx.fillStyle = rgba(col, .12); ctx.fillRect(x, s.y, wid, hgt);
+  ctx.shadowColor = col; ctx.shadowBlur = 14 * lv;
+  ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.strokeRect(x, s.y, wid, hgt);
+  ctx.fillStyle = mix(col, '#ffffff', .55);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (s.horiz) {
+    ctx.font = `500 ${fs}px Orbitron, sans-serif`;
+    ctx.fillText(s.word, x + wid / 2, s.y + hgt / 2 + 1);
+  } else {
+    ctx.font = `${fs}px "DotGothic16", sans-serif`;
+    [...s.word].forEach((ch, i) => ctx.fillText(ch, x + wid / 2, s.y + fs * .85 + i * fs * 1.12));
+  }
+  ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+}
+
+function drawFloor(t) {
+  const C = params.color, fh = H - HZ;
+  // 床のベース
+  const base = ctx.createLinearGradient(0, HZ, 0, H);
+  base.addColorStop(0, mix(C.sky, C.a, .25)); base.addColorStop(.25, '#08010f'); base.addColorStop(1, '#020005');
+  ctx.fillStyle = base; ctx.fillRect(0, HZ, W, fh);
+  // 濡れた路面の映り込み
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, HZ, W, fh); ctx.clip();
+  ctx.translate(0, HZ * 2); ctx.scale(1, -1);
+  ctx.globalAlpha = .2; drawLayer(layers[1], t, false);
+  ctx.globalAlpha = .28; drawLayer(layers[2], t, false);
+  ctx.restore();
+  const dark = ctx.createLinearGradient(0, HZ, 0, H);
+  dark.addColorStop(0, 'rgba(2,0,6,.1)'); dark.addColorStop(1, 'rgba(2,0,6,.8)');
+  ctx.fillStyle = dark; ctx.fillRect(0, HZ, W, fh);
+
+  if (params.grid.show) {
+    const cx = W / 2, ph = (t * params.grid.speed * 1.2) % 1;
+    const path = new Path2D();
+    for (let i = 0; i < 44; i++) {
+      const z = i + 1 - ph;
+      const y = HZ + fh / (1 + z * .42);
+      path.moveTo(0, y); path.lineTo(W, y);
+    }
+    const sH = W * .012, sB = W * .1;
+    for (let i = -40; i <= 40; i++) { path.moveTo(cx + i * sH, HZ); path.lineTo(cx + i * sB, H); }
+    const sg = ctx.createLinearGradient(0, HZ, 0, H);
+    sg.addColorStop(0, rgba(C.a, .05)); sg.addColorStop(.35, rgba(C.a, .55)); sg.addColorStop(1, rgba(C.a, 1));
+    ctx.strokeStyle = sg;
+    ctx.globalAlpha = .18 * params.grid.glow; ctx.lineWidth = 5; ctx.stroke(path);
+    ctx.globalAlpha = .9; ctx.lineWidth = 1.2; ctx.stroke(path);
+    ctx.globalAlpha = 1;
+  }
+  // 地平線の光
+  const hg = ctx.createLinearGradient(0, HZ - 10, 0, HZ + 10);
+  hg.addColorStop(0, rgba(C.a, 0)); hg.addColorStop(.5, mix(C.a, '#ffffff', .4).replace('rgb(', 'rgba(').replace(')', ',.8)')); hg.addColorStop(1, rgba(C.a, 0));
+  ctx.fillStyle = hg; ctx.fillRect(0, HZ - 10, W, 20);
+}
+
+function drawRain(dt) {
+  const amt = params.fx.rain;
+  if (amt <= 0) return;
+  const n = Math.min(drops.length, Math.round(drops.length * amt));
+  const path = new Path2D();
+  for (let i = 0; i < n; i++) {
+    const d = drops[i];
+    d.y += d.v * dt; d.x -= d.v * .15 * dt;
+    if (d.y > H) { d.y = rand(-60, -10); d.x = rand(0, W * 1.2); }
+    path.moveTo(d.x, d.y); path.lineTo(d.x + d.len * .15, d.y - d.len);
+  }
+  ctx.strokeStyle = 'rgba(190,225,255,.22)'; ctx.lineWidth = 1;
+  ctx.stroke(path);
+}
+
+/* ---------- タイトル ---------- */
+function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+function scramble(text, p, seed) {
+  const chars = [...text]; let out = '';
+  chars.forEach((ch, i) => {
+    if (ch === ' ') { out += ' '; return; }
+    const th = (i / chars.length) * .72 + hash(i + seed) * .18;
+    out += p >= th + .1 ? ch : p > th - .2 ? GLYPHS[(Math.random() * GLYPHS.length) | 0] : ' ';
+  });
+  return out;
+}
+
+function fitFont(str, family, weight, target, maxW) {
+  let size = target;
+  ctx.font = `${weight} ${size}px ${family}`;
+  const w = ctx.measureText(str).width;
+  if (w > maxW) size *= maxW / w;
+  return size;
+}
+
+function drawTitle(card, tl, gI) {
+  const C = params.color, T = params.title, L = T.hold;
+  const isJp = card === 1;
+  const full = isJp ? T.jp : T.en;
+  const sub = isJp ? T.subJp : T.subEn;
+  const family = isJp ? '"DotGothic16", sans-serif' : 'Orbitron, sans-serif';
+  const weight = isJp ? 400 : 900;
+  const size = fitFont(full, family, weight, H * .17 * T.size, W * .86);
+  const p = clamp(tl / 1.1);
+  const str = p < 1 ? scramble(full, p, card * 13) : full;
+  const cx = W / 2, cy = H * .4;
+
+  // 終わり際はブラウン管を切るように縦に潰す
+  const off = clamp((tl - (L - .28)) / .28);
+  const sy = 1 - easeOut(off) * .985, sx = 1 + off * .25;
+
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(sx, sy);
+  ctx.font = `${weight} ${size}px ${family}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+  // 奥の輪郭だけの残像
+  ctx.globalAlpha = .28;
+  ctx.strokeStyle = C.b; ctx.lineWidth = 1;
+  const echo = 1.06 + Math.sin(tl * 2) * .01;
+  ctx.save(); ctx.scale(echo, echo); ctx.strokeText(str, 0, size * .04); ctx.restore();
+
+  // 色ずれ（赤系・青系を左右にずらして重ねる）
+  const split = (2.5 + gI * 30) * T.split * U;
+  const jit = gI * 10 * U;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = .85;
+  ctx.fillStyle = C.a; ctx.fillText(str, -split, rand(-jit, jit));
+  ctx.fillStyle = C.b; ctx.fillText(str, split, rand(-jit, jit));
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.shadowColor = C.a; ctx.shadowBlur = 28 * U;
+  ctx.fillStyle = '#f6f4ff';
+  ctx.fillText(str, 0, 0);
+  ctx.shadowBlur = 0;
+
+  // 上の小さなラベル
+  const lab = `// TRANSMISSION_0${card + 7}  ▸ CH.${isJp ? 'JP' : 'EN'}`;
+  ctx.font = `${13 * U}px "Share Tech Mono", monospace`;
+  ctx.fillStyle = rgba(C.b, clamp((tl - .3) * 3) * .9);
+  ctx.fillText(lab, 0, -size * .72);
+  ctx.restore();
+
+  // サブタイトル：黄色い帯が伸びて、黒文字がタイプされる
+  const t0 = 1.15;
+  if (tl > t0 && off < 1) {
+    const fs = 18 * U * T.size;
+    ctx.font = `${fs}px "DotGothic16", sans-serif`;
+    const fw = ctx.measureText(sub).width + fs * 1.4;
+    const bw = fw * easeOut((tl - t0) / .35);
+    const by = cy + size * .62, bh = fs * 1.7;
+    ctx.save();
+    ctx.translate(cx, by); ctx.scale(1, sy);
+    ctx.fillStyle = C.c;
+    ctx.beginPath();  // 右端を斜めに切った帯
+    ctx.moveTo(-fw / 2, -bh / 2); ctx.lineTo(-fw / 2 + bw, -bh / 2);
+    ctx.lineTo(-fw / 2 + bw - bh * .4, bh / 2); ctx.lineTo(-fw / 2, bh / 2); ctx.closePath(); ctx.fill();
+    const n = Math.max(0, Math.floor((tl - t0 - .3) * 30));
+    const typed = [...sub].slice(0, n).join('');
+    ctx.fillStyle = '#0a0a0a'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(typed, -fw / 2 + fs * .7, 1);
+    if (Math.sin(tl * 12) > 0) {
+      const tw = ctx.measureText(typed).width;
+      ctx.fillRect(-fw / 2 + fs * .7 + tw + 3, -fs * .45, fs * .5, fs * .9);
+    }
+    // 帯の左右の細い線
+    ctx.fillStyle = rgba(C.c, .6);
+    ctx.fillRect(-fw / 2 - 60 * U, -1, 44 * U * easeOut((tl - t0) / .5), 2);
+    ctx.fillRect(fw / 2 + 16 * U, -1, 44 * U * easeOut((tl - t0) / .5), 2);
+    ctx.restore();
+  }
+}
+
+/* ---------- HUD（画面の計器表示） ---------- */
+const pad = n => String(Math.floor(n)).padStart(2, '0');
+function drawHUD(t) {
+  if (!params.hud.show) return;
+  const C = params.color, m = 22 * U, fs = 12 * U;
+  ctx.save();
+  ctx.globalAlpha = params.hud.opacity;
+  ctx.strokeStyle = rgba(C.b, .7); ctx.lineWidth = 1.5;
+  // 四隅のカギ
+  const k = 26 * U;
+  [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(([x, y, sx, sy]) => {
+    ctx.beginPath(); ctx.moveTo(x, y + k * sy); ctx.lineTo(x, y); ctx.lineTo(x + k * sx, y); ctx.stroke();
+  });
+  ctx.font = `${fs}px "Share Tech Mono", monospace`;
+  ctx.textBaseline = 'top';
+  // 左上
+  ctx.textAlign = 'left'; ctx.fillStyle = C.b;
+  ctx.fillText('SYS://NEO-CITY  SECTOR_07', m + 14 * U, m + 10 * U);
+  ctx.fillStyle = Math.sin(t * 5) > 0 ? '#ff3355' : 'rgba(255,51,85,.25)';
+  ctx.fillText('● LIVE', m + 14 * U, m + 10 * U + fs * 1.5);
+  // 右上：タイムコード
+  ctx.textAlign = 'right'; ctx.fillStyle = C.b;
+  const fr = (t * 30) % 30;
+  ctx.fillText(`TC ${pad(t / 3600)}:${pad(t / 60 % 60)}:${pad(t % 60)}:${pad(fr)}`, W - m - 14 * U, m + 10 * U);
+  ctx.fillStyle = rgba(C.a, .9);
+  ctx.fillText(`NET ${(62 + Math.sin(t * 1.7) * 20 + Math.random() * 4).toFixed(1)} TB/s`, W - m - 14 * U, m + 10 * U + fs * 1.5);
+  // 左下：音の棒グラフ
+  const bars = 26, bw = 3 * U, gap = 2.2 * U, bh = 34 * U, bx = m + 14 * U, by = H - m - 12 * U;
+  ctx.fillStyle = C.a;
+  for (let i = 0; i < bars; i++) {
+    const v = clamp(.15 + .5 * Math.abs(Math.sin(t * 5.3 + i * .7) * Math.sin(t * 2.1 + i * 1.3)) + Math.random() * .25);
+    ctx.fillRect(bx + i * (bw + gap), by - v * bh, bw, v * bh);
+  }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillStyle = rgba(C.b, .9);
+  ctx.fillText('AUDIO_FEED', bx, by - bh - 6 * U);
+  // 右下：座標と電波
+  ctx.textAlign = 'right';
+  ctx.fillText('35.6895N  139.6917E', W - m - 14 * U, H - m - 12 * U - fs * 1.5);
+  const sig = 3 + Math.round(Math.sin(t * .9) + 1);
+  ctx.fillText('SIGNAL ' + '▮'.repeat(sig) + '▯'.repeat(5 - sig), W - m - 14 * U, H - m - 12 * U);
+  // 右中央：照準
+  if (W > 620) {
+    const rx = W - 90 * U, ry = H * .5, r = 34 * U;
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = rgba(C.b, .8);
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(rx, ry, r, t * .9 + i * 2.094, t * .9 + i * 2.094 + 1.3); ctx.stroke(); }
+    ctx.strokeStyle = rgba(C.a, .8);
+    for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(rx, ry, r * .66, -t * 1.4 + i * 1.571, -t * 1.4 + i * 1.571 + .8); ctx.stroke(); }
+    ctx.strokeStyle = rgba(C.b, .5);
+    ctx.beginPath(); ctx.moveTo(rx - r * 1.4, ry); ctx.lineTo(rx - r * .3, ry); ctx.moveTo(rx + r * .3, ry); ctx.lineTo(rx + r * 1.4, ry);
+    ctx.moveTo(rx, ry - r * 1.4); ctx.lineTo(rx, ry - r * .3); ctx.moveTo(rx, ry + r * .3); ctx.lineTo(rx, ry + r * 1.4); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = Math.sin(t * 7) > -.3 ? C.c : 'transparent';
+    ctx.fillText('TARGET_LOCK', rx, ry + r * 1.55);
+  }
+  // 左中央：流れる16進数
+  if (W > 620) {
+    ctx.save();
+    const top = H * .3, hgt = H * .38, lh = fs * 1.4;
+    ctx.beginPath(); ctx.rect(0, top, 200 * U, hgt); ctx.clip();
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = rgba(C.b, .38);
+    const sh = (t * 22) % (lh * hexLines.length);
+    for (let i = 0; i < hexLines.length * 2; i++) {
+      const y = top + i * lh - sh;
+      if (y > top - lh && y < top + hgt) ctx.fillText(hexLines[i % hexLines.length], m + 14 * U, y);
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* ---------- 起動シーン ---------- */
+const BOOT = [
+  '> NEURAL_LINK v2.0.99 ............ OK',
+  '> DECRYPT CITY_GRID ............... OK',
+  '> BYPASS ICE // SECTOR_07 ......... OK',
+  '> JACK IN'
+];
+const BOOT_DUR = 2.9;
+function drawBoot(t) {
+  const C = params.color, fs = 15 * U;
+  ctx.fillStyle = '#020005'; ctx.fillRect(0, 0, W, H);
+  ctx.font = `${fs}px "Share Tech Mono", monospace`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  let left = Math.floor(t * 58);
+  const x = Math.max(20, W * .12), y0 = H * .36;
+  BOOT.forEach((line, i) => {
+    if (left <= 0) return;
+    const s = line.slice(0, left); left -= line.length + 4;
+    ctx.fillStyle = i === BOOT.length - 1 ? C.c : C.b;
+    ctx.fillText(s, x, y0 + i * fs * 1.7);
+    if (left <= 0 && Math.sin(t * 14) > 0) ctx.fillRect(x + ctx.measureText(s).width + 3, y0 + i * fs * 1.7, fs * .55, fs);
+  });
+  // 進捗バー
+  const pr = clamp(t / (BOOT_DUR - .4));
+  const bw = Math.min(W - x * 2, 420 * U), by = y0 + BOOT.length * fs * 1.7 + fs;
+  ctx.strokeStyle = rgba(C.b, .6); ctx.strokeRect(x, by, bw, 8 * U);
+  ctx.fillStyle = C.a; ctx.fillRect(x + 2, by + 2, (bw - 4) * pr, 8 * U - 4);
+  ctx.fillStyle = rgba(C.b, .8);
+  ctx.fillText(`${Math.round(pr * 100)}%`, x + bw + 10, by - 3 * U);
+}
+
+/* ---------- 画面の質感・グリッチ ---------- */
+let frameN = 0;
+function drawPost(t) {
+  const F = params.fx;
+  if (F.scan > 0) {
+    ctx.globalAlpha = F.scan; ctx.fillStyle = scanPat; ctx.fillRect(0, 0, W, H);
+    // ゆっくり降りてくる明るい帯
+    const ry = ((t * 90) % (H + 300)) - 150;
+    const rg = ctx.createLinearGradient(0, ry - 80, 0, ry + 80);
+    rg.addColorStop(0, 'rgba(255,255,255,0)'); rg.addColorStop(.5, 'rgba(255,255,255,.05)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.globalAlpha = 1; ctx.fillStyle = rg; ctx.fillRect(0, ry - 80, W, 160);
+  }
+  if (F.noise > 0) {
+    ctx.save();
+    ctx.globalAlpha = F.noise;
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.translate(-rand(0, 128), -rand(0, 128));
+    ctx.fillStyle = noisePats[frameN % noisePats.length];
+    ctx.fillRect(0, 0, W + 128, H + 128);
+    ctx.restore();
+  }
+  if (F.vignette > 0) { ctx.globalAlpha = F.vignette; ctx.drawImage(vigCv, 0, 0, W, H); }
+  ctx.globalAlpha = 1;
+}
+
+function applyGlitch(amount) {
+  if (amount < .02) return;
+  bctx.setTransform(1, 0, 0, 1, 0, 0);
+  bctx.clearRect(0, 0, buf.width, buf.height);
+  bctx.drawImage(cv, 0, 0);
+  // 全体を少しずらして重ねる（色の残像）
+  if (amount > .2) {
+    ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = .3 * clamp(amount);
+    ctx.drawImage(buf, rand(-14, 14) * amount, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  }
+  // 横に裂ける帯
+  const n = 2 + Math.floor(amount * 12);
+  for (let i = 0; i < n; i++) {
+    const y = rand(0, H), h = rand(2, H * .07 * amount + 3), dx = rand(-.5, .5) * W * .16 * amount;
+    ctx.drawImage(buf, 0, y * DPR, buf.width, h * DPR, dx, y, W, h);
+  }
+  // 色ブロック
+  if (amount > .35) {
+    ctx.globalCompositeOperation = 'lighter';
+    const C = params.color;
+    for (let i = 0; i < Math.floor(amount * 6); i++) {
+      ctx.fillStyle = rgba([C.a, C.b, C.c][i % 3], rand(.15, .5));
+      ctx.fillRect(rand(0, W), rand(0, H), rand(20, 180) * amount, rand(2, 14));
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+/* =========================================================
+   タイムライン
+   起動(2.9s) → 街が上から走査して現れる → 英字タイトル ⇄ カタカナタイトル を交互にループ
+   ========================================================= */
+let micro = 0;
+function frame(dt) {
+  const t = clock;
+  const bootDur = params.play.boot ? BOOT_DUR : 0;
+  frameN++;
+
+  if (t < bootDur) {
+    drawBoot(t);
+    drawPost(t);
+    const flash = clamp((t - (bootDur - .25)) / .25);
+    applyGlitch((Math.random() < .06 ? .3 : 0) + flash * 1.2);
+    if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${flash * .8})`; ctx.fillRect(0, 0, W, H); }
+    return;
+  }
+  const st = t - bootDur;
+
+  drawSky(t);
+  drawKanaRain(dt);
+  drawSun(t);
+  drawLayer(layers[0], t, false);
+  // 遠景のもや
+  const hz = ctx.createLinearGradient(0, HZ * .5, 0, HZ);
+  hz.addColorStop(0, rgba(params.color.a, 0)); hz.addColorStop(1, rgba(params.color.a, .16));
+  ctx.fillStyle = hz; ctx.fillRect(0, HZ * .5, W, HZ * .5);
+  drawCars(dt);
+  drawLayer(layers[1], t, true);
+  drawLayer(layers[2], t, true);
+  drawFloor(t);
+  drawRain(dt);
+
+  // タイトル
+  const L = params.title.hold;
+  const ct = st - .7;
+  let gI = 0;
+  if (ct >= 0) {
+    const card = Math.floor(ct / L) % 2, tl = ct % L;
+    gI = Math.max(1 - tl / .45, (tl - (L - .5)) / .5, 0);
+    drawTitle(card, tl, gI * params.fx.glitch);
+    const fl = clamp(.45 - tl * 2.2);
+    if (fl > 0) { ctx.fillStyle = rgba(params.color.b, fl * .5); ctx.fillRect(0, 0, W, H); }
+  }
+
+  drawHUD(t);
+
+  // 登場時：上から走査線がなめて映像が現れる
+  const rv = easeOut(st / 1.1);
+  if (rv < 1) {
+    const ry = H * rv;
+    ctx.fillStyle = '#020005'; ctx.fillRect(0, ry, W, H - ry);
+    ctx.fillStyle = params.color.b; ctx.fillRect(0, ry - 1, W, 2);
+    ctx.fillStyle = rgba(params.color.b, .25); ctx.fillRect(0, ry - 8, W, 16);
+  }
+
+  drawPost(t);
+
+  // たまに入る小さなグリッチ
+  if (micro <= 0 && Math.random() < .012) micro = rand(.06, .22);
+  micro -= dt;
+  applyGlitch((Math.max(gI, micro > 0 ? .35 : 0) + (1 - rv) * .4) * params.fx.glitch);
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const sdt = dt * params.play.speed;
+  clock += sdt;
+  requestAnimationFrame(loop);
+  // 画面サイズが0（非表示タブ等）の間は描かない。サイズが変わっていたら作り直す
+  if (innerWidth !== W || innerHeight !== H) resize();
+  if (!W || !H) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  frame(sdt);
+}
+
+function restart() { clock = 0; micro = 0; }
+
+addEventListener('resize', () => { clearTimeout(resize.t); resize.t = setTimeout(resize, 120); });
+resize();
+requestAnimationFrame(loop);
+
+/* =========================================================
+   調整パネル（右上の透明な四角をクリックで出る）
+   ========================================================= */
+try {
+  TunePanel.create({
+    title: '⚙️ サイバーパンク調整',
+    storageKey: 'cyberpunk-motion', version: 1, theme: 'dark',
+    params, defaults: DEFAULTS,
+    schema: [
+      { cat: '🎬 全体', open: true, items: [
+        { sub: '再生' },
+        { slider: '再生スピード', path: 'play.speed', min: .2, max: 3, step: .05, fmt: 'x', hint: '全部の動きが同じ倍率で速く／遅くなります。' },
+        { toggle: '起動シーン', path: 'play.boot', hint: '最初の黒い画面で「システム起動中…」と打ち込まれる演出。' },
+        { button: '▶ 最初から再生', primary: true, onClick: () => restart() },
+        { sub: '配色' },
+        { color: 'ネオン1（メイン）', path: 'color.a', hint: '床のグリッド・太陽・タイトルの赤側の色ずれ。' },
+        { color: 'ネオン2（サブ）', path: 'color.b', hint: 'カタカナの雨・計器表示・タイトルの青側の色ずれ。' },
+        { color: 'アクセント', path: 'color.c', hint: 'サブタイトルの帯・太陽の上側。' },
+        { color: '夜空', path: 'color.sky', hint: '空の真ん中あたりの色。遠くのビルもこの色から作ります。' }
+      ]},
+      { cat: '🌌 空', items: [
+        { toggle: '太陽', path: 'sky.sun', hint: '街の奥にある横縞の太陽。' },
+        { slider: '太陽の大きさ', path: 'sky.sunSize', min: .4, max: 1.8, step: .05, fmt: 'x', hint: '手を離すと描き直します。' },
+        { slider: 'カタカナの雨', path: 'sky.kana', min: 0, max: 1.6, step: .05, fmt: 'x', hint: '空に流れる文字の濃さ・量。0で消えます。' },
+        { slider: '空飛ぶ車', path: 'sky.cars', min: 0, max: 1, step: .1, fmt: 'x', hint: '光の尾を引いて横切る点の数。' }
+      ]},
+      { cat: '🔤 タイトル', items: [
+        { sub: '文字' },
+        { text: '英字タイトル', path: 'title.en', hint: '1枚目に出る大きな文字。' },
+        { text: '英字のサブ', path: 'title.subEn', hint: '1枚目の黄色い帯の文字。' },
+        { text: 'カタカナタイトル', path: 'title.jp', hint: '2枚目に出る大きな文字。' },
+        { text: 'カタカナのサブ', path: 'title.subJp', hint: '2枚目の黄色い帯の文字。' },
+        { sub: '見え方' },
+        { slider: '大きさ', path: 'title.size', min: .5, max: 1.5, step: .05, fmt: 'x', hint: '画面幅からはみ出る時は自動で縮みます。' },
+        { slider: '色ずれの強さ', path: 'title.split', min: 0, max: 3, step: .05, fmt: 'x', hint: '文字の左右に出る赤・青のずれ幅。' },
+        { slider: '1枚の表示秒数', path: 'title.hold', min: 3, max: 14, step: .5, fmt: 's', hint: '英字⇄カタカナが切り替わる間隔。' }
+      ]},
+      { cat: '🌃 街', items: [
+        { slider: '流れる速さ', path: 'city.speed', min: 0, max: 4, step: .05, fmt: 'x', hint: 'ビル群が横に流れる速さ。奥ほどゆっくり。' },
+        { slider: '窓の明かり', path: 'city.windows', min: 0, max: 2.5, step: .05, fmt: 'x', hint: '灯っている窓の割合。手を離すと描き直します。' },
+        { toggle: 'ネオン看板', path: 'city.signs', hint: 'ビルの縦看板・横看板（時々チカチカ切れます）。' }
+      ]},
+      { cat: '🟪 床グリッド', items: [
+        { toggle: '表示', path: 'grid.show', hint: '手前に迫ってくる格子の床。' },
+        { slider: '迫る速さ', path: 'grid.speed', min: 0, max: 4, step: .05, fmt: 'x', hint: '格子が手前に流れてくる速さ。' },
+        { slider: '光のにじみ', path: 'grid.glow', min: 0, max: 3, step: .05, fmt: 'x', hint: '線の周りのぼんやりした光。' }
+      ]},
+      { cat: '📟 HUD（計器表示）', items: [
+        { toggle: '表示', path: 'hud.show', hint: '四隅のカギ・タイムコード・照準などの計器表示。' },
+        { slider: '濃さ', path: 'hud.opacity', min: .1, max: 1, step: .05, fmt: '%', hint: '計器表示全体の不透明度。' }
+      ]},
+      { cat: '📺 画面の質感', items: [
+        { slider: '雨', path: 'fx.rain', min: 0, max: 2, step: .05, fmt: 'x', hint: '一番手前に降る斜めの雨。' },
+        { slider: 'グリッチ', path: 'fx.glitch', min: 0, max: 2, step: .05, fmt: 'x', hint: '画面が横に裂けるノイズの強さ。0で止まります。' },
+        { slider: '走査線', path: 'fx.scan', min: 0, max: 1, step: .05, fmt: '%', hint: 'ブラウン管っぽい横線の濃さ。' },
+        { slider: 'ザラつき', path: 'fx.noise', min: 0, max: .3, step: .01, fmt: '%', hint: 'フィルムのような粒子ノイズ。' },
+        { slider: '周辺減光', path: 'fx.vignette', min: 0, max: 1, step: .05, fmt: '%', hint: '画面の四隅を暗くする量。' }
+      ]}
+    ],
+    onSettle: () => buildStatic()
+  });
+} catch (e) { console.warn('tune-panel not loaded', e); }
+</script>
+</body>
+</html>
