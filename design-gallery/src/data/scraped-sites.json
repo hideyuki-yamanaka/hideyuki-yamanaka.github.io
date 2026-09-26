@@ -23547,6 +23547,20 @@
     "lastCheckedAt": "2026-08-02T05:28:51.511Z"
   },
   {
+    "id": "2f0c8abb1de1",
+    "title": "CABO",
+    "url": "https://muuuuu.org/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/23-768x576-1.png",
+    "source": "muuuuu",
+    "category": [
+      "shopping"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-11T03:44:59.347Z"
+  },
+  {
     "id": "e07c7f01b986",
     "title": "Farm Minerals",
     "url": "https://www.farmminerals.com/",
@@ -24139,20 +24153,6 @@
     "lastCheckedAt": "2026-08-02T05:28:52.650Z"
   },
   {
-    "id": "2f0c8abb1de1",
-    "title": "モトヤユナイテッド株式会社",
-    "url": "https://muuuuu.org/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/22-768x576.webp",
-    "source": "muuuuu",
-    "category": [
-      "white"
-    ],
-    "taste": [],
-    "date": "2026-07",
-    "starred": false,
-    "firstSeen": "2026-09-11T03:44:59.347Z"
-  },
-  {
     "id": "9ac530da9867",
     "title": "CCTP",
     "url": "https://sstr.tech/",
@@ -24517,22 +24517,6 @@
     "date": "2026-06",
     "starred": false,
     "firstSeen": "2026-06-24T03:59:25.092Z"
-  },
-  {
-    "id": "d7ab9d07d5ac",
-    "title": "PP Neue Montreal",
-    "url": "https://neuemontreal.com/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/06/22.webp",
-    "source": "muuuuu",
-    "category": [
-      "art"
-    ],
-    "taste": [],
-    "date": "2026-06",
-    "starred": false,
-    "firstSeen": "2026-06-23T03:58:22.606Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:28:57.032Z"
   },
   {
     "id": "731b9285ce73",
@@ -48162,6 +48146,46 @@
     "firstSeen": "2026-09-19T15:30:07.693Z"
   },
   {
+    "id": "93aa3edb0951",
+    "title": "RE:ACTION",
+    "url": "https://re-action.world/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/z2a6gew4lym7-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "アート･芸術"
+    ],
+    "taste": [
+      "タイポグラフィー･文字",
+      "UI スキュアモーフィック",
+      "パララックス",
+      "グリッドデザイン"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-26T15:54:26.178Z"
+  },
+  {
+    "id": "3f37afbb8dda",
+    "title": "Goodpatch 15th Anniversary",
+    "url": "https://goodpatch.com/15th",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/pvyxm3tf7ecd-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "特設サイト"
+    ],
+    "taste": [
+      "アイコン･ピクトグラム",
+      "ゲーミフィケーション",
+      "タイポグラフィー･文字",
+      "3Dアニメーション･3Dモデル",
+      "スクロールエフェクト"
+    ],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-09-26T15:54:26.178Z"
+  },
+  {
     "id": "3fa564ad488a",
     "title": "Waku & Co.株式会社",
     "url": "https://waku-and-co.jp/",
@@ -52874,70 +52898,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-08-02T05:29:20.796Z"
-  },
-  {
-    "id": "db4d8652b75b",
-    "title": "日本バイリーン株式会社",
-    "url": "https://vilene.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/6wyahf89jl4e-1400x1050.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "プロダクトサイト",
-      "軽工•重工•製造"
-    ],
-    "taste": [
-      "写真･フォトディレクション",
-      "動画･映像",
-      "スクロールエフェクト",
-      "モチーフ 円•曲線"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:15.254Z"
-  },
-  {
-    "id": "10e284e95031",
-    "title": "サムコ株式会社",
-    "url": "https://www.samco.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/zisglqnma4d6-1400x1050.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "プロダクトサイト",
-      "軽工•重工•製造",
-      "IT･コンピューター･テクノロジー"
-    ],
-    "taste": [
-      "写真･フォトディレクション",
-      "スクロールエフェクト",
-      "グリッドデザイン"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-04-22T14:57:30.657Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:29:21.486Z"
-  },
-  {
-    "id": "b6dd7154ec0f",
-    "title": "ブルーパドル | 話題化する「PR・商品企画・店・こども・WEB」",
-    "url": "https://blue-puddle.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/8a37x1dj5fqi-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "デザイン･制作･開発会社"
-    ],
-    "taste": [
-      "グリッドデザイン"
-    ],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-08-02T05:37:14.099Z"
   },
   {
     "id": "61dbd2acd28e",
