@@ -508,3 +508,30 @@
 [2026-09-26 03:10:00] === v4 自動デプロイ開始 ===
 [2026-09-26 03:10:00] プロジェクト = anyflow-embed-v4
 [2026-09-26 03:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 04:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 04:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 04:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 05:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 05:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 05:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 06:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 06:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 06:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 07:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 07:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 07:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 08:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 08:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 08:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 09:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 09:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 09:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 10:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 10:10:01] プロジェクト = anyflow-embed-v4
+[2026-09-26 10:10:01] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 11:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 11:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 11:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 12:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 12:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 12:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
