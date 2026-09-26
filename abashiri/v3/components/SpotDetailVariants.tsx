@@ -2,8 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 /*
- * ぼーっとスポット詳細ページ｜デザイン兼インタラクション 5案
+ * ぼーっとスポット詳細ページ｜共通部品（ヘッダー・基本情報・おすすめ・地図）＋案1
  * （2026-09-15 ヒデさん依頼。旧3案は廃止して新規に作り直し）
+ * 【2026-09-26 ヒデさん指示】案3（白エディトリアル）は完全削除
  *
  * 共通の考え方
  *   ・主役は写真。文字は写真の邪魔をしない置き方にする
@@ -17,15 +18,7 @@
  *    body-14 行間2 字間0.7px など）
  */
 import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useAnimationFrame,
-  useMotionTemplate,
-  useMotionValue,
-  useScroll,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import type { SpotDetail } from "./spotDetailData";
 import SiteFooter from "./SiteFooter";
 import GlobalNav from "./GlobalNav";
@@ -482,174 +475,3 @@ export function V1Parallax({ spot }: VProps) {
     </main>
   );
 }
-
-/* ═══════════════════════════════════════════════════════════
-   最初に作った3案を復活（2026-09-15 ヒデさん指示）。
-   案2=全画面ヒーロー / 案3=白エディトリアル / 案4=空グラデ没入
-   ═══════════════════════════════════════════════════════════ */
-
-/* ═══════════ 案3 白エディトリアル ═══════════
-   縦書きの名前＋2カラム。右の基本情報がスクロールに追従する。
-
-   【2026-09-16 ヒデさん指示】
-     「現状のデザインは終点として扱い、最初は全画面で表示されていた写真が
-       スクロールすると現状のような切り取られた画像になって下にスクロールできる形に。
-       最初の全画面の時はテキスト情報は一切なし。スクロールした先でタイトルが見えてくる」
-   → 導入（全画面の写真だけ）→ 終点（いまのエディトリアル）へ、スクロールで移す。
-     写真の切り取りを【いまの写真の置き場所とだいたい同じ枠】まで狭めながら、
-     入れ替わりに白いエディトリアルの面をかぶせる。
-     こうすると「全画面だった写真が、そのまま記事の写真になった」ように見える */
-export function V3Editorial({ spot }: VProps) {
-  const ref = useRef<HTMLElement>(null);
-  const stage = useRef<HTMLDivElement>(null);
-  /** 記事側の写真の置き場所（空き枠）。ここへ向かってズームアウトする */
-  const shot = useRef<HTMLDivElement>(null);
-  /** 実際に動く写真。いちばん上に乗っていて、全画面 → 空き枠へ縮む */
-  const hero = useRef<HTMLDivElement>(null);
-  /** 縮みきったら、貼りついた写真を消して記事側の写真に引き渡す */
-  const [landed, setLanded] = useState(false);
-
-  /* 【2026-09-17 ヒデさん指示】
-     「最初に出ている写真が Zインデックスで上にあって、下にコンテンツが
-       かぶさっている形で表示されていて、スクロールするとズームアウトして、
-       その写真が終点の位置・終点のサイズになって進む」
-     → 溶暗（クロスフェード）はやめた。写真は【1枚だけ】で、
-       最前面のまま全画面から記事の枠へ縮んでいく。記事は最初から下に見えている。
-
-     ⚠️ 縮めるのに transform の scale は使えない。写真は object-cover なので、
-        枠の大きさが変わらないと「切り取られ方」が変わらず、
-        非等倍で潰れる。枠の width/height を動かす（＝本物のズームアウト）。
-        動かすのは position:absolute の1要素だけなので、まわりのレイアウトは動かない。
-     ⚠️ framer の useScroll に container と target を渡す書き方は、
-        このサイトでは進捗が正しく出ない。スクロール量から直接出す */
-  const sp = useMotionValue(0);
-  useAnimationFrame(() => {
-    const sc = ref.current;
-    const st = stage.current;
-    const slot = shot.current;
-    const h = hero.current;
-    if (!sc || !st || !slot || !h) return;
-    const travel = Math.max(1, st.offsetHeight - sc.clientHeight);
-    const v = Math.max(0, Math.min(1, sc.scrollTop / travel));
-    if (Math.abs(v - sp.get()) > 0.0005) sp.set(v);
-
-    /* 0→0.86 で全画面から記事の枠まで縮みきる（最後は少し余韻を残す） */
-    const k = Math.min(1, v / 0.86);
-    /* 行き先＝記事の空き枠が、いま画面のどこにあるか */
-    const r = slot.getBoundingClientRect();
-    const mix = (from: number, to: number) => from + (to - from) * k;
-    h.style.left = `${mix(0, r.left).toFixed(1)}px`;
-    h.style.top = `${mix(0, r.top).toFixed(1)}px`;
-    h.style.width = `${mix(sc.clientWidth, r.width).toFixed(1)}px`;
-    h.style.height = `${mix(sc.clientHeight, r.height).toFixed(1)}px`;
-
-    /* 枠にぴったり重なったら、記事側の写真に引き渡して貼りつきを終える
-       （ぴったり同じ場所なので、入れ替わりは見えない） */
-    const done = k >= 0.999;
-    if (done !== landed) setLanded(done);
-  });
-
-  return (
-    /* ⚠️ relative は必須。最前面の写真を absolute で置くので、
-       基準になる箱がないとページの左上に飛ぶ */
-    <main
-      ref={ref}
-      className="relative h-dvh overflow-y-auto overscroll-contain bg-white"
-    >
-      <DetailHeader />
-
-      {/* ── 記事本体。最初から見えていて、上の写真にかぶられている ── */}
-      <div className="relative z-0">
-      {/* ⚠️ 上に1画面ぶん近い余白を置く。これが無いと、写真が縮みきるころには
-          記事が画面の上へ流れてしまい、【着地するところが見えない】
-          （2026-09-17 実測：着地時に写真の行き先が y=-708 にあった）。
-          写真が縮みきるのは 0.86 × (190dvh − 1画面) ＝ 約78dvh のとき。
-          そこで記事の写真が画面の上から 176px に来るように逆算した */}
-      <div className="mx-auto w-[1200px] max-w-full px-6 pb-[120px] pt-[calc(78dvh+120px)]">
-        <div className="flex items-start gap-7 sm:p-[56px]">
-          <div className="flex w-full items-start gap-6 pt-2 sm:w-auto sm:shrink-0">
-            <h1
-              className="text-title-36 font-thin leading-[1.2] text-ink [writing-mode:horizontal-tb] sm:whitespace-nowrap sm:text-title-56 sm:[writing-mode:vertical-rl]"
-            >
-              {spot.name}
-            </h1>
-            <p
-              className="pt-1 text-body-14 font-extralight tracking-[2px] text-ink/50 [writing-mode:horizontal-tb] sm:whitespace-nowrap sm:[writing-mode:vertical-rl]"
-            >
-              {spot.category} {spot.no}｜{spot.kana}
-            </p>
-          </div>
-          {/* 写真の置き場所。導入の間は空けておき、
-              上の写真が縮みきったら中身を出す（同じ場所なので切り替えは見えない） */}
-          <div
-            ref={shot}
-            className="relative h-[300px] w-full min-w-0 overflow-hidden bg-white sm:h-[560px] sm:flex-1"
-          >
-            {landed && (
-              <img
-                src={spot.hero}
-                alt={spot.name}
-                className="absolute inset-0 size-full object-cover"
-              />
-            )}
-          </div>
-        </div>
-        <p className="mt-10 text-body-18 font-extralight leading-[2.2] tracking-[0.7px] text-ink/80">
-          {spot.lead}
-        </p>
-        <div className="mt-12 flex flex-col items-start gap-10 lg:mt-[88px] lg:flex-row lg:gap-[72px]">
-          <div className="flex min-w-0 flex-1 flex-col gap-[72px]">
-            <Sections spot={spot} root={ref} />
-            <div className="flex flex-col gap-6">
-              <h2 className="text-title-28 font-thin leading-[1.6] text-ink">
-                担当者からのおすすめポイント
-              </h2>
-              <Points spot={spot} />
-            </div>
-            <div className="flex gap-2">
-              {spot.photos.map((p) => (
-                <img key={p} src={p} alt="" className="h-[150px] min-w-0 flex-1 object-cover lg:h-[240px]" />
-              ))}
-            </div>
-            <div className="flex flex-col gap-6">
-              <h2 className="text-title-28 font-thin leading-[1.6] text-ink">周辺マップ</h2>
-              <MapEmbed spot={spot} />
-            </div>
-          </div>
-          <aside className="w-full shrink-0 bg-sky-bottom/40 p-6 lg:sticky lg:top-10 lg:w-[360px] lg:p-8">
-            <h2 className="mb-4 text-body-18 font-thin text-ink">基本情報</h2>
-            <InfoTable spot={spot} />
-          </aside>
-        </div>
-      </div>
-      </div>
-
-      {/* ── 最前面の写真。全画面 → 記事の枠へズームアウトする ──
-          ⚠️ z-30。記事（z-0）より必ず上。押せるものは下にあるので当たり判定は外す */}
-      <div
-        ref={stage}
-        className="pointer-events-none absolute inset-x-0 top-0 h-[190dvh]"
-      >
-        <div className="sticky top-0 h-dvh w-full">
-          <div
-            ref={hero}
-            className="absolute z-30 overflow-hidden"
-            style={{
-              left: 0,
-              top: 0,
-              width: "100%",
-              height: "100%",
-              visibility: landed ? "hidden" : "visible",
-              willChange: "width, height, left, top",
-            }}
-          >
-            <img src={spot.hero} alt="" className="size-full object-cover" />
-          </div>
-        </div>
-      </div>
-
-      <SiteFooter />
-    </main>
-  );
-}
-
