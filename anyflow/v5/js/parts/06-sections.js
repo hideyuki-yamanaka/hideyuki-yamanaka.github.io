@@ -992,6 +992,9 @@ const VAL_VB = 220;                    /* 描画の座標系。表示は 220×22
 const VAL_INK = '#111';
 const VAL_ACC = '#0EBBFF';
 const VAL_PINK = '#FF5D97';
+/* 【2026-09-26 ヒデさん依頼】for AI「A20 レーダー」の先端の丸の色(左の棒から順)。ブランド3色＝Anyflow マークの水色・青・ピンク
+   (開発者体験モックのサイドバーの丸ポチと同じ3色)。隣どうしが同じ色にならない並び。⚠️仮置き: 並びは好みで入れ替え可 */
+const VAL_A20_COLS = ['#0EBBFF', '#2E6FD8', '#FF5D97', '#0EBBFF', '#2E6FD8'];
 /* 【2026-08-30 ヒデさん指定】黒せり上がりの白反転を、ピクトグラムの「黒い図形」にも効かせる(色付きACC/PINKは維持)。
    updateResults が毎フレーム valInkCur をセット(反転中=白寄り / 通常=VAL_INK)。valTake/valStyle が #111 を検知して差し替える。 */
 let valInkCur = VAL_INK;
@@ -1081,9 +1084,14 @@ function vTrim(e, k, from) {
   if (!L0) return e;
   /* 【2026-09-15 ヒデさん指摘「For AI のパスが途中で途切れる」の根治】線は vector-effect:non-scaling-stroke なので dasharray は画面px。
      ピクトが 220px より大きく表示される案(300/325/340/420px など)では、座標系(220)の長さのままだと表示の途中で切れていた
-     → その svg の表示倍率(画面幅 ÷ 220。ステージ縮小や拡大の transform も含む)を毎フレーム1回だけ測って掛ける */
+     → その svg の表示倍率を毎フレーム1回だけ測って掛ける。
+     【2026-09-26 ヒデさん指摘「線が途中で止まる」の真因・修正】倍率は「svg の箱の大きさ(CSS の transform をかける前)」で測る。
+     non-scaling-stroke の点線の長さは、親の transform(実績の固定ステージの縮小 --sp・ピクトの拡大)を【含まない】単位で数えられる。
+     以前は getBoundingClientRect(transform 込み)で測っていたため、画面の高さが足りずステージを縮めている時(ノートPCで --sp≈0.83〜0.9)に
+     点線の1本目が縮小率ぶん短くなり、線が 83〜90% の所で止まっていた(1440×921 以上では --sp=1 なので出なかった)。
+     箱が正方形でない時は viewBox が小さい方の辺に合わせて収まる(meet)ので、幅と高さの小さい方を使う。 */
   const svg = e.ownerSVGElement;
-  if (svg && svg.__scF !== frameSeq) { const w = svg.getBoundingClientRect().width; svg.__sc = w > 0 ? (w / VAL_VB) : 1; svg.__scF = frameSeq; }
+  if (svg && svg.__scF !== frameSeq) { const w = svg.clientWidth, h = svg.clientHeight; svg.__sc = (w > 0 && h > 0) ? (Math.min(w, h) / VAL_VB) : 1; svg.__scF = frameSeq; }
   const L = L0 * ((svg && svg.__sc) || 1);
   const a = Math.max(0, Math.min(1, from || 0)), b = Math.max(a, Math.min(1, k));
   const on = L * (b - a);
@@ -1227,6 +1235,7 @@ const VAL_AI = {
     const N = 5, span = 132, x0 = C - span / 2, gap = span / (N - 1);
     const baseY = C + 48;                 /* 棒の下端(共通の底) */
     const minH = 22, maxH = 100;
+    const R = 2.5;                        /* 先端の丸の半径 */
     /* 底の基準線(うっすら)。空っぽに見えないように常設 */
     vLine(st, x0 - 12, baseY, x0 + span + 12, baseY, { a: 0.25, w: 1 });
     for (let i = 0; i < N; i++) {
@@ -1235,7 +1244,9 @@ const VAL_AI = {
       const s = 0.5 + 0.5 * Math.sin(t * 2.2 - i * 0.8);
       const h = minH + (maxH - minH) * s;
       vLine(st, x, baseY, x, baseY - h, { w: 1, a: 0.9 });
-      vCircle(st, x, baseY - h, 2.5, { c: VAL_ACC, w: 1, a: 0.9 });   /* 先端の信号点(水色) */
+      /* 【2026-09-26 ヒデさん依頼】先端の丸は棒の先に「乗せる」(中心を半径ぶん上へ＝ペンの上に丸がくっついている形)。
+         以前は丸の中心が棒の先端にあり、棒が丸を串刺しにしていた。色はブランド3色を散らす(以前は全部水色) */
+      vCircle(st, x, baseY - h - R, R, { c: VAL_A20_COLS[i % VAL_A20_COLS.length], w: 1, a: 0.9 });
     }
   },
   /* ===== 2026-09-08 ヒデさん指定・新規7案(コンテキスト取得→実行)。矢印の三角は
