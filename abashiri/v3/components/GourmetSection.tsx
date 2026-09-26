@@ -15,6 +15,8 @@
  *   見出し … Noto Sans JP Thin 36px (Title_36px) / 行間1.8 / 黒 / 2行
  *   見出し行の幅 1300・右端に「もっと見る」（ExtraLight 16px ＋ 18px アイコン・間4）
  *   見出し → カルーセルの間 140px
+ *     → 2026-09-26 ヒデさん指示「間を詰めて中央に寄せて、上下に余白ができる感じ」で
+ *       80px に詰めた（🟡仮置き。--gourmet-gap・調整パネル「グルメの余白」）
  *   カード … 588 x 504（カンプ 586.73x504.38 を4の倍数に丸め）/ 枠線なし・角丸なし / 間 8px
  *   ホバー … 黒グラデ rgba(0,0,0,0.2)→0.8 / 余白 左右44・上下24
  *     小見出し「素朴なグルメ 03」ExtraLight 16px（cap詰め）/ 店名 Thin 28px (Title_28px) / 間8px
@@ -128,7 +130,9 @@ export default function GourmetSection() {
        中身は「見出しの文字 → カルーセル」の順で出る（場面が出てから時間差） */
     <section
       id="gourmet"
-      className="flex size-full flex-col justify-center bg-white pb-10 pt-6"
+      /* 【2026-09-26 ヒデさん指示】「中央に寄せて」→ 上下の余白を pt-6/pb-10 → py-8 にそろえ、
+         中身が画面の上下まん中に来るようにした（前は16px上にずれていた・実測） */
+      className="flex size-full flex-col justify-center bg-white py-8"
     >
       {/* 見出し行（幅1280・中央）。場面が替わってから一拍おいて出る */}
       <motion.div
@@ -167,7 +171,7 @@ export default function GourmetSection() {
       {/* カルーセル：右から左へゆっくり流れ続ける。
           2セット並べて -50% まで動かすと、切れ目なく無限に回る */}
       <motion.div
-        className="mt-[140px] w-full overflow-hidden"
+        className="mt-[var(--gourmet-gap,80px)] w-full overflow-hidden"
         initial="hidden"
         animate="show"
         /* 文字よりさらに一拍あとに出る（場面 → 文字 → カルーセル の順） */

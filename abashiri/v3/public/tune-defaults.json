@@ -117,7 +117,8 @@
   },
   "gourmet": {
     "speed": 40,
-    "pauseOnHover": true
+    "pauseOnHover": true,
+    "gap": 80
   },
   "events": {
     "pattern": 32,

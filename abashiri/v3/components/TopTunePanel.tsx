@@ -183,7 +183,8 @@ type Params = {
   kvExit: KvExit;
   hero: HeroEnter;
   msg: MsgTune;
-  gourmet: { speed: number; pauseOnHover: boolean };
+  /** gap＝見出し→カルーセルの間(px)。カンプは140 */
+  gourmet: { speed: number; pauseOnHover: boolean; gap: number };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
   events: { pattern: number; tailPad: number; cardRatio: number; flow: number };
   /** ページ遷移の演出 1〜5 */
@@ -259,7 +260,10 @@ export default function TopTunePanel({
       hero: { ...DEFAULT_HERO_ENTER },
       msg: { ...DEFAULT_MSG },
       /* グルメのカルーセル。1周40秒は🟡仮置きのまま既定に */
-      gourmet: { speed: 40, pauseOnHover: true },
+      /* gap：【2026-09-26 ヒデさん指示】「グルメの上のテキスト群と下のカルーセルの間を詰めて、
+              コンテンツを中央に寄せて。上下に余白ができる感じ」→ カンプの 140px から詰める。
+              🟡仮置き 80px（詰める量はカンプに無いので、調整パネル「グルメの余白」で決める） */
+      gourmet: { speed: 40, pauseOnHover: true, gap: 80 },
       events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
@@ -297,6 +301,7 @@ export default function TopTunePanel({
       const root = document.documentElement;
       /* グルメのカルーセル：1周の秒数とホバー停止（その場で反映） */
       root.style.setProperty("--gourmet-speed", `${params.gourmet.speed}s`);
+      root.style.setProperty("--gourmet-gap", `${params.gourmet.gap}px`);
       root.dataset.gourmetPause = params.gourmet.pauseOnHover ? "1" : "0";
       for (const k of Object.keys(VAR_OF) as (keyof typeof POS_DEFAULTS)[]) {
         /* Rot で終わるキーだけ単位が deg（カモメの傾きなど） */
@@ -1296,6 +1301,17 @@ export default function TopTunePanel({
                 step: 20,
                 fmt: "px",
                 hint: "このぶんスクロールするごとに次の写真へ。982でちょうど1画面ぶんです。",
+              },
+              /* ── グルメ｜余白（2026-09-26 ヒデさん依頼）。画面の上から下の順なので、カルーセルの動きより先 ── */
+              { sub: "グルメの余白", grp: "basic" },
+              {
+                slider: "見出しとカルーセルの間",
+                path: "gourmet.gap",
+                min: 24,
+                max: 160,
+                step: 4,
+                fmt: "px",
+                hint: "上の文章と下の写真の列の間。中身は画面の上下まん中にそろうので、詰めるほど上下の余白が広がります。カンプは140px。",
               },
               /* ── グルメ｜カルーセル（2026-08-22 ヒデさん依頼） ── */
               { sub: "グルメのカルーセル", grp: "anim" },
