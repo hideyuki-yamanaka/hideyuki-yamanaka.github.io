@@ -41,6 +41,7 @@ import {
   EVENT_RATIO_EVENT,
 } from "./EventVariants5";
 import {
+  PT_DEFAULT,
   PAGE_TRANSITION_EVENT,
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
@@ -190,7 +191,8 @@ type Params = {
   /** mqSize/mqDur：案31 の後ろを流れる文字の大きさ(px)・1周の秒数。shufCard：カードの大きさ(%) */
   events: { pattern: number; tailPad: number; cardRatio: number; flow: number; shufDur: number; shufPow: number; mqSize: number; mqDur: number; shufCard: number };
   /** ページ遷移の演出 1〜5 */
-  pageTrans: { pattern: number };
+  /** dur/blur/peak は案7（じんわり溶ける）だけの長さ(ms)・ぼかし(px)・白の濃さ(%) */
+  pageTrans: { pattern: number; dur: number; blur: number; peak: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
   footer: {
     padX: number;
@@ -267,7 +269,10 @@ export default function TopTunePanel({
               🟡仮置き 80px（詰める量はカンプに無いので、調整パネル「グルメの余白」で決める） */
       gourmet: { speed: 40, pauseOnHover: true, gap: 80 },
       events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */, shufDur: 1.0, shufPow: 3 /* 2026-09-26 案31 カードを切る：ヒデさん「ゆったりすぎ・シャッと、でも急じゃなく」→ 1.0秒・メリハリ3（🟡仮置き） */, mqSize: 80, mqDur: 34, shufCard: 100 /* 同日 ヒデさん「後ろのテキストのサイズ・速度、カードのサイズも変えられるように」。既定はカンプ値(80px)・これまでの速さ(34秒)・等倍 */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
-      pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
+      /* ページ遷移の演出。2026-09-26 ヒデさん「全部統一・ほんの気持ちだけじんわり溶ける印象に」
+         → 案7「じんわり溶ける」を既定に（それまでは案6「ディゾルブ」）。
+         ⚠️ 値の住み家：ここ／PageTransition の PT_DEFAULT／tune-defaults.json */
+      pageTrans: { pattern: 7, dur: PT_DEFAULT.dur, blur: PT_DEFAULT.blur, peak: PT_DEFAULT.peak },
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
@@ -405,6 +410,22 @@ export default function TopTunePanel({
       if (!lib) return;
       madeRef.current = true;
 
+      /* 【2026-09-26 一回限りの移し替え】ページ遷移の既定を案6→案7に変えたが、
+         ブラウザに前の保存値（案6・長さなどの項目なし）が残っていると新しい既定が見えない。
+         版を上げると他のつまみの保存値まで全部消えるので、ページ遷移の項目だけを置き換える。
+         見分け方：新しく足した dur を持っていない保存値＝この変更より前のもの */
+      try {
+        const k = `tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}`;
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved && (!saved.pageTrans || saved.pageTrans.dur === undefined)) {
+            saved.pageTrans = { pattern: 7, dur: PT_DEFAULT.dur, blur: PT_DEFAULT.blur, peak: PT_DEFAULT.peak };
+            localStorage.setItem(k, JSON.stringify(saved));
+          }
+        }
+      } catch {}
+
       /* デプロイ用の既定値ファイル（💾保存の自動引き継ぎ先）。
          ローカルで保存 → public/tune-defaults.json に書き込み → git経由でデプロイに載り、
          ここで読み込まれて全員の既定値になる（2026-08-23 ヒデさん依頼） */
@@ -531,7 +552,7 @@ export default function TopTunePanel({
               },
               { sub: "ページ遷移の演出", grp: "anim" },
               {
-                note: "ページを移る時にかぶせる幕。既定は案6「ディゾルブ」（ブラーも色の幕も使わず、うっすら白を挟んで前の画面と次の画面がすっと入れ替わる）。ほかにブラーや色の幕を使う案も選べます。選ぶとその場で一度再生して見せます（実際の遷移でも同じ動きになります）。",
+                note: "ページを移る時にかぶせる幕。サイト内のどのリンク・ボタンから移っても同じ動きになります（2026-09-26 に統一）。既定は案7「じんわり溶ける」（前のページがうっすら白くぼやけながら溶けて、次のページが白の中から現れる）。行き先が「ぼーっと体験」の時だけ、幕の色がそのページと同じ青になります。選ぶとその場で一度再生して見せます。",
               },
               {
                 pills: "案",
@@ -544,6 +565,37 @@ export default function TopTunePanel({
                   swatch: "#0070c9",
                   desc: p.note,
                 })),
+              },
+              /* 案7 を選んだ時だけ出す（2026-09-26） */
+              {
+                slider: "切り替えの長さ",
+                path: "pageTrans.dur",
+                min: 400,
+                max: 2400,
+                step: 50,
+                unit: "ms",
+                when: (p: Params) => p.pageTrans.pattern === 7,
+                hint: "溶けて消え始めてから、次のページが現れ終わるまで。溶ける:現れる＝4:6。長いほどじんわり。",
+              },
+              {
+                slider: "ぼかし",
+                path: "pageTrans.blur",
+                min: 0,
+                max: 12,
+                step: 1,
+                unit: "px",
+                when: (p: Params) => p.pageTrans.pattern === 7,
+                hint: "溶ける時に後ろのページをどれだけぼかすか。0でぼかし無し（案6に近い）。",
+              },
+              {
+                slider: "白の濃さ",
+                path: "pageTrans.peak",
+                min: 40,
+                max: 100,
+                step: 2,
+                unit: "%",
+                when: (p: Params) => p.pageTrans.pattern === 7,
+                hint: "いちばん溶けた時の白の濃さ。100で真っ白を挟む。下げるほど前後のページが透けて重なる。",
               },
               { sub: "カモメの見た目（全ページ共通）", grp: "fxtex" },
               {
@@ -1740,11 +1792,18 @@ export default function TopTunePanel({
           }
           /* 【2026-09-16】フッターの案は撤去したので、切り替えを知らせる必要が無くなった。
              余白などの数値は CSS 変数（--ft-*）で直接効くので、イベントは不要 */
-          if (info?.path === "pageTrans.pattern") {
-            /* preview:true で、その場で一度幕を見せる */
+          if (info?.path?.startsWith("pageTrans.")) {
+            /* 案を選んだ時は preview:true で、その場で一度幕を見せる。
+               長さ・ぼかし・濃さは値だけ渡す（つまみを動かすたびに再生するとうるさいため） */
             window.dispatchEvent(
               new CustomEvent(PAGE_TRANSITION_EVENT, {
-                detail: { v: params.pageTrans.pattern, preview: true },
+                detail: {
+                  v: params.pageTrans.pattern,
+                  dur: params.pageTrans.dur,
+                  blur: params.pageTrans.blur,
+                  peak: params.pageTrans.peak,
+                  preview: info.path === "pageTrans.pattern",
+                },
               })
             );
           }
@@ -1810,7 +1869,14 @@ export default function TopTunePanel({
         new CustomEvent(EVENT_RATIO_EVENT, { detail: { v: params.events.cardRatio } })
       );
       window.dispatchEvent(
-        new CustomEvent(PAGE_TRANSITION_EVENT, { detail: { v: params.pageTrans.pattern } })
+        new CustomEvent(PAGE_TRANSITION_EVENT, {
+          detail: {
+            v: params.pageTrans.pattern,
+            dur: params.pageTrans.dur,
+            blur: params.pageTrans.blur,
+            peak: params.pageTrans.peak,
+          },
+        })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの

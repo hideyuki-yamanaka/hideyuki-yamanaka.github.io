@@ -132,7 +132,10 @@
     "shufCard": 100
   },
   "pageTrans": {
-    "pattern": 6
+    "pattern": 7,
+    "dur": 1000,
+    "blur": 3,
+    "peak": 88
   },
   "footer": {
     "padX": 60,
