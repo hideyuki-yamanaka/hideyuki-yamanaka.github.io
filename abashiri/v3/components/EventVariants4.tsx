@@ -45,7 +45,7 @@ export const EVENT_KV_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。1回スクロールするごとに上の1枚が右へめくれて剥がれる（強く回しても1枚ずつ・流れ方は3案から選べる）。中央のカードにカーソルを乗せると影が乗って情報が出る" },
+  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。1回スクロールするごとに、いちばん上の1枚が右へすべり出て、束のいちばん下へ潜り込む（トランプを切るように）。残りは1段ずつ繰り上がり、4枚ぜんぶが一番上に来たら下へ進める。右へ出ていく部分のすべり方は「流れ方」の3案から選べる。中央のカードにカーソルを乗せると影が乗って情報が出る" },
   32: { name: "案32 左右に文字", note: "【ラフ再現】動きは案31と同じ。文字組みだけ違い、左に「意外と／オモロい、」右に「網走」を置いて、その間に写真の束がある" },
   33: { name: "案33 コピーから飛び出す", note: "【ラフ再現】中央に「意外とオモロい、網走。」。スクロールすると、その裏に隠れていた写真が大きくなりながら四方へ飛び出して散る" },
 };
@@ -96,7 +96,112 @@ function HoverInfo({ it }: { it: EventItem }) {
   );
 }
 
-/* ═══════════ 案31・32 共通：重なった写真が1枚ずつ右へめくれる ═══════════
+/* ═══════════ 案31：トランプを切るように、上の1枚が束の下へ潜る ═══════════
+   【2026-09-26 ヒデさん指示】
+     「スクロールすると写真が一番後ろに重なっていく演出に。右の方にカードが出ていくのは
+       一緒なんですけど、上から順番に、一番下のやつの下に行く。トランプのカードを切る
+       みたいなイメージ。上のやつが後ろに潜り込む」
+   動きは2段：
+     ① 出る（t: 0 → SHUF_SPLIT）… いちばん上の1枚が右へすべり出る。すべり方は「流れ方」の3案
+     ② 潜る（t: SHUF_SPLIT → 1）… 束の裏へ回り（重なり順をいちばん下へ）、左へ戻って
+        束のいちばん下の位置へ収まる。同時に、残りのカードが1段ずつ繰り上がる
+   束の形（STACK＝カンプの重なり方）は変えない。カードは「今が下から何段目か（rank）」に
+   応じて STACK の位置へ動く＝形はそのまま、中身だけが入れ替わる。
+   ⚠️ 「何段目か」は各カードの進み t から毎フレーム計算する（別に状態を持たない）。
+      上へ戻る時は t が 1→0 へ戻るので、そのまま逆回し（下から出て、上へ戻る）になる */
+const SHUF_SPLIT = 0.5;
+/** 右へ出る距離(px)。束の右端（約1040）より左端が右へ抜けて、裏へ回れる量 */
+const SHUF_OUT = 560;
+/** 右へ出る間の回り方は「流れ方」の回転の何割か（大きく回すと束から抜けきらない） */
+const SHUF_SPIN = 0.6;
+const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+/** ② 潜る段の進み（0→1）。① の間は 0 */
+const sunk = (t: number) =>
+  t <= SHUF_SPLIT ? 0 : easeInOut(Math.min(1, (t - SHUF_SPLIT) / (1 - SHUF_SPLIT)));
+/** 下から r 段目（小数も可）の置き場所。STACK の間をなめらかにつなぐ */
+function slotAt(r: number) {
+  const n = STACK.length - 1;
+  const c = Math.max(0, Math.min(n, r));
+  const k = Math.min(n - 1, Math.floor(c));
+  const f = c - k;
+  const a = STACK[k];
+  const b = STACK[k + 1];
+  return {
+    cx: a.cx + (b.cx - a.cx) * f,
+    cy: a.cy + (b.cy - a.cy) * f,
+    rot: a.rot + (b.rot - a.rot) * f,
+  };
+}
+function ShuffleCard({
+  it,
+  i,
+  ts,
+  nudge,
+  flow,
+}: {
+  it: EventItem;
+  i: number;
+  /** 全カードの進み（何段目かの計算に、他のカードが潜った量も要る） */
+  ts: MotionValue<number>[];
+  nudge: MotionValue<number>;
+  flow: EvFlow;
+}) {
+  const N = ts.length;
+  /* 何段目か（0＝いちばん下）。
+     他のカードが1枚潜るたびに1段上がり、自分が潜る時はいちばん下へ（N 段ぶん下げる） */
+  const rankOf = (vals: number[]) => {
+    let r = i;
+    for (let j = 0; j < N; j++) r += sunk(vals[j]);
+    return r - N * sunk(vals[i]);
+  };
+  /* 右へ出ている量（0→1→0）。出る段は「流れ方」のカーブ、潜る段はなめらかに戻す */
+  const away = (tv: number) =>
+    tv <= SHUF_SPLIT ? flow.pos(tv / SHUF_SPLIT) : 1 - sunk(tv);
+  const spinOf = (tv: number) =>
+    tv <= SHUF_SPLIT ? flow.rot(tv / SHUF_SPLIT) : 1 - sunk(tv);
+  const x = useTransform([...ts, nudge], (v: number[]) => {
+    const s = slotAt(rankOf(v));
+    return s.cx - STACK[i].cx + away(v[i]) * SHUF_OUT + v[N] * 14;
+  });
+  const y = useTransform(ts, (v: number[]) => {
+    const s = slotAt(rankOf(v));
+    return s.cy - STACK[i].cy + away(v[i]) * flow.drift;
+  });
+  const rot = useTransform([...ts, nudge], (v: number[]) => {
+    const s = slotAt(rankOf(v));
+    return s.rot + spinOf(v[i]) * flow.spin * SHUF_SPIN + v[N] * 1.6;
+  });
+  /* 重なり順：潜り始めた瞬間に、まだ潜っていないカードすべての下へ。
+     潜ったカードどうしは「あとで潜ったものほど下」＝番号が小さいほど下 */
+  const z = useTransform(ts[i], (tv) => (tv > SHUF_SPLIT ? i + 1 : i + 1 + N * 2));
+  return (
+    <motion.div
+      className="group absolute"
+      style={{
+        left: STACK[i].cx - CARD_W / 2,
+        top: STACK[i].cy - CARD_H / 2,
+        width: CARD_W,
+        height: CARD_H,
+        x,
+        y,
+        rotate: rot,
+        zIndex: z,
+      }}
+    >
+      <div className="relative size-full overflow-hidden bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_60px_rgba(0,0,0,.28)]">
+        <img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+        />
+        <HoverInfo it={it} />
+      </div>
+    </motion.div>
+  );
+}
+
+/* ═══════════ 案32：重なった写真が1枚ずつ右へめくれる ═══════════
+   （2026-09-26 まで案31 も同じ動きだった。案31 は上の ShuffleCard に変更）
    いちばん上（配列の最後）から順に、右へ回りながら抜けていく。
    最後の1枚は残す＝束が空にならない */
 function StackCard({
@@ -257,8 +362,9 @@ function MarqueeScene({
         </div>
       }
     >
+      {/* 【2026-09-26】案31 はトランプを切る動き（上の1枚が束の下へ潜る） */}
       {ITEMS.map((it, i) => (
-        <StackCard key={it.title} it={it} i={i} t={ts[i]} nudge={nudges[i]} flow={flow} />
+        <ShuffleCard key={it.title} it={it} i={i} ts={ts} nudge={nudges[i]} flow={flow} />
       ))}
     </Frame>
   );
