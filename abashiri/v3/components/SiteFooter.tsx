@@ -16,6 +16,7 @@
  *   ・SNSのリンク先URL（公式アカウントが確定したら差し替え）
  *   ・問い合わせ先は網走市観光協会の公開情報（0152-44-5849）を使用
  */
+import { navigateTo } from "./PageTransition";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
@@ -89,7 +90,7 @@ function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
     try {
       sessionStorage.setItem("abashiri-goto", key);
     } catch {}
-    window.location.href = "/";
+    navigateTo("/"); /* 2026-09-26 丸ごと読み込み直し(window.location)をやめ、切り替え演出を通す */
     return;
   }
   window.dispatchEvent(

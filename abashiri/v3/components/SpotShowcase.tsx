@@ -24,7 +24,7 @@
  *   サムネイル … (40, 805) 3枚 各 164.845x110.442 / 間 14.4px / 角丸なし
  */
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { navigateTo } from "./PageTransition";
 import { SPOT_DETAILS } from "./spotDetailData";
 import {
   AnimatePresence,
@@ -104,7 +104,6 @@ export default function SpotShowcase({
   finale?: React.ReactNode;
 }) {
   const t = mergeSpotTransition(tune);
-  const router = useRouter();
   /* 場面数 ＝ 写真4枚 ＋ グルメ */
   const sceneCount = SPOTS.length + (finale ? 1 : 0);
 
@@ -207,7 +206,7 @@ export default function SpotShowcase({
                 : ""
             }`}
             onClick={() => {
-              if (SPOT_DETAILS[spot.id]) router.push(`/spot/${spot.id}`);
+              if (SPOT_DETAILS[spot.id]) navigateTo(`/spot/${spot.id}`); /* 2026-09-26 ページ移動は全部 PageTransition を通す */
             }}
             initial={SWITCH.initial}
             animate={SWITCH.animate}

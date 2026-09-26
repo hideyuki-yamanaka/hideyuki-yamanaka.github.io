@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { preload } from "react-dom";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   motion,
   useScroll,
@@ -167,6 +166,7 @@ import HeroBlurSeq from "./HeroBlurSeq";
 import SpotShowcase from "./SpotShowcase";
 import GourmetSection from "./GourmetSection";
 import EventSection from "./EventSection";
+import { NAVIGATING_EVENT } from "./PageTransition";
 import { GESTURE_GAP, SPIKE_MIN_MS, SPIKE_RATIO } from "./eventParts";
 import SiteFooter from "./SiteFooter";
 import { DEFAULT_HERO_TIMING, type HeroTiming } from "./heroTiming";
@@ -311,15 +311,17 @@ export default function TopPage({
   /* 「ぼーっとしてみる」→ 体験ページの遷移をディゾルブに（2026-08-22 ヒデさん指摘。
      即切替だとガタついて見えるため、青いグラデ＋ブラーの幕がふわっとかぶってから遷移する。
      体験ページ側も同じ青グラデから始まるので、幕がそのまま次のページにつながる） */
-  const router = useRouter();
+  /* 【2026-09-26 ヒデさん指示「ページのトランジションは全部統一」】
+     この専用の幕（青グラデ 0.6 秒）は PageTransition に統合した。行き先が /experience の時は
+     PageTransition が同じ青の重ね方で幕をかけるので、見た目は変わらない。
+     ここに残すのは「幕がかかり始めたら KV の動きを止める」だけ（ブラーを軽くするため）。
+     どのページへ移る時も止める（PageTransition が NAVIGATING_EVENT で知らせる） */
   const [leaving, setLeaving] = useState(false);
-  const onGoExperience = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (leaving) return;
-    setLeaving(true);
-    router.prefetch("/experience");
-    window.setTimeout(() => router.push("/experience"), 600); /* 幕の 0.6 秒に合わせる（2026-09-20） */
-  };
+  useEffect(() => {
+    const on = () => setLeaving(true);
+    window.addEventListener(NAVIGATING_EVENT, on);
+    return () => window.removeEventListener(NAVIGATING_EVENT, on);
+  }, []);
 
   /* ディゾルブ中は KV の演出（カモメ＝CSSアニメ／人物イラスト＝WAAPIループ）を
      すべて一時停止して、背景を静止させる。
@@ -332,7 +334,8 @@ export default function TopPage({
     /* この効果は DOM コミット後に走るので幕は既に存在する。
        同期で止める（rAF だと裏タブで発火せず、実機でも1フレーム遅れるだけ利点がない）。
        幕自身のフェードは除外（幕の要素配下のアニメは止めない） */
-    const veil = document.querySelector("[data-dissolve-veil]");
+    /* ⚠️ 幕は PageTransition のもの（data-page-veil）。止めると幕が途中で固まる */
+    const veil = document.querySelector("[data-page-veil]");
     document.getAnimations().forEach((a) => {
       const target = (a.effect as KeyframeEffect | null)?.target as Node | null;
       if (veil && target && veil.contains(target)) return;
@@ -1055,7 +1058,7 @@ export default function TopPage({
                       ボタンが 218x53.2 に太り、カンプの 216x51 とずれるため */}
                   <Link
                     href="/experience"
-                    onClick={onGoExperience}
+                    /* 押した後の幕は PageTransition が出す（2026-09-26 統一） */
                     className="flex items-center justify-center rounded-full bg-white/10 px-11 py-4 text-body-16 font-medium leading-[1.2] text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform hover:scale-105"
                   >
                     ぼーっとしてみる
@@ -1102,30 +1105,7 @@ export default function TopPage({
             グルメは v1.2 で GourmetSection として新設した */}
       </div>
 
-      {/* 体験ページへのディゾルブの幕。後ろの画面をブラーで溶かしながら
-          青グラデ（体験ページの下地と同じ）でふんわり覆う */}
-      {leaving && (
-        <motion.div
-          data-dissolve-veil
-          /* 【2026-09-20 ヒデさん指示】
-               「キービジュアルの『ぼーっとしてみる』を押した後のトランジションが不自然。
-                 ぼーっと体験の【導入メッセージ → 場面選択】と同じにしてほしい」
-             あちらは《同じ青い背景は動かさず、中身だけを 0.6 秒でふわっと入れ替える》形。
-             ここは①ブラーで一度ぼかす ②幕の色が体験ページと別物（via-brand/70 →
-             to-sky-bottom）だったので、幕が晴れた先で色が変わって見えていた。
-             → ブラーをやめ、幕の色を体験ページの背景（Stage の brandOverlay＝
-               from-brand via-brand/45 to-transparent）と同じ重ね方にそろえ、
-               秒数も 0.6 に合わせた。これで幕がそのまま次のページの背景になる。 */
-          className="absolute inset-0 z-40 bg-sky-bottom"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* 体験ページの空にかぶる青（Stage の brandOverlay）と同じもの。
-              これを重ねておくと、遷移した瞬間に同じ絵が続いて見える */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand via-brand/45 to-transparent" />
-        </motion.div>
-      )}
+      {/* 体験ページへのディゾルブの幕は 2026-09-26 に PageTransition へ統合（同じ青の重ね方） */}
 
       {/* 追従ヘッダー：スクロールの外に置いて常に表示 */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30">

@@ -12,7 +12,7 @@
  *   （その場でブラーのクロスフェード。スクロールで流れていくのではない）。
  * コピー・写真はデスクトップ実装と同じ実データ。
  */
-import { useRouter } from "next/navigation";
+import { navigateTo } from "./PageTransition";
 import MobileHeader, { MOBILE_GOTO_KEY, MOBILE_NAV } from "./MobileHeader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
@@ -99,7 +99,6 @@ const KV_SCALE = 0.64;
 const DUR = 800; // トランジション時間(ms)
 
 export default function MobileTop() {
-  const router = useRouter();
   const [active, setActive] = useState(0);
   const lockRef = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -250,7 +249,7 @@ export default function MobileTop() {
             </div>
             <button
               type="button"
-              onClick={() => router.push("/experience")}
+              onClick={() => navigateTo("/experience")}
               className="mt-6 flex items-center justify-center rounded-full bg-white/10 px-6 py-[13px] text-body-14 font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
             >
               ぼーっとしてみる
@@ -305,7 +304,7 @@ export default function MobileTop() {
               カードごとタップで詳細ページへ */}
           <button
             type="button"
-            onClick={() => router.push(`/spot/${spot.slug}`)}
+            onClick={() => navigateTo(`/spot/${spot.slug}`)}
             className="absolute inset-x-6 bottom-[72px] flex flex-col gap-4 bg-white/10 p-6 text-left text-white backdrop-blur-65 tab:inset-x-[80px] tab:bottom-[110px] tab:gap-6 tab:p-10"
           >
             <div className="flex items-end justify-between gap-3">
@@ -353,7 +352,7 @@ export default function MobileTop() {
                  流れている最中でも押せるよう、カードごと押せる形にしてある */
               <div
                 key={idx}
-                onClick={() => router.push(`/gourmet/${card.slug}`)}
+                onClick={() => navigateTo(`/gourmet/${card.slug}`)}
                 className="relative w-[230px] shrink-0 cursor-pointer overflow-hidden tab:w-[330px]"
               >
                 <img
@@ -389,7 +388,7 @@ export default function MobileTop() {
             <button
               key={e.slug}
               type="button"
-              onClick={() => router.push(`/spot/${e.slug}`)}
+              onClick={() => navigateTo(`/spot/${e.slug}`)}
               className="flex flex-col gap-2 text-left"
             >
               <div className="overflow-hidden">

@@ -1,5 +1,6 @@
 "use client";
 
+import { navigateTo } from "./PageTransition";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -66,7 +67,7 @@ export default function GlobalNav({ theme, size = "md" }: GlobalNavProps) {
       try {
         sessionStorage.setItem("abashiri-goto", key);
       } catch {}
-      window.location.href = "/";
+      navigateTo("/"); /* 2026-09-26 丸ごと読み込み直し(window.location)をやめ、切り替え演出を通す */
       return;
     }
     /* 動かすのは TopPage の慣性スクロール一本（上の onHomeClick と同じ理由） */

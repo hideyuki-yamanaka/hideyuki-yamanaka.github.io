@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { navigateTo } from "./PageTransition";
 import { AnimatePresence, motion } from "framer-motion";
 import SiteLogo from "./SiteLogo";
 
@@ -54,7 +54,6 @@ export default function MobileHeader({
   onScene?: (scene: number) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
 
   const go = (scene: number) => {
     setOpen(false);
@@ -65,7 +64,7 @@ export default function MobileHeader({
     try {
       sessionStorage.setItem(MOBILE_GOTO_KEY, String(scene));
     } catch {}
-    router.push("/");
+    navigateTo("/"); /* 2026-09-26 ページ移動は全部 PageTransition を通す */
   };
 
   return (

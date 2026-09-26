@@ -35,7 +35,7 @@
  *   ・番号の表記はスポットの「ぼーっとスポット 01」に合わせて半角スペース入り
  */
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { navigateTo } from "./PageTransition";
 import { GOURMET_DETAILS } from "./gourmetDetailData";
 
 type GourmetCard = {
@@ -79,7 +79,6 @@ const CARDS: GourmetCard[] = [
 ];
 
 function Card({ card }: { card: GourmetCard }) {
-  const router = useRouter();
   /* ⚠️ カード全体がホバー／クリックの対象。スポットのカード（SpotShowcase）と
      同じ言葉遣いにそろえてある（2026-09-20 ヒデさん指示で詳細ページを新設） */
   const hasDetail = Boolean(GOURMET_DETAILS[card.id]);
@@ -89,7 +88,7 @@ function Card({ card }: { card: GourmetCard }) {
         hasDetail ? "cursor-pointer" : ""
       }`}
       onClick={() => {
-        if (hasDetail) router.push(`/gourmet/${card.id}`);
+        if (hasDetail) navigateTo(`/gourmet/${card.id}`); /* 2026-09-26 ページ移動は全部 PageTransition を通す */
       }}
     >
       <img

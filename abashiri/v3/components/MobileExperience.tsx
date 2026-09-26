@@ -8,7 +8,7 @@
  *   → 窓枠ダイブイン（選んだカードが画面いっぱいに広がる）→ 動画再生（ぼーっとTips＋後ろ向き人物）。
  * 動画は ryuhyo.mp4 の1本のみ（＝流氷クルーズだけ体験可）。
  */
-import { useRouter } from "next/navigation";
+import { navigateTo } from "./PageTransition";
 import { useEffect, useRef, useState } from "react";
 import BoTips, { DEFAULT_BO_TIPS } from "./BoTips";
 
@@ -27,7 +27,6 @@ const CARD_W = 300; // カード幅（PC 902 のレスポンシブ縮小）
 type EnterRect = { top: number; left: number; width: number; height: number };
 
 export default function MobileExperience() {
-  const router = useRouter();
   const [step, setStep] = useState<"intro" | "pick" | "enter" | "video">("intro");
   const [pickIdx, setPickIdx] = useState(VIDEO_IDX);
   const [playing, setPlaying] = useState(false);
@@ -182,7 +181,7 @@ export default function MobileExperience() {
             setPlaying(false);
             setStep("pick");
           } else if (step === "pick") setStep("intro");
-          else if (step === "intro") router.push("/");
+          else if (step === "intro") navigateTo("/"); /* 2026-09-26 ページ移動は全部 PageTransition を通す */
         }}
         className="absolute left-5 top-5 z-40 flex size-9 items-center justify-center rounded-full bg-black/20 backdrop-blur-md"
       >
