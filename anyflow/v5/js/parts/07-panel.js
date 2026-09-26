@@ -1275,12 +1275,12 @@ function buildPanel() {
     subT(catRes, () => '案' + rfxNos(['24-4']) + '：ピクトの大きさと文字の動き');
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
-    const F24 = { heroScale: 1.7, labelUp: 190, prodSize: 38 };
-    /* 【2026-09-21 ヒデさん依頼】主役の大きさ/文字が上へ/Product は PC のスクロール登場演出専用で、スマホ(flow)では効かない。
+    const F24 = { labelUp: 190, prodSize: 38 };
+    /* 【2026-09-21 ヒデさん依頼】文字が上へ/Product は PC のスクロール登場演出専用で、スマホ(flow)では効かない。
        → スマホモード中は隠す(.pc-only-row)。PC編集時は今まで通り表示。区切り線の余白はスマホ用の効く版を下に用意。 */
     const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
     const s24 = (label, key, min, max, step, fmt, tip) => rows.push(pcOnly(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key })));
-    s24('ピクトの主役の大きさ', 'heroScale', 1.2, 2.2, 0.05, v => '×' + v.toFixed(2), '各列の中央に大きく出る時の倍率(絵コンテ 666枠/386枠 ≒ 1.7)。※PCのスクロール登場演出専用(スマホでは効きません)。');
+    /* 【2026-09-26 ヒデさん依頼】『ピクトの主役の大きさ』(heroScale)つまみは削除。いまの案24-4 はピクトをズームしない作り(ほぼ最終サイズ1.08倍固定)で、効かなかったため */
     s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
     rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',

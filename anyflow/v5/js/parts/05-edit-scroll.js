@@ -1931,7 +1931,7 @@ function resFxFrame(t) {
   if (k === '24-4') {
     /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
     const p = resFxFlowMode(k) ? 1 : resFxPin(), H = rfxHero(), vh = rfxVH();
-    const F = Object.assign({ heroScale: 1.7, labelUp: 190 }, (params.sections.results.fx24 || {}));
+    const F = Object.assign({ labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
        「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。
        元になった案24(絵コンテ Figma 17271:23392): Vision から続けて「for SaaS」「for AI」(70px)が左右に並ぶ → 文字は小さく上へ・各列の中央にピクト →
