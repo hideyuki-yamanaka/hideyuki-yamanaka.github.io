@@ -541,3 +541,6 @@
 [2026-09-26 14:10:00] === v4 自動デプロイ開始 ===
 [2026-09-26 14:10:00] プロジェクト = anyflow-embed-v4
 [2026-09-26 14:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
+[2026-09-26 18:10:00] === v4 自動デプロイ開始 ===
+[2026-09-26 18:10:00] プロジェクト = anyflow-embed-v4
+[2026-09-26 18:10:00] 失敗 → /Users/hideyuki/Developer/Claude Code/anyflow/deploy-v4.sh: line 30: npx: command not found 
