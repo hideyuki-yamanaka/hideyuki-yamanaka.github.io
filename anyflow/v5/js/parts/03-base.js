@@ -6,6 +6,13 @@ function presetStoreLoad() {
   return null;
 }
 function presetStoreSave() {
+  /* 【2026-09-26 根治】スマホ(スマホ幅)は閲覧専用＝ここも保存しない(save() と同じ決まり)。
+     スマホでは起動時に applyMbToParams がスマホ用の値を設定そのものに流し込むため、案の上書き控え(varAutoCapture)が
+     スマホの値のまま控えられてここで保存され、あとで同じブラウザを PC 幅で開くと控えが適用されて PC にスマホの値
+     (KVメッシュの大きさ cageR・線の濃さ lineAlpha・線の太さ lineWidth)が混ざり、さらに PC 側の保存で本体の保存値まで汚れていた。
+     スマホ実機への同期(liveSync)は localStorage へ直接書くのでこの止めには関係しない。PC⇄スマホで開き直す直前も保存しない */
+  if (typeof isMobile !== 'undefined' && isMobile) return;
+  if (window.__afModeReloading) return;
   try {
     localStorage.setItem(PRESET_KEY, JSON.stringify({
       v: 1, presets: params.gfxPresets || {}, on: params.gfxPresetOn || {},
@@ -329,6 +336,8 @@ function save() {
      ここで保存すると PC の基準値まで SP の値で上書きされてしまう(＝SPがPCに漏れる)。
      編集・保存は PC 側(スマホモードのトグルは PC 上のクラス切替で isMobile=false のまま)だけで行う。 */
   if (typeof isMobile !== 'undefined' && isMobile) return;
+  /* 【2026-09-26】PC⇄スマホの境目をまたいで開き直す直前は保存しない(スマホの値が入った設定で PC の保存値を上書きしないため。modeSwitchReload) */
+  if (window.__afModeReloading) return;
   /* いま画面に出ている形を、いまの案の引き出しへ入れてから保存する
      (2026-08-27 ヒデさん指定・案ごとに形を分ける) */
   if (typeof gfxStash === 'function') gfxStash();

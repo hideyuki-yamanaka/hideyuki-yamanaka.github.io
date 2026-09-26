@@ -1101,6 +1101,13 @@ function presetStoreLoad() {
   return null;
 }
 function presetStoreSave() {
+  /* 【2026-09-26 根治】スマホ(スマホ幅)は閲覧専用＝ここも保存しない(save() と同じ決まり)。
+     スマホでは起動時に applyMbToParams がスマホ用の値を設定そのものに流し込むため、案の上書き控え(varAutoCapture)が
+     スマホの値のまま控えられてここで保存され、あとで同じブラウザを PC 幅で開くと控えが適用されて PC にスマホの値
+     (KVメッシュの大きさ cageR・線の濃さ lineAlpha・線の太さ lineWidth)が混ざり、さらに PC 側の保存で本体の保存値まで汚れていた。
+     スマホ実機への同期(liveSync)は localStorage へ直接書くのでこの止めには関係しない。PC⇄スマホで開き直す直前も保存しない */
+  if (typeof isMobile !== 'undefined' && isMobile) return;
+  if (window.__afModeReloading) return;
   try {
     localStorage.setItem(PRESET_KEY, JSON.stringify({
       v: 1, presets: params.gfxPresets || {}, on: params.gfxPresetOn || {},
@@ -1424,6 +1431,8 @@ function save() {
      ここで保存すると PC の基準値まで SP の値で上書きされてしまう(＝SPがPCに漏れる)。
      編集・保存は PC 側(スマホモードのトグルは PC 上のクラス切替で isMobile=false のまま)だけで行う。 */
   if (typeof isMobile !== 'undefined' && isMobile) return;
+  /* 【2026-09-26】PC⇄スマホの境目をまたいで開き直す直前は保存しない(スマホの値が入った設定で PC の保存値を上書きしないため。modeSwitchReload) */
+  if (window.__afModeReloading) return;
   /* いま画面に出ている形を、いまの案の引き出しへ入れてから保存する
      (2026-08-27 ヒデさん指定・案ごとに形を分ける) */
   if (typeof gfxStash === 'function') gfxStash();
@@ -9678,6 +9687,58 @@ window.__anim = {
    高さ921pxのカンプ座標系はそのままに、幅だけ画面いっぱいへ広げる（フィル）。
    左右の要素は left:120px / right:120px でアンカーしているので余白は常に120px */
 const stage = document.getElementById('stage');
+/* ===== 【2026-09-26 ヒデさん依頼「ウィンドウ幅がいろいろな端末でも順応するように」】PC⇄スマホの境目をまたいだら開き直す =====
+   このページは「開いた瞬間の幅」でPC用/スマホ用を決め、そのとき
+     ・スマホ用の値(params.mb)を設定そのものに流し込む(applyMbToParams・元のPC値はメモリ上から消える)
+     ・パネルで調整した文字の大きさ/太さを、その側の値で各文字に書き込む(文字システム)
+     ・見出しの改行位置など、開いた時の幅で1回だけ決める所がほかにも多数ある
+   ため、開いたあとに窓を狭める/広げる・端末を横向きにする等で境目(600px)をまたぐと、並びだけ切り替わって
+   中身は開いた時の側のまま(PCの大きい文字がスマホ幅にはみ出す等)になっていた。さらにスマホ幅で開いて
+   PC幅へ広げると、スマホの値が入った設定のまま保存が動き、PCの保存値をスマホの値で上書きする危険もあった。
+   → 境目をまたいだら、幅が落ち着くのを待って1回だけ開き直す(＝最初からその幅で開いたのと必ず同じになる)。
+     見ていた位置(セクションとその中の進み)は開き直したあとに戻す。途中で元の側へ戻したら開き直さない。 */
+let modeAtLoad = null;                 /* 開いた時の側(true=スマホ) */
+let _modeReloadT = null;
+const MODE_RELOAD_KEY = 'anyflow-mode-reload';   /* sessionStorage: 開き直す前の位置(このタブの中だけ) */
+function modeSwitchReload(wasMobile, nextMobile) {
+  if (document.documentElement.classList.contains('pp-inner')) return;   /* パネルのスマホプレビューの枠の中は幅が固定なので対象外 */
+  if (nextMobile === modeAtLoad) {       /* 開いた時の側へ戻った → 開き直しは取り消し(メモリの設定は開いた時のまま正しい) */
+    clearTimeout(_modeReloadT); _modeReloadT = null; window.__afModeReloading = false; return;
+  }
+  if (!wasMobile && markDirty._t) {      /* PC→スマホ: 保存待ちの調整は PC のうちに保存(スマホ側は保存しない決まり) */
+    clearTimeout(markDirty._t); markDirty._t = null;
+    try { if (typeof varAutoCapture === 'function') varAutoCapture(); } catch (e) {}
+    try { save(); dirty = false; } catch (e) {}
+  }
+  if (wasMobile && markDirty._t) { clearTimeout(markDirty._t); markDirty._t = null; }   /* スマホ→PC: スマホの値が入った設定は保存しない */
+  window.__afModeReloading = true;       /* 開き直すまで save() を止める(03-base の save 冒頭) */
+  clearTimeout(_modeReloadT);
+  _modeReloadT = setTimeout(() => {
+    /* 直前に開き直したばかり(4秒以内)なら繰り返さない＝万一の往復ループ防止 */
+    let last = null; try { last = JSON.parse(sessionStorage.getItem(MODE_RELOAD_KEY) || 'null'); } catch (e) {}
+    if (last && Date.now() - last.at < 4000) { window.__afModeReloading = false; return; }
+    /* 見ていた位置: 画面の中央にあるセクションと、その中での進み(0〜1) */
+    let pos = { at: Date.now(), id: null, k: 0 };
+    try {
+      const mid = innerHeight / 2;
+      const sec = [...document.querySelectorAll('body > section[id], .stage > section[id], section[id]')].find(s => { const r = s.getBoundingClientRect(); return r.top <= mid && r.bottom > mid; });
+      if (sec) { const r = sec.getBoundingClientRect(); const run = Math.max(1, r.height - innerHeight); pos = { at: pos.at, id: sec.id, k: Math.max(0, Math.min(1, -r.top / run)) }; }
+    } catch (e) {}
+    try { sessionStorage.setItem(MODE_RELOAD_KEY, JSON.stringify(pos)); } catch (e) {}
+    location.reload();
+  }, 400);
+}
+/* 開き直したあと、見ていたセクションの同じ所へ戻す(10秒以内の開き直しだけ。ふつうの再読み込みは従来どおり先頭から) */
+function restoreModeReloadPos() {
+  let pos = null; try { pos = JSON.parse(sessionStorage.getItem(MODE_RELOAD_KEY) || 'null'); } catch (e) {}
+  if (!pos || !pos.id || Date.now() - pos.at > 10000) return false;
+  const sec = document.getElementById(pos.id); if (!sec) return false;
+  const r = sec.getBoundingClientRect(); const run = Math.max(0, r.height - innerHeight);
+  const y = Math.max(0, scrollY + r.top + run * pos.k);
+  if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(y, { immediate: true, force: true }); else window.scrollTo(0, y);
+  pos.id = null; try { sessionStorage.setItem(MODE_RELOAD_KEY, JSON.stringify(pos)); } catch (e) {}   /* 戻すのは1回だけ(時刻は残して往復ループ防止に使う) */
+  return true;
+}
 function fit() {
   /* 描画前などで 0 が返る環境があるのでフォールバックを噛ませる (NaN 防止) */
   const w = window.innerWidth || document.documentElement.clientWidth || 1440;
@@ -9696,7 +9757,11 @@ function fit() {
      本文が4pxくらいになって読めないため、座標系ごと差し替える) */
   /* 【2026-09-08】iOS Safari は読み込み直後に innerWidth が一瞬 980px 等を返すことがあり、
      それを拾うと isMobile を誤判定して固定化する。CSS の @media と同じ matchMedia を基準にして確実化。 */
-  isMobile = (window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches) || w <= MOBILE_MAX;
+  const nextMobile = (window.matchMedia && window.matchMedia('(max-width: ' + MOBILE_MAX + 'px)').matches) || w <= MOBILE_MAX;
+  /* 1回目の fit で「開いた時の側」を記録(fitReady は最初の fit より前に true になるので、目印には使えない) */
+  if (modeAtLoad === null) modeAtLoad = nextMobile;
+  else if (nextMobile !== isMobile) modeSwitchReload(isMobile, nextMobile);   /* PC⇄スマホの境目をまたいだ(上の注記) */
+  isMobile = nextMobile;
   DW = isMobile ? 390 : 1440;
   DH = isMobile ? 780 : 921;
   document.documentElement.classList.toggle('mb', isMobile);
@@ -9867,7 +9932,8 @@ document.addEventListener('click', e => {
   e.preventDefault();
   if (lenis) lenis.scrollTo(el, { duration: 1.6 }); else el.scrollIntoView();
 });
-window.addEventListener('load', () => window.scrollTo(0, 0));
+/* 【2026-09-26】PC⇄スマホの境目で開き直した時だけは、見ていたセクションの同じ所へ戻す(modeSwitchReload)。それ以外は従来どおり先頭から */
+window.addEventListener('load', () => { window.scrollTo(0, 0); setTimeout(() => { try { restoreModeReloadPos(); } catch (e) {} }, 350); });
 window.scrollTo(0, 0);
 if (window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
 fit();
