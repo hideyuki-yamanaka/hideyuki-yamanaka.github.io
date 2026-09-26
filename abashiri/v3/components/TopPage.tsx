@@ -167,6 +167,7 @@ import HeroBlurSeq from "./HeroBlurSeq";
 import SpotShowcase from "./SpotShowcase";
 import GourmetSection from "./GourmetSection";
 import EventSection from "./EventSection";
+import { GESTURE_GAP, SPIKE_MIN_MS, SPIKE_RATIO } from "./eventParts";
 import SiteFooter from "./SiteFooter";
 import { DEFAULT_HERO_TIMING, type HeroTiming } from "./heroTiming";
 import { DEFAULT_BIRDS, type BirdsConfig } from "./birdConfig";
@@ -556,6 +557,52 @@ export default function TopPage({
     let targetY = sc.scrollTop;
     let posY = sc.scrollTop;
 
+    /* 【2026-09-26 ヒデさん指摘】「ぼーっとスポットからグルメへ1回スクロールすると、
+         見出しが切れて、グルメを通り過ぎてしまう」
+       原因：グルメは【スポットの5場面目】で、画面に貼りついているのは余韻（hold）の
+         500px ぶんだけ。トラックパッドの1回のはじきは慣性で 1000〜2800px 進むので、
+         その勢いのまま貼りつきを抜けて、グルメが上へ流れていた
+         （実測: 1700px のはじきで見出しが 217px 切れる／2800px で体験まで素通り）。
+       対処：上からグルメに入ってきた【1回の操作】は、グルメが貼りついている範囲の
+         最後（data-gourmet-stop）で止め、その操作の残りの勢いは捨てる。
+         次の1回で、すぐ先（体験セクション）へ進める。
+         「1回」の見分けは体験セクションの重ね写真と同じ基準（eventParts の定数） */
+    let gid = 0; /* 操作の通し番号 */
+    let gLast = 0;
+    let gPrevAbs = 0;
+    let gStart = 0;
+    let stopGid = -1; /* グルメで止めた操作の番号 */
+    const markGesture = (e: WheelEvent) => {
+      const now = performance.now();
+      const a = Math.abs(e.deltaY);
+      const fresh = now - gLast > GESTURE_GAP;
+      /* 慣性の途中で量が急に増えた＝指でもう一度はじいた → 新しい1回 */
+      const spike =
+        !fresh && a > gPrevAbs * SPIKE_RATIO + 6 && now - gStart > SPIKE_MIN_MS;
+      if (fresh || spike) {
+        gid++;
+        gStart = now;
+      }
+      gLast = now;
+      gPrevAbs = a;
+    };
+    /* 縦の目標値を動かす（ホイールはここを通す） */
+    const moveY = (dY: number) => {
+      const max = sc.scrollHeight - sc.clientHeight;
+      let next = Math.max(0, Math.min(max, targetY + dY));
+      const stop = Number(sc.dataset.gourmetStop);
+      if (dY > 0 && Number.isFinite(stop) && stop > 0) {
+        if (stopGid === gid && Math.abs(targetY - stop) < 1) {
+          next = targetY; /* 止めた操作の残りの勢いは捨てる */
+        } else if (targetY < stop - 0.5 && next > stop) {
+          next = stop; /* 上から来た操作は、グルメで一度止める */
+          stopGid = gid;
+        }
+      }
+      targetY = next;
+      kick();
+    };
+
     const tick = () => {
       raf = 0;
       let busy = false;
@@ -727,6 +774,7 @@ export default function TopPage({
     const onWheel = (e: WheelEvent) => {
       /* トラックパッドの横ジェスチャはネイティブの横スクロールに任せる */
       if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      markGesture(e);
       const scRect = sc.getBoundingClientRect();
       if (scRect.height < 10) return; /* 非表示中など計測不能時は素通し */
       const scale = scRect.height / sc.clientHeight;
@@ -756,11 +804,7 @@ export default function TopPage({
       if (!row) {
         lock = null;
         e.preventDefault();
-        targetY = Math.max(
-          0,
-          Math.min(sc.scrollHeight - sc.clientHeight, targetY + dY)
-        );
-        kick();
+        moveY(dY);
         return;
       }
       if (!lock || lock.row !== row) {
@@ -781,11 +825,7 @@ export default function TopPage({
       /* 完了方向へのさらなる入力は縦の慣性スクロールへ */
       if ((lock.done === "fwd" && down) || (lock.done === "back" && !down)) {
         e.preventDefault();
-        targetY = Math.max(
-          0,
-          Math.min(sc.scrollHeight - sc.clientHeight, targetY + dY)
-        );
-        kick();
+        moveY(dY);
         return;
       }
       /* 逆方向の入力が来たら完了状態を解除（巻き戻しできる） */
@@ -869,6 +909,13 @@ export default function TopPage({
         data-spot-at={Math.round(useExit ? msgEnd + (T.spotTo - T.spotFrom) : T.spotTo)}
         data-gourmet-at={Math.round(
           (useExit ? msgEnd + (T.spotTo - T.spotFrom) : T.spotTo) + T.stepLen * 4 + 1
+        )}
+        /* グルメで1回止める位置＝グルメが画面に貼りついている範囲の最後
+           （5場面目に切り替わる位置 ＋ 余韻 hold）。ここより先はグルメが上へ流れ始める。
+           余韻が0でも、切り替わった直後より手前にはしない（ひまわりで止まらないように） */
+        data-gourmet-stop={Math.max(
+          Math.ceil(gourmetStart) + 1,
+          Math.floor(gourmetStart + T.hold) - 1
         )}
         className="no-scrollbar h-full w-full overflow-y-auto overflow-x-clip overscroll-contain bg-sky-bottom [container-type:inline-size]"
       >
