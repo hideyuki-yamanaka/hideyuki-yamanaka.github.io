@@ -32,7 +32,7 @@
 | DEPLOY-RULES | 無駄なVercelデプロイを消す方法(Ignored Build Step)＋24h集計コマンド | [general/DEPLOY-RULES.md](general/DEPLOY-RULES.md) | 2026-09-11 |
 | [SCROLL-RULES.md](general/SCROLL-RULES.md) | スクロール事故の防止（1画面超えは必ずスクロールバー・実測してから渡す） |
 | [general/DESIGN-SYSTEM-RULES.md](general/DESIGN-SYSTEM-RULES.md) | Figma カンプの読み方（🔴スペック表をコードより先に作る・数値を推測で埋めない） | カンプ通りに実装する時 |
-| [general/RESPONSIVE-RULES.md](general/RESPONSIVE-RULES.md) | レスポンシブ実装（🔴SP は "別のカンプ" として一から実装＝スペック表を breakpoint ごとに通す・実機の短い innerHeight で検証） | スマホ/ブレイクポイント対応をする時 |
+| [general/RESPONSIVE-RULES.md](general/RESPONSIVE-RULES.md) | レスポンシブ実装（🔴**全プロダクト共通の基準: 途中で幅を変えても崩れない**＝「A幅で開いてBへ」＝「最初からB」・6章に作り方の優先順位(CSS→書き直し→境目で開き直し)とスマホ判定中は保存しない決まり／SP は "別のカンプ" として一から実装・実機の短い innerHeight で検証） | スマホ/ブレイクポイント対応をする時・新しくサイトを作る時 |
 | [general/PHONE-MODE.md](general/PHONE-MODE.md) | スマホモード（実機ライブ同期・QRでスマホ実機にPCの調整を即反映）＝調整パネルの標準機能。単一ソースは settings/tune-panel/phone-mode/ | SP を実機で詰める時／新プロダクトに入れる時 |
 | [general/FIXLOG.md](general/FIXLOG.md) | 不具合の1行台帳（症状と真因。**直す前に検索・直したら追記**） | バグを直す前後に必ず |
 | [general/FIGMA-EFFECTS-RULES.md](general/FIGMA-EFFECTS-RULES.md) | ブラー/影を正しく実装（🔴 backdrop-blurはSVG/PNGに焼けない＝ライブCSS必須。値はFigma実測） | Figmaのガラス/影を実装する時 |
