@@ -30,8 +30,13 @@
  *   ホバーはグルメのカードと同じ言葉遣い（黒グラデ＋下から文字が上がる）にした
  */
 import Link from "next/link";
-import { useRef } from "react";
-import { motion, useTransform, type MotionValue } from "framer-motion";
+import { useRef, useState } from "react";
+import {
+  motion,
+  useAnimationFrame,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import {
   ITEMS,
   PinStage,
@@ -45,7 +50,7 @@ export const EVENT_KV_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。1回スクロールするごとに、いちばん上の1枚が右へすべり出て、束のいちばん下へ潜り込む（トランプを切るように）。残りは1段ずつ繰り上がり、4枚ぜんぶが一番上に来たら下へ進める。右へ出ていく部分のすべり方は「流れ方」の3案から選べる。中央のカードにカーソルを乗せると影が乗って情報が出る" },
+  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。1回スクロールするごとに、いちばん上の1枚が右へシャッと出て、束のいちばん下へ潜り込む（トランプを切るように）。残りは1段ずつ繰り上がり、4枚ぜんぶが一番上に来たら下へ進める。上へ戻すと、下の1枚が右へ引き出されて上へ乗る（行きと同じ感触）。速さとメリハリは下のつまみで。中央のカードにカーソルを乗せると影が乗って情報が出る" },
   32: { name: "案32 左右に文字", note: "【ラフ再現】動きは案31と同じ。文字組みだけ違い、左に「意外と／オモロい、」右に「網走」を置いて、その間に写真の束がある" },
   33: { name: "案33 コピーから飛び出す", note: "【ラフ再現】中央に「意外とオモロい、網走。」。スクロールすると、その裏に隠れていた写真が大きくなりながら四方へ飛び出して散る" },
 };
@@ -69,6 +74,9 @@ const STACK = [
 ];
 const CARD_W = 420;
 const CARD_H = 616;
+/** 束の中心（4枚の中心の平均）。案31 のカードの大きさを変える時の基準点 */
+const STACK_CX = STACK.reduce((a, s) => a + s.cx, 0) / STACK.length;
+const STACK_CY = STACK.reduce((a, s) => a + s.cy, 0) / STACK.length;
 
 /* ── ホバーの中身（グルメのカードと同じ言葉遣い）───────── */
 function HoverInfo({ it }: { it: EventItem }) {
@@ -109,15 +117,52 @@ function HoverInfo({ it }: { it: EventItem }) {
    応じて STACK の位置へ動く＝形はそのまま、中身だけが入れ替わる。
    ⚠️ 「何段目か」は各カードの進み t から毎フレーム計算する（別に状態を持たない）。
       上へ戻る時は t が 1→0 へ戻るので、そのまま逆回し（下から出て、上へ戻る）になる */
-const SHUF_SPLIT = 0.5;
+/* 【同日 ヒデさん指示（2回目）】
+     「右へずれる挙動がゆったりすぎ。メリハリをつけてシャッと変わる感じに。
+       ただ急な感じは出さないで。スクロールバックがすごく不自然なので、
+       戻しても同じような体験に」
+   → ・①出る／②潜る の2段とも「ゆっくり動き出す → 途中は速い → ゆっくり止まる」の
+       左右対称のカーブ（easePow）にした。対称なので、上へ戻す時に逆再生しても
+       【まったく同じ感触】になる（戻しは「下から右へ引き出して、上へ乗せる」）
+     ・前は ①が「流れ方」の摩擦カーブ（出だしがいちばん速い＝急）で、戻しは時間を
+       ゆがめていたため、戻す時に下から急に飛び出して最後にカクッと止まっていた
+     ・秒数とメリハリ（途中の速さの強さ）は調整パネル（案2を選んだ時だけ出る）。
+       値の住み家：globals.css の --ev-shuf-dur/--ev-shuf-pow／TopTunePanel の既定／
+       tune-defaults.json／ここの SHUF_DEFAULT（4つとも同じ値にしておく） */
+const SHUF_DEFAULT = { dur: 1.0, pow: 3 };
+/** ①出る段の長さ（全体の何割）。残りが②潜る段 */
+const SHUF_SPLIT = 0.45;
 /** 右へ出る距離(px)。束の右端（約1040）より左端が右へ抜けて、裏へ回れる量 */
 const SHUF_OUT = 560;
-/** 右へ出る間の回り方は「流れ方」の回転の何割か（大きく回すと束から抜けきらない） */
-const SHUF_SPIN = 0.6;
-const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+/** 右へ出る間に右へ回る角度(度)・下へそれる量(px)。🟡仮置き */
+const SHUF_SPIN = 10;
+const SHUF_DRIFT = 14;
+/** 左右対称のなめらかカーブ。pow が大きいほど「動き出しと止まり際はゆっくり・途中はシャッ」 */
+const easePow = (u: number, pow: number) => {
+  const c = Math.max(0, Math.min(1, u));
+  return c < 0.5 ? Math.pow(2 * c, pow) / 2 : 1 - Math.pow(2 - 2 * c, pow) / 2;
+};
 /** ② 潜る段の進み（0→1）。① の間は 0 */
-const sunk = (t: number) =>
-  t <= SHUF_SPLIT ? 0 : easeInOut(Math.min(1, (t - SHUF_SPLIT) / (1 - SHUF_SPLIT)));
+const sunk = (t: number, pow: number) =>
+  t <= SHUF_SPLIT ? 0 : easePow((t - SHUF_SPLIT) / (1 - SHUF_SPLIT), pow);
+/** 調整パネルの秒数・メリハリ（CSS 変数）を読む */
+function readShuf() {
+  const cs = getComputedStyle(document.documentElement);
+  const dur = parseFloat(cs.getPropertyValue("--ev-shuf-dur"));
+  const pow = parseFloat(cs.getPropertyValue("--ev-shuf-pow"));
+  return {
+    dur: Number.isFinite(dur) && dur > 0 ? dur : SHUF_DEFAULT.dur,
+    pow: Number.isFinite(pow) && pow >= 1 ? pow : SHUF_DEFAULT.pow,
+  };
+}
+function useShufPow() {
+  const [pow, setPow] = useState(SHUF_DEFAULT.pow);
+  useAnimationFrame(() => {
+    const p = readShuf().pow;
+    if (p !== pow) setPow(p);
+  });
+  return pow;
+}
 /** 下から r 段目（小数も可）の置き場所。STACK の間をなめらかにつなぐ */
 function slotAt(r: number) {
   const n = STACK.length - 1;
@@ -136,40 +181,37 @@ function ShuffleCard({
   it,
   i,
   ts,
-  nudge,
-  flow,
+  pow,
 }: {
   it: EventItem;
   i: number;
   /** 全カードの進み（何段目かの計算に、他のカードが潜った量も要る） */
   ts: MotionValue<number>[];
-  nudge: MotionValue<number>;
-  flow: EvFlow;
+  /** メリハリ（easePow の強さ） */
+  pow: number;
 }) {
   const N = ts.length;
   /* 何段目か（0＝いちばん下）。
      他のカードが1枚潜るたびに1段上がり、自分が潜る時はいちばん下へ（N 段ぶん下げる） */
   const rankOf = (vals: number[]) => {
     let r = i;
-    for (let j = 0; j < N; j++) r += sunk(vals[j]);
-    return r - N * sunk(vals[i]);
+    for (let j = 0; j < N; j++) r += sunk(vals[j], pow);
+    return r - N * sunk(vals[i], pow);
   };
-  /* 右へ出ている量（0→1→0）。出る段は「流れ方」のカーブ、潜る段はなめらかに戻す */
+  /* 右へ出ている量（0→1→0）。①で右へ出て、②で戻りながら潜る。どちらも対称カーブ */
   const away = (tv: number) =>
-    tv <= SHUF_SPLIT ? flow.pos(tv / SHUF_SPLIT) : 1 - sunk(tv);
-  const spinOf = (tv: number) =>
-    tv <= SHUF_SPLIT ? flow.rot(tv / SHUF_SPLIT) : 1 - sunk(tv);
-  const x = useTransform([...ts, nudge], (v: number[]) => {
+    tv <= SHUF_SPLIT ? easePow(tv / SHUF_SPLIT, pow) : 1 - sunk(tv, pow);
+  const x = useTransform(ts, (v: number[]) => {
     const s = slotAt(rankOf(v));
-    return s.cx - STACK[i].cx + away(v[i]) * SHUF_OUT + v[N] * 14;
+    return s.cx - STACK[i].cx + away(v[i]) * SHUF_OUT;
   });
   const y = useTransform(ts, (v: number[]) => {
     const s = slotAt(rankOf(v));
-    return s.cy - STACK[i].cy + away(v[i]) * flow.drift;
+    return s.cy - STACK[i].cy + away(v[i]) * SHUF_DRIFT;
   });
-  const rot = useTransform([...ts, nudge], (v: number[]) => {
+  const rot = useTransform(ts, (v: number[]) => {
     const s = slotAt(rankOf(v));
-    return s.rot + spinOf(v[i]) * flow.spin * SHUF_SPIN + v[N] * 1.6;
+    return s.rot + away(v[i]) * SHUF_SPIN;
   });
   /* 重なり順：潜り始めた瞬間に、まだ潜っていないカードすべての下へ。
      潜ったカードどうしは「あとで潜ったものほど下」＝番号が小さいほど下 */
@@ -336,8 +378,10 @@ function MarqueeScene({
   hold: React.RefObject<number>;
   out: React.RefObject<number>;
 }) {
-  /* 1回スクロール＝1枚。流れ方は調整パネルの「流れ方」3案 */
-  const { ts, nudges, flow } = useStepCards(q, pinned, hold, out);
+  /* 1回スクロール＝1枚。案31 は「カードを切る」動きで、秒数は調整パネルから
+     （行きも帰りも同じ秒数・一定の時計。形は ShuffleCard のカーブで作る） */
+  const { ts } = useStepCards(q, pinned, hold, out, () => ({ duration: readShuf().dur }));
+  const pow = useShufPow();
   return (
     <Frame
       full={
@@ -345,15 +389,26 @@ function MarqueeScene({
            【2026-09-17 ヒデさん指示】「セクション自体がちょん切れてる感じ。
              横幅いっぱいに文字が伸びる感じに」→ カンプの1512枠の外に出して、
              画面の横幅いっぱいに流す */
+        /* 【2026-09-26 ヒデさん指示】「この案を選んだら、後ろのテキストのサイズ感や
+             速度感、カードのサイズ感を変えられるように」→ 大きさ・1周の秒数は CSS 変数
+             （--ev-mq-size / --ev-mq-dur。調整パネルの「案2 カードを切る」）。
+           ⚠️ 大きさを変えても文字の【中心の高さ】はカンプの位置（上から 31+398+40＝469px）に保つ */
         <div
           className="pointer-events-none absolute inset-x-0 overflow-hidden"
-          style={{ top: (CANVAS_H - FRAME_H) / 2 + 398, height: 80 }}
+          style={{
+            top: `calc(${(CANVAS_H - FRAME_H) / 2 + 398 + 40}px - var(--ev-mq-size, 80px) / 2)`,
+            height: "var(--ev-mq-size, 80px)",
+          }}
         >
-          <div className="tp-marquee flex whitespace-nowrap">
+          <div
+            className="tp-marquee flex whitespace-nowrap"
+            style={{ animationDuration: "var(--ev-mq-dur, 34s)" }}
+          >
             {[0, 1].map((k) => (
               <span
                 key={k}
-                className="shrink-0 pr-[0.4em] text-[80px] font-thin leading-none text-black/80"
+                className="shrink-0 pr-[0.4em] font-thin leading-none text-black/80"
+                style={{ fontSize: "var(--ev-mq-size, 80px)" }}
               >
                 意外とオモロい、網走。意外とオモロい、網走。意外とオモロい、網走。
               </span>
@@ -362,10 +417,19 @@ function MarqueeScene({
         </div>
       }
     >
-      {/* 【2026-09-26】案31 はトランプを切る動き（上の1枚が束の下へ潜る） */}
-      {ITEMS.map((it, i) => (
-        <ShuffleCard key={it.title} it={it} i={i} ts={ts} nudge={nudges[i]} flow={flow} />
-      ))}
+      {/* 【2026-09-26】案31 はトランプを切る動き（上の1枚が束の下へ潜る）。
+          カードの大きさは束の中心を基準に束ごと拡大縮小（--ev-shuf-card。右へ出る距離も比例） */}
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: "scale(var(--ev-shuf-card, 1))",
+          transformOrigin: `${STACK_CX}px ${STACK_CY}px`,
+        }}
+      >
+        {ITEMS.map((it, i) => (
+          <ShuffleCard key={it.title} it={it} i={i} ts={ts} pow={pow} />
+        ))}
+      </div>
     </Frame>
   );
 }

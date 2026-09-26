@@ -124,7 +124,12 @@
     "pattern": 32,
     "tailPad": 0,
     "cardRatio": 0,
-    "flow": 3
+    "flow": 3,
+    "shufDur": 1.0,
+    "shufPow": 3,
+    "mqSize": 80,
+    "mqDur": 34,
+    "shufCard": 100
   },
   "pageTrans": {
     "pattern": 6

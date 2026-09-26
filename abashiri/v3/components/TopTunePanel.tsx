@@ -186,7 +186,9 @@ type Params = {
   /** gap＝見出し→カルーセルの間(px)。カンプは140 */
   gourmet: { speed: number; pauseOnHover: boolean; gap: number };
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
-  events: { pattern: number; tailPad: number; cardRatio: number; flow: number };
+  /** shufDur/shufPow：案31（カードを切る）の秒数とメリハリ */
+  /** mqSize/mqDur：案31 の後ろを流れる文字の大きさ(px)・1周の秒数。shufCard：カードの大きさ(%) */
+  events: { pattern: number; tailPad: number; cardRatio: number; flow: number; shufDur: number; shufPow: number; mqSize: number; mqDur: number; shufCard: number };
   /** ページ遷移の演出 1〜5 */
   pageTrans: { pattern: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
@@ -264,7 +266,7 @@ export default function TopTunePanel({
               コンテンツを中央に寄せて。上下に余白ができる感じ」→ カンプの 140px から詰める。
               🟡仮置き 80px（詰める量はカンプに無いので、調整パネル「グルメの余白」で決める） */
       gourmet: { speed: 40, pauseOnHover: true, gap: 80 },
-      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 1, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */, shufDur: 1.0, shufPow: 3 /* 2026-09-26 案31 カードを切る：ヒデさん「ゆったりすぎ・シャッと、でも急じゃなく」→ 1.0秒・メリハリ3（🟡仮置き） */, mqSize: 80, mqDur: 34, shufCard: 100 /* 同日 ヒデさん「後ろのテキストのサイズ・速度、カードのサイズも変えられるように」。既定はカンプ値(80px)・これまでの速さ(34秒)・等倍 */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       pageTrans: { pattern: 6 }, /* ページ遷移の演出（案6「ディゾルブ」が既定・2026-09-24） */
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
@@ -333,6 +335,12 @@ export default function TopTunePanel({
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
       /* 重ね写真の流れ方（1〜3）。eventParts.tsx の EV_FLOWS の番号 */
       root.style.setProperty("--ev-flow", String(params.events.flow ?? 1));
+      /* 案31（カードを切る）の秒数とメリハリ。EventVariants4 の ShuffleCard が読む */
+      root.style.setProperty("--ev-shuf-dur", String(params.events.shufDur ?? 1));
+      root.style.setProperty("--ev-shuf-pow", String(params.events.shufPow ?? 3));
+      root.style.setProperty("--ev-mq-size", `${params.events.mqSize ?? 80}px`);
+      root.style.setProperty("--ev-mq-dur", `${params.events.mqDur ?? 34}s`);
+      root.style.setProperty("--ev-shuf-card", String((params.events.shufCard ?? 100) / 100));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
@@ -1355,14 +1363,74 @@ export default function TopTunePanel({
                 pills: "流れ方",
                 path: "events.flow",
                 immediate: true,
-                /* 重ね写真の案だけ */
-                when: (p: Params) => p.events.pattern === 31 || p.events.pattern === 32,
+                /* 重ね写真の案32 だけ（案31 は 2026-09-26 にカードを切る動きになり、
+                   下の「切る速さ／メリハリ」で調整する） */
+                when: (p: Params) => p.events.pattern === 32,
                 options: Object.entries(EV_FLOWS).map(([v, f]) => ({
                   name: f.name,
                   value: Number(v),
                   swatch: "#0070c9",
                   desc: f.note,
                 })),
+              },
+              /* ── 案31（パネル表示は案2）を選んだ時だけ出るつまみ。画面の奥から手前の順 ──
+                 【2026-09-26 ヒデさん指示】「この案を選んだら動的に出てきて、後ろのカルーセル
+                   テキストのサイズ感や速度感、カードのサイズ感を変えられるように」 */
+              { sub: "案2 カードを切る", deep: true, when: (p: Params) => p.events.pattern === 31 },
+              {
+                slider: "流れる文字の大きさ",
+                path: "events.mqSize",
+                min: 40,
+                max: 200,
+                step: 2,
+                unit: "px",
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "カードの後ろを右から左へ流れる「意外とオモロい、網走。」の大きさ。カンプは80px。大きくしても文字の中心の高さは変わりません。",
+              },
+              {
+                slider: "流れる文字の速さ",
+                path: "events.mqDur",
+                min: 8,
+                max: 90,
+                step: 1,
+                unit: "秒",
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "文字の列がひと回りする時間。小さいほど速く流れます。これまでは34秒でした。",
+              },
+              {
+                slider: "カードの大きさ",
+                path: "events.shufCard",
+                min: 60,
+                max: 140,
+                step: 1,
+                unit: "%",
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "重なったカードの大きさ（カンプの420×616pxが100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。",
+              },
+              {
+                slider: "カードを切る速さ",
+                path: "events.shufDur",
+                min: 0.5,
+                max: 2,
+                step: 0.05,
+                unit: "秒",
+                immediate: true,
+                /* 案31（パネル表示は案2）だけ */
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "1回スクロールで、いちばん上のカードが右へ出て束の下へ潜り終わるまでの秒数。上へ戻す時も同じ秒数です。",
+              },
+              {
+                slider: "メリハリ",
+                path: "events.shufPow",
+                min: 1.5,
+                max: 5,
+                step: 0.1,
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "大きいほど、動き出しと止まり際はゆっくりで、途中がシャッと速くなります。小さいほど一定の速さに近づきます。",
               },
               {
                 seg: "カードの縦横比",

@@ -530,7 +530,12 @@ export function useStepCards(
   pinned: React.RefObject<boolean>,
   hold: React.RefObject<number>,
   /** いま抜けている枚数（PinStage の上向きの関所に渡す） */
-  out?: React.RefObject<number>
+  out?: React.RefObject<number>,
+  /** 時間の進め方を場面側で決める時だけ渡す（案31 のカード切り）。
+      渡すと「流れ方」の秒数・戻りの時間のゆがめ・しなりは使わず、
+      行きも帰りも【同じ秒数・一定の速さの時計】で t を進める
+      （動きの形は場面側のカーブで作るので、逆再生しても同じ感触になる） */
+  timing?: () => { duration: number }
 ) {
   const flow = useEvFlow();
   const steps = ITEMS.length - 1; /* 抜ける枚数（台紙の1枚は残す） */
@@ -545,6 +550,8 @@ export function useStepCards(
   const endGid = useRef(-1);
   const flowRef = useRef(flow);
   flowRef.current = flow;
+  const timingRef = useRef(timing);
+  timingRef.current = timing;
 
   /* 段を動かす。i 番目のカードは「上から何枚目か」で出番が決まる */
   const goTo = (next: number) => {
@@ -554,19 +561,22 @@ export function useStepCards(
     step.current = n;
     if (n === steps || n === 0) endGid.current = gid.current;
     const f = flowRef.current;
+    const tm = timingRef.current?.();
     ITEMS.forEach((_, i) => {
       if (i === 0) return; /* 台紙は動かさない */
       const order = ITEMS.length - 1 - i; /* 0 が最初に抜ける */
       const to = n > order ? 1 : 0;
       if (ts[i].get() === to) return;
       /* t＝押してからの経過時間。等速で進め、形（速い→遅い）は pos/rot の式で出す */
-      animate(ts[i], to, {
-        duration: f.duration,
-        ease: to === 1 ? "linear" : returnEase(f.pos),
-      });
+      animate(ts[i], to, tm
+        ? { duration: tm.duration, ease: "linear" }
+        : {
+            duration: f.duration,
+            ease: to === 1 ? "linear" : returnEase(f.pos),
+          });
     });
     /* 案2：1枚抜けたら、次にいちばん上になったカードがしなって落ち着く */
-    if (f.settle && n > prev) {
+    if (f.settle && n > prev && !tm) {
       const top = ITEMS.length - 1 - n; /* 次にいちばん上のカード */
       if (top >= 0) {
         /* 上のカードに引きずられて少し右へ動き、摩擦で戻って落ち着く */
