@@ -30,9 +30,10 @@
  *   ホバーはグルメのカードと同じ言葉遣い（黒グラデ＋下から文字が上がる）にした
  */
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   motion,
+  motionValue,
   useAnimationFrame,
   useTransform,
   type MotionValue,
@@ -544,6 +545,93 @@ function BurstCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<numb
         <HoverInfo it={it} />
       </div>
     </motion.div>
+  );
+}
+
+/* ═══════════ スマホ用：重ね写真の束だけ（案31・32）═══════════
+   【2026-09-26 ヒデさん指示】「レスポンシブ対応も、今採用されていない案に関しても」
+   スマホのトップ（MobileTop）は1画面ずつ切り替わる作りなので、PC の貼りつき（PinStage）は使えない。
+   → PC と【同じカードの部品】を、束の中心を基準に縮めて置く（動き・重なり方は PC と完全に同じ）。
+     1回のスワイプ＝1枚は、MobileTop のスワイプから gate を呼んでもらう。
+     文字（流れる文字・左右の文字）はスマホの縦長に合わせて MobileEvents 側で組む */
+export function MobileStack({
+  kind,
+  gate,
+  scale,
+  onTop,
+}: {
+  /** shuffle＝案31 カードを切る ／ peel＝案32 右へめくれる */
+  kind: "shuffle" | "peel";
+  gate: React.RefObject<((dir: 1 | -1) => boolean) | null>;
+  /** 束の縮め方（カンプの 420×616 に対する倍率） */
+  scale: number;
+  /** いちばん上に来たカードの番号（ITEMS の添字）を知らせる */
+  onTop?: (i: number) => void;
+}) {
+  const q = useMemo(() => motionValue(1), []);
+  const pinned = useRef(true);
+  const hold = useRef(0);
+  const out = useRef(0);
+  const inner = useRef<((dir: 1 | -1) => boolean) | null>(null);
+  const { ts, nudges, flow } = useStepCards(
+    q,
+    pinned,
+    hold,
+    out,
+    kind === "shuffle" ? () => ({ duration: readShuf().dur }) : undefined,
+    inner
+  );
+  const pow = useShufPow();
+  /* 何枚進めたか（いちばん上のカード＝ITEMS の後ろから数えて n 枚目） */
+  const n = useRef(0);
+  const onTopRef = useRef(onTop);
+  onTopRef.current = onTop;
+  /* ⚠️ gate は effect の中で渡す。描画中に書くと、案を切り替えた時に
+     消える側の後片付けが新しい方の gate を消してしまう */
+  useEffect(() => {
+    const fn = (dir: 1 | -1) => {
+      const moved = inner.current?.(dir) ?? false;
+      if (moved) {
+        n.current = Math.max(0, Math.min(ITEMS.length - 1, n.current + dir));
+        onTopRef.current?.(ITEMS.length - 1 - n.current);
+      }
+      return moved;
+    };
+    gate.current = fn;
+    return () => {
+      if (gate.current === fn) gate.current = null;
+    };
+  }, [gate]);
+  return (
+    <div className="pointer-events-none relative size-full">
+      <div
+        className="absolute left-1/2 top-1/2"
+        style={{
+          width: FRAME_W,
+          height: FRAME_H,
+          /* 束の中心を、この箱の中心へ。縮めるのも束の中心が基準 */
+          transform: `translate(${-STACK_CX}px, ${-STACK_CY}px) scale(${scale})`,
+          transformOrigin: `${STACK_CX}px ${STACK_CY}px`,
+        }}
+      >
+        <div
+          className="pointer-events-auto absolute inset-0"
+          style={
+            kind === "shuffle"
+              ? { transform: "scale(var(--ev-shuf-card, 1))", transformOrigin: `${STACK_CX}px ${STACK_CY}px` }
+              : undefined
+          }
+        >
+          {ITEMS.map((it, i) =>
+            kind === "shuffle" ? (
+              <ShuffleCard key={it.title} it={it} i={i} ts={ts} pow={pow} />
+            ) : (
+              <StackCard key={it.title} it={it} i={i} t={ts[i]} nudge={nudges[i]} flow={flow} />
+            )
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

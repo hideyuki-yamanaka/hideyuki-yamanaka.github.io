@@ -422,11 +422,14 @@ export function Carousel3D({
   /** カードの縦横比（幅÷高さ）。既定は 420/610 ≒ 0.69（2:3 の縦長）。
       0.75=3:4 ／ 1=1:1 ／ 1.333=4:3 ／ 1.778=16:9 */
   ratio,
+  /** 下の案内文を差し替える（スマホは「スワイプ」。2026-09-26） */
+  hint,
 }: {
   items?: Item[];
   progress?: React.RefObject<number>;
   heading?: boolean;
   ratio?: number;
+  hint?: string;
 } = {}) {
   const C = CONFIG.css3d;
   const ITEMS = items && items.length ? items : DEFAULT_ITEMS;
@@ -612,9 +615,10 @@ export function Carousel3D({
         </div>
       </div>
       <p className="px-6 text-[13px] font-extralight leading-[1.4] text-black/40 sm:px-[147px]">
-        {scrollDriven
-          ? "↓ スクロールすると写真が右から左へ切り替わります"
-          : "← 横にドラッグ／スワイプ、または ← → キーで回ります"}
+        {hint ??
+          (scrollDriven
+            ? "↓ スクロールすると写真が右から左へ切り替わります"
+            : "← 横にドラッグ／スワイプ、または ← → キーで回ります")}
       </p>
     </div>
   );

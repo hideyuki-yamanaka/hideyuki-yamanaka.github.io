@@ -45,7 +45,7 @@ export const EVENT_3D_PATTERNS: Record<
 };
 
 /** 体験セクションのデータを、カルーセルが読める形にそろえる（写真も説明もそのまま） */
-const CARDS: CarouselItem[] = ITEMS.map((it) => ({
+export const CARDS: CarouselItem[] = ITEMS.map((it) => ({
   no: it.no,
   tag: it.tag,
   title: it.title,
@@ -79,7 +79,7 @@ if (typeof window !== "undefined") {
 }
 
 /** 調整パネルで選んだ縦横比を受け取る */
-function useCardRatio() {
+export function useCardRatio() {
   const [i, setI] = useState(lastRatioIndex);
   /* ⚠️ 焼き込みファイルの読み込みは非同期。パネル（ブラウザの保存値）が
      先に届いていたのに、あとから焼き込みの値で【上書きしてしまう】競合があった

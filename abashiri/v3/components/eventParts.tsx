@@ -535,7 +535,11 @@ export function useStepCards(
       渡すと「流れ方」の秒数・戻りの時間のゆがめ・しなりは使わず、
       行きも帰りも【同じ秒数・一定の速さの時計】で t を進める
       （動きの形は場面側のカーブで作るので、逆再生しても同じ感触になる） */
-  timing?: () => { duration: number }
+  timing?: () => { duration: number },
+  /** スマホ（MobileTop）用。渡すと window のホイール・キー・スワイプは見張らず、
+      代わりに「1枚進める／戻す」関数をここへ入れる。返り値 true＝カードを動かした
+      （＝場面は切り替えない）。false＝もう端なので場面を切り替えてよい */
+  external?: React.RefObject<((dir: 1 | -1) => boolean) | null>
 ) {
   const flow = useEvFlow();
   const steps = ITEMS.length - 1; /* 抜ける枚数（台紙の1枚は残す） */
@@ -600,6 +604,22 @@ export function useStepCards(
        新：1つの操作につき1枚は変えずに、
          ・その操作でまだ1枚も動かしていなければ、貼りついた瞬間に1枚動かす
          ・慣性の途中で量が急に増えたら（＝指でもう一度払った）、新しい1回とみなす */
+    if (external) {
+      external.current = (dir) => {
+        if (dir > 0 && step.current < steps) {
+          goTo(step.current + 1);
+          return true;
+        }
+        if (dir < 0 && step.current > 0) {
+          goTo(step.current - 1);
+          return true;
+        }
+        return false;
+      };
+      return () => {
+        external.current = null;
+      };
+    }
     let last = 0;
     let prevAbs = 0;
     let lastTrig = 0;

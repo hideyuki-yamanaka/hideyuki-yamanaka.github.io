@@ -60,7 +60,16 @@ export default function Home() {
     setReplayEpoch((e) => e + 1);
   }, []);
 
-  if (isMobile) return <MobileTop />;
+  /* 【2026-09-26】スマホのトップにも調整パネルを載せる（ふだんは隠しモードで見えない）。
+     載っていないと、パネルで変えた値（体験の案・ページ切り替え・各種つまみ）も、
+     スマホモードの同期も、スマホのトップに一切届かなかった */
+  if (isMobile)
+    return (
+      <>
+        <MobileTop />
+        <TopTunePanel onSettleValues={onSettleValues} onReplay={onReplay} />
+      </>
+    );
 
   return (
     <>

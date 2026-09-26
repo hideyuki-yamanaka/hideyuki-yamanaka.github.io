@@ -86,6 +86,12 @@ function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
       ? document.querySelector<HTMLElement>("#events")?.offsetTop
       : sc?.dataset[key];
   if (!sc || at == null) {
+    /* スマホのトップ（MobileTop）にいる時は、場面の切り替えをお願いする
+       （スマホのトップには PC のスクロールの箱が無い。2026-09-26 フッター差し替えで追加） */
+    if (window.location.pathname === "/") {
+      window.dispatchEvent(new CustomEvent("abashiri:goto-key", { detail: { key } }));
+      return;
+    }
     /* 他ページからはトップへ戻ってから飛ぶ */
     try {
       sessionStorage.setItem("abashiri-goto", key);
@@ -119,7 +125,7 @@ function Logo({ light = false }: { light?: boolean }) {
   return (
     <div
       /* 【2026-09-26 ヒデさん指示】スマホのフッターでは作字を中央に。PC は左のまま */
-      className="relative shrink-0 self-center sm:self-start"
+      className="relative shrink-0 self-center @min-[1200px]:self-start"
       style={{
         /* 高さはつまみ（--ft-logo-h）。幅は比率から出す */
         height: "var(--ft-logo-h)",
@@ -237,14 +243,21 @@ function PhotoStage({
 
   /* 高さが測れるまでは 1画面ぶんを仮に置く（描画のちらつき防止） */
   const H = vh || 900;
-  /* スマホ幅かどうか。フッターの組み方を変えるのに使う（2026-09-24） */
+  /* 縦積み（スマホ・タブレット）かどうか。フッターの組み方を変えるのに使う（2026-09-24）。
+     【2026-09-26】判定を「画面の幅 639px 以下」から「フッター自身の幅 1200px 未満」に変更。
+       ・タブレット幅（640〜1023px）で PC の横並びに押し込まれ、サイトマップが1文字ずつ
+         折り返して崩れていた（実測: 820px 幅）
+       ・画面の幅で判定すると、PC のトップ（1512px の紙を縮めて表示）の中にあるフッターまで
+         小さめの窓で縦積みになってしまう。フッター自身の幅なら紙の中では常に 1512px */
   const [isNarrow, setIsNarrow] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const apply = () => setIsNarrow(mq.matches);
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => setIsNarrow(el.clientWidth < 1200);
     apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
   const stageH = cfg.stageH / 100;
   const fadeH = cfg.fadeH / 100;
@@ -318,19 +331,19 @@ function PhotoStage({
       <div
         className={`flex flex-col ${
           isNarrow
-            ? "relative z-10 px-6 pb-[56px] pt-[200px]"  /* 作字がグラデに埋もれないよう上を空ける（グラデ240pxに合わせて 128→200） */
+            ? "relative z-10 px-6 pb-[56px] pt-[200px] @min-[640px]:px-[64px]"  /* 作字がグラデに埋もれないよう上を空ける（グラデ240pxに合わせて 128→200）。タブレット幅は左右を広めに */
             : "absolute inset-x-0 bottom-0"
         } ${
           isNarrow
             ? ""
             : pad === "wide"
-              ? "px-6 sm:px-[var(--ft-pad-x)]"
-              : "px-6 sm:px-[120px]"
+              ? "px-6 @min-[640px]:px-[var(--ft-pad-x)]"
+              : "px-6 @min-[640px]:px-[120px]"
         } ${
           isNarrow
             ? ""
             : align === "end"
-              ? "justify-end pb-[56px] sm:pb-[var(--ft-pad-bottom)]"
+              ? "justify-end pb-[56px] @min-[640px]:pb-[var(--ft-pad-bottom)]"
               : "justify-center"
         }`}
         style={{ height: isNarrow ? undefined : H }}
@@ -403,7 +416,8 @@ function MapColumn({
 /** サイトマップ（3カテゴリを横に並べる） */
 function SiteMapGrid({ light = false }: { light?: boolean }) {
   return (
-    <div className="grid w-full grid-cols-1 gap-x-8 gap-y-[var(--ft-map-gap-y)] sm:grid-cols-3 sm:gap-x-[var(--ft-map-gap-x)]">
+    /* 3列にするのはフッターの幅が 640px 以上の時（画面の幅ではなくフッター自身の幅。2026-09-26） */
+    <div className="grid w-full grid-cols-1 gap-x-8 gap-y-[var(--ft-map-gap-y)] @min-[640px]:grid-cols-3 @min-[640px]:gap-x-[var(--ft-map-gap-x)]">
       {SITEMAP.map((c) => (
         <MapColumn key={c.title} col={c} light={light} />
       ))}
@@ -418,9 +432,11 @@ function SiteMapGrid({ light = false }: { light?: boolean }) {
 function Body() {
   return (
     <PhotoStage align="end" pad="wide">
-      <div className="flex w-full flex-col gap-14 sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--ft-col-gap)]">
+      {/* 横並び（左に作字・右にサイトマップ）はフッターの幅が 1200px 以上の時だけ（1024px だとサイトマップの列が66pxまで細くなった）。
+          それより狭い時は作字を中央・その下にサイトマップ（2026-09-26 タブレット対応） */}
+      <div className="flex w-full flex-col gap-14 @min-[1200px]:flex-row @min-[1200px]:items-center @min-[1200px]:justify-between @min-[1200px]:gap-[var(--ft-col-gap)]">
         {/* 左の作字。サイトの顔なので大きく出す。SNS アイコンは無し */}
-        <div className="flex shrink-0 flex-col items-center sm:items-start">
+        <div className="flex shrink-0 flex-col items-center @min-[1200px]:items-start">
           <Logo light />
         </div>
         <div
@@ -453,7 +469,8 @@ export default function SiteFooter() {
       /* ⚠️ 地は白のまま。透明にすると、上のセクションと2px重ねている所から
          ページの地（うすい水色）がすじになって見える（2026-09-16 実測）。
          写真はこの白の上に載るので、白地でも見た目は変わらない */
-      className="relative z-10 -mt-[2px] w-full bg-white"
+      /* @container：中の組みを「画面の幅」ではなく「フッター自身の幅」で切り替える（2026-09-26） */
+      className="@container relative z-10 -mt-[2px] w-full bg-white"
     >
       <Body />
     </footer>

@@ -13,7 +13,9 @@
  * コピー・写真はデスクトップ実装と同じ実データ。
  */
 import { navigateTo } from "./PageTransition";
-import MobileHeader, { MOBILE_GOTO_KEY, MOBILE_NAV } from "./MobileHeader";
+import MobileEvents from "./MobileEvents";
+import SiteFooter from "./SiteFooter";
+import MobileHeader, { MOBILE_GOTO_KEY } from "./MobileHeader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 
@@ -70,13 +72,13 @@ const GOURMET = [
   { no: "04", title: "酒縁酒場 屯々", img: "/img/gourmet-new-4.webp", slug: "tonton" },
 ];
 
-/* 体験セクション（PC版 EventSection と同じ4件・同じ詳細ページへつなぐ） */
-const EVENTS = [
-  { no: "01", slug: "kangoku", title: "博物館 網走監獄", img: "/img/spot/kangoku-1.webp" },
-  { no: "02", slug: "ryuhyokan", title: "オホーツク流氷館", img: "/img/spot/ryuhyokan-1.webp" },
-  { no: "03", slug: "canoe", title: "カヌー体験", img: "/img/spot/canoe-1.webp" },
-  { no: "04", slug: "washi", title: "オジロワシ・オオワシウォッチング", img: "/img/spot/washi-1.webp" },
-];
+/* 体験セクションは 2026-09-26 に MobileEvents へ（PC の案1〜5 をスマホでも出し分ける） */
+const EVENTS_SCENE = 7;
+const FOOTER_SCENE = 8;
+/** フッターのサイトマップ見出し・別ページからの「セクションへ」の行き先 → 場面の番号 */
+const KEY_TO_SCENE: Record<string, number> = { spotAt: 2, gourmetAt: 6, eventsAt: 7 };
+/** 体験の場面でカードを1枚動かしたあと、次のスワイプを受けるまでの間(ms) */
+const CARD_LOCK = 550;
 
 /* KV / メッセージ / スポット×4 / グルメ / 体験 / フッター
    （2026-09-16 ヒデさん指示で体験とフッターを追加。PCと同じ中身をスマホでも見せる） */
@@ -85,21 +87,27 @@ const SCENE_COUNT = 9;
 /** キービジュアルの作字ブロック（PC カンプ 415×379）をスマホで何倍にするか。
     PC との位置関係を壊さないよう、ブロックごと拡大縮小する。
     0.8 → 0.64（2026-09-16 ヒデさん指示「もう少し80%ぐらいに縮小」） */
-/* フッターの作字ロゴの倍率。枠 415x379 を高さ150pxに収める（150/379） */
-const FOOT_LOGO_SCALE = 150 / 379;
 
 /* 【2026-09-17】タブレット（縦長の大きい画面）用の倍率。
    縦長タブレットは useIsMobile で【この縦長用レイアウト】に回している。
    iPhone 用の倍率のままだと、1024px の画面で作字が 266px しかなく
    スカスカに見えたので、744px 以上では大きくする（実測して決めた値）。 */
 const KV_SCALE_TAB = 1.0;
-const FOOT_LOGO_SCALE_TAB = 230 / 379;
 
 const KV_SCALE = 0.64;
 const DUR = 800; // トランジション時間(ms)
 
 export default function MobileTop() {
   const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
+  activeRef.current = active;
+  /* 体験セクションの「1回＝1枚」の受け口（MobileEvents の案が入れる） */
+  const eventsGate = useRef<((dir: 1 | -1) => boolean) | null>(null);
+  /* フッターの場面は中をスクロールできる。上までスクロールし終わっている時だけ
+     「下へスワイプ＝前の場面へ」にする（途中で戻されると読めないため） */
+  const footerRef = useRef<HTMLDivElement>(null);
+  const footerTopAtTouch = useRef(true);
+  const footerTopSince = useRef(0);
   const lockRef = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
 
@@ -117,17 +125,29 @@ export default function MobileTop() {
     });
   }, []);
   const step = useCallback(
-    (dir: number) => setActive((prev) => {
-      if (lockRef.current) return prev;
-      const t = Math.max(0, Math.min(SCENE_COUNT - 1, prev + dir));
-      if (t !== prev) {
+    (dir: number) => {
+      /* 体験の場面では、先にカードを動かすか聞く。動かしたらこの回は場面を切り替えない
+         （4枚見終わった／戻しきった時は false が返って、ふつうに場面が切り替わる） */
+      if (lockRef.current) return;
+      if (activeRef.current === EVENTS_SCENE && eventsGate.current?.(dir > 0 ? 1 : -1)) {
         lockRef.current = true;
         window.setTimeout(() => {
           lockRef.current = false;
-        }, DUR);
+        }, CARD_LOCK);
+        return;
       }
-      return t;
-    }),
+      setActive((prev) => {
+        if (lockRef.current) return prev;
+        const t = Math.max(0, Math.min(SCENE_COUNT - 1, prev + dir));
+        if (t !== prev) {
+          lockRef.current = true;
+          window.setTimeout(() => {
+            lockRef.current = false;
+          }, DUR);
+        }
+        return t;
+      });
+    },
     []
   );
 
@@ -135,12 +155,19 @@ export default function MobileTop() {
   const onWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; // 横は無視（グルメの横送り用）
     if (Math.abs(e.deltaY) < 8) return;
+    if (activeRef.current === FOOTER_SCENE) {
+      /* フッターの中はふつうにスクロール。上端に0.35秒以上いる時だけ前の場面へ */
+      const atTop = (footerRef.current?.scrollTop ?? 0) <= 1;
+      const settled = atTop && footerTopSince.current && performance.now() - footerTopSince.current > 350;
+      if (e.deltaY > 0 || !settled) return;
+    }
     step(e.deltaY > 0 ? 1 : -1);
   };
   /* スワイプ（縦）で1枚ずつ */
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
     touch.current = { x: t.clientX, y: t.clientY };
+    footerTopAtTouch.current = (footerRef.current?.scrollTop ?? 0) <= 1;
   };
   const onTouchEnd = (e: React.TouchEvent) => {
     const s = touch.current;
@@ -150,6 +177,9 @@ export default function MobileTop() {
     const dy = t.clientY - s.y;
     touch.current = null;
     if (Math.abs(dy) < 40 || Math.abs(dy) <= Math.abs(dx)) return; // 縦スワイプのみ
+    /* フッターの中：上へのスワイプはスクロールだけ。下へのスワイプは、
+       スワイプを始めた時に上端にいた時だけ前の場面へ */
+    if (activeRef.current === FOOTER_SCENE && (dy < 0 || !footerTopAtTouch.current)) return;
     step(dy < 0 ? 1 : -1); // 上へスワイプ＝次へ
   };
 
@@ -163,7 +193,39 @@ export default function MobileTop() {
       if (n) sessionStorage.removeItem(MOBILE_GOTO_KEY);
     } catch {}
     if (n) setActive(Math.max(0, Math.min(SCENE_COUNT - 1, Number(n) || 0)));
+    /* 共通フッター（SiteFooter）の見出しは PC 用の行き先（spotAt など）を預ける。
+       スマホのトップでも読んで、該当する場面を開く（2026-09-26 フッター差し替えで追加） */
+    let k: string | null = null;
+    try {
+      k = sessionStorage.getItem("abashiri-goto");
+      if (k) sessionStorage.removeItem("abashiri-goto");
+    } catch {}
+    if (k && KEY_TO_SCENE[k] != null) setActive(KEY_TO_SCENE[k]);
+    /* すでにトップにいる時は、フッターの見出しがイベントで知らせてくる */
+    const onKey = (e: Event) => {
+      const key = (e as CustomEvent<{ key: string }>).detail?.key;
+      if (key && KEY_TO_SCENE[key] != null) goTo(KEY_TO_SCENE[key]);
+    };
+    window.addEventListener("abashiri:goto-key", onKey);
+    return () => window.removeEventListener("abashiri:goto-key", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* フッターの場面に入ったら上から見せる。上端にいる時間も数え直す */
+  useEffect(() => {
+    if (active !== FOOTER_SCENE) return;
+    const el = footerRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+    footerTopSince.current = performance.now();
+    const on = () => {
+      if (el.scrollTop <= 1) {
+        if (!footerTopSince.current) footerTopSince.current = performance.now();
+      } else footerTopSince.current = 0;
+    };
+    el.addEventListener("scroll", on, { passive: true });
+    return () => el.removeEventListener("scroll", on);
+  }, [active]);
 
   /* その場でブラーのクロスフェード（動かさない） */
   /* グルメ（白背景）のときはヘッダーを黒に切り替える */
@@ -375,108 +437,26 @@ export default function MobileTop() {
       </section>
 
       {/* ── 7: 体験セクション ───────────────── */}
+      {/* 【2026-09-26】PC の案1〜5 をスマホでも出し分ける（MobileEvents）。
+          ⚠️ overflow-hidden：案2 で右へ出たカードや案4 の飛び出す写真を、この場面の中で切る */}
       <section
-        className="absolute inset-0 flex flex-col justify-center bg-white px-6 tab:px-[80px]"
-        style={scene(7)}
+        className="absolute inset-0 flex flex-col justify-center overflow-hidden bg-white px-6 tab:px-[80px]"
+        style={scene(EVENTS_SCENE)}
       >
-        <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-34">
-          意外とオモロい、網走。
-        </h2>
-        {/* 2列×2段。タップで詳細ページへ */}
-        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 tab:mt-12 tab:gap-x-6 tab:gap-y-10">
-          {EVENTS.map((e) => (
-            <button
-              key={e.slug}
-              type="button"
-              onClick={() => navigateTo(`/spot/${e.slug}`)}
-              className="flex flex-col gap-2 text-left"
-            >
-              <div className="overflow-hidden">
-                <img
-                  src={e.img}
-                  alt={e.title}
-                  className="h-[150px] w-full object-cover tab:h-[300px]"
-                />
-              </div>
-              <p className="text-body-12 font-extralight leading-[1.4] text-ink/50 tab:text-body-13">
-                体験 {e.no}
-              </p>
-              <p className="text-body-14 font-light leading-[1.5] text-ink tab:text-body-20">
-                {e.title}
-              </p>
-            </button>
-          ))}
-        </div>
+        <MobileEvents active={active === EVENTS_SCENE} gate={eventsGate} />
       </section>
 
       {/* ── 8: フッター ───────────────────── */}
-      <section
-        className="absolute inset-0 flex flex-col items-center justify-center gap-10 bg-white px-6"
-        style={scene(8)}
-      >
-        {/* 作字ロゴ。PC のフッター（SiteFooter の Logo）と同じ組みにそろえて
-            「網走市観光サイト」を吹き出しの右上に入れる（2026-09-17 ヒデさん指摘で追加）。
-            ⚠️ 枠は 415x379。ここを高さ150pxに合わせるので倍率は 150/379 = 0.396。
-               作字は 471x390 なので、PC と同じく入れ子の div に逃がして
-               max-w-none を明示する（直に置くと 415px に切り詰められて位置がずれる）。
-            ⚠️ ここは白背景。もとの text-kanko-site.svg は【白い文字】なので、
-               青にした text-kanko-site-blue.svg を使う（白のままだと見えない） */}
-        <div
-          className="relative tab:![width:calc(415px*var(--ft-s-tab))] tab:![height:calc(379px*var(--ft-s-tab))]"
-          style={
-            {
-              ["--ft-s" as string]: FOOT_LOGO_SCALE,
-              ["--ft-s-tab" as string]: FOOT_LOGO_SCALE_TAB,
-              width: "calc(415px * var(--ft-s))",
-              height: "calc(379px * var(--ft-s))",
-            } as React.CSSProperties
-          }
-        >
-          <div
-            className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left [transform:scale(var(--ft-s))] tab:[transform:scale(var(--ft-s-tab))]"
-          >
-            <div className="absolute left-[-28px] top-[13.1px]">
-              <img
-                src="/img/hero-message-blue.svg"
-                alt="な〜んにもない たまらない"
-                className="h-[390px] w-[471px] max-w-none"
-              />
-            </div>
-            <img
-              src="/img/text-kanko-site-blue.svg"
-              alt="網走市観光サイト"
-              className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px]"
-            />
+      {/* 【2026-09-26 ヒデさん指示】「スマホビューでフッターがまだ最新化されていない」
+          → それまでの簡易版（作字＋メニュー＋SNS）をやめ、PC・詳細ページと同じ
+            共通フッター（SiteFooter：写真＋作字＋サイトマップ）にした。
+          1画面より長いので、この場面の中だけ縦にスクロールできる（スクロールの箱は必須） */}
+      <section className="absolute inset-0 bg-white" style={scene(FOOTER_SCENE)}>
+        <div ref={footerRef} className="no-scrollbar h-full overflow-y-auto overscroll-contain">
+          {/* 1画面より短い時（タブレット）は下に寄せる。上は白なので、フッターの白グラデとつながる */}
+          <div className="flex min-h-full flex-col justify-end">
+            <SiteFooter />
           </div>
-        </div>
-        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 tab:gap-x-8">
-          {MOBILE_NAV.map((n) => (
-            <button
-              key={n.label}
-              type="button"
-              onClick={() => goTo(n.scene)}
-              className="text-body-13 font-light leading-[1.2] text-ink/70 tab:text-body-16"
-            >
-              {n.label}
-            </button>
-          ))}
-        </nav>
-        <div className="flex items-center gap-5">
-          {[
-            { icon: "/img/sns-ig-circle.svg", label: "Instagram" },
-            { icon: "/img/sns-x.svg", label: "X" },
-            { icon: "/img/sns-yt.svg", label: "YouTube" },
-          ].map((s) => (
-            <a
-              key={s.label}
-              href="#"
-              aria-label={s.label}
-              className="opacity-70"
-              onClick={(ev) => ev.preventDefault()}
-            >
-              <img src={s.icon} alt="" className="h-[18px] w-auto [filter:brightness(0)] tab:h-[24px]" />
-            </a>
-          ))}
         </div>
       </section>
 
