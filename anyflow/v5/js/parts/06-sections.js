@@ -1079,6 +1079,13 @@ function vPath(st, pts, o) { const e = valTake(st, 'path');
 /* 【2026-08-28 ヒデさん指定】パスのトリミング。
    線を「今どこまで描かれたか」で見せると、時間の経過やストーリーが表せる。
    k=0 で何も描かれていない / k=1 で全部描かれた。from を渡すと途中から。 */
+/* ピクトの表示倍率(座標系 220 → 画面px)。svg の箱の大きさ(CSS の transform をかける前)で測り、1フレームに1回だけ計算する。
+   線の太さ・点線の長さは non-scaling-stroke で画面px なので、座標の長さと比べる時はこれで割り掛けする(理由は vTrim の注記) */
+function vSvgScale(svg) {
+  if (!svg) return 1;
+  if (svg.__scF !== frameSeq) { const w = svg.clientWidth, h = svg.clientHeight; svg.__sc = (w > 0 && h > 0) ? (Math.min(w, h) / VAL_VB) : 1; svg.__scF = frameSeq; }
+  return svg.__sc || 1;
+}
 function vTrim(e, k, from) {
   const L0 = e.__len || 0;
   if (!L0) return e;
@@ -1090,13 +1097,14 @@ function vTrim(e, k, from) {
      以前は getBoundingClientRect(transform 込み)で測っていたため、画面の高さが足りずステージを縮めている時(ノートPCで --sp≈0.83〜0.9)に
      点線の1本目が縮小率ぶん短くなり、線が 83〜90% の所で止まっていた(1440×921 以上では --sp=1 なので出なかった)。
      箱が正方形でない時は viewBox が小さい方の辺に合わせて収まる(meet)ので、幅と高さの小さい方を使う。 */
-  const svg = e.ownerSVGElement;
-  if (svg && svg.__scF !== frameSeq) { const w = svg.clientWidth, h = svg.clientHeight; svg.__sc = (w > 0 && h > 0) ? (Math.min(w, h) / VAL_VB) : 1; svg.__scF = frameSeq; }
-  const L = L0 * ((svg && svg.__sc) || 1);
+  const L = L0 * vSvgScale(e.ownerSVGElement);
   const a = Math.max(0, Math.min(1, from || 0)), b = Math.max(a, Math.min(1, k));
   const on = L * (b - a);
   e.setAttribute('stroke-dasharray', on.toFixed(2) + ' ' + L.toFixed(2));
   e.setAttribute('stroke-dashoffset', (-L * a).toFixed(2));
+  /* 【2026-09-26】長さ0(描き始めの瞬間)は隠す。線の端が丸(round)なので、長さ0の点線でも線の始点と終点に小さな点が出ていた
+     (S9 の周の頭で左右の合わせ目にピンクの点が出ていた)。このフレームだけの指定で、次のフレームは valTake が濃さを戻す */
+  if (on < 0.01) e.setAttribute('opacity', '0');
   return e;
 }
 function valStyle(e, o) {
@@ -1176,18 +1184,32 @@ const VAL_SAAS = {
     const C = VAL_VB / 2, T = 3.6, k = vLoop(t, T);
     const grow = Math.min(1, k / 0.55), lock = Math.max(0, (k - 0.55) / 0.2), off = Math.max(0, (k - 0.85) / 0.15);
     const R = 56;
-    const arc = (a0, a1, kk, col) => {
-      const pts = []; const seg = 26;
+    /* 円周上の a0°→a1° の折れ線(弧)。a1<a0 なら逆回り */
+    const arcPts = (a0, a1, seg) => { const pts = [];
       for (let i = 0; i <= seg; i++) { const a = (a0 + (a1 - a0) * (i / seg)) * Math.PI / 180;
         pts.push([C + Math.cos(a) * R, C + Math.sin(a) * R]); }
-      vTrim(vPath(st, pts, { c: col, w: 1, a: 1 - off }), vE(kk));
+      return pts; };
+    const arc = (a0, a1, kk, col) => {
+      vTrim(vPath(st, arcPts(a0, a1, 26), { c: col, w: 1, a: 1 - off }), vE(kk));
     };
+    /* 【2026-09-26 ヒデさん依頼】下地の点線の円は、青/ピンクの弧が伸びた所から消えていく(弧の伸びに合わせたトリミング)。
+       以前は点線の円がずっと全周出ていた。点線の粒が動いて見えないよう、弧の終点側から逆向きに描いて「まだ弧が来ていない所」だけ残す
+       (模様の起点が終点側に固定される)。弧が消える所(off)では点線の円が全周で薄く戻り、次の周の頭と濃さ・模様がつながる */
+    const eG = off > 0 ? 0 : vE(grow);                       /* 点線が弧に食われた割合 */
+    const gA = off > 0 ? 0.14 * off : 0.14;                  /* 点線の濃さ(戻る時だけ 0→0.14) */
+    const guide = (a0, a1) => { if (eG >= 1 || gA <= 0) return;
+      const aCut = a0 + (a1 - a0) * eG;                      /* 弧の先端の角度 */
+      vPath(st, arcPts(a1, aCut, Math.max(2, Math.ceil(26 * (1 - eG)))), { a: gA, dash: '4 6' }); };
+    guide(180, 360);
+    guide(0, 180);
     arc(180, 360, grow, VAL_ACC);
     arc(0, 180, grow, VAL_PINK);
-    vCircle(st, C, C, R, { a: 0.14, dash: '4 6' });
-    /* 常設の印(左右の合わせ目)。どの場面でも密度が落ちないように */
-    vLine(st, C - R - 12, C, C - R + 2, C, { a: 0.25 });
-    vLine(st, C + R - 2, C, C + R + 12, C, { a: 0.25 });
+    /* 常設の印(左右の合わせ目)。どの場面でも密度が落ちないように。
+       【2026-09-26 ヒデさん依頼】内側の端を円周にぴったり(弧の線の外側のふちに、印の丸い端が接する位置)。以前は円の中へ 2 入り込んではみ出して見えた。
+       線の太さは画面px(non-scaling)なので、弧の線の半分＋印の丸い端の半分(=1px×線の太さの倍率)を表示倍率で割って座標に直す */
+    const gap = valStrokeMul / vSvgScale(st.svg);
+    vLine(st, C - R - 12, C, C - R - gap, C, { a: 0.25 });
+    vLine(st, C + R + gap, C, C + R + 12, C, { a: 0.25 });
     if (lock > 0) vCircle(st, C, C, 12 + vE(Math.min(1, lock * 2)) * 6, { c: VAL_ACC, w: 1, a: 1 - lock });
   },
   /* S10 積層して重なる: 3つの円がずれて重なっていき、完全に重なると1つに見える */
