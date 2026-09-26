@@ -59,6 +59,22 @@
       "cwd": "houmon-app"
     },
     {
+      "name": "houmon-local-real",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "NEXT_PUBLIC_SUPABASE_URL=",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY=",
+        "npm",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3098"
+      ],
+      "port": 3098,
+      "cwd": "houmon-app"
+    },
+    {
       "name": "inzone-works",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
