@@ -256,6 +256,25 @@ export function PinStage({
   const upSince = useRef(0);
   const lastOut = useRef(-1);
 
+  /* 【2026-09-26 ヒデさん報告】「既定以外の案だと、カードを見終わってもフッターへ行けない」
+     原因：関所（window.__abashiriScrollGate / GateTop）は毎フレーム書くだけで、
+       この場面が【消える時に片付けていなかった】。既定の案（関所あり）で体験セクションに
+       入ってから調整パネルで案1・4・5（関所なし）へ切り替えると、古い関所が残ったまま
+       誰も消さず、下にも上にも行けなくなっていた（実測: 10190 で永久に停止）。
+     → 消える時に、自分が張る種類の関所を消す */
+  useEffect(() => {
+    if (!hold && !out) return;
+    return () => {
+      const w = window as unknown as {
+        __abashiriScrollGate?: number;
+        __abashiriScrollGateTop?: number;
+      };
+      delete w.__abashiriScrollGate;
+      delete w.__abashiriScrollGateTop;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useAnimationFrame(() => {
     if (!hold) return;
     const w = window as unknown as {
