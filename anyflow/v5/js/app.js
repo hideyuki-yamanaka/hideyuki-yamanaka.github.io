@@ -1092,7 +1092,7 @@ const SHIPPED_FLAGS = {"anyflow-case-noline-20260915": "1", "anyflow-casehover-t
 /* 【2026-09-01 ヒデさん指定・「デプロイしてもKVが変わらない」の根治】焼き込みの世代番号。
    ⚠️ 焼き込み(SHIPPED_*)を更新したら、この数値も必ず上げること(bakeスクリプトが自動で置換する)。
    本番ドメインでは「保存された世代 < この世代」なら古いlocalStorageを破棄して焼き込みで起動する。 */
-const SHIPPED_GENERATION = 20260926013000;
+const SHIPPED_GENERATION = 20260926134749;   /* 【2026-09-26 13:47】スマホ幅で案の控えにスマホの値が保存される不具合の根治に合わせて世代を上げる(本番で残っているかもしれない汚れた保存を一度消す) */
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
