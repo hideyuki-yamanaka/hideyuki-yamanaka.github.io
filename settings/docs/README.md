@@ -59,6 +59,7 @@
 | ファイル | 中身 |
 |---|---|
 | [houmon-app/DESIGN-SYSTEM.md](houmon-app/DESIGN-SYSTEM.md) | デザインシステム（2026-09-27 整理: 色は役割の名前・角丸6段・影5つ・文字10/12/16/20/24・4の倍数ルール・マテリアルアイコン・画面ごとの決まり・運用ルール） |
+| [houmon-app/SHARE-LINKS.md](houmon-app/SHARE-LINKS.md) | 共有リンク（URL だけで訪問ログを見せる・招待との違い・作り） |
 
 ### opus-metaverse（Opus 5.5 没入型コンセプトサイト）
 | ファイル | 中身 |
