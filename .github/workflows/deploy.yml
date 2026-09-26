@@ -20,7 +20,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive
+          # houmon-app はメンバーの個人情報を含むため 2026-09-26 に非公開化した。
+          # この Actions の GITHUB_TOKEN では「別の非公開リポジトリ」を取得できず
+          # recursive だとチェックアウトで失敗するので、公開サブモジュールだけ個別に取る。
+          submodules: false
+
+      - name: 公開サブモジュールだけ取得
+        run: git submodule update --init nittei-chousei
+
+      # ポータルのカードは各フォルダの product.meta.json から作る。
+      # houmon-app は中身を取れないので、ポータル側に置いた控えを使う。
+      # (制作開始日は親リポの履歴 -- houmon-app から取れるので同じ日付になる)
+      - name: 非公開の houmon-app はポータル用のメタ情報だけ補う
+        run: |
+          if [ ! -f houmon-app/product.meta.json ]; then
+            mkdir -p houmon-app
+            cp portal/private-meta/houmon-app.product.meta.json houmon-app/product.meta.json
+          fi
 
       - uses: actions/setup-node@v4
         with:
