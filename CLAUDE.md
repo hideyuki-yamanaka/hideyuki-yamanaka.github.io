@@ -231,7 +231,8 @@ w("'SF Pro Text'");  // カンプの指定 → 一致すれば正しい
 
 1. ✅ **main ブランチで作業しているか** — `git branch --show-current`
    - feature branch で作業していたら、必ず main に merge してから push する
-   - このリポジトリは **main ブランチ一本化** 運用（feature branch は作らない）
+   - このリポジトリは **main ブランチ一本化** 運用（feature branch は作らない）。
+     ⚠️ 例外: **houmon-app の大きいアップデート**は `update/*` ブランチで作る（下の「ブランチ運用」）。本番に出すのは main に乗せてから
 2. ✅ **origin/main に push 済みか** — `git status` で "up to date with 'origin/main'"
 3. ✅ **ユーザーが実際に開く URL がどの deploy なのかを特定**（⭐ 最重要）
    - ポータル `hideyuki-yamanaka.github.io` 配下か、Vercel の独立ドメインか
@@ -259,6 +260,21 @@ w("'SF Pro Text'");  // カンプの指定 → 一致すれば正しい
 - **main 一本化**。feature branch や `claude/*` 系の自動ブランチは作らない
 - Worktree も原則使わない（どうしても必要な時のみ、後で必ず main に merge）
 - 過去に `claude/laughing-maxwell` / `claude/tender-bartik` 系でトラブル多発（本番未反映）
+
+### 🏠 houmon-app だけの進め方（2026-09-27 ヒデさん決定・v3.2.0 から）
+
+「本番が動いている状態で、アップデートは別のブランチで作って main に乗せる」普通のアプリ開発の流れにする。
+
+| 種類 | どこで作る | 本番に出すまで |
+|---|---|---|
+| 小さな直し（文字・余白・色の調整、不具合の修正） | **main** のまま（今までどおり） | 「デプロイ」で main を push |
+| **大きいアップデート**（新しい機能・画面の作り直し） | houmon-app の中で **`update/<内容>` ブランチ**を切って作る（例: `update/filter-v2`） | 確認はローカル or Vercel のプレビュー URL（ブランチを push すると自動で出る）→ ヒデさんの OK で **main に merge** → 「デプロイ」で本番 |
+
+- バージョンの区切りは **houmon-app の package.json の version と タグ `vX.Y.Z`**（例: v3.2.0 = 2026-09-27）。大きいアップデートを main に乗せたら 番号を上げてタグを付ける
+- 大きいか小さいか迷ったら Claude から「別ブランチで作りますか？」と聞く
+- 作業中に自動保存（コミット）が走るので、**今どのブランチにいるか**を着手前に `git -C houmon-app branch --show-current` で必ず確認・報告する
+- merge し終わった `update/*` ブランチは、ヒデさんに聞いてから消す
+- 親リポ（このフォルダ全体）は今までどおり main 一本化
 
 ### 🔒 削除厳禁ブランチ（凍結スナップショット）
 
