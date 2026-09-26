@@ -2835,7 +2835,18 @@
               background: #fff; border-bottom: 1px solid #dcdcdc;   /* 【2026-09-25 ヒデさん依頼】ブラー撤去→スマホモード/編集ボタンと同じ白(#fff)の不透明地でスクロール中の後ろを隠す。下のグレー下線は維持 */
               overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .pan-tabs::-webkit-scrollbar { height: 3px; }   /* 【2026-09-25 ヒデさん依頼】タブ下のスクロールバーを細く(6→3px) */
-  .pan-tabs::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 2px; }
+  /* 【2026-09-26 ヒデさん依頼】スクロールバーは「横にスクロールしている間だけ」出す(JS が .is-scrolling を付け、止まって 0.8 秒で外す)。
+     ふだんは透明(3px の場所は確保したまま＝出たり消えたりしても下の中身が動かない)。
+     つまみは box-shadow(色の指定なし＝その要素の文字色)で塗り、.pan-tabs の color を変えてふわっと出し入れする
+     (中のタブのボタンは #8a8a8a / #333 / #111 と自分の色を持つので影響しない) */
+  .pan-tabs { color: transparent; transition: color .4s ease; }
+  .pan-tabs.is-scrolling { color: #c4c4c4; transition-duration: .12s; }
+  .pan-tabs::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; box-shadow: inset 0 0 0 10px; }
+  /* Firefox(::-webkit-scrollbar 非対応)は scrollbar-color で同じ出し入れ。webkit 系で scrollbar-color を付けると 3px 指定が無視されるので分ける */
+  @supports not selector(::-webkit-scrollbar) {
+    .pan-tabs { scrollbar-color: transparent transparent; }
+    .pan-tabs.is-scrolling { scrollbar-color: #c4c4c4 transparent; }
+  }
   /* Chrome121+ は scrollbar-width / scrollbar-color(親からの継承も含む)があると ::-webkit-scrollbar を無視して太めの標準バーを出す→ webkit 対応ブラウザでは両方 auto に戻して上の 3px を効かせる(Firefox は thin のまま) */
   @supports selector(::-webkit-scrollbar) { .pan-tabs { scrollbar-width: auto; scrollbar-color: auto; } }   /* 親(#panelBody)の scrollbar-color が継承されても webkit 指定が無視されるので色も auto に戻す */
   .pan-tabs::-webkit-scrollbar-track { background: transparent; }

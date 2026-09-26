@@ -378,6 +378,8 @@ function buildPanel() {
   hiddenListRefresh();   /* 【2026-09-15】焼き込み済みの案を「消した案」の控えから外す(完全削除リストの最新化) */
   /* 【2026-09-15 ヒデさん指定】大カテゴリのタブ列。先頭に置き、カテゴリを全部組み立てた後(末尾)で中身を埋める */
   const panTabs = document.createElement('div'); panTabs.className = 'pan-tabs'; body.appendChild(panTabs);
+  /* 【2026-09-26 ヒデさん依頼】タブのスクロールバーは横スクロールしている間だけ出す(CSS の .pan-tabs.is-scrolling)。止まって 0.8 秒で消える */
+  { let _sbT = null; panTabs.addEventListener('scroll', () => { panTabs.classList.add('is-scrolling'); clearTimeout(_sbT); _sbT = setTimeout(() => panTabs.classList.remove('is-scrolling'), 800); }, { passive: true }); }
   liveEdit = false;                    // 既定は「頭から流し直す」。見た目だけの所で true にする
   const sv = () => params.sections;
 
