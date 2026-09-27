@@ -5,7 +5,10 @@
 ## 📘 ルール集（最初に読む）
 
 > **進め方の決まりの正は [settings/docs/general/RULES.md](settings/docs/general/RULES.md)（2026-09-27 に全ルールを仕分けて作り直した）。**
-> 作業を始める時は、RULES.md の **「0. 安全のための決まり」と「1. いつでも」を必ず読み**、今回の作業に合う節（Figmaから作る・調整パネル・デプロイ など）も読む。
+> RULES.md は下の1行で**会話の始めに毎回自動で読み込まれる**（ヒデさんが「ルールを読んで」と言わなくてよい）。「0. 安全のための決まり」と「1. いつでも」はどの作業でも守り、今回の作業に合う節（Figmaから作る・調整パネル・デプロイ など）も守る。
+
+@settings/docs/general/RULES.md
+
 > ほかの資料と食い違ったら RULES.md を優先する。外した決まりは [RULES-ARCHIVE.md](settings/docs/general/RULES-ARCHIVE.md)（参照用。今の作業では守らなくてよい）。
 > 資料の索引は [settings/docs/README.md](settings/docs/README.md)。調整パネルの仕様は [settings/tune-panel/README.md](settings/tune-panel/README.md)。
 > **ルール集は「これからの進め方」の決まり。外した決まりに沿って作られた、今あるサイトやアプリの作りは変えない。**
