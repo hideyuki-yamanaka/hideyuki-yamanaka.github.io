@@ -1468,7 +1468,7 @@
     will-change: width; }  /* 2026-08-29 角丸なし / 2026-08-30 割れのカタつき低減(will-change) */
   .dc-one .ds-roll { position: relative; height: 34px; width: 100%; }
   .dc-one .ds-word { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-en); font-weight: 200; font-size: var(--fs-stat); letter-spacing: 1.7px; color: var(--ink-on-dark); white-space: nowrap;
+    font-family: var(--font-en); font-weight: 200; font-size: var(--fs-stat); letter-spacing: 0.05em; color: var(--ink-on-dark); white-space: nowrap;
     will-change: transform, opacity, filter; backface-visibility: hidden; }
   /* テキストスライド案のレイアウト: 右リストを隠し、モックを dev1 と同じ原寸(840×504)で中央に。
      左後ろ・右後ろのカードが見えるよう perspective とゆとりを持たせる(V1.0の3枚カルーセル) */
@@ -2305,7 +2305,7 @@
     .hl-main .hl-line:last-child .hl-caret { height: 48px; vertical-align: -6px; }   /* 46px / 1.4 中央。太さ100=9/9のSPトレースのまま(PCは調整版800。仮置き: SPカンプ未確認) */
     .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 400; }   /* 【2026-09-17 大掃除】PCのサブコピーは20px/Medium500(Figma)に焼き込んだので、SPは従来の12px/400を明示して据え置き(仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
     .hl-caret { height: 28px; vertical-align: -4px; }   /* 2026-09-19: 34px に合わせて */
-    .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 500; letter-spacing: 0.6px; gap: var(--space-4);   /* 2026-09-19: 太さ 300→500(PC サブコピー Medium と同じ・仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
+    .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 500; letter-spacing: 0.05em; gap: var(--space-4);   /* 2026-09-19: 太さ 300→500(PC サブコピー Medium と同じ・仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
                   flex-wrap: nowrap; justify-content: center; margin-top: 0; }   /* カンプSP node16534:22199: Noto Light(300) 12px / 字間0.6 (PCの --kv-eyebrow-weight=400 は使わない) */
     .hl-eyebrow i { width: 10px; flex: 0 0 auto; }   /* カンプの罫線10px */
     /* カンプSP node16534:22200: ロゴ帯は y624・高さ42.4、ロゴ1つは 13.5〜19px 高(→⚠️仮置き 16px)・間隔 24〜31px(→27px)。
@@ -2437,7 +2437,7 @@
     /* CLI/SDKの箱もモバイル文字サイズに合わせて縮める(1行に収める) */
     .dc-one .ds-box { height: 30px; }
     .dc-one .ds-roll { height: 26px; }
-    .dc-one .ds-word { font-size: var(--fs-title); letter-spacing: 1.1px; }
+    .dc-one .ds-word { font-size: var(--fs-title); letter-spacing: 0.05em; }
     /* dev1: 840×504 の実寸パネルを 0.42倍(353px幅=画面ぴったり)。余白ぶんは下側の負マージンで詰める */
     /* 【2026-09-02】origin=top なので余りは下側のみ。上に負マージンだと見出しと重なっていた */
     /* max-width:100%(PC用)だと840→354に縮んだ上へ0.42倍が掛かり極小になる→実寸840のまま0.42倍。
