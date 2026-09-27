@@ -101,6 +101,13 @@ async function pillMenu(page, pillPath, value, entryStartsWith) {
   await page.waitForTimeout(120);
 }
 async function lsDump(page) { return page.evaluate(() => { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); o[k] = localStorage.getItem(k); } return o; }); }
+/* ヒデさんに見せる画像なので、出現の動き（ぼかし→くっきり）が終わってから、動きを止めた状態で撮る */
+async function shot(page, name) {
+  await page.waitForTimeout(1800);
+  await page.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))).catch(() => {});
+  for (const f of page.frames()) { try { await f.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))); } catch (e) {} }
+  await page.screenshot({ path: path.join(SHOTS, name), animations: 'disabled' });
+}
 async function saved(page) { return page.evaluate(() => { try { return JSON.parse(localStorage.getItem('tp:tp-demo:v1')); } catch (e) { return null; } }); }
 
 try {
@@ -208,7 +215,7 @@ try {
 
     /* PC のスクショ（キービジュアルのタブ） */
     await tab(page, 'キービジュアル');
-    await page.screenshot({ path: path.join(SHOTS, 'pc.png') });
+    await shot(page, 'pc.png');
     await context.close();
   }
 
@@ -498,8 +505,10 @@ try {
     rec('案 × スマホの掛け合わせも独立（強調のスマホだけ行間 1.8）', sSp === 1.8 && nSp !== 1.8 && sPc !== 1.8, `強調のスマホ ${sSp}・ノーマルのスマホ ${nSp}・強調のPC ${sPc}`);
     await pickVariant(page, 'kv.variant', 'normal');
     await page.click('.tp-phone-btn'); await page.waitForTimeout(600);
+    await typeValue(page, 'kv.copyX', 24);      /* スマホだけの値を2つ入れて、青い印が写るようにする */
+    await typeValue(page, 'kv.gfxSize', 260);
     await page.evaluate(() => { TunePanel.instances[0].body.scrollTop = 0; });
-    await page.screenshot({ path: path.join(SHOTS, 'pc-phone-mode.png') });
+    await shot(page, 'pc-phone-mode.png');
     await page.click('.tp-phone-btn'); await page.waitForTimeout(150);
 
     /* 全部のつまみ（スマホモード）：値はスマホの入れ物だけに入り、スマホ枠の画面が変わる */
@@ -670,7 +679,7 @@ try {
     await sp.mouse.move(grip.x, grip.y); await sp.mouse.down(); await sp.mouse.move(grip.x, grip.y - 300, { steps: 6 }); await sp.mouse.up();
     await sp.waitForTimeout(450);
     const opened = await sp.evaluate(() => { const p = TunePanel.instances[0], r = p.el.getBoundingClientRect(); return { open: p.el.classList.contains('open'), top: Math.round(r.top) }; });
-    await sp.screenshot({ path: path.join(SHOTS, 'sp.png') });
+    await shot(sp, 'sp.png');
     /* いろいろ触る：つまみ・案の切り替え・下のボタン */
     await tab(sp, 'キービジュアル');
     await setSlider(sp, 'kv.copyX', 40);
@@ -690,7 +699,7 @@ try {
     await sp.mouse.move(grip2.x, grip2.y); await sp.mouse.down(); await sp.mouse.move(grip2.x, grip2.y + 260, { steps: 5 }); await sp.mouse.up();
     await sp.waitForTimeout(400);
     const peek2 = await sp.evaluate(() => { const p = TunePanel.instances[0], r = p.el.getBoundingClientRect(); return { open: p.el.classList.contains('open'), vis: Math.round(innerHeight - r.top) }; });
-    await sp.screenshot({ path: path.join(SHOTS, 'sp-peek.png') });
+    await shot(sp, 'sp-peek.png');
     const grip3 = await sp.evaluate(() => { const r = TunePanel.instances[0].grip.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await sp.mouse.move(grip3.x, grip3.y); await sp.mouse.down(); await sp.mouse.move(grip3.x, grip3.y + 120, { steps: 4 }); await sp.mouse.up();
     await sp.waitForTimeout(400);
