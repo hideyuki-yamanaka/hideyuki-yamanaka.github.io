@@ -4,23 +4,32 @@
 ルール集の「★ いちばん大事な決まり」を、長い会話の中で薄れないように目の前へ出す仕掛け（2026-09-27）。
 
   session … 会話の始め・再開・要約の直後（SessionStart）に、★の節を丸ごと出す
-  prompt  … ヒデさんの指示（UserPromptSubmit）の言葉から場面を見分けて、その場面の決まりだけ出す
+  prompt  … ヒデさんの指示（UserPromptSubmit）のたびに「★0 経過報告」を出し、
+            言葉から場面を見分けて、その場面の決まりも出す
             場面A カンプから作る／B カンプなしで作る／C Figmaに書き出す／デプロイ／直ってない
+  tick    … 道具を1回使うたび（PostToolUse）に時計を見て、前の合図から3分たっていたら
+            「表で経過報告して」の合図を出す（★0・2026-09-27 ヒデさん「最長3分」）
 
 中身は settings/docs/general/RULES.md の <!-- 名前:start --> 〜 <!-- 名前:end --> から毎回読む。
 ルールを直す時は RULES.md だけ直せばよい（この仕掛けは触らなくてよい）。
-止める時は .claude/settings.json の "SessionStart" と "UserPromptSubmit" を消す。
+止める時は .claude/settings.json の "SessionStart"・"UserPromptSubmit"・"PostToolUse" を消す。
 何かで失敗しても、会話は止めずに何も出さないだけにしてある。
 """
 import json
 import os
 import re
 import sys
+import tempfile
+import time
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.dirname(HERE))
 RULES = os.path.join(ROOT, "settings", "docs", "general", "RULES.md")
+
+# 経過報告の合図の間隔（秒）。ヒデさん指定「最長3分」（2026-09-27）。試す時だけ環境変数で短くできる
+INTERVAL = float(os.environ.get("RULES_REPORT_INTERVAL", "180"))
+TIMER_DIR = os.path.join(tempfile.gettempdir(), "claude-report-timer")
 
 # 場面を見分ける言葉。指示は音声入力なので、よくある誤変換も入れる（カンプ→完封 など）
 TRIGGERS = [
@@ -63,6 +72,34 @@ SESSION_HEAD = {
 }
 
 
+def timer_path(data):
+    sid = re.sub(r"[^A-Za-z0-9_-]", "", str(data.get("session_id", ""))) or "default"
+    return os.path.join(TIMER_DIR, sid)
+
+
+def timer_reset(data):
+    try:
+        os.makedirs(TIMER_DIR, exist_ok=True)
+        with open(timer_path(data), "w") as f:
+            f.write(str(time.time()))
+    except Exception:
+        pass
+
+
+def timer_due(data):
+    """前の合図（またはヒデさんの指示）から INTERVAL 秒たったら True。True の時は時計を0に戻す"""
+    try:
+        with open(timer_path(data)) as f:
+            last = float(f.read().strip())
+    except Exception:
+        timer_reset(data)
+        return False
+    if time.time() - last >= INTERVAL:
+        timer_reset(data)
+        return True
+    return False
+
+
 def block(text, name):
     m = re.search(r"<!-- %s:start -->\n(.*?)\n?<!-- %s:end -->" % (name, name), text, re.S)
     if not m:
@@ -86,13 +123,35 @@ def main():
         data = json.load(sys.stdin)
     except Exception:
         data = {}
+    if mode == "tick":
+        try:  # DEBUG-KEYS（確かめが済んだら消す）
+            os.makedirs(TIMER_DIR, exist_ok=True)
+            with open(os.path.join(TIMER_DIR, "debug.log"), "a") as f:
+                f.write(json.dumps({"keys": sorted(data.keys()), "tool": data.get("tool_name"), "agent": data.get("agent_id")}) + "\n")
+        except Exception:
+            pass
+        # 裏の手伝い役（サブエージェント）の中では合図を出さない。報告はメインの会話でする
+        if data.get("agent_id") or data.get("agent_type"):
+            return
+        if not timer_due(data):
+            return
     try:
         with open(RULES, encoding="utf-8") as f:
             text = f.read()
     except Exception:
         return  # ルール集が無い場所では何もしない
 
+    report = block(text, "report")
+
+    if mode == "tick":
+        if report:
+            emit("PostToolUse",
+                 "【ルールの自動表示・3分の合図】前の合図から3分たちました。"
+                 "今の手を区切りのいい所で止めて、表で経過報告してください（★0・〔絶対〕）。\n\n" + report)
+        return
+
     if mode == "session":
+        timer_reset(data)
         core = block(text, "core")
         if not core:
             return
@@ -100,9 +159,12 @@ def main():
         emit("SessionStart", head + "\n\n" + core)
         return
 
+    timer_reset(data)  # ヒデさんの指示が来たら、3分の時計はそこから数え直す
     prompt = unicodedata.normalize("NFKC", str(data.get("prompt", ""))).lower()
     hits = [name for name, pat in TRIGGERS if re.search(pat, prompt)]
+    report_ctx = ("【ルールの自動表示・いちばん上の決まり】\n" + report) if report else ""
     if not hits:
+        emit("UserPromptSubmit", report_ctx)
         return
     parts = []
     for name in hits:
@@ -114,11 +176,12 @@ def main():
         if cross:
             parts.append(cross)
     if not parts:
+        emit("UserPromptSubmit", report_ctx)
         return
     head = ("【ルールの自動表示】指示の言葉から見て、今回は " + "・".join(LABELS[h] for h in hits)
             + " の可能性があります。当てはまる時は、次の決まりを先に守ってください"
             "（最優先は RULES.md の ★ いちばん大事な決まり）。")
-    emit("UserPromptSubmit", head + "\n\n" + "\n\n".join(parts))
+    emit("UserPromptSubmit", (report_ctx + "\n\n" if report_ctx else "") + head + "\n\n" + "\n\n".join(parts))
 
 
 if __name__ == "__main__":
