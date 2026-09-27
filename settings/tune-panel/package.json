@@ -1,11 +1,25 @@
 {
   "name": "tune-panel",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "作りながら数値をその場でいじれる、依存ゼロの調整パネル (1ファイル)",
   "main": "tune-panel.js",
-  "files": ["tune-panel.js", "README.md", "LICENSE"],
-  "keywords": ["gui", "tweak", "debug", "slider", "control-panel", "animation"],
+  "files": [
+    "tune-panel.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "gui",
+    "tweak",
+    "debug",
+    "slider",
+    "control-panel",
+    "animation"
+  ],
   "license": "MIT",
   "author": "hideyuki-yamanaka",
-  "repository": { "type": "git", "url": "https://github.com/hideyuki-yamanaka/tune-panel" }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hideyuki-yamanaka/tune-panel"
+  }
 }

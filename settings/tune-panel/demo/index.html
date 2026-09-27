@@ -40,7 +40,7 @@
   .kv[data-align="center"] { flex-direction: column; justify-content: center; text-align: center; }
   .kv-copy { transform: translate(var(--copy-x), var(--copy-y)); max-width: 620px; }
   .kv-copy h1, .res h2 { font-family: var(--head-font); }
-  .kv-copy h1 { margin: 0; font-size: var(--copy-size); font-weight: var(--copy-weight); line-height: var(--copy-lh); letter-spacing: .01em; }
+  .kv-copy h1 { margin: 0; font-size: var(--copy-size); font-weight: var(--copy-weight); line-height: var(--copy-lh); letter-spacing: .01em; word-break: auto-phrase; text-wrap: balance; }
   .kv-copy p { margin: 18px 0 0; color: #555; }
   .kv-gfx {
     flex: 0 0 auto; width: var(--gfx-size); height: var(--gfx-size); border-radius: 50%; position: relative;
@@ -205,7 +205,7 @@ const panel = TunePanel.create({
         { slider: '太さ', path: 'site.gridWidth', min: 0.5, max: 4, step: 0.5, fmt: 'px', when: p => !!p.site.grid, hint: '方眼の線の太さ。' }
       ]},
       /* 名前つきの「選ぶ」行も案ピル（⋯ 付き）。1案だけ残すと、名前の行ごと欄が隠れ、見出しも隠れる */
-      { sub: '見出しの書体', grp: 'font' },
+      { sub: '見出し', grp: 'font' },
       { pills: '書体', path: 'site.font', options: [
         { name: 'ゴシック', value: 'gothic', desc: 'いまの書体。' },
         { name: '明朝', value: 'mincho', desc: '見出しだけ明朝にする。' },

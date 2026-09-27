@@ -295,6 +295,7 @@
     '.tp-pill.on{background:#0EBBFF;border-color:#0EBBFF;color:#fff;}',
     '.tp-pill.fav:not(.on){border-color:#e6c25a;background:#fffaf0;}',
     '.tp-pill.back{border-style:dashed;color:#999;}',
+    '.tp-var.only-back .tp-var-lab,.tp-var.only-back .tp-favhead,.tp-var.only-back .tp-favrow,.tp-var.only-back .tp-pill:not(.back){display:none!important;}',
     '.tp-pill-x{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:13px;height:13px;line-height:12px;text-align:center;border-radius:4px;',
     '  cursor:pointer;font-size:11px;color:#b9b9b9;opacity:0;transition:opacity .12s,color .12s;}',
     '.tp-pill:hover .tp-pill-x,.tp-pill-x:focus{opacity:1;}',
@@ -534,6 +535,12 @@
     this.owns = !item.fixedOptions && item.values !== false;
     this.depth = 0; this.fill = null; this.box = null; this.lab = null;
   }
+
+  /* まだコードから消していない、隠した案（「↺ 消した案を戻す」で戻せる物） */
+  Ctl.prototype.restorable = function () {
+    var opts = this.opts();
+    return this.st().hidden.filter(function (k) { return opts.some(function (o) { return String(o.value) === k; }); });
+  };
   Ctl.prototype.opts = function () { return normOptions(this.item.options); };
   Ctl.prototype.st = function () {
     var vs = this.p._vs, id = this.id;
@@ -1312,7 +1319,8 @@
     var test = this._cond(k.item, ctx);
     if (r.ctl) {
       var ctl = r.ctl, t0 = test;
-      test = function () { return (!t0 || t0()) && ctl.alive().length > 1; };   /* 1案だけ残った欄は隠す */
+      /* 1案だけ残った欄は隠す。ただし消した案がある時は「↺ 消した案を戻す」だけ残す（2026-09-27 ヒデさん） */
+      test = function () { return (!t0 || t0()) && (ctl.alive().length > 1 || ctl.restorable().length > 0); };
     }
     parentV.kids.push({ el: wrap, test: test });
   };
@@ -1749,7 +1757,8 @@
       pinned.forEach(function (o, i) { mk(o, '★' + (i + 1) + ' ' + plain(o), favRow, true); });
       var n = 0;
       alive.forEach(function (o) { if (o.fixed || pinned.indexOf(o) >= 0) return; n++; mk(o, numbered(n, o), rowEl, false); });
-      var restorable = st.hidden.filter(function (k) { return opts.some(function (o) { return String(o.value) === k; }); });
+      var restorable = ctl.restorable();
+      box.classList.toggle('only-back', alive.length === 1 && restorable.length > 0);   /* 1案＋消した案あり＝戻すボタンだけ */
       if (restorable.length) {
         var back = el('button', 'tp-pill back');
         back.type = 'button';
@@ -2557,7 +2566,7 @@
   /* 案を外から選ぶ（path は案ピルの path） */
   Panel.prototype.setVariant = function (id, v) { var c = this._ctlById(id); if (c) this._choose(c, v, c.box); return this; };
   Panel.prototype.getVariant = function (id) { var c = this._ctlById(id); return c ? c.sel() : undefined; };
-  /* 隠した案を全部戻す（id を省くと全部の欄）。1案だけ残って欄ごと隠れた時は画面から戻せないので、これを呼ぶ */
+  /* 隠した案を全部戻す（id を省くと全部の欄）。画面の「↺ 消した案を戻す」は1つずつ戻す。1案だけ残っても戻すボタンは残る（2026-09-27〜） */
   Panel.prototype.restoreVariants = function (id) {
     var self = this;
     this._ctls.forEach(function (c) {

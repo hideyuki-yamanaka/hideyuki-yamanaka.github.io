@@ -589,7 +589,7 @@ try {
     rec('削除（確認つき）→「↺ 消した案を戻す (n)」→ 戻す（番号は見えている順に振り直す）', modal === '削除しますか？' && d1.main.join(',') === '1 ノーマル,2 強調' && d1.back === '↺ 消した案を戻す (1)' && d2.main.join(',') === '1 ノーマル,2 強調,3 ミニマル' && !d2.back,
       `確認「${modal}」→ 削除後 ${d1.main.join('・')}＋「${d1.back}」→ 戻した後 ${d2.main.join('・')}`);
 
-    /* 選んでいた案を消したら残りの先頭へ／1案だけ残ったら欄ごと隠す／最後の1案は消せない */
+    /* 選んでいた案を消したら残りの先頭へ／1案だけ残ったら「↺ 消した案を戻す」だけ残す（2026-09-27 ヒデさん）／最後の1案は消せない */
     await pickVariant(page, 'kv.variant', 'minimal');
     await pillMenu(page, 'kv.variant', 'minimal', '🗑 削除');
     await page.click('.tp-mdl-btns button.danger');
@@ -598,10 +598,10 @@ try {
     await pillMenu(page, 'kv.variant', 'strong', '🗑 削除');
     await page.click('.tp-mdl-btns button.danger');
     await page.waitForTimeout(200);
-    const one = await page.evaluate(() => ({ row: !!document.querySelector('.tp-item[data-key="kv.variant"]').offsetParent, cat: !!document.querySelector('.tp-pane.on .tp-cs.var').offsetParent, sel: TunePanel.instances[0].params.kv.variant }));
+    const one = await page.evaluate(() => { const it = document.querySelector('.tp-item[data-key="kv.variant"]'); const back = it.querySelector('.tp-pill.back'); return { row: !!it.offsetParent, cat: !!document.querySelector('.tp-pane.on .tp-cs.var').offsetParent, sel: TunePanel.instances[0].params.kv.variant, back: back && back.offsetParent ? back.textContent : '', pills: [...it.querySelectorAll('.tp-pill:not(.back)')].filter(b => b.offsetParent).length }; });
     const lastTry = await page.evaluate(() => { const p = TunePanel.instances[0], c = p._ctlById('kv.variant'); const r = p._deleteVariant(c, 'normal', 'ノーマル', { noConfirm: true }); return { r, hidden: c.st().hidden.slice(), modal: (document.querySelector('.tp-mdl h4') || {}).textContent }; });
-    rec('1案だけ残ったら欄ごと隠す・最後の1案は消せない・選んでいた案を消したら先頭へ', selAfterDel === 'normal' && !one.row && !one.cat && one.sel === 'normal' && lastTry.r === false && lastTry.modal === '削除できません' && lastTry.hidden.length === 2,
-      `ミニマルを選んで削除 → 選択は「${selAfterDel}」／強調も削除 → 欄 ${one.row ? '出' : '隠'}・「バリエーション」見出し ${one.cat ? '出' : '隠'}・既定=${one.sel}／最後の1案を消そうとすると「${lastTry.modal}」・隠した案 ${lastTry.hidden.length} 件のまま`);
+    rec('1案だけ残ったら「↺ 消した案を戻す」だけ残す（ピルは隠す）・最後の1案は消せない・選んでいた案を消したら先頭へ', selAfterDel === 'normal' && one.row && one.cat && one.back === '↺ 消した案を戻す (2)' && one.pills === 0 && one.sel === 'normal' && lastTry.r === false && lastTry.modal === '削除できません' && lastTry.hidden.length === 2,
+      `ミニマルを選んで削除 → 選択は「${selAfterDel}」／強調も削除 → 見えているピル ${one.pills} 個・戻すボタン「${one.back || 'なし'}」・「バリエーション」見出し ${one.cat ? '出' : '隠'}・既定=${one.sel}／最後の1案を消そうとすると「${lastTry.modal}」・隠した案 ${lastTry.hidden.length} 件のまま`);
     await context.close();
   }
 
@@ -902,9 +902,10 @@ try {
       const vis = e => !!(e && e.offsetParent);
       const row = document.querySelector('.tp-item[data-key="site.font"]');
       const lab = row.querySelector('.tp-var-lab');
-      const sec = document.querySelector('.tp-pane.on .tp-sec[data-title="見出しの書体"]');
+      const sec = document.querySelector('.tp-pane.on .tp-sec[data-title="見出し"]');
       const card = sec.closest('.tp-cs');
-      return { row: vis(row), lab: vis(lab), labText: lab.textContent, sec: vis(sec), card: vis(card), sel: TunePanel.instances[0].params.site.font };
+      const back = row.querySelector('.tp-pill.back');
+      return { row: vis(row), lab: vis(lab), labText: lab.textContent, sec: vis(sec), card: vis(card), sel: TunePanel.instances[0].params.site.font, back: vis(back) ? back.textContent : '', pills: [...row.querySelectorAll('.tp-pill:not(.back)')].filter(vis).length };
     });
     const f0 = await st();
     await pillMenu(page, 'site.font', 'mincho', '🗑 削除'); await page.click('.tp-mdl-btns button.danger'); await page.waitForTimeout(120);
@@ -914,8 +915,22 @@ try {
     await page.evaluate(() => TunePanel.instances[0].restoreVariants('site.font'));
     await page.waitForTimeout(100);
     const f3 = await st();
-    rec('1案だけ残って欄を隠す時は、名前の行（書体）も見出しも一緒に隠れる・戻すと両方戻る', f0.row && f0.lab && f0.sec && f1.row && !f2.row && !f2.lab && !f2.sec && f2.card && f2.sel === 'gothic' && f3.row && f3.lab && f3.sec,
-      `3案: 欄=${f0.row ? '出' : '隠'}・名前「${f0.labText}」=${f0.lab ? '出' : '隠'}・見出し=${f0.sec ? '出' : '隠'} → 2案: 欄=${f1.row ? '出' : '隠'} → 1案: 欄=${f2.row ? '出' : '隠'}・名前=${f2.lab ? '出' : '隠'}・見出し「見出しの書体」=${f2.sec ? '出' : '隠'}・フォントの箱=${f2.card ? '出（本文があるので）' : '隠'}・選択=${f2.sel} → restoreVariants で戻す: 欄=${f3.row ? '出' : '隠'}・名前=${f3.lab ? '出' : '隠'}・見出し=${f3.sec ? '出' : '隠'}`);
+    rec('1案だけ残ったら、名前の行（書体）とピルは隠れて「↺ 消した案を戻す」だけ残る・戻すと全部戻る', f0.row && f0.lab && f0.sec && f1.row && f2.row && !f2.lab && f2.pills === 0 && f2.back === '↺ 消した案を戻す (2)' && f2.sec && f2.card && f2.sel === 'gothic' && f3.row && f3.lab && f3.sec && !f3.back,
+      `3案: 欄=${f0.row ? '出' : '隠'}・名前「${f0.labText}」=${f0.lab ? '出' : '隠'}・見出し=${f0.sec ? '出' : '隠'} → 2案: 欄=${f1.row ? '出' : '隠'} → 1案: ピル=${f2.pills}個・名前=${f2.lab ? '出' : '隠'}・戻すボタン「${f2.back || 'なし'}」・見出し「見出し」=${f2.sec ? '出' : '隠'}・フォントの箱=${f2.card ? '出（本文があるので）' : '隠'}・選択=${f2.sel} → restoreVariants で戻す: 欄=${f3.row ? '出' : '隠'}・名前=${f3.lab ? '出' : '隠'}・見出し=${f3.sec ? '出' : '隠'}`);
+
+    const solo = await page.evaluate(async () => {
+      const prm = { a: { v: 'x', n: 1 } };
+      const p = TunePanel.create({ params: prm, storageKey: 'tp-solo', secret: false, phone: false, position: { left: 700, top: 40 }, size: { w: 300, h: 400 },
+        schema: [{ cat: 'テスト', items: [{ sub: 'ひとつ' }, { pills: '案', path: 'a.v', options: [{ name: 'エックス', value: 'x' }] }, { sub: 'ほか' }, { slider: '数', path: 'a.n', min: 0, max: 2, step: 0.1 }] }] });
+      await new Promise(r => setTimeout(r, 80));
+      const vis = e => !!(e && e.offsetParent);
+      const row = p.el.querySelector('.tp-item[data-key="a.v"]');
+      const out = { row: vis(row), sec: vis(p.el.querySelector('.tp-sec[data-title="ひとつ"]')), other: vis(p.el.querySelector('.tp-sec[data-title="ほか"]')) };
+      p.destroy();
+      return out;
+    });
+    rec('消した案が無い1案（コードに1つしか無い）は、今までどおり欄も見出しも隠れる', !solo.row && !solo.sec && solo.other,
+      `1つしか無い案の欄=${solo.row ? '出' : '隠'}・その見出し=${solo.sec ? '出' : '隠'}・となりの見出し=${solo.other ? '出' : '隠'}`);
 
     const g = () => page.evaluate(() => {
       const vis = e => !!(e && e.offsetParent);
@@ -952,17 +967,23 @@ try {
       const s0 = { fx: vis(card('B', 'fxtex')), font: vis(card('B', 'font')), other: vis(card('B', 'other')), tabC: !tabBtn('C').hidden, authorMark: document.getElementById('authorHidden').classList.contains('tp-off'), authorDisp: document.getElementById('authorHidden').style.display };
       p._deleteVariant(p._ctlById('a.f'), 'm', '明朝', { noConfirm: true });
       await new Promise(res => setTimeout(res, 30));
-      const s1 = { font: vis(card('B', 'font')), tabB: !tabBtn('B').hidden, active: p._activeTab };
+      /* 1案＋消した案あり → 「↺ 消した案を戻す」が残るので、カードもタブも残る（2026-09-27 ヒデさん） */
+      const fontRow = pane('B').querySelector('.tp-item[data-key="a.f"]');
+      const s1 = { font: vis(card('B', 'font')), back: (fontRow.querySelector('.tp-pill.back') || {}).textContent || '', tabB: !tabBtn('B').hidden, active: p._activeTab };
       prm.a.on = true; p.sync();
       document.getElementById('authorHidden').style.display = ''; p.sync();
       const s2 = { fx: vis(card('B', 'fxtex')), other: vis(card('B', 'other')), tabC: !tabBtn('C').hidden, tabB: !tabBtn('B').hidden };
+      /* 見ているタブの中身が全部隠れたら、そのタブは隠れて別のタブへ移る */
+      p._showTab('C'); prm.a.on = false; p.sync();
+      await new Promise(res => setTimeout(res, 30));
+      const sC = { tabC: !tabBtn('C').hidden, active: p._activeTab };
       p.restoreVariants('a.f');
-      const s3 = { font: vis(card('B', 'font')) };
+      const s3 = { font: vis(card('B', 'font')), pills: fontRow.querySelectorAll('.tp-pill:not(.back)').length };
       p.destroy();
-      return { s0, s1, s2, s3 };
+      return { s0, s1, s2, sC, s3 };
     });
-    rec('中身が全部隠れたカテゴリのカードとタブも隠れる・作る人が自分で隠した部品には印を付けない', !r.s0.fx && r.s0.font && !r.s0.other && !r.s0.tabC && !r.s0.authorMark && r.s0.authorDisp === 'none' && !r.s1.font && !r.s1.tabB && r.s1.active === 'A' && r.s2.fx && r.s2.other && r.s2.tabC && r.s2.tabB && r.s3.font,
-      `when で空のカード「エフェクト」=${r.s0.fx ? '出' : '隠'}・中身を自分で隠した custom だけのカード「その他」=${r.s0.other ? '出' : '隠'}（その部品に部品の印=${r.s0.authorMark}・display=${r.s0.authorDisp} のまま）・中身が全部隠れたタブC=${r.s0.tabC ? '出' : '隠'} → 1案でカード「フォント」=${r.s1.font ? '出' : '隠'}（タブB が空になり隠れて、見ているタブは ${r.s1.active} へ）→ 条件を満たす: エフェクト=${r.s2.fx ? '出' : '隠'}・その他=${r.s2.other ? '出' : '隠'}・タブC=${r.s2.tabC ? '出' : '隠'} → 案を戻す: フォント=${r.s3.font ? '出' : '隠'}`);
+    rec('中身が全部隠れたカテゴリのカードとタブも隠れる・作る人が自分で隠した部品には印を付けない', !r.s0.fx && r.s0.font && !r.s0.other && !r.s0.tabC && !r.s0.authorMark && r.s0.authorDisp === 'none' && r.s1.font && r.s1.back === '↺ 消した案を戻す (1)' && r.s1.tabB && r.s1.active === 'B' && r.s2.fx && r.s2.other && r.s2.tabC && r.s2.tabB && !r.sC.tabC && r.sC.active !== 'C' && r.s3.font && r.s3.pills === 2,
+      `when で空のカード「エフェクト」=${r.s0.fx ? '出' : '隠'}・中身を自分で隠した custom だけのカード「その他」=${r.s0.other ? '出' : '隠'}（その部品に部品の印=${r.s0.authorMark}・display=${r.s0.authorDisp} のまま）・中身が全部隠れたタブC=${r.s0.tabC ? '出' : '隠'} → 1案でカード「フォント」=${r.s1.font ? '出' : '隠'}（戻すボタン「${r.s1.back}」が残るのでタブB=${r.s1.tabB ? '出' : '隠'}・見ているタブ ${r.s1.active}）→ 条件を満たす: エフェクト=${r.s2.fx ? '出' : '隠'}・その他=${r.s2.other ? '出' : '隠'}・タブC=${r.s2.tabC ? '出' : '隠'} → タブCを見ている時に中身が全部隠れる: タブC=${r.sC.tabC ? '出' : '隠'}・見ているタブは ${r.sC.active} へ → 案を戻す: フォント=${r.s3.font ? '出' : '隠'}・ピル ${r.s3.pills} 個`);
     await context.close();
   }
 } catch (e) {
