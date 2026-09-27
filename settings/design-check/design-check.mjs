@@ -10,6 +10,8 @@
  *   node settings/design-check/design-check.mjs --hook                  … 書いた直後の見張り（PostToolUse から。書いた所だけ）
  *   node settings/design-check/design-check.mjs <フォルダ> --fix [--dry-run] [--prefer=fontSize:11=12]
  *                                                                       … 見た目がほぼ変わらない物だけ自動で寄せる（先に戻し用の目印を作る）
+ *                                                                         ※決まりどおりの値どうし（1回しか使っていない近い値）と、1px 以下のサイズ・余白は
+ *                                                                           自動では寄せない（いつも「提案」・2026-09-27）
  *   オプション: --json（機械向け）／--with-js（フォルダ検査で .js .ts も見る）／--all（mock・test も見る）
  *
  * わざと決まりから外す行には、同じ行に「4-7例外」と書く（理由も添える）。その行は検査しない。
@@ -41,6 +43,8 @@ const AUTO = { color: 2, fontSize: 1, spacing: 2, size: 2, radius: 2, lineHeight
 function howTo(cat, from, to) {
   const d = Math.abs(to - from);
   if (cat === 'fontWeight') return '提案';
+  /* 1px 以下のサイズ・余白は、細い線に合わせた値のことが多い（区切り線の height:1px・線を重ねる margin:-1px など）。自動では動かさない（この行は説明の文・4-7例外） */
+  if ((cat === 'size' || cat === 'spacing') && from <= 1) return '提案';
   if (cat === 'stroke') return d < AUTO.stroke ? '自動' : '提案';
   if (cat === 'shadow' || cat === 'blur') return d <= AUTO[cat] + 1e-9 && d / Math.max(from, to) <= AUTO.shadowRel + 1e-9 ? '自動' : '提案';
   return d <= (AUTO[cat] ?? 0) + 1e-9 ? '自動' : '提案';
@@ -280,12 +284,19 @@ function scanTailwind(ln, ctx, sink) {
     if (cat === 'strokeTw') { lengths(raw).forEach(n => sink.len('stroke', n, head + '-[' + m[3] + ']', ctx)); continue; }
     lengths(raw).forEach(n => sink.len(cat, n, head + '-[' + m[3] + ']', ctx));
   }
-  const half = /(?:^|[\s"'`])-?(p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y|w|h|size)-(\d+\.5)(?=[\s"'`]|$)/g;
+  const half = /(?:^|[\s"'`:])-?(p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y|w|h|size)-(\d+\.5)(?=[\s"'`]|$)/g;   /* sm:px-3.5 のような頭付きも */
   while ((m = half.exec(ln))) {
     const px = parseFloat(m[2]) * 4;
     sink.len(TW_HEAD[m[1]] || 'spacing', px, m[1] + '-' + m[2] + '（' + px + 'px）', ctx);
   }
+  /* 目盛りの名前のクラス（p-4 = 16px・gap-2 = 8px・text-sm = 14px など）は決まりどおりなので、数えるだけ
+   * （数えないと、Tailwind で組んだサイトでは「よく使う値」を読み違え、同じ差の時の寄せる先を誤る） */
+  const named = /(?:^|[\s"'`:])-?(p|px|py|pt|pr|pb|pl|ps|pe|m|mx|my|mt|mr|mb|ml|ms|me|gap|gap-x|gap-y|space-x|space-y|w|h|size|min-w|min-h|basis)-(\d+)(?=[\s"'`]|$)/g;
+  while ((m = named.exec(ln))) { const px = parseInt(m[2], 10) * 4; if (px > 0) sink.use(TW_HEAD[m[1]] || 'spacing', px, ctx); }
+  const textNamed = /(?:^|[\s"'`:])text-(xs|sm|base|lg|xl|[2-9]xl)(?=[\s"'`]|$)/g;
+  while ((m = textNamed.exec(ln))) { const px = TW_TEXT_PX[m[1]]; if (px && RULE.fontSize.ok(px)) sink.use('fontSize', px, ctx); }
 }
+const TW_TEXT_PX = { xs: 12, sm: 14, base: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30, '4xl': 36, '5xl': 48, '6xl': 60, '7xl': 72, '8xl': 96, '9xl': 128 };
 
 /* React の style={{ fontSize: 13 }} など（キャメルケース） */
 function scanStyleObject(ln, ctx, sink) {
@@ -296,6 +307,13 @@ function scanStyleObject(ln, ctx, sink) {
     if (!prop) continue;
     const val = /px|rem/.test(m[3]) || PROP[prop] === 'fontWeight' || PROP[prop] === 'opacity' || PROP[prop] === 'lineHeight' ? m[3] : m[3] + 'px';
     checkDecl(prop, val, ctx, sink);
+  }
+  /* padding: '6px 10px' のように、値が2つ以上ある文字列（値が1つの物は上で見た） */
+  const multi = /\b([a-zA-Z]+)\s*:\s*(['"`])([^'"`]*\d(?:px|rem)[^'"`]*)\2/g;
+  while ((m = multi.exec(ln))) {
+    const prop = CAMEL[m[1]];
+    if (!prop || !/\s/.test(m[3].trim())) continue;
+    checkDecl(prop, m[3], ctx, sink);
   }
 }
 
@@ -372,6 +390,9 @@ function similarColors(colors) {
   return pairs.sort((x, y) => x.d - y.d);
 }
 
+/* 1回しか使っていない、決まりどおりの値（例：よく使う 8px の近くに 1回だけの 6px）。決まり（4-7）は倍数だけで、
+ * 決まりどおりの値どうしをまとめるのは求めていない（種類に上限は設けない・ヒデさん 2026-09-27）。小さい値では 2px でも
+ * 見た目が変わる（8px→6px は 25% 細くなる）ので、自動では寄せず、いつも「提案」にする */
 function rareNearValues(uses) {
   const out = [];
   ['spacing', 'radius', 'fontSize', 'size'].forEach(cat => {
@@ -381,7 +402,7 @@ function rareNearValues(uses) {
       if (e.n !== 1) return;
       let best = null;
       m.forEach((e2, v2) => { if (v2 !== v && Math.abs(v2 - v) <= 4 && e2.n >= 3 && (!best || e2.n > best.n)) best = { v: v2, n: e2.n }; });
-      if (best) out.push({ cat, v, at: e.at[0], near: best.v, nearN: best.n, how: howTo(cat, v, best.v) });
+      if (best) out.push({ cat, v, at: e.at[0], near: best.v, nearN: best.n, how: '提案' });
     });
   });
   return out;
@@ -441,7 +462,7 @@ function report({ bad, tips, uses, colors, notes }, files, opts = {}) {
     opts.pairs.slice(0, 60).forEach(p => lines.push(`| ${p.keep} | ${p.keepN} | ${p.drop} | ${p.dropN} | ${p.d} | ${p.how} | ${rel(p.dropAt.split(':')[0])}:${p.dropAt.split(':')[1]} |`));
   }
   if (opts.rare.length) {
-    lines.push('', `### 1回しか使っていない近い値（4-4）`, '', '| 項目 | 値 | 箇所 | 寄せる先（よく使う値） | 扱い |', '|---|---|---|---|---|');
+    lines.push('', `### 1回しか使っていない近い値（4-4・決まりどおりの値どうしなので自動では寄せない。まとめるかは提案）`, '', '| 項目 | 値 | 箇所 | 寄せる先（よく使う値） | 扱い |', '|---|---|---|---|---|');
     opts.rare.slice(0, 60).forEach(r => lines.push(`| ${RULE[r.cat].name} | ${r.v}px | ${rel(r.at.split(':')[0])}:${r.at.split(':')[1]} | ${r.near}px（${r.nearN} 回） | ${r.how} |`));
   }
   if (opts.summary) {
@@ -612,8 +633,8 @@ function rewriteTailwind(line, maps, changes, where) {
     } else nv = rewriteLengths(cat === 'blur' ? 'blur' : cat, raw, maps, changes, { ...where, prop: head });
     return nv === raw ? all : pre + head + '-[' + nv + ']';
   });
-  /* .5 刻みの余白クラス（p-3.5 = 14px など） */
-  out = out.replace(/((?:^|[\s"'`])-?)(p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y|w|h|size)-(\d+\.5)(?=[\s"'`]|$)/g, (all, pre, head, n) => {
+  /* .5 刻みの余白クラス（p-3.5 = 14px など。sm:px-3.5 のような頭付きも） */
+  out = out.replace(/((?:^|[\s"'`:])-?)(p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y|w|h|size)-(\d+\.5)(?=[\s"'`]|$)/g, (all, pre, head, n) => {
     const cat = TW_HEAD[head] || 'spacing', m = maps.num[cat], px = parseFloat(n) * 4;
     if (!m || !m.has(px)) return all;
     const to = m.get(px) / 4;
@@ -638,6 +659,12 @@ function rewriteStyleObject(line, maps, changes, where) {
     const out = key + colon + q + (cat === 'lineHeight' || cat === 'opacity' || unitless ? String(to) : fmt(to, unit)) + q;
     changes.push({ ...where, prop: key, cat, from: all, to: out });
     return out;
+  }).replace(/\b([a-zA-Z]+)(\s*:\s*)(['"`])([^'"`]*\d(?:px|rem)[^'"`]*)\3/g, (all, key, colon, q, val) => {
+    /* padding: '6px 10px' のように、値が2つ以上ある文字列 */
+    const prop = CAMEL[key];
+    if (!prop || !/\s/.test(val.trim())) return all;
+    const nv = rewriteDecl(prop, val, maps, changes, { ...where, prop: key });
+    return nv === val ? all : key + colon + q + nv + q;
   });
 }
 const DECL_RE_CSS = () => /(^|[;{\s"'`(])(--[\w-]+|-?[a-z][a-z-]*)\s*:\s*([^;{}"'`]+)/gi;

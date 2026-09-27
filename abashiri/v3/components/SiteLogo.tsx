@@ -30,13 +30,13 @@ export default function SiteLogo({
           src={tone === "light" ? "/img/text-kanko-site.svg" : "/img/text-kanko-site-blue.svg"}
           alt="網走市観光サイト"
           className="absolute"
-          style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }}
+          style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }} /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
         />
         <img
           src={tone === "light" ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
           alt="な〜んにもない たまらない"
           className="absolute max-w-none"
-          style={{ left: -28, top: 13.1, width: 471, height: 390 }}
+          style={{ left: -28, top: 13.1, width: 471, height: 390 }} /* 4-7例外（作字の画像の実寸 471×390） */
         />
       </div>
     </div>

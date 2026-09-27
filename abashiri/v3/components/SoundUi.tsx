@@ -271,7 +271,7 @@ export default function SoundUi({
           一度「文言なし・白40%」へ変えたが、元のこの形に戻した（2026-08-22 ヒデさん指示） */}
       {showDialog && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-shadow/30 backdrop-blur-22">
-          <div className="mx-4 flex w-[400px] max-w-full flex-col items-center rounded-30 bg-white/90 p-8 text-center shadow-modal">
+          <div className="mx-4 flex w-[400px] max-w-full flex-col items-center rounded-28 bg-white/90 p-8 text-center shadow-modal">
             <p className="mb-6 text-body-16 font-bold leading-[1.6] text-ink">
               網走の環境音を楽しむことができます。
               <br />
@@ -331,7 +331,7 @@ export default function SoundUi({
                   }
                 }}
                 aria-pressed={active}
-                className={`font-num flex w-[90px] cursor-pointer items-center justify-center gap-1 rounded-full px-[10px] py-[5px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
+                className={`font-num flex h-7 w-[90px] cursor-pointer items-center justify-center gap-1 rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
                   active
                     ? "bgm-seg-active bg-brand text-white"
                     : "bgm-seg-inactive text-white/50 hover:text-white/80"
@@ -343,7 +343,7 @@ export default function SoundUi({
                 <img
                   src={icon}
                   alt=""
-                  className="size-[18px]"
+                  className="size-[16px]"
                   style={{ ["--bgm-icon" as string]: `url(${icon})` } as React.CSSProperties}
                 />
                 {label}
@@ -364,7 +364,7 @@ export default function SoundUi({
               {/* 音量インジケーター：ONが鳴っている状態でもう一度ONを押すと出る。
                   スイッチと同じ白ガラスのピルに、スピーカー小アイコン＋スライダー＋% */}
               <div
-                className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[184px] items-center gap-2 rounded-full bg-white/40 py-[7px] pl-3 pr-4 backdrop-blur-65 transition-all duration-300 ease-standard ${
+                className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[184px] items-center gap-2 rounded-full bg-white/40 py-[6px] pl-3 pr-4 backdrop-blur-65 transition-all duration-300 ease-standard ${
                   showVol
                     ? "pointer-events-auto translate-y-0 opacity-100"
                     : "pointer-events-none -translate-y-1 opacity-0"
@@ -393,7 +393,7 @@ export default function SoundUi({
                     background: `linear-gradient(to right, #fff ${Math.round(vol * 100)}%, rgba(255,255,255,0.35) ${Math.round(vol * 100)}%)`,
                   }}
                 />
-                <span className="font-num w-[34px] shrink-0 text-right text-body-13 font-light leading-none text-white">
+                <span className="font-num w-[36px] shrink-0 text-right text-body-14 font-light leading-none text-white">
                   {Math.round(vol * 100)}%
                 </span>
               </div>

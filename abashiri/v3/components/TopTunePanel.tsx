@@ -277,7 +277,7 @@ export default function TopTunePanel({
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
         padX: 160,
-        padBottom: 110,
+        padBottom: 112, /* 2026-09-27 4-7 で 110→112（globals.css の --ft-pad-bottom・tune-defaults.json と同じ値） */
         colGap: 140,
         mapGapX: 40,
         mapGapY: 48,

@@ -165,7 +165,7 @@ export function DetailHeader() {
                実際そうなっていた。トップの置き場（left:34 / top:32）と同じ座標。 */}
         <div
           id="abashiri-sound-slot"
-          className="pointer-events-auto absolute left-[34px] top-[32px] z-50 flex h-[19px] items-center"
+          className="pointer-events-auto absolute left-[34px] top-[32px] z-50 flex h-[20px] items-center"
         />
         {/* 白背景になったらナビの字も黒へ（トップページと同じふるまい）。
             ⚠️ GlobalNav の nav は absolute なので、この relative が位置の基準になる */}
@@ -230,7 +230,7 @@ export function Points({ spot, light }: { spot: SpotDetail; light?: boolean }) {
           }`}
         >
           <span
-            className={`mt-[13px] size-[6px] shrink-0 rounded-full ${
+            className={`mt-[12px] size-[6px] shrink-0 rounded-full ${
               light ? "bg-white/80" : "bg-brand"
             }`}
           />
@@ -253,7 +253,7 @@ export function MapEmbed({
       <iframe
         title={`${spot.name} 周辺マップ`}
         src={`https://maps.google.com/maps?q=${encodeURIComponent(spot.map.query)}&z=11&hl=ja&output=embed`}
-        className={`h-[280px] w-full border-0 sm:h-[420px] ${light ? "rounded-30" : ""}`}
+        className={`h-[280px] w-full border-0 sm:h-[420px] ${light ? "rounded-28" : ""}`}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
       />
@@ -269,7 +269,7 @@ export function MapEmbed({
         className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-white/55 px-4 py-2 text-body-14 font-light text-ink shadow-floating ring-1 ring-inset ring-white/70 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/80"
       >
         マップで開く
-        <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
+        <img src="/img/icon-view-more-black.svg" alt="" className="size-[16px]" />
       </a>
     </div>
   );
@@ -445,7 +445,7 @@ export function V1Parallax({ spot }: VProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
         {/* 左下の見出し。小さめ＋下のセクションから離す
             （2026-09-15 ヒデさん指示：文字が大きく、下にくっつきすぎていた） */}
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-[90px] md:px-[56px] lg:px-[120px] lg:pb-[180px]">
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-[88px] md:px-[56px] lg:px-[120px] lg:pb-[180px]">
           <HeroTitle spot={spot} size="sm" />
         </div>
       </div>

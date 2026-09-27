@@ -309,7 +309,7 @@ function Toc({
   }, [active, items.length, kind]);
 
   return (
-    <nav ref={box} className="relative flex flex-col gap-[18px]">
+    <nav ref={box} className="relative flex flex-col gap-[16px]">
       {/* 案35（dot）だけ、目次の左に1本レールを引いて印が滑る。
           【2026-09-16 ヒデさん指示】「レールの線と文字がちょっとずれている」
           → 決め打ちの行送り（38px）で位置を出していたのが原因。
@@ -348,7 +348,7 @@ function Toc({
             {/* 案36：番号が大きくなる */}
             {kind === "num" && (
               <motion.span
-                className="block w-[26px] shrink-0 font-num font-thin leading-none text-ink"
+                className="block w-[24px] shrink-0 font-num font-thin leading-none text-ink"
                 animate={{
                   fontSize: on ? 18 : 12,
                   opacity: on ? 0.9 : 0.32,
@@ -644,10 +644,10 @@ function TocLayout({
         <QuietHero spot={spot} h={heroH} />
       )}
       <div
-        className={`px-6 py-[56px] md:px-[56px] md:py-[80px] lg:px-[100px] lg:py-[110px] ${
+        className={`px-6 py-[56px] md:px-[56px] md:py-[80px] lg:px-[100px] lg:py-[112px] ${
           /* 白い面の続き。写真(z-0)より手前に置く */
-          /* ⚠️ lg:py-[110px] はメディアクエリのぶん pt-0 より強い。
-             lg: を付けないと PC だけ 110px の余白が残る（実測で発覚） */
+          /* ⚠️ lg:py-[112px] はメディアクエリのぶん pt-0 より強い。
+             lg: を付けないと PC だけ 112px の余白が残る（実測で発覚。2026-09-27 に 110→112） */
           blurHero
             ? /* blur案：写真が消えた地点で本文が現れるので、本文の頭に
                  ヘッダー分の余白を持たせて、見出しがナビと重ならないようにする
@@ -658,9 +658,9 @@ function TocLayout({
               : ""
         }`}
       >
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[110px]">
+        <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[112px]">
           {/* 左カラム：目次。本文を読んでいる間ずっと画面に残る */}
-          <aside className="shrink-0 lg:w-[230px]">
+          <aside className="shrink-0 lg:w-[228px]">
             <div className="lg:sticky lg:top-[110px]">
               <p className="mb-7 text-body-14 font-light tracking-[0.2em] text-ink/35">
                 目次

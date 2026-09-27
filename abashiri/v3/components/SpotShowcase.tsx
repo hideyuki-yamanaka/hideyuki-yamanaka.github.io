@@ -161,11 +161,11 @@ export default function SpotShowcase({
          付け忘れると透明なまま KV の「ぼーっとしてみる」ボタンのクリックを
          飲み込んでしまう（v1.1 で実際に起きた） */
       className="pointer-events-none relative"
-      style={{ marginTop: -982, height: 982 + totalScroll(t, sceneCount) }}
+      style={{ marginTop: -982, height: 982 + totalScroll(t, sceneCount) }} /* 4-7例外（PCのキャンバス 1512×982 の高さ） */
     >
       <motion.section
         id="spot"
-        className="sticky top-0 h-[982px] w-full overflow-hidden"
+        className="sticky top-0 h-[982px] w-full overflow-hidden" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */
         style={{ opacity, filter, pointerEvents }}
       >
         {/* 全画面の場面。1スクロールごとに次へ、ブラーで切替。
@@ -200,7 +200,7 @@ export default function SpotShowcase({
             /* ⚠️ カード全体がホバー／クリックの対象（2026-09-15 ヒデさん指示。
                以前は「もっと見る」の文字だけだった）。詳細があるスポットは
                このカード全部がリンクになり、ホバーで少し明るくなる */
-            className={`group absolute right-[41px] top-[684px] flex h-[238px] w-[712px] flex-col justify-center gap-6 bg-white/10 p-11 backdrop-blur-65 transition-colors duration-300 ease-standard ${
+            className={`group absolute right-[41px] top-[684px] flex h-[240px] w-[712px] flex-col justify-center gap-6 bg-white/10 p-11 backdrop-blur-65 transition-colors duration-300 ease-standard ${
               SPOT_DETAILS[spot.id]
                 ? "pointer-events-auto cursor-pointer hover:bg-white/20"
                 : ""
@@ -226,7 +226,7 @@ export default function SpotShowcase({
                 <span className="whitespace-nowrap text-right text-body-16 font-extralight leading-[1.2] text-white">
                   もっと見る
                 </span>
-                <img src="/img/icon-view-more.svg" alt="" className="size-[18px]" />
+                <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
               </span>
             </div>
             <p className="w-full text-body-14 font-extralight leading-[2.2] tracking-[0.7px] text-white">

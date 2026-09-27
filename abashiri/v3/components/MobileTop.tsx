@@ -289,7 +289,7 @@ export default function MobileTop() {
               className="relative tab:![width:calc(415px*var(--kv-s-tab))] tab:![height:calc(379px*var(--kv-s-tab))]"
             >
               <div
-                className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left [transform:scale(var(--kv-s))] tab:[transform:scale(var(--kv-s-tab))]"
+                className="absolute left-0 top-0 h-[379px] w-[415px] origin-top-left [transform:scale(var(--kv-s))] tab:[transform:scale(var(--kv-s-tab))]" /* 4-7例外（作字ブロックの実寸 415×379。倍率の計算の基準） */
               >
                 {/* ⚠️ 作字は 471x390。415px の枠に直接置くと img の max-width:100% で
                    415px まで縮められ（実測 390→343.6px）、「網走市観光サイト」との
@@ -299,20 +299,20 @@ export default function MobileTop() {
                   <img
                     src="/img/hero-message.svg"
                     alt="な〜んにもない、たまらない。"
-                    className="h-[390px] w-[471px] max-w-none"
+                    className="h-[390px] w-[471px] max-w-none" /* 4-7例外（作字の画像の実寸 471×390） */
                   />
                 </div>
                 <img
                   src="/img/text-kanko-site.svg"
                   alt="網走市観光サイト"
-                  className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px]"
+                  className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px]" /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
                 />
               </div>
             </div>
             <button
               type="button"
               onClick={() => navigateTo("/experience")}
-              className="mt-6 flex items-center justify-center rounded-full bg-white/10 px-6 py-[13px] text-body-14 font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
+              className="mt-6 flex h-10 items-center justify-center rounded-full bg-white/10 px-6 text-body-14 font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
             >
               ぼーっとしてみる
             </button>
@@ -320,7 +320,7 @@ export default function MobileTop() {
           <img
             src="/img/illust-main.png"
             alt=""
-            className="pointer-events-none absolute -bottom-[30px] right-3 w-[90px]"
+            className="pointer-events-none absolute -bottom-[30px] right-3 w-[88px]"
           />
         </div>
       </section>
@@ -371,7 +371,7 @@ export default function MobileTop() {
           >
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-body-13 font-extralight tab:text-body-16">
+                <p className="text-body-14 font-extralight tab:text-body-16">
                   ぼーっとスポット {spot.no}
                 </p>
                 <p className="mt-1 text-title-24 font-thin leading-tight tab:mt-2 tab:text-title-34">
@@ -385,7 +385,7 @@ export default function MobileTop() {
             </div>
             {/* ⚠️ タブレットで1行が長くなりすぎる（実測: 1024px幅で約66文字）ので
                 読みやすい行長（約40文字）で止める */}
-            <p className="text-body-13 font-extralight leading-[1.9] tracking-[0.3px] tab:max-w-[640px] tab:text-body-16 tab:leading-[2]">
+            <p className="text-body-14 font-extralight leading-[1.9] tracking-[0.3px] tab:max-w-[640px] tab:text-body-16 tab:leading-[2]">
               {spot.body}
             </p>
           </button>
@@ -415,7 +415,7 @@ export default function MobileTop() {
               <div
                 key={idx}
                 onClick={() => navigateTo(`/gourmet/${card.slug}`)}
-                className="relative w-[230px] shrink-0 cursor-pointer overflow-hidden tab:w-[330px]"
+                className="relative w-[228px] shrink-0 cursor-pointer overflow-hidden tab:w-[328px]"
               >
                 <img
                   src={card.img}
@@ -423,7 +423,7 @@ export default function MobileTop() {
                   className="h-[300px] w-full object-cover tab:h-[430px]"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
-                  <p className="text-body-12 font-extralight tab:text-body-13">
+                  <p className="text-body-12 font-extralight tab:text-body-14">
                     素朴なグルメ {card.no}
                   </p>
                   <p className="mt-0.5 text-body-16 font-light leading-snug tab:text-body-20">

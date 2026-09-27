@@ -473,7 +473,7 @@ export default function Stage({
         className="absolute left-0 overflow-hidden bg-gradient-to-b from-sky-top to-sky-bottom transition-opacity duration-300"
         style={{
           width: fit?.stageW ?? 1512,
-          height: 982,
+          height: 982, /* 4-7例外（PCのキャンバス 1512×982 の高さ） */
           top: fit?.top ?? 0,
           transform: `scale(${fit?.scale ?? 1})`,
           transformOrigin: "top left",
@@ -561,7 +561,7 @@ export default function Stage({
              「たまらねー」は (1380.05, 749.94) / 75.2x53.3。
              右づけ。ステージは画面が横長だと 1512px より広がるので、左からの絶対位置ではなく
              右端からの距離で置く（カンプ 1512 幅での右端 1455px ＝ 右から 57px） */
-          className="pointer-events-none absolute z-30 h-[241px] w-[210px]"
+          className="pointer-events-none absolute z-30 h-[241px] w-[210px]" /* 4-7例外（人物イラストの置き場。右寄せなので幅を変えると絵が横にずれる） */
           style={{
             /* 位置は globals.css の --illust-* から。調整パネルがそこを書き換える */
             right: "var(--illust-frame-right)",

@@ -118,9 +118,9 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
   /* 案1 育つ一列：小さな4枚が、中央に来るまでに実寸へ伸びる */
   if (pat === 1) {
     return (
-      <div className="flex w-full flex-col gap-12 sm:gap-[90px]">
-        <HTitle className="px-6 sm:px-[147px]" />
-        <div className="flex w-full gap-[5px] px-4 sm:px-[40px]">
+      <div className="flex w-full flex-col gap-12 sm:gap-[88px]">
+        <HTitle className="px-6 sm:px-[148px]" />
+        <div className="flex w-full gap-[6px] px-4 sm:px-[40px]">
           {ITEMS.map((it, i) => {
             const [a, b] = segTogether(i);
             return (
@@ -188,7 +188,7 @@ export default function EventSection() {
         （2026-09-16 ヒデさん指摘。赤背景テストで「背景の透け」ではないことは確認済み） */}
     <section
       id="events"
-      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white pt-[90px] pb-[90px] sm:pt-[180px] sm:pb-[var(--ev-pad-bottom)]"
+      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white pt-[88px] pb-[88px] sm:pt-[180px] sm:pb-[var(--ev-pad-bottom)]"
     >
       {ready ? (
         <Scrolled pat={pat} container={scRef} />

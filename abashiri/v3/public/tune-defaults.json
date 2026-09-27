@@ -139,7 +139,7 @@
   },
   "footer": {
     "padX": 60,
-    "padBottom": 110,
+    "padBottom": 112,
     "colGap": 248,
     "mapGapX": 84,
     "mapGapY": 48,

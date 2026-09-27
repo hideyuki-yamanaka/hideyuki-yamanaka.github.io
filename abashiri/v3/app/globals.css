@@ -71,8 +71,8 @@
        トークンとは無関係なのでそのまま動く。復活が必要になったらここに戻す */
 
   /* ══════════ 角丸（3 段） ══════════ */
-  --radius-30: 30px; /* Radius_30px  板の中の面：タブレット内側・プロモカード・ダイアログ */
-  --radius-290: 290px; /* Radius_290px 楕円カード */
+  --radius-28: 28px; /* Radius_28px  板の中の面：タブレット内側・プロモカード・ダイアログ（2026-09-27 4-7 で 30→28。名前も一緒に変えた） */
+  --radius-288: 288px; /* Radius_288px 楕円カード（2026-09-27 4-7 で 290→288。高さ410の板では角は高さの半分で決まるので見た目は同じ） */
 
   /* ══════════ テキストサイズ（11 段） ══════════ */
   /* Title — 見出し */
@@ -80,8 +80,7 @@
   /* Body — 読ませる文字 */
   --text-body-18: 18px;
   --text-body-16: 16px;
-  --text-body-15: 15px;
-  --text-body-13: 13px; /* Body_13px  スマホの説明文 ExtraLight */
+  /* Body_15px・Body_13px は 2026-09-27 に Body_14px へまとめた（4-7：文字は4の倍数か14・18。どちらも差1pxなので自動で寄せた） */
   --text-body-12: 12px; /* Body_12px  最小サイズ。タグ・補助文（11pxもここへ統合） */
   /* Control — ボタン・チップ・小さいラベル */
   --text-control-20: 20px;
@@ -123,7 +122,7 @@
      Tailwind が値を解析できるよう rgba で書いてあるが、中身は同じ色。 */
   --drop-shadow-illust: -8px 1px 2px rgba(0, 95, 179, 0.25); /* Shadow_Illust   切り抜きイラスト */
   --shadow-floating: 0 8px 20px -6px rgba(0, 95, 179, 0.35); /* Shadow_Floating 浮いた小物 */
-  --shadow-modal: 0 25px 50px -12px rgba(0, 95, 179, 0.35); /* Shadow_Modal    ダイアログ */
+  --shadow-modal: 0 24px 50px -12px rgba(0, 95, 179, 0.35); /* Shadow_Modal    ダイアログ */
   /* Shadow_Device（タブレットの浮遊感）は shadowConfig.ts のパラメーター */
 
   /* ══════════ イージング ══════════ */
@@ -141,7 +140,7 @@
      調整パネル（🌐サイト共通 > フッター）から、その場で動かせるようにしてある。
      ⚠️ 数値を変えたい時はここを直す（コンポーネント側に生の px を書かない） */
   --ft-pad-x: 160px;    /* 左右の余白 */
-  --ft-pad-bottom: 110px; /* 下の余白 */
+  --ft-pad-bottom: 112px; /* 下の余白 */
   --ft-col-gap: 140px;  /* 左カラム（作字）と右カラム（サイトマップ）の間 */
   --ft-map-gap-x: 40px; /* 親階層どうしの【左右】の間隔 */
   --ft-map-gap-y: 48px; /* 親階層どうしの【上下】の間隔 */
@@ -173,7 +172,7 @@
   /* スポット詳細ページの文字の大きさ（2026-09-16 ヒデさん「案11の本文が大きい」）。
      行間は倍率（leading-[2.4] など）で持っているので、ここを変えると行間も一緒に動く */
   --dt-head: 26px;  /* 見出し（小見出し・下の3ブロックの見出し） */
-  --dt-body: 15px;  /* 本文（16px から 1px 下げたのが既定） */
+  --dt-body: 14px;  /* 本文（16px から 1px 下げた 15px が既定だったが、2026-09-27 に 4-7 で 14px へ。住み家は SpotDetailPage の SIZE0 と2つ） */
 
   /* 詳細ページ 案40（写真がぼけて白になじむ）の、写真から本文への渡り。
      単位は「画面の高さの何%」。値の住み家はここと SpotDetailPage の params の2つ。
@@ -296,16 +295,16 @@ html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive img {
 .bgm-vol-slider::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: #fff;
   border: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 .bgm-vol-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: #fff;
   border: none;
@@ -509,7 +508,7 @@ html.live-phone .tp-secret-hot {
   background: rgba(17, 24, 39, 0.82);
   color: #fff;
   font: 600 11px/1 -apple-system, system-ui, sans-serif;
-  padding: 7px 10px;
+  padding: 7px 10px; /* 4-7例外（スマホ同期の札。調整パネル関係の見た目なので対象外） */
   border-radius: 999px;
   letter-spacing: 0.02em;
   pointer-events: none;

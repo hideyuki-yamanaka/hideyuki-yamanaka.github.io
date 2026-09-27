@@ -111,7 +111,7 @@ function Card({ card }: { card: GourmetCard }) {
               <span className="whitespace-nowrap text-body-16 font-extralight leading-[1.2] text-white">
                 もっと見る
               </span>
-              <img src="/img/icon-view-more.svg" alt="" className="size-[18px]" />
+              <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
             </span>
           </div>
           <p className="w-full text-body-14 font-extralight leading-[2] tracking-[0.7px] text-white">
@@ -163,7 +163,7 @@ export default function GourmetSection() {
             もっと見る
           </span>
           {/* 黒シェブロン・線幅1.0（2026-08-22 ヒデさん指定。白版は線幅0.5のまま） */}
-          <img src="/img/icon-view-more-black.svg" alt="" className="size-[18px]" />
+          <img src="/img/icon-view-more-black.svg" alt="" className="size-[16px]" />
         </a>
       </motion.div>
 

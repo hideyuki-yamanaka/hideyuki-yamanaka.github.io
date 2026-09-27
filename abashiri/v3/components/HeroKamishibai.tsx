@@ -217,6 +217,6 @@ export default function HeroKamishibai({
   }, [variant, pace, timing]);
 
   return (
-    <div ref={ref} className="h-[390px] w-[471px]" aria-label="な〜んにもない たまらない" />
+    <div ref={ref} className="h-[390px] w-[471px]" /* 4-7例外（作字の画像の実寸 471×390） */ aria-label="な〜んにもない たまらない" />
   );
 }

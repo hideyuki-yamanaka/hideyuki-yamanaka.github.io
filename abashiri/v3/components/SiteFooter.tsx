@@ -146,13 +146,13 @@ function Logo({ light = false }: { light?: boolean }) {
           src="/img/text-kanko-site.svg"
           alt="網走市観光サイト"
           className="absolute"
-          style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }}
+          style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }} /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
         />
         <img
           src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
           alt="な〜んにもない たまらない"
           className="absolute max-w-none"
-          style={{ left: -28, top: 13.1, width: 471, height: 390 }}
+          style={{ left: -28, top: 13.1, width: 471, height: 390 }} /* 4-7例外（作字の画像の実寸 471×390） */
         />
       </div>
     </div>
@@ -393,7 +393,7 @@ function MapColumn({
             {n.href ? (
               <Link
                 href={n.href}
-                className={`block text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+                className={`block text-body-14 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </Link>
@@ -401,7 +401,7 @@ function MapColumn({
               <button
                 type="button"
                 onClick={() => n.jump && jumpTo(n.jump)}
-                className={`block cursor-pointer text-left text-body-13 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+                className={`block cursor-pointer text-left text-body-14 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </button>

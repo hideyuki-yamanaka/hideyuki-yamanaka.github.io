@@ -170,7 +170,7 @@ export default function BoTips({
           >
             <div className="flex flex-col items-center gap-2 leading-[1.2]">
               {/* 見出しサイズはカンプ実測（20px/46px）。compact はスマホ用に縮小 */}
-              <p className={compact ? "text-body-15 font-extralight" : "text-body-20 font-extralight"}>
+              <p className={compact ? "text-body-14 font-extralight" : "text-body-20 font-extralight"}>
                 五感を使おう
               </p>
               <p
@@ -191,7 +191,7 @@ export default function BoTips({
             中央寄せは外側のラッパー（transform）、登場アニメは内側に分けて当てる */}
         <div className="absolute -top-[22px] left-1/2 -translate-x-1/2">
           <div
-            className="flex w-[186px] items-center justify-center rounded-full bg-white/40 px-4 py-[6px] backdrop-blur-90"
+            className="flex w-[184px] items-center justify-center rounded-full bg-white/40 px-4 py-[6px] backdrop-blur-90"
             style={anim}
           >
             <p className="text-body-16 font-normal leading-[1.2] text-white">

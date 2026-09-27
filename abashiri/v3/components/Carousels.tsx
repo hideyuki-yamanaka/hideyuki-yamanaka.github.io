@@ -383,18 +383,18 @@ function CardInfo({ it }: { it: Item }) {
     /* 体験セクションのカードと同じ言葉遣い（黒グラデがかかって、下から文字が上がる） */
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-black/10 to-black/80 px-6 py-6 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
       <div className="flex translate-y-[16px] flex-col gap-2 opacity-0 transition-all delay-75 duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100">
-        <p className="text-[13px] font-extralight leading-[1.2] text-white/80">
+        <p className="text-body-14 font-extralight leading-[1.2] text-white/80">
           {it.tag} {it.no}
         </p>
-        <p className="text-[24px] font-thin leading-[1.35] text-white">{it.title}</p>
+        <p className="text-[24px] font-thin leading-[1.3] text-white">{it.title}</p>
         {it.body && (
-          <p className="mt-1 line-clamp-4 text-[13px] font-extralight leading-[1.9] tracking-[0.5px] text-white/85">
+          <p className="mt-1 line-clamp-4 text-body-14 font-extralight leading-[1.9] tracking-[0.5px] text-white/85">
             {it.body}
           </p>
         )}
-        <span className="mt-1 flex items-center gap-1 text-[13px] font-extralight leading-[1.2] text-white">
+        <span className="mt-1 flex items-center gap-1 text-body-14 font-extralight leading-[1.2] text-white">
           もっと見る
-          <img src="/img/icon-view-more.svg" alt="" className="size-[15px]" />
+          <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
         </span>
       </div>
     </div>
@@ -526,7 +526,7 @@ export function Carousel3D({
   return (
     <div className="flex w-full flex-col gap-10 bg-white">
       {heading && (
-        <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
+        <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[148px]">
           意外とオモロい、網走。
         </h2>
       )}
@@ -614,7 +614,7 @@ export function Carousel3D({
           })}
         </div>
       </div>
-      <p className="px-6 text-[13px] font-extralight leading-[1.4] text-black/40 sm:px-[147px]">
+      <p className="px-6 text-body-14 font-extralight leading-[1.4] text-black/40 sm:px-[148px]">
         {hint ??
           (scrollDriven
             ? "↓ スクロールすると写真が右から左へ切り替わります"
@@ -945,7 +945,7 @@ export function CarouselBend({
   return (
     <div className="flex w-full flex-col gap-10 bg-white">
       {heading && (
-        <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[147px]">
+        <h2 className="px-6 text-[length:var(--sec-head,36px)] font-thin leading-[1.8] text-black sm:px-[148px]">
           意外とオモロい、網走。
         </h2>
       )}
@@ -974,7 +974,7 @@ export function CarouselBend({
           </div>
         )}
       </div>
-      <p className="px-6 text-[13px] font-extralight leading-[1.4] text-black/40 sm:px-[147px]">
+      <p className="px-6 text-body-14 font-extralight leading-[1.4] text-black/40 sm:px-[148px]">
         ← 横にドラッグ／スワイプ、または ← → キーで流れます
       </p>
     </div>

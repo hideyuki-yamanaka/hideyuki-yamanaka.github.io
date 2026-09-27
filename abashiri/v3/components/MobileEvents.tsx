@@ -95,7 +95,7 @@ function NowCaption({ it }: { it: EventItem }) {
       </span>
       <span className="flex shrink-0 items-center gap-1 pb-1 text-body-12 font-extralight text-ink/70 tab:text-body-14">
         もっと見る
-        <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
+        <img src="/img/icon-view-more-black.svg" alt="" className="size-[16px]" />
       </span>
     </button>
   );
@@ -142,7 +142,7 @@ function Grow({ active }: { active: boolean }) {
             className="flex flex-col gap-2 text-left"
           >
             {/* 場所は最初から実寸で取り、中の写真だけ 55% から育てる（PC の GrowShot と同じ考え方） */}
-            <div className="flex h-[150px] w-full items-center justify-center tab:h-[300px]">
+            <div className="flex h-[148px] w-full items-center justify-center tab:h-[300px]">
               <motion.img
                 src={it.img}
                 alt={it.title}
@@ -152,7 +152,7 @@ function Grow({ active }: { active: boolean }) {
                 transition={{ duration: 1.1, ease: EASE, delay: active ? 0.25 + i * 0.08 : 0 }}
               />
             </div>
-            <p className="text-body-12 font-extralight leading-[1.4] text-ink/50 tab:text-body-13">
+            <p className="text-body-12 font-extralight leading-[1.4] text-ink/50 tab:text-body-14">
               {it.tag} {it.no}
             </p>
             <p className="text-body-14 font-light leading-[1.5] text-ink tab:text-body-20">{it.title}</p>

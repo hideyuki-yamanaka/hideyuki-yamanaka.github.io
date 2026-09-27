@@ -137,7 +137,7 @@ export default function MessageSection({
 
   let lineNo = -1;
   return (
-    <div className="pointer-events-none sticky top-0 -mt-[982px] h-[982px]">
+    <div className="pointer-events-none sticky top-0 -mt-[982px] h-[982px]" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
       <div
         /* 器(親)は pointer-events-none で KV ボタンのクリックを通すが、
            それを受けると本文がドラッグ選択（コピペ）できなくなる。

@@ -461,7 +461,7 @@ function SideTextScene({
     <Frame>
       <p
         className="pointer-events-none absolute whitespace-nowrap text-[70px] font-extralight leading-[1.6] text-black/80"
-        style={{ left: 133, top: 333, width: 350 }}
+        style={{ left: 133, top: 333, width: 348 }}
       >
         意外と
         <br />
@@ -536,7 +536,7 @@ function BurstCard({ it, i, p }: { it: EventItem; i: number; p: MotionValue<numb
       className="group absolute z-10"
       style={{ left: x, top: y, width: w, height: h, opacity: o }}
     >
-      <div className="relative size-full overflow-hidden bg-white shadow-[0_8px_24px_rgba(0,0,0,.12)] transition-shadow duration-500 ease-out group-hover:shadow-[0_26px_64px_rgba(0,0,0,.3)]">
+      <div className="relative size-full overflow-hidden bg-white shadow-[0_8px_24px_rgba(0,0,0,.12)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_64px_rgba(0,0,0,.3)]">
         <img
           src={it.img}
           alt={it.title}

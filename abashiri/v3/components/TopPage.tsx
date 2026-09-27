@@ -83,9 +83,9 @@ function Card({
     <motion.div
       variants={cardReveal}
       custom={index}
-      className="relative h-[410px] w-[730px] shrink-0"
+      className="relative h-[408px] w-[728px] shrink-0"
     >
-      <div className="group h-full w-full overflow-hidden rounded-290 border-8 border-white/70">
+      <div className="group h-full w-full overflow-hidden rounded-288 border-8 border-white/70">
         <img
           src={card.src}
           alt={card.alt}
@@ -93,7 +93,7 @@ function Card({
         />
         {/* ホバー：下から黒グラデ+ブラーの上にスポット名 */}
         <div
-          className={`absolute inset-0 flex items-end justify-center rounded-290 bg-gradient-to-b from-transparent to-black/70 pb-10 backdrop-blur-6 ${ov.overlay}`}
+          className={`absolute inset-0 flex items-end justify-center rounded-288 bg-gradient-to-b from-transparent to-black/70 pb-10 backdrop-blur-6 ${ov.overlay}`}
         >
           <p className={`text-title-32 font-medium leading-[1.2] text-white ${ov.title}`}>
             {card.title}
@@ -151,7 +151,7 @@ function ViewMore({ anim = MORE_ANIM }: { anim?: MoreAnim }) {
       <img
         src="/img/icon-more-circle.svg"
         alt=""
-        className={`size-[62px] ${a.icon}`}
+        className={`size-[60px] ${a.icon}`}
       />
     </a>
   );
@@ -925,7 +925,7 @@ export default function TopPage({
         {/* 固定背景（灯台の写真）：中身だけがその上をスクロールする。
             パターンによってはスクロールに合わせてゆっくりズーム。
             下地を写真上端と同じ空色にして、角や継ぎ目が出ないようにする */}
-        <div className="pointer-events-none sticky top-0 h-[982px] w-full overflow-hidden bg-brand">
+        <div className="pointer-events-none sticky top-0 h-[982px] w-full overflow-hidden bg-brand" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
           {/* Figmaのトリミング・色加工を焼き込み、角丸の縁を切り落とした四角い書き出し画像。
               角丸はCSS側だけで付けるので、継ぎ目やズレが出ない */}
           <motion.img
@@ -941,9 +941,9 @@ export default function TopPage({
 
         {/* キービジュアル：画面中央に固定されたまま、ブラーで登場 →
             スクロールでその場から奥へ引いて消える */}
-        <div className="pointer-events-none sticky top-0 -mt-[982px] h-[982px]">
+        <div className="pointer-events-none sticky top-0 -mt-[982px] h-[982px]" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
           <motion.div
-            className="flex h-full flex-col items-center pt-[150px]"
+            className="flex h-full flex-col items-center pt-[148px]"
             initial={
               animated
                 ? { opacity: 1 } /* 手書き/紙芝居アニメ時は書く動き自体が登場演出 */
@@ -977,7 +977,7 @@ export default function TopPage({
                      そのぶん左上へずらして、絵がカンプの座標に来るようにしている
                      （SVGを作り直すと blurSeq のグループ構造に依存した演出が壊れるため、
                       SVGはそのままで置き方だけ合わせる） */}
-              <div className="relative h-[379px] w-[415px]">
+              <div className="relative h-[379px] w-[415px]" /* 4-7例外（作字ブロックの実寸 415×379。倍率の計算の基準） */>
               <img
                 src="/img/text-kanko-site.svg"
                 alt="網走市観光サイト"
@@ -988,7 +988,7 @@ export default function TopPage({
                       ブラーが弱いぶんこちらだけ早くくっきりし、先に現れて見えていた
                       （実測: 600ms 時点で吹き出しはまだぼやけ、この文字だけ読めていた）。
                       時間・ブラー・イージングを吹き出しとそろえる */
-                className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px] transition-all ease-standard"
+                className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px] transition-all ease-standard" /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
                 style={{
                   transitionDuration: `${timing2.kotoba.duration}ms`,
                   opacity: animated && !kankoIn ? 0 : 1,
@@ -1030,7 +1030,7 @@ export default function TopPage({
                 <img
                   src="/img/hero-message.svg"
                   alt="な〜んにもない たまらない"
-                  className="h-[390px] w-[471px]"
+                  className="h-[390px] w-[471px]" /* 4-7例外（作字の画像の実寸 471×390） */
                 />
               )}
               </div>
@@ -1129,7 +1129,7 @@ export default function TopPage({
         id="abashiri-sound-slot"
         /* カンプ x=34。ヘッダーの文字行（top32・高さ19px）と上下中央ぞろえ
            （2026-08-22 ヒデさん指示。ナビは帯ではなく素の文字なので、その実寸に合わせる） */
-        className="absolute left-[34px] top-[32px] z-40 flex h-[19px] items-center"
+        className="absolute left-[34px] top-[32px] z-40 flex h-[20px] items-center"
       />
     </div>
   );

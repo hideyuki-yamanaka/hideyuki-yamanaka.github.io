@@ -136,7 +136,7 @@ export function Caption({
       )}
       <span className="mt-1 flex items-center gap-1 text-body-14 font-extralight leading-[1.2] text-ink/60 transition-transform duration-300 ease-standard group-hover:translate-x-[6px]">
         もっと見る
-        <img src="/img/icon-view-more-black.svg" alt="" className="size-[14px]" />
+        <img src="/img/icon-view-more-black.svg" alt="" className="size-[16px]" />
       </span>
     </Link>
   );
@@ -382,7 +382,7 @@ export function PinStage({
       className="relative -mt-[180px] w-full"
       style={{ height: `${Math.round(length * 982)}px` }}
     >
-      <div className="sticky top-0 h-[982px] w-full overflow-hidden bg-white">
+      <div className="sticky top-0 h-[982px] w-full overflow-hidden bg-white" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
         {children(q, pinned)}
       </div>
     </div>

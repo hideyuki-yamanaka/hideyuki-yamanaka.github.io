@@ -74,7 +74,7 @@ export default function MobileHeader({
       <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between px-6 pt-5">
         <div
           id="abashiri-sound-slot"
-          className="pointer-events-auto flex h-[22px] origin-left scale-[0.72] items-center"
+          className="pointer-events-auto flex h-[24px] origin-left scale-[0.72] items-center"
         />
         <button
           type="button"
@@ -82,12 +82,12 @@ export default function MobileHeader({
           aria-label="メニューを開く"
           className="pointer-events-auto flex size-9 items-center justify-center"
         >
-          <span className="relative block h-[11px] w-[24px]">
+          <span className="relative block h-[10px] w-[24px]">
             <span
-              className={`absolute left-0 top-0 h-[1.5px] w-full rounded-full ${dark ? "bg-ink" : "bg-white"}`}
+              className={`absolute left-0 top-0 h-[1.5px] w-full rounded-full ${dark ? "bg-ink" : "bg-white"}`} /* 4-7例外（線の太さ。線幅は自由） */
             />
             <span
-              className={`absolute bottom-0 left-0 h-[1.5px] w-full rounded-full ${dark ? "bg-ink" : "bg-white"}`}
+              className={`absolute bottom-0 left-0 h-[1.5px] w-full rounded-full ${dark ? "bg-ink" : "bg-white"}`} /* 4-7例外（線の太さ。線幅は自由） */
             />
           </span>
         </button>

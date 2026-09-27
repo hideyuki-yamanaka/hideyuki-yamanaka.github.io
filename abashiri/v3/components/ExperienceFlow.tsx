@@ -149,7 +149,7 @@ function Intro({
       <motion.div
         /* 上下中央ぞろえ。カンプは top 110px 固定だが、文字量で高さが変わるので
            画面の真ん中に置いたほうが収まりが良い */
-        className="absolute left-1/2 top-1/2 flex w-[382px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[100px] text-center text-white"
+        className="absolute left-1/2 top-1/2 flex w-[380px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[100px] text-center text-white"
         variants={INTRO_STAGGER}
         initial="hidden"
         animate="show"
@@ -229,7 +229,7 @@ const HOVER_SCALE = 1.01;
 
 function Chevron({ dir }: { dir: "left" | "right" }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="size-[26px]" aria-hidden>
+    <svg viewBox="0 0 24 24" fill="none" className="size-[24px]" aria-hidden>
       <path
         d={dir === "left" ? "M15 5L8 12l7 7" : "M9 5l7 7-7 7"}
         stroke="white"
@@ -461,7 +461,7 @@ function Pick({
           <span
             key={s.id}
             className={`block size-[8px] rounded-full transition-all duration-500 ease-standard ${
-              i === active ? "w-[26px] bg-white" : "bg-white/40"
+              i === active ? "w-[24px] bg-white" : "bg-white/40"
             }`}
           />
         ))}
@@ -1078,7 +1078,7 @@ export default function ExperienceFlow({
         id="abashiri-sound-slot"
         /* カンプ x=34。ヘッダーの文字行（top32・高さ19px）と上下中央ぞろえ
            （2026-08-22 ヒデさん指示。ナビは帯ではなく素の文字なので、その実寸に合わせる） */
-        className="absolute left-[34px] top-[32px] z-40 flex h-[19px] items-center"
+        className="absolute left-[34px] top-[32px] z-40 flex h-[20px] items-center"
       />
 
       {/* 遷移中は、まわりの世界だけ外へ押し出して奥へ流す。

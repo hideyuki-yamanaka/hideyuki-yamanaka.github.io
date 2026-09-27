@@ -169,7 +169,7 @@ export default function MobileExperience() {
       {/* 環境音トグルの置き場（無いと左下に出るため右上に固定） */}
       <div
         id="abashiri-sound-slot"
-        className="absolute right-4 top-5 z-40 flex h-[22px] origin-right scale-[0.72] items-center"
+        className="absolute right-4 top-5 z-40 flex h-[24px] origin-right scale-[0.72] items-center"
       />
 
       {/* 戻る（左上） */}
@@ -196,7 +196,7 @@ export default function MobileExperience() {
           <div className="flex flex-1 -translate-y-6 flex-col items-center justify-center px-6 text-center">
             {/* タブレット（744px以上）は画面が大きいので一段大きく組む
                 （2026-09-17 タブレット対応。実測: 1024x1366 で本文14pxは小さすぎた） */}
-            <p className="text-body-13 font-light tab:text-body-16">網走に来る前に、まずやってみよう</p>
+            <p className="text-body-14 font-light tab:text-body-16">網走に来る前に、まずやってみよう</p>
             <p className="mt-2 text-title-34 font-thin tab:mt-3 tab:text-title-56">ぼーっと体験</p>
             <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9] tab:mt-14 tab:space-y-7 tab:text-body-18 tab:leading-[2]">
               <p>網走は何もないけど、それがたまらない。</p>
@@ -215,7 +215,7 @@ export default function MobileExperience() {
             <button
               type="button"
               onClick={() => setStep("pick")}
-              className={`${glass} mt-10 px-8 py-[13px] text-body-14 font-medium leading-none tab:mt-14 tab:px-12 tab:py-[18px] tab:text-body-18`}
+              className={`${glass} mt-10 h-10 px-8 text-body-14 font-medium leading-none tab:mt-14 tab:h-14 tab:px-12 tab:text-body-18`}
             >
               次へ進む
             </button>
@@ -244,7 +244,7 @@ export default function MobileExperience() {
                 ref={(el) => {
                   cardEls.current[i] = el;
                 }}
-                className={`relative aspect-[902/586] shrink-0 snap-center overflow-hidden rounded-30 border-[3px] border-white/60 transition-opacity duration-300 ${
+                className={`relative aspect-[902/586] shrink-0 snap-center overflow-hidden rounded-28 border-[3px] border-white/60 transition-opacity duration-300 ${
                   i === pickIdx ? "opacity-100" : "opacity-55"
                 }`}
                 style={{ width: CARD_W }}
@@ -257,14 +257,14 @@ export default function MobileExperience() {
           {/* ラベル＋ボタン（中央グループ） */}
           <div className="mt-7 flex flex-col items-center gap-5 px-6">
             <div className="flex flex-col items-center">
-              <p className="text-body-13 font-extralight tab:text-body-16">ぼーっとスポット {active.no}</p>
+              <p className="text-body-14 font-extralight tab:text-body-16">ぼーっとスポット {active.no}</p>
               <p className="mt-1 text-title-24 font-thin tab:mt-2 tab:text-title-34">{active.label}</p>
             </div>
             {active.video ? (
               <button
                 type="button"
                 onClick={dive}
-                className={`${glass} w-full max-w-[342px] py-[15px] text-body-15 font-medium leading-none tab:max-w-[420px] tab:py-[20px] tab:text-body-18`}
+                className={`${glass} h-11 w-full max-w-[342px] text-body-14 font-medium leading-none tab:h-14 tab:max-w-[420px] tab:text-body-18`}
               >
                 この場所にする
               </button>
@@ -347,7 +347,7 @@ export default function MobileExperience() {
               setPlaying((v) => !v);
               poke();
             }}
-            className={`absolute left-1/2 top-1/2 z-10 flex size-[114px] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-opacity duration-500 ${
+            className={`absolute left-1/2 top-1/2 z-10 flex size-[112px] -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-opacity duration-500 ${
               controls ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >

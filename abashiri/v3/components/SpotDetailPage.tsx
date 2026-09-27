@@ -84,7 +84,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
        → 案ごとの値を sizes に持つ。つまみ（headSize / bodySize）は
          「いま選んでいる案の値」を映す窓で、動かすと sizes の その案の欄だけ書き換わる。
          案を切り替えると、その案がおぼえている値をつまみへ読み戻す。 */
-    const SIZE0 = { head: 26, body: 15 };
+    const SIZE0 = { head: 26, body: 14 }; /* 2026-09-27 本文 15→14（4-7。globals.css の --dt-body と同じ値）。見出し 26 は提案に回した */
     const sizes: Record<string, { head: number; body: number }> = {};
     Object.keys(SPOT_DETAIL_PATTERNS).forEach((k) => {
       sizes[k] = { ...SIZE0 };
