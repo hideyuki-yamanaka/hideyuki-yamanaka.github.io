@@ -1027,7 +1027,7 @@ function applyCvfGlass() {
   /* 【2026-09-21 ヒデさん依頼】フォームカードの色味(tint)。既定は白。色コード→RGB */
   var _bc = g.bgColor || '#ffffff', _bm = /^#?([0-9a-fA-F]{6})$/.exec(_bc);
   set('--cvf-bg-rgb', _bm ? (parseInt(_bm[1].slice(0, 2), 16) + ',' + parseInt(_bm[1].slice(2, 4), 16) + ',' + parseInt(_bm[1].slice(4, 6), 16)) : '255,255,255', '');
-  set('--cvf-blur', g.blur != null ? g.blur : 22, 'px');
+  set('--cvf-blur', g.blur != null ? g.blur : 20, 'px');
   set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
   set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
   set('--cvf-ph-a', g.phA != null ? g.phA : 0.32, '');

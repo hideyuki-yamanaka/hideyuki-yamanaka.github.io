@@ -1658,6 +1658,23 @@ function applyResFx() {
   if (k === '24-4') resFxBuildBig();
 }
 /* 固定区間の進み: 0=セクション上端が画面上端に着いた / 1=区間の終わり(下端が画面下端)。固定なしの案は 0 */
+/* 【2026-09-27 ヒデさん指摘「今まであった for SaaS / for AI のアニメーションがごっそり消えた」】
+   画面固定をやめて流す時(PC)も、実績がまるごと画面に入ったら(下端が画面に入る／上端が画面の上1割より上)、
+   今までと同じ演出(大きい文字→小さく上へ→縦線が伸びる→中身→横線→数字)を「進み」0→1 として時間で再生する。
+   長さは fx24.playSec(既定 2.8秒・仮置き)。くり返し再生が ON なら、画面の下へ出きったら巻き戻して、次に入った時にもう一度。
+   スマホ(mobileFlow)は従来どおり完成した姿(1)のまま。 */
+const rfxFlowPlay = { t0: null };
+function rfxFlowP() {
+  if (isMobile) return 1;
+  const r = rectOf(SECS.results), vh = innerHeight || 1;
+  if (r.top > vh && params.replay) rfxFlowPlay.t0 = null;   /* 上へ戻って画面の下へ出きった→巻き戻し */
+  if (rfxFlowPlay.t0 == null) {
+    if (!((r.bottom <= vh + 1 || r.top <= vh * 0.1) && r.bottom > 0)) return 0;   /* まるごと入るまでは最初の姿 */
+    rfxFlowPlay.t0 = elapsed;
+  }
+  const dur = Math.max(0.6, +(((params.sections.results || {}).fx24 || {}).playSec) || 2.8);
+  return clamp01((elapsed - rfxFlowPlay.t0) / dur);
+}
 function resFxPin() {
   const r = rectOf(SECS.results), vh = innerHeight || 1;
   const travel = r.height - vh;
@@ -1906,7 +1923,7 @@ function applyVisResPull() { document.documentElement.style.setProperty('--vis-r
 applyVisResPull();
 function applySecHeadGap() { document.documentElement.style.setProperty('--sec-head-gap', (params.secHeadGap != null ? params.secHeadGap : 6) + 'px'); }
 applySecHeadGap();
-function applyResProd() { const f = (params.sections && params.sections.results && params.sections.results.fx24) || {}; document.documentElement.style.setProperty('--r2v-prod-size', (f.prodSize != null ? f.prodSize : 38) + 'px'); }
+function applyResProd() { const f = (params.sections && params.sections.results && params.sections.results.fx24) || {}; document.documentElement.style.setProperty('--r2v-prod-size', (f.prodSize != null ? f.prodSize : 40) + 'px'); }
 applyResProd();
 /* 毎フレーム(updateResults から)。t=入場リビールの再生位置(秒・マイナスは未再生)。 */
 function resFxFrame(t) {
@@ -1930,8 +1947,9 @@ function resFxFrame(t) {
   if (k === '26' && resFxShort()) { valTOv.saas = null; valTOv.ai = null; return; }   /* 【2026-09-26 整理】元は固定案の一覧(生きているのは26だけ。24-4 は入っていない) */
 
   if (k === '24-4') {
-    /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
-    const p = resFxFlowMode(k) ? 1 : resFxPin(), H = rfxHero(), vh = rfxVH();
+    /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す
+       【2026-09-27 ヒデさん指摘「for SaaS / for AI のアニメーションがごっそり消えた」】PC は流す時も、まるごと画面に入ったら同じ演出を時間で再生する(rfxFlowP) */
+    const p = resFxFlowMode(k) ? rfxFlowP() : resFxPin(), H = rfxHero(), vh = rfxVH();
     const F = Object.assign({ labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
        「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。
@@ -2500,7 +2518,7 @@ const dmCodeRoot = document.getElementById('dmCode');
 const dmLoadRoot = document.getElementById('dmLoad');
 let dmLineEls = [], dmCurScreen = null;
 (function buildLoader() {
-  [180, 240, 150, 210, 120, 190].forEach(w => {
+  [180, 240, 152, 208, 120, 192].forEach(w => {
     const b = document.createElement('div');
     b.className = 'sk';
     b.style.width = w + 'px';

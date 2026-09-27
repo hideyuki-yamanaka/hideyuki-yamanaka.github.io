@@ -13,7 +13,7 @@ const KV_VARIANTS = [
             kvGfx: { scale: 1, dx: 31.9, dy: 15 }, planet: { scale: 1.004, dx: 31, dy: 45, flat: 1 },
             mesh: { cageR: 2.22, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
   { key: 'strong', name: '強調', tip: '2026-09-17 の調整版(Figma 17435:22386)。コピー 70px/120px・大きいグラフィック(1.21倍)。',
-    data: { kv: { mainSize: 70, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0, copyGap: 32, eyebrowDash: true, eyebrowDashW: 16, dashGap: 10,
+    data: { kv: { mainSize: 72, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0, copyGap: 32, eyebrowDash: true, eyebrowDashW: 16, dashGap: 10,
                   mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row' },
             kvGfx: { scale: 1.21, dx: 148, dy: 184 }, planet: { scale: 1.3, dx: 31, dy: 45, flat: 1 },
             mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
@@ -1016,9 +1016,9 @@ function buildPanel() {
     v => { params.kv.copyGap = v; applyKvCopy(); }, v => Math.round(v) + 'px',
     'メインコピーとサブコピーの縦の間隔。', { mbKey: 'kv.copyGap' }));
   sub(copyRoot, 'コピー（文字サイズ）', false, { grp: 'font' });   /* フォント: 文字サイズ(太さ/行間/字間は🔤文字) */
-  rows.push(slider('1〜2行目', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 70),
+  rows.push(slider('1〜2行目', 40, 110, 1, () => (params.kv.mainSize != null ? params.kv.mainSize : 72),
     v => { params.kv.mainSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
-    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「文字」で。', { mbKey: 'kv.mainSize', mbDefault: 34 }));
+    '見出し1〜2行目「データ連携で／AIとプロダクトに」の文字サイズ。調整版は70px。太さ・行間・字間は「文字」で。', { mbKey: 'kv.mainSize', mbDefault: 32 }));
   rows.push(slider('最終行「競争力を」', 60, 160, 1, () => (params.kv.jumpSize != null ? params.kv.jumpSize : 120),
     v => { params.kv.jumpSize = v; applyKvCopy(); }, v => Math.round(v) + 'px',
     '見出し3行目「競争力を」だけのサイズ。1〜2行目とは別の独立した値(ここだけ大きくできる)。調整版は120px。', { mbKey: 'kv.jumpSize', mbDefault: 60 }));
@@ -1139,9 +1139,9 @@ function buildPanel() {
   rows.push(slider('位置 Y', -400, 600, 2, () => (editPos('visMsg').dy || 0),
     v => { editPos('visMsg').dy = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの上下位置。', { mbKey: 'edits.visMsg.dy', signed: true }));
   sub(catVis, 'メッセージ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
-  rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 50),
+  rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 48),
     v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize', mbDefault: 26 }));
+    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize', mbDefault: 28 }));
   /* 【2026-09-25 ヒデさん依頼】強調案の行間(1行目↔2行目の縦の間隔)。強調案だけに効く独立値。PC/SP独立(mbKey)。数値=1行目の頭からの距離(px) */
   rows.push(slider('行間（強調案・1↔2行目）', 30, 260, 2, () => (sv().vision.emphGap != null ? sv().vision.emphGap : 119),
     v => { sv().vision.emphGap = v; applyVpSize(); }, v => Math.round(v) + 'px',
@@ -1238,7 +1238,7 @@ function buildPanel() {
     v => { sv().vision.pWidth = v; applyVpSize(); }, v => Math.round(v) + 'px',
     'ポイント1・2のブロックの横幅。狭いほど本文の折り返しが増えます。カンプは328px。', { mbKey: 'sections.vision.pWidth' }));
   sub(catVis, 'ポイント1・2（文字サイズ）', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
-  rows.push(slider('見出し', 16, 44, 1, () => (sv().vision.pHSize != null ? sv().vision.pHSize : 26),
+  rows.push(slider('見出し', 16, 44, 1, () => (sv().vision.pHSize != null ? sv().vision.pHSize : 32),
     v => { sv().vision.pHSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
     '「賢いAIの土台をつくる」などの見出しの文字サイズ。カンプは26px。', { mbKey: 'sections.vision.pHSize', mbDefault: 20 }));
   rows.push(slider('本文', 10, 24, 0.5, () => (sv().vision.pPSize != null ? sv().vision.pPSize : 14),
@@ -1294,7 +1294,7 @@ function buildPanel() {
     subT(catRes, () => '案' + rfxNos(['24-4']) + (RES_FX['24-4'].flow ? '：区切り線' : '：文字の動き・区切り線'));
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
-    const F24 = { labelUp: 190, prodSize: 38 };
+    const F24 = { labelUp: 190, prodSize: 40 };
     /* 【2026-09-21 ヒデさん依頼】文字が上へ/Product は PC のスクロール登場演出専用で、スマホ(flow)では効かない。
        → スマホモード中は隠す(.pc-only-row)。PC編集時は今まで通り表示。区切り線の余白はスマホ用の効く版を下に用意。 */
     const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
@@ -1302,8 +1302,8 @@ function buildPanel() {
     /* 【2026-09-26 ヒデさん依頼】『ピクトの主役の大きさ』(heroScale)つまみは削除。いまの案24-4 はピクトをズームしない作り(ほぼ最終サイズ1.08倍固定)で、効かなかったため */
     if (!RES_FX['24-4'].flow) s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
-    if (!RES_FX['24-4'].flow) rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
-      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
+    if (!RES_FX['24-4'].flow) rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 40), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
+      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定40px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
     subgroup('区切り線', () => {
     rows.push(pcOnly(slider('上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
       '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。※PCのみ(スマホは下の「区切り線 › まわりの余白（スマホ）」で)。', { mbKey: 'sections.results.hrGap', fixedMax: true })));
@@ -1635,7 +1635,7 @@ function buildPanel() {
   /* 【2026-09-21 ヒデさん依頼】フォームの磨りガラス(バックドロップ・ぼかし/彩度)は「エフェクト」節へ */
   sub(catCv, 'フォーム（磨りガラス）', null, { fixed: true, grp: 'fxtex' });
   const _cg = () => (params.cvfGlass = params.cvfGlass || {});
-  rows.push(slider('ぼかし（バックドロップ）', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 22), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'フォームの磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
+  rows.push(slider('ぼかし（バックドロップ）', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 20), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'フォームの磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
   rows.push(slider('彩度', 1, 2.2, 0.05, () => (_cg().sat != null ? _cg().sat : 1.5), v => { _cg().sat = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(2), 'フォームの磨りガラスの彩度。上げると背景の色が残ります。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
   /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
      案を選ぶ項目はパネルから削除し、既定値として固定した。

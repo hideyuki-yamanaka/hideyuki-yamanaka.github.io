@@ -441,7 +441,7 @@ function applyKvCopy() {
   const _mbK = (params && params.mb) || {};
   const _isMbK = (typeof isMobile !== 'undefined' && isMobile);
   const effK = (f, pc, sp) => _isMbK ? (_mbK['kv.' + f] != null ? _mbK['kv.' + f] : sp) : (k[f] != null ? k[f] : pc);
-  r.setProperty('--kv-main-size', effK('mainSize', 70, 34) + 'px');
+  r.setProperty('--kv-main-size', effK('mainSize', 72, 32) + 'px');
   r.setProperty('--kv-jump-size', effK('jumpSize', 120, 60) + 'px');   /* 最終行「競争力を」(PC調整版 120px / SP 60px) */
   r.setProperty('--kv-eyebrow-size', effK('eyebrowSize', 20, 12) + 'px');
   /* 【2026-09-20 ヒデさん依頼】ヘッダー↔コピーの距離。基準top(PC208/SP434)に足すオフセット。PC/SP独立(mbKey)。 */
@@ -497,10 +497,10 @@ function applyVpSize() {
   const eff = (field, pcDef, spDef) => isMb
     ? (mb['sections.vision.' + field] != null ? mb['sections.vision.' + field] : spDef)
     : (v[field] != null ? v[field] : pcDef);
-  r.setProperty('--vp-h-size', eff('pHSize', 26, 20) + 'px');
+  r.setProperty('--vp-h-size', eff('pHSize', 32, 20) + 'px');
   r.setProperty('--vp-p-size', eff('pPSize', 14, 12) + 'px');
   r.setProperty('--vp-width', (v.pWidth != null ? v.pWidth : 328) + 'px');
-  r.setProperty('--vis-msg-size', eff('msgSize', 50, 26) + 'px');
+  r.setProperty('--vis-msg-size', eff('msgSize', 48, 28) + 'px');
   r.setProperty('--vis-emph-gap', eff('emphGap', 119, 50) + 'px');
   try { applyCtaArrow(); } catch (e) {}   /* 【2026-09-26】お問い合わせボタンの矢印の線幅(PC/SP別)もここで一緒に反映＝起動・スマホ判定後・ライブ同期で取り直される */   /* 【2026-09-25】強調案の1↔2行目の行間(PC既定119/SP既定50・PC/SP独立) */
 }
