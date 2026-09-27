@@ -2109,7 +2109,6 @@
   #conversion.cv-cta-form .cv-form { display: flex; flex-direction: column; gap: var(--space-16); width: min(var(--cvf-w, 660px), 92%); margin: var(--space-40) auto 0; text-align: left; }
   #conversion.cv-cta-form.cv-fi .cv-content { width: min(calc(var(--cvf-w, 660px) + 48px), 94%); }
   .cv-form .cvf-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-14); }
-  html.mb .cv-form .cvf-2col.cvf-mb1 { grid-template-columns: 1fr; }   /* 【2026-09-21 ヒデさん依頼】スマホは メール/電話・職種/役職 を縦1カラムに(姓名は2カラム維持) */
   .cv-form .cvf-field { display: flex; flex-direction: column; gap: var(--space-8); }
   .cv-form .cvf-lab { font-weight: 400; font-size: var(--fs-body); line-height: var(--lh-tight); color: var(--ink-strong); }
   .cv-form .cvf-lab em { color: var(--brand-pink); font-style: normal; margin-left: 3px; }

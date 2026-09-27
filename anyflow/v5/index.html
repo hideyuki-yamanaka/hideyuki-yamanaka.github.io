@@ -518,20 +518,15 @@
           <label class="cvf-field"><span class="cvf-lab">姓<em>*</em></span><input class="cvf-in" type="text" placeholder="田中" autocomplete="family-name"></label>
           <label class="cvf-field"><span class="cvf-lab">名<em>*</em></span><input class="cvf-in" type="text" placeholder="太郎" autocomplete="given-name"></label>
         </div>
-        <!-- 【2026-09-21 ヒデさん依頼】メール+電話。スマホは縦1カラム(cvf-mb1) -->
-        <div class="cvf-2col cvf-mb1">
-          <label class="cvf-field"><span class="cvf-lab">メールアドレス<em>*</em></span><input class="cvf-in" type="email" placeholder="taro@anyflow.co.jp" autocomplete="email"></label>
-          <label class="cvf-field"><span class="cvf-lab">電話番号<em>*</em></span><input class="cvf-in" type="tel" placeholder="03-0000-0000" autocomplete="tel"></label>
-        </div>
-        <!-- 【2026-09-21 ヒデさん依頼】職種+役職。スマホは縦1カラム(cvf-mb1) -->
-        <div class="cvf-2col cvf-mb1">
-          <label class="cvf-field"><span class="cvf-lab">職種</span>
-            <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>エンジニア</option><option>プロダクトマネージャー</option><option>経営・役員</option><option>営業・マーケティング</option><option>その他</option></select></span>
-          </label>
-          <label class="cvf-field"><span class="cvf-lab">役職</span>
-            <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>経営者・役員</option><option>部長・マネージャー</option><option>リーダー</option><option>担当者</option><option>その他</option></select></span>
-          </label>
-        </div>
+        <!-- 【2026-09-27 ヒデさん依頼】横2カラムは姓・名だけ。メール・電話・職種・役職は PC もスマホも縦に1つずつ(会社名などと同じ普通の縦組み) -->
+        <label class="cvf-field"><span class="cvf-lab">メールアドレス<em>*</em></span><input class="cvf-in" type="email" placeholder="taro@anyflow.co.jp" autocomplete="email"></label>
+        <label class="cvf-field"><span class="cvf-lab">電話番号<em>*</em></span><input class="cvf-in" type="tel" placeholder="03-0000-0000" autocomplete="tel"></label>
+        <label class="cvf-field"><span class="cvf-lab">職種</span>
+          <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>エンジニア</option><option>プロダクトマネージャー</option><option>経営・役員</option><option>営業・マーケティング</option><option>その他</option></select></span>
+        </label>
+        <label class="cvf-field"><span class="cvf-lab">役職</span>
+          <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>経営者・役員</option><option>部長・マネージャー</option><option>リーダー</option><option>担当者</option><option>その他</option></select></span>
+        </label>
         <label class="cvf-field"><span class="cvf-lab">貴社ではITプロダクトを開発していますか<em>*</em></span>
           <span class="cvf-note">Anyflow Embed はITプロダクトを開発/運営する方のためのAPI連携基盤です</span>
           <span class="cvf-sel"><select class="cvf-in"><option value="" disabled selected>選択してください</option><option>はい</option><option>いいえ</option><option>検討中</option></select></span>
