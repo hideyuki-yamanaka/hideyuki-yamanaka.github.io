@@ -119,7 +119,7 @@ export function Caption({
       href={`/spot/${it.slug}`}
       className={`group flex flex-col gap-2 ${className}`}
     >
-      <p className="text-body-14 font-extralight leading-[1.2] tracking-[0.7px] text-ink/45 [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
+      <p className="text-body-14 font-extralight leading-[1.2] tracking-[0.05em] text-ink/45 [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
         {it.tag} {it.no}
       </p>
       <p
@@ -130,7 +130,7 @@ export function Caption({
         {it.title}
       </p>
       {size === "lg" && (
-        <p className="mt-2 text-body-14 font-extralight leading-[2] tracking-[0.7px] text-ink/70">
+        <p className="mt-2 text-body-14 font-extralight leading-[2] tracking-[0.05em] text-ink/70">
           {it.body}
         </p>
       )}

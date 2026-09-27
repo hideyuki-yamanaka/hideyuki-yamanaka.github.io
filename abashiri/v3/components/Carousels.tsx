@@ -388,7 +388,7 @@ function CardInfo({ it }: { it: Item }) {
         </p>
         <p className="text-[24px] font-thin leading-[1.3] text-white">{it.title}</p>
         {it.body && (
-          <p className="mt-1 line-clamp-4 text-body-14 font-extralight leading-[1.9] tracking-[0.5px] text-white/85">
+          <p className="mt-1 line-clamp-4 text-body-14 font-extralight leading-[1.9] tracking-[0.0357em] text-white/85">
             {it.body}
           </p>
         )}

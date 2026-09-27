@@ -71,7 +71,7 @@ function useViewport() {
 /** 見出し（スマホの既存の組みと同じ） */
 function Title({ className = "" }: { className?: string }) {
   return (
-    <h2 className={`text-body-20 font-thin leading-[1.7] text-ink tab:text-title-34 ${className}`}>
+    <h2 className={`text-body-20 font-thin leading-[1.7] text-ink tab:text-title-36 ${className}`}>
       意外とオモロい、網走。
     </h2>
   );
@@ -237,7 +237,7 @@ function Burst({ active }: { active: boolean }) {
           <img src={it.img} alt={it.title} className="size-full object-cover" />
         </motion.button>
       ))}
-      <p className="pointer-events-none absolute inset-x-0 top-1/2 z-20 -translate-y-1/2 text-center text-[22px] font-extralight leading-[1.6] text-black/80 tab:text-[40px]">
+      <p className="pointer-events-none absolute inset-x-0 top-1/2 z-20 -translate-y-1/2 text-center text-title-24 font-extralight leading-[1.6] text-black/80 tab:text-[40px]">
         意外とオモロい、網走。
       </p>
     </div>

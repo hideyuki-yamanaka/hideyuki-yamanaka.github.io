@@ -93,7 +93,7 @@ function HoverInfo({ it }: { it: EventItem }) {
         <p className="text-title-28 font-thin leading-[1.3] text-white">
           {it.title}
         </p>
-        <p className="text-body-14 font-extralight leading-[1.9] tracking-[0.7px] text-white/85">
+        <p className="text-body-14 font-extralight leading-[1.9] tracking-[0.05em] text-white/85">
           {it.body}
         </p>
         <span className="mt-1 flex items-center gap-1 text-body-14 font-extralight leading-[1.2] text-white transition-transform duration-300 ease-standard group-hover/hover:translate-x-[6px]">
@@ -460,7 +460,7 @@ function SideTextScene({
   return (
     <Frame>
       <p
-        className="pointer-events-none absolute whitespace-nowrap text-[70px] font-extralight leading-[1.6] text-black/80"
+        className="pointer-events-none absolute whitespace-nowrap text-[72px] font-extralight leading-[1.6] text-black/80"
         style={{ left: 133, top: 333, width: 348 }}
       >
         意外と
@@ -468,7 +468,7 @@ function SideTextScene({
         オモロい、
       </p>
       <p
-        className="pointer-events-none absolute whitespace-nowrap text-[90px] font-thin leading-none text-black/80"
+        className="pointer-events-none absolute whitespace-nowrap text-hero-88 font-thin leading-none text-black/80"
         style={{ left: 1135, top: 394, width: 180 }}
       >
         網走

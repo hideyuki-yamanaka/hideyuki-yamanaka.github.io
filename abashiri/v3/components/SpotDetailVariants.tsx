@@ -209,7 +209,7 @@ export function InfoTable({
              スマホ幅を突き破り、ページごと横スクロールしていた
              （2026-09-16 実測：375px で31px はみ出し） */}
           <dd
-            className={`min-w-0 whitespace-pre-line break-words text-body-14 font-extralight leading-[2] tracking-[0.7px] ${value}`}
+            className={`min-w-0 whitespace-pre-line break-words text-body-14 font-extralight leading-[2] tracking-[0.05em] ${value}`}
           >
             {row.value}
           </dd>
@@ -225,7 +225,7 @@ export function Points({ spot, light }: { spot: SpotDetail; light?: boolean }) {
       {spot.points.map((p) => (
         <li
           key={p}
-          className={`flex gap-3 text-body-14 font-extralight leading-[2] tracking-[0.7px] ${
+          className={`flex gap-3 text-body-14 font-extralight leading-[2] tracking-[0.05em] ${
             light ? "text-white" : "text-ink"
           }`}
         >
@@ -308,7 +308,7 @@ export function Sections({
           )}
           <p
             /* 大きさは調整パネルのつまみ（--dt-body） */
-            className={`text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] ${
+            className={`text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.0357em] ${
               light ? "text-white/90" : "text-ink/90"
             }`}
           >
@@ -392,12 +392,12 @@ export function HeroTitle({
         {spot.category} {spot.no}
       </p>
       <h1
-        className={`font-thin leading-none opacity-95 ${sm ? "text-title-34 sm:text-title-56" : "text-title-44 sm:text-hero-90"}`}
+        className={`font-thin leading-none opacity-95 ${sm ? "text-title-36 sm:text-title-56" : "text-title-44 sm:text-hero-88"}`}
       >
         {spot.name}
       </h1>
       <p
-        className={`font-extralight leading-[2] tracking-[0.7px] text-white/90 ${
+        className={`font-extralight leading-[2] tracking-[0.05em] text-white/90 ${
           sm ? "text-body-14" : "text-body-16"
         }`}
       >

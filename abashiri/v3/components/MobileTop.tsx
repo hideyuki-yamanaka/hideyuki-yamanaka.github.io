@@ -335,7 +335,7 @@ export default function MobileTop() {
           <h2 className="text-title-28 font-thin leading-[1.5] tab:text-title-44">
             {MSG_TITLE}
           </h2>
-          <div className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.3px] tab:mt-12 tab:space-y-8 tab:text-body-18">
+          <div className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.0214em] tab:mt-12 tab:space-y-8 tab:text-body-18 tab:tracking-[0.0167em]">
             {MSG_BLOCKS.map((lines, i) => (
               <p key={i}>
                 {lines.map((l, j) => (
@@ -374,7 +374,7 @@ export default function MobileTop() {
                 <p className="text-body-14 font-extralight tab:text-body-16">
                   ぼーっとスポット {spot.no}
                 </p>
-                <p className="mt-1 text-title-24 font-thin leading-tight tab:mt-2 tab:text-title-34">
+                <p className="mt-1 text-title-24 font-thin leading-tight tab:mt-2 tab:text-title-36">
                   {spot.title}
                 </p>
               </div>
@@ -385,7 +385,7 @@ export default function MobileTop() {
             </div>
             {/* ⚠️ タブレットで1行が長くなりすぎる（実測: 1024px幅で約66文字）ので
                 読みやすい行長（約40文字）で止める */}
-            <p className="text-body-14 font-extralight leading-[1.9] tracking-[0.3px] tab:max-w-[640px] tab:text-body-16 tab:leading-[2]">
+            <p className="text-body-14 font-extralight leading-[1.9] tracking-[0.0214em] tab:max-w-[640px] tab:text-body-16 tab:leading-[2] tab:tracking-[0.01875em]">
               {spot.body}
             </p>
           </button>
@@ -397,7 +397,7 @@ export default function MobileTop() {
         className="absolute inset-0 flex flex-col justify-center bg-white px-6 tab:px-[80px]"
         style={scene(6)}
       >
-        <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-34">
+        <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-36">
           なーんにもない、道東の土地、網走。
           <br />
           そこの味が沁みちゃうんです。

@@ -305,7 +305,7 @@ function Toc({
   useEffect(() => {
     const el = rows.current[active];
     if (!el) return;
-    setDotY(el.offsetTop + el.offsetHeight / 2 - 2.5);
+    setDotY(el.offsetTop + el.offsetHeight / 2 - 3); /* 印の高さ 6px の半分（2026-09-27 に 5→6px） */
   }, [active, items.length, kind]);
 
   return (
@@ -320,7 +320,7 @@ function Toc({
       )}
       {kind === "dot" && (
         <motion.span
-          className="absolute left-[-2px] size-[5px] rounded-full bg-ink"
+          className="absolute left-[-2.5px] size-[6px] rounded-full bg-ink"
           animate={{ top: dotY }}
           transition={{ duration: 0.55, ease: EASE }}
         />
@@ -686,7 +686,7 @@ function TocLayout({
                 </h3>
                 {/* 【2026-09-26 ヒデさん指示】「段落がコンテンツ幅より手前で折り返す。
                     写真の横幅まで伸ばして大丈夫」→ lg:max-w-[620px] を外し、写真と同じ幅に */}
-                <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.5px] text-ink/90">
+                <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.0357em] text-ink/90">
                   {s.text}
                 </p>
               </motion.section>

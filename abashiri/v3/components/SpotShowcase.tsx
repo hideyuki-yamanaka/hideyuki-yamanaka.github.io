@@ -229,7 +229,7 @@ export default function SpotShowcase({
                 <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
               </span>
             </div>
-            <p className="w-full text-body-14 font-extralight leading-[2.2] tracking-[0.7px] text-white">
+            <p className="w-full text-body-14 font-extralight leading-[2.2] tracking-[0.05em] text-white">
               {spot.body}
             </p>
           </motion.div>
@@ -254,7 +254,7 @@ export default function SpotShowcase({
               type="button"
               onClick={() => jumpTo(SPOTS.indexOf(th))}
               aria-label={th.title}
-              className="h-[110.442px] w-[164.845px] cursor-pointer overflow-hidden transition-transform duration-500 ease-standard hover:scale-[1.03]"
+              className="h-[112px] w-[168px] cursor-pointer overflow-hidden transition-transform duration-500 ease-standard hover:scale-[1.03]"
             >
               <img src={th.img} alt={th.title} className="size-full object-cover" />
             </button>

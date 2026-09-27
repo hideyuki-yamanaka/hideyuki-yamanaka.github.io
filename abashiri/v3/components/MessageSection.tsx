@@ -148,7 +148,7 @@ export default function MessageSection({
       >
         {/* 見出し：カンプ 15481:23022 の実測（Noto Sans JP Thin / Hero_90px / 行間1 / 白80%） */}
         <p
-          className="text-hero-90 whitespace-nowrap"
+          className="text-hero-88 whitespace-nowrap"
           style={{
             fontWeight: M.titleWeight,
             lineHeight: M.titleLeading,
@@ -159,7 +159,7 @@ export default function MessageSection({
         </p>
         {/* 本文：カンプ 15480:23019 の実測（Noto Sans JP Light 20px / 行間2 / 字間0.4px / 白） */}
         <div
-          className="mt-[120px] text-body-20 tracking-[0.4px]"
+          className="mt-[120px] text-body-20 tracking-[0.02em]"
           style={{ fontWeight: M.bodyWeight, lineHeight: M.bodyLeading }}
         >
           {BLOCKS.map((lines, bi) => (

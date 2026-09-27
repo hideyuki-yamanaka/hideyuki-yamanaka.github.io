@@ -77,8 +77,8 @@ const STAGE_W = 1512;
 const STAGE_H = 982;
 
 /* カンプ 15152:29215 の実寸 */
-const CARD_W = 902;
-const CARD_H = 586;
+const CARD_W = 904; /* カンプは 902。2026-09-27 に 4-7 で 904 に */
+const CARD_H = 588; /* カンプは 586。同 588 に */
 const CARD_GAP = 60;
 
 /* 導入の文字は、上から順に1ブロックずつブラーが晴れて出てくる。
@@ -214,7 +214,7 @@ function GlassButton({
 /*
  * カンプ 15152:29228 の実測
  *   器 … left 0.16 / top 239 / w 1512 / h 586
- *   カード … 902x586・角丸120・白フチ10px(60%)・gap 60
+ *   カード … 902x586・角丸120・白フチ10px(60%)・gap 60（実装は 2026-09-27 に 4-7 で 904x588）
  *   3枚の中心 … -206 / 756 / 1718 ＝ 中央カードは画面のど真ん中(1512/2=756)
  *
  * カードは3枚とも同じ比率・同じサイズ。カンプに拡大状態は無い。
@@ -223,7 +223,7 @@ function GlassButton({
  * 送りは自動をやめて、左右のシェブロンで手動。
  * 選べるのは中央のカードだけ（ボタンは中央にしか出さない）。
  */
-const STEP = CARD_W + CARD_GAP; /* カード1枚ぶんの送り幅 = 962 */
+const STEP = CARD_W + CARD_GAP; /* カード1枚ぶんの送り幅 = 964 */
 /* ホバーで触れると分かる程度に。カンプに拡大状態が無いので控えめに */
 const HOVER_SCALE = 1.01;
 
@@ -254,14 +254,14 @@ function SliderButton({
       type="button"
       onClick={onClick}
       aria-label={dir === "left" ? "前の場所へ" : "次の場所へ"}
-      /* 中央カードの左右の端に乗せる（半幅451 の 62px 内側 ＝ カードのフチから28px）。
+      /* 中央カードの左右の端に乗せる（半幅452 の 62px 内側 ＝ カードのフチから28px）。
          画面幅に依らないよう、器の中央からの相対位置で置く */
       style={{
         left: "50%",
         transform:
           dir === "left"
-            ? "translate(calc(-50% - 389px), -50%)"
-            : "translate(calc(-50% + 389px), -50%)",
+            ? "translate(calc(-50% - 390px), -50%)"
+            : "translate(calc(-50% + 390px), -50%)",
       }}
       /* v1.2: 地・枠をボタン共通仕様（white/10 + 白40%リング）に統一 */
       className="absolute top-1/2 z-20 flex size-[68px] cursor-pointer items-center justify-center rounded-full bg-white/10 ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/25"
@@ -423,8 +423,8 @@ function Pick({
         どこでぼーっとする？
       </motion.p>
 
-      {/* カンプ 15152:29228: top 239 / h 586。拡大しないのでカンプの実寸そのまま */}
-      <div className="absolute left-0 top-[239px] h-[586px] w-full">
+      {/* カンプ 15152:29228: top 239 / h 586 → 2026-09-27 に 4-7 で 588（カードの高さ CARD_H と同じ値）。拡大はしない */}
+      <div className="absolute left-0 top-[239px] h-[588px] w-full">
         {/* ⚠️ ここに overflow-hidden を付けない：ホバーの拡大分が上下で
             見切れる（2026-08-23 ヒデさん報告）。横のはみ出しはステージの
             ルート（ExperienceFlow直下の overflow-hidden）が刈ってくれる */}

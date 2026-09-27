@@ -114,7 +114,7 @@ function Card({ card }: { card: GourmetCard }) {
               <img src="/img/icon-view-more.svg" alt="" className="size-[16px]" />
             </span>
           </div>
-          <p className="w-full text-body-14 font-extralight leading-[2] tracking-[0.7px] text-white">
+          <p className="w-full text-body-14 font-extralight leading-[2] tracking-[0.05em] text-white">
             {card.body}
           </p>
         </div>

@@ -22,7 +22,7 @@ const PICKS = [
   { id: "himawari", label: "大曲湖畔園地ひまわり畑", no: "04", img: "/img/spot/himawari-1.webp" },
 ];
 const VIDEO_IDX = PICKS.findIndex((p) => p.video);
-const CARD_W = 300; // カード幅（PC 902 のレスポンシブ縮小）
+const CARD_W = 300; // カード幅（PC 904 のレスポンシブ縮小）
 
 type EnterRect = { top: number; left: number; width: number; height: number };
 
@@ -197,7 +197,7 @@ export default function MobileExperience() {
             {/* タブレット（744px以上）は画面が大きいので一段大きく組む
                 （2026-09-17 タブレット対応。実測: 1024x1366 で本文14pxは小さすぎた） */}
             <p className="text-body-14 font-light tab:text-body-16">網走に来る前に、まずやってみよう</p>
-            <p className="mt-2 text-title-34 font-thin tab:mt-3 tab:text-title-56">ぼーっと体験</p>
+            <p className="mt-2 text-title-36 font-thin tab:mt-3 tab:text-title-56">ぼーっと体験</p>
             <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9] tab:mt-14 tab:space-y-7 tab:text-body-18 tab:leading-[2]">
               <p>網走は何もないけど、それがたまらない。</p>
               <p>
@@ -244,7 +244,7 @@ export default function MobileExperience() {
                 ref={(el) => {
                   cardEls.current[i] = el;
                 }}
-                className={`relative aspect-[902/586] shrink-0 snap-center overflow-hidden rounded-28 border-[3px] border-white/60 transition-opacity duration-300 ${
+                className={`relative aspect-[904/588] shrink-0 snap-center overflow-hidden rounded-28 border-[3px] border-white/60 transition-opacity duration-300 ${
                   i === pickIdx ? "opacity-100" : "opacity-55"
                 }`}
                 style={{ width: CARD_W }}
@@ -258,7 +258,7 @@ export default function MobileExperience() {
           <div className="mt-7 flex flex-col items-center gap-5 px-6">
             <div className="flex flex-col items-center">
               <p className="text-body-14 font-extralight tab:text-body-16">ぼーっとスポット {active.no}</p>
-              <p className="mt-1 text-title-24 font-thin tab:mt-2 tab:text-title-34">{active.label}</p>
+              <p className="mt-1 text-title-24 font-thin tab:mt-2 tab:text-title-36">{active.label}</p>
             </div>
             {active.video ? (
               <button

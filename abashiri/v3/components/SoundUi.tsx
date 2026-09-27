@@ -331,7 +331,7 @@ export default function SoundUi({
                   }
                 }}
                 aria-pressed={active}
-                className={`font-num flex h-7 w-[90px] cursor-pointer items-center justify-center gap-1 rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
+                className={`font-num flex h-7 w-[88px] cursor-pointer items-center justify-center gap-1 rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
                   active
                     ? "bgm-seg-active bg-brand text-white"
                     : "bgm-seg-inactive text-white/50 hover:text-white/80"
@@ -364,7 +364,7 @@ export default function SoundUi({
               {/* 音量インジケーター：ONが鳴っている状態でもう一度ONを押すと出る。
                   スイッチと同じ白ガラスのピルに、スピーカー小アイコン＋スライダー＋% */}
               <div
-                className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[184px] items-center gap-2 rounded-full bg-white/40 py-[6px] pl-3 pr-4 backdrop-blur-65 transition-all duration-300 ease-standard ${
+                className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[180px] items-center gap-2 rounded-full bg-white/40 py-[6px] pl-3 pr-4 backdrop-blur-65 transition-all duration-300 ease-standard ${
                   showVol
                     ? "pointer-events-auto translate-y-0 opacity-100"
                     : "pointer-events-none -translate-y-1 opacity-0"
