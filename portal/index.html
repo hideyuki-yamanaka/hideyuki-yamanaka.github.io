@@ -21,17 +21,17 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   .lock-box h1 {
-    font-size: 1.2rem;
+    font-size: 1.25rem; /* 2026-09-27 4-7 で 19.2→20px */
     letter-spacing: 4px;
     margin-bottom: 24px;
     color: #fff;
   }
   .lock-box input {
     width: 220px;
-    padding: 10px 40px 10px 14px;
+    padding: 10px 40px 10px 16px;
     border: 1px solid #333;
     border-radius: 8px;
-    background: #161616;
+    background: #141414; /* 2026-09-27 #161616→カードの面と同じ色（色の差0.6） */
     color: #fff;
     font-size: 1rem;
     text-align: center;
@@ -54,8 +54,8 @@
     justify-content: center;
     transition: color 0.15s;
   }
-  .pw-toggle:hover { color: #aaa; }
-  .pw-toggle svg { width: 18px; height: 18px; display: block; }
+  .pw-toggle:hover { color: #b0b0b0; } /* 2026-09-27 #aaa→制作期間の文字と同じ色（色の差1.7） */
+  .pw-toggle svg { width: 16px; height: 16px; display: block; }
   .pw-toggle .icon-off { display: none; }
   .pw-toggle.shown .icon-on { display: none; }
   .pw-toggle.shown .icon-off { display: block; }
@@ -92,14 +92,14 @@
     margin-bottom: 48px;
   }
   header h1 {
-    font-size: 1.8rem;
+    font-size: 1.75rem; /* 2026-09-27 4-7 で 28.8→28px */
     font-weight: 700;
     color: #fff;
     margin-bottom: 8px;
     letter-spacing: 0.5px;
   }
   header p {
-    font-size: 0.85rem;
+    font-size: 0.875rem; /* 13.6→14px */
     color: #666;
   }
 
@@ -124,7 +124,7 @@
     min-height: 200px;
   }
   .product:hover {
-    background: #1a1a1a;
+    background: #1a1a1a; /* 4-7例外（ホバーで少し明るくなる色。似た色の #141414 にまとめるとホバーの変化が消える） */
     border-color: #444;
     transform: translateY(-2px);
   }
@@ -152,7 +152,7 @@
     letter-spacing: 0.2px;
   }
   .product-period {
-    font-size: 0.95rem;
+    font-size: 1rem; /* 2026-09-27 4-7 で 15.2→16px */
     color: #b0b0b0;
     font-weight: 500;
     letter-spacing: 0.3px;
@@ -170,17 +170,17 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 16px;
     }
-    .product { padding: 24px 20px; min-height: 160px; gap: 14px; }
+    .product { padding: 24px 20px; min-height: 160px; gap: 16px; }
     .product-icon { width: 60px; height: 60px; font-size: 2rem; }
     .product-name { font-size: 1rem; }
-    .product-period { font-size: 0.8rem; }
+    .product-period { font-size: 0.75rem; } /* 12.8→12px */
   }
   @media (max-width: 480px) {
-    header h1 { font-size: 1.3rem; }
+    header h1 { font-size: 1.25rem; } /* 20.8→20px */
     .products { gap: 12px; }
     .product { padding: 20px 16px; min-height: 140px; }
-    .product-icon { width: 52px; height: 52px; font-size: 1.7rem; }
-    .product-name { font-size: 0.9rem; }
+    .product-icon { width: 52px; height: 52px; font-size: 1.75rem; } /* 27.2→28px */
+    .product-name { font-size: 0.875rem; } /* 14.4→14px */
     .product-period { font-size: 0.75rem; }
   }
 

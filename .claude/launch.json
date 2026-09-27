@@ -41,7 +41,7 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-c",
-        "cd /tmp/akijikan_preview && exec python3 -m http.server 8766"
+        "cd '/Users/hideyuki/Developer/Claude Code/akijikan-mitsukeru-kun' && exec python3 -m http.server 8766"
       ],
       "port": 8766
     },
@@ -230,6 +230,19 @@
       ],
       "port": 3095,
       "cwd": "abashiri/v3"
+    },
+    {
+      "name": "nittei-chousei",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3291"
+      ],
+      "port": 3291,
+      "cwd": "nittei-chousei"
     }
   ]
 }

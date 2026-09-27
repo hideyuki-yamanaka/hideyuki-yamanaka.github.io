@@ -227,7 +227,7 @@ body {
   height: 2px;
   background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.6), transparent);
   animation: scanLine 2s ease-in-out infinite;
-  border-radius: 1px;
+  border-radius: 999px;
 }
 .ai-card-stagger {
   animation: fadeInStagger 0.4s ease-out both;

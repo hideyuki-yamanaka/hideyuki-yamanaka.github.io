@@ -8,7 +8,7 @@ import type { DraftSpot } from '../lib/trip-review';
 function MissingBadge({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-orange-50 border border-dashed border-orange-300 text-orange-500 font-medium">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
       </svg>
       {label}
@@ -114,7 +114,7 @@ export default function DraftEditForm({ draft, onSave, onBack }: DraftEditFormPr
           onClick={onBack}
           className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3c3c43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3c3c43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>

@@ -486,7 +486,7 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
                         <MessageCircle className="w-4 h-4 text-purple-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] text-gray-700 truncate">{sessionTitle(s)}</p>
+                        <p className="text-[14px] text-gray-700 truncate">{sessionTitle(s)}</p>
                         <p className="text-[11px] text-gray-400">{timeAgo(s.updatedAt)}・{s.messages.length}件</p>
                       </div>
                     </button>
