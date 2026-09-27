@@ -1154,11 +1154,11 @@ const DEV_STYLES = [
    値は params.sections.dev.stv[まとまりのkey][項目のkey] に入る(案を切り替えても各案の値が残る)。
    css() が返した文字列を #dev の CSS 変数に入れる＝CSS 側は var() を読むだけ */
 const DEV_DYN_SPEC = {
-  '11': { title: 'この案の調整（ネオンが一周する）', on: ['11'], rows: [
-    { k: 'dir', seg: [['反時計回り', 'ccw'], ['時計回り', 'cw']], label: '光の向き', def: 'ccw', v: '--dm-run-dir', css: v => (v === 'cw' ? 'normal' : 'reverse') },
-    { k: 'sec', label: '光が1周する時間', min: 2, max: 24, step: 0.5, def: 6, v: '--dm-run-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '短いほど速く走ります。' },
-    { k: 'len', label: '光の長さ', min: 0.06, max: 0.7, step: 0.02, def: 0.28, v: '--dm-run-len', css: v => v + 'turn', fmt: v => Math.round(v * 100) + '%', hint: '縁1周のうち何割を光が占めるか。短いと点に近く、長いと帯になります。' },
-    { k: 'w', label: '光の太さ', min: 1, max: 6, step: 0.5, def: 2, v: '--dm-run-w', css: v => v + 'px', fmt: v => v.toFixed(1) + 'px', hint: '縁取りの太さ。' },
+  '11': { title: 'この案の調整（ネオンの光が一周する）', on: ['11'], rows: [
+    { k: 'dir', seg: [['反時計回り', 'ccw'], ['時計回り', 'cw']], label: '向き', def: 'ccw', v: '--dm-run-dir', css: v => (v === 'cw' ? 'normal' : 'reverse') },
+    { k: 'sec', label: '1周する時間', min: 2, max: 24, step: 0.5, def: 6, v: '--dm-run-sec', css: v => v + 's', fmt: v => v.toFixed(1) + '秒', hint: '短いほど速く走ります。' },
+    { k: 'len', label: '長さ', min: 0.06, max: 0.7, step: 0.02, def: 0.28, v: '--dm-run-len', css: v => v + 'turn', fmt: v => Math.round(v * 100) + '%', hint: '縁1周のうち何割を光が占めるか。短いと点に近く、長いと帯になります。' },
+    { k: 'w', label: '太さ', min: 1, max: 6, step: 0.5, def: 2, v: '--dm-run-w', css: v => v + 'px', fmt: v => v.toFixed(1) + 'px', hint: '縁取りの太さ。' },
   ] },
 };
 /* ガラス(後ろが透ける)案 = 地色を敷いて後ろのカードをぼかす対象 */

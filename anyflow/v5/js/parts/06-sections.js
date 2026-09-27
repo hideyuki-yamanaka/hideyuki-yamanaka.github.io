@@ -2092,12 +2092,12 @@ function mkReset(get, set, sync, isLive) {
 const TEXT_SPEC = [
   // --- ヘッダー(KVタブに出す) ---
   { key: 'navLogo',   sel: '.logo',                  name: 'ロゴ',                          sec: 'kv',  text: 0, font: 0 },
-  { key: 'navLinks',  sel: 'header nav a:not(.cta)', name: 'ヘッダーのナビ',                sec: 'kv',  text: 0, multi: 1, move: 0 },
-  { key: 'navCta',    sel: 'header .cta',            name: 'ヘッダーのボタン',              sec: 'kv',  text: 1 },
+  { key: 'navLinks',  sel: 'header nav a:not(.cta)', name: 'ヘッダーのナビ', pg: 'ヘッダー', pl: 'ナビ',                sec: 'kv',  text: 0, multi: 1, move: 0 },
+  { key: 'navCta',    sel: 'header .cta',            name: 'ヘッダーのボタン', pg: 'ヘッダー', pl: 'ボタン',              sec: 'kv',  text: 1 },
   // --- キービジュアル ---
-  { key: 'kvMain',    sel: '.hl-main',   name: 'KVメインコピー（データ連携で〜）',        sec: 'kv',  text: 0 },
-  { key: 'kvMainLast', sel: '.hl-main .hl-line:last-child', name: 'KVメイン 最終行（競争力を）', sec: 'kv', text: 0, move: 0 },   /* 【2026-09-18】Figma 17707:26040 では最終行だけ Bold(700) */
-  { key: 'kvEyebrow', sel: '#hlEyebrow', name: 'KVサブコピー（AI/プロダクト企業の〜）',    sec: 'kv',  text: 0 },
+  { key: 'kvMain',    sel: '.hl-main',   name: 'KVメインコピー（データ連携で〜）', pg: 'コピー', pl: 'メイン（データ連携で〜）',        sec: 'kv',  text: 0 },
+  { key: 'kvMainLast', sel: '.hl-main .hl-line:last-child', name: 'KVメイン 最終行（競争力を）', pg: 'コピー', pl: 'メインの最終行（競争力を）', sec: 'kv', text: 0, move: 0 },   /* 【2026-09-18】Figma 17707:26040 では最終行だけ Bold(700) */
+  { key: 'kvEyebrow', sel: '#hlEyebrow', name: 'KVサブコピー（AI/プロダクト企業の〜）', pg: 'コピー', pl: 'サブ（AI/プロダクト企業の〜）',    sec: 'kv',  text: 0 },
   { key: 'kvLogos',   sel: '.logos',     name: 'KVロゴ帯（位置だけ）',                      sec: 'kv',  text: 0, font: 0 },
   // --- ビジョン ---
   { key: 'visLabel',  sel: '#visLabel',      name: 'Our Vision',                         sec: 'vis', text: 1 },
@@ -2105,38 +2105,38 @@ const TEXT_SPEC = [
   { key: 'vfWrap',    sel: '#vfWrap',        name: '図（網目のドーム・位置だけ）',        sec: 'vis', text: 0, font: 0 },   /* 【2026-09-19】Figma 18004:38228 */
   /* 【2026-09-19 ヒデさん依頼】図の機能名と補足は1つずつ(太さ・行間・字間・サイズ・文字・位置)。カンプ: 機能名 Noto Medium 16px / 補足 Regular 8px */
   { key: 'vfLab1',    sel: '#vfLab1',       name: '図の機能名①（コネクタ・組ごと位置）', sec: 'vis', text: 0, font: 0 },
-  { key: 'vfL1',      sel: '#vfL1',         name: '図の機能名① コネクタ',        sec: 'vis', text: 1 },
-  { key: 'vfL1s',     sel: '#vfL1s',        name: '図の補足① 外部サービスをつなぐ',          sec: 'vis', text: 1 },
+  { key: 'vfL1',      sel: '#vfL1',         name: '図の機能名① コネクタ', pg: '図（機能名と補足）', pl: '① コネクタ',        sec: 'vis', text: 1 },
+  { key: 'vfL1s',     sel: '#vfL1s',        name: '図の補足① 外部サービスをつなぐ', pg: '図（機能名と補足）', pl: '① 補足（外部サービスをつなぐ）',          sec: 'vis', text: 1 },
   { key: 'vfLab2',    sel: '#vfLab2',       name: '図の機能名②（認証ウィザード・組ごと位置）', sec: 'vis', text: 0, font: 0 },
-  { key: 'vfL2',      sel: '#vfL2',         name: '図の機能名② 認証ウィザード',        sec: 'vis', text: 1 },
-  { key: 'vfL2s',     sel: '#vfL2s',        name: '図の補足② 認証設定を支える',          sec: 'vis', text: 1 },
+  { key: 'vfL2',      sel: '#vfL2',         name: '図の機能名② 認証ウィザード', pg: '図（機能名と補足）', pl: '② 認証ウィザード',        sec: 'vis', text: 1 },
+  { key: 'vfL2s',     sel: '#vfL2s',        name: '図の補足② 認証設定を支える', pg: '図（機能名と補足）', pl: '② 補足（認証設定を支える）',          sec: 'vis', text: 1 },
   { key: 'vfLab3',    sel: '#vfLab3',       name: '図の機能名③（SDK・組ごと位置）', sec: 'vis', text: 0, font: 0 },
-  { key: 'vfL3',      sel: '#vfL3',         name: '図の機能名③ SDK',        sec: 'vis', text: 1 },
-  { key: 'vfL3s',     sel: '#vfL3s',        name: '図の補足③ 開発環境に組み込む',          sec: 'vis', text: 1 },
+  { key: 'vfL3',      sel: '#vfL3',         name: '図の機能名③ SDK', pg: '図（機能名と補足）', pl: '③ SDK',        sec: 'vis', text: 1 },
+  { key: 'vfL3s',     sel: '#vfL3s',        name: '図の補足③ 開発環境に組み込む', pg: '図（機能名と補足）', pl: '③ 補足（開発環境に組み込む）',          sec: 'vis', text: 1 },
   { key: 'vfLab4',    sel: '#vfLab4',       name: '図の機能名④（ワークフロー・組ごと位置）', sec: 'vis', text: 0, font: 0 },
-  { key: 'vfL4',      sel: '#vfL4',         name: '図の機能名④ ワークフロー',        sec: 'vis', text: 1 },
-  { key: 'vfL4s',     sel: '#vfL4s',        name: '図の補足④ 連携処理を組み立てる',          sec: 'vis', text: 1 },
+  { key: 'vfL4',      sel: '#vfL4',         name: '図の機能名④ ワークフロー', pg: '図（機能名と補足）', pl: '④ ワークフロー',        sec: 'vis', text: 1 },
+  { key: 'vfL4s',     sel: '#vfL4s',        name: '図の補足④ 連携処理を組み立てる', pg: '図（機能名と補足）', pl: '④ 補足（連携処理を組み立てる）',          sec: 'vis', text: 1 },
   { key: 'vfLab5',    sel: '#vfLab5',       name: '図の機能名⑤（実行エンジン・組ごと位置）', sec: 'vis', text: 0, font: 0 },
-  { key: 'vfL5',      sel: '#vfL5',         name: '図の機能名⑤ 実行エンジン',        sec: 'vis', text: 1 },
-  { key: 'vfL5s',     sel: '#vfL5s',        name: '図の補足⑤ 処理を実行する',          sec: 'vis', text: 1 },
+  { key: 'vfL5',      sel: '#vfL5',         name: '図の機能名⑤ 実行エンジン', pg: '図（機能名と補足）', pl: '⑤ 実行エンジン',        sec: 'vis', text: 1 },
+  { key: 'vfL5s',     sel: '#vfL5s',        name: '図の補足⑤ 処理を実行する', pg: '図（機能名と補足）', pl: '⑤ 補足（処理を実行する）',          sec: 'vis', text: 1 },
   { key: 'vfLogo',    sel: '#vfLogo',        name: '図のロゴ（位置だけ。大きさはビジョンタブ③）', sec: 'vis', text: 0, font: 0 },
-  { key: 'p1tag',     sel: '#valP1 .vp-tag', name: 'Point 01 ラベル',                    sec: 'vis', text: 1 },
-  { key: 'p1h',       sel: '#valP1 h3',      name: 'Point 01 見出し',                    sec: 'vis', text: 1 },
-  { key: 'p1p',       sel: '#valP1 p',       name: 'Point 01 本文',                      sec: 'vis', text: 1 },
-  { key: 'p2tag',     sel: '#valP2 .vp-tag', name: 'Point 02 ラベル',                    sec: 'vis', text: 1 },
-  { key: 'p2h',       sel: '#valP2 h3',      name: 'Point 02 見出し',                    sec: 'vis', text: 1 },
-  { key: 'p2p',       sel: '#valP2 p',       name: 'Point 02 本文',                      sec: 'vis', text: 1 },
+  { key: 'p1tag',     sel: '#valP1 .vp-tag', name: 'Point 01 ラベル', pg: 'Point 01', pl: 'ラベル',                    sec: 'vis', text: 1 },
+  { key: 'p1h',       sel: '#valP1 h3',      name: 'Point 01 見出し', pg: 'Point 01', pl: '見出し',                    sec: 'vis', text: 1 },
+  { key: 'p1p',       sel: '#valP1 p',       name: 'Point 01 本文', pg: 'Point 01', pl: '本文',                      sec: 'vis', text: 1 },
+  { key: 'p2tag',     sel: '#valP2 .vp-tag', name: 'Point 02 ラベル', pg: 'Point 02', pl: 'ラベル',                    sec: 'vis', text: 1 },
+  { key: 'p2h',       sel: '#valP2 h3',      name: 'Point 02 見出し', pg: 'Point 02', pl: '見出し',                    sec: 'vis', text: 1 },
+  { key: 'p2p',       sel: '#valP2 p',       name: 'Point 02 本文', pg: 'Point 02', pl: '本文',                      sec: 'vis', text: 1 },
   // --- 実績 ---
-  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for SaaS / for AI（小ラベル）',              sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for SaaS / for AI（小ラベル）の Product', sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for SaaS / for AI（大きい英字）',            sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for SaaS / for AI（大）の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
-  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（リアルタイムに〜／コンテキスト取得〜）', sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vP',      sel: '.r2v-p',     name: '価値の本文',                                 sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'resHl1',    sel: '#resHl1',    name: '推進力の見出し 1行目（事業の推進力を、）',    sec: 'res', text: 1 },
-  { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
-  { key: 'statsLab',  sel: '.res2-stats .r2s b',    name: '数字のラベル（導入企業 など）',    sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'statsVal',  sel: '.res2-stats .r2s span', name: '数字（100+ など）',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for SaaS / for AI（小ラベル）', pg: 'for SaaS / for AI', pl: '小ラベル',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for SaaS / for AI（小ラベル）の Product', pg: 'for SaaS / for AI', pl: '小ラベルの Product', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for SaaS / for AI（大きい英字）', pg: 'for SaaS / for AI', pl: '大きい英字',            sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for SaaS / for AI（大）の Product', pg: 'for SaaS / for AI', pl: '大きい英字の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
+  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（リアルタイムに〜／コンテキスト取得〜）', pg: '2つの価値', pl: '見出し（リアルタイムに〜／コンテキスト取得〜）', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vP',      sel: '.r2v-p',     name: '価値の本文', pg: '2つの価値', pl: '本文',                                 sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'resHl1',    sel: '#resHl1',    name: '推進力の見出し 1行目（事業の推進力を、）', pg: '推進力の見出し', pl: '1行目（事業の推進力を、）',    sec: 'res', text: 1 },
+  { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）', pg: '推進力の見出し', pl: '2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
+  { key: 'statsLab',  sel: '.res2-stats .r2s b',    name: '数字のラベル（導入企業 など）', pg: '数字', pl: 'ラベル（導入企業 など）',    sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'statsVal',  sel: '.res2-stats .r2s span', name: '数字（100+ など）', pg: '数字', pl: '値（100+ など）',              sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
@@ -2144,37 +2144,37 @@ const TEXT_SPEC = [
   { key: 'figAi',     sel: '#valAi',     name: 'for AI の図（位置だけ）',                    sec: 'res', text: 0, font: 0, rel: 1 },
   // --- 開発者体験 ---
   { key: 'dcLabel',   sel: '.dc-label',  name: 'Strength 01 / 02',                          sec: 'dev', text: 0, multi: 1 },
-  { key: 'dcOne',     sel: '.dc-one',    name: '見出し（自動生成で〜／開発環境〜）',          sec: 'dev', text: 0, multi: 1 },
-  { key: 'dsWord',    sel: '.ds-word',   name: '見出しのスロット（CLI / SDK / API）',          sec: 'dev', text: 0, multi: 1, move: 0 },   /* 2026-09-18 コンプ: SF Pro Medium(500) 34px */
-  { key: 'dlHead',    sel: '.dl-head b', name: 'リストの見出し（CLI / SDK / API）',           sec: 'dev', text: 0, multi: 1, move: 0 },
-  { key: 'dlBody',    sel: '.dl-item p', name: 'リストの説明文',                              sec: 'dev', text: 0, multi: 1, move: 0 },
+  { key: 'dcOne',     sel: '.dc-one',    name: '見出し（自動生成で〜／開発環境〜）', pg: '見出し', pl: 'テキスト（自動生成で〜／開発環境〜）',          sec: 'dev', text: 0, multi: 1 },
+  { key: 'dsWord',    sel: '.ds-word',   name: '見出しのスロット（CLI / SDK / API）', pg: '見出し', pl: 'スロット（CLI / SDK / API）',          sec: 'dev', text: 0, multi: 1, move: 0 },   /* 2026-09-18 コンプ: SF Pro Medium(500) 34px */
+  { key: 'dlHead',    sel: '.dl-head b', name: 'リストの見出し（CLI / SDK / API）', pg: 'リスト（CLI / SDK / API）', pl: '見出し',           sec: 'dev', text: 0, multi: 1, move: 0 },
+  { key: 'dlBody',    sel: '.dl-item p', name: 'リストの説明文', pg: 'リスト（CLI / SDK / API）', pl: '説明文',                              sec: 'dev', text: 0, multi: 1, move: 0 },
   { key: 'devMock1',  sel: '#devMock1',  name: 'Strength 01 のモック（位置だけ）',           sec: 'dev', text: 0, font: 0, rel: 1 },
   { key: 'devMock',   sel: '#devMock',   name: 'Strength 02 のモック（位置だけ）',           sec: 'dev', text: 0, font: 0, rel: 1 },
   // --- 導入事例 ---
   { key: 'caseEyebrow', sel: '#caseEyebrow', name: 'Use Case',                              sec: 'case', text: 1 },
   { key: 'caseTitle', sel: '#caseTitle',  name: '導入事例（見出し）',                        sec: 'case', text: 1 },
-  { key: 'cgQuote',   sel: '.cg-quote',   name: 'カードの一言',                              sec: 'case', text: 0, multi: 1, move: 0 },
-  { key: 'cgTag',     sel: '.cg-tag',     name: 'カードの業種タグ',                          sec: 'case', text: 0, multi: 1, move: 0 },
-  { key: 'cgCompany', sel: '.cg-company', name: 'カードの会社名',                            sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'cgQuote',   sel: '.cg-quote',   name: 'カードの一言', pg: 'カード', pl: '一言',                              sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'cgTag',     sel: '.cg-tag',     name: 'カードの業種タグ', pg: 'カード', pl: '業種タグ',                          sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'cgCompany', sel: '.cg-company', name: 'カードの会社名', pg: 'カード', pl: '会社名',                            sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'caseGrid',  sel: '#caseGrid',   name: '事例カード4枚（位置だけ）',                 sec: 'case', text: 0, font: 0, rel: 1 },
   // --- お問い合わせ ---
   { key: 'cvEyebrow', sel: '.cv-eyebrow', name: 'Contact',                                  sec: 'cv',  text: 1 },
-  { key: 'cvHead',    sel: '.cv-head',    name: 'お問い合わせ（見出し）',                    sec: 'cv',  text: 1 },
-  { key: 'cvSub',     sel: '.cv-sub',     name: 'お問い合わせの本文',                        sec: 'cv',  text: 0 },
-  { key: 'cvfLab',    sel: '.cvf-lab',    name: 'フォームの項目名',                          sec: 'cv',  text: 0, multi: 1, move: 0 },
-  { key: 'cvfIn',     sel: '.cvf-in',     name: 'フォームの入力欄',                          sec: 'cv',  text: 0, multi: 1, move: 0 },
-  { key: 'cvfFine',   sel: '.cvf-fine',   name: 'メルマガの注記',                            sec: 'cv',  text: 1 },
-  { key: 'cvfSubmit', sel: '.cvf-submit', name: '送信ボタン',                                sec: 'cv',  text: 1 },
+  { key: 'cvHead',    sel: '.cv-head',    name: 'お問い合わせ（見出し）', pl: '見出し（お問い合わせ）',                    sec: 'cv',  text: 1 },
+  { key: 'cvSub',     sel: '.cv-sub',     name: 'お問い合わせの本文', pl: '本文',                        sec: 'cv',  text: 0 },
+  { key: 'cvfLab',    sel: '.cvf-lab',    name: 'フォームの項目名', pg: 'フォーム', pl: '項目名',                          sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'cvfIn',     sel: '.cvf-in',     name: 'フォームの入力欄', pg: 'フォーム', pl: '入力欄',                          sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'cvfFine',   sel: '.cvf-fine',   name: 'メルマガの注記', pg: 'フォーム', pl: 'メルマガの注記',                            sec: 'cv',  text: 1 },
+  { key: 'cvfSubmit', sel: '.cvf-submit', name: '送信ボタン', pg: 'フォーム', pl: '送信ボタン',                                sec: 'cv',  text: 1 },
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
   { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
-  { key: 'footNav',   sel: '.cv-foot-nav a', name: 'フッターのナビ',                         sec: 'cv',  text: 0, multi: 1, move: 0 },
-  { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所',                         sec: 'cv',  text: 1 },
-  { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト',                           sec: 'cv',  text: 1 },
+  { key: 'footNav',   sel: '.cv-foot-nav a', name: 'フッターのナビ', pg: 'フッター', pl: 'ナビ',                         sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所', pg: 'フッター', pl: '住所',                         sec: 'cv',  text: 1 },
+  { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト', pg: 'フッター', pl: 'コピーライト',                           sec: 'cv',  text: 1 },
   // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---
-  { key: 'drwNav',    sel: '.hdr-drawer-nav a:not(.hdr-drawer-cta)', name: 'メニューの項目（ビジョン など）', sec: 'menu', text: 0, multi: 1, move: 0 },
-  { key: 'drwNum',    sel: '.hdr-drawer-nav .hdr-drawer-num', name: 'メニューの番号（01〜04）',           sec: 'menu', text: 0, multi: 1, move: 0 },
-  { key: 'drwCta',    sel: '.hdr-drawer-cta', name: 'メニューのお問い合わせボタン',              sec: 'menu', text: 0, move: 0 },
+  { key: 'drwNav',    sel: '.hdr-drawer-nav a:not(.hdr-drawer-cta)', name: 'メニューの項目（ビジョン など）', pl: '項目（ビジョン など）', sec: 'menu', text: 0, multi: 1, move: 0 },
+  { key: 'drwNum',    sel: '.hdr-drawer-nav .hdr-drawer-num', name: 'メニューの番号（01〜04）', pl: '番号（01〜04）',           sec: 'menu', text: 0, multi: 1, move: 0 },
+  { key: 'drwCta',    sel: '.hdr-drawer-cta', name: 'メニューのお問い合わせボタン', pl: 'お問い合わせボタン',              sec: 'menu', text: 0, move: 0 },
 ];
 
 function slider(label, min, max, step, get, set, fmt, hint, opts) {
@@ -2654,6 +2654,15 @@ function note(text) {
 /* 選んだ内容で文言が変わる説明。パネルを作り直さずに文字だけ差し替えるための版。
    (2026-08-27 ヒデさん指定「リロードは一切挟まない」)
    高さを固定枠にしてあるので、文言が変わっても下の行は動かない。 */
+/* 【2026-09-27 ヒデさん依頼】見出しの中の小見出し(まとまり)。同じ言葉で始まる項目が並ぶ時は、その言葉をここに出して
+   項目名からは外す(「カードの枠線の色」→ 小見出し「枠線」の「色」)。↺リセットは親の見出しのまま効く。 */
+function subgroup(label, fn) {
+  const g = document.createElement('div'); g.className = 'cv-subg';
+  if (label) { const l = document.createElement('div'); l.className = 'cv-subg-lab'; l.textContent = label; g.appendChild(l); }
+  (mount || body).appendChild(g);
+  const prev = mount; mount = g; try { fn(); } finally { mount = prev; }
+  return g;
+}
 function noteLive(getText, minH) {
   const d = note(getText());
   d.style.minHeight = minH || '2.6em';
@@ -2729,7 +2738,7 @@ st.textContent = '.txt-row{align-items:flex-start}'
   }
   const row = document.createElement('div');
   row.className = 'row txt-row';
-  const lab = document.createElement('label'); lab.textContent = sp.name; lab.title = sp.sel; row.appendChild(lab);
+  const lab = document.createElement('label'); lab.textContent = sp.pl || sp.name; lab.title = sp.name + '（' + sp.sel + '）'; row.appendChild(lab);   /* 【2026-09-27】パネルは小見出し(pg)＋短い名前(pl)。✏️編集の浮きバーは単独で出るので name(長い名前)のまま */
   const box = document.createElement('div'); box.className = 'txt-ctl';
   row.dataset.key = sp.key;   /* 【2026-09-20】スマホ上書きの印付け(markMbOverrides)で使う */
   /* 【2026-09-20 ヒデさん依頼・PC/SP独立】書き込み先を切り替える:
@@ -2820,7 +2829,14 @@ st.textContent = '.txt-row{align-items:flex-start}'
 }
 /* セクション(sec)の文字を全部並べる。font:0(位置だけの要素)は出さない */
 function textRowsFor(secs) {
-  TEXT_SPEC.filter(sp => secs.includes(sp.sec) && sp.font !== 0).forEach(textRow);
+  /* 【2026-09-27 ヒデさん依頼】pg(小見出し)が同じ行が続いたら subgroup にまとめる＝項目名で同じ言葉をくり返さない */
+  const list = TEXT_SPEC.filter(sp => secs.includes(sp.sec) && sp.font !== 0);
+  for (let i = 0; i < list.length;) {
+    const g = list[i].pg;
+    if (!g) { textRow(list[i]); i++; continue; }
+    const run = []; while (i < list.length && list[i].pg === g) run.push(list[i++]);
+    subgroup(g, () => run.forEach(textRow));
+  }
 }
 
 /* 【2026-09-18 ヒデさん指定】する/しない以外の「案を選ぶ」行は、全部 ⋯(削除)付きの varRowX に統一する。
