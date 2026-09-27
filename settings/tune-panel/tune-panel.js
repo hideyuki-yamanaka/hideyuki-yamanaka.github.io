@@ -113,6 +113,39 @@
     return { lo: lo, hi: hi };
   }
 
+  /* ── デザインの数値の決まり（ルール集 RULES.md 4-7・2026-09-27 ヒデさん）──
+     余白・サイズ・角丸・文字サイズの px のつまみは、4の倍数（10px以下は2刻み・文字は14と18も可）に止まる。
+     種類は項目の grid（'spacing'|'size'|'radius'|'fontSize'|false）で決める。無ければ単位が px の項目だけ、名前から見分ける。
+     位置（X/Y/Z・ずらし）・秒・%・倍率・影・ぼかし・線幅などは止めない（決まりの外）。 */
+  function gridKindOf(item, cfg) {
+    if (!item || item.grid === false || (cfg && cfg.grid === false)) return null;
+    if (typeof item.grid === 'string') return item.grid;
+    var unit = item.unit != null ? String(item.unit) : (typeof item.fmt === 'string' ? item.fmt : '');
+    if (unit !== 'px') return null;
+    var t = String(item.slider || '') + ' ' + String(item.path || '');
+    if (/位置|座標|ずらし|オフセット|offset|translate|shift|(^|[^a-z])[xyz]($|[^a-z])|top|left|right|bottom/i.test(t)) return null;
+    if (/行間|字間|line-?height|letter|tracking|leading|影|shadow|ぼかし|ブラー|blur|線|太さ|stroke|border|不透明|opacity/i.test(t)) return null;   /* 線幅（0.5px・1pxも可）・影・ぼかし・不透明度は自由 */
+    if (/文字|フォント|font|text/i.test(t)) return 'fontSize';
+    if (/角丸|radius|round|corner/i.test(t)) return 'radius';
+    if (/余白|ギャップ|パディング|マージン|間隔|gap|pad|margin|space|spacing|gutter/i.test(t)) return 'spacing';
+    if (/大きさ|サイズ|幅|高さ|width|height|size/i.test(t)) return 'size';
+    return null;
+  }
+  function gridOk(x, kind) {
+    x = Math.abs(x);
+    if (Math.abs(x - Math.round(x)) > 1e-9) return false;
+    return (x <= 10 && x % 2 === 0) || x % 4 === 0 || (kind === 'fontSize' && (x === 14 || x === 18)) || (kind === 'radius' && x >= 999);
+  }
+  function snapGrid(v, kind) {
+    if (!kind || !isFinite(v) || gridOk(v, kind)) return v;
+    var sign = v < 0 ? -1 : 1, a = Math.abs(v), best = null;
+    for (var x = Math.max(0, Math.floor(a) - 4); x <= Math.ceil(a) + 4; x++) {
+      if (!gridOk(x, kind)) continue;
+      if (best === null || Math.abs(x - a) < Math.abs(best - a) || (Math.abs(x - a) === Math.abs(best - a) && x > best)) best = x;
+    }
+    return best === null ? v : sign * best;
+  }
+
   /* 数値の見せ方のショートカット */
   var FMT = {
     s: function (v) { return (+v).toFixed(2) + 's'; },
@@ -152,33 +185,33 @@
   var FONT = '-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif';
 
   var CSS = [
-    /* ── 枠：既定 448×520・最小 240×46・最大は画面の92%。外寸は固定で中身だけスクロール（2026-09-27 デザインの数値の決まり 4-7 で 450→448） ── */
+    /* ── 枠：既定 450×520・最小 240×46・最大は画面の92%。外寸は固定で中身だけスクロール ── */
     '.tp{position:fixed;z-index:2147483000;display:flex;flex-direction:column;overflow:hidden;',
-    '  width:448px;height:520px;min-width:240px;min-height:44px;max-width:92vw;max-height:92vh;resize:both;',
+    '  width:450px;height:520px;min-width:240px;min-height:46px;max-width:92vw;max-height:92vh;resize:both;',
     '  background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
-    '  border:1px solid #eeeeee;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.10);',
-    '  font-family:' + FONT + ';font-size:12px;line-height:1.45;color:#101828;font-weight:400;text-align:left;letter-spacing:0;}',
+    '  border:1px solid #ececec;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.10);',
+    '  font-family:' + FONT + ';font-size:11px;line-height:1.45;color:#101828;font-weight:400;text-align:left;letter-spacing:0;}',
     '.tp *{box-sizing:border-box;}',
     '.tp.tp-hide{display:none!important;}',
     '.tp.closed{height:auto!important;resize:none;}',
     '.tp.closed .tp-body,.tp.closed .tp-z,.tp.closed .tp-banner{display:none!important;}',
     /* ── 見出しの帯（タブと同じ白の不透明地。つかんで移動・押して開閉） ── */
-    '.tp-head{display:flex;align-items:center;gap:8px;padding:12px 12px;cursor:grab;user-select:none;-webkit-user-select:none;flex:0 0 auto;background:#fff;}',
+    '.tp-head{display:flex;align-items:center;gap:8px;padding:14px 12px;cursor:grab;user-select:none;-webkit-user-select:none;flex:0 0 auto;background:#fff;}',
     '.tp-head:active{cursor:grabbing;}',
-    '.tp-title{font-size:14px;font-weight:700;letter-spacing:.02em;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}',
+    '.tp-title{font-size:15px;font-weight:700;letter-spacing:.02em;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}',
     '.tp-head-sub{font-size:10px;color:#999;margin-left:8px;font-weight:300;letter-spacing:0;}',
     '.tp:not(.closed) .tp-head-sub{display:none;}',
     '.tp-head-btns{margin-left:auto;display:flex;gap:6px;align-items:center;flex:0 0 auto;}',
-    '.tp-head-btn{flex:0 0 auto;padding:4px 10px;font-family:inherit;font-size:12px;line-height:1.4;border:1px solid #d8d8d8;border-radius:6px;background:#fff;color:#444;cursor:pointer;}',
+    '.tp-head-btn{flex:0 0 auto;padding:4px 10px;font-family:inherit;font-size:11px;line-height:1.4;border:1px solid #d5d5d5;border-radius:6px;background:#fff;color:#444;cursor:pointer;}',
     '.tp-head-btn:hover{border-color:#0EBBFF;color:#0aa2dd;}',
     '.tp-head-btn.on{background:#0EBBFF;border-color:#0EBBFF;color:#fff;}',
     '.tp-head-btn[hidden]{display:none!important;}',
     '.tp-chev{flex:0 0 auto;font-size:10px;color:#888;transition:transform .25s;padding:2px 4px;cursor:pointer;}',
     '.tp.closed .tp-chev{transform:rotate(180deg);}',
     /* ── スマホモード中：帯が青っぽく＋上に「スマホモード」の帯 ── */
-    '.tp-banner{display:none;gap:6px;align-items:center;justify-content:center;font-size:12px;font-weight:600;line-height:1.35;color:#0b4bd6;',
+    '.tp-banner{display:none;gap:6px;align-items:center;justify-content:center;font-size:11px;font-weight:600;line-height:1.35;color:#0b4bd6;',
     '  background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.14));border-top:1px solid rgba(14,92,255,.22);',
-    '  border-bottom:1px solid rgba(14,92,255,.22);padding:8px 12px;text-align:center;flex:0 0 auto;}',
+    '  border-bottom:1px solid rgba(14,92,255,.22);padding:7px 12px;text-align:center;flex:0 0 auto;}',
     '.tp-banner b{font-weight:800;}',
     '.tp.tp-phone .tp-banner{display:flex;}',
     '.tp.tp-phone .tp-head{background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.12));}',
@@ -187,144 +220,144 @@
     '.tp .pm-banner{display:none!important;}',   /* phone-mode.client.js の帯はパネルの帯と重なるので出さない */
     /* ── 中身（ここだけスクロール。ページへスクロールを伝えない） ── */
     '.tp-body{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0 10px 10px;scrollbar-width:thin;scrollbar-color:#cfcfcf transparent;}',
-    '.tp-body::-webkit-scrollbar{width:8px;}',
-    '.tp-body::-webkit-scrollbar-thumb{background:#cfcfcf;border-radius:2px;}',
+    '.tp-body::-webkit-scrollbar{width:6px;}',
+    '.tp-body::-webkit-scrollbar-thumb{background:#cfcfcf;border-radius:3px;}',
     '.tp-body::-webkit-scrollbar-track{background:transparent;}',
     /* ── タブ：下線型・横1列・はみ出たら横スクロール・貼りつく・バーは動かしている間だけ ── */
     '.tp-tabs{position:sticky;top:0;z-index:3;display:flex;flex-wrap:nowrap;gap:16px;margin:0 -10px;padding:6px 10px 0;background:#fff;',
-    '  border-bottom:1px solid #d8d8d8;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;',
+    '  border-bottom:1px solid #dcdcdc;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;',
     '  color:transparent;transition:color .4s ease;}',
     '.tp-tabs.is-scrolling{color:#c4c4c4;transition-duration:.12s;}',
-    '.tp-tabs::-webkit-scrollbar{height:4px;}',
+    '.tp-tabs::-webkit-scrollbar{height:3px;}',
     '.tp-tabs::-webkit-scrollbar-thumb{background:transparent;border-radius:2px;box-shadow:inset 0 0 0 10px;}',
     '.tp-tabs::-webkit-scrollbar-track{background:transparent;}',
     '@supports not selector(::-webkit-scrollbar){.tp-tabs{scrollbar-width:thin;scrollbar-color:transparent transparent;}.tp-tabs.is-scrolling{scrollbar-color:#c4c4c4 transparent;}}',
     '@supports selector(::-webkit-scrollbar){.tp-tabs{scrollbar-width:auto;scrollbar-color:auto;}}',
-    '.tp-tab{flex:0 0 auto;height:32px;padding:0 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#8a8a8a;',
-    '  font-family:inherit;font-size:12px;font-weight:500;line-height:34px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;}',
+    '.tp-tab{flex:0 0 auto;height:34px;padding:0 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#8a8a8a;',
+    '  font-family:inherit;font-size:12.5px;font-weight:500;line-height:34px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;}',
     '.tp-tab:hover{color:#333;}',
     '.tp-tab.on{color:#111;border-bottom-color:#111;font-weight:700;}',
     '.tp-tab[hidden]{display:none;}',
     '.tp-pane{display:none;padding-top:2px;}',
     '.tp-pane.on{display:block;}',
-    '.tp-pane-title{font-size:14px;font-weight:800;color:#000;padding:12px 2px 2px;}',
+    '.tp-pane-title{font-size:14px;font-weight:800;color:#000;padding:14px 2px 2px;}',
     '.tp-off{display:none!important;}',
     /* ── カテゴリ（H1）。基本〜その他はカード、バリエーションは装飾なしの大見出し ── */
     '.tp-cs{margin:8px 0;}',
-    '.tp-cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 2px 8px;font-size:14px;font-weight:700;',
+    '.tp-cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 2px 7px;font-size:13px;font-weight:700;',
     '  letter-spacing:.03em;color:#111;user-select:none;-webkit-user-select:none;}',
     '.tp-cs.var{margin:2px 0 4px;}',
-    '.tp-cs.card{background:#f8f9fb;border:1px solid #e4e7eb;border-radius:10px;padding:0 10px 6px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',
-    '.tp-cs.card>.tp-cs-head{padding:10px 2px 8px;cursor:pointer;}',
-    '.tp-cs-chev{position:relative;width:24px;height:24px;flex:0 0 auto;transition:transform .2s;}',
+    '.tp-cs.card{background:#f8f9fb;border:1px solid #e4e7eb;border-radius:10px;padding:0 11px 6px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',
+    '.tp-cs.card>.tp-cs-head{padding:11px 2px 8px;cursor:pointer;}',
+    '.tp-cs-chev{position:relative;width:22px;height:22px;flex:0 0 auto;transition:transform .2s;}',
     '.tp-cs-chev::before{content:"";position:absolute;inset:0;background:#8a8a8a;-webkit-mask:' + ICON_CHEV + ';mask:' + ICON_CHEV + ';}',
     '.tp-cs.card>.tp-cs-head:hover .tp-cs-chev::before{background:#333;}',
     '.tp-cs.closed .tp-cs-chev{transform:rotate(-90deg);}',
     '.tp-cs.closed>.tp-cs-body{display:none;}',
     /* 案ごとの大見出し（1タブに主役の案が複数ある時） */
     '.tp-vs{margin:6px 0 4px;}',
-    '.tp-vs-head{font-size:14px;font-weight:800;color:#000;padding:16px 2px 6px;}',
+    '.tp-vs-head{font-size:14px;font-weight:800;color:#000;padding:15px 2px 6px;}',
     /* ── H2＝モノの見出し 12px 太字／H3＝入れ子 11px グレー／まとまり（小見出し）。左の縦線は使わない ── */
     '.tp-sec{margin-top:4px;}',
-    '.tp-sec-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#333;margin:12px 0 4px;min-height:20px;}',
+    '.tp-sec-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#333;margin:12px 0 5px;min-height:20px;}',
     '.tp-cs-body>.tp-sec:first-child>.tp-sec-head{margin-top:4px;}',
     '.tp-sec-head>span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
     '.tp-sec-body{padding-bottom:4px;}',
     '.tp-deep{margin-top:8px;}',
-    '.tp-deep-head{font-size:12px;font-weight:600;color:#777;margin:8px 0 4px;}',
+    '.tp-deep-head{font-size:11px;font-weight:600;color:#777;margin:8px 0 4px;}',
     '.tp-subg{margin:2px 0 6px;}',
-    '.tp-subg-lab{font-size:12px;font-weight:600;color:#8a8a8a;margin:4px 0 6px;}',
+    '.tp-subg-lab{font-size:11px;font-weight:600;color:#8a8a8a;margin:4px 0 6px;}',
     /* まとまりの ↺（28px 角）。押すと「✓ 戻しました」 */
-    '.tp-gbtn{position:relative;flex:0 0 auto;width:28px;height:28px;padding:0;border:1px solid #d8d8d8;border-radius:8px;background:#fff;',
-    '  color:transparent;-webkit-text-fill-color:transparent;font-family:inherit;font-size:12px;line-height:26px;text-align:center;cursor:pointer;',
+    '.tp-gbtn{position:relative;flex:0 0 auto;width:28px;height:28px;padding:0;border:1px solid #e0e0e0;border-radius:8px;background:#fff;',
+    '  color:transparent;-webkit-text-fill-color:transparent;font-family:inherit;font-size:11px;line-height:26px;text-align:center;cursor:pointer;',
     '  white-space:nowrap;transform:scale(.86);transform-origin:right center;transition:background .15s,border-color .15s;}',
-    '.tp-gbtn::after{content:"";position:absolute;inset:0;margin:auto;width:16px;height:16px;background:#8a8a8a;pointer-events:none;-webkit-mask:' + ICON_RST + ';mask:' + ICON_RST + ';}',
+    '.tp-gbtn::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;background:#8a8a8a;pointer-events:none;-webkit-mask:' + ICON_RST + ';mask:' + ICON_RST + ';}',
     '.tp-gbtn:hover{background:#f4f4f4;border-color:#d5d5d5;}',
     '.tp-gbtn:hover::after{background:#333;}',
-    '.tp-gbtn.done{width:auto;padding:0 8px;background:#090909;border-color:#111;color:#fff;-webkit-text-fill-color:#fff;}',
+    '.tp-gbtn.done{width:auto;padding:0 9px;background:#090909;border-color:#111;color:#fff;-webkit-text-fill-color:#fff;}',
     '.tp-gbtn.done::after{display:none;}',
     /* ── 1行：項目名100px → つまみ → 値48px（右寄せ・桁ぞろえ）→ ↺ ── */
     '.tp-item{position:relative;}',
-    '.tp-item.tp-gap{margin-top:8px;}',
+    '.tp-item.tp-gap{margin-top:9px;}',
     '.tp-row{display:flex;align-items:center;gap:6px;margin:2px 0;min-height:24px;}',
     '.tp-row>label{flex:0 0 100px;min-width:0;color:#555;font-weight:300;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
     '.tp-row.seg>label{flex:0 0 74px;}',
     '.tp-row input[type=range]{flex:1;min-width:0;margin:0;accent-color:#090909;}',
     '.tp-val{flex:0 0 48px;text-align:right;font-variant-numeric:tabular-nums;color:#333;white-space:nowrap;overflow:hidden;cursor:pointer;}',
     '.tp-val:hover{color:#000;text-decoration:underline dashed #aaa;}',
-    '.tp-row .tp-num{flex:0 0 64px;min-width:0;padding:2px 4px;border:1px solid #0EBBFF;border-radius:6px;font:inherit;text-align:right;background:#fff;color:inherit;}',
-    '.tp-rst{position:relative;flex:0 0 26px;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;background:transparent;',
+    '.tp-row .tp-num{flex:0 0 64px;min-width:0;padding:2px 5px;border:1px solid #0EBBFF;border-radius:5px;font:inherit;text-align:right;background:#fff;color:inherit;}',
+    '.tp-rst{position:relative;flex:0 0 26px;width:26px;height:26px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;',
     '  color:transparent;-webkit-text-fill-color:transparent;cursor:pointer;transition:background .15s,border-color .15s;}',
-    '.tp-rst::after{content:"";position:absolute;inset:0;margin:auto;width:16px;height:16px;background:#8a8a8a;pointer-events:none;-webkit-mask:' + ICON_RST + ';mask:' + ICON_RST + ';}',
+    '.tp-rst::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;background:#8a8a8a;pointer-events:none;-webkit-mask:' + ICON_RST + ';mask:' + ICON_RST + ';}',
     '.tp-rst:hover{background:#f0f0f0;border-color:#e0e0e0;}',
     '.tp-rst:hover::after{background:#333;}',
     '.tp-fill{flex:1 1 auto;}',
     /* スマホで上書きしている項目の印：青い文字＋小さな●（左の帯・背景は付けない） */
     '.tp.tp-phone .tp-row.tp-mb>label,.tp.tp-phone .tp-row.tp-mb .tp-val,.tp.tp-phone .tp-var.tp-mb .tp-var-lab{color:#0b4bd6;font-weight:600;}',
-    '.tp.tp-phone .tp-row.tp-mb>label::before{content:"●";color:#0EBBFF;font-size:8px;margin-right:2px;vertical-align:1px;}',
+    '.tp.tp-phone .tp-row.tp-mb>label::before{content:"●";color:#0EBBFF;font-size:8px;margin-right:3px;vertical-align:1px;}',
     /* 2〜3択・する/しない（黒） */
     '.tp-seg{display:flex;flex:1;min-width:0;border:1px solid #d8d8d8;border-radius:8px;overflow:hidden;}',
-    '.tp-seg button{flex:1;min-width:0;border:0;background:#fff;font-family:inherit;font-size:10px;padding:4px 2px;cursor:pointer;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '.tp-seg button{flex:1;min-width:0;border:0;background:#fff;font-family:inherit;font-size:10px;padding:5px 2px;cursor:pointer;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
     '.tp-seg button+button{border-left:1px solid #eee;}',
     '.tp-seg button.on{background:#090909;color:#fff;}',
     /* チップ（表示・非表示をいくつも・黒） */
     '.tp-chips{display:flex;gap:4px;flex:1 1 auto;min-width:0;}',
-    '.tp-chip{flex:1 1 0;min-width:0;border:1px solid #d8d8d8;background:#fff;border-radius:6px;font-family:inherit;font-size:10px;padding:4px 2px;',
+    '.tp-chip{flex:1 1 0;min-width:0;border:1px solid #d8d8d8;background:#fff;border-radius:7px;font-family:inherit;font-size:10px;padding:5px 3px;',
     '  cursor:pointer;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s,color .12s,border-color .12s;}',
     '.tp-chip:hover{border-color:#999;}',
     '.tp-chip.on{background:#090909;color:#fff;border-color:#090909;}',
     /* プルダウン・文字・色 */
-    '.tp-row select,.tp-row input[type=text]{flex:1;min-width:0;padding:4px 6px;border:1px solid #d8d8d8;border-radius:6px;font-family:inherit;font-size:12px;background:#fff;color:inherit;}',
-    '.tp-row input[type=color]{flex:0 0 34px;width:32px;height:24px;padding:0;border:1px solid #d8d8d8;border-radius:6px;background:none;cursor:pointer;}',
-    '.tp-row .tp-hex{flex:0 0 72px;width:72px;font-family:inherit;font-size:12px;border:1px solid #d8d8d8;border-radius:6px;padding:2px 6px;color:#333;background:#fff;}',
+    '.tp-row select,.tp-row input[type=text]{flex:1;min-width:0;padding:4px 6px;border:1px solid #d8d8d8;border-radius:6px;font-family:inherit;font-size:11px;background:#fff;color:inherit;}',
+    '.tp-row input[type=color]{flex:0 0 34px;width:34px;height:22px;padding:0;border:1px solid #ddd;border-radius:5px;background:none;cursor:pointer;}',
+    '.tp-row .tp-hex{flex:0 0 72px;width:72px;font-family:inherit;font-size:11px;border:1px solid #ddd;border-radius:5px;padding:2px 6px;color:#333;background:#fff;}',
     '.tp-row.col{flex-wrap:wrap;}',
     '.tp-row.col>label{flex:1 1 100%;}',
-    '.tp-row textarea{flex:1 1 auto;min-width:0;padding:6px 8px;border:1px solid #d8d8d8;border-radius:6px;font-family:inherit;font-size:12px;line-height:1.6;background:#fff;color:inherit;resize:vertical;}',
+    '.tp-row textarea{flex:1 1 auto;min-width:0;padding:6px 8px;border:1px solid #d8d8d8;border-radius:6px;font-family:inherit;font-size:11px;line-height:1.6;background:#fff;color:inherit;resize:vertical;}',
     /* ── 案ピル（水色 #0EBBFF・角丸小さめ・10px）と ⋯ メニュー ── */
     '.tp-var{margin:2px 0 0;}',
-    '.tp-var-lab{font-size:12px;color:#555;font-weight:300;margin:2px 0 2px;}',
+    '.tp-var-lab{font-size:11px;color:#555;font-weight:300;margin:2px 0 3px;}',
     '.tp-var-lab[hidden]{display:none;}',
-    '.tp-favhead{font-size:12px;font-weight:500;color:#666;margin:4px 0 2px;}',
-    '.tp-pills{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0;}',
+    '.tp-favhead{font-size:11.5px;font-weight:500;color:#666;margin:4px 0 2px;}',
+    '.tp-pills{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0;}',
     '.tp-favrow{margin-bottom:4px;}',
     '.tp-favhead[hidden],.tp-favrow[hidden]{display:none!important;}',
-    '.tp-pill{position:relative;display:inline-flex;align-items:center;gap:4px;padding:2px 16px 2px 8px;border:1px solid #d8d8d8;border-radius:6px;',
+    '.tp-pill{position:relative;display:inline-flex;align-items:center;gap:4px;padding:3px 17px 3px 7px;border:1px solid #dcdcdc;border-radius:6px;',
     '  background:#fbfbfc;font-family:inherit;font-size:10px;line-height:1.5;color:#555;cursor:pointer;transition:background .14s,color .14s,border-color .14s;}',
-    '.tp-pill.nox,.tp-pill.back{padding-right:8px;}',
+    '.tp-pill.nox,.tp-pill.back{padding-right:9px;}',
     '.tp-pill:hover{border-color:#9fdcf5;background:#f4fbfe;}',
     '.tp-pill.on{background:#0EBBFF;border-color:#0EBBFF;color:#fff;}',
     '.tp-pill.fav:not(.on){border-color:#e6c25a;background:#fffaf0;}',
     '.tp-pill.back{border-style:dashed;color:#999;}',
     '.tp-var.only-back .tp-var-lab,.tp-var.only-back .tp-favhead,.tp-var.only-back .tp-favrow,.tp-var.only-back .tp-pill:not(.back){display:none!important;}',
-    '.tp-pill-x{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:12px;height:12px;line-height:12px;text-align:center;border-radius:6px;',
-    '  cursor:pointer;font-size:12px;color:#b9b9b9;opacity:0;transition:opacity .12s,color .12s;}',
+    '.tp-pill-x{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:13px;height:13px;line-height:12px;text-align:center;border-radius:4px;',
+    '  cursor:pointer;font-size:11px;color:#b9b9b9;opacity:0;transition:opacity .12s,color .12s;}',
     '.tp-pill:hover .tp-pill-x,.tp-pill-x:focus{opacity:1;}',
     '.tp-pill.on .tp-pill-x{color:rgba(255,255,255,.75);}',
     '.tp-pill-x:hover{color:#d94141;background:rgba(0,0,0,.06);}',
     '.tp-pill.on .tp-pill-x:hover{color:#fff;background:rgba(255,255,255,.22);}',
     '.tp-swatch{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.08);flex:0 0 auto;}',
     /* 補足文は画面に出さない（項目名の吹き出しで読む）。keep:true だけ出す */
-    '.tp-note,.tp-hint{display:none;font-size:8px;line-height:1.45;color:#a6a6a6;margin:-2px 0 2px;}',
+    '.tp-note,.tp-hint{display:none;font-size:8.5px;line-height:1.45;color:#a6a6a6;margin:-2px 0 3px;}',
     '.tp-note.keep,.tp-hint.keep{display:block;}',
-    '.tp-hint.keep{margin-left:104px;}',
+    '.tp-hint.keep{margin-left:106px;}',
     /* 項目としてのボタン */
     '.tp-btnrow{display:flex;gap:8px;margin:4px 0;}',
-    '.tp-btnrow button{flex:1 1 auto;font-family:inherit;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #d8d8d8;background:#fff;color:#101828;cursor:pointer;}',
+    '.tp-btnrow button{flex:1 1 auto;font-family:inherit;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid #d8d8d8;background:#fff;color:#101828;cursor:pointer;}',
     '.tp-btnrow button:hover{background:#f2f2f2;}',
     '.tp-btnrow button.primary{background:#090909;color:#fff;border-color:#090909;}',
     /* ── 下のボタン3つ（中身のいちばん最後）＋注意書き ── */
     '.tp-foot{padding:0;}',
     '.tp-btns{display:flex;gap:8px;margin-top:12px;}',
-    '.tp-btns button{flex:1 1 0;min-width:0;font-family:inherit;font-size:12px;line-height:1.3;padding:8px 4px;border-radius:8px;border:1px solid #d8d8d8;',
+    '.tp-btns button{flex:1 1 0;min-width:0;font-family:inherit;font-size:11px;line-height:1.3;padding:8px 4px;border-radius:8px;border:1px solid #d8d8d8;',
     '  background:#fff;color:#101828;cursor:pointer;transition:background .18s;}',
     '.tp-btns button:hover{background:#f2f2f2;}',
     '.tp-btns button.primary{background:#090909;color:#fff;border-color:#090909;}',
     '.tp-btns button.primary:hover{background:#333;}',
     '.tp-btns button.primary.dirty{background:#FF5D97;border-color:#FF5D97;}',
     '.tp-btns button.primary.dirty:hover{background:#ff4487;}',
-    '.tp-savenote{font-size:8px;line-height:1.45;color:#a6a6a6;margin:6px 0 0;}',
+    '.tp-savenote{font-size:8.5px;line-height:1.45;color:#a6a6a6;margin:6px 0 0;}',
     '.tp-spacer{height:0;}',
-    '.tp-toast{position:absolute;left:0;right:0;bottom:0;padding:8px 12px;background:#090909;color:#fff;font-size:12px;opacity:0;',
+    '.tp-toast{position:absolute;left:0;right:0;bottom:0;padding:7px 12px;background:#090909;color:#fff;font-size:11px;opacity:0;',
     '  transform:translateY(100%);transition:opacity .2s,transform .2s;pointer-events:none;z-index:5;}',
     '.tp-toast.show{opacity:1;transform:translateY(0);}',
     /* ── 4辺の大きさ変更（右下の角は標準の resize） ── */
@@ -337,26 +370,26 @@
     '.tp-hot{position:fixed;right:0;bottom:0;width:100px;height:100px;z-index:2147482999;background:transparent;cursor:pointer;}',
     '@media (max-width:600px){.tp-hot{width:72px;height:72px;}}',
     /* ── ⋯ メニュー・確認 ── */
-    '.tp-pmenu{position:fixed;z-index:2147483005;background:#fff;border:1px solid #e4e4e4;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.16);',
-    '  padding:4px;min-width:148px;font-family:' + FONT + ';}',
-    '.tp-pmenu button{display:block;width:100%;text-align:left;border:0;background:none;font-family:inherit;font-size:12px;padding:8px 10px;border-radius:6px;cursor:pointer;color:#222;}',
+    '.tp-pmenu{position:fixed;z-index:2147483005;background:#fff;border:1px solid #e4e4e4;border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.16);',
+    '  padding:4px;min-width:150px;font-family:' + FONT + ';}',
+    '.tp-pmenu button{display:block;width:100%;text-align:left;border:0;background:none;font-family:inherit;font-size:11px;padding:8px 10px;border-radius:6px;cursor:pointer;color:#222;}',
     '.tp-pmenu button:hover{background:#f2f2f2;}',
     '.tp-pmenu button.danger{color:#d94141;}',
     '.tp-pmenu button.danger:hover{background:#fdecec;}',
     '.tp-mdl-bg{position:fixed;inset:0;z-index:2147483006;background:rgba(20,20,20,.28);display:flex;align-items:center;justify-content:center;',
     '  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);padding:20px;}',
-    '.tp-mdl{width:288px;max-width:100%;background:#fff;border-radius:12px;padding:16px 16px 12px;box-shadow:0 18px 50px rgba(0,0,0,.24);',
-    '  font-family:' + FONT + ';font-size:12px;color:#222;}',
+    '.tp-mdl{width:290px;max-width:100%;background:#fff;border-radius:12px;padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.24);',
+    '  font-family:' + FONT + ';font-size:11px;color:#222;}',
     '.tp-mdl h4{margin:0 0 6px;font-size:14px;font-weight:600;}',
-    '.tp-mdl p{margin:0 0 12px;font-size:12px;line-height:1.6;color:#777;}',
+    '.tp-mdl p{margin:0 0 14px;font-size:11px;line-height:1.6;color:#777;}',
     '.tp-mdl-list{max-height:260px;overflow-y:auto;margin:0 0 12px;}',
-    '.tp-mdl-li{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #eeeeee;font-size:12px;color:#333;}',
+    '.tp-mdl-li{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;font-size:11.5px;color:#333;}',
     '.tp-mdl-li:last-child{border-bottom:0;}',
     '.tp-mdl-li span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-    '.tp-mdl-li button{flex:0 0 auto;font-family:inherit;font-size:10px;padding:4px 10px;border:1px solid #0EBBFF;background:#fff;color:#0aa2dd;border-radius:6px;cursor:pointer;}',
+    '.tp-mdl-li button{flex:0 0 auto;font-family:inherit;font-size:10.5px;padding:4px 10px;border:1px solid #0EBBFF;background:#fff;color:#0aa2dd;border-radius:6px;cursor:pointer;}',
     '.tp-mdl-li button:hover{background:#0EBBFF;color:#fff;}',
     '.tp-mdl-btns{display:flex;gap:8px;}',
-    '.tp-mdl-btns button{flex:1;font-family:inherit;font-size:12px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid #d8d8d8;background:#fff;color:#444;}',
+    '.tp-mdl-btns button{flex:1;font-family:inherit;font-size:11.5px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid #dcdcdc;background:#fff;color:#444;}',
     '.tp-mdl-btns button:hover{background:#f4f4f4;}',
     '.tp-mdl-btns button.danger{background:#d94141;border-color:#d94141;color:#fff;}',
     '.tp-mdl-btns button.danger:hover{background:#c23636;}',
@@ -375,10 +408,10 @@
     /* ── PC 上の 390×844 のスマホ枠（スマホモード中） ── */
     '.tp-pp{position:fixed;z-index:2147482990;right:20px;bottom:20px;display:none;flex-direction:column;width:390px;transform-origin:right bottom;}',
     '.tp-pp.on{display:flex;}',
-    '.tp-pp-bar{display:flex;align-items:center;gap:8px;background:#111;color:#fff;border-radius:12px 12px 0 0;padding:8px 12px;',
+    '.tp-pp-bar{display:flex;align-items:center;gap:8px;background:#111;color:#fff;border-radius:12px 12px 0 0;padding:7px 12px;',
     '  font:600 12px/1.2 ' + FONT + ';cursor:move;touch-action:none;user-select:none;-webkit-user-select:none;}',
     '.tp-pp-ttl{flex:1;}',
-    '.tp-pp-bar button{width:24px;height:24px;border:0;border-radius:6px;background:#333;color:#fff;cursor:pointer;font-size:14px;line-height:1;}',
+    '.tp-pp-bar button{width:24px;height:24px;border:0;border-radius:6px;background:#333;color:#fff;cursor:pointer;font-size:15px;line-height:1;}',
     '.tp-pp-bar button:hover{background:#4a4a4a;}',
     '.tp-pp-frame{width:390px;height:844px;background:#000;border-radius:0 0 28px 28px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.4);border:1px solid #222;}',
     '.tp-pp iframe{width:390px;height:844px;border:0;background:#fff;display:block;}',
@@ -759,9 +792,9 @@
     if (this.storageKey) { try { ui = JSON.parse(localStorage.getItem(this._uKey())); } catch (e) {} }
     if (!isObj(ui)) ui = {};
     var size = this.cfg.size || {};
-    this._openW = (ui.w > 120 ? ui.w : 0) || size.w || 448;
+    this._openW = (ui.w > 120 ? ui.w : 0) || size.w || 450;
     this._openH = (ui.h > 80 ? ui.h : 0) || size.h || 520;
-    if (!ui.v && ui.w === 360 && !ui.w450) this._openW = 448;   /* 旧既定 360px のままの保存値は 448px へ */
+    if (!ui.v && ui.w === 360 && !ui.w450) this._openW = 450;   /* 旧既定 360px のままの保存値は 450px へ */
     if (isObj(ui.cats)) this._catOpen = ui.cats;
     this._activeTab = typeof ui.tab === 'string' ? ui.tab : null;
     this._restoreScroll = ui.scroll || 0;
@@ -1451,6 +1484,8 @@
     var val = el('span', 'tp-val');
     val.title = 'クリックで数値を直接入力';
     var fmt = toFmt(item, step);
+    var gk = gridKindOf(item, this.cfg);   /* デザインの数値の決まり（4-7）に止まる種類。null なら止めない */
+    var snap = function (v) { return gk ? snapGrid(v, gk) : v; };
     var q = function (v) { return +(Math.round(v / step) * step).toFixed(dec); };
     var num = function (x) { var n = typeof x === 'number' ? x : parseFloat(x); return isFinite(n) ? n : NaN; };
     var setRange = function (lo, hi) { input.min = lo; input.max = hi; input.step = step; };
@@ -1464,7 +1499,8 @@
     var v0 = num(acc.view());
     if (fixed) setRange(dMin, dMax);
     else { var r0 = rangeFor(isFinite(v0) ? v0 : dMin, dMin, dMax, step, signed); setRange(r0.lo, r0.hi); }
-    var row = { line: line, accs: [acc], input: input, kind: 'slider' };
+    var row = { line: line, accs: [acc], input: input, kind: 'slider', grid: gk };
+    if (gk) line.dataset.grid = gk;
     row.sync = function () {
       var v = num(acc.view());
       if (isFinite(v)) { fit(v); input.value = v; }
@@ -1473,7 +1509,8 @@
     };
     input.addEventListener('pointerdown', function () { self._dragStart(); });
     input.addEventListener('input', function () {
-      var v = read();
+      var v = snap(read());
+      if (gk && +input.value !== v) input.value = v;
       acc.write(v);
       val.textContent = fmt(v);
       row.mark();
@@ -1481,7 +1518,7 @@
     });
     /* 端（1割）で手を離したら、そこを真ん中に範囲を取り直す（どこまでも広げられる） */
     input.addEventListener('change', function () {
-      var v = read();
+      var v = snap(read());
       if (!fixed) {
         var lo = +input.min, hi = +input.max, k = hi > lo ? (v - lo) / (hi - lo) : 0.5;
         if (k < 0.1 || k > 0.9) {
@@ -1513,7 +1550,7 @@
         if (ed.parentNode) ed.parentNode.removeChild(ed);
         val.style.display = '';
         if (!commit || !isFinite(v)) return;
-        v = +v.toFixed(Math.max(dec, decOf(v)));
+        v = snap(+v.toFixed(Math.max(dec, decOf(v))));   /* 打ち込んだ数字も決まり（4-7）に止める */
         acc.write(v);
         row.sync();
         self._changed({ item: item, path: item.path, value: v, immediate: true, row: row });
@@ -2655,7 +2692,7 @@
     },
     Panel: Panel,
     setPhoneMode: setPhoneMode,
-    utils: { getPath: getPath, setPath: setPath, mergeSaved: mergeSaved, assignDeep: assignDeep, clone: clone, rangeFor: rangeFor, grpFromText: grpFromText },
+    utils: { getPath: getPath, setPath: setPath, mergeSaved: mergeSaved, assignDeep: assignDeep, clone: clone, rangeFor: rangeFor, gridKindOf: gridKindOf, snapGrid: snapGrid, grpFromText: grpFromText },
     version: VERSION
   };
   return api;

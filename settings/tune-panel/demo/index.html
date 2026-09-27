@@ -7,7 +7,7 @@
 <style>
   /* ── 見本のサイト（中身は仮の文言）。値はすべて調整パネルの params から CSS 変数で流し込む ── */
   :root {
-    --bg: #ffffff; --pad: 64px; --grid-cell: 40px; --grid-op: .3; --grid-color: 16, 24, 40; --grid-w: 1px; --head-font: inherit; --body-size: 16px; --body-lh: 1.7; --speed: 1;
+    --bg: #f6f7f9; --pad: 64px; --grid-cell: 40px; --grid-op: .3; --grid-color: 16, 24, 40; --grid-w: 1px; --head-font: inherit; --body-size: 15px; --body-lh: 1.7; --speed: 1;
     --copy-x: 0px; --copy-y: 0px; --copy-size: 56px; --copy-weight: 500; --copy-lh: 1.3;
     --gfx-size: 320px; --gfx-x: 0px; --gfx-z: 0; --sp-top: 0px; --gfx-color: #0EBBFF; --gfx-op: .9; --gfx-blur: 0px;
     --glow: .4; --ring: 2px; --kv-delay: .3s; --kv-dur: 1.2s;
@@ -31,9 +31,9 @@
   .page { max-width: 1040px; margin: 0 auto; padding: 0 var(--pad); }
   @media (min-width: 1280px) { .page { margin-left: 500px; margin-right: 40px; max-width: none; } }
   .site-head { display: flex; align-items: center; justify-content: space-between; height: 72px; }
-  .logo { font-weight: 800; letter-spacing: .08em; font-size: 14px; }
-  .nav { display: flex; gap: 24px; font-size: 14px; color: #444; }
-  .nav b { background: #090909; color: #fff; font-weight: 500; padding: 6px 12px; border-radius: 6px; }
+  .logo { font-weight: 800; letter-spacing: .08em; font-size: 15px; }
+  .nav { display: flex; gap: 24px; font-size: 13px; color: #444; }
+  .nav b { background: #090909; color: #fff; font-weight: 500; padding: 6px 14px; border-radius: 6px; }
 
   /* キービジュアル */
   .kv { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 40px; min-height: 520px; padding: 24px 0 32px; }
@@ -41,19 +41,19 @@
   .kv-copy { transform: translate(var(--copy-x), var(--copy-y)); max-width: 620px; }
   .kv-copy h1, .res h2 { font-family: var(--head-font); }
   .kv-copy h1 { margin: 0; font-size: var(--copy-size); font-weight: var(--copy-weight); line-height: var(--copy-lh); letter-spacing: .01em; word-break: auto-phrase; text-wrap: balance; }
-  .kv-copy p { margin: 16px 0 0; color: #555; }
+  .kv-copy p { margin: 18px 0 0; color: #555; }
   .kv-gfx {
     flex: 0 0 auto; width: var(--gfx-size); height: var(--gfx-size); border-radius: 50%; position: relative;
     transform: translateX(var(--gfx-x)); opacity: var(--gfx-op); filter: blur(var(--gfx-blur));
     background: radial-gradient(circle at 35% 30%, #fff 0, var(--gfx-color) 55%, #0b3a8c 100%);
   }
-  @media (min-width: 600px) { .kv-gfx { transform: translateX(var(--gfx-x)) scale(calc(1 + var(--gfx-z) / 100)); } }
+  @media (min-width: 601px) { .kv-gfx { transform: translateX(var(--gfx-x)) scale(calc(1 + var(--gfx-z) / 100)); } }
   .kv[data-variant="strong"] .kv-gfx { box-shadow: 0 0 calc(var(--glow) * 160px) calc(var(--glow) * 40px) var(--gfx-color); outline: var(--ring) solid rgba(255, 255, 255, .7); outline-offset: 12px; }
   .kv[data-variant="minimal"] .kv-copy h1 { letter-spacing: .04em; }
   .play .kv-copy, .play .kv-gfx { animation: kvIn calc(var(--kv-dur) / var(--speed)) cubic-bezier(.2, .7, .2, 1) calc(var(--kv-delay) / var(--speed)) both; }
   @keyframes kvIn { from { opacity: 0; filter: blur(12px); } }
   .kv[data-logos="0"] + .logos { visibility: hidden; }
-  .logos { display: flex; gap: 36px; flex-wrap: wrap; color: #9aa1ab; font-weight: 700; letter-spacing: .06em; font-size: 14px; padding: 8px 0 40px; }
+  .logos { display: flex; gap: 36px; flex-wrap: wrap; color: #9aa1ab; font-weight: 700; letter-spacing: .06em; font-size: 13px; padding: 8px 0 40px; }
 
   /* 実績 */
   .res h2 { font-size: 26px; font-weight: 600; margin: 24px 0 20px; }
@@ -64,9 +64,9 @@
     box-shadow: 0 10px 30px rgba(16, 24, 40, var(--shadow));
   }
   .card .num { font-size: var(--num-size); font-weight: 700; line-height: 1.1; margin-top: 12px; }
-  .card .lab { color: #666; font-size: 14px; }
+  .card .lab { color: #666; font-size: 13px; }
   .picto { width: var(--picto-size); height: var(--picto-size); }
-  .picto circle, .picto path { fill: none; stroke: #090909; stroke-width: var(--picto-stroke); }
+  .picto circle, .picto path { fill: none; stroke: #111; stroke-width: var(--picto-stroke); }
   .res[data-picto="fill"] .picto circle { fill: var(--picto-fill); stroke: none; }
   .res[data-picto="fill"] .picto path { stroke: #fff; }
   .play .card { animation: calc(var(--fx-dur) / var(--speed)) cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * var(--fx-delay) / var(--speed)); }

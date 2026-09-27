@@ -140,10 +140,10 @@ try {
         left: Math.round(r.left), midY: Math.round(r.top + r.height / 2), vh: innerHeight
       };
     });
-    const lookOk = look.w === 448 && look.h === 520 && look.bg === 'rgba(255, 255, 255, 0.92)' && look.border === 'rgb(238, 238, 238)' && look.radius === '8px'
-      && look.font === '12px' && /blur\(12px\)/.test(look.blur) && look.title === '調整パネル' && look.cardBg === 'rgb(248, 249, 251)' && look.cardBorder === 'rgb(228, 231, 235)'
+    const lookOk = look.w === 450 && look.h === 520 && look.bg === 'rgba(255, 255, 255, 0.92)' && look.border === 'rgb(236, 236, 236)' && look.radius === '8px'
+      && look.font === '11px' && /blur\(12px\)/.test(look.blur) && look.title === '調整パネル' && look.cardBg === 'rgb(248, 249, 251)' && look.cardBorder === 'rgb(228, 231, 235)'
       && look.cardRadius === '10px' && look.labW === 100 && look.valW === 48 && look.tabBorder === 'solid rgb(17, 17, 17)' && look.tabWeight === '700';
-    rec('見た目の寸法（AnyFlow V5 の値を、デザインの数値の決まり 4-7 で寄せた値）', lookOk,
+    rec('見た目の寸法（AnyFlow V5 の値）', lookOk,
       `外寸 ${look.w}×${look.h} / 地 ${look.bg} / 枠 ${look.border} / 角丸 ${look.radius} / 文字 ${look.font} / ${look.blur} / タイトル「${look.title}」/ タブ下線 ${look.tabBorder}・太さ${look.tabWeight} / カード ${look.cardBg}・${look.cardBorder}・${look.cardRadius} / 項目名 ${look.labW}px・値 ${look.valW}px`);
     rec('出る位置は画面の左・上下中央（既定）', look.left === 24 && Math.abs(look.midY - look.vh / 2) <= 1, `左 ${look.left}px・パネルの中心 ${look.midY}px（画面の中心 ${look.vh / 2}px）`);
 
@@ -374,7 +374,7 @@ try {
     await open(page);
     await showPanel(page);
     await tab(page, '全体');
-    await typeValue(page, 'site.pad', 90);
+    await typeValue(page, 'site.pad', 88);
     await page.waitForTimeout(250);   /* ボタンの色の切り替え（0.18秒）が終わってから読む */
     const btnDirty = await page.evaluate(() => { const b = document.querySelector('.tp-btns button.primary'); return b.textContent + '|' + getComputedStyle(b).backgroundColor; });
     await page.waitForTimeout(100);
@@ -386,7 +386,7 @@ try {
     const rl1 = await pc(page, 'site.pad');
     await page.reload(); await page.waitForTimeout(150);
     const rl2 = await pc(page, 'site.pad');
-    rec('手が止まって0.8秒後に自動保存され、リロード2回しても残る', at03 !== 90 && at10 === 90 && rl1 === 90 && rl2 === 90 && /（未保存）\|rgb\(255, 93, 151\)/.test(btnDirty) && btnSaved === 'デフォルトに設定',
+    rec('手が止まって0.8秒後に自動保存され、リロード2回しても残る', at03 !== 88 && at10 === 88 && rl1 === 88 && rl2 === 88 && /（未保存）\|rgb\(255, 93, 151\)/.test(btnDirty) && btnSaved === 'デフォルトに設定',
       `触って0.35秒後の保存値 ${at03}・1.0秒後 ${at10}・ボタン「${btnDirty.split('|')[0]}」(${btnDirty.split('|')[1]}) → 保存後「${btnSaved}」・リロード1回目 ${rl1}・2回目 ${rl2}`);
 
     /* ドラッグの途中では書かない */
@@ -459,7 +459,7 @@ try {
     const phoneOn = await page.evaluate(() => ({ html: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), banner: getComputedStyle(document.querySelector('.tp-banner')).display, btn: document.querySelector('.tp-phone-btn').textContent, frame: !!document.querySelector('.tp-pp.on'), head: getComputedStyle(document.querySelector('.tp-head')).backgroundImage.slice(0, 15), save: document.querySelector('.tp-btns button.primary').textContent }));
     const inherit = await val(page, 'kv.copySize');
     const mark0 = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.copySize"] .tp-row').classList.contains('tp-mb'));
-    await typeValue(page, 'kv.copySize', 30);
+    await typeValue(page, 'kv.copySize', 28);
     const spV = await val(page, 'kv.copySize'), pcV = await pc(page, 'kv.copySize');
     const mark = await page.evaluate(() => { const r = document.querySelector('.tp-item[data-key="kv.copySize"] .tp-row'), l = r.querySelector('label'); return { on: r.classList.contains('tp-mb'), color: getComputedStyle(l).color, dot: getComputedStyle(l, '::before').content, bg: getComputedStyle(r).backgroundColor, bl: getComputedStyle(r).borderLeftWidth }; });
     /* 同じ値でも触った瞬間に印が付く */
@@ -477,7 +477,7 @@ try {
     await page.click('.tp-phone-btn');
     await page.waitForTimeout(150);
     const spKept = await val(page, 'kv.copySize');
-    rec('PCで動かした値がスマホで上書きした項目に出ない・スマホの値がPCに出ない', spV === 30 && pcV === 60 && backPC === 60 && spKept === 30,
+    rec('PCで動かした値がスマホで上書きした項目に出ない・スマホの値がPCに出ない', spV === 28 && pcV === 60 && backPC === 60 && spKept === 28,
       `スマホモードで30 → PCの値は ${pcV} のまま → PCに戻ると ${backPC} → PCで64に変更 → スマホモードでは ${spKept}`);
     /* スマホモードの ↺ は上書きだけ外す */
     await page.click('.tp-item[data-key="kv.copySize"] .tp-rst');
@@ -634,7 +634,7 @@ try {
     const zt = await page.evaluate(() => { const r = document.querySelector('.tp-z-t').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await page.mouse.move(zt.x, zt.y); await page.mouse.down(); await page.mouse.move(zt.x, zt.y - 40, { steps: 4 }); await page.mouse.up();
     const r5 = await rect();
-    rec('右下の角＋4辺で大きさ変更', r5.w === 508 && r5.h === 560,   /* 既定の幅 448 ＋ 60（2026-09-27 に 450→448） */ `右の辺を+60 → 幅 ${r5.w}px／上の辺を-40 → 高さ ${r5.h}px（resize:both も有効）`);
+    rec('右下の角＋4辺で大きさ変更', r5.w === 510 && r5.h === 560, `右の辺を+60 → 幅 ${r5.w}px／上の辺を-40 → 高さ ${r5.h}px（resize:both も有効）`);
     /* 閉じた状態で下の方へ動かしてから開く → 上へ持ち上げる */
     await page.click('.tp-title'); await page.waitForTimeout(80);
     const rc = await rect();
@@ -658,7 +658,7 @@ try {
     await pickVariant(page, 'kv.variant', 'strong');
     await typeValue(page, 'kv.copySize', 80);
     await page.click('.tp-phone-btn'); await page.waitForTimeout(120);
-    await typeValue(page, 'kv.copySize', 33);
+    await typeValue(page, 'kv.copySize', 36);
     await typeValue(page, 'kv.spTop', 40);
     await page.click('.tp-btns button.primary');
     await page.waitForTimeout(200);
@@ -671,7 +671,7 @@ try {
     await open(sp);
     const ls0 = await lsDump(sp), ss0 = await sp.evaluate(() => JSON.stringify(sessionStorage));
     const applied = await sp.evaluate(() => ({ size: TunePanel.instances[0].params.kv.copySize, v: TunePanel.instances[0].params.kv.variant, spTop: TunePanel.instances[0].params.kv.spTop, css: getComputedStyle(document.querySelector('.kv-copy h1')).fontSize }));
-    rec('スマホ実機は起動時に「案の値 → スマホ用の値」の順で当てる', applied.v === 'strong' && applied.size === 33 && applied.spTop === 40, `案=${applied.v}・文字サイズ ${applied.size}（PCの強調は80・スマホの上書き33）・ギャップ（スマホ）${applied.spTop}・画面の見出し ${applied.css}`);
+    rec('スマホ実機は起動時に「案の値 → スマホ用の値」の順で当てる', applied.v === 'strong' && applied.size === 36 && applied.spTop === 40, `案=${applied.v}・文字サイズ ${applied.size}（PCの強調は80・スマホの上書き33）・ギャップ（スマホ）${applied.spTop}・画面の見出し ${applied.css}`);
     const hot = await sp.evaluate(() => { const r = document.querySelector('.tp-hot').getBoundingClientRect(); return r.width + '×' + r.height; });
     await showPanel(sp);
     const sheet = await sp.evaluate(() => { const p = TunePanel.instances[0], r = p.el.getBoundingClientRect(); return { cls: p.el.classList.contains('tp-sheet'), top: Math.round(r.top), h: Math.round(r.height), w: Math.round(r.width), vis: Math.round(innerHeight - r.top), grip: getComputedStyle(p.grip).display, phoneBtn: p.phoneBtn.hidden, zoom: getComputedStyle(p.body).zoom, radius: getComputedStyle(p.el).borderTopLeftRadius }; });
@@ -716,7 +716,7 @@ try {
     await showPanel(page);
     await tab(page, '全体');
     await page.evaluate(() => { window.__mark = 'before'; });
-    await typeValue(page, 'site.pad', 101);   /* 保存待ち（PC の値）のまま境目をまたぐ */
+    await typeValue(page, 'site.pad', 104);   /* 保存待ち（PC の値）のまま境目をまたぐ */
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForFunction(() => !window.__mark, null, { timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(300);
@@ -726,7 +726,7 @@ try {
     await page.evaluate(() => { const p = TunePanel.instances[0]; p.params.site.pad = 12; p.sync(); });
     await page.waitForTimeout(1000);
     const s2 = await saved(page);
-    rec('PC⇄スマホの境目をまたいだら開き直す（PC の保存待ちは PC のうちに保存・スマホ側は保存しない）', reloaded && s1.site.pad === 101 && isSheet && s2.site.pad === 101,
+    rec('PC⇄スマホの境目をまたいだら開き直す（PC の保存待ちは PC のうちに保存・スマホ側は保存しない）', reloaded && s1.site.pad === 104 && isSheet && s2.site.pad === 104,
       `1440→390 に縮める → 開き直した=${reloaded}・保存値 パディング ${s1.site.pad}・シート表示=${isSheet}・スマホ側で値を変えても保存値は ${s2.site.pad}`);
     await context.close();
   }
@@ -757,7 +757,7 @@ try {
     await page.waitForTimeout(600);
     const st = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), pop: !!document.querySelector('.pm-pop.show'), qr: (document.querySelector('.pm-pop .qr') || {}).src || '', url: (document.querySelector('.pm-pop .url') || {}).textContent, client: !!window.__phoneModeOn, dupBanner: getComputedStyle(document.querySelector('.pm-banner')).display, keys: JSON.stringify(window.PHONE_MODE_CONFIG.storageKeys) }));
     const n0 = pushes.length;
-    await typeValue(page, 'kv.copySize', 41);
+    await typeValue(page, 'kv.copySize', 40);
     await page.waitForTimeout(600);
     const last = pushes.length ? JSON.parse(pushes[pushes.length - 1]) : null;
     const mb = last && last.store && last.store['tp:tp-demo:v1:mb'] ? JSON.parse(last.store['tp:tp-demo:v1:mb']) : {};
@@ -769,7 +769,7 @@ try {
     await page.click('#pmStop');
     await page.waitForTimeout(200);
     const off = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), frame: !!document.querySelector('.tp-pp.on') }));
-    rec('phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる', st.on && st.panel && st.pop && /\/qr/.test(st.qr) && st.client && st.dupBanner === 'none' && pushes.length > n0 && mb['kv.copySize'] === 41 && second.on && !second.pop && !off.on && !off.panel && !off.frame,
+    rec('phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる', st.on && st.panel && st.pop && /\/qr/.test(st.qr) && st.client && st.dupBanner === 'none' && pushes.length > n0 && mb['kv.copySize'] === 40 && second.on && !second.pop && !off.on && !off.panel && !off.frame,
       `ボタン1押し → スマホモード=${st.on}・QRの窓=${st.pop ? '出た' : '出ない'}（${st.url}）・二重の帯=${st.dupBanner}／スマホモードで文字サイズ41 → 中継へ送信 ${pushes.length - n0} 回・送った中身のスマホ値 ${mb['kv.copySize']}／2回目の押下 → QRだけ閉じた=${!second.pop}（モード継続=${second.on}）／「スマホモード終了」→ ${off.on ? '続く' : '終わった'}・枠 ${off.frame ? '残る' : '消えた'}／送る保存キー ${st.keys}`);
     await context.close();
     relay.close();
@@ -827,7 +827,7 @@ try {
         tools: document.querySelectorAll('.tp-item-tools,[draggable="true"]').length, emoji: [...document.querySelectorAll('.tp-tab,.tp-cs-head,.tp-sec-head span:first-child')].filter(e => /\p{Extended_Pictographic}/u.test(e.textContent)).length
       };
     });
-    rec('1行の形（全部の行に↺）・違う種類の前は8px・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '8px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
+    rec('1行の形（全部の行に↺）・違う種類の前は9px・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '9px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
       `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
     rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(9, 9, 9)',
       `画面に出ている補足文 ${d.hintsShown}・項目名の吹き出し「${d.labTitle}」・ピルの吹き出し「${d.pillTitle}」・2〜3択の選択色 ${d.segOn}・項目の削除/並び替えの道具 ${d.tools}`);
@@ -984,6 +984,32 @@ try {
     });
     rec('中身が全部隠れたカテゴリのカードとタブも隠れる・作る人が自分で隠した部品には印を付けない', !r.s0.fx && r.s0.font && !r.s0.other && !r.s0.tabC && !r.s0.authorMark && r.s0.authorDisp === 'none' && r.s1.font && r.s1.back === '↺ 消した案を戻す (1)' && r.s1.tabB && r.s1.active === 'B' && r.s2.fx && r.s2.other && r.s2.tabC && r.s2.tabB && !r.sC.tabC && r.sC.active !== 'C' && r.s3.font && r.s3.pills === 2,
       `when で空のカード「エフェクト」=${r.s0.fx ? '出' : '隠'}・中身を自分で隠した custom だけのカード「その他」=${r.s0.other ? '出' : '隠'}（その部品に部品の印=${r.s0.authorMark}・display=${r.s0.authorDisp} のまま）・中身が全部隠れたタブC=${r.s0.tabC ? '出' : '隠'} → 1案でカード「フォント」=${r.s1.font ? '出' : '隠'}（戻すボタン「${r.s1.back}」が残るのでタブB=${r.s1.tabB ? '出' : '隠'}・見ているタブ ${r.s1.active}）→ 条件を満たす: エフェクト=${r.s2.fx ? '出' : '隠'}・その他=${r.s2.other ? '出' : '隠'}・タブC=${r.s2.tabC ? '出' : '隠'} → タブCを見ている時に中身が全部隠れる: タブC=${r.sC.tabC ? '出' : '隠'}・見ているタブは ${r.sC.active} へ → 案を戻す: フォント=${r.s3.font ? '出' : '隠'}・ピル ${r.s3.pills} 個`);
+    await context.close();
+  }
+  /* ============ 17. デザインの数値の決まり（ルール集 4-7）：余白・サイズ・角丸・文字サイズのつまみは4と8の倍数に止まる ============ */
+  {
+    const { context, page } = await newPage();
+    await open(page);
+    await showPanel(page);
+    const setv = async (tabName, key, v) => {
+      await tab(page, tabName);
+      return page.evaluate(([k, v]) => {
+        const inp = document.querySelector(`.tp-pane.on .tp-item[data-key="${k}"] input[type=range]`);
+        if (!inp) return 'なし';
+        inp.value = v;
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        return k.split('.').reduce((o, x) => o && o[x], TunePanel.instances[0].params);
+      }, [key, v]);
+    };
+    const r = {
+      gap14: await setv('実績', 'res.cardGap', 14), pad10: await setv('実績', 'res.cardPad', 10), pad6: await setv('実績', 'res.cardPad', 6),
+      rad5: await setv('実績', 'res.radius', 5), bw05: await setv('実績', 'res.border.width', 0.5),
+      fs15: await setv('キービジュアル', 'kv.copySize', 15), fs14: await setv('キービジュアル', 'kv.copySize', 14), x14: await setv('キービジュアル', 'kv.copyX', 14),
+      gw: await setv('全体', 'site.gridWidth', 1.5),
+    };
+    rec('つまみはデザインの数値の決まり（4-7）に止まる：余白・サイズ・角丸・文字サイズは4の倍数（10px以下は2刻み・文字は14と18も可）。位置・線幅は止めない',
+      r.gap14 === 16 && r.pad10 === 10 && r.pad6 === 6 && r.rad5 === 6 && r.bw05 === 0.5 && r.fs15 === 16 && r.fs14 === 14 && r.x14 === 14 && (r.gw === 1.5 || r.gw === 'なし'),
+      `ギャップ 14→${r.gap14}・パディング 10→${r.pad10}・6→${r.pad6}・角丸 5→${r.rad5}・枠線の太さ 0.5→${r.bw05}・方眼の線の太さ 1.5→${r.gw}・文字サイズ 15→${r.fs15}・14→${r.fs14}・位置X 14→${r.x14}`);
     await context.close();
   }
 } catch (e) {
