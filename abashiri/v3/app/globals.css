@@ -211,21 +211,21 @@
   /* 人物（648x1067。絵は上 907 ぶんで、下 160 は跳ねた時に切れ目を見せないための延長） */
   --illust-person-x: 0px;
   --illust-person-y: 14px;
-  --illust-person-w: 162px;
+  --illust-person-w: 162px; /* 4-7例外（人物イラストの大きさ。カンプ採寸・位置と組で調整パネルで合わせた値） */
   /* 「たまらねー」（縦横比 75:53）。ヒデさん調整値 2026-08-20 */
   --illust-tamaranee-x: 107px;
   --illust-tamaranee-y: -10px;
-  --illust-tamaranee-w: 75px;
+  --illust-tamaranee-w: 75px; /* 4-7例外（「たまらねー」の絵の大きさ。ヒデさん調整値・位置と組） */
   /* 「ぼーっ」（動画視聴中。高さは元の比率まかせ） */
   --illust-bo-x: 135px;
   --illust-bo-y: 8px;
-  --illust-bo-w: 62px;
+  --illust-bo-w: 62px; /* 4-7例外（「ぼーっ」の絵の大きさ。位置と組で合わせた値） */
   /* キラキラ（2コマのGIF風）。ヒデさん指示 2026-08-20 で独立要素として復活。
      絵から切り出した sparkle-2f.png を、1コマ目=この位置 → 2コマ目=ずらした位置 で
      パキッと切り替える。位置・ずらし・速さは調整パネルから */
   --illust-sparkle-x: 4px;
   --illust-sparkle-y: 53px;
-  --illust-sparkle-w: 18px;
+  --illust-sparkle-w: 18px; /* 4-7例外（キラキラの絵の大きさ。絵から切り出した実寸・位置と組） */
   --illust-sparkle2-dx: -5px; /* ヒデさん調整値 2026-08-21 */
   --illust-sparkle2-dy: -5px;
   --illust-sparkle-period: 1.2s;
@@ -480,10 +480,10 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
 
 @media (max-width: 639px) {
   :root {
-    --ft-logo-h: 150px;
+    --ft-logo-h: 148px; /* 2026-09-27 4-7 で 150→148（収まる側へ） */
     /* ⚠️ 倍率は --ft-logo-h ÷ 379。高さを変えたらこちらも必ず一緒に変える
        （片方だけだと、中身と枠がずれる） */
-    --ft-logo-scale: 0.396;
+    --ft-logo-scale: 0.3905; /* = 148 ÷ 379 */
   }
 }
 

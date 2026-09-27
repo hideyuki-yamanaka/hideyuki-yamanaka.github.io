@@ -638,7 +638,7 @@ export default function TopTunePanel({
                 max: 420,
                 step: 5,
                 fmt: "px",
-                hint: "左カラムの作字ロゴの高さ（PC幅のとき）。スマホは150px固定",
+                hint: "左カラムの作字ロゴの高さ（PC幅のとき）。スマホは148px固定",
               },
               { sub: "パディング", deep: true },
               {

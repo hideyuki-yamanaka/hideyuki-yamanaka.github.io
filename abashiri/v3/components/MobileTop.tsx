@@ -420,7 +420,7 @@ export default function MobileTop() {
                 <img
                   src={card.img}
                   alt={card.title}
-                  className="h-[300px] w-full object-cover tab:h-[430px]"
+                  className="h-[300px] w-full object-cover tab:h-[428px]"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
                   <p className="text-body-12 font-extralight tab:text-body-14">
