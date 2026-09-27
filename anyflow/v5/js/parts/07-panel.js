@@ -207,6 +207,8 @@ function varRowX(bucket, items, getSel, setSel, o) {
     const alive = items.filter(it => !gone(it)), view = [];
     /* 【2026-09-18 ヒデさん指定】案が1つしか残っていない欄は選ぶ意味が無いので欄ごと隠し、その1案を既定にする(0なら隠すだけ) */
     box.hidden = alive.length <= 1;
+    if (o.labelEl) o.labelEl.style.display = box.hidden ? 'none' : '';
+    if (typeof hideEmptyPanelGroups === 'function') setTimeout(hideEmptyPanelGroups, 0);   /* 案を消した/戻した時に見出しの空き具合を見直す */   /* 【2026-09-27 ヒデさん依頼】欄を隠す時は項目名の行(optRow)も一緒に隠す＝名前だけ残らない。案を戻せば両方戻る */
     if (alive.length === 1 && K(getSel()) !== K(alive[0].key)) { try { const it1 = alive[0]; setSel(it1.key); markDirty(); setTimeout(() => { try { if (o.after) o.after(it1); renderFrame(); } catch (e) {} }, 0); } catch (e) {} }
     const pinned = favs().filter(f => f.m === bucket).map(f => alive.find(it => K(it.key) === K(f.name))).filter(Boolean);
     /* ピン留めは上部の別セクション(favRow)へ。番号(★1..)や VAR_VIEW の順は従来どおり(固定→ピン→その他) */
@@ -1772,6 +1774,7 @@ function buildPanel() {
   /* 【2026-09-20 ヒデさん依頼・パネル整理】全カテゴリを組み終えたので、各タブの小見出しを
      いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)に並べ替える。 */
   applyPanelGroupOrder();
+  hideEmptyPanelGroups();   /* 【2026-09-27】中身が全部隠れた見出しは見出しごと隠す */
 
   /* ボタン。
      ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。

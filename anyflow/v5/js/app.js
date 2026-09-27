@@ -10827,6 +10827,24 @@ function applyPanelGroupOrder() {
     });
   } catch (e) {}
 }
+/* 【2026-09-27 ヒデさん依頼】中身が全部隠れた小見出し(.cv-subg)・見出し(.grp)・節(.cat-section)は、見出しごと隠す(名前だけ・見出しだけ残さない)。
+   対象は中身が「その場で隠れている」(hidden / style.display='none')時だけ。自分で隠した物には data-auto-empty を付け、中身が戻ったらそれだけ戻す。 */
+function hideEmptyPanelGroups() {
+  try {
+    const root = document.getElementById('panelBody') || document;
+    const off = el => el.hidden || el.style.display === 'none';
+    const isContent = el => !['grp-note', 'row-hint', 'cat-note', 'cv-subg-lab', 'grp-title', 'cat-section-head'].some(c => el.classList.contains(c));
+    const hasVisible = box => [...box.children].some(c => isContent(c) && !off(c));
+    const setAuto = (el, empty) => {
+      if (empty) { if (!off(el)) { el.style.display = 'none'; el.dataset.autoEmpty = '1'; } }
+      else if (el.dataset.autoEmpty) { el.style.display = ''; delete el.dataset.autoEmpty; }
+    };
+    /* 内側から順に(小見出し → 見出し → 節)。入れ子は後ろから回す＝子が先 */
+    [...root.querySelectorAll('.cv-subg')].reverse().forEach(g => setAuto(g, !hasVisible(g)));
+    [...root.querySelectorAll('.grp')].reverse().forEach(g => { const bd = g.querySelector(':scope > .grp-body'); if (bd) setAuto(g, !hasVisible(bd)); });
+    [...root.querySelectorAll('.cat-section')].reverse().forEach(s => { const bd = s.querySelector(':scope > .cat-section-body'); if (bd) setAuto(s, !hasVisible(bd)); });
+  } catch (e) {}
+}
 function sub(target, html, deep, opts) {
   const key = String(html).replace(/<[^>]*>/g, '').trim();
   const fixed = !!(opts && opts.fixed);   /* たためない＝常に開いたコンパクト表示 */
@@ -11089,7 +11107,7 @@ function textRowsFor(secs) {
    opts=[[表示名, 値]]。値は文字列キーとして扱う(数値は set 側で戻す)。bucket は params.gfxVariantHidden の鍵(完全削除リストにも出る)。 */
 function optRow(bucket, label, opts, get, set, o) {
   const lab = document.createElement('div'); lab.className = 'row opt-row'; lab.innerHTML = `<label>${label}</label>`; (mount || body).appendChild(lab);
-  return varRowX(bucket, opts.map(([name, key]) => ({ key: String(key), name })), () => String(get()), k => set(k), o || {});
+  return varRowX(bucket, opts.map(([name, key]) => ({ key: String(key), name })), () => String(get()), k => set(k), Object.assign({}, o || {}, { labelEl: lab }));   /* labelEl: 選択肢が1つで欄が隠れる時に、この名前の行も隠す(2026-09-27) */
 }
 
 /* 【2026-08-27 ヒデさん指定・コンパクト化】オン/オフの2択をいくつか横に並べて1行に収める。
@@ -11354,6 +11372,8 @@ function varRowX(bucket, items, getSel, setSel, o) {
     const alive = items.filter(it => !gone(it)), view = [];
     /* 【2026-09-18 ヒデさん指定】案が1つしか残っていない欄は選ぶ意味が無いので欄ごと隠し、その1案を既定にする(0なら隠すだけ) */
     box.hidden = alive.length <= 1;
+    if (o.labelEl) o.labelEl.style.display = box.hidden ? 'none' : '';
+    if (typeof hideEmptyPanelGroups === 'function') setTimeout(hideEmptyPanelGroups, 0);   /* 案を消した/戻した時に見出しの空き具合を見直す */   /* 【2026-09-27 ヒデさん依頼】欄を隠す時は項目名の行(optRow)も一緒に隠す＝名前だけ残らない。案を戻せば両方戻る */
     if (alive.length === 1 && K(getSel()) !== K(alive[0].key)) { try { const it1 = alive[0]; setSel(it1.key); markDirty(); setTimeout(() => { try { if (o.after) o.after(it1); renderFrame(); } catch (e) {} }, 0); } catch (e) {} }
     const pinned = favs().filter(f => f.m === bucket).map(f => alive.find(it => K(it.key) === K(f.name))).filter(Boolean);
     /* ピン留めは上部の別セクション(favRow)へ。番号(★1..)や VAR_VIEW の順は従来どおり(固定→ピン→その他) */
@@ -12919,6 +12939,7 @@ function buildPanel() {
   /* 【2026-09-20 ヒデさん依頼・パネル整理】全カテゴリを組み終えたので、各タブの小見出しを
      いつも同じ順(バリエーション→基本→フォント→カラー→テクスチャ→アニメーション)に並べ替える。 */
   applyPanelGroupOrder();
+  hideEmptyPanelGroups();   /* 【2026-09-27】中身が全部隠れた見出しは見出しごと隠す */
 
   /* ボタン。
      ⚠️【2026-08-19 ヒデさん指定】「動きを止める」「先頭から見直す」は削除。

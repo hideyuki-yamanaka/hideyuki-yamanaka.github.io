@@ -2581,6 +2581,24 @@ function applyPanelGroupOrder() {
     });
   } catch (e) {}
 }
+/* 【2026-09-27 ヒデさん依頼】中身が全部隠れた小見出し(.cv-subg)・見出し(.grp)・節(.cat-section)は、見出しごと隠す(名前だけ・見出しだけ残さない)。
+   対象は中身が「その場で隠れている」(hidden / style.display='none')時だけ。自分で隠した物には data-auto-empty を付け、中身が戻ったらそれだけ戻す。 */
+function hideEmptyPanelGroups() {
+  try {
+    const root = document.getElementById('panelBody') || document;
+    const off = el => el.hidden || el.style.display === 'none';
+    const isContent = el => !['grp-note', 'row-hint', 'cat-note', 'cv-subg-lab', 'grp-title', 'cat-section-head'].some(c => el.classList.contains(c));
+    const hasVisible = box => [...box.children].some(c => isContent(c) && !off(c));
+    const setAuto = (el, empty) => {
+      if (empty) { if (!off(el)) { el.style.display = 'none'; el.dataset.autoEmpty = '1'; } }
+      else if (el.dataset.autoEmpty) { el.style.display = ''; delete el.dataset.autoEmpty; }
+    };
+    /* 内側から順に(小見出し → 見出し → 節)。入れ子は後ろから回す＝子が先 */
+    [...root.querySelectorAll('.cv-subg')].reverse().forEach(g => setAuto(g, !hasVisible(g)));
+    [...root.querySelectorAll('.grp')].reverse().forEach(g => { const bd = g.querySelector(':scope > .grp-body'); if (bd) setAuto(g, !hasVisible(bd)); });
+    [...root.querySelectorAll('.cat-section')].reverse().forEach(s => { const bd = s.querySelector(':scope > .cat-section-body'); if (bd) setAuto(s, !hasVisible(bd)); });
+  } catch (e) {}
+}
 function sub(target, html, deep, opts) {
   const key = String(html).replace(/<[^>]*>/g, '').trim();
   const fixed = !!(opts && opts.fixed);   /* たためない＝常に開いたコンパクト表示 */
@@ -2843,7 +2861,7 @@ function textRowsFor(secs) {
    opts=[[表示名, 値]]。値は文字列キーとして扱う(数値は set 側で戻す)。bucket は params.gfxVariantHidden の鍵(完全削除リストにも出る)。 */
 function optRow(bucket, label, opts, get, set, o) {
   const lab = document.createElement('div'); lab.className = 'row opt-row'; lab.innerHTML = `<label>${label}</label>`; (mount || body).appendChild(lab);
-  return varRowX(bucket, opts.map(([name, key]) => ({ key: String(key), name })), () => String(get()), k => set(k), o || {});
+  return varRowX(bucket, opts.map(([name, key]) => ({ key: String(key), name })), () => String(get()), k => set(k), Object.assign({}, o || {}, { labelEl: lab }));   /* labelEl: 選択肢が1つで欄が隠れる時に、この名前の行も隠す(2026-09-27) */
 }
 
 /* 【2026-08-27 ヒデさん指定・コンパクト化】オン/オフの2択をいくつか横に並べて1行に収める。
