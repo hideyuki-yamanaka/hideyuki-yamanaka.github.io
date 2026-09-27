@@ -100,6 +100,17 @@ try {
     localStorage.setItem('anyflow-vision-sig', _sig);
   }
 } catch (e) {}
+/* 【2026-09-27 ヒデさん依頼】開発者体験①②の「中央で一旦止まる」をやめる(全部出たらスクロールがカクッと止まるのをなくす)。
+   既定・焼き込みは 'off' にしたが、保存値に 'on' が残っているブラウザ(ローカルのヒデさんの画面も)は勝ってしまうので、1回だけ 'off' へ切り替える。
+   パネル(開発者体験 › ①②で一旦止まる › 有無)で「止まる」に戻せば、その後はそのまま残る(印 anyflow-dev-nostop-20260927)。 */
+try {
+  if (!localStorage.getItem('anyflow-dev-nostop-20260927')) {
+    if (params.sections && params.sections.dev) params.sections.dev.pinStops = 'off';
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (_o && _o.sections && _o.sections.dev) { _o.sections.dev.pinStops = 'off'; localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); } }
+    localStorage.setItem('anyflow-dev-nostop-20260927', '1');
+  }
+} catch (e) {}
 function loadParams() {
   try {
     let s = JSON.parse(localStorage.getItem(STORAGE_KEY));

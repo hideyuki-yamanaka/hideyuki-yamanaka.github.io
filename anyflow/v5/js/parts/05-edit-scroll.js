@@ -1590,7 +1590,7 @@ let resBlackK = 0;         /* 黒がどれだけ覆ったか(0→1)。dev1 の�
    仮置き: 尺(vh)・読む区間の配分は原本値。パネル「固定の長さ」で尺は可変。 */
 const RES_FX = {
   default: { vh: 0 },
-  '24-4': { vh: 240, mobileFlow: true, flow: true },   /* 【2026-09-27 ヒデさん依頼】PC も画面固定をやめ、スマホと同じく止まらずに流す。止める見せ方に戻す時は flow を外す(vh は残してある) */   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
+  '24-4': { vh: 240, mobileFlow: true },   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
   '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
   /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
 };
@@ -1658,23 +1658,6 @@ function applyResFx() {
   if (k === '24-4') resFxBuildBig();
 }
 /* 固定区間の進み: 0=セクション上端が画面上端に着いた / 1=区間の終わり(下端が画面下端)。固定なしの案は 0 */
-/* 【2026-09-27 ヒデさん指摘「今まであった for SaaS / for AI のアニメーションがごっそり消えた」】
-   画面固定をやめて流す時(PC)も、実績がまるごと画面に入ったら(下端が画面に入る／上端が画面の上1割より上)、
-   今までと同じ演出(大きい文字→小さく上へ→縦線が伸びる→中身→横線→数字)を「進み」0→1 として時間で再生する。
-   長さは fx24.playSec(既定 2.8秒・仮置き)。くり返し再生が ON なら、画面の下へ出きったら巻き戻して、次に入った時にもう一度。
-   スマホ(mobileFlow)は従来どおり完成した姿(1)のまま。 */
-const rfxFlowPlay = { t0: null };
-function rfxFlowP() {
-  if (isMobile) return 1;
-  const r = rectOf(SECS.results), vh = innerHeight || 1;
-  if (r.top > vh && params.replay) rfxFlowPlay.t0 = null;   /* 上へ戻って画面の下へ出きった→巻き戻し */
-  if (rfxFlowPlay.t0 == null) {
-    if (!((r.bottom <= vh + 1 || r.top <= vh * 0.1) && r.bottom > 0)) return 0;   /* まるごと入るまでは最初の姿 */
-    rfxFlowPlay.t0 = elapsed;
-  }
-  const dur = Math.max(0.6, +(((params.sections.results || {}).fx24 || {}).playSec) || 2.8);
-  return clamp01((elapsed - rfxFlowPlay.t0) / dur);
-}
 function resFxPin() {
   const r = rectOf(SECS.results), vh = innerHeight || 1;
   const travel = r.height - vh;
@@ -1918,8 +1901,7 @@ applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを�
 applyResSpGap();    /* 【2026-09-21】起動時にスマホの実績の縦余白を反映 */
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
 /* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
-function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px');
-  document.documentElement.style.setProperty('--vis-res-pull-flow', (params.visResPullFlow != null ? params.visResPullFlow : 0) + 'px'); }   /* 【2026-09-27】実績を止めずに流す時(PC)の引き上げ量。止める時の 200 のままだとビジョンの図に重なる */
+function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px'); }
 applyVisResPull();
 function applySecHeadGap() { document.documentElement.style.setProperty('--sec-head-gap', (params.secHeadGap != null ? params.secHeadGap : 6) + 'px'); }
 applySecHeadGap();
@@ -1947,9 +1929,8 @@ function resFxFrame(t) {
   if (k === '26' && resFxShort()) { valTOv.saas = null; valTOv.ai = null; return; }   /* 【2026-09-26 整理】元は固定案の一覧(生きているのは26だけ。24-4 は入っていない) */
 
   if (k === '24-4') {
-    /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す
-       【2026-09-27 ヒデさん指摘「for SaaS / for AI のアニメーションがごっそり消えた」】PC は流す時も、まるごと画面に入ったら同じ演出を時間で再生する(rfxFlowP) */
-    const p = resFxFlowMode(k) ? rfxFlowP() : resFxPin(), H = rfxHero(), vh = rfxVH();
+    /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
+    const p = resFxFlowMode(k) ? 1 : resFxPin(), H = rfxHero(), vh = rfxVH();
     const F = Object.assign({ labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
        「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。

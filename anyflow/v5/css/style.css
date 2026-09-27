@@ -1077,9 +1077,7 @@
   #results { position: relative; z-index: 1; }
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図を差し替えて下が空きすぎたので、実績を上へ引き上げて空白を詰める(PCのみ。SPは図の下にPointが続くので詰めない)。
      量は ビジョンタブ「実績との間隔（詰める）」→ --vis-res-pull。実績の pin-vp は不透明(var(--surface))なので、重なった分はビジョンの舞台の下の空白(1440×921で216px)が隠れるだけ */
-  html:not(.mb) #results { margin-top: calc(-1 * (var(--vis-res-pull, 0px) + max(0px, (100vh - var(--dh, 921px)) / 2))); }
-  /* 【2026-09-27 ヒデさん依頼】実績を止めずに流す時(rfx-flow)は、中身が上から詰まるので、止める時の引き上げ(200)だとビジョンの図に重なる→流す用の量(既定0＝舞台のすぐ下から)を使う */
-  html:not(.mb) #results.rfx-flow { margin-top: calc(-1 * (var(--vis-res-pull-flow, 0px) + max(0px, (100vh - var(--dh, 921px)) / 2))); }   /* 2026-09-19: 背の高い画面では舞台(921px)の上下の余り(中央寄せぶん)も自動で吸収する */
+  html:not(.mb) #results { margin-top: calc(-1 * (var(--vis-res-pull, 0px) + max(0px, (100vh - var(--dh, 921px)) / 2))); }   /* 2026-09-19: 背の高い画面では舞台(921px)の上下の余り(中央寄せぶん)も自動で吸収する */
   #results .pin-stage { display: flex; align-items: center; justify-content: center; }
   .res2 { width: 1136px; max-width: calc(100% - 96px); display: flex; flex-direction: column; gap: var(--space-40); color: var(--ink-strong); }
   /* 上段: 見出し(左) + 3数値(右)。フレーム 1138×116・数値グループ 631×102 */
