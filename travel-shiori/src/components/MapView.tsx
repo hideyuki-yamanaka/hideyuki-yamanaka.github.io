@@ -124,7 +124,7 @@ function createNumberedPin(spot: Spot, dayNum: number | undefined, isSelected: b
         left: 0;
         right: 0;
         text-align: center;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 700;
         line-height: 20px;
         color: ${pinColor};
@@ -470,7 +470,7 @@ const MapViewInner = forwardRef<MapViewHandle, MapViewProps>(function MapViewInn
             >
               <div style={{
                 padding: '8px 12px',
-                minWidth: 148,
+                minWidth: 150,
                 fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
               }}>
                 <div style={{
@@ -484,19 +484,19 @@ const MapViewInner = forwardRef<MapViewHandle, MapViewProps>(function MapViewInn
                     color: 'white',
                     borderRadius: 12,
                     padding: '2px 8px',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
                   }}>
                     {config.icon} {config.label}
                   </span>
                   {spot.time && (
-                    <span style={{ fontSize: 12, color: '#5F6368', fontWeight: 500 }}>
+                    <span style={{ fontSize: 13, color: '#5F6368', fontWeight: 500 }}>
                       {spot.time}
                     </span>
                   )}
                 </div>
                 <div style={{
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: 600,
                   color: '#1A1A1A',
                   lineHeight: 1.3,

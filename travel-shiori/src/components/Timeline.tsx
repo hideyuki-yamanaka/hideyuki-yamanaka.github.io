@@ -51,8 +51,8 @@ export default function Timeline({
         <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
           <span className="text-3xl">📍</span>
         </div>
-        <p className="text-[14px] font-medium text-gray-500">スポットがまだありません</p>
-        <p className="text-[12px] mt-1 text-gray-400">タップしてスポットを追加</p>
+        <p className="text-[15px] font-medium text-gray-500">スポットがまだありません</p>
+        <p className="text-[13px] mt-1 text-gray-400">タップしてスポットを追加</p>
       </button>
     );
   }
@@ -90,12 +90,12 @@ export default function Timeline({
                   <span className="text-[36px] tracking-tighter" style={{ fontWeight: 900 }}>{day.dayNum}</span>
                   <span className="text-[22px] tracking-tight ml-[1px]">日目</span>
                 </span>
-                <span className="text-[16px] font-semibold text-gray-500">
+                <span className="text-[17px] font-semibold text-gray-500">
                   {section.dateLabel}
                 </span>
               </div>
               {section.headline && (
-                <p className="text-[14px] text-gray-400 mt-0.5 leading-snug">
+                <p className="text-[15px] text-gray-400 mt-0.5 leading-snug">
                   {section.headline}
                 </p>
               )}
@@ -175,7 +175,7 @@ function DraftCard({
       <button
         type="button"
         onClick={onTap}
-        className="w-full text-left rounded-xl py-3 px-3 border-2 border-dashed border-blue-300 bg-blue-50/30"
+        className="w-full text-left rounded-xl py-3 px-3.5 border-2 border-dashed border-blue-300 bg-blue-50/30"
       >
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center flex-shrink-0 w-10">
@@ -184,7 +184,7 @@ function DraftCard({
             <div className="w-0.5 h-2 bg-blue-200 rounded-full" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[14px] font-semibold text-gray-700 truncate block">
+            <span className="text-[15px] font-semibold text-gray-700 truncate block">
               {spot.name}
             </span>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
@@ -213,7 +213,7 @@ function DraftCard({
     <button
       type="button"
       onClick={onTap}
-      className="w-full text-left rounded-2xl p-3 border-2 border-dashed border-blue-300 bg-blue-50/30"
+      className="w-full text-left rounded-2xl p-3.5 border-2 border-dashed border-blue-300 bg-blue-50/30"
     >
       <div className="flex items-center gap-3">
         <MiniPinIcon dayNum={dayNum} size={36} draft />
@@ -221,11 +221,11 @@ function DraftCard({
         <div className="flex-1 min-w-0">
           {isNamePlaceholder ? (
             <div className="flex items-center gap-2">
-              <span className="text-[20px] font-bold text-gray-300 leading-tight">{spot.name}</span>
+              <span className="text-[19px] font-bold text-gray-300 leading-tight">{spot.name}</span>
               <FieldPlaceholder label="名前を入力" />
             </div>
           ) : (
-            <span className="text-[20px] font-bold text-gray-900 truncate block leading-tight">
+            <span className="text-[19px] font-bold text-gray-900 truncate block leading-tight">
               {spot.name}
             </span>
           )}
@@ -236,7 +236,7 @@ function DraftCard({
               <FieldPlaceholder label="時刻を入力" />
             )}
             <span
-              className="text-[12px] px-1.5 py-0.5 rounded-full font-medium"
+              className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
               style={{
                 backgroundColor: dayColor.hex + '15',
                 color: dayColor.hex,
@@ -303,7 +303,7 @@ function SpotCard({
         type="button"
         onClick={onSelect}
         className={cn(
-          'w-full text-left rounded-xl py-3 px-3 transition-all duration-150 active:scale-[0.98]',
+          'w-full text-left rounded-xl py-3 px-3.5 transition-all duration-150 active:scale-[0.98]',
           'bg-gray-50 ring-1 ring-gray-100',
           isSelected && 'ring-2 ring-blue-500/30 bg-blue-50/30',
         )}
@@ -322,7 +322,7 @@ function SpotCard({
             <div className="w-0.5 h-2 bg-gray-200 rounded-full" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[14px] font-semibold text-gray-700 truncate block">
+            <span className="text-[15px] font-semibold text-gray-700 truncate block">
               {spot.name}
             </span>
             <div className="flex items-center gap-2 mt-0.5">
@@ -330,7 +330,7 @@ function SpotCard({
                 {spot.time}
               </span>
               {spot.endTime && (
-                <span className="text-[12px] text-gray-400">– {spot.endTime}</span>
+                <span className="text-[13px] text-gray-400">– {spot.endTime}</span>
               )}
               {tc && (
                 <span className="text-[12px] px-2 py-0.5 rounded-full bg-gray-200/70 text-gray-600 font-medium">
@@ -361,7 +361,7 @@ function SpotCard({
       onClick={onSelect}
       className={cn(
         'w-full text-left rounded-2xl transition-all duration-150 active:scale-[0.98]',
-        'shadow-sm p-3',
+        'shadow-sm p-3.5',
         assignee
           ? aColor!.bg
           : 'bg-white ring-1 ring-black/[0.04]',
@@ -381,7 +381,7 @@ function SpotCard({
         <MiniPinIcon dayNum={dayNum} size={36} />
 
         <div className="flex-1 min-w-0">
-          <span className="text-[20px] font-bold text-gray-900 truncate block leading-tight">
+          <span className="text-[19px] font-bold text-gray-900 truncate block leading-tight">
             {spot.name}
           </span>
           <div className="flex items-center gap-2 mt-0.5">
@@ -389,10 +389,10 @@ function SpotCard({
               {spot.time}
             </span>
             {spot.endTime && (
-              <span className="text-[12px] text-gray-400">– {spot.endTime}</span>
+              <span className="text-[13px] text-gray-400">– {spot.endTime}</span>
             )}
             <span
-              className="text-[12px] px-1.5 py-0.5 rounded-full font-medium"
+              className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
               style={{
                 backgroundColor: dayColor.hex + '15',
                 color: dayColor.hex,
@@ -417,8 +417,8 @@ function SpotCard({
       </div>
 
       {spot.memo && (
-        <div className="mt-2.5 pl-[48px] pt-2 border-t border-gray-200">
-          <p className="text-[12px] text-gray-500 leading-relaxed">{spot.memo}</p>
+        <div className="mt-2.5 pl-[50px] pt-2 border-t border-gray-200">
+          <p className="text-[13px] text-gray-500 leading-relaxed">{spot.memo}</p>
         </div>
       )}
     </button>
