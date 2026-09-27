@@ -174,7 +174,7 @@
   /* 3: 下スクロールで隠す(現在は未使用) */
   /* 4: 縮む(ロゴ小・余白小・ガラス) */
   /* 5: フローティングピル(ナビは残す・両端を少し浮かせてガラス) */
-  html:not(.mb).hm-5 .header { --hdr-py: 13px; --hdr-px: 28px; --hdr-logo-h: 39px;
+  html:not(.mb).hm-5 .header { --hdr-py: 12px; --hdr-px: 28px; --hdr-logo-h: 39px;
     margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: calc(var(--hdr-side) * var(--hdr-t, 0));
     --hdr-skin-bg: rgba(255,255,255,.58); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 14px 34px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
 
@@ -268,7 +268,7 @@
   /* 6: 全幅ガラスバー(既定 skin) / 7: 全幅ソリッド白。幅は不変、ナビ→バーガーだけ */
   /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴは大きく変えない=40px) */
   /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴのサイズは変えない=47。ロゴが原寸ぶんピル幅は広め) */
-  html:not(.mb).hm-8 .header { --hdr-cw: 345px; --hdr-py: 14px; --hdr-px: 20px; --hdr-logo-h: 47px;
+  html:not(.mb).hm-8 .header { --hdr-cw: 344px; --hdr-py: 16px; --hdr-px: 20px; --hdr-logo-h: 47px;
     margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: auto;
     --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
   /* 9: 右寄せピル */
