@@ -8811,11 +8811,19 @@ function alignGridAndLines() {
       const r = el.getBoundingClientRect(), top0 = r.top - cur;
       const y = mob ? top0 + scrollY : top0 - vp.getBoundingClientRect().top;   /* スマホ=ページの上から / PC=止まっている間の画面の上から */
       const m = mod(y);
-      const vis = n => n && getComputedStyle(n).display !== 'none';
-      let pv = el.previousElementSibling; while (pv && !vis(pv)) pv = pv.previousElementSibling;
-      let nx = el.nextElementSibling; while (nx && !vis(nx)) nx = nx.nextElementSibling;
-      const gA = pv ? top0 - pv.getBoundingClientRect().bottom : Infinity;
-      const gB = nx ? nx.getBoundingClientRect().top - (top0 + r.height) : Infinity;
+      /* 見た目で線のすぐ上・すぐ下にある中身(文字・図)。コードの並び順と見た目の順が違う所があるので、位置で探す。透明で見えていない物は数えない */
+      const sec = el.closest('section') || document.body;
+      const shownOp = n => { let o = 1; for (let a = n; a && a !== sec.parentElement; a = a.parentElement) { const c = getComputedStyle(a); if (c.display === 'none' || c.visibility === 'hidden') return 0; o *= +c.opacity; } return o; };
+      let above = -Infinity, below = Infinity;
+      sec.querySelectorAll('*').forEach(n => {
+        if (n.closest(GRID_SNAP_SEL) || (n.ownerSVGElement)) return;
+        const leaf = /^(svg|img|canvas)$/i.test(n.tagName) || [...n.childNodes].some(c => c.nodeType === 3 && c.textContent.trim());
+        if (!leaf) return;
+        const q = n.getBoundingClientRect(); if (q.width < 2 || q.height < 2 || q.right <= r.left || q.left >= r.right) return;
+        if (shownOp(n) < 0.05) return;
+        if (q.bottom <= top0 + 0.5) above = Math.max(above, q.bottom); else if (q.top >= top0 + r.height - 0.5) below = Math.min(below, q.top);
+      });
+      const gA = top0 - above, gB = below - (top0 + r.height);   /* 無ければ Infinity */
       const cands = [-m, cell - m].sort((a, b) => Math.abs(a) - Math.abs(b));
       const d = cands.find(c => Math.min(gA + c, gB - c) >= GRID_SNAP_MIN_GAP) ?? cands[0];
       const st = el.closest('.pin-stage');
