@@ -98,7 +98,7 @@
   /* 【2026-09-17 ヒデさん指定】ロゴは常に縦横比を保つ＝高さ基準＋width:auto。縮小案も transition は height だけ動かし、
      幅は比率で自動追従(=どのフレームでも潰れない)。自然サイズ 255×47(比 5.426)。 */
   .header .logo { position: relative; }
-  .header .logo img { height: 47px; width: auto; display: block; }
+  .header .logo img { height: 47px; width: auto; display: block; }   /* 4-7例外（ロゴ画像の実寸 255×47） */
   /* 白版ロゴ(反転用)は色版の上に重ねてクロスフェード。色版がフローで箱サイズを決め、白版は絶対配置で追従(morph の height 補間は両方に効く) */
   .header .logo .logo-w { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; }
   .nav { display: flex; align-items: center; gap: var(--space-32); }
@@ -122,7 +122,7 @@
   .header[data-navhover="fade"] .nav-links a { transition: opacity var(--t-fast) var(--e-fast); }
   .header[data-navhover="fade"] .nav-links a:hover { opacity: .5; }
   /* 2: 下線が左から伸びる */
-  .header[data-navhover="underline"] .nav-links a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: -4px; height: 1.5px; background: currentColor; transition: right var(--t-ui) var(--e-out); }
+  .header[data-navhover="underline"] .nav-links a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: -4px; height: 1.5px; background: currentColor; transition: right var(--t-ui) var(--e-out); }   /* 4-7例外（線の太さ・下線） */
   .header[data-navhover="underline"] .nav-links a:hover::after { right: 0; }
   /* 3: 上下ロール(Framer参照 https://extraordinary-topic-909967.framer.app/) */
   .header[data-navhover="roll"] .nav-links a .nlab > span { transition: transform var(--t-ui) var(--e-out); }
@@ -489,7 +489,7 @@
     color: var(--ink-strong);
     opacity: 0;
   }
-  .hl-eyebrow i { display: var(--kv-eyebrow-dash, block); width: var(--kv-eyebrow-dash-w, 26px); height: 1px; background: var(--ink-strong); flex: none; }
+  .hl-eyebrow i { display: var(--kv-eyebrow-dash, block); width: var(--kv-eyebrow-dash-w, 26px); height: 1px; background: var(--ink-strong); flex: none; }   /* 4-7例外（線の太さ・罫線） */
   /* 【2026-09-18 ノーマル案(Figma 17707:26544)】罫線(40px)を文字の【上】に置き、サブコピーは2行組。列方向の間隔は --kv-dash-gap(21px) */
   html.kvv-eyebrow-col:not(.mb) .hl-eyebrow { flex-direction: column; align-items: flex-start; }
   .hl-eb-br { display: none; }
@@ -528,8 +528,8 @@
     position: absolute;
     right: 28.5px;
     top: 179px;
-    width: 915.483px;
-    height: 630px;
+    width: 915.483px;   /* 4-7例外（カンプのグラフィックの枠） */
+    height: 630px;   /* 4-7例外（カンプのグラフィックの枠） */
     opacity: 0;
     z-index: 4;   /* 【2026-09-17 ヒデさん指定・全案共通】グラフィックを移動(gdx/gdy)した時、DOM後方のロゴ群/次セクションに覆われて下部が切れていた。前面に出して切れないように(ヘッダー/パネル等のUIオーバーレイ z: 100+ より下) */
   }
@@ -771,7 +771,7 @@
   /* 章①用の静止モック（複製）。ホバーも動きも持たない見せ物 */
   /* 章①用の静止モック。JS で動かさないので、CSS で中央に置いて見出しの下に収める */
   html.nopin .np-mock {
-    position: absolute; left: 50%; top: 300px; width: 840.6px; height: 504.37px;
+    position: absolute; left: 50%; top: 300px; width: 840.6px; height: 504.37px;   /* 4-7例外（カンプのモック画面の実寸 840.6×504.37） */
     transform: translateX(-50%) scale(0.905); transform-origin: 50% 0;
     pointer-events: none;
   }
@@ -891,7 +891,7 @@
   .vf-wrap .vf-dome { position: absolute; left: -150px; top: -150px; width: 900px; height: 900px; display: block;
     -webkit-mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 402px), transparent var(--vf-fade-b, 546px));
             mask-image: linear-gradient(to bottom, #000 var(--vf-fade-a, 402px), transparent var(--vf-fade-b, 546px)); }
-  .vf-wrap .vf-logo { position: absolute; left: 127px; top: 288px; width: 204px; height: 37px; display: block; -webkit-user-drag: none; user-select: none; }   /* カンプ: ケージ(29,49)＋ロゴ bbox(98,239) */
+  .vf-wrap .vf-logo { position: absolute; left: 127px; top: 288px; width: 204px; height: 37px; display: block; -webkit-user-drag: none; user-select: none; }   /* カンプ: ケージ(29,49)＋ロゴ bbox(98,239) */   /* 4-7例外（ロゴ画像の大きさ） */
   /* 【2026-09-19 ヒデさん依頼】ロゴの後ろの楕円: 中の網目をぼかし(backdrop-filter)＋地色で薄める。縁は radial の mask でやわらかく。値は JS(applyVfFade) */
   .vf-wrap .vf-logo-bg { position: absolute; display: none; pointer-events: none; border-radius: 50%; background: rgba(231,231,231,var(--vfbg-a, 0));
     -webkit-backdrop-filter: blur(var(--vfbg-blur, 0px)); backdrop-filter: blur(var(--vfbg-blur, 0px));
@@ -959,7 +959,7 @@
   /* ---- 共通の見た目 ---- */
   .res-head { width: 100%; font-weight: 300; font-size: var(--fs-stat); line-height: var(--lh-loose); text-align: right; }
   .res-head .rh-ch { display: inline-block; white-space: pre; }
-  .res-line { width: 100%; height: 1px; background: var(--line); }
+  .res-line { width: 100%; height: 1px; background: var(--line); }   /* 4-7例外（線の太さ） */
   .res-nums { display: flex; align-items: center; gap: var(--space-44); width: 100%; }
   .res-nums .rn { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-8); }
   .res-nums .rn b { font-weight: 300; font-size: var(--fs-base); line-height: 24px; white-space: nowrap; }
@@ -1109,7 +1109,7 @@
      以前 Ultralight を 200 と誤変換していた(SF系: Ultralight=100/Thin=200。Noto系の Thin=100 と呼称がズレる) */
   .res2-stats .r2s span { font-family: var(--font-en); font-weight: 100; font-size: 60px; line-height: 1; color: var(--ink-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }   /* 【2026-09-20】4項目化: 70→60px(Figma 17950:34275 準拠) */
   /* 区切り線(横・全幅) */
-  .res2-hr { width: 100%; height: 1px; background: var(--line-grid); }   /* 2026-09-09: 導入事例のグリッド線と同じ濃さに(--line #D1D5DC→--line-grid #ACACAC・ヒデさん指定) */
+  .res2-hr { width: 100%; height: 1px; background: var(--line-grid); }   /* 2026-09-09: 導入事例のグリッド線と同じ濃さに(--line #D1D5DC→--line-grid #ACACAC・ヒデさん指定) */   /* 4-7例外（線の太さ） */
   .res2-hr-top { display: none; }   /* 【2026-09-20】for SaaS の上の横線。既定は出さず、案24/25 でだけ出す */
   /* 下段: 2つの価値。フレーム 1138×220・各カラム 512(text260 + gap32 + graphic220)・中央に縦線182 */
   .res2-vals { display: flex; align-items: center; justify-content: space-between; }
@@ -1175,12 +1175,12 @@
   html:not(.mb) #results.rfx-24 .res2 { width: min(1248px, 100% - 120px); display: grid; grid-template-columns: 1fr 1px 1fr; grid-template-rows: auto auto auto auto; column-gap: var(--space-48); row-gap: 0; align-items: start; }   /* カンプの内容幅 96〜1343 = 1247。【2026-09-20】上の横線ぶん行を1つ増やして4行に */
   #results.rfx-24 .res2-vals, #results.rfx-24 .r2v-track { display: contents; }
   /* 【2026-09-20 ヒデさん依頼】for SaaS/AI の上の横線(下段と同じ見た目・同じ出現アニメ)。行1に置き、カード類は行2へ繰り下げ */
-  #results.rfx-24 .res2-hr-top { display: block; grid-area: 1 / 1 / 2 / 4; height: 1px; background: var(--line-grid); margin: 0 0 var(--rfx-hr-gap-top, 56px); transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
+  #results.rfx-24 .res2-hr-top { display: block; grid-area: 1 / 1 / 2 / 4; height: 1px; background: var(--line-grid); margin: 0 0 var(--rfx-hr-gap-top, 56px); transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }   /* 4-7例外（線の太さ） */
   /* 【2026-09-20 ヒデさん依頼】for SaaS/AI の上の横線は PC では非表示(SPのみ)。空いた行1は自動で高さ0になる */
   html:not(.mb) #results.rfx-24 .res2-hr-top { display: none; }
   #results.rfx-24 .r2v-track > .r2v:nth-of-type(1) { grid-area: 2 / 1 / 3 / 2; }
   #results.rfx-24 .r2v-track > .r2v:nth-of-type(3) { grid-area: 2 / 3 / 3 / 4; }
-  #results.rfx-24 .res2-vline { display: block; grid-area: 2 / 2 / 3 / 3; width: 1px; height: auto; align-self: stretch; margin: 0; background: var(--rfx-line); transform-origin: center top; transform: scaleY(var(--rfx-vline, 0)); }
+  #results.rfx-24 .res2-vline { display: block; grid-area: 2 / 2 / 3 / 3; width: 1px; height: auto; align-self: stretch; margin: 0; background: var(--rfx-line); transform-origin: center top; transform: scaleY(var(--rfx-vline, 0)); }   /* 4-7例外（線の太さ） */
   /* 【2026-09-15 ヒデさん指摘】2つの価値のブロックと区切り線の間の余白。36→72→(つまみ)100px。
      ブロック全体は中央寄せなので、ここを広げると線と「事業の推進力を、Anyflowが支えます。」が下がり、
      上のブロックとの間が空く。調整パネル「実績」→ 案24 のまとまりの「区切り線の上の余白」で変えられる。 */
@@ -1234,7 +1234,7 @@
   #results.rfx-26 .r2v-h br { display: none; }
   #results.rfx-26 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
   #results.rfx-26 .r2v-fig { display: block; order: 1; justify-self: end; margin-right: var(--space-60); }
-  #results.rfx-26 .r2v-graphic { width: 325px; height: 325px; }   /* 描画 148/220 → 219px ＝ カンプの内容 219px */
+  #results.rfx-26 .r2v-graphic { width: 325px; height: 325px; }   /* 描画 148/220 → 219px ＝ カンプの内容 219px */   /* 4-7例外（ピクトの描画をカンプの大きさに合わせた逆算値） */
 
   /* ===== 【2026-09-15 ヒデさん指定】モック(/mock/reveal/)に残っていた5案(No.01〜05)を本実装へ移植(動き・概念を踏襲。寸法はモックの値) ===== */
 
@@ -1251,7 +1251,7 @@
   /* --- 案24(SP): 2列を縦積み(説明→ピクト300×220)。仕切り線なし。下段は見出し29px・2行と数値40px。大見出し 40px --- */
   html.mb #results.rfx-24 .res2 { display: flex; flex-direction: column; gap: var(--r2v-sp-gap, var(--space-16)); width: calc(100% - 48px); margin: 0 auto; }   /* 【2026-09-21 ヒデさん依頼】縦の余白を「区切り線まわりの余白(スマホ)」で調整可能に(既定 --space-16=16px) */   /* 【2026-09-16】左右24px(V3.0)/縦gap 28→16(--space-16)でスペーシングガイドラインに沿って詰める */
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track { display: contents; }
-  html.mb #results.rfx-24 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0 46px; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */   /* 【2026-09-21 ヒデさん依頼】線→for AI の見た目余白を約60pxに(下margin 4→46。上4はSaaS側=ピクトのmargin-bottomで60に調整) */
+  html.mb #results.rfx-24 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0 46px; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */   /* 【2026-09-21 ヒデさん依頼】線→for AI の見た目余白を約60pxに(下margin 4→46。上4はSaaS側=ピクトのmargin-bottomで60に調整) */   /* 4-7例外（線の太さ） */
   html.mb #results.rfx-24 .res2-hr { display: block; order: 1; /* 【2026-09-19 ヒデさん依頼】線は数値の上(ピクト→線→数値。PCと同じ並び) */ margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
   html.mb #results.rfx-24 .res2-hr-top { margin: var(--space-4) 0 46px; }   /* 【2026-09-21 Y9】for SaaS 上の線の下余白(既定56px)を他の線(vline/res2-hr=4px)と統一＝各ボックス上下の余白を揃える(SPのみ・PCは非表示) */   /* 【2026-09-21 ヒデさん依頼】線→for SaaS の見た目余白を約60pxに(下margin 4→46) */
   html.mb #results.rfx-24 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: 0; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に。【2026-09-21 ヒデさん依頼】線→事業の推進力見出しの余白を他の線と統一(24px→20px。padding-top 4px を除去) */
@@ -1280,8 +1280,8 @@
   html.mb #results.rfx-26 .res2-stats .r2s b { font-size: var(--fs-caption); line-height: 18px; }
   html.mb #results.rfx-26 .res2-hr { margin: var(--space-28) var(--space-20) 0; width: auto; }
   html.mb #results.rfx-26 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-24) var(--space-20) 0; min-height: 0; }
-  html.mb #results.rfx-26 .r2v-fig { order: -1; align-self: center; width: 235px; margin: 0; }
-  html.mb #results.rfx-26 .r2v-graphic { width: 235px; height: 145px; }
+  html.mb #results.rfx-26 .r2v-fig { order: -1; align-self: center; width: 235px; margin: 0; }   /* 4-7例外（ピクトの枠＝グラフィックの大きさ） */
+  html.mb #results.rfx-26 .r2v-graphic { width: 235px; height: 145px; }   /* 4-7例外（ピクトの枠＝グラフィックの大きさ） */
   html.mb #results.rfx-26 .r2v-text { max-width: none; width: 100%; gap: var(--space-10); margin-top: var(--space-10); }
   html.mb #results.rfx-26 .r2v-tag { font-size: var(--fs-base); }
   html.mb #results.rfx-26 .r2v-h { font-size: 25px; line-height: var(--lh-heading); white-space: nowrap; }
@@ -1325,7 +1325,7 @@
     position: absolute;
     right: 0;
     top: -625.6px;     /* JS がパララックスでここを動かす */
-    width: 941px;
+    width: 941px;   /* 4-7例外（画像の大きさ） */
     height: 1672px;
     max-width: none;
   }
@@ -1586,7 +1586,7 @@
   .dm-side .dm-logo i:nth-child(1) { background: #0EBBFF; }
   .dm-side .dm-logo i:nth-child(2) { background: #2E6FD8; }
   .dm-side .dm-logo i:nth-child(3) { background: #FF5D97; }
-  .dm-side .dm-divider { width: 24px; height: 1px; background: var(--glass-10); }
+  .dm-side .dm-divider { width: 24px; height: 1px; background: var(--glass-10); }   /* 4-7例外（線の太さ） */
   .dm-side .dm-icons { display: flex; flex-direction: column; align-items: center; gap: var(--space-16); width: 100%; }
   .dm-side .dm-icons i { position: relative; width: 16px; height: 16px; display: grid; place-items: center; }
   .dm-side .dm-icons i::before { content: ''; display: block; width: 10px; height: 10px; border-radius: 50%; background: rgba(14,187,255,.2); }
@@ -1765,7 +1765,7 @@
   .dm-input .dm-typed { color: var(--glass-90); }
   .dm-input .dm-cursor {
     display: inline-block;
-    width: 1px;
+    width: 1px;   /* 4-7例外（線の太さ・入力カーソル） */
     height: 13px;
     margin-left: 1px;
     background: var(--glass-82);
@@ -1878,7 +1878,7 @@
     position: absolute;
     left: 0;
     width: 100%;
-    height: 1px;
+    height: 1px;   /* 4-7例外（線の太さ） */
     background: var(--line-grid);
     transform-origin: left center;
     transform: scaleX(0);
@@ -1891,7 +1891,7 @@
     position: absolute;
     left: 50%;
     top: 0;
-    width: 1px;
+    width: 1px;   /* 4-7例外（線の太さ） */
     height: 100%;
     background: var(--line-grid);
     transform-origin: center top;
@@ -1927,7 +1927,7 @@
      ⚠️ 疑似要素(::after)ではなく実体の要素にしてある。
         ::after は JS から状態を読めず、動いているか確かめられないため(2026-08-27) */
   .cg-uline {
-    position: absolute; left: 60px; right: 60px; bottom: 46px; height: 1px;
+    position: absolute; left: 60px; right: 60px; bottom: 46px; height: 1px;   /* 4-7例外（線の太さ） */
     background: var(--brand-cyan); transform: scaleX(0); transform-origin: left center; opacity: 0;
     transition: transform var(--t-move) var(--e-soft), opacity var(--t-tap) ease; pointer-events: none;
   }
@@ -1948,10 +1948,10 @@
      画像は同時に scale1.0→1.04(中央基点・0.35sで線より先に着地)。文字・浮き・影・背景は一切変化なし。 */
   .cg-edge { position: absolute; background: var(--ink-strong); pointer-events: none; z-index: 2;
              transition: transform var(--t-slow) var(--e-standard); }
-  .cg-e-t { top: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: left center; }
-  .cg-e-r { top: 0; right: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center top; }
-  .cg-e-b { bottom: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: right center; }
-  .cg-e-l { top: 0; left: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center bottom; }
+  .cg-e-t { top: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: left center; }   /* 4-7例外（線の太さ） */
+  .cg-e-r { top: 0; right: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center top; }   /* 4-7例外（線の太さ） */
+  .cg-e-b { bottom: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: right center; }   /* 4-7例外（線の太さ） */
+  .cg-e-l { top: 0; left: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center bottom; }   /* 4-7例外（線の太さ） */
   [data-hover="trim"] .cg-cell:hover .cg-edge { transform: scale(1); transition-duration: .55s; }
   [data-hover="trim"] .cg-img img { transition: transform var(--t-ui) var(--e-standard); }
   [data-hover="trim"] .cg-cell:hover .cg-img img { transform: scale(1.04); }
@@ -1969,10 +1969,10 @@
   /* 線の色は、もともと引いてあった罫線と同じグレー(--line-grid)。黒だと濃すぎる(2026-09-15 ヒデさん指定) */
   .cg-cedge { position: absolute; background: var(--cg-edge, var(--line-grid)); pointer-events: none; z-index: 3;
               transition: transform var(--t-slow) var(--e-standard), background-color var(--t-ui) ease; }
-  .cg-ce-t { top: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: left center; }
-  .cg-ce-r { top: 0; right: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center top; }
-  .cg-ce-b { bottom: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: right center; }
-  .cg-ce-l { top: 0; left: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center bottom; }
+  .cg-ce-t { top: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: left center; }   /* 4-7例外（線の太さ） */
+  .cg-ce-r { top: 0; right: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center top; }   /* 4-7例外（線の太さ） */
+  .cg-ce-b { bottom: 0; left: 0; right: 0; height: 1px; transform: scaleX(0); transform-origin: right center; }   /* 4-7例外（線の太さ） */
+  .cg-ce-l { top: 0; left: 0; bottom: 0; width: 1px; transform: scaleY(0); transform-origin: center bottom; }   /* 4-7例外（線の太さ） */
   [data-hover="cardtrim"] .cg-cell:hover .cg-cedge { transform: scale(1); transition-duration: .55s; }
   [data-hover="cardtrim"] .cg-img img { transition: transform var(--t-ui) var(--e-standard); }
   [data-hover="cardtrim"] .cg-cell:hover .cg-img img { transform: scale(1.03); }
@@ -1998,7 +1998,7 @@
   .cg-tr { left: 50%; top: 0;     height: 295px; }
   .cg-bl { left: 0;   top: 295px; height: 294px; }
   .cg-br { left: 50%; top: 295px; height: 294px; }
-  .cg-img { position: relative; flex: 0 0 260px; width: 260px; height: 173px; overflow: hidden; }
+  .cg-img { position: relative; flex: 0 0 260px; width: 260px; height: 173px; overflow: hidden; }   /* 4-7例外（事例の写真の枠 260×173＝写真の縦横比） */
   .cg-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cg-body { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-28); }
   .cg-quote {
@@ -2055,7 +2055,7 @@
     background: rgba(40,120,255,.12); color: inherit; font: 600 12px system-ui, sans-serif; cursor: pointer; text-align: center; }
   .cvg-editbtn.on { background: #2878ff; color: #fff; border-color: #2878ff; }
   /* 惑星グラフィック(カンプの Group1119 の見えている部分を 2倍PNGで)。右上に配置 */
-  .cv-planet { position: absolute; right: 0; top: 46px; width: 409.5px; height: 315px; pointer-events: none; }
+  .cv-planet { position: absolute; right: 0; top: 46px; width: 409.5px; height: 315px; pointer-events: none; }   /* 4-7例外（惑星の画像の大きさ） */
   .cv-content {
     position: absolute; left: 50%; top: 100px; transform: translateX(-50%);
     width: 497px; text-align: center; color: var(--ink-strong);
@@ -2221,7 +2221,7 @@
               display: flex; flex-direction: column; align-items: center; gap: var(--space-60); }   /* 縦 gap60(カンプ) */
   .ft-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
   .ft-left { display: flex; flex-direction: column; gap: var(--space-24); }   /* ロゴ→住所 gap24 */
-  .ft-logo { width: 334px; height: 62px; display: block; }
+  .ft-logo { width: 334px; height: 62px; display: block; }   /* 4-7例外（ロゴ画像の大きさ） */
   /* 住所: Noto Sans JP Light 12 / 白100% / 行間170% (カンプ 16083:23606) */
   .ft-addr { font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); color: var(--ink-on-dark); white-space: nowrap; }   /* 12px / 1.7 */
   /* ナビ: 2列(列間 44・列内 24)。Noto Sans JP Light 14 / 白 / 全体 opacity 0.5 (カンプ 16534:22728) */
@@ -2242,7 +2242,7 @@
   /* ===== タブレット (781〜1100px)。2026-08-27 ヒデさん指定でざっくり対応 =====
      PC の 1440 座標系を JS が縮めて表示するので、ここでは
      「小さくなりすぎて読めない文字」を持ち上げ、左右の余白を整える。 */
-  @media (min-width: 781px) and (max-width: 1100px) {
+  @media (min-width: 781px) and (max-width: 1100px) {   /* 4-7例外（画面幅の境目） */
     .header { left: 32px; right: 32px; }
     .nav-links { gap: var(--space-20); }
     .nav-links a { font-size: var(--fs-base); }
@@ -2263,7 +2263,7 @@
     /* --- ヘッダー --- */
     /* カンプSP node16534:22176: ヘッダーは左右 17px・ロゴ 180×33・ボタン 120幅(padding 6px 16px / 角丸4 / #090909 / Light 14px) */
     .header { left: 17px; right: 17px; top: 18px; }
-    .header .logo img { width: 180px; height: 33px; }
+    .header .logo img { width: 180px; height: 33px; }   /* 4-7例外（ロゴ画像の縦横比 180×33） */
     .nav-links { display: none; }            /* カンプSP にナビリンクは無い(ロゴ＋お問い合わせのみ) */
     .cta { width: 150px; height: 36px; font-size: var(--fs-caption); padding: var(--space-6) var(--space-12) var(--space-6) var(--space-14); gap: var(--space-10); border-radius: var(--radius-btn); }   /* 【V4.0 2026-09-13】マーキー化に伴いスマホでも矢印+マーキー入る幅を確保 */
     .cta .cta-arrow { width: 18px; height: 18px; }
@@ -2294,7 +2294,7 @@
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
     /* 【2026-09-09 カンプ node16534:22139 準拠】グラフィックは幅~414・上端~81・中央(左に少しはみ出し)。
        gx/gy(17,-52)ぶんを見込んで top/margin を調整(top=133-52=81 / left=195-218+17≈-6)。 */
-    .orbit { right: auto; left: 50%; top: calc(150px + var(--kv-sp-top, 0px)); transform-origin: 0 0; margin-left: -243px; }   /* 【2026-09-20 ヒデさん依頼】--kv-sp-top = ヘッダー↔コンテンツの距離(スマホ・KV全体を下げる) */   /* 【2026-09-20 ヒデさん依頼】SP は KV 全体を下げてヘッダーに被らないように(120→168) */   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */
+    .orbit { right: auto; left: 50%; top: calc(150px + var(--kv-sp-top, 0px)); transform-origin: 0 0; margin-left: -243px; }   /* 【2026-09-20 ヒデさん依頼】--kv-sp-top = ヘッダー↔コンテンツの距離(スマホ・KV全体を下げる) */   /* 【2026-09-20 ヒデさん依頼】SP は KV 全体を下げてヘッダーに被らないように(120→168) */   /* 2026-09-19: 144→120(コピーを3行に収めるため図を少し上へ・仮置き) */   /* 中央: margin-left=−(915.483×0.53)/2 は JS(applySway)が同期。top 133→144 でメッシュを少し下げ、ヘッダーとの間隔を拡大(ヒデさん指定・2026-09-09) */   /* 4-7例外（中央に置くための位置合わせ） */
     /* コピーはグラフィックの下へ。幅を制限して折り返し可にし、右はみ出しを解消 */
     /* 【2026-09-08 カンプ node16534:22195 準拠】KVコピーは中央寄せ。メイン46px Thin/行間1.4・中央、
        サブ12px Light/字間0.6px・中央(前に10px罫線)。コピー位置は y409(グラフィック y81-409 の下)。 */
@@ -2424,7 +2424,7 @@
     .r2v-h br { display: none; }   /* カンプSP は見出し1行(本文の <br> は HTML から除去済み・PC も改行なし) */
     .r2v-graphic { width: 220px; height: 220px; align-self: center; }   /* カンプSP: ピクト 220×220 */
     /* SaaS↔AI の区切り線(カンプの Line 34)。縦線ではなく横の区切りに */
-    .res2-vline { display: block; width: 100%; height: 1px; background: var(--line-grid);
+    .res2-vline { display: block; width: 100%; height: 1px; background: var(--line-grid);   /* 4-7例外（線の太さ） */
                   align-self: stretch; margin: 0; }   /* 2026-09-09: 導入事例と同じ濃さ(--line-grid #ACACAC) */
 
     /* --- 開発者体験 (モバイル: 2ブロック縦積み。パネルは縮小・dev2は縦積み・要モバイルカンプ) --- */
@@ -2445,7 +2445,7 @@
     .dev1-mock { max-width: none; transform: scale(0.42); transform-origin: center top; margin: 0 0 -292px; }
     /* dev2: 積層モックの上に API/CLI/SDK リストを縦積み */
     .dev2-wrap { flex-direction: column; height: auto; gap: 0; }
-    .dev2-stack { transform: scale(0.60); transform-origin: center top; margin: 0 auto -202px; }
+    .dev2-stack { transform: scale(0.60); transform-origin: center top; margin: 0 auto -202px; }   /* 4-7例外（0.6倍に縮めて空いた分を詰める計算値） */
     /* 【2026-09-02】ds2-slide(カルーセル)のパネルは全部 .dm-ghost なので一律非表示にすると
        dev2が丸ごと消える。隠すのは旧・積層レイアウトの時だけ */
     #dev:not(.ds2-slide) .dm-ghost { display: none; }
@@ -2454,7 +2454,7 @@
     /* margin左右は0固定(autoだとflexで左寄せ扱いになる)。中央寄せはalign-self:centerが
        はみ出し分も含めて負オフセットで効く */
     #dev.ds2-slide .dev2-stack { width: 840px; height: 520px; transform: scale(0.42); transform-origin: center top;
-      margin: 0 0 -302px; }
+      margin: 0 0 -302px; }   /* 4-7例外（0.42倍に縮めて空いた分を詰める計算値） */
     .dev-list { flex: none; width: 100%; }
     .dl-item { padding: var(--space-16) var(--space-24); }
     .dl-head b { font-size: var(--fs-title); }

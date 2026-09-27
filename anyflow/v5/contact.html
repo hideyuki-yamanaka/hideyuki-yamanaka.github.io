@@ -76,7 +76,7 @@
       display: flex; align-items: center; justify-content: space-between;
       z-index: 10;
     }
-    .site-header .logo img { width: 255px; height: 47px; display: block; }
+    .site-header .logo img { width: 255px; height: 47px; display: block; }   /* 4-7例外（ロゴ画像の実寸 255×47） */
     .site-header .logo { display: inline-block; }
     .nav { display: flex; align-items: center; gap: var(--space-32); }
     .nav-links { display: flex; gap: 32px; align-items: center; margin: 0; padding: 0; list-style: none; }
@@ -141,14 +141,14 @@
       width: 100%;
       max-width: 720px;
       margin: 0 auto;
-      padding: 180px 50px 120px;   /* 上=ヘッダーの下＋余白、左右50px（ヘッダー左右と合わせる） */
+      padding: 180px 50px 120px;   /* 上=ヘッダーの下＋余白、左右50px（ヘッダー左右と合わせる） */   /* 4-7例外（左右50px＝ヘッダーの位置にそろえた値） */
     }
     .contact-head { margin: 0 0 var(--space-40); }
     .contact-eyebrow {
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 12px; font-weight: 300; letter-spacing: .06em; color: var(--ink);
     }
-    .contact-eyebrow::before { content: ''; width: 10px; height: 1px; background: var(--ink); }
+    .contact-eyebrow::before { content: ''; width: 10px; height: 1px; background: var(--ink); }   /* 4-7例外（線の太さ・罫線） */
     .contact-title {
       margin: 12px 0 0;
       font-weight: 300;
@@ -179,9 +179,9 @@
     #hs-form { min-height: 892px; opacity: 0; transition: opacity .3s ease; }
     .form-card:not(.is-hs-loading) #hs-form { min-height: 0; opacity: 1; }
     /* 細い画面ほど姓・名や選択肢が段組みされて縦に伸びる。実測値をそのまま段にしてある(360/375=1033・390〜430=1013・450〜489=998) */
-    @media (max-width: 489px) { #hs-form { min-height: 998px; } }
-    @media (max-width: 440px) { #hs-form { min-height: 1013px; } }
-    @media (max-width: 380px) { #hs-form { min-height: 1033px; } }
+    @media (max-width: 489px) { #hs-form { min-height: 998px; } }   /* 4-7例外（フォームの実測の高さ＝読み込み中の場所取り） */
+    @media (max-width: 440px) { #hs-form { min-height: 1013px; } }   /* 4-7例外（フォームの実測の高さ＝読み込み中の場所取り） */
+    @media (max-width: 380px) { #hs-form { min-height: 1033px; } }   /* 4-7例外（フォームの実測の高さ＝読み込み中の場所取り） */
     /* 待っている間の骨組み(入力欄の形)。場所取りは #hs-form がやるので、これは重ねるだけ＝レイアウトに影響しない */
     .hs-skeleton {
       position: absolute; left: 40px; right: 40px; top: 40px; bottom: 40px;
@@ -254,7 +254,7 @@
     }
     .ft-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
     .ft-left { display: flex; flex-direction: column; gap: var(--space-24); }
-    .ft-logo { width: 334px; height: 62px; display: block; }
+    .ft-logo { width: 334px; height: 62px; display: block; }   /* 4-7例外（ロゴ画像の大きさ） */
     .ft-addr {
       font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose);
       color: var(--ink-on-dark); white-space: nowrap;
@@ -273,7 +273,7 @@
     }
 
     /* ============ タブレット (601〜1100px) ============ */
-    @media (min-width: 601px) and (max-width: 1100px) {
+    @media (min-width: 601px) and (max-width: 1100px) {   /* 4-7例外（画面幅の境目） */
       .site-header { left: 32px; right: 32px; }
       .site-header .logo img { width: 220px; height: auto; }
       .nav-links { gap: var(--space-20); }
@@ -290,7 +290,7 @@
        トップの SP と同じ: ロゴ+CTAのみ表示、ナビリンクは隠す。フッターは縦積み。 */
     @media (max-width: 600px) {
       .site-header { left: 17px; right: 17px; top: 18px; }
-      .site-header .logo img { width: 180px; height: 33px; }
+      .site-header .logo img { width: 180px; height: 33px; }   /* 4-7例外（ロゴ画像の縦横比 180×33） */
       .nav { gap: var(--space-16); }
       .nav-links { display: none; }
       .cta { width: 150px; height: 36px; font-size: 12px; padding: 6px 12px 6px 14px; gap: 10px; border-radius: 5px; }
