@@ -120,3 +120,31 @@ Redeploy は**同じソースを再生するだけ**で、既存デプロイの�
 
 - [.github/workflows/supabase-keepalive.yml](../../../.github/workflows/supabase-keepalive.yml) — Supabase 自動停止防止
 - [CLAUDE.md](../../../CLAUDE.md) / [AGENTS.md](../../../AGENTS.md) — AI 向け運用ルール（symlink で同一）
+
+
+## ⚠️ 過去の本番未反映事故（再発防止）
+
+> 2026-09-27 に CLAUDE.md から移した。
+
+1. **別プロジェクトへの誤 deploy**（2026-04-23）
+   - `/tmp/houmon-preview` ディレクトリ名で `npx vercel` → `houmon-preview` という別プロジェクト作成
+   - 対策: deploy 前に必ず `cat .vercel/project.json` で projectName 確認
+2. **env 末尾改行で Supabase 切断**（2026-04-23）
+   - Vercel ダッシュボードにコピペした値に `\n` が混入
+   - 対策: `vercel env pull` して `repr()` で確認、--value 渡しで再登録
+3. **GH Pages と Vercel の二重 deploy**（2026-04-23）
+   - ポータルは GH Pages に飛ばすが、CLAUDE.md は Vercel URL、ユーザーは両方行き来
+   - 対策: houmon-app は Vercel 一本化（GH Pages はリダイレクト）
+4. **Vercel CLI 53 の sensitive 既定で env が「空」に見える罠**（2026-05-13）
+   - Vercel CLI 53 系では Production / Preview に env add すると **デフォルトで sensitive 扱い** になり、`vercel env pull` で値が **空文字列として返る**（実際は中身入ってる）
+   - これを「値が消えてる」と勘違いして再登録すると、本当に sensitive で書き直して読めなくなるループに入りがち
+   - 対策: 読めるようにしたい時は `vercel env add NAME production --value "..." --no-sensitive --yes` で `--no-sensitive` を必ず付ける
+   - pull で空に見えても、実際の本番アプリが動いてるなら値は入ってる可能性が高い。慌てて削除しない
+5. **design-gallery の Root Directory 未設定で自動デプロイが9日間全滅**（2026-07-31発覚）
+   - GitHub 連携はされてたのに Vercel の Root Directory が未設定 → モノレポのルート（Next.js アプリなし）でビルドして毎回 Error
+   - スクレイパーは毎日 GitHub に commit してたが本番は 7/19 の手動デプロイのまま凍結 →「メディアからの更新が止まって見える」
+   - 対策: Root Directory を `design-gallery` に設定（API で PATCH 済み）。「更新が止まった」と感じたら、まず `npx vercel ls` で **Error が並んでないか** を見る
+6. **Supabase 無料プランの自動停止**（2026-05-13）
+   - 7 日間無アクセスで Supabase プロジェクトが一時停止 → さらに長期で削除される
+   - 旅のしおりがこれで一時停止していた
+   - 対策: 各アプリに `/api/keep-alive` ルート + `.github/workflows/supabase-keepalive.yml` で週2回叩いて予防中

@@ -28,6 +28,8 @@
 
 | ファイル | 中身 | いつ読む |
 |---|---|---|
+| [general/RULES.md](general/RULES.md) | **ルール集（2026-09-27〜、進め方の決まりの正）**。全ルールを仕分けて作り直したもの。0 安全・1 いつでも・作業別の節 | **作業に着手する前に必ず（0と1）** |
+| [general/RULES-ARCHIVE.md](general/RULES-ARCHIVE.md) | 仕分けで外した決まりの控え（参照用。今は守らなくてよい） | 今あるものを直す時に経緯を知りたい時 |
 | [general/WORKING-RULES.md](general/WORKING-RULES.md) | 推測・質問・報告の共通ルール（🔴最重要・持ち運び用） | **作業に着手する前に必ず** |
 | DEPLOY-RULES | 無駄なVercelデプロイを消す方法(Ignored Build Step)＋24h集計コマンド | [general/DEPLOY-RULES.md](general/DEPLOY-RULES.md) | 2026-09-11 |
 | [SCROLL-RULES.md](general/SCROLL-RULES.md) | スクロール事故の防止（1画面超えは必ずスクロールバー・実測してから渡す） |
