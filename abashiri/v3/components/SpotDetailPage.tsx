@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SPOT_DETAILS } from "./spotDetailData";
 import { GOURMET_DETAILS } from "./gourmetDetailData";
+import { attachPhoneMode } from "./phoneMode";
 import { V1Parallax } from "./SpotDetailVariants";
 import {
   V32TocSlide,
@@ -74,64 +75,65 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   /* 右下の調整パネル（tune-panel.js）。案の切替だけの小さいパネル */
   useEffect(() => {
     if (madeRef.current) return;
-    let panel: { destroy: () => void; sync?: () => void } | null = null;
+    let panel: {
+      destroy: () => void;
+      sync?: () => void;
+      value?: (key: string) => unknown;
+    } | null = null;
 
-    /* 文字の大きさは CSS 変数で持つ（つまみを動かすたびに React を描き直さないため）。
-       値の住み家：①globals.css の :root ②ここの params ③ブラウザ保存
-       ——3つとも同じ数にしておくこと。
+    /* 文字の大きさ・写真から本文への渡りは CSS 変数で持つ（つまみを動かすたびに React を描き直さないため）。
+       値の住み家：①globals.css の :root ②ここの params（と spDefault）③ブラウザ保存 ——①と②は同じ数にしておく。
 
-       【2026-09-16 ヒデさん指示】「各案で個別に設定できるように。連動しない」
-       → 案ごとの値を sizes に持つ。つまみ（headSize / bodySize）は
-         「いま選んでいる案の値」を映す窓で、動かすと sizes の その案の欄だけ書き換わる。
-         案を切り替えると、その案がおぼえている値をつまみへ読み戻す。 */
+       【2026-09-27 ヒデさん決定】調整パネルを共通部品 v2.0.0 に上げた。
+         ・値は「案ごと × PC/スマホごと」に部品が自動で分ける（ルール6-8）。このタブの主役は案ピルなので、
+           タブの中のつまみ（渡り・文字の大きさ）は全部 案ごとの値になる。
+           → 2026-09-16 から手作りで持っていた「案ごとの文字の大きさ（sizes・recallSize・rememberSize）」は外した
+             （同じ値を書き換える入口が2つになるため。ルール6-2）
+         ・「パソコン／スマホ」に分けていた写真の高さ・渡る長さは1本ずつにまとめた（ヒデさん決定）。
+           スマホの値はスマホモードの上書き（青い印）で持ち、上書きが無い間は spDefault（写真52%・渡る8%）。
+           ⚠️ 画面では今までどおり 1023px 以下でスマホの値を使う（globals.css の --dt-fv-sp）。
+              部品がスマホの値を流し込むのは 600px 以下の端末だけなので、PC の画面ではスマホの値を
+              保存値（スマホの上書き）から読んで --dt-*-sp に入れる（readSp） */
     const SIZE0 = { head: 24, body: 14 }; /* 2026-09-27 本文 15→14・見出し 26→24（4-7。globals.css の --dt-body・--dt-head と同じ値） */
-    const sizes: Record<string, { head: number; body: number }> = {};
-    Object.keys(SPOT_DETAIL_PATTERNS).forEach((k) => {
-      sizes[k] = { ...SIZE0 };
-    });
+    const SP_DEFAULT = { fv: 52, fade: 8 };
     const params = {
       /* 【2026-09-24 ヒデさん指示】「ブラーで白くなる案を採用していきたい」
          → 既定を値40（写真そのものがぼけて白くなり、白い本文へ溶ける）に。
-           それまでの既定は値36（白い面が写真の手前に乗り上げる）。
          ⚠️ 既定を変えたら version も上げる。上げないと、前の案を
             おぼえているブラウザ（＝ヒデさんの手元）では変わらない */
       detail: {
         pattern: 40,
         headSize: SIZE0.head,
         bodySize: SIZE0.body,
-        sizes,
-        /* 写真から本文への渡り。単位は「画面の高さの何%」。
-           住み家は globals.css の :root とここの2つ（同じ数にしておくこと） */
-        fv: { pc: 100, sp: 52 },
-        fade: { pc: 12, sp: 8 },
+        /* 写真から本文への渡り（PC の値）。単位は「画面の高さの何%」 */
+        fv: 100,
+        fade: 12,
       },
+    };
+    const STORAGE_KEY = "abashiri-spot-detail-tune";
+    const VERSION = 18;
+    /* PC の画面で「スマホで効く値」を読む：スマホモード中は部品に聞き、それ以外は保存値（スマホの上書き）→ 既定 */
+    const readSp = (path: "detail.fv" | "detail.fade", def: number) => {
+      if (document.documentElement.classList.contains("phone-mode")) {
+        const v = panel?.value?.(path);
+        if (typeof v === "number") return v;
+      }
+      try {
+        const mb = JSON.parse(localStorage.getItem(`tp:${STORAGE_KEY}:v${VERSION}:mb`) || "{}");
+        if (typeof mb[path] === "number") return mb[path];
+      } catch {}
+      return def;
     };
     const applyType = () => {
       const r = document.documentElement;
       r.style.setProperty("--dt-head", params.detail.headSize + "px");
       r.style.setProperty("--dt-body", params.detail.bodySize + "px");
-      /* 写真から本文への渡り。PC とスマホで別々に持つ
-         （画面の広さで気持ちのいい長さが違うため） */
-      r.style.setProperty("--dt-fv-pc", String(params.detail.fv.pc));
-      r.style.setProperty("--dt-fade-pc", String(params.detail.fade.pc));
-      r.style.setProperty("--dt-fv-sp", String(params.detail.fv.sp));
-      r.style.setProperty("--dt-fade-sp", String(params.detail.fade.sp));
-    };
-    /* つまみ → その案の欄へ書き戻す */
-    const rememberSize = () => {
-      const k = String(params.detail.pattern);
-      params.detail.sizes[k] = {
-        head: params.detail.headSize,
-        body: params.detail.bodySize,
-      };
-    };
-    /* その案の欄 → つまみへ読み戻す */
-    const recallSize = () => {
-      const k = String(params.detail.pattern);
-      const v = params.detail.sizes[k] ?? SIZE0;
-      params.detail.headSize = v.head;
-      params.detail.bodySize = v.body;
-      panel?.sync?.();
+      /* スマホの端末（600px 以下）では、部品がスマホの値を params に流し込んでいる */
+      const phone = window.matchMedia("(max-width: 600px)").matches;
+      r.style.setProperty("--dt-fv-pc", String(params.detail.fv));
+      r.style.setProperty("--dt-fade-pc", String(params.detail.fade));
+      r.style.setProperty("--dt-fv-sp", String(phone ? params.detail.fv : readSp("detail.fv", SP_DEFAULT.fv)));
+      r.style.setProperty("--dt-fade-sp", String(phone ? params.detail.fade : readSp("detail.fade", SP_DEFAULT.fade)));
     };
 
     const build = () => {
@@ -140,7 +142,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       madeRef.current = true;
       panel = lib.create({
         title: "調整パネル", /* 2026-09-20 anyflow と同じ名称にそろえる */
-        storageKey: "abashiri-spot-detail-tune",
+        storageKey: STORAGE_KEY,
         /* ⚠案を入れ替えたら必ず上げる（古い保存値が自動で捨てられる）。
            v2: 旧3案 → 5案に作り直し
            v3: 写真主体の案6〜10を追加・案1の視差を弱めた
@@ -156,9 +158,9 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
            v13: 文字の大きさを案ごとに別々に持つようにした（2026-09-16）
            v14: ヒデさんの選定で 案12・26・33 を完全削除（2026-09-17）
            v15: 既定を案5(値36)に変更（2026-09-20）
-           v16: 既定をブラー案(値40)に変更＋渡りのつまみを追加（2026-09-24） */
-        version: 17, /* 2026-09-26 ヒデさんの指示で 案3・37・38・39 を完全削除。消した案を選んだままの保存値を破棄する */
-        startClosed: true,
+           v16: 既定をブラー案(値40)に変更＋渡りのつまみを追加（2026-09-24）
+           v17: 案3・37・38・39 を完全削除（2026-09-26） */
+        version: VERSION, /* =18。2026-09-27 共通部品 v2.0.0 へ。渡りを1本ずつにまとめ（fv/fade が数に変わった）、手作りの案ごとの文字の大きさを外したので、形の違う古い保存値を破棄する */
         position: { right: 20, bottom: 20 },
         /* タブ方式で描く（中身がバリエーション／基本／フォントのカードに分かれる。anyflow と同じ）。
            タブが1つだけの時はタブの帯は出さない */
@@ -194,47 +196,31 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               {
                 note: "ファーストビューの写真から、白い本文へ移るまでの長さ。【ブラー案（写真がぼけて白になじむ）だけに効きます】。短くするほど早く本文が読めます。⚠️「写真の高さ」＋「渡る長さ」が 100 を下回ると、止まっている時点で画面の下に白い帯が見えます。",
               },
-              { sub: "パソコン", deep: true },
               {
                 slider: "写真の高さ",
-                path: "detail.fv.pc",
+                path: "detail.fv",
                 min: 70,
                 max: 100,
                 step: 1,
                 unit: "%",
+                spDefault: SP_DEFAULT.fv,
                 immediate: true,
+                hint: "ファーストビューで写真が占める高さ（画面の高さの何%）。スマホの値は、スマホモードで触ると別に持てます（上書きが無い間は52%）。",
               },
               {
                 slider: "渡る長さ",
-                path: "detail.fade.pc",
+                path: "detail.fade",
                 min: 4,
                 max: 40,
                 step: 1,
                 unit: "%",
+                spDefault: SP_DEFAULT.fade,
                 immediate: true,
-              },
-              { sub: "スマホ", deep: true },
-              {
-                slider: "写真の高さ",
-                path: "detail.fv.sp",
-                min: 40,
-                max: 100,
-                step: 1,
-                unit: "%",
-                immediate: true,
-              },
-              {
-                slider: "渡る長さ",
-                path: "detail.fade.sp",
-                min: 4,
-                max: 40,
-                step: 1,
-                unit: "%",
-                immediate: true,
+                hint: "写真が白い本文へ移りきるまでのスクロール量（画面の高さの何%）。スマホの上書きが無い間は8%。",
               },
               { sub: "文字の大きさ", grp: "font" },
               {
-                note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます。【案ごとに別々の値を持ちます】。案を切り替えると、その案でいじった値に戻ります（他の案には影響しません）。",
+                note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます。【案ごと・PC/スマホごとに別々の値を持ちます】（2026-09-27 から部品が自動で分ける）。",
               },
               {
                 slider: "本文",
@@ -257,23 +243,18 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             ],
           },
         ],
-        onChange: (info?: { path?: string }) => {
-          /* 案を切り替えた時だけ読み戻す。つまみを動かした時は書き戻す
-             （こうしないと、案ごとの値がすぐ上書きされて連動してしまう） */
-          if (info?.path === "detail.pattern") recallSize();
-          else rememberSize();
+        /* 案ごとの値の出し入れは部品がやる（案を切り替えると、その案の値が params に入ってから呼ばれる） */
+        onChange: () => {
           applyType();
           setPattern(params.detail.pattern);
         },
-        onSettle: (info?: { path?: string }) => {
-          if (info?.path === "detail.pattern") recallSize();
-          else rememberSize();
+        onSettle: () => {
           applyType();
           setPattern(params.detail.pattern);
         },
       });
-      /* 保存値を読んだ直後の状態を、いま選んでいる案の値にそろえる */
-      recallSize();
+      /* スマホモードの QR・実機への反映（共通の phone-mode・開発中だけ） */
+      attachPhoneMode(panel as unknown as Parameters<typeof attachPhoneMode>[0]);
       applyType();
       setPattern(params.detail.pattern);
     };

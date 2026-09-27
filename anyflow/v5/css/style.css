@@ -1260,7 +1260,7 @@
   html.mb #results.rfx-24 .res2-stats .r2s { flex: 0 0 calc(50% - var(--space-16) / 2); box-sizing: border-box; align-items: center; text-align: center; }   /* 【2026-09-20 ヒデさん依頼】SP は見出し＋数値を中央揃え */   /* 2列 */   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
   html.mb #results.rfx-24 .res2-stats .r2s span { font-size: var(--fs-stat); }   /* 【2026-09-16】V3.0: 34px=--fs-stat */
   html.mb #results.rfx-24 .slot .fx:last-child { font-size: var(--fs-lead); }   /* 【2026-09-16 ヒデさん依頼】+マークをPC同様に数字より小さく上側に(34pxに対し20px=PCの40/70比) */
-  html.mb #results.rfx-24 .res2-stats .r2s b { font-size: var(--fs-caption); }
+  html.mb #results.rfx-24 .res2-stats .r2s b { font-size: var(--fs-caption); line-height: 2; }   /* 12px × 2 = 24px（行間を比率にした時に 18px に縮んだので戻した・2026-09-27） */
   html.mb #results.rfx-24 .r2v { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: var(--space-16); order: 0; padding: 0; }   /* 【2026-09-16】中央→左寄せ・基準の左右20pxを解除・DOM順(V3.0) */
   html.mb #results.rfx-24 .r2v-text { order: 0; max-width: none; width: 100%; gap: var(--space-10); align-items: center; text-align: center; }   /* 【2026-09-19 ヒデさん依頼】PCと同じ中央揃え(左寄せ→中央) */   /* 【2026-09-16】左寄せ(V3.0) */
   html.mb #results.rfx-24 .r2v-tagh { align-items: center; }   /* 【2026-09-19】中央 */   /* 【2026-09-16】タグ(for SaaS/AI)を左寄せ(V3.0) */

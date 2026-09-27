@@ -1,34 +1,30 @@
 "use client";
 
-/* スマホモード（実機ライブ同期）の「スマホ側」と、PC のプレビュー枠の「中身側」。
+/* スマホモード（実機ライブ同期）の「スマホ側」と、PC のスマホ枠の「中身側」の、網走だけの手当て。
  *
- * 【2026-09-26 ヒデさん指示】
- *   「Anyflow の調整パネルの仕様、ローカル環境でスマホモードができる仕様も全部真似して」
- *   → anyflow/v5/index.html の liveSync（?live=phone の受け手）と同じ動き。
- *
- *   ・?preview=1  … PC の「📱 スマホモード」で出す 390×844 の枠の中身。
- *                   <html class="pp-inner"> を付けて、調整パネルを隠すだけ
- *   ・?live=phone … 本物のスマホで QR から開いた時。中継サーバ(:8780)から
- *                   PC の調整パネルの保存値を受け取り、このブラウザに書いて反映する
- *
- * ⚠️ 流すのは「調整パネルの保存値（localStorage の tp:*）」だけ。
- *    PC 画面の CSS 変数をそのまま流すと、スマホ専用の値（例：フッターの作字の大きさ）を
- *    PC の値で上書きしてスマホの見た目を壊すため。反映は各ページのパネルが
- *    自分のルール（スマホならスマホの値）で行う。
+ * 【2026-09-27 調整パネルを共通部品 v2.0.0 に上げた（ヒデさん決定）】
+ *   受け取り（中継サーバから保存値をもらって、書いて、読み直す）は、共通の
+ *   phone-mode.client.js が受け持つようになった（つなぎは components/phoneMode.ts）。
+ *   ここに残すのは、共通の仕組みに無い網走だけの3つ：
+ *   ・?preview=1 / ?tp-preview=1 … PC のスマホ枠の中身。<html class="pp-inner"> を付ける
+ *   ・PC が別のページを開いていたら、スマホも同じページへ移る（PATH_KEY）
+ *   ・読み直しの前後でスクロール位置を保つ（網走はページではなく中の箱がスクロールするため、
+ *     共通の仕組みの window.scrollY では戻らない）
  * ⚠️ 開発（localhost / 同じ Wi-Fi のアドレス）でだけ動く。本番では何もしない。
  */
 import { useEffect } from "react";
-
-const SYNC_PORT = 8780;
+import { PATH_KEY } from "./phoneMode";
 
 const isDevHost = (h: string) =>
   /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h) ||
   h.endsWith(".local");
 
-/* リロードをまたいでスクロール位置を保つ（ページごとにスクロールする箱が違う） */
+/* スクロールする箱（ページごとに違う） */
 const scroller = () =>
   document.querySelector<HTMLElement>("[data-abashiri-scroller]") ||
   document.querySelector<HTMLElement>("main");
+
+const SCROLL_KEY = "abashiri-live-scroll";
 
 export default function LivePhone() {
   useEffect(() => {
@@ -36,21 +32,25 @@ export default function LivePhone() {
     const q = new URLSearchParams(location.search);
     const root = document.documentElement;
 
-    if (q.get("preview") === "1") {
+    if (q.get("preview") === "1" || q.get("tp-preview") === "1") {
       root.classList.add("pp-inner");
       return;
     }
     if ((q.get("live") || "").toLowerCase() !== "phone") return;
 
-    root.classList.add("live-phone");
-    const badge = document.createElement("div");
-    badge.className = "live-badge";
-    badge.textContent = "📱 PCと接続中…";
-    document.body.appendChild(badge);
-
-    /* 前回リロード前のスクロール位置に戻す */
+    /* PC が別のページを開いていたら、そちらへ */
     try {
-      const sv = sessionStorage.getItem("abashiri-live-scroll");
+      const want = localStorage.getItem(PATH_KEY);
+      if (want && want !== location.pathname) {
+        sessionStorage.removeItem(SCROLL_KEY);
+        location.replace(want + "?live=phone");
+        return;
+      }
+    } catch {}
+
+    /* 読み直す前のスクロール位置に戻す */
+    try {
+      const sv = sessionStorage.getItem(SCROLL_KEY);
       if (sv != null) {
         const y = +sv;
         setTimeout(() => {
@@ -59,87 +59,13 @@ export default function LivePhone() {
         }, 400);
       }
     } catch {}
-
-    let firstDone = false;
-    try {
-      firstDone = sessionStorage.getItem("abashiri-pm-firstdone") === "1";
-    } catch {}
-    let t = 0;
-
-    const apply = (text: string) => {
-      let d: { ls?: Record<string, string | null>; path?: string } | null = null;
+    const save = () => {
       try {
-        d = JSON.parse(text);
-      } catch {
-        return;
-      }
-      if (!d || typeof d !== "object" || !d.ls) return;
-      badge.classList.remove("off");
-      badge.textContent = "📱 PCと同期中";
-      /* 接続のたびに前回値が送られてくるので、同じ中身なら何もしない
-         （毎回リロードすると“チカチカ無限リロード”になる。anyflow で実際に起きた） */
-      let last: string | null = null;
-      try {
-        last = sessionStorage.getItem("abashiri-pm-last");
+        sessionStorage.setItem(SCROLL_KEY, String(scroller()?.scrollTop || 0));
       } catch {}
-      if (text === last) return;
-      try {
-        sessionStorage.setItem("abashiri-pm-last", text);
-      } catch {}
-      try {
-        for (const k of Object.keys(d.ls)) {
-          const v = d.ls[k];
-          if (v == null) localStorage.removeItem(k);
-          else localStorage.setItem(k, v);
-        }
-      } catch {
-        return;
-      }
-      /* PC が別のページを開いていたら、スマホも同じページへ */
-      if (d.path && d.path !== location.pathname) {
-        location.href = d.path + "?live=phone";
-        return;
-      }
-      clearTimeout(t);
-      t = window.setTimeout(
-        () => {
-          /* 初回だけは確実さ優先でリロード。以降はリロード無しで、
-             パネルに「読み直して反映して」と知らせる（tune-panel.js が受ける） */
-          if (!firstDone) {
-            firstDone = true;
-            try {
-              sessionStorage.setItem("abashiri-pm-firstdone", "1");
-              sessionStorage.setItem("abashiri-live-scroll", String(scroller()?.scrollTop || 0));
-            } catch {}
-            location.reload();
-            return;
-          }
-          window.dispatchEvent(new CustomEvent("tp:remote-apply"));
-        },
-        firstDone ? 40 : 120
-      );
     };
-
-    let es: EventSource | null = null;
-    try {
-      es = new EventSource(`${location.protocol}//${location.hostname}:${SYNC_PORT}/events`);
-      es.onmessage = (ev) => ev.data && apply(ev.data);
-      es.onerror = () => {
-        badge.classList.add("off");
-        badge.textContent = "📱 再接続中…";
-      };
-      es.onopen = () => {
-        badge.classList.remove("off");
-        badge.textContent = "📱 PCと同期中";
-      };
-    } catch {
-      badge.classList.add("off");
-      badge.textContent = "📱 同期サーバに接続できません";
-    }
-    return () => {
-      es?.close();
-      badge.remove();
-    };
+    window.addEventListener("pagehide", save);
+    return () => window.removeEventListener("pagehide", save);
   }, []);
   return null;
 }

@@ -3,9 +3,8 @@
 /*
  * トップページに常時出しておく調整パネル（ヒデさん指示 2026-08-18）
  *
- * ・右下にアコーディオンをたたんだ状態で置く（startClosed）
- * ・仕様は settings/tune-panel/README.md のライブラリ（public/tune-panel.js）に準拠
- *   アコーディオン2階層・検索・localStorage保存・「設定をコピー」・`.`キーで隠す
+ * ・仕様は settings/tune-panel/README.md の共通部品（public/tune-panel.js v2.0.0・2026-09-27 に更新）に準拠
+ *   隠しモード（右下の透明な四角で出す）・タブ→カテゴリのカード・値は案ごと×PC/スマホごと・自動保存
  *
  * カテゴリの並びは「ページ ＞ セクション ＞ 細目」の3階層（2026-08-21 ヒデさん指示。
  * AnyFlow のパネルと同じ考え方。全部を並列に並べない。全文は settings/tune-panel/README.md）
@@ -47,6 +46,7 @@ import {
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
+import { attachPhoneMode } from "./phoneMode";
 import {
 } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
@@ -498,13 +498,13 @@ export default function TopTunePanel({
                 本番URLで保存された古い値が、最新の焼き込みを上書きして「調整が反映されて
                 いない」ように見えていたため（2026-08-23 ヒデさん報告の原因） */
         version: TOP_TUNE_VERSION, /* =41。2026-09-24 流れる速さの既定を変更。古い保存値を破棄 */ /* 2026-09-20 剥がれる速さの既定を変更。古い保存値を破棄する */
-        /* ⚠autoCenter（既定値を真ん中に置くための自動上限調整）は切る。
-           既定が範囲の下寄りの項目で、書いた上限が勝手に縮む
-           （人物の登場ディレイが max5秒 → 1秒に見えていた事故。2026-08-23） */
-        autoCenter: false,
-        /* ページごとのタブ切替（2026-08-23 ヒデさん依頼。タブの中はセクションの折りたたみ） */
+        /* 【2026-09-27 ヒデさん決定】共通部品 v2.0.0 に上げた。
+           ・値は「案ごと × PC/スマホごと」に部品が自動で分ける（ルール6-8）。
+             案ピルと同じ見出しの中のつまみは案ごと、ほかは全案共通。スマホモードで触るとスマホだけの上書き（青い印）
+           ・範囲は AnyFlow 式の自動（旧 autoCenter は廃止）／隠しモードは開くたび必ず隠れる（startClosed は不要）
+           ・余白・サイズ・角丸・文字サイズの px のつまみは 4と8の倍数に止まる（ルール4-7） */
+        /* ページごとのタブ切替（2026-08-23 ヒデさん依頼） */
         tabs: true,
-        startClosed: true /* たたんだ状態で置く（ヒデさん指示） */,
         position: { right: 20, bottom: 20 },
         params,
         defaults: DEFAULTS,
@@ -1402,7 +1402,6 @@ export default function TopTunePanel({
                 path: "events.pattern",
                 immediate: true,
                 /* 案によって出す項目が変わるので、選んだら組み直す */
-                rebuild: true,
                 autoNum: "案",
                 options: Object.entries(EVENT_LAYOUT_PATTERNS).map(([v, p]) => ({
                   name: p.name,
@@ -1859,6 +1858,8 @@ export default function TopTunePanel({
             onReplay?.(p);
         },
       });
+      /* スマホモードの QR・実機への反映（共通の phone-mode・開発中だけ） */
+      attachPhoneMode(panel as unknown as Parameters<typeof attachPhoneMode>[0]);
       /* 保存されていた値を最初の1回だけ反映する */
       applyVars();
       applyVolume();
