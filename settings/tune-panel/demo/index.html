@@ -51,6 +51,7 @@
   .kv[data-variant="minimal"] .kv-copy h1 { letter-spacing: .04em; }
   .play .kv-copy, .play .kv-gfx { animation: kvIn calc(var(--kv-dur) / var(--speed)) cubic-bezier(.2, .7, .2, 1) calc(var(--kv-delay) / var(--speed)) both; }
   @keyframes kvIn { from { opacity: 0; filter: blur(12px); } }
+  .kv[data-logos="0"] + .logos { visibility: hidden; }
   .logos { display: flex; gap: 36px; flex-wrap: wrap; color: #9aa1ab; font-weight: 700; letter-spacing: .06em; font-size: 13px; padding: 8px 0 40px; }
 
   /* 実績 */
@@ -157,13 +158,14 @@ function apply() {
   set('--border-color', r.border.color); set('--border-width', r.border.width + 'px'); set('--border-op', r.border.opacity / 100);
   set('--shadow', r.shadow / 100); set('--num-size', r.numSize + 'px');
   document.body.classList.toggle('grid-on', !!s.grid);
-  $('siteHead').hidden = !s.show.header; $('logos').hidden = !(s.show.logos && k.logos); $('siteFoot').hidden = !s.show.footer;
+  document.body.dataset.replay = s.replay ? '1' : '0';
+  $('siteHead').hidden = !s.show.header; $('logos').hidden = !s.show.logos; $('siteFoot').hidden = !s.show.footer;
   $('logo').textContent = s.logo; $('copy').textContent = k.copy;
-  Object.assign($('kv').dataset, { variant: k.variant, align: k.align });
+  Object.assign($('kv').dataset, { variant: k.variant, align: k.align, logos: k.logos ? '1' : '0' });
   Object.assign($('res').dataset, { fx: r.fx, dir: r.slideDir, picto: r.picto });
 }
 /* 自動検査が「画面が変わったか」を読むための目印（画面の見た目には関係ない） */
-window.__demoSig = () => [document.documentElement.getAttribute('style'), document.body.className,
+window.__demoSig = () => [document.documentElement.getAttribute('style'), document.body.className, JSON.stringify(document.body.dataset),
   JSON.stringify($('kv').dataset), JSON.stringify($('res').dataset), $('siteHead').hidden, $('logos').hidden, $('siteFoot').hidden,
   $('logo').textContent, $('copy').textContent].join('|');
 window.__replays = 0;

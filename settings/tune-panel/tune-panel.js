@@ -1497,10 +1497,12 @@
       val.style.display = 'none';
       line.insertBefore(ed, val);
       ed.focus(); ed.select();
+      var closed = false;
       var done = function (commit) {
-        if (!ed.parentNode) return;
+        if (closed) return;   /* Enter で消す時にも blur が来るので、2回目は何もしない */
+        closed = true;
         var v = parseFloat(ed.value);
-        ed.remove();
+        if (ed.parentNode) ed.parentNode.removeChild(ed);
         val.style.display = '';
         if (!commit || !isFinite(v)) return;
         v = +v.toFixed(Math.max(dec, decOf(v)));
