@@ -137,4 +137,53 @@ const inside = fb.x>=sb.x && fb.x+fb.width<=sb.x+sb.width && fb.y>=sb.y && fb.y+
 - [ ] **Figmaにあるロゴ・SNSアイコン・メニューは、作り直さず複製して使う**（トンマナが完全に一致して速い） ［079］
 - [ ] **Figmaに置く大きさは決め打ちせず聞く**（上の5章） ［080］
 - [ ] **WebP は PNG にしてから入れる**（RULES 3-5） ［074］
-- [ ] **仕上げの点検**：オートレイアウトの枠に固定の幅・高さが残っていないか（アイコン・画像を除く）、余白・gap・角丸・文字サイズ・線幅が4と8の倍数か、を `use_figma` で全部数えて報告する（RULES 3-2〜3-4）
+- [ ] **行間と字間はパーセント（%）で入れる**（RULES 3-6）。`lineHeight: { unit: 'PERCENT', value: 行間px ÷ 文字サイズ × 100 }`、`letterSpacing: { unit: 'PERCENT', value: 字間px ÷ 文字サイズ × 100 }`（例：16px・行間24px → 150、字間0.32px → 2）。CSS の `em` の字間は ×100 がそのまま %
+- [ ] **仕上げの点検（必ず・自動）**：書き出したフレームを下の 8章のスクリプトで検査し、結果の表を報告に載せる。オートレイアウトの枠に固定の幅・高さが残っていないか（アイコン・画像を除く）、余白・gap・角丸・文字サイズが4と8の倍数か、行間と字間が%か、線幅・影・ぼかし・不透明度・色に似た値が増えていないかを数える（RULES 3-2〜3-6・4-7・4-13）
+
+---
+
+## 8. 書き出した後の自動の点検（use_figma で流す）
+
+書き出しが終わったら、出したフレームの ID を入れて `use_figma` でこれを流す（2026-09-27 に書いた版。まだ本物のファイルで流していないので、初めて使う時に動きを確かめて直す）。結果（決まりから外れた値・固定の大きさ・px の行間/字間・似た色）を表にして報告に載せる。
+外れた値はその場で直す（今ある古いカンプは報告だけで直さない）。決まりは RULES.md 4-7：倍数が効くのは文字サイズ・サイズ・余白・角丸だけ（4と8の倍数・10px以下は2刻み・文字は14と18も可）。行間と字間は%なら倍数でなくてよい。線幅・影・ぼかし・不透明度は自由で、似た値だけ寄せる。
+
+```js
+const ROOT_ID = '書き出したフレームのID';
+const root = await figma.getNodeByIdAsync(ROOT_ID);
+let pg = root; while (pg && pg.type !== 'PAGE') pg = pg.parent;
+if (pg) await figma.setCurrentPageAsync(pg);   /* use_figma は毎回先頭ページに戻るので、対象のページを指定する */
+const grid = v => v === 0 || (v <= 10 && v % 2 === 0) || v % 4 === 0;
+const okFont = v => grid(v) || v === 14 || v === 18;
+const bad = [], fixed = [], unitNg = [], colors = new Map(), free = { 線幅: new Map(), 影: new Map(), ぼかし: new Map(), 不透明度: new Map() };
+const count = (m, v) => m.set(Math.round(v * 100) / 100, (m.get(Math.round(v * 100) / 100) || 0) + 1);
+const note = (n, what, v) => bad.push(`${n.name}（${n.id}）${what} ${Math.round(v * 100) / 100}`);
+const isArt = n => ['VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'LINE', 'ELLIPSE', 'POLYGON'].includes(n.type) || /ロゴ|アイコン|イラスト|logo|icon/i.test(n.name);
+root.findAll(() => true).concat(root).forEach(n => {
+  if ('layoutMode' in n && n.layoutMode !== 'NONE') {
+    ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'itemSpacing'].forEach(k => { if (!grid(n[k])) note(n, k, n[k]); });
+    if (n.counterAxisSpacing != null && !grid(n.counterAxisSpacing)) note(n, 'counterAxisSpacing', n.counterAxisSpacing);
+  }
+  if ('layoutSizingHorizontal' in n && !isArt(n) && n.type !== 'TEXT' && !(n.fills || []).some?.(f => f.type === 'IMAGE')) {
+    if (n.layoutSizingHorizontal === 'FIXED' || n.layoutSizingVertical === 'FIXED') fixed.push(`${n.name}（${n.id}）横=${n.layoutSizingHorizontal}・縦=${n.layoutSizingVertical}`);
+  }
+  if (typeof n.cornerRadius === 'number' && n.cornerRadius < 999 && !grid(n.cornerRadius)) note(n, '角丸', n.cornerRadius);
+  /* 線幅・影・ぼかし・不透明度は自由（数えて、似た値のかたまりを見るだけ） */
+  if (typeof n.strokeWeight === 'number' && (n.strokes || []).length) count(free.線幅, n.strokeWeight);
+  (n.effects || []).forEach(e => { if (e.visible === false) return; if (e.type.includes('BLUR')) count(free.ぼかし, e.radius); else { count(free.影, e.radius); if (e.offset) { count(free.影, Math.abs(e.offset.x)); count(free.影, Math.abs(e.offset.y)); } } });
+  if (typeof n.opacity === 'number' && n.opacity < 1) count(free.不透明度, n.opacity);
+  if (n.type === 'TEXT') {
+    const fs = n.fontSize, lh = n.lineHeight, ls = n.letterSpacing;
+    if (typeof fs === 'number' && !okFont(fs)) note(n, '文字サイズ', fs);
+    if (lh && lh.unit === 'PIXELS') unitNg.push(`${n.name}（${n.id}）行間がpx（${lh.value}）→ %に`);
+    if (ls && ls.unit === 'PIXELS' && ls.value !== 0) unitNg.push(`${n.name}（${n.id}）字間がpx（${ls.value}）→ %に`);
+  }
+  (Array.isArray(n.fills) ? n.fills : []).forEach(f => { if (f.type === 'SOLID' && (f.opacity ?? 1) === 1) { const k = [f.color.r, f.color.g, f.color.b].map(c => Math.round(c * 255).toString(16).padStart(2, '0')).join(''); colors.set('#' + k, (colors.get('#' + k) || 0) + 1); } });
+});
+const 自由な値 = Object.fromEntries(Object.entries(free).map(([k, m]) => [k, [...m.entries()].sort((a, b) => a[0] - b[0])]));
+return { 決まりから外れた値: bad, 固定の大きさ: fixed, pxの行間と字間: unitNg, 使っている色: [...colors.entries()].sort((a, b) => b[1] - a[1]), 自由な値: 自由な値 };
+```
+
+- 「使っている色」は、実装の色（`node settings/design-check/design-check.mjs <プロダクト>` の結果）と見比べて、実装に無い色・ほぼ同じ色が増えていないかを確かめる
+- 固定の大きさは、アイコン・画像・イラスト・ロゴ以外で出たら、Hug か Fill にできないかを見る（限られた場面だけ固定・RULES 3-3）
+- 「決まりから外れた値」と「自由な値」（線幅・影・ぼかし・不透明度）の近い値（例：影 22 と 24）は、見た目がほぼ変わらなければ自動で寄せて報告の表に書き、見た目が変わりそうな物は提案する（線引きは RULES.md 4-13 の表）
+
