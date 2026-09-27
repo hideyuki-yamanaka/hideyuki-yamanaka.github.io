@@ -32,7 +32,7 @@ function SectionTitle({
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-text-sidebar/60 hover:text-text-sidebar/80 transition-colors"
+      className="w-full flex items-center justify-between px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wider text-text-sidebar/60 hover:text-text-sidebar/80 transition-colors"
     >
       {children}
       <svg
@@ -68,14 +68,14 @@ function CheckItem({
   return (
     <button
       onClick={onChange}
-      className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-[13px] transition-colors rounded-md mx-0 ${
+      className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-[14px] transition-colors rounded-md mx-0 ${
         checked
           ? "text-text-sidebar-active bg-bg-sidebar-hover"
           : "text-text-sidebar hover:text-text-sidebar-active hover:bg-bg-sidebar-hover"
       }`}
     >
       <span
-        className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${
+        className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
           checked ? "bg-accent border-accent" : "border-text-sidebar/30"
         }`}
       >
@@ -93,7 +93,7 @@ function CheckItem({
       )}
       <span className="truncate flex-1 text-left">{label}</span>
       {count !== undefined && (
-        <span className="text-[11px] text-text-sidebar/40">{count}</span>
+        <span className="text-[12px] text-text-sidebar/40">{count}</span>
       )}
     </button>
   );
@@ -141,7 +141,7 @@ export function Sidebar({
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => updateFilter({ starredOnly: !filter.starredOnly })}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[14px] font-medium transition-colors ${
             filter.starredOnly
               ? "bg-accent/20 text-accent"
               : "text-text-sidebar hover:bg-bg-sidebar-hover hover:text-text-sidebar-active"
@@ -163,7 +163,7 @@ export function Sidebar({
         <div className="px-4 pb-1">
           <button
             onClick={resetFilter}
-            className="text-[11px] text-accent hover:text-accent/80 transition-colors"
+            className="text-[12px] text-accent hover:text-accent/80 transition-colors"
           >
             フィルターをリセット
           </button>
@@ -250,7 +250,7 @@ export function Sidebar({
         </SectionTitle>
         {openSections.date && (
           <div className="px-4 pb-4">
-            <div className="text-[13px] text-text-sidebar mb-3 font-medium">
+            <div className="text-[14px] text-text-sidebar mb-3 font-medium">
               {filter.dateRange[0]} — {filter.dateRange[1]}
             </div>
             <div className="flex flex-col gap-3">

@@ -8,12 +8,12 @@ const KV_VARIANTS = [
        本文→罫線 40px(実装は行箱248なので42で合わせる)、罫線→サブ 21px(罫線1px込みで20))。
        グラフィック＝コンプ画像(2倍スクショ 1508×1258 を 774×646 に配置)を画素で測り、球の中心(1009,426.5)・直径227、カゴ(線)の範囲 557×549 に
        自動で寄せた実測値(2026-09-18: 球は完全一致、カゴは 543×566 で平均一致・縦横比は回転位相の差)。 */
-    data: { kv: { mainSize: 50, jumpSize: 90, eyebrowSize: 20, copyX: 86, copyY: 24, copyGap: 42, eyebrowDash: true, eyebrowDashW: 40, dashGap: 20,
+    data: { kv: { mainSize: 50, jumpSize: 90, eyebrowSize: 20, copyX: 86, copyY: 24, copyGap: 40, eyebrowDash: true, eyebrowDashW: 40, dashGap: 20,
                   mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 1.6, eyebrowLayout: 'col' },
             kvGfx: { scale: 1, dx: 31.9, dy: 15 }, planet: { scale: 1.004, dx: 31, dy: 45, flat: 1 },
             mesh: { cageR: 2.22, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
   { key: 'strong', name: '強調', tip: '2026-09-17 の調整版(Figma 17435:22386)。コピー 70px/120px・大きいグラフィック(1.21倍)。',
-    data: { kv: { mainSize: 70, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0, copyGap: 32, eyebrowDash: true, eyebrowDashW: 14, dashGap: 10,
+    data: { kv: { mainSize: 70, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0, copyGap: 32, eyebrowDash: true, eyebrowDashW: 16, dashGap: 10,
                   mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row' },
             kvGfx: { scale: 1.21, dx: 148, dy: 184 }, planet: { scale: 1.3, dx: 31, dy: 45, flat: 1 },
             mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
@@ -1005,7 +1005,7 @@ function buildPanel() {
     () => (params.kv.eyebrowDash === false ? 0 : 1),
     v => { params.kv.eyebrowDash = !!v; applyKvCopy(); markDirty(); buildPanel(); });
   if (params.kv.eyebrowDash !== false) {
-    rows.push(slider('罫線の長さ', 8, 80, 1, () => (params.kv.eyebrowDashW != null ? params.kv.eyebrowDashW : 26),
+    rows.push(slider('罫線の長さ', 8, 80, 1, () => (params.kv.eyebrowDashW != null ? params.kv.eyebrowDashW : 28),
       v => { params.kv.eyebrowDashW = v; applyKvCopy(); }, v => Math.round(v) + 'px',
       'サブコピー先頭の罫線(—)の長さ。カンプは26px。', { mbKey: 'kv.eyebrowDashW' }));
     rows.push(slider('罫線と文字のギャップ', 0, 40, 1, () => (params.kv.dashGap != null ? params.kv.dashGap : 10),
@@ -1537,7 +1537,7 @@ function buildPanel() {
   sub(catDev, '② の見出しのスロット（API / CLI / SDK の箱）', true, { fixed: true });
   rows.push(slider('上下の位置', -30, 30, 1, () => (sv().dev.slotBoxY != null ? sv().dev.slotBoxY : 0), v => { sv().dev.slotBoxY = v; applyDsBox(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
     'マイナスで上へ、プラスで下へ。文字の並びには影響しません(見た目だけ動かします)。', { mbKey: 'sections.dev.slotBoxY', signed: true, fixedMax: true }));
-  rows.push(slider('高さ', 24, 64, 1, () => (sv().dev.slotBoxH != null ? sv().dev.slotBoxH : 42), v => { sv().dev.slotBoxH = v; applyDsBox(); }, v => Math.round(v) + 'px',
+  rows.push(slider('高さ', 24, 64, 1, () => (sv().dev.slotBoxH != null ? sv().dev.slotBoxH : 44), v => { sv().dev.slotBoxH = v; applyDsBox(); }, v => Math.round(v) + 'px',
     'グレーの箱の高さ。文字(34px)より少し大きいと収まりがよくなります。', { mbKey: 'sections.dev.slotBoxH', fixedMax: true }));
 
   sub(catDev, '② の出入り（スクロール位置）');
@@ -1650,7 +1650,7 @@ function buildPanel() {
       /* 【2026-09-17 ヒデさん依頼】背景・バックドロップフィルター・プレースホルダーの色味を後から個別調整できるように(白飛び対策) */
       const _g = () => (params.cvfGlass = params.cvfGlass || {});
       /* 【2026-09-18 ヒデさん指定】「フォーム裏の明るさ上限」は見た目が想像と違うため取り下げ(既定 100%=効かない)。代わりに上の「流れ・ゆらゆら」の白い光の案(7〜9)で対応 */
-      rows.push(slider('角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 22), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { mbKey: 'cvfGlass.radius', fixedMax: true }));
+      rows.push(slider('角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 20), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { mbKey: 'cvfGlass.radius', fixedMax: true }));
       rows.push(slider('色の透過率', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの色の濃さ(透過率)。下げるほど背景が透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
       colorRow('色', () => (_g().bgColor || '#ffffff'), v => { _g().bgColor = v; applyCvfGlass(); markDirty(); }, 'フォームカードの色そのもの。既定は白。透過率は上のつまみで。');   /* 【2026-09-21 ヒデさん依頼】色自体を変えられるように */
       /* 【2026-09-27 ヒデさん依頼】見出しとくり返す言い方をやめ、同じ言葉で始まる項目は小見出しにまとめる(フォーム＝カード本体→枠線→入力欄→入力欄の枠線→プレースホルダー) */
@@ -1753,7 +1753,7 @@ function buildPanel() {
     const ds = (label, k, def, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => dv(k, def), v => { D()[k] = v; applyDrawerTune(); markDirty(); }, fmt, tip, { fixedMax: true, signed: min < 0, mbKey: 'drawer.' + k }));
     ds('上', 'padT', 0, -200, 400, 4, v => Math.round(v) + 'px', 'メニュー全体の上の余白。マイナスで上へ寄せます。');
     ds('下', 'padB', 0, -200, 400, 4, v => Math.round(v) + 'px', 'メニュー全体の下の余白。');
-    ds('左', 'padL', 130, 0, 600, 4, v => Math.round(v) + 'px', '左端からメニューまでの余白(以前は 9vw≒130px)。');
+    ds('左', 'padL', 128, 0, 600, 4, v => Math.round(v) + 'px', '左端からメニューまでの余白(以前は 9vw≒130px)。');
     ds('右', 'padR', 0, 0, 600, 4, v => Math.round(v) + 'px', 'メニューの右の余白。');
     ds('項目の間隔（上下）', 'gap', 24, 0, 120, 2, v => Math.round(v) + 'px', 'ビジョン／提供できること… の行と行の間。以前は10px。');
     sub(catMenu, '文字サイズ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
@@ -1763,7 +1763,7 @@ function buildPanel() {
     sub(catMenu, 'アイコンの線', false);   /* 右上のハンバーガー(2本線) */
     ds('長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
     ds('太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
-    ds('間隔', 'barGap', 7, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
+    ds('間隔', 'barGap', 6, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
     sub(catMenu, 'その他', false);
     ds('スクロール時のナビのぼかし', 'navBlur', 8, 0, 24, 1, v => Math.round(v) + 'px', 'スクロールでナビ(ビジョン〜導入事例)が右へ格納される時、徐々にかかるぼかしの最大量。0でぼかし無し。');
   }

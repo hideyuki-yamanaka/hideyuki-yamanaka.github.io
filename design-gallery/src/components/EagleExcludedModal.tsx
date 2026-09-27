@@ -77,7 +77,7 @@ export function EagleExcludedModal({ sites, onClose }: EagleExcludedModalProps) 
         {/* グリッド */}
         <div className="flex-1 overflow-y-auto p-5">
           {sites.length === 0 ? (
-            <div className="text-center py-12 text-text-secondary text-[13px]">
+            <div className="text-center py-12 text-text-secondary text-[14px]">
               非表示中のサイトはありません
             </div>
           ) : (
@@ -102,7 +102,7 @@ export function EagleExcludedModal({ sites, onClose }: EagleExcludedModalProps) 
                         unoptimized
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-[11px]">
+                      <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-[12px]">
                         No thumbnail
                       </div>
                     )}
@@ -122,7 +122,7 @@ export function EagleExcludedModal({ sites, onClose }: EagleExcludedModalProps) 
                     <p className="text-[12px] font-medium text-text-primary line-clamp-1">
                       {site.title}
                     </p>
-                    <p className="text-[11px] text-text-secondary line-clamp-1 mt-0.5">
+                    <p className="text-[12px] text-text-secondary line-clamp-1 mt-0.5">
                       {site.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                     </p>
                   </div>
@@ -136,7 +136,7 @@ export function EagleExcludedModal({ sites, onClose }: EagleExcludedModalProps) 
         <div className="p-4 border-t border-border shrink-0 flex justify-end">
           <button
             onClick={onClose}
-            className="h-9 px-4 rounded-lg bg-text-primary text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+            className="h-9 px-4 rounded-lg bg-text-primary text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
           >
             閉じる
           </button>

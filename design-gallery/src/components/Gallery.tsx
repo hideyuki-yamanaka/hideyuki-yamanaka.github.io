@@ -150,8 +150,8 @@ export function Gallery({
           <svg className="w-16 h-16 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <p className="text-[15px] font-medium">該当するサイトがありません</p>
-          <p className="text-[13px] mt-1">フィルター条件を変更してみてください</p>
+          <p className="text-[16px] font-medium">該当するサイトがありません</p>
+          <p className="text-[14px] mt-1">フィルター条件を変更してみてください</p>
         </div>
       ) : (
         <div
@@ -175,7 +175,7 @@ export function Gallery({
       {/* もっと読み込み表示 */}
       {hasMore && (
         <div className="flex justify-center py-8">
-          <span className="text-[13px] text-text-secondary">
+          <span className="text-[14px] text-text-secondary">
             {visibleSites.length} / {sites.length}件を表示中…スクロールで続きを読み込み
           </span>
         </div>
@@ -220,7 +220,7 @@ export function Gallery({
                 window.open(s.url, "_blank", "noopener,noreferrer");
               });
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-sm font-medium transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -237,7 +237,7 @@ export function Gallery({
                   // アクション完了 → 選択解除してアクションバーを閉じる
                   onClearSelection();
                 }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   allStarred ? "bg-white/20 hover:bg-white/30" : "bg-emerald-600 hover:bg-emerald-500"
                 }`}
               >

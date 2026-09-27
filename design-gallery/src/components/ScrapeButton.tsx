@@ -132,7 +132,7 @@ export function ScrapeButton() {
         aria-label="スクレイピングを今すぐ実行"
       >
         <svg
-          className={`w-3.5 h-3.5 ${running ? "animate-spin" : ""}`}
+          className={`w-4 h-4 ${running ? "animate-spin" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -156,7 +156,7 @@ export function ScrapeButton() {
       {msg && (
         <button
           onClick={() => setMsg(null)}
-          className="absolute right-0 top-9 z-40 max-w-[320px] rounded-lg border border-border bg-white px-3 py-2 text-left text-[11px] leading-relaxed text-text-primary shadow-lg"
+          className="absolute right-0 top-9 z-40 max-w-[320px] rounded-lg border border-border bg-white px-3 py-2 text-left text-[12px] leading-relaxed text-text-primary shadow-lg"
         >
           {msg}
           {info?.run?.url && (

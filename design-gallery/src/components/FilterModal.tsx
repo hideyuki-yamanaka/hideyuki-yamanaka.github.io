@@ -181,7 +181,7 @@ export function FilterModal({
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
           {/* 並び順 */}
           <section>
-            <h3 className="text-[11px] uppercase tracking-wider text-text-secondary mb-2">
+            <h3 className="text-[12px] uppercase tracking-wider text-text-secondary mb-2">
               並び順
             </h3>
             <div className="flex gap-2">
@@ -211,14 +211,14 @@ export function FilterModal({
           {/* 日付レンジ（スムースなエリアチャート + デュアルハンドル） */}
           <section>
             <div className="flex items-end justify-between mb-2">
-              <h3 className="text-[11px] uppercase tracking-wider text-text-secondary">
+              <h3 className="text-[12px] uppercase tracking-wider text-text-secondary">
                 日付レンジ
               </h3>
               <div className="flex items-baseline gap-3">
-                <span className="text-[11px] text-text-secondary tabular-nums">
+                <span className="text-[12px] text-text-secondary tabular-nums">
                   {selectedTotal.toLocaleString()} / {grandTotal.toLocaleString()} 件
                 </span>
-                <span className="text-[13px] font-semibold text-text-primary tabular-nums">
+                <span className="text-[14px] font-semibold text-text-primary tabular-nums">
                   {allMonths[fromIdx]} — {allMonths[toIdxSafe]}
                 </span>
               </div>
@@ -292,7 +292,7 @@ export function FilterModal({
 
           {/* タグ（Framer / Studio / Production） */}
           <section>
-            <h3 className="text-[11px] uppercase tracking-wider text-text-secondary mb-2">
+            <h3 className="text-[12px] uppercase tracking-wider text-text-secondary mb-2">
               制作タグ（AND条件）
             </h3>
             <div className="flex flex-col gap-1.5">
@@ -332,11 +332,11 @@ export function FilterModal({
                         </svg>
                       )}
                     </span>
-                    <span className="flex-1 text-[13px] text-text-primary">
+                    <span className="flex-1 text-[14px] text-text-primary">
                       {SIGNAL_LABELS[sig]}
                     </span>
                     {typeof count === "number" && (
-                      <span className="text-[11px] text-text-secondary">
+                      <span className="text-[12px] text-text-secondary">
                         {count.toLocaleString()} 件
                       </span>
                     )}
@@ -357,7 +357,7 @@ export function FilterModal({
           </button>
           <button
             onClick={onClose}
-            className="h-9 px-4 rounded-lg bg-text-primary text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+            className="h-9 px-4 rounded-lg bg-text-primary text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
           >
             適用して閉じる
           </button>
@@ -388,7 +388,7 @@ function DateSliderBar({
   const leftPct = totalMonths > 1 ? (fromIdx / (totalMonths - 1)) * 100 : 0;
   const rightPct = totalMonths > 1 ? (toIdx / (totalMonths - 1)) * 100 : 100;
   return (
-    <div className="relative h-[18px] select-none">
+    <div className="relative h-[16px] select-none">
       {/* 青ライン（つまみの間） */}
       <div
         className="absolute top-1/2 -translate-y-1/2 h-[2px] bg-accent rounded-full pointer-events-none"
@@ -423,7 +423,7 @@ function DateSliderBar({
           position: absolute;
           inset: 0;
           width: 100%;
-          height: 18px;
+          height: 16px;
           -webkit-appearance: none;
           -moz-appearance: none;
           appearance: none;
@@ -438,21 +438,21 @@ function DateSliderBar({
           -webkit-appearance: none;
           appearance: none;
           background: transparent;
-          height: 18px;
+          height: 16px;
           border: none;
           box-shadow: none;
         }
         .fm-date-range::-moz-range-track {
           background: transparent;
-          height: 18px;
+          height: 16px;
           border: none;
           box-shadow: none;
         }
         .fm-date-range::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: white;
           border: 2px solid var(--accent);
@@ -464,8 +464,8 @@ function DateSliderBar({
           cursor: grabbing;
         }
         .fm-date-range::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: white;
           border: 2px solid var(--accent);

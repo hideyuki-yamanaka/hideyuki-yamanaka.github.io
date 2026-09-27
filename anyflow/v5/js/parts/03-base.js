@@ -1031,7 +1031,7 @@ function applyCvfGlass() {
   set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
   set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
   set('--cvf-ph-a', g.phA != null ? g.phA : 0.32, '');
-  set('--cvf-r', g.radius != null ? g.radius : 22, 'px');     /* 2026-09-18: フォームの角丸 */
+  set('--cvf-r', g.radius != null ? g.radius : 20, 'px');     /* 2026-09-18: フォームの角丸 */
   set('--cvf-in-r', g.inR != null ? g.inR : 10, 'px');       /* 2026-09-18: 入力欄の角丸 */
   /* 【2026-09-18 ヒデさん依頼】枠線(カード/入力欄)の色系・太さ・濃さ、プレースホルダーの色系 */
   set('--cvf-bw', g.bw != null ? g.bw : 1, 'px'); set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');

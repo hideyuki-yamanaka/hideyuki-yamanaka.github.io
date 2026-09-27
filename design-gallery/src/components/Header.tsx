@@ -74,7 +74,7 @@ export function Header({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="サイト名、URL、エージェンシーで検索..."
-          className="w-full h-8 pl-9 pr-3 text-[13px] bg-bg-primary border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+          className="w-full h-8 pl-9 pr-3 text-[14px] bg-bg-primary border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
         />
       </div>
 
@@ -105,7 +105,7 @@ export function Header({
             title={`表示中の${filteredCount}件を一覧から非表示にする`}
             aria-label="表示中のサイトを非表示にする"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -140,7 +140,7 @@ export function Header({
       {/* 列数スライダー */}
       <div className="flex items-center gap-2">
         <svg
-          className="w-3.5 h-3.5 text-text-secondary"
+          className="w-4 h-4 text-text-secondary"
           viewBox="0 0 16 16"
           fill="currentColor"
         >

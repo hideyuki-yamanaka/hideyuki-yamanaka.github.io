@@ -69,11 +69,11 @@ export function UpdateNotificationModal({
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: SOURCE_COLORS[source] }}
                 />
-                <span className="text-[13px] font-medium text-text-primary">
+                <span className="text-[14px] font-medium text-text-primary">
                   {SOURCE_LABELS[source]}
                 </span>
               </div>
-              <span className="text-[13px] font-bold text-text-primary tabular-nums">
+              <span className="text-[14px] font-bold text-text-primary tabular-nums">
                 {counts[source]} 件
               </span>
             </div>
@@ -83,7 +83,7 @@ export function UpdateNotificationModal({
         {/* 閉じるボタン */}
         <button
           onClick={onClose}
-          className="w-full h-10 rounded-lg bg-text-primary text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+          className="w-full h-10 rounded-lg bg-text-primary text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
         >
           確認した
         </button>

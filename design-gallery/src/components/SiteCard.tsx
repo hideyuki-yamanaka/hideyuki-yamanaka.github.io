@@ -84,14 +84,14 @@ export const SiteCard = memo(function SiteCard({
           }`}
           title={site.starred ? "未確認に戻す" : "確認済みにする"}
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
         </button>
 
         {/* 日付（ホバー時・左上チェックの右） */}
         <div
-          className={`absolute top-3 left-12 text-[11px] font-medium text-white drop-shadow transition-opacity duration-200 ${
+          className={`absolute top-3 left-12 text-[12px] font-medium text-white drop-shadow transition-opacity duration-200 ${
             hovered ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -109,7 +109,7 @@ export const SiteCard = memo(function SiteCard({
           }`}
           title="サイトを開く"
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -134,8 +134,8 @@ export const SiteCard = memo(function SiteCard({
       </div>
 
       {/* カード情報 */}
-      <div className="px-3.5 py-3">
-        <h3 className="text-[13px] font-semibold text-text-primary truncate leading-tight">
+      <div className="px-3 py-3">
+        <h3 className="text-[14px] font-semibold text-text-primary truncate leading-tight">
           {site.title}
         </h3>
         {/* 制作タグ（ハッシュタグ表記: #Framer / #Studio / #制作会社） */}
@@ -144,7 +144,7 @@ export const SiteCard = memo(function SiteCard({
             {SIGNAL_DISPLAY_ORDER.filter((sig) => site.signals?.includes(sig)).map((sig) => (
               <span
                 key={sig}
-                className="text-[10.5px] font-medium text-text-secondary/80 tracking-tight"
+                className="text-[10px] font-medium text-text-secondary/80 tracking-tight"
               >
                 #{SIGNAL_LABELS[sig]}
               </span>
@@ -154,7 +154,7 @@ export const SiteCard = memo(function SiteCard({
         {/* キュレーション日 + クレジット（制作会社・デザイナー）
             旧: ドメイン表示+コピー → 削除（ホバー時の外部リンクボタンで開ける）
             新: いつ取得されたサイトか + 誰が作ったか */}
-        <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-text-secondary/70 min-w-0">
+        <div className="flex items-center gap-1.5 mt-1.5 text-[12px] text-text-secondary/70 min-w-0">
           {/* キュレーション日 */}
           <span
             className="inline-flex items-center gap-1 shrink-0 tabular-nums"
@@ -211,7 +211,7 @@ export const SiteCard = memo(function SiteCard({
                 {agencyHovered && (
                   <span
                     role="tooltip"
-                    className="absolute left-0 bottom-full mb-2 z-50 inline-block w-max max-w-[min(320px,80vw)] px-2.5 py-1.5 rounded-md bg-gray-900 text-white text-[11px] font-normal leading-snug shadow-xl pointer-events-none whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="absolute left-0 bottom-full mb-2 z-50 inline-block w-max max-w-[min(320px,80vw)] px-2.5 py-1.5 rounded-md bg-gray-900 text-white text-[12px] font-normal leading-snug shadow-xl pointer-events-none whitespace-nowrap overflow-hidden text-ellipsis"
                   >
                     <span className="opacity-60">制作: </span>
                     <span className="font-medium">{site.agency}</span>

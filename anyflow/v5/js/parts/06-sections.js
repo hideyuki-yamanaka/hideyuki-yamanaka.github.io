@@ -427,12 +427,12 @@ function applyLogoTune() {
   document.querySelectorAll('.mq-set').forEach(set => { Array.from(set.querySelectorAll('img')).forEach((img, i) => { const k = LOGO_KEYS[i]; const t = (k && T[k]) || {}; img.style.setProperty('--dy', (t.dy || 0) + 'px'); img.style.marginLeft = (t.mx || 0) + 'px'; img.style.marginRight = (t.mx || 0) + 'px'; }); });
 }
 function applyDrawerTune() {
-  const d = Object.assign({ padT: 0, padB: 0, padL: 130, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
+  const d = Object.assign({ padT: 0, padB: 0, padL: 128, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
   r.setProperty('--drw-gap', d.gap + 'px'); r.setProperty('--drw-fs', d.fs + 'px'); r.setProperty('--drw-num-fs', d.numFs + 'px');
   r.setProperty('--hdr-nav-blur', (d.navBlur != null ? d.navBlur : 8) + 'px');
   /* 【2026-09-18 ヒデさん依頼】ハンバーガーアイコン(2本線)の長さ・太さ・間隔(html.bi-2 の CSS より優先させるため要素に直接) */
-  document.querySelectorAll('.hdr-burger, .cta-burg').forEach(b => { b.style.setProperty('--bg-w', (d.barW != null ? d.barW : 20) + 'px'); b.style.setProperty('--bg-h', (d.barH != null ? d.barH : 2) + 'px'); b.style.setProperty('--bg-gap', (d.barGap != null ? d.barGap : 7) + 'px'); });
+  document.querySelectorAll('.hdr-burger, .cta-burg').forEach(b => { b.style.setProperty('--bg-w', (d.barW != null ? d.barW : 20) + 'px'); b.style.setProperty('--bg-h', (d.barH != null ? d.barH : 2) + 'px'); b.style.setProperty('--bg-gap', (d.barGap != null ? d.barGap : 6) + 'px'); });
 }
 function applyKvCopy() {
   const r = document.documentElement.style, k = params.kv;
@@ -475,7 +475,7 @@ function applyKvCopy() {
   } catch (e) { r.setProperty('--kv-copy-base', '50px'); }
   r.setProperty('--kv-copy-dir', k.copyOrder === 'sub' ? 'column-reverse' : 'column');
   r.setProperty('--kv-eyebrow-dash', (k.eyebrowDash === false) ? 'none' : 'block');
-  r.setProperty('--kv-eyebrow-dash-w', (k.eyebrowDashW != null ? k.eyebrowDashW : 26) + 'px');
+  r.setProperty('--kv-eyebrow-dash-w', (k.eyebrowDashW != null ? k.eyebrowDashW : 28) + 'px');
   r.setProperty('--kv-dash-gap', (k.dashGap != null ? k.dashGap : 10) + 'px');
   r.setProperty('--kv-copy-gap', (k.copyGap != null ? k.copyGap : 16) + 'px');
   r.setProperty('--kv-copy-x', (k.copyX || 0) + 'px');
@@ -543,7 +543,7 @@ function applyDsBox() {
   const d = (params.sections && params.sections.dev) || {};
   const r = document.documentElement.style;
   r.setProperty('--ds-box-y', (d.slotBoxY != null ? d.slotBoxY : 0) + 'px');
-  r.setProperty('--ds-box-h', (d.slotBoxH != null ? d.slotBoxH : 42) + 'px');
+  r.setProperty('--ds-box-h', (d.slotBoxH != null ? d.slotBoxH : 44) + 'px');
 }
 applyDsBox();
 function applyResHrGap() {

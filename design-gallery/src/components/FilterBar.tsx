@@ -100,7 +100,7 @@ export function FilterBar({
             title="フィルターを開く"
           >
             <svg
-              className="w-3.5 h-3.5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -114,7 +114,7 @@ export function FilterBar({
             </svg>
             フィルター
             {nonDefaultCount > 0 && (
-              <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-white text-[10px] font-bold">
+              <span className="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-accent text-white text-[10px] font-bold">
                 {nonDefaultCount}
               </span>
             )}

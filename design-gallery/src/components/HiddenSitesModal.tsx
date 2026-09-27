@@ -149,12 +149,12 @@ export function HiddenSitesModal({
             {/* === Eagle連携セクション === */}
             <section className="p-5 border-b border-border">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <h3 className="text-[13px] font-bold text-text-primary">
+                <h3 className="text-[14px] font-bold text-text-primary">
                   Eagle連携
                 </h3>
                 <button
                   onClick={onEagleRefresh}
-                  className="inline-flex items-center gap-1 text-[11px] text-text-secondary hover:text-text-primary transition-colors"
+                  className="inline-flex items-center gap-1 text-[12px] text-text-secondary hover:text-text-primary transition-colors"
                   title="Eagleと再同期"
                 >
                   <svg
@@ -189,10 +189,10 @@ export function HiddenSitesModal({
                 {/* トグル行 */}
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-text-primary">
+                    <p className="text-[14px] font-medium text-text-primary">
                       Eagleに収録済みのサイトを非表示
                     </p>
-                    <p className="text-[11px] text-text-secondary mt-0.5 leading-relaxed">
+                    <p className="text-[12px] text-text-secondary mt-0.5 leading-relaxed">
                       Eagleで保存済みのサイトをギャラリーから隠す。重複ブックマーク防止に。
                     </p>
                   </div>
@@ -239,7 +239,7 @@ export function HiddenSitesModal({
             {/* === もう見ない非表示セクション === */}
             <section className="p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <h3 className="text-[13px] font-bold text-text-primary">
+                <h3 className="text-[14px] font-bold text-text-primary">
                   「もう見ない」で非表示
                   {sites.length > 0 && (
                     <span className="ml-2 text-text-secondary font-normal tabular-nums">
@@ -250,7 +250,7 @@ export function HiddenSitesModal({
                 {sites.length > 0 && (
                   <button
                     onClick={handleUnhideAll}
-                    className="h-7 inline-flex items-center gap-1 px-2.5 rounded-lg border border-border bg-bg-primary text-[11px] font-medium text-text-primary hover:border-accent/40 hover:text-accent transition-colors"
+                    className="h-7 inline-flex items-center gap-1 px-2.5 rounded-lg border border-border bg-bg-primary text-[12px] font-medium text-text-primary hover:border-accent/40 hover:text-accent transition-colors"
                     title="非表示を全部解除して一覧に戻す"
                   >
                     <svg
@@ -289,7 +289,7 @@ export function HiddenSitesModal({
                   <p className="text-[12px] font-medium">
                     まだ非表示にしたサイトはありません
                   </p>
-                  <p className="text-[11px] mt-1 opacity-70">
+                  <p className="text-[12px] mt-1 opacity-70">
                     確認済みタブで「○件を非表示」を押すとここに溜まります
                   </p>
                 </div>
@@ -317,7 +317,7 @@ export function HiddenSitesModal({
                             unoptimized
                           />
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-[11px]">
+                          <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-[12px]">
                             No thumbnail
                           </div>
                         )}
@@ -336,14 +336,14 @@ export function HiddenSitesModal({
                         <p className="text-[12px] font-medium text-text-primary line-clamp-1">
                           {site.title}
                         </p>
-                        <p className="text-[11px] text-text-secondary line-clamp-1">
+                        <p className="text-[12px] text-text-secondary line-clamp-1">
                           {site.url
                             .replace(/^https?:\/\//, "")
                             .replace(/\/$/, "")}
                         </p>
                         <button
                           onClick={() => onUnhideOne(site.id)}
-                          className="mt-1 h-7 inline-flex items-center justify-center gap-1 px-2 rounded-md border border-border text-[11px] font-medium text-text-secondary hover:border-accent/40 hover:text-accent transition-colors"
+                          className="mt-1 h-7 inline-flex items-center justify-center gap-1 px-2 rounded-md border border-border text-[12px] font-medium text-text-secondary hover:border-accent/40 hover:text-accent transition-colors"
                           title="このサイトを一覧に戻す"
                         >
                           <svg
@@ -373,7 +373,7 @@ export function HiddenSitesModal({
           <div className="p-4 border-t border-border shrink-0 flex justify-end">
             <button
               onClick={onClose}
-              className="h-9 px-4 rounded-lg bg-text-primary text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+              className="h-9 px-4 rounded-lg bg-text-primary text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
             >
               閉じる
             </button>
