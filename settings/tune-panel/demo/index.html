@@ -3,177 +3,302 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>tune-panel デモ</title>
+<title>調整パネル 見本（tune-panel v2）</title>
 <style>
+  /* ── 見本のサイト（中身は仮の文言）。値はすべて調整パネルの params から CSS 変数で流し込む ── */
+  :root {
+    --bg: #f6f7f9; --pad: 64px; --grid-cell: 40px; --grid-op: .3; --body-size: 15px; --body-lh: 1.7; --speed: 1;
+    --copy-x: 0px; --copy-y: 0px; --copy-size: 56px; --copy-weight: 500; --copy-lh: 1.3;
+    --gfx-size: 320px; --gfx-x: 0px; --gfx-z: 0; --sp-top: 0px; --gfx-color: #0EBBFF; --gfx-op: .9; --gfx-blur: 0px;
+    --glow: .4; --ring: 2px; --kv-delay: .3s; --kv-dur: 1.2s;
+    --fx-dur: .8s; --fx-delay: .12s; --fx-dist: 40px; --zoom-from: .8; --picto-size: 56px; --picto-stroke: 2px; --picto-fill: #FF5D97;
+    --card-gap: 24px; --card-pad: 24px; --radius: 12px; --border-color: #e4e7eb; --border-width: 1px; --border-op: 1; --shadow: .12; --num-size: 40px;
+  }
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
+  html, body { margin: 0; }
   body {
-    background: #0b0b0e;
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-    font-weight: 300;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
+    background: var(--bg); color: #1a1a1a; font-size: var(--body-size); line-height: var(--body-lh);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 400;
   }
-  canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
-  .lead {
-    position: relative; z-index: 2; text-align: center; pointer-events: none;
+  body.grid-on {
+    background-image:
+      linear-gradient(rgba(16, 24, 40, var(--grid-op)) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 24, 40, var(--grid-op)) 1px, transparent 1px);
+    background-size: var(--grid-cell) var(--grid-cell);
   }
-  .lead h1 { font-size: 28px; font-weight: 200; letter-spacing: .04em; margin: 0 0 10px; }
-  .lead p  { font-size: 13px; color: #9aa; margin: 0; line-height: 1.9; }
-  .lead code { background: rgba(255,255,255,.1); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  [hidden] { display: none !important; }
+  /* 調整パネルは画面の左に出るので、広い画面では中身を右に寄せて見えるようにしておく */
+  .page { max-width: 1040px; margin: 0 auto; padding: 0 var(--pad); }
+  @media (min-width: 1280px) { .page { margin-left: 500px; margin-right: 40px; max-width: none; } }
+  .site-head { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .logo { font-weight: 800; letter-spacing: .08em; font-size: 15px; }
+  .nav { display: flex; gap: 24px; font-size: 13px; color: #444; }
+  .nav b { background: #090909; color: #fff; font-weight: 500; padding: 6px 14px; border-radius: 6px; }
+
+  /* キービジュアル */
+  .kv { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 40px; min-height: 520px; padding: 24px 0 32px; }
+  .kv[data-align="center"] { flex-direction: column; justify-content: center; text-align: center; }
+  .kv-copy { transform: translate(var(--copy-x), var(--copy-y)); max-width: 620px; }
+  .kv-copy h1 { margin: 0; font-size: var(--copy-size); font-weight: var(--copy-weight); line-height: var(--copy-lh); letter-spacing: .01em; }
+  .kv-copy p { margin: 18px 0 0; color: #555; }
+  .kv-gfx {
+    flex: 0 0 auto; width: var(--gfx-size); height: var(--gfx-size); border-radius: 50%; position: relative;
+    transform: translateX(var(--gfx-x)); opacity: var(--gfx-op); filter: blur(var(--gfx-blur));
+    background: radial-gradient(circle at 35% 30%, #fff 0, var(--gfx-color) 55%, #0b3a8c 100%);
+  }
+  @media (min-width: 601px) { .kv-gfx { transform: translateX(var(--gfx-x)) scale(calc(1 + var(--gfx-z) / 100)); } }
+  .kv[data-variant="strong"] .kv-gfx { box-shadow: 0 0 calc(var(--glow) * 160px) calc(var(--glow) * 40px) var(--gfx-color); outline: var(--ring) solid rgba(255, 255, 255, .7); outline-offset: 12px; }
+  .kv[data-variant="minimal"] .kv-copy h1 { letter-spacing: .04em; }
+  .play .kv-copy, .play .kv-gfx { animation: kvIn calc(var(--kv-dur) / var(--speed)) cubic-bezier(.2, .7, .2, 1) calc(var(--kv-delay) / var(--speed)) both; }
+  @keyframes kvIn { from { opacity: 0; filter: blur(12px); } }
+  .logos { display: flex; gap: 36px; flex-wrap: wrap; color: #9aa1ab; font-weight: 700; letter-spacing: .06em; font-size: 13px; padding: 8px 0 40px; }
+
+  /* 実績 */
+  .res h2 { font-size: 26px; font-weight: 600; margin: 24px 0 20px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--card-gap); }
+  .card {
+    background: #fff; padding: var(--card-pad); border-radius: var(--radius);
+    border: var(--border-width) solid color-mix(in srgb, var(--border-color) calc(var(--border-op) * 100%), transparent);
+    box-shadow: 0 10px 30px rgba(16, 24, 40, var(--shadow));
+  }
+  .card .num { font-size: var(--num-size); font-weight: 700; line-height: 1.1; margin-top: 12px; }
+  .card .lab { color: #666; font-size: 13px; }
+  .picto { width: var(--picto-size); height: var(--picto-size); }
+  .picto circle, .picto path { fill: none; stroke: #111; stroke-width: var(--picto-stroke); }
+  .res[data-picto="fill"] .picto circle { fill: var(--picto-fill); stroke: none; }
+  .res[data-picto="fill"] .picto path { stroke: #fff; }
+  .play .card { animation: calc(var(--fx-dur) / var(--speed)) cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * var(--fx-delay) / var(--speed)); }
+  .res[data-fx="fade"].play .card { animation-name: fxFade; }
+  .res[data-fx="slide"][data-dir="up"].play .card { animation-name: fxUp; }
+  .res[data-fx="slide"][data-dir="left"].play .card { animation-name: fxLeft; }
+  .res[data-fx="zoom"].play .card { animation-name: fxZoom; }
+  @keyframes fxFade { from { opacity: 0; } }
+  @keyframes fxUp { from { opacity: 0; transform: translateY(var(--fx-dist)); } }
+  @keyframes fxLeft { from { opacity: 0; transform: translateX(calc(var(--fx-dist) * -1)); } }
+  @keyframes fxZoom { from { opacity: 0; transform: scale(var(--zoom-from)); } }
+  .site-foot { margin-top: 64px; padding: 28px 0 120px; border-top: 1px solid #e4e7eb; color: #777; font-size: 12px; }
+
+  /* スマホ（幅600px以下）。スマホ専用の「ヘッダーとのギャップ」はここでだけ効く */
+  @media (max-width: 600px) {
+    .page { padding: 0 20px; }
+    .nav span { display: none; }
+    .kv { flex-direction: column; align-items: flex-start; min-height: 0; padding-top: calc(16px + var(--sp-top)); }
+    .kv-copy h1 { font-size: calc(var(--copy-size) * .6); }
+    .kv-gfx { width: calc(var(--gfx-size) * .6); height: calc(var(--gfx-size) * .6); align-self: center; }
+    .cards { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-
-<canvas id="cv"></canvas>
-<div class="lead">
-  <h1>tune-panel</h1>
-  <p>右下のパネルを触ると、その場で反映されます。<br>
-     ヘッダーを掴んで移動 / 右下つまみでリサイズ / <code>.</code> キーで隠す</p>
+<div class="page">
+  <header class="site-head" id="siteHead">
+    <div class="logo" id="logo">TSUNAGU LAB</div>
+    <nav class="nav"><span>サービス</span><span>実績</span><span>会社</span><b>お問い合わせ</b></nav>
+  </header>
+  <main id="stage">
+    <section class="kv play" id="kv">
+      <div class="kv-copy">
+        <h1 id="copy">データをつなぐと、事業が動きだす。</h1>
+        <p>AIと業務システムを、ひとつの流れに。見本のページなので、文言はすべて仮置きです。</p>
+      </div>
+      <div class="kv-gfx" id="gfx"></div>
+    </section>
+    <div class="logos" id="logos"><span>NORTH</span><span>HARBOR</span><span>KAZE</span><span>MIRAI</span><span>SORA</span></div>
+    <section class="res play" id="res">
+      <h2>実績</h2>
+      <div class="cards">
+        <div class="card" style="--i:0"><svg class="picto" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/><path d="M14 25l7 7 13-15"/></svg><div class="num">120社+</div><div class="lab">導入企業</div></div>
+        <div class="card" style="--i:1"><svg class="picto" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/><path d="M14 24h20M24 14v20"/></svg><div class="num">300+</div><div class="lab">連携サービス</div></div>
+        <div class="card" style="--i:2"><svg class="picto" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/><path d="M15 30l6-8 6 5 7-11"/></svg><div class="num">月2億件</div><div class="lab">処理件数</div></div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-foot" id="siteFoot">© TSUNAGU LAB（見本）｜右下の角を押すと調整パネルが出ます</footer>
 </div>
 
 <script src="../tune-panel.js"></script>
 <script>
-/* ========== 1. 触りたい値を1か所にまとめる ========== */
+/* ========== 1. 触りたい値を1か所にまとめる（これが既定値の原本） ========== */
 const DEFAULTS = {
-  common:  { speed: 1, trail: 0.12 },
-  orbit:   { count: 6, radius: 190, squash: 0.42, tilt: -12, wobble: 0.18, period: 9 },
-  dot:     { size: 7, glow: 26, style: 'gradient' },
-  core:    { size: 96, pulse: 0.25, show: true },
-  motion:  { dir: 1, ease: 'linear' }
-};
-const params = JSON.parse(JSON.stringify(DEFAULTS));
-
-/* ========== 2. 描画（params を毎フレーム読むだけ） ========== */
-const cv = document.getElementById('cv');
-const ctx = cv.getContext('2d');
-let t0 = performance.now();
-
-function fit() {
-  const d = Math.min(devicePixelRatio || 1, 2);
-  cv.width = innerWidth * d; cv.height = innerHeight * d;
-  ctx.setTransform(d, 0, 0, d, 0, 0);
-}
-addEventListener('resize', fit); fit();
-
-const PALETTE = {
-  gradient: (i, n) => `hsl(${200 + (i / n) * 130}, 90%, 62%)`,
-  brand:    (i, n) => (i % 2 ? '#FF5D97' : '#00ABEB'),
-  mono:     () => '#ffffff'
-};
-
-function frame(now) {
-  const T = (now - t0) / 1000 * params.common.speed;
-
-  ctx.fillStyle = `rgba(11,11,14,${params.common.trail})`;
-  ctx.fillRect(0, 0, innerWidth, innerHeight);
-
-  const cx = innerWidth / 2, cy = innerHeight / 2;
-  const o = params.orbit;
-
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(o.tilt * Math.PI / 180);
-
-  /* 軌道の線 */
-  ctx.beginPath();
-  ctx.ellipse(0, 0, o.radius, o.radius * o.squash, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(255,255,255,.12)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  /* 中心 */
-  if (params.core.show) {
-    const r = params.core.size * (1 + Math.sin(T * 1.6) * params.core.pulse);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-    g.addColorStop(0, 'rgba(255,255,255,.9)');
-    g.addColorStop(.5, 'rgba(0,171,235,.35)');
-    g.addColorStop(1, 'rgba(255,93,151,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  site: {
+    bg: '#f6f7f9', pad: 64, grid: false, gridCell: 40, gridOpacity: 30,
+    bodySize: 15, bodyLh: 1.7, replay: true, speed: 1,
+    show: { header: true, logos: true, footer: true }, logo: 'TSUNAGU LAB'
+  },
+  kv: {
+    variant: 'normal', copy: 'データをつなぐと、事業が動きだす。', align: 'left',
+    copyX: 0, copyY: 0, copySize: 56, copyWeight: 500, copyLh: 1.3,
+    gfxSize: 320, gfxX: 0, gfxZ: 0, spTop: 0, gfxColor: '#0EBBFF', gfxOpacity: 90, gfxBlur: 0,
+    glow: 40, ring: 2, delay: 0.3, dur: 1.2, logos: true
+  },
+  res: {
+    fx: 'fade', fxDur: 0.8, fxDelay: 0.12, fxDist: 40, slideDir: 'up', zoomFrom: 80,
+    picto: 'line', pictoSize: 56, pictoStroke: 2, pictoFill: '#FF5D97',
+    cardGap: 24, cardPad: 24, radius: 12, border: { color: '#e4e7eb', width: 1, opacity: 100 }, shadow: 12, numSize: 40
   }
+};
+const params = structuredClone(DEFAULTS);   /* 画面が読むのはこっち（パネルが書き換える） */
 
-  /* 周回するドット */
-  const n = Math.round(o.count);
-  const ease = params.motion.ease === 'inout';
-  for (let i = 0; i < n; i++) {
-    let p = (T / o.period) * params.motion.dir + i / n;
-    p -= Math.floor(p);
-    const a = (ease ? (p - Math.sin(p * Math.PI * 2) / (Math.PI * 2)) : p) * Math.PI * 2;
-    const wob = 1 + Math.sin(T * 1.2 + i) * o.wobble;
-    const x = Math.cos(a) * o.radius * wob;
-    const y = Math.sin(a) * o.radius * o.squash * wob;
-    const col = PALETTE[params.dot.style](i, n);
-    ctx.shadowColor = col;
-    ctx.shadowBlur = params.dot.glow;
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.arc(x, y, params.dot.size, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-  ctx.restore();
-  requestAnimationFrame(frame);
+/* ========== 2. 画面へ流し込む（params を読むだけ） ========== */
+const $ = id => document.getElementById(id);
+function apply() {
+  const s = params.site, k = params.kv, r = params.res, st = document.documentElement.style;
+  const set = (n, v) => st.setProperty(n, v);
+  set('--bg', s.bg); set('--pad', s.pad + 'px'); set('--grid-cell', s.gridCell + 'px'); set('--grid-op', s.gridOpacity / 100);
+  set('--body-size', s.bodySize + 'px'); set('--body-lh', s.bodyLh); set('--speed', Math.max(0.05, s.speed));
+  set('--copy-x', k.copyX + 'px'); set('--copy-y', k.copyY + 'px'); set('--copy-size', k.copySize + 'px');
+  set('--copy-weight', k.copyWeight); set('--copy-lh', k.copyLh); set('--gfx-size', k.gfxSize + 'px'); set('--gfx-x', k.gfxX + 'px');
+  set('--gfx-z', k.gfxZ); set('--sp-top', k.spTop + 'px'); set('--gfx-color', k.gfxColor); set('--gfx-op', k.gfxOpacity / 100);
+  set('--gfx-blur', k.gfxBlur + 'px'); set('--glow', k.glow / 100); set('--ring', k.ring + 'px');
+  set('--kv-delay', k.delay + 's'); set('--kv-dur', k.dur + 's');
+  set('--fx-dur', r.fxDur + 's'); set('--fx-delay', r.fxDelay + 's'); set('--fx-dist', r.fxDist + 'px'); set('--zoom-from', r.zoomFrom / 100);
+  set('--picto-size', r.pictoSize + 'px'); set('--picto-stroke', r.pictoStroke + 'px'); set('--picto-fill', r.pictoFill);
+  set('--card-gap', r.cardGap + 'px'); set('--card-pad', r.cardPad + 'px'); set('--radius', r.radius + 'px');
+  set('--border-color', r.border.color); set('--border-width', r.border.width + 'px'); set('--border-op', r.border.opacity / 100);
+  set('--shadow', r.shadow / 100); set('--num-size', r.numSize + 'px');
+  document.body.classList.toggle('grid-on', !!s.grid);
+  $('siteHead').hidden = !s.show.header; $('logos').hidden = !(s.show.logos && k.logos); $('siteFoot').hidden = !s.show.footer;
+  $('logo').textContent = s.logo; $('copy').textContent = k.copy;
+  Object.assign($('kv').dataset, { variant: k.variant, align: k.align });
+  Object.assign($('res').dataset, { fx: r.fx, dir: r.slideDir, picto: r.picto });
 }
-requestAnimationFrame(frame);
+/* 自動検査が「画面が変わったか」を読むための目印（画面の見た目には関係ない） */
+window.__demoSig = () => [document.documentElement.getAttribute('style'), document.body.className,
+  JSON.stringify($('kv').dataset), JSON.stringify($('res').dataset), $('siteHead').hidden, $('logos').hidden, $('siteFoot').hidden,
+  $('logo').textContent, $('copy').textContent].join('|');
+window.__replays = 0;
+function replay() {
+  window.__replays++;
+  ['kv', 'res'].forEach(id => { const e = $(id); e.classList.remove('play'); void e.offsetWidth; e.classList.add('play'); });
+}
 
-/* ========== 3. パネルを組み立てる（ここが本題） ========== */
+/* ========== 3. 調整パネル ========== */
 const panel = TunePanel.create({
-  title: '⚙️ デモの調整パネル',
-  storageKey: 'tune-panel-demo',
+  title: '調整パネル',
+  storageKey: 'tp-demo',
   version: 1,
   params, defaults: DEFAULTS,
-  theme: 'dark',
-  /* 手が止まった時（0.25秒）に呼ばれる。重い作り直しはここでやる */
-  onSettle: () => { /* このデモは毎フレーム params を読むので何も要らない */ },
-  footer: [{ label: '↺ 最初から', primary: true, onClick: () => { t0 = performance.now(); } }],
-
   schema: [
-    { cat: '🌊 全体', open: true, items: [
-      { slider: '再生スピード', path: 'common.speed', min: 0.1, max: 3, step: 0.05, fmt: 'x',
-        hint: '全部の動きが同じ倍率で速くなります。' },
-      { slider: '残像の強さ', path: 'common.trail', min: 0.02, max: 1, step: 0.01, fmt: '%',
-        hint: '小さいほど尾を引きます。1 で残像なし。' }
+    { cat: '全体', items: [
+      /* 並べ替えの見本：わざとカテゴリの順をばらばらに書いている（画面ではカテゴリ順に並ぶ） */
+      { sub: 'くり返し再生', grp: 'anim' },
+      { toggle: 'くり返し', path: 'site.replay', hint: '一度見た動きも、戻ってくるともう一度流します。' },
+      { slider: '再生速度', path: 'site.speed', min: 0, max: 2, step: 0.05, fmt: 'x', hint: '全部の動きの倍率。上げると速く、下げると遅くなる。' },
+      { sub: '背景', grp: 'fxtex' },
+      { color: '色', path: 'site.bg', hint: 'ページ全体の背景色。' },
+      { toggle: 'グリッド', path: 'site.grid', hint: '背景に方眼を出すかどうか。「する」にすると下に「グリッドの細かさ」が出る。' },
+      /* when を付けた見出しは、中の項目もまとめて隠れる */
+      { sub: 'グリッドの細かさ', grp: 'fxtex', when: p => !!p.site.grid },
+      { slider: 'マスの大きさ', path: 'site.gridCell', min: 8, max: 72, step: 1, fmt: 'px', hint: '方眼1マスの大きさ。小さいほど細かい方眼になる。' },
+      { slider: '濃さ', path: 'site.gridOpacity', min: 0, max: 100, step: 1, unit: '%', clamp: true, hint: '方眼の線の濃さ。0〜100% で止まる（clamp の見本）。' },
+      { sub: '本文', grp: 'font' },
+      { slider: '文字サイズ', path: 'site.bodySize', min: 10, max: 20, step: 0.5, fmt: 'px', hint: '本文の文字の大きさ。' },
+      { slider: '行間', path: 'site.bodyLh', min: 1.2, max: 2.2, step: 0.05, fmt: 'n2', hint: '本文の行の高さ（倍）。上げると行と行が離れる。' },
+      { sub: 'ページ', grp: 'basic' },
+      { slider: 'パディング', path: 'site.pad', min: 16, max: 112, step: 2, fmt: 'px', hint: 'ページの左右の余白。' },
+      { sub: '表示する部品', grp: 'other' },
+      { chips: '表示', items: [
+        { name: 'ヘッダー', path: 'site.show.header' },
+        { name: 'ロゴ帯', path: 'site.show.logos' },
+        { name: 'フッター', path: 'site.show.footer' }
+      ], hint: '押すたびに出す／隠すが切り替わる。' },
+      { text: 'ロゴ名', path: 'site.logo', hint: '左上のロゴに出す文字。' },
+      { button: 'もう一度再生', primary: true, onClick: () => replay(), hint: '出現の動きを頭から流し直す。' }
     ]},
-
-    { cat: '🛰 軌道', open: true, items: [
-      { sub: '形' },
-      { slider: '大きさ', path: 'orbit.radius', min: 60, max: 420, step: 1, fmt: 'px' },
-      { slider: '楕円のつぶれ', path: 'orbit.squash', min: 0.05, max: 1, step: 0.01, fmt: '%',
-        hint: '100% で真円になります。' },
-      { slider: '傾き', path: 'orbit.tilt', min: -90, max: 90, step: 1, fmt: 'deg', autoCenter: false },
-
-      { sub: '回り方', deep: true },
-      { slider: '1周の秒数', path: 'orbit.period', min: 2, max: 30, step: 0.5, fmt: 's' },
-      { slider: 'ドットの数', path: 'orbit.count', min: 1, max: 24, step: 1, fmt: 'int' },
-      { slider: 'ゆらぎ', path: 'orbit.wobble', min: 0, max: 0.6, step: 0.01, fmt: '%',
-        hint: '軌道からの離れ具合が波打ちます。' },
-      { seg: '回転方向', path: 'motion.dir', options: [['右回り', 1], ['左回り', -1]] },
-      { seg: '緩急', path: 'motion.ease', options: [['等速', 'linear'], ['なめらか', 'inout']] }
-    ]},
-
-    { cat: '⚪️ ドット', open: false, items: [
-      { pills: '配色', path: 'dot.style', options: [
-        { name: 'グラデ', value: 'gradient', swatch: '#3fb7ff', desc: '青→ピンクへ連続的に変化。' },
-        { name: 'ブランド2色', value: 'brand', swatch: '#FF5D97', desc: '交互に2色。ブランドカラー向け。' },
-        { name: '白', value: 'mono', swatch: '#ffffff', desc: '色を使わない検証用。' }
+    { cat: 'キービジュアル', items: [
+      /* 見出しより前の案ピル＝このタブの主役の案。タブの中のつまみは、既定で全部「案ごと」になる */
+      { pills: 'キービジュアルの案', path: 'kv.variant', options: [
+        { name: 'ノーマル', value: 'normal', desc: 'カンプどおり。コピー56px・グラフィック320px。' },
+        { name: '強調', value: 'strong', desc: '大きいコピーと光るグラフィック。', values: { 'kv.copySize': 72, 'kv.copyWeight': 700, 'kv.gfxSize': 400, 'kv.glow': 60 } },
+        { name: 'ミニマル', value: 'minimal', desc: '小さめのコピーを真ん中に、淡いグラフィック。', values: { 'kv.copySize': 44, 'kv.align': 'center', 'kv.gfxSize': 240, 'kv.gfxOpacity': 50 } }
       ]},
-      { slider: '大きさ', path: 'dot.size', min: 2, max: 20, step: 0.5, fmt: 'px' },
-      { slider: '光り方', path: 'dot.glow', min: 0, max: 60, step: 1, fmt: 'px',
-        hint: 'にじみの半径。0 で光らない。' }
+      /* 並べ替えの見本：アニメーション → 基本 → エフェクト → フォント の順に書いている */
+      { sub: '出現' },
+      { slider: 'ディレイ', path: 'kv.delay', min: 0, max: 1.2, step: 0.05, fmt: 's', hint: '出はじめるまでの待ち時間。' },
+      { slider: 'アニメーション時間', path: 'kv.dur', min: 0.2, max: 3, step: 0.05, fmt: 's', hint: '出現にかける時間。長いほどゆっくり。' },
+      { sub: 'コピーの位置' },
+      { seg: '揃え', path: 'kv.align', options: [['左', 'left'], ['中央', 'center']], hint: 'コピーとグラフィックの並び方（2〜3択の見本）。' },
+      { slider: '位置 X', path: 'kv.copyX', min: -200, max: 200, step: 2, fmt: 'px', signed: true, hint: 'コピーを左右にずらす。0＝いまの位置。＋で右。' },
+      { slider: '位置 Y', path: 'kv.copyY', min: -200, max: 200, step: 2, fmt: 'px', signed: true, hint: 'コピーを上下にずらす。0＝いまの位置。＋で下。' },
+      { sub: 'グラフィック' },
+      { color: '色', path: 'kv.gfxColor', hint: 'グラフィックの色。' },
+      { slider: '不透明度', path: 'kv.gfxOpacity', min: 0, max: 100, step: 1, unit: '%', clamp: true, hint: 'グラフィックの濃さ。100% で上限。' },
+      { slider: 'ブラー', path: 'kv.gfxBlur', min: 0, max: 24, step: 1, fmt: 'px', hint: 'グラフィックのぼかし。0 でくっきり。' },
+      /* 案だけのつまみ：強調を選んでいる時だけ出る（パネルは作り直さない） */
+      { sub: '強調の光', only: 'strong' },
+      { slider: '光の強さ', path: 'kv.glow', min: 0, max: 100, step: 1, unit: '%', hint: '強調案だけの光のにじみ。' },
+      { slider: '輪の太さ', path: 'kv.ring', min: 0, max: 8, step: 0.5, fmt: 'px', hint: '強調案だけの白い輪の太さ。' },
+      { sub: 'コピー' },
+      { slider: '文字サイズ', path: 'kv.copySize', min: 24, max: 96, step: 1, fmt: 'px', hint: 'メインコピーの大きさ。スマホはこの0.6倍。' },
+      { slider: '太さ', path: 'kv.copyWeight', min: 100, max: 900, step: 100, fmt: 'int', hint: 'メインコピーのフォントウェイト。' },
+      { slider: '行間', path: 'kv.copyLh', min: 1, max: 2, step: 0.05, fmt: 'n2', hint: 'メインコピーの行の高さ（倍）。' },
+      { sub: 'グラフィックの大きさと位置' },
+      { slider: '大きさ', path: 'kv.gfxSize', min: 120, max: 520, step: 4, fmt: 'px', hint: 'グラフィックの直径。' },
+      { slider: '位置 X', path: 'kv.gfxX', min: -200, max: 200, step: 2, fmt: 'px', signed: true, hint: 'グラフィックを左右にずらす。0＝いまの位置。' },
+      { slider: '位置 Z', path: 'kv.gfxZ', min: -60, max: 60, step: 1, fmt: '%', signed: true, pcOnly: true, hint: 'PC専用：奥行き（＋で手前に大きく）。スマホモード中は隠れる。' },
+      { slider: 'ギャップ（スマホ）', path: 'kv.spTop', min: -80, max: 160, step: 2, fmt: 'px', signed: true, spOnly: true, hint: 'スマホ専用：ヘッダーとキービジュアルのギャップ。PCで触っている間は隠れる。' },
+      { sub: 'コピーの文言', grp: 'other' },
+      { text: '文言', path: 'kv.copy', shared: true, hint: '全案共通（shared:true）。どの案を選んでも同じ文言。' },
+      { toggle: 'ロゴ帯', path: 'kv.logos', shared: true, hint: 'キービジュアルの下のロゴ帯（全案共通）。' }
     ]},
-
-    { cat: '☀️ 中心', open: false, items: [
-      { toggle: '表示する', path: 'core.show', rebuild: true },
-      { slider: '大きさ', path: 'core.size', min: 20, max: 260, step: 2, fmt: 'px', when: p => p.core.show },
-      { slider: '脈打ち', path: 'core.pulse', min: 0, max: 0.8, step: 0.01, fmt: '%', when: p => p.core.show },
-      { note: '「表示する」を切ると、下の2つは消えます（when 条件の例）。' }
+    { cat: '実績', items: [
+      /* 案と関係ない（タブ共通の）つまみ。案ごとの大見出しより上に出る */
+      { sub: 'カード', grp: 'basic' },
+      { slider: 'ギャップ', path: 'res.cardGap', min: 0, max: 64, step: 2, fmt: 'px', hint: 'カードとカードの間。' },
+      { slider: 'パディング', path: 'res.cardPad', min: 8, max: 48, step: 2, fmt: 'px', hint: 'カードの内側の余白。' },
+      { sub: '角', deep: true },   /* 旧来の書き方（一段内側の見出し。次の見出しまで） */
+      { slider: '角丸', path: 'res.radius', min: 0, max: 32, step: 1, fmt: 'px', hint: 'カードの角の丸み。' },
+      { sub: 'カード', grp: 'fxtex' },
+      /* まとまり：同じ言葉（枠線）で始まる項目を小見出しにする。中身を入れ子で渡すので閉じ忘れが無い */
+      { subgroup: '枠線', items: [
+        { color: '色', path: 'res.border.color', hint: 'カードの枠線の色。' },
+        { slider: '太さ', path: 'res.border.width', min: 0, max: 4, step: 0.5, fmt: 'px', hint: 'カードの枠線の太さ。' },
+        { slider: '濃さ', path: 'res.border.opacity', min: 0, max: 100, step: 1, unit: '%', clamp: true, hint: 'カードの枠線の濃さ。' }
+      ]},
+      { slider: '影の強さ', path: 'res.shadow', min: 0, max: 100, step: 1, unit: '%', hint: 'カードの影（まとまりの外の項目）。' },
+      { sub: '数字', grp: 'font' },
+      { slider: '文字サイズ', path: 'res.numSize', min: 20, max: 72, step: 1, fmt: 'px', hint: '実績の数字の大きさ。' },
+      /* 主役の案が1タブに2つ → 案ごとに大見出しを立て、その中に 基本〜アニメーション を入れ子で置く */
+      { varsec: '演出', items: [
+        { pills: '演出の案', path: 'res.fx', options: [
+          { name: 'フェード', value: 'fade', fixed: true, desc: '現行。ふわっと出る。' },
+          { name: 'スライド', value: 'slide', desc: '下（または左）から滑り込む。', values: { 'res.fxDist': 60 } },
+          { name: 'ズーム', value: 'zoom', desc: '小さい所から大きくなる。', values: { 'res.fxDur': 1 } }
+        ]},
+        { sub: '出現' },
+        { slider: 'アニメーション時間', path: 'res.fxDur', min: 0.2, max: 2, step: 0.05, fmt: 's', hint: '1枚のカードが出るのにかける時間。' },
+        { slider: 'ディレイ', path: 'res.fxDelay', min: 0, max: 0.6, step: 0.02, fmt: 's', hint: 'カードとカードの出はじめのずれ。' },
+        { sub: 'スライド', only: 'slide', grp: 'anim' },
+        { seg: '向き', path: 'res.slideDir', options: [['下から', 'up'], ['左から', 'left']], hint: 'スライド案だけ：滑り込む向き。' },
+        { slider: '移動の長さ', path: 'res.fxDist', min: 0, max: 160, step: 2, fmt: 'px', hint: 'スライド案だけ：滑り込む長さ。' },
+        { sub: 'ズーム', only: 'zoom', grp: 'anim' },
+        { slider: '始めの大きさ', path: 'res.zoomFrom', min: 40, max: 100, step: 1, unit: '%', clamp: true, hint: 'ズーム案だけ：出はじめの大きさ。' }
+      ]},
+      { varsec: 'ピクトグラム', items: [
+        { pills: 'ピクトグラムの案', path: 'res.picto', options: [
+          { name: '線', value: 'line', desc: '線だけで描く。' },
+          { name: '塗り', value: 'fill', desc: '丸を塗って白い線を乗せる。', values: { 'res.pictoSize': 64 } }
+        ]},
+        { sub: 'ピクトグラム' },
+        { slider: '大きさ', path: 'res.pictoSize', min: 24, max: 120, step: 2, fmt: 'px', hint: 'ピクトグラムの大きさ。' },
+        { sub: '線', only: 'line' },
+        { slider: '太さ', path: 'res.pictoStroke', min: 0.5, max: 6, step: 0.25, fmt: 'px', hint: '線の案だけ：線の太さ。' },
+        { sub: '塗り', only: 'fill', grp: 'fxtex' },
+        { color: '色', path: 'res.pictoFill', hint: '塗りの案だけ：丸の色。' }
+      ]}
     ]}
-  ]
+  ],
+  onChange: () => apply(),
+  onSettle: info => { apply(); if (info && (info.variant || info.reset || info.remote)) replay(); }
 });
+apply();
 
-/* 「表示する」の ON/OFF で schema の when を効かせるため、関数で渡す使い方もできる。
-   ここでは toggle 側の rebuild:true で作り直している */
-window.panel = panel;
+/* 「くり返し」が「する」の時は、画面に戻ってきたセクションをもう一度流す */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting || !params.site.replay) return;
+  e.target.classList.remove('play'); void e.target.offsetWidth; e.target.classList.add('play');
+}), { threshold: 0.3 });
+['kv', 'res'].forEach(id => io.observe($(id)));
 </script>
 </body>
 </html>
