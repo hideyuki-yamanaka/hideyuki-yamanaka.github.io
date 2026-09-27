@@ -140,10 +140,10 @@ try {
         left: Math.round(r.left), midY: Math.round(r.top + r.height / 2), vh: innerHeight
       };
     });
-    const lookOk = look.w === 450 && look.h === 520 && look.bg === 'rgba(255, 255, 255, 0.92)' && look.border === 'rgb(236, 236, 236)' && look.radius === '8px'
-      && look.font === '11px' && /blur\(12px\)/.test(look.blur) && look.title === '調整パネル' && look.cardBg === 'rgb(248, 249, 251)' && look.cardBorder === 'rgb(228, 231, 235)'
+    const lookOk = look.w === 448 && look.h === 520 && look.bg === 'rgba(255, 255, 255, 0.92)' && look.border === 'rgb(238, 238, 238)' && look.radius === '8px'
+      && look.font === '12px' && /blur\(12px\)/.test(look.blur) && look.title === '調整パネル' && look.cardBg === 'rgb(248, 249, 251)' && look.cardBorder === 'rgb(228, 231, 235)'
       && look.cardRadius === '10px' && look.labW === 100 && look.valW === 48 && look.tabBorder === 'solid rgb(17, 17, 17)' && look.tabWeight === '700';
-    rec('見た目の寸法（AnyFlow V5 の値）', lookOk,
+    rec('見た目の寸法（AnyFlow V5 の値を、デザインの数値の決まり 4-7 で寄せた値）', lookOk,
       `外寸 ${look.w}×${look.h} / 地 ${look.bg} / 枠 ${look.border} / 角丸 ${look.radius} / 文字 ${look.font} / ${look.blur} / タイトル「${look.title}」/ タブ下線 ${look.tabBorder}・太さ${look.tabWeight} / カード ${look.cardBg}・${look.cardBorder}・${look.cardRadius} / 項目名 ${look.labW}px・値 ${look.valW}px`);
     rec('出る位置は画面の左・上下中央（既定）', look.left === 24 && Math.abs(look.midY - look.vh / 2) <= 1, `左 ${look.left}px・パネルの中心 ${look.midY}px（画面の中心 ${look.vh / 2}px）`);
 
@@ -634,7 +634,7 @@ try {
     const zt = await page.evaluate(() => { const r = document.querySelector('.tp-z-t').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await page.mouse.move(zt.x, zt.y); await page.mouse.down(); await page.mouse.move(zt.x, zt.y - 40, { steps: 4 }); await page.mouse.up();
     const r5 = await rect();
-    rec('右下の角＋4辺で大きさ変更', r5.w === 510 && r5.h === 560, `右の辺を+60 → 幅 ${r5.w}px／上の辺を-40 → 高さ ${r5.h}px（resize:both も有効）`);
+    rec('右下の角＋4辺で大きさ変更', r5.w === 508 && r5.h === 560,   /* 既定の幅 448 ＋ 60（2026-09-27 に 450→448） */ `右の辺を+60 → 幅 ${r5.w}px／上の辺を-40 → 高さ ${r5.h}px（resize:both も有効）`);
     /* 閉じた状態で下の方へ動かしてから開く → 上へ持ち上げる */
     await page.click('.tp-title'); await page.waitForTimeout(80);
     const rc = await rect();
@@ -827,7 +827,7 @@ try {
         tools: document.querySelectorAll('.tp-item-tools,[draggable="true"]').length, emoji: [...document.querySelectorAll('.tp-tab,.tp-cs-head,.tp-sec-head span:first-child')].filter(e => /\p{Extended_Pictographic}/u.test(e.textContent)).length
       };
     });
-    rec('1行の形（全部の行に↺）・違う種類の前は9px・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '9px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
+    rec('1行の形（全部の行に↺）・違う種類の前は8px・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '8px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
       `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
     rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(9, 9, 9)',
       `画面に出ている補足文 ${d.hintsShown}・項目名の吹き出し「${d.labTitle}」・ピルの吹き出し「${d.pillTitle}」・2〜3択の選択色 ${d.segOn}・項目の削除/並び替えの道具 ${d.tools}`);

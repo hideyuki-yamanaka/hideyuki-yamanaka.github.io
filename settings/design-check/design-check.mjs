@@ -8,6 +8,8 @@
  *
  *   node settings/design-check/design-check.mjs <ファイルかフォルダ ...>   … 全体を検査（完了の前・監査）
  *   node settings/design-check/design-check.mjs --hook                  … 書いた直後の見張り（PostToolUse から。書いた所だけ）
+ *   node settings/design-check/design-check.mjs <フォルダ> --fix [--dry-run] [--prefer=fontSize:11=12]
+ *                                                                       … 見た目がほぼ変わらない物だけ自動で寄せる（先に戻し用の目印を作る）
  *   オプション: --json（機械向け）／--with-js（フォルダ検査で .js .ts も見る）／--all（mock・test も見る）
  *
  * わざと決まりから外す行には、同じ行に「4-7例外」と書く（理由も添える）。その行は検査しない。
@@ -523,12 +525,160 @@ function hook() {
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: msg } }));
 }
 
+
+/* ---------------- 自動で寄せる（--fix）：見た目がほぼ変わらない物だけ書き換える（RULES.md 4-13） ---------------- */
+/* maps.num[cat] : 値 → 寄せる先（px か、単位なしの比率）／maps.hex : 色 → 寄せる先の色 */
+function buildFixMaps(res, pairs, rare, clusters) {
+  const num = {}, hex = new Map();
+  const put = (cat, from, to) => { if (from === to) return; (num[cat] ||= new Map()); if (!num[cat].has(from)) num[cat].set(from, to); };
+  res.bad.forEach(b => { const r = RULE[b.cat], t = target(b.v, r.ok, res.uses[b.cat]); if (t !== null && howTo(b.cat, b.v, t) === '自動') put(b.cat, b.v, t); });
+  clusters.forEach(c => { const top = c.vals.slice().sort((a, b) => b.n - a.n)[0].v; c.vals.forEach(x => { if (x.v !== top && howTo(c.cat, x.v, top) === '自動') put(c.cat, x.v, top); }); });
+  rare.forEach(r => { if (r.how === '自動') put(r.cat, r.v, r.near); });
+  /* 色は、よく使う方へ。寄せる先がさらに寄せられる時は、たどって最後の色へ */
+  pairs.filter(p => p.how === '自動').sort((a, b) => b.keepN - a.keepN).forEach(p => { if (!hex.has(p.drop) && !hex.has(p.keep)) hex.set(p.drop, p.keep); });
+  hex.forEach((to, from) => { let t = to, guard = 0; while (hex.has(t) && guard++ < 10) t = hex.get(t); hex.set(from, t); });
+  return { num, hex };
+}
+const fmt = (v, unit) => unit === 'rem' ? String(round(v / 16)).replace(/^0\./, '0.') + 'rem' : String(round(v)) + (unit || '');
+function rewriteLengths(cat, str, maps, changes, where) {
+  const m = maps.num[cat];
+  if (!m) return str;
+  return str.replace(/(-?)(\d*\.?\d+)(px|rem)\b/g, (all, sign, n, unit) => {
+    const px = round(parseFloat(n) * (unit === 'rem' ? 16 : 1));
+    if (!m.has(px)) return all;
+    const out = sign + fmt(m.get(px), unit);
+    changes.push({ ...where, cat, from: all, to: out });
+    return out;
+  });
+}
+function rewriteColors(str, maps, changes, where) {
+  if (!maps.hex.size) return str;
+  return str.replace(/#[0-9a-fA-F]{3,8}\b/g, all => {
+    const p = parseColor(all);
+    if (!p || p.a < 1) return all;
+    const k = hex(p);
+    if (!maps.hex.has(k)) return all;
+    const out = maps.hex.get(k);
+    changes.push({ ...where, cat: 'color', from: all, to: out });
+    return out;
+  });
+}
+function rewriteDecl(prop, value, maps, changes, where) {
+  prop = prop.toLowerCase();
+  const cat = PROP[prop] || (prop.startsWith('--') ? varCat(prop) : null);
+  let v = value;
+  if (!/gradient\(/.test(v) && !/shadow/.test(prop) && !/^(filter|backdrop-filter|-webkit-backdrop-filter|mask|-webkit-mask)/.test(prop)) v = rewriteColors(v, maps, changes, where);
+  if (!cat || /\bvar\(|\bcalc\(|\benv\(/.test(v)) return v;
+  if (cat === 'filter') return v.replace(/(blur|drop-shadow)\(([^)]*)\)/g, (all, fn, inner) => fn + '(' + rewriteLengths(fn === 'blur' ? 'blur' : 'shadow', inner, maps, changes, where) + ')');
+  if (cat === 'lineHeight' || cat === 'opacity') {
+    const t = v.trim(), m = maps.num[cat];
+    if (m && /^\d*\.?\d+%?$/.test(t)) {
+      const x = t.endsWith('%') ? parseFloat(t) / 100 : parseFloat(t);
+      if (m.has(round(x))) { const to = m.get(round(x)); const out = t.endsWith('%') ? round(to * 100) + '%' : String(to); changes.push({ ...where, cat, from: t, to: out }); return v.replace(t, out); }
+    }
+    return v;
+  }
+  if (cat === 'letterSpacing' || cat === 'fontWeight') return v;
+  return rewriteLengths(cat, v, maps, changes, where);
+}
+/* 1行の中の「プロパティ: 値」を、見つけた位置のまま書き換える（view は注釈や @keyframes を空白にした行） */
+function rewriteDeclsInLine(orig, view, re, maps, changes, where, filter) {
+  let out = '', last = 0, m;
+  re.lastIndex = 0;
+  while ((m = re.exec(view))) {
+    const prop = m[2], vStart = m.index + m[0].length - m[3].length, vEnd = m.index + m[0].length;
+    if (filter && !filter(prop)) continue;
+    if (/^\s*(https?|data|mailto)$/i.test(prop)) continue;
+    const val = orig.slice(vStart, vEnd);
+    const nv = rewriteDecl(prop, val, maps, changes, { ...where, prop });
+    if (nv !== val) { out += orig.slice(last, vStart) + nv; last = vEnd; }
+  }
+  return out + orig.slice(last);
+}
+function rewriteTailwind(line, maps, changes, where) {
+  let out = line.replace(/((?:^|[\s"'`:{(])-?)([a-z]+(?:-[a-z]+)?)-\[([^\]\s]+)\]/g, (all, pre, head, raw) => {
+    const cat = TW_HEAD[head];
+    if (!cat || cat === 'letterSpacing' || cat === 'font') return all;
+    let nv = raw;
+    if (cat === 'color' || /^#/.test(raw)) nv = rewriteColors(raw, maps, changes, { ...where, prop: head });
+    else if (cat === 'text') nv = /px|rem/.test(raw) ? rewriteLengths('fontSize', raw, maps, changes, { ...where, prop: head }) : rewriteColors(raw, maps, changes, { ...where, prop: head });
+    else if (cat === 'border' || cat === 'strokeTw') nv = /px|rem/.test(raw) ? rewriteLengths('stroke', raw, maps, changes, { ...where, prop: head }) : rewriteColors(raw, maps, changes, { ...where, prop: head });
+    else if (cat === 'shadow') nv = rewriteColors(rewriteLengths('shadow', raw.replace(/_/g, ' '), maps, changes, { ...where, prop: head }), maps, changes, { ...where, prop: head }).replace(/ /g, '_');
+    else if (cat === 'opacity' || cat === 'lineHeight') {
+      const m = maps.num[cat], x = parseFloat(raw);
+      if (cat === 'lineHeight' && /px|rem/.test(raw)) return all;
+      const key = cat === 'opacity' && x > 1 ? round(x / 100) : round(x);
+      if (m && m.has(key)) { const to = m.get(key); nv = cat === 'opacity' && x > 1 ? String(round(to * 100)) : String(to); changes.push({ ...where, prop: head, cat, from: raw, to: nv }); }
+    } else nv = rewriteLengths(cat === 'blur' ? 'blur' : cat, raw, maps, changes, { ...where, prop: head });
+    return nv === raw ? all : pre + head + '-[' + nv + ']';
+  });
+  /* .5 刻みの余白クラス（p-3.5 = 14px など） */
+  out = out.replace(/((?:^|[\s"'`])-?)(p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y|w|h|size)-(\d+\.5)(?=[\s"'`]|$)/g, (all, pre, head, n) => {
+    const cat = TW_HEAD[head] || 'spacing', m = maps.num[cat], px = parseFloat(n) * 4;
+    if (!m || !m.has(px)) return all;
+    const to = m.get(px) / 4;
+    if (Math.abs(to * 2 - Math.round(to * 2)) > 1e-9) return all;
+    changes.push({ ...where, prop: head, cat, from: head + '-' + n, to: head + '-' + to });
+    return pre + head + '-' + to;
+  });
+  return out;
+}
+function rewriteStyleObject(line, maps, changes, where) {
+  return line.replace(/\b([a-zA-Z]+)(\s*:\s*)(['"`]?)(-?\d*\.?\d+)(px|rem)?\3(?=\s*[,}])/g, (all, key, colon, q, n, unit) => {
+    const prop = CAMEL[key];
+    if (!prop) return all;
+    const cat = PROP[prop];
+    if (!cat || cat === 'fontWeight' || cat === 'letterSpacing') return all;
+    const m = maps.num[cat];
+    if (!m) return all;
+    const unitless = !unit;
+    const px = cat === 'lineHeight' || cat === 'opacity' ? round(parseFloat(n)) : round(parseFloat(n) * (unit === 'rem' ? 16 : 1));
+    if (!m.has(px)) return all;
+    const to = m.get(px);
+    const out = key + colon + q + (cat === 'lineHeight' || cat === 'opacity' || unitless ? String(to) : fmt(to, unit)) + q;
+    changes.push({ ...where, prop: key, cat, from: all, to: out });
+    return out;
+  });
+}
+const DECL_RE_CSS = () => /(^|[;{\s"'`(])(--[\w-]+|-?[a-z][a-z-]*)\s*:\s*([^;{}"'`]+)/gi;
+const DECL_RE_JS = () => /(^|[;{\s"'`])(--[\w-]+|-?[a-z][a-z-]*)\s*:\s*([^;{}"'`]*?(?:px|rem)[^;{}"'`]*)/g;
+function fixText(file, text, maps) {
+  const ext = path.extname(file).toLowerCase(), changes = [];
+  const lines = text.split('\n');
+  const skip = i => /4-7例外/.test(lines[i]);
+  if (CSS_EXT.has(ext)) {
+    const view = blankKeyframes(blankComments(text)).split('\n');
+    return { text: lines.map((ln, i) => skip(i) ? ln : rewriteDeclsInLine(ln, view[i], DECL_RE_CSS(), maps, changes, { file, line: i + 1 })).join('\n'), changes };
+  }
+  if (MARKUP_EXT.has(ext)) {
+    /* <style> の中は CSS として（@keyframes と注釈は空白にした行で位置を決める） */
+    const view = text.replace(/(<style[^>]*>)([\s\S]*?)(<\/style>)/gi, (all, a, css, b) => a + blankKeyframes(blankComments(css)) + b).split('\n');
+    const inStyle = new Array(lines.length).fill(false);
+    let on = false;
+    lines.forEach((ln, i) => { if (/<style[^>]*>/i.test(ln)) on = true; inStyle[i] = on; if (/<\/style>/i.test(ln)) on = false; });
+    return { text: lines.map((ln, i) => {
+      if (skip(i)) return ln;
+      const where = { file, line: i + 1 };
+      if (inStyle[i]) return rewriteDeclsInLine(ln, view[i], DECL_RE_CSS(), maps, changes, where);
+      let out = ln.replace(/(style\s*=\s*")([^"]*)(")/g, (all, a, body, b) => a + rewriteDeclsInLine(body, body, DECL_RE_CSS(), maps, changes, where) + b);
+      return rewriteTailwind(out, maps, changes, where);
+    }).join('\n'), changes };
+  }
+  return { text: lines.map((ln, i) => {
+    if (skip(i)) return ln;
+    const where = { file, line: i + 1 };
+    let out = rewriteDeclsInLine(ln, ln, DECL_RE_JS(), maps, changes, where, p => p.includes('-') || !!PROP[p]);
+    if (JSX_EXT.has(ext)) { out = rewriteStyleObject(out, maps, changes, where); out = rewriteTailwind(out, maps, changes, where); }
+    return out;
+  }).join('\n'), changes };
+}
+
 /* ---------------- 入口 ---------------- */
 const args = process.argv.slice(2);
 if (args.includes('--hook')) {
   try { hook(); } catch (e) { /* 見張りの失敗で作業を止めない */ }
 } else {
-  const opts = { withJs: args.includes('--with-js'), all: args.includes('--all'), json: args.includes('--json') };
+  const opts = { withJs: args.includes('--with-js'), all: args.includes('--all'), json: args.includes('--json'), fix: args.includes('--fix'), dry: args.includes('--dry-run') };
   const targets = args.filter(a => !a.startsWith('--'));
   if (!targets.length) { console.log('使い方: node design-check.mjs <ファイルかフォルダ ...> [--with-js] [--all] [--json]'); process.exit(0); }
   const files = [];
@@ -538,6 +688,31 @@ if (args.includes('--hook')) {
   files.forEach(f => { const text = fs.readFileSync(f, 'utf8'); if (isGenerated(text)) return; scanned++; scanFile(f, text, sink, null); });
   const res = sink.result();
   const pairs = similarColors(res.colors), rare = rareNearValues(res.uses), clusters = nearClusters(res.uses);
+  if (opts.fix) {
+    /* 自動で寄せる。書き換える前に、戻し用の目印（git のタグ）を作っておくこと（ヒデさんの指示：今の状態に戻れることは必須） */
+    const maps = buildFixMaps(res, pairs, rare, clusters);
+    /* --prefer fontSize:11=12 … 寄せる先をヒデさんの判断で決める時（例：読みやすさを優先して大きい方へ） */
+    args.filter(a => a.startsWith('--prefer=')).forEach(a => a.slice(9).split(',').forEach(x => {
+      const m = x.match(/^(\w+):(-?\d*\.?\d+)=(-?\d*\.?\d+)$/);
+      if (m) { (maps.num[m[1]] ||= new Map()).set(parseFloat(m[2]), parseFloat(m[3])); }
+    }));
+    const all = [];
+    files.forEach(f => {
+      const text = fs.readFileSync(f, 'utf8');
+      if (isGenerated(text)) return;
+      const r = fixText(f, text, maps);
+      if (r.changes.length && r.text !== text) { if (!opts.dry) fs.writeFileSync(f, r.text); all.push(...r.changes); }
+    });
+    const lines = [`## 自動で寄せた値（${all.length} か所${opts.dry ? '・試しに数えただけで書き換えていない' : ''}）`, '', '| 箇所 | プロパティ | 前 | 後 |', '|---|---|---|---|'];
+    all.forEach(c => lines.push(`| ${rel(c.file)}:${c.line} | ${c.prop || ''} | \`${String(c.from).replace(/\|/g, '\\|')}\` | \`${String(c.to).replace(/\|/g, '\\|')}\` |`));
+    const after = newSink();
+    files.forEach(f => { const text = fs.readFileSync(f, 'utf8'); if (!isGenerated(text)) scanFile(f, text, after, null); });
+    const ar = after.result(), ap = similarColors(ar.colors);
+    const propose = ar.bad.filter(b => howTo(b.cat, b.v, target(b.v, RULE[b.cat].ok, ar.uses[b.cat])) === '提案');
+    lines.push('', `残り：決まりから外れた値 ${ar.bad.length} 件（うち提案 ${propose.length} 件）・似た色 ${ap.length} 組（うち自動 ${ap.filter(p => p.how === '自動').length} 組）`);
+    console.log(lines.join('\n'));
+    process.exit(0);
+  }
   if (opts.json) {
     console.log(JSON.stringify({ files: scanned, bad: res.bad, tips: res.tips, similarColors: pairs, nearClusters: clusters, rare }, null, 2));
   } else {
