@@ -232,12 +232,12 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 unit: "%",
                 immediate: true,
               },
-              { sub: "本文と見出し", grp: "font" },
+              { sub: "文字の大きさ", grp: "font" },
               {
                 note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます。【案ごとに別々の値を持ちます】。案を切り替えると、その案でいじった値に戻ります（他の案には影響しません）。",
               },
               {
-                slider: "本文の大きさ",
+                slider: "本文",
                 path: "detail.bodySize",
                 min: 12,
                 max: 20,
@@ -246,7 +246,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 immediate: true,
               },
               {
-                slider: "見出しの大きさ",
+                slider: "見出し",
                 path: "detail.headSize",
                 min: 16,
                 max: 40,

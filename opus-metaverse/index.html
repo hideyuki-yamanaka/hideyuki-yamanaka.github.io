@@ -1248,13 +1248,14 @@ try {
         { color: '背景（宇宙）', path: 'color.bg', hint: '一番奥の色。真っ黒より少し色を入れると深く見えます。' }
       ]},
       { cat: '✨ 星屑（全編）', items: [
-        { slider: '粒の大きさ', path: 'dust.size', min: .2, max: 3, step: .05, fmt: 'x', hint: '道のり全体に漂う粒の大きさ。' },
-        { slider: '粒の量', path: 'dust.amount', min: .2, max: 2, step: .05, fmt: 'x', hint: '手を離すと作り直します。多いほど重くなります。' }
+        { slider: '大きさ', path: 'dust.size', min: .2, max: 3, step: .05, fmt: 'x', hint: '道のり全体に漂う粒の大きさ。' },
+        { slider: '量', path: 'dust.amount', min: .2, max: 2, step: .05, fmt: 'x', hint: '手を離すと作り直します。多いほど重くなります。' }
       ]},
       { cat: '🔮 00 光る核', items: [
-        { slider: 'うねりの大きさ', path: 'core.amp', min: 0, max: 2.5, step: .05, fmt: 'x', hint: '球の表面がボコボコ波打つ量。' },
-        { slider: 'うねりの速さ', path: 'core.speed', min: 0, max: 4, step: .05, fmt: 'x', hint: 'マウスを核に乗せるとさらに加速します。' },
-        { slider: '輝き', path: 'core.glow', min: .2, max: 2.5, step: .05, fmt: 'x', hint: 'ふちの光と後光の強さ。' }
+        { slider: '輝き', path: 'core.glow', min: .2, max: 2.5, step: .05, fmt: 'x', hint: 'ふちの光と後光の強さ。' },
+        { sub: 'うねり', deep: true },
+        { slider: '大きさ', path: 'core.amp', min: 0, max: 2.5, step: .05, fmt: 'x', hint: '球の表面がボコボコ波打つ量。' },
+        { slider: '速さ', path: 'core.speed', min: 0, max: 4, step: .05, fmt: 'x', hint: 'マウスを核に乗せるとさらに加速します。' }
       ]},
       { cat: '🌀 01 ポータル', items: [
         { slider: '輪の回転', path: 'portal.spin', min: 0, max: 5, step: .1, fmt: 'x', hint: '粒子の輪が回る速さ。スクロール中はさらに加速。' }
@@ -1276,13 +1277,14 @@ try {
         { slider: '円盤の明るさ', path: 'final.disk', min: 0, max: 2.5, step: .05, fmt: 'x', hint: 'ブラックホールのまわりを回る光の円盤。' }
       ]},
       { cat: '📺 画面の質感', items: [
-        { slider: '光のにじみ', path: 'fx.bloom', min: 0, max: 3, step: .05, fmt: 'x', hint: '明るい所からあふれる光（ブルーム）の強さ。' },
-        { slider: 'にじみの広がり', path: 'fx.radius', min: 0, max: 1, step: .01, fmt: 'n2', hint: '光がどこまで広がるか。' },
-        { slider: 'にじむ明るさの境目', path: 'fx.threshold', min: 0, max: .8, step: .01, fmt: 'n2', hint: '小さいほど暗い所までにじむ。' },
         { slider: '色ずれ', path: 'fx.ca', min: 0, max: 3, step: .05, fmt: 'x', hint: '画面のふちの赤・青のずれ。速くスクロールすると強くなります。' },
         { slider: '速度ブラー', path: 'fx.blur', min: 0, max: 3, step: .05, fmt: 'x', hint: '速くスクロールした時に中心へ向かって流れるブレ。' },
         { slider: 'ザラつき', path: 'fx.grain', min: 0, max: .2, step: .005, fmt: 'n2', hint: 'フィルムのような粒子ノイズ。' },
-        { slider: '周辺減光', path: 'fx.vignette', min: 0, max: 1, step: .05, fmt: '%', hint: '四隅を暗くする量。' }
+        { slider: '周辺減光', path: 'fx.vignette', min: 0, max: 1, step: .05, fmt: '%', hint: '四隅を暗くする量。' },
+        { sub: '光のにじみ（ブルーム）', deep: true },
+        { slider: '強さ', path: 'fx.bloom', min: 0, max: 3, step: .05, fmt: 'x', hint: '明るい所からあふれる光（ブルーム）の強さ。' },
+        { slider: '広がり', path: 'fx.radius', min: 0, max: 1, step: .01, fmt: 'n2', hint: '光がどこまで広がるか。' },
+        { slider: '明るさの境目', path: 'fx.threshold', min: 0, max: .8, step: .01, fmt: 'n2', hint: '小さいほど暗い所までにじむ。' }
       ]},
       { cat: '🔊 音', items: [
         { slider: '音量', path: 'sound.vol', min: 0, max: 1.5, step: .05, fmt: 'x', hint: '左下の「Sound」をオンにした時の音量。' }

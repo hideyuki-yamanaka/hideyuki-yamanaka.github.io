@@ -736,7 +736,7 @@ try {
     schema: [
       { cat: '🎬 全体', open: true, items: [
         { sub: '再生' },
-        { slider: '再生スピード', path: 'play.speed', min: .2, max: 3, step: .05, fmt: 'x', hint: '全部の動きが同じ倍率で速く／遅くなります。' },
+        { slider: 'スピード', path: 'play.speed', min: .2, max: 3, step: .05, fmt: 'x', hint: '全部の動きが同じ倍率で速く／遅くなります。' },
         { toggle: '起動シーン', path: 'play.boot', hint: '最初の黒い画面で「システム起動中…」と打ち込まれる演出。' },
         { button: '▶ 最初から再生', primary: true, onClick: () => restart() },
         { sub: '配色' },
@@ -746,17 +746,20 @@ try {
         { color: '夜空', path: 'color.sky', hint: '空の真ん中あたりの色。遠くのビルもこの色から作ります。' }
       ]},
       { cat: '🌌 空', items: [
-        { toggle: '太陽', path: 'sky.sun', hint: '街の奥にある横縞の太陽。' },
-        { slider: '太陽の大きさ', path: 'sky.sunSize', min: .4, max: 1.8, step: .05, fmt: 'x', hint: '手を離すと描き直します。' },
         { slider: 'カタカナの雨', path: 'sky.kana', min: 0, max: 1.6, step: .05, fmt: 'x', hint: '空に流れる文字の濃さ・量。0で消えます。' },
-        { slider: '空飛ぶ車', path: 'sky.cars', min: 0, max: 1, step: .1, fmt: 'x', hint: '光の尾を引いて横切る点の数。' }
+        { slider: '空飛ぶ車', path: 'sky.cars', min: 0, max: 1, step: .1, fmt: 'x', hint: '光の尾を引いて横切る点の数。' },
+        { sub: '太陽', deep: true },
+        { toggle: '表示', path: 'sky.sun', hint: '街の奥にある横縞の太陽。' },
+        { slider: '大きさ', path: 'sky.sunSize', min: .4, max: 1.8, step: .05, fmt: 'x', hint: '手を離すと描き直します。' }
       ]},
       { cat: '🔤 タイトル', items: [
         { sub: '文字' },
-        { text: '英字タイトル', path: 'title.en', hint: '1枚目に出る大きな文字。' },
-        { text: '英字のサブ', path: 'title.subEn', hint: '1枚目の黄色い帯の文字。' },
-        { text: 'カタカナタイトル', path: 'title.jp', hint: '2枚目に出る大きな文字。' },
-        { text: 'カタカナのサブ', path: 'title.subJp', hint: '2枚目の黄色い帯の文字。' },
+        { sub: '英字', deep: true },
+        { text: 'タイトル', path: 'title.en', hint: '1枚目に出る大きな文字。' },
+        { text: 'サブ', path: 'title.subEn', hint: '1枚目の黄色い帯の文字。' },
+        { sub: 'カタカナ', deep: true },
+        { text: 'タイトル', path: 'title.jp', hint: '2枚目に出る大きな文字。' },
+        { text: 'サブ', path: 'title.subJp', hint: '2枚目の黄色い帯の文字。' },
         { sub: '見え方' },
         { slider: '大きさ', path: 'title.size', min: .5, max: 1.5, step: .05, fmt: 'x', hint: '画面幅からはみ出る時は自動で縮みます。' },
         { slider: '色ずれの強さ', path: 'title.split', min: 0, max: 3, step: .05, fmt: 'x', hint: '文字の左右に出る赤・青のずれ幅。' },

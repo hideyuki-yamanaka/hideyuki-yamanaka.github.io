@@ -217,6 +217,19 @@
         "cd '/Users/hideyuki/Developer/Claude Code/opus-metaverse' && exec python3 -m http.server 8782"
       ],
       "port": 8782
+    },
+    {
+      "name": "abashiri-v3",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3095"
+      ],
+      "port": 3095,
+      "cwd": "abashiri/v3"
     }
   ]
 }

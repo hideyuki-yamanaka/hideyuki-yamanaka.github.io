@@ -28,7 +28,7 @@
 
 | ファイル | 中身 | いつ読む |
 |---|---|---|
-| [general/RULES.md](general/RULES.md) | **ルール集（2026-09-27〜、進め方の決まりの正）**。全ルールを仕分けて作り直したもの。0 安全・1 いつでも・作業別の節 | **作業に着手する前に必ず（0と1）** |
+| [general/RULES.md](general/RULES.md) | **ルール集（2026-09-27〜、進め方の決まりの正）**。一番上の「★ いちばん大事な決まり」＝場面A カンプから作る／B カンプなしで作る／C Figmaに書き出す。そのあと 0 安全・1 いつでも・作業別の節。★は `.claude/hooks/rules-reminder.py`（設定 `.claude/settings.json`）が会話の始め・要約の直後・場面の言葉が来た時に自動で出す | **作業に着手する前に必ず（★と0と1）** |
 | [general/RULES-ARCHIVE.md](general/RULES-ARCHIVE.md) | 仕分けで外した決まりの控え（参照用。今は守らなくてよい） | 今あるものを直す時に経緯を知りたい時 |
 | [general/WORKING-RULES.md](general/WORKING-RULES.md) | 推測・質問・報告の共通ルール（🔴最重要・持ち運び用） | **作業に着手する前に必ず** |
 | DEPLOY-RULES | 無駄なVercelデプロイを消す方法(Ignored Build Step)＋24h集計コマンド | [general/DEPLOY-RULES.md](general/DEPLOY-RULES.md) | 2026-09-11 |
@@ -38,7 +38,7 @@
 | [general/PHONE-MODE.md](general/PHONE-MODE.md) | スマホモード（実機ライブ同期・QRでスマホ実機にPCの調整を即反映）＝調整パネルの標準機能。単一ソースは settings/tune-panel/phone-mode/ | SP を実機で詰める時／新プロダクトに入れる時 |
 | [general/FIXLOG.md](general/FIXLOG.md) | 不具合の1行台帳（症状と真因。**直す前に検索・直したら追記**） | バグを直す前後に必ず |
 | [general/FIGMA-EFFECTS-RULES.md](general/FIGMA-EFFECTS-RULES.md) | ブラー/影を正しく実装（🔴 backdrop-blurはSVG/PNGに焼けない＝ライブCSS必須。値はFigma実測） | Figmaのガラス/影を実装する時 |
-| [general/FIGMA-OUTPUT-WORKFLOW.md](general/FIGMA-OUTPUT-WORKFLOW.md) | Web→Figma出力（ベクターはSVG取込・惑星等は2倍PNG・🔴セクションの子は相対座標で範囲内へ→appendChild） | グラフィックをFigmaのセクションへ出力する時 |
+| [general/FIGMA-OUTPUT-WORKFLOW.md](general/FIGMA-OUTPUT-WORKFLOW.md) | Web→Figma出力の手順とハマり所（ベクターはSVG取込・惑星等は2倍PNG・🔴セクションの子は相対座標で範囲内へ→appendChild・7章に書き出しのチェックリスト）。決まりは RULES.md の★場面C と3章 | **作った画面をFigmaに書き出す時は着手前に必ず** |
 | [general/DESIGN-SYSTEM-WORKFLOW.md](general/DESIGN-SYSTEM-WORKFLOW.md) | 既存サイトを棚卸ししてデザインシステムに整える手順 | スタイルを整理する時 |
 | [general/VERCEL-PROJECTS.md](general/VERCEL-PROJECTS.md) | 各プロジェクトの本番 URL・Vercel 設定・デプロイ手順 | デプロイ・本番反映の確認 |
 | [general/FOLDER-RESTRUCTURE-RUNBOOK.md](general/FOLDER-RESTRUCTURE-RUNBOOK.md) | フォルダ構成の整理手順（settings/ への集約・バージョンフォルダの親子化。Vercel 設定の直し方つき） | フォルダを動かす時 |

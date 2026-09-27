@@ -25,29 +25,29 @@
 
 ### Figma書き出し(実装→Figma)
 
-- **Figmaのセクションに入れる要素は、先に範囲の中へ置く**（元の番号: 068／生まれた所: anyflow）  
+- **Figmaのセクションに入れる要素は、先に範囲の中へ置く**（元の番号: 068／生まれた所: anyflow） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: FigmaのSECTIONには、範囲内に置いてから入れる。範囲外で appendChild すると不可視になる。子の座標はセクション原点からの相対座標で決め、absoluteBoundingBox で範囲内か確認し、検証は get_screenshot でSECTIONを撮る。 補足: SECTIONの子の座標はセクション左上からの相対。section.x を足すと遠くへ飛ぶ。範囲外でappendChildすると不可視になるので、先に範囲内へ置く。出力先ページは setCurrentPageA
-- **Figmaへの書き出しは、古いカンプでなくローカルの今の画面をもとに作る**（元の番号: 069／生まれた所: anyflow）  
+- **Figmaへの書き出しは、古いカンプでなくローカルの今の画面をもとに作る**（元の番号: 069／生まれた所: anyflow） → **2026-09-27 ヒデさんの指示で RULES.md 3-1 に戻した**  
   元の書き方: Figma書き出しは「現行のローカル実装が正」で作る。古いコンプを土台にすると必ず「まだ古い」と言われる。現行を Playwright で採寸・キャプチャし、該当セクションだけ作り替えて並べて確認する。 補足: 座標・回転・線・グラデのストップ・ドットを javascript で全部取り、canvas は toDataURL で画像化。推測で埋めない。
-- **Figmaで一括削除する時は必ず自分の親フレームで絞る**（元の番号: 070／生まれた所: anyflow）  
+- **Figmaで一括削除する時は必ず自分の親フレームで絞る**（元の番号: 070／生まれた所: anyflow） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: Figmaで一括削除する時は必ず自分の親フレームで絞る。ページ全体を検索して remove すると他の履歴コンプまで消える（実際に17個消した）。 補足: 文字列一致で findAll → まとめて remove すると、ページ全体の同名ノードまで消える（別版のラベル17個を誤削除した）。対象は親フレームで絞ってから消す。
-- **Figmaでセクションの高さが伸びたら、下の要素も同じだけ下げる**（元の番号: 071／生まれた所: anyflow）  
+- **Figmaでセクションの高さが伸びたら、下の要素も同じだけ下げる**（元の番号: 071／生まれた所: anyflow） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: Figmaのセクション高が伸びたら、下の要素も同じだけ下げる。下の兄弟要素を同じ差分だけ下げ、外枠の高さも伸ばす。
-- **Figmaへはスクショを貼らず、オートレイアウトとベクターで組む**（元の番号: 072／生まれた所: anyflow）  
+- **Figmaへはスクショを貼らず、オートレイアウトとベクターで組む**（元の番号: 072／生まれた所: anyflow） → **2026-09-27 ヒデさんの指示で RULES.md 3-2 に戻した**  
   元の書き方: Figmaへはスクショではなくネイティブデータで書き出す。オートレイアウト・ベクター・レイヤー整理で作る。画像にするのは写真・ロゴPNG・流体グラデなど合意したものだけ。 補足: 線・図形・グラデはSVGで書き出しupload_assetsで編集できるパスとして取り込む。WebGLの質感など不可能な物だけ2倍解像度PNG。前後関係はSVGのレイヤー順＋プレースホルダで保ち、レイヤー名は日本語で整理。 ／ 短い間隔でサンプリングし、描画量が最大の瞬間の形をフラットなSVGに焼く。
-- **Figmaで大きさを変えた後は、オートレイアウトのHugをかけ直す**（元の番号: 073／生まれた所: anyflow）  
+- **Figmaで大きさを変えた後は、オートレイアウトのHugをかけ直す**（元の番号: 073／生まれた所: anyflow） → **2026-09-27 ヒデさんの指示で RULES.md 3-3 に戻した**  
   元の書き方: Figmaで resize した後はオートレイアウトのHugを付け直す。resize() すると固定サイズに戻るので、後で layoutSizingVertical='HUG' を再設定する。絶対配置の子は親に入れてから設定する。
-- **Figmaを自動で操作する時は、毎回作業するページを指定する**（元の番号: 075／生まれた所: abashiri）  
+- **Figmaを自動で操作する時は、毎回作業するページを指定する**（元の番号: 075／生まれた所: abashiri） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: use_figma では毎回ページを明示的に切り替える。use_figma は毎回先頭ページにリセットされるので、操作前に setCurrentPageAsync で対象ページを指定する。
-- **FigmaではSF Pro Textの代わりにSF ProかInterを使う**（元の番号: 076／生まれた所: anyflow）  
+- **FigmaではSF Pro Textの代わりにSF ProかInterを使う**（元の番号: 076／生まれた所: anyflow） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: Figmaで SF Pro Text が使えない時は SF Pro / Int…。Figma環境では SF Pro Text が読めない。書式変更が要るなら先に書体を置き換える。幅のズレは字間で合わせ、行間は実測pxで固定する。
-- **Figmaに貼るスクショは、画像枠と同じ縦横比で撮る**（元の番号: 077／生まれた所: abashiri）  
+- **Figmaに貼るスクショは、画像枠と同じ縦横比で撮る**（元の番号: 077／生まれた所: abashiri） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: スクショ撮影はFigmaの画像枠と同じ比率で撮る。ビューポートを画像ノードと同比率にすると切り抜きゼロで入る。
-- **Figmaの書き出しで端が切れる時は、要素本来の範囲で書き出す**（元の番号: 078／生まれた所: anyflow）  
+- **Figmaの書き出しで端が切れる時は、要素本来の範囲で書き出す**（元の番号: 078／生まれた所: anyflow） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: Figmaからの書き出しで端が切れる時は絶対範囲で書き出す。親フレームがクリップしていると書き出しが欠ける。exportAsync に useAbsoluteBounds を付けるか、一時的にクリップを外して後で戻す。
-- **Figmaにあるロゴやメニューは、複製して使う**（元の番号: 079／生まれた所: inzone-works）  
+- **Figmaにあるロゴやメニューは、複製して使う**（元の番号: 079／生まれた所: inzone-works） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: Figmaの既存ロゴやメニューはクローンして流用する。ロゴ・SNSアイコン・既存メニューは作り直さずクローンすると、トンマナが完全一致して速い。
-- **Figmaに置くサイズは決め打ちせず聞く**（元の番号: 080／生まれた所: anyflow）  
+- **Figmaに置くサイズは決め打ちせず聞く**（元の番号: 080／生まれた所: anyflow） → 手順の注意として [FIGMA-OUTPUT-WORKFLOW.md](FIGMA-OUTPUT-WORKFLOW.md) のチェックリストに載せた  
   元の書き方: Figmaに置くサイズは決め打ちせず聞く。サイズは見た目に出るのでAskUserQuestionで聞く。拡大する時は画像部分だけ高解像度で再書き出し。
 
 ### Figma読み取り(カンプ→実装)
