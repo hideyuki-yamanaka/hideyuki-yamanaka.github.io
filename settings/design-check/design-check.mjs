@@ -186,14 +186,68 @@ function dE2000([L1, a1, b1], [L2, a2, b2]) {
 }
 const COLOR_RE = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g;
 
+/* ---------------- CSS の変数の種類 ---------------- */
+/* 名前から種類が分からない変数（--hdr-py など）は、使っている所のプロパティで決める（padding: var(--hdr-py) なら余白）。
+ * 走らせる前に全ファイルから集める（2026-09-27：名前だけで決めていて見落としていた） */
+const VAR_USE = new Map();   /* 変数名 → { 項目: 回数 } */
+function collectVarUses(text) {
+  const note = (name, cat) => { if (!cat || cat === 'filter') return; const m = VAR_USE.get(name) || {}; m[cat] = (m[cat] || 0) + 1; VAR_USE.set(name, m); };
+  const decl = /([a-zA-Z-]+)\s*:\s*(['"`]?)([^;{}'"`\n]*\bvar\([^;{}'"`\n]*)/g;
+  let m;
+  while ((m = decl.exec(text))) {
+    const prop = m[1].includes('-') || PROP[m[1].toLowerCase()] ? m[1].toLowerCase() : CAMEL[m[1]];
+    const cat = prop && PROP[prop];
+    if (!cat) continue;
+    const re = /\bvar\(\s*(--[\w-]+)/g;
+    let v;
+    while ((v = re.exec(m[3]))) note(v[1], cat);
+  }
+  const tw = /(?:^|[\s"'`:])-?([a-z]+(?:-[a-z]+)?)-\[var\((--[\w-]+)/g;
+  while ((m = tw.exec(text))) { const c = TW_HEAD[m[1]]; note(m[2], c === 'text' ? 'fontSize' : c === 'border' || c === 'strokeTw' ? 'stroke' : c); }
+}
+function varCatOf(name) {
+  const byName = varCat(name);
+  if (byName) return byName;
+  const m = VAR_USE.get(name);
+  if (!m) return null;
+  const top = Object.entries(m).sort((a, b) => b[1] - a[1]);
+  return top.length === 1 || top[0][1] > top[1][1] ? top[0][0] : null;   /* 同じ回数で割れた時は決めない */
+}
+
+/* var(--x, 150px) の「予備の値」（カンマの後ろ）と、var() の外の値を、それぞれ fn に通す（入れ子の var() も） */
+function mapVarParts(v, outsideFn, fallbackFn) {
+  let out = '', i = 0;
+  while (i < v.length) {
+    const k = v.indexOf('var(', i);
+    if (k < 0) { out += outsideFn(v.slice(i)); break; }
+    out += outsideFn(v.slice(i, k)) + 'var(';
+    let depth = 1, j = k + 4, comma = -1;
+    for (; j < v.length; j++) {
+      const ch = v[j];
+      if (ch === '(') depth++;
+      else if (ch === ')') { if (--depth === 0) break; }
+      else if (ch === ',' && depth === 1 && comma < 0) comma = j;
+    }
+    if (depth !== 0) { out += v.slice(k + 4); break; }
+    out += comma < 0 ? v.slice(k + 4, j + 1) : v.slice(k + 4, comma + 1) + mapVarParts(v.slice(comma + 1, j), fallbackFn, fallbackFn) + ')';
+    i = j + 1;
+  }
+  return out;
+}
+const LEN_CATS = new Set(['size', 'spacing', 'radius', 'fontSize', 'stroke', 'shadow']);
+
 /* ---------------- 1つの宣言を調べる ---------------- */
 function checkDecl(prop, value, ctx, sink) {
   prop = prop.toLowerCase();
-  let cat = PROP[prop] || (prop.startsWith('--') ? varCat(prop) : null);
+  let cat = PROP[prop] || (prop.startsWith('--') ? varCatOf(prop) : null);
   const v = value.trim();
-  if (!/gradient\(/.test(v) && !/shadow/.test(prop) && !/^(filter|backdrop-filter|-webkit-backdrop-filter|mask|-webkit-mask)/.test(prop)) (v.match(COLOR_RE) || []).forEach(c => sink.color(c, ctx));
+  if (!/gradient\(/.test(v) && !/shadow/.test(prop) && !/^(filter|backdrop-filter|-webkit-backdrop-filter|mask|-webkit-mask)/.test(prop)) (v.match(COLOR_RE) || []).forEach(c => sink.color(c, ctx, prop.startsWith('--')));
   if (!cat) return;
-  if (/\bvar\(|\bcalc\(|\benv\(/.test(v)) return;   /* 計算の途中の値は見ない */
+  if (/\bcalc\(|\benv\(/.test(v)) return;   /* 計算の途中の値は見ない */
+  if (/\bvar\(/.test(v)) {   /* var() の外の値と、var(--x, 150px) の予備の値だけ見る */
+    if (LEN_CATS.has(cat)) { const f = s => { lengths(s).forEach(n => sink.len(cat, n, v, ctx)); return s; }; mapVarParts(v, f, f); }
+    return;
+  }
   if (cat === 'letterSpacing') {   /* 字間は %（CSS は em）で書く。px の時だけ参考に出す */
     sink.note('letterSpacing', v, ctx);
     if (/\d(px|rem)\b/.test(v) && !/^0(px)?$/.test(v)) sink.tip('letterSpacing', v, 'em（%）で書く（4の倍数でなくてよい）', ctx);
@@ -366,25 +420,28 @@ function newSink() {
       const r = RULE[cat];
       if (!r) return;
       if (v === 0) return;
-      if (cat === 'size' && SCREEN.has(v)) return;
+      /* 画面の大きさ（390・430 など）と同じ値は、画面の大きさなら例外・部品の大きさなら寄せる。黙って飛ばさず参考に出す（2026-09-27） */
+      if (cat === 'size' && SCREEN.has(v) && !r.ok(v)) { this.tip('size', raw, '画面の大きさなら行に「4-7例外」。部品の大きさなら ' + nearest(v, r.ok) + ' へ', ctx); return; }
       if (r.free || r.ok(v)) this.use(cat, v, ctx);   /* 自由な項目は数えるだけ */
       else this.bad(cat, v, raw, ctx);
     },
     use: (cat, v, ctx) => { (uses[cat] ||= new Map()); const k = v; const e = uses[cat].get(k) || { n: 0, at: [] }; e.n++; if (e.at.length < 3) e.at.push(ctx.file + ':' + ctx.line); uses[cat].set(k, e); },
-    color: (c, ctx) => { const p = parseColor(c); if (!p || p.a < 1) return; const k = hex(p); const e = colors.get(k) || { n: 0, at: [] }; e.n++; if (e.at.length < 3) e.at.push(ctx.file + ':' + ctx.line); colors.set(k, e); },
+    color: (c, ctx, isToken) => { const p = parseColor(c); if (!p || p.a < 1) return; const k = hex(p); const e = colors.get(k) || { n: 0, at: [], token: false }; e.n++; if (isToken) e.token = true; if (e.at.length < 3) e.at.push(ctx.file + ':' + ctx.line); colors.set(k, e); },
     note: (cat, v, ctx) => { (notes[cat] ||= new Map()); notes[cat].set(v, (notes[cat].get(v) || 0) + 1); },
     result: () => ({ bad, tips, uses, colors, notes }),
   };
 }
 
 function similarColors(colors) {
-  const list = [...colors.entries()].map(([k, e]) => ({ k, n: e.n, at: e.at, lab: toLab(parseColor(k)) }));
+  const list = [...colors.entries()].map(([k, e]) => ({ k, n: e.n, at: e.at, token: e.token, lab: toLab(parseColor(k)) }));
   const pairs = [];
   for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
     const d = dE2000(list[i].lab, list[j].lab);
     if (d > 0.01 && d < SIMILAR_COLOR_DE) {
       const [a, b] = list[i].n >= list[j].n ? [list[i], list[j]] : [list[j], list[i]];
-      pairs.push({ keep: a.k, keepN: a.n, drop: b.k, dropN: b.n, dropAt: b.at[0], d: Math.round(d * 10) / 10, how: d < AUTO.color ? '自動' : '提案' });
+      /* どちらも名前の付いた色（--bg と --surface-2 など）は、役割が違うかもしれないので自動ではまとめない（2026-09-27） */
+      const tokens = a.token && b.token;
+      pairs.push({ keep: a.k, keepN: a.n, drop: b.k, dropN: b.n, dropAt: b.at[0], d: Math.round(d * 10) / 10, how: d < AUTO.color && !tokens ? '自動' : '提案', tokens });
     }
   }
   return pairs.sort((x, y) => x.d - y.d);
@@ -438,9 +495,13 @@ function report({ bad, tips, uses, colors, notes }, files, opts = {}) {
   lines.push('扱い：「自動」＝見た目がほぼ変わらないので、作業で触っている範囲なら聞かずに寄せて報告の表に書く。「提案」＝見た目が変わりそうなので、寄せる前に聞く（RULES.md 4-13）');
   if (bad.length) {
     lines.push('', `### 決まりから外れた値（${bad.length} 件・扱いが「自動」の物は、作業で触っている範囲なら聞かずに寄せる）`, '', '| 箇所 | 項目 | 値 | 書き方 | 寄せる先 | 扱い |', '|---|---|---|---|---|---|');
+    /* 文字は、大小の差が消えないようにずらした後の寄せる先を出す（--fix と同じ） */
+    const fontMap = new Map();
+    bad.filter(b => b.cat === 'fontSize').forEach(b => { const t = target(b.v, RULE.fontSize.ok, uses.fontSize); if (t !== null && howTo('fontSize', b.v, t) === '自動') fontMap.set(b.v, t); });
+    spreadFontTargets({ fontSize: fontMap });
     bad.slice(0, opts.limit || 200).forEach(b => {
       const r = RULE[b.cat];
-      const t = target(b.v, r.ok, uses[b.cat]);
+      const t = b.cat === 'fontSize' && fontMap.has(b.v) ? fontMap.get(b.v) : target(b.v, r.ok, uses[b.cat]);
       lines.push(`| ${rel(b.file)}:${b.line} | ${r.name} | ${b.v}px | \`${b.raw.replace(/\|/g, '\\|')}\` | ${t}px | ${howTo(b.cat, b.v, t)} |`);
     });
     if (bad.length > (opts.limit || 200)) lines.push(`| … | ほか ${bad.length - (opts.limit || 200)} 件 | | | | |`);
@@ -455,11 +516,11 @@ function report({ bad, tips, uses, colors, notes }, files, opts = {}) {
   }
   if (tips.length) {
     lines.push('', `### 参考：書き方の提案（${tips.length} 件）`, '', '| 箇所 | 項目 | 書き方 | 提案 |', '|---|---|---|---|');
-    tips.slice(0, 40).forEach(t => lines.push(`| ${rel(t.file)}:${t.line} | ${t.cat === 'lineHeight' ? '行間' : '字間'} | \`${t.raw.replace(/\|/g, '\\|')}\` | ${t.why} |`));
+    tips.slice(0, 40).forEach(t => lines.push(`| ${rel(t.file)}:${t.line} | ${t.cat === 'letterSpacing' ? '字間' : (RULE[t.cat] && RULE[t.cat].name) || t.cat} | \`${t.raw.replace(/\|/g, '\\|')}\` | ${t.why} |`));
   }
   if (opts.pairs.length) {
     lines.push('', `### 似た色（色の差 ${SIMILAR_COLOR_DE} 未満・${opts.pairs.length} 組。2未満は自動で寄せる）`, '', '| 寄せる先（よく使う色） | 回数 | 似た色 | 回数 | 色の差 | 扱い | 似た色の箇所 |', '|---|---|---|---|---|---|---|');
-    opts.pairs.slice(0, 60).forEach(p => lines.push(`| ${p.keep} | ${p.keepN} | ${p.drop} | ${p.dropN} | ${p.d} | ${p.how} | ${rel(p.dropAt.split(':')[0])}:${p.dropAt.split(':')[1]} |`));
+    opts.pairs.slice(0, 60).forEach(p => lines.push(`| ${p.keep} | ${p.keepN} | ${p.drop} | ${p.dropN} | ${p.d} | ${p.how}${p.tokens ? '（名前の違う色どうし）' : ''} | ${rel(p.dropAt.split(':')[0])}:${p.dropAt.split(':')[1]} |`));
   }
   if (opts.rare.length) {
     lines.push('', `### 1回しか使っていない近い値（4-4・決まりどおりの値どうしなので自動では寄せない。まとめるかは提案）`, '', '| 項目 | 値 | 箇所 | 寄せる先（よく使う値） | 扱い |', '|---|---|---|---|---|');
@@ -522,6 +583,7 @@ function hook() {
   text.split('\n').forEach((l, i) => { const c = oldCount.get(l) || 0; if (c > 0) oldCount.set(l, c - 1); else if (l.trim()) only.add(i + 1); });
   if (!only.size) return;
   const sink = newSink();
+  collectVarUses(text);
   scanFile(file, text, sink, only);
   let { bad } = sink.result();   /* 書いた直後に知らせるのは決まり（4と8の倍数）だけ。提案は完了前の全体検査で出す */
   if (!bad.length) return;
@@ -553,12 +615,47 @@ function buildFixMaps(res, pairs, rare, clusters) {
   const num = {}, hex = new Map();
   const put = (cat, from, to) => { if (from === to) return; (num[cat] ||= new Map()); if (!num[cat].has(from)) num[cat].set(from, to); };
   res.bad.forEach(b => { const r = RULE[b.cat], t = target(b.v, r.ok, res.uses[b.cat]); if (t !== null && howTo(b.cat, b.v, t) === '自動') put(b.cat, b.v, t); });
+  const notes = spreadFontTargets(num);
   clusters.forEach(c => { const top = c.vals.slice().sort((a, b) => b.n - a.n)[0].v; c.vals.forEach(x => { if (x.v !== top && howTo(c.cat, x.v, top) === '自動') put(c.cat, x.v, top); }); });
   rare.forEach(r => { if (r.how === '自動') put(r.cat, r.v, r.near); });
   /* 色は、よく使う方へ。寄せる先がさらに寄せられる時は、たどって最後の色へ */
   pairs.filter(p => p.how === '自動').sort((a, b) => b.keepN - a.keepN).forEach(p => { if (!hex.has(p.drop) && !hex.has(p.keep)) hex.set(p.drop, p.keep); });
   hex.forEach((to, from) => { let t = to, guard = 0; while (hex.has(t) && guard++ < 10) t = hex.get(t); hex.set(from, t); });
-  return { num, hex };
+  return { num, hex, notes };
+}
+/* 文字サイズ：別々の大きさが同じ値に寄ると、見出しと補足の大小の差が消える（例：13px と 11px が両方 12px）。
+ * ちょうど真ん中の値（どちらに寄せても同じ差）は、ぶつからない側へずらす。大きい方から先に上へ（読みやすさを保つ・2026-09-27） */
+function spreadFontTargets(num) {
+  const m = num.fontSize, notes = [];
+  if (!m) return notes;
+  const ok = RULE.fontSize.ok;
+  const sides = f => {
+    let lo = null, hi = null;
+    for (let d = 0.5; d <= 16 && (lo === null || hi === null); d += 0.5) {
+      if (lo === null && f - d > 0 && ok(round(f - d))) lo = round(f - d);
+      if (hi === null && ok(round(f + d))) hi = round(f + d);
+    }
+    return { lo, hi, tie: lo !== null && hi !== null && round(f - lo) === round(hi - f) };
+  };
+  for (let guard = 0; guard < 8; guard++) {
+    const byTo = new Map();
+    m.forEach((to, from) => { if (!byTo.has(to)) byTo.set(to, []); byTo.get(to).push(from); });
+    let moved = false;
+    for (const [to, froms] of byTo) {
+      if (froms.length < 2) continue;
+      for (const f of froms.slice().sort((a, b) => b - a)) {
+        const s = sides(f), alt = f > to ? s.hi : s.lo;
+        if (!s.tie || alt === null || alt === to) continue;
+        m.set(f, alt);
+        notes.push(`${f}px → ${alt}px（${froms.filter(x => x !== f).map(x => x + 'px').join('・')} も ${to}px に寄るので、大小の差を残すため反対側へ）`);
+        moved = true;
+        break;
+      }
+      if (moved) break;
+    }
+    if (!moved) break;
+  }
+  return notes;
 }
 const fmt = (v, unit) => unit === 'rem' ? String(round(v / 16)).replace(/^0\./, '0.') + 'rem' : String(round(v)) + (unit || '');
 function rewriteLengths(cat, str, maps, changes, where) {
@@ -586,10 +683,15 @@ function rewriteColors(str, maps, changes, where) {
 }
 function rewriteDecl(prop, value, maps, changes, where) {
   prop = prop.toLowerCase();
-  const cat = PROP[prop] || (prop.startsWith('--') ? varCat(prop) : null);
+  const cat = PROP[prop] || (prop.startsWith('--') ? varCatOf(prop) : null);
   let v = value;
   if (!/gradient\(/.test(v) && !/shadow/.test(prop) && !/^(filter|backdrop-filter|-webkit-backdrop-filter|mask|-webkit-mask)/.test(prop)) v = rewriteColors(v, maps, changes, where);
-  if (!cat || /\bvar\(|\bcalc\(|\benv\(/.test(v)) return v;
+  if (!cat || /\bcalc\(|\benv\(/.test(v)) return v;
+  if (/\bvar\(/.test(v)) {   /* var() の外の値と、var(--x, 150px) の予備の値だけ書き換える */
+    if (!LEN_CATS.has(cat)) return v;
+    const f = s => rewriteLengths(cat, s, maps, changes, where);
+    return mapVarParts(v, f, f);
+  }
   if (cat === 'filter') return v.replace(/(blur|drop-shadow)\(([^)]*)\)/g, (all, fn, inner) => fn + '(' + rewriteLengths(fn === 'blur' ? 'blur' : 'shadow', inner, maps, changes, where) + ')');
   if (cat === 'lineHeight' || cat === 'opacity') {
     const t = v.trim(), m = maps.num[cat];
@@ -712,6 +814,7 @@ if (args.includes('--hook')) {
   targets.forEach(t => { const explicit = fs.existsSync(t) && fs.statSync(t).isFile(); walk(path.resolve(t), { ...opts, explicit }, files); });
   const sink = newSink();
   let scanned = 0;
+  files.forEach(f => { const text = fs.readFileSync(f, 'utf8'); if (!isGenerated(text)) collectVarUses(text); });   /* 先に変数の使われ方を集める */
   files.forEach(f => { const text = fs.readFileSync(f, 'utf8'); if (isGenerated(text)) return; scanned++; scanFile(f, text, sink, null); });
   const res = sink.result();
   const pairs = similarColors(res.colors), rare = rareNearValues(res.uses), clusters = nearClusters(res.uses);
@@ -732,18 +835,20 @@ if (args.includes('--hook')) {
     });
     const lines = [`## 自動で寄せた値（${all.length} か所${opts.dry ? '・試しに数えただけで書き換えていない' : ''}）`, '', '| 箇所 | プロパティ | 前 | 後 |', '|---|---|---|---|'];
     all.forEach(c => lines.push(`| ${rel(c.file)}:${c.line} | ${c.prop || ''} | \`${String(c.from).replace(/\|/g, '\\|')}\` | \`${String(c.to).replace(/\|/g, '\\|')}\` |`));
+    if (maps.notes.length) lines.push('', '文字の寄せる先をずらした所：', ...maps.notes.map(n => '- ' + n));
     const after = newSink();
     files.forEach(f => { const text = fs.readFileSync(f, 'utf8'); if (!isGenerated(text)) scanFile(f, text, after, null); });
     const ar = after.result(), ap = similarColors(ar.colors);
     const propose = ar.bad.filter(b => howTo(b.cat, b.v, target(b.v, RULE[b.cat].ok, ar.uses[b.cat])) === '提案');
     lines.push('', `残り：決まりから外れた値 ${ar.bad.length} 件（うち提案 ${propose.length} 件）・似た色 ${ap.length} 組（うち自動 ${ap.filter(p => p.how === '自動').length} 組）`);
     console.log(lines.join('\n'));
-    process.exit(0);
-  }
-  if (opts.json) {
-    console.log(JSON.stringify({ files: scanned, bad: res.bad, tips: res.tips, similarColors: pairs, nearClusters: clusters, rare }, null, 2));
   } else {
-    console.log(report(res, scanned, { pairs, rare, clusters, summary: true }));
+    if (opts.json) {
+      console.log(JSON.stringify({ files: scanned, bad: res.bad, tips: res.tips, similarColors: pairs, nearClusters: clusters, rare }, null, 2));
+    } else {
+      console.log(report(res, scanned, { pairs, rare, clusters, summary: true }));
+    }
+    /* process.exit() は使わない：出力を次のコマンドへ渡している時に、長い結果の終わりが切れるため（2026-09-27） */
+    process.exitCode = res.bad.length ? 1 : 0;
   }
-  process.exit(res.bad.length ? 1 : 0);
 }

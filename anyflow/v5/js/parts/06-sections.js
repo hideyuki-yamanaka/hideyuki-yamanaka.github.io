@@ -529,7 +529,58 @@ function applyGrid() {
   const cell = (g.cell != null ? g.cell : 40);
   const vw = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1440;
   s.setProperty('--grid-pos-x', (Math.round(((vw / 2) % cell) * 100) / 100) + 'px');
+  if (typeof scheduleGridAlign === 'function') scheduleGridAlign();   /* マスの大きさ・オンオフが変わったら区切り線も合わせ直す */
 }
+/* 【2026-09-27 ヒデさん依頼】グレーの区切り線を方眼の横線にぴったり合わせる＋方眼の面どうしの目をそろえる。
+   ・スマホ: 方眼は面(キービジュアル/ビジョン…)ごとに左上から始まる(scroll)ので、面の上端のはみ出し分を --grid-oy で打ち消し、
+     ページの上端を基準の1つの目にそろえる(機種によってはビジョンの境目で方眼がずれていた)。
+   ・区切り線(実績の3本)は、縦にだけ一番近い方眼の線へ寄せる(translate。文字やブロックは動かさない・最大で半マス)。
+     寄せた先で上下の要素との間が 12px 未満になる時は、反対側の線へ寄せる。
+   ・基準: スマホ=ページの上端(方眼がスクロールと一緒に動く) / PC=画面の上端(方眼は画面に固定)。PC の実績は止まっている間の位置で合わせる。
+   ・マスの大きさはその時の --grid-cell を読む(古い保存のマスでも合う)。方眼オフの時は元の位置に戻す。 */
+const GRID_SNAP_SEL = '#resHrTop, #results .res2-vline, #resHr';
+const GRID_SNAP_MIN_GAP = 12;
+let _gridAlignRaf = 0;
+function scheduleGridAlign() { cancelAnimationFrame(_gridAlignRaf); _gridAlignRaf = requestAnimationFrame(alignGridAndLines); }
+function alignGridAndLines() {
+  try {
+    const root = document.documentElement;
+    const on = root.classList.contains('grid-on');
+    const cell = parseFloat(getComputedStyle(root).getPropertyValue('--grid-cell')) || 44;
+    const mob = (typeof isMobile !== 'undefined' && isMobile);
+    const mod = v => ((v % cell) + cell) % cell;
+    /* ① 方眼の面の目をそろえる(スマホだけ。PC は画面固定なので元からそろう) */
+    document.querySelectorAll('.stage-wrap, .pin-vp, .np-vp, #conversion.cvs-10').forEach(el => {
+      if (!on || !mob) { el.style.removeProperty('--grid-oy'); return; }
+      el.style.setProperty('--grid-oy', (-mod(el.getBoundingClientRect().top + scrollY)).toFixed(2) + 'px');
+    });
+    /* ② 区切り線を一番近い方眼の線へ(横線だけ。PC の縦の仕切りは対象外) */
+    document.querySelectorAll(GRID_SNAP_SEL).forEach(el => {
+      const off = () => { el.style.removeProperty('translate'); delete el.dataset.gridSnap; };
+      if (!on || getComputedStyle(el).display === 'none' || !(el.offsetWidth > el.offsetHeight * 4)) return off();
+      const vp = el.closest('.pin-vp');
+      if (!mob && !vp) return off();   /* PC で止まらない所は、方眼(画面固定)とスクロールで常にずれ続けるので寄せない */
+      const cur = parseFloat(el.dataset.gridSnap || '0');   /* 今かけている分(画面px) */
+      const r = el.getBoundingClientRect(), top0 = r.top - cur;
+      const y = mob ? top0 + scrollY : top0 - vp.getBoundingClientRect().top;   /* スマホ=ページの上から / PC=止まっている間の画面の上から */
+      const m = mod(y);
+      const vis = n => n && getComputedStyle(n).display !== 'none';
+      let pv = el.previousElementSibling; while (pv && !vis(pv)) pv = pv.previousElementSibling;
+      let nx = el.nextElementSibling; while (nx && !vis(nx)) nx = nx.nextElementSibling;
+      const gA = pv ? top0 - pv.getBoundingClientRect().bottom : Infinity;
+      const gB = nx ? nx.getBoundingClientRect().top - (top0 + r.height) : Infinity;
+      const cands = [-m, cell - m].sort((a, b) => Math.abs(a) - Math.abs(b));
+      const d = cands.find(c => Math.min(gA + c, gB - c) >= GRID_SNAP_MIN_GAP) ?? cands[0];
+      const st = el.closest('.pin-stage');
+      const sc = (st && st.offsetHeight) ? (st.getBoundingClientRect().height / st.offsetHeight) || 1 : 1;   /* 拡大縮小の中では translate が倍率ぶん効く */
+      el.dataset.gridSnap = d.toFixed(2);
+      el.style.setProperty('translate', '0 ' + (d / sc).toFixed(2) + 'px');
+    });
+  } catch (e) {}
+}
+try { new ResizeObserver(scheduleGridAlign).observe(document.body); } catch (e) {}   /* 中身の高さが変わったら合わせ直す(寄せ自体は高さを変えないので繰り返さない) */
+window.addEventListener('load', () => setTimeout(scheduleGridAlign, 300));
+try { document.fonts.ready.then(scheduleGridAlign); } catch (e) {}
 applyGrid();
 /* 【2026-09-01】実績: Anyflowと「が」の間(px)をCSS変数へ */
 function applyResSlotGap() {

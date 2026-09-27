@@ -57,7 +57,7 @@
     background-image: var(--grid-img);
     background-size: var(--grid-cell) var(--grid-cell);
     background-attachment: scroll;
-    background-position: var(--grid-pos-x, 0px) 0;
+    background-position: var(--grid-pos-x, 0px) var(--grid-oy, 0px);   /* 【2026-09-27】--grid-oy=面の上端のはみ出し分を打ち消す(JS alignGridAndLines)→ページの上端基準の1つの目 */
   }
   #gridBg { display: none !important; }   /* オーバーレイは撤去(前面に出る問題)。要素は残すが常に非表示 */
 
