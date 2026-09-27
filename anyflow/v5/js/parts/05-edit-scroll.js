@@ -1590,7 +1590,7 @@ let resBlackK = 0;         /* 黒がどれだけ覆ったか(0→1)。dev1 の�
    仮置き: 尺(vh)・読む区間の配分は原本値。パネル「固定の長さ」で尺は可変。 */
 const RES_FX = {
   default: { vh: 0 },
-  '24-4': { vh: 240, mobileFlow: true },   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
+  '24-4': { vh: 240, mobileFlow: true, flow: true },   /* 【2026-09-27 ヒデさん依頼】PC も画面固定をやめ、スマホと同じく止まらずに流す。止める見せ方に戻す時は flow を外す(vh は残してある) */   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
   '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
   /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
 };
@@ -1901,7 +1901,8 @@ applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを�
 applyResSpGap();    /* 【2026-09-21】起動時にスマホの実績の縦余白を反映 */
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
 /* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
-function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px'); }
+function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px');
+  document.documentElement.style.setProperty('--vis-res-pull-flow', (params.visResPullFlow != null ? params.visResPullFlow : 0) + 'px'); }   /* 【2026-09-27】実績を止めずに流す時(PC)の引き上げ量。止める時の 200 のままだとビジョンの図に重なる */
 applyVisResPull();
 function applySecHeadGap() { document.documentElement.style.setProperty('--sec-head-gap', (params.secHeadGap != null ? params.secHeadGap : 6) + 'px'); }
 applySecHeadGap();

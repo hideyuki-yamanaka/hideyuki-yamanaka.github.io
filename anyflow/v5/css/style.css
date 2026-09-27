@@ -43,8 +43,8 @@
   html:not(.mb).grid-on #conversion.cvs-10 {
     background-image: var(--grid-img);
     background-size: var(--grid-cell) var(--grid-cell);
-    background-attachment: fixed;
-    background-position: var(--grid-pos-x, 0px) 0;
+    background-attachment: scroll;   /* 【2026-09-27】PC も実績の画面固定をやめたので、方眼もスマホと同じくスクロールと一緒に動かす(区切り線といつもそろう) */
+    background-position: var(--grid-pos-x, 0px) var(--grid-oy, 0px);
   }
   /* スマホ(html.mb): 【2026-09-21 ヒデさん指摘】オーバーレイ(#gridBg)は content の前面に出てしまうので廃止。
      iOS では background-attachment:fixed が不安定なので scroll で地色面に重ねる=背景として content の後ろに出る。
@@ -78,7 +78,7 @@
   .stage {
     position: relative;
     width: var(--sw, 1440px);
-    height: var(--dh, 921px);
+    height: var(--dh, 921px);   /* 4-7例外（カンプの設計フレームの高さ 921） */
     transform-origin: top left;
     transform: scale(var(--s, 1));
     margin-left: max(0px, calc((100% - var(--sw, 1440px)) / 2));   /* 2026-09-15: 設計幅より広い画面では中央に(縮小時は 0) */
@@ -174,7 +174,7 @@
   /* 3: 下スクロールで隠す(現在は未使用) */
   /* 4: 縮む(ロゴ小・余白小・ガラス) */
   /* 5: フローティングピル(ナビは残す・両端を少し浮かせてガラス) */
-  html:not(.mb).hm-5 .header { --hdr-py: 12px; --hdr-px: 28px; --hdr-logo-h: 39px;
+  html:not(.mb).hm-5 .header { --hdr-py: 12px; --hdr-px: 28px; --hdr-logo-h: 40px;
     margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: calc(var(--hdr-side) * var(--hdr-t, 0));
     --hdr-skin-bg: rgba(255,255,255,.58); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 14px 34px rgba(20,30,60,.16), inset 0 1px 0 rgba(255,255,255,.6); }
 
@@ -268,7 +268,7 @@
   /* 6: 全幅ガラスバー(既定 skin) / 7: 全幅ソリッド白。幅は不変、ナビ→バーガーだけ */
   /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴは大きく変えない=40px) */
   /* 8: 左寄せピル (2026-09-17 ヒデさん指定: ロゴのサイズは変えない=47。ロゴが原寸ぶんピル幅は広め) */
-  html:not(.mb).hm-8 .header { --hdr-cw: 344px; --hdr-py: 16px; --hdr-px: 20px; --hdr-logo-h: 47px;
+  html:not(.mb).hm-8 .header { --hdr-cw: 344px; --hdr-py: 16px; --hdr-px: 20px; --hdr-logo-h: 47px;   /* 4-7例外（ロゴ画像の実寸の高さ 47） */
     margin-left: calc(var(--hdr-side) * var(--hdr-t, 0)); margin-right: auto;
     --hdr-skin-bg: rgba(255,255,255,.6); --hdr-skin-filter: blur(20px) saturate(1.6); --hdr-skin-shadow: 0 12px 30px rgba(20,30,60,.16); }
   /* 9: 右寄せピル */
@@ -279,7 +279,7 @@
   /* 12: 分離型 —【2026-09-17 ヒデさん指定】スクロールすると4つのリンクが右へ寄って「お問い合わせ」の黒箱へ吸い込まれ、
      その黒箱がコンパクトな正方形に縮んで、中身が明るい色のハンバーガーに変わる＝箱がメニュー入口になる(一続きの動き)。
      位置・余白・ロゴは不変(レイアウトシフト無し)。黒セクション上ではロゴだけ白反転。別バーガー(.hdr-burger)は出さない。 */
-  html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; --hdr-skin-border: 0 solid transparent; }
+  html:not(.mb).hm-12 .header { --hdr-top: 0px; --hdr-py: 24px; --hdr-px: 50px; --hdr-skin-bg: transparent; --hdr-skin-filter: none; --hdr-skin-shadow: none; --hdr-skin-border: 0 solid transparent; }   /* 4-7例外（ヘッダーの左右の位置 50px＝カンプの座標） */
   html:not(.mb).hm-12 .hdr-burger { display: none; }
   html:not(.mb).hm-12 .header .nav { margin-left: auto; overflow: visible;
     gap: calc(32px * (1 - clamp(0, var(--hdr-t, 0) * 1.25, 1))); }
@@ -632,7 +632,7 @@
      カーブは easeOutQuint = var(--e-out) を基準にする
      (実測でいちばん多かった。JS側の easeOutQ = 1-(1-t)^5 と同じカーブ) */
   :root {
-    --s: 1; --sp: 1; --dh: 921px;
+    --s: 1; --sp: 1; --dh: 921px;   /* 4-7例外（カンプの設計フレームの高さ 921） */
     --t-fast: .25s; --t-in: .8s; --t-big: 1.3s;
     --t-tap: .18s; --t-ui: .3s; --t-move: .4s; --t-slow: .5s;   /* 2026-09-19 整理②: 押した反応 / UIの色変化・ロール(.32,.34,.35→.3) / 動き(.38,.42,.45→.4) / ゆっくり */
     --e-fast: cubic-bezier(.4, 0, .2, 1);
@@ -781,7 +781,7 @@
     left: max(0px, calc((100% - var(--swp, 1440px) * var(--sp, 1)) / 2));   /* 2026-09-15: 見た目の幅(1440×縮小率)で中央に。縮小で画面幅ぴったりなら 0 */
     top: 50%;
     width: var(--swp, 1440px);
-    height: var(--dh, 921px);
+    height: var(--dh, 921px);   /* 4-7例外（カンプの設計フレームの高さ 921） */
     transform: translateY(-50%) scale(var(--sp));
     transform-origin: left center;
   }
@@ -944,7 +944,7 @@
   .val-point p { font-weight: 300; font-size: var(--vp-p-size, 14px); line-height: normal; margin-top: var(--space-24); }
 
   /* ---- 実績セクション ---- */
-  #results .pin-stage { height: var(--dh, 921px); }
+  #results .pin-stage { height: var(--dh, 921px); }   /* 4-7例外（カンプの設計フレームの高さ 921） */
   /* カンプ座標 = TOP y - 2800 + 90.56。
      カンプでは実績のかたまり(画像の上端〜下段の数字まで 623.9px)の上下にたっぷり余白がある
      (上 約420px / 下 約270px)。ビューポートに固定する以上そのpx数は入らないので、
@@ -1077,7 +1077,9 @@
   #results { position: relative; z-index: 1; }
   /* 【2026-09-19 ヒデさん依頼】ビジョンの図を差し替えて下が空きすぎたので、実績を上へ引き上げて空白を詰める(PCのみ。SPは図の下にPointが続くので詰めない)。
      量は ビジョンタブ「実績との間隔（詰める）」→ --vis-res-pull。実績の pin-vp は不透明(var(--surface))なので、重なった分はビジョンの舞台の下の空白(1440×921で216px)が隠れるだけ */
-  html:not(.mb) #results { margin-top: calc(-1 * (var(--vis-res-pull, 0px) + max(0px, (100vh - var(--dh, 921px)) / 2))); }   /* 2026-09-19: 背の高い画面では舞台(921px)の上下の余り(中央寄せぶん)も自動で吸収する */
+  html:not(.mb) #results { margin-top: calc(-1 * (var(--vis-res-pull, 0px) + max(0px, (100vh - var(--dh, 921px)) / 2))); }
+  /* 【2026-09-27 ヒデさん依頼】実績を止めずに流す時(rfx-flow)は、中身が上から詰まるので、止める時の引き上げ(200)だとビジョンの図に重なる→流す用の量(既定0＝舞台のすぐ下から)を使う */
+  html:not(.mb) #results.rfx-flow { margin-top: calc(-1 * (var(--vis-res-pull-flow, 0px) + max(0px, (100vh - var(--dh, 921px)) / 2))); }   /* 2026-09-19: 背の高い画面では舞台(921px)の上下の余り(中央寄せぶん)も自動で吸収する */
   #results .pin-stage { display: flex; align-items: center; justify-content: center; }
   .res2 { width: 1136px; max-width: calc(100% - 96px); display: flex; flex-direction: column; gap: var(--space-40); color: var(--ink-strong); }
   /* 上段: 見出し(左) + 3数値(右)。フレーム 1138×116・数値グループ 631×102 */
@@ -1253,7 +1255,7 @@
   html.mb #results.rfx-24 .res2-vals, html.mb #results.rfx-24 .r2v-track { display: contents; }
   html.mb #results.rfx-24 .res2-vline { display: block; order: 0; align-self: stretch; width: 100%; height: 1px; background: var(--line-grid); margin: var(--space-4) 0 46px; }   /* 【2026-09-16】for SaaS と for AI の間の区切り線(margin 12→4=--space-4。for AI 上を詰める) */   /* 【2026-09-21 ヒデさん依頼】線→for AI の見た目余白を約60pxに(下margin 4→46。上4はSaaS側=ピクトのmargin-bottomで60に調整) */   /* 4-7例外（線の太さ） */
   html.mb #results.rfx-24 .res2-hr { display: block; order: 1; /* 【2026-09-19 ヒデさん依頼】線は数値の上(ピクト→線→数値。PCと同じ並び) */ margin: var(--space-4) 0; transform: none; }   /* 【2026-09-16】V3.0: 見出し・数値の直後に静的な区切り線 */
-  html.mb #results.rfx-24 .res2-hr-top { margin: var(--space-4) 0 46px; }   /* 【2026-09-21 Y9】for SaaS 上の線の下余白(既定56px)を他の線(vline/res2-hr=4px)と統一＝各ボックス上下の余白を揃える(SPのみ・PCは非表示) */   /* 【2026-09-21 ヒデさん依頼】線→for SaaS の見た目余白を約60pxに(下margin 4→46) */
+  html.mb #results.rfx-24 .res2-hr-top { margin: var(--space-4) 0 44px; }   /* 【2026-09-21 Y9】for SaaS 上の線の下余白(既定56px)を他の線(vline/res2-hr=4px)と統一＝各ボックス上下の余白を揃える(SPのみ・PCは非表示) */   /* 【2026-09-21 ヒデさん依頼】線→for SaaS の見た目余白を約60pxに(下margin 4→46) */
   html.mb #results.rfx-24 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: 0; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に。【2026-09-21 ヒデさん依頼】線→事業の推進力見出しの余白を他の線と統一(24px→20px。padding-top 4px を除去) */
   html.mb #results.rfx-24 .res2-head { flex-direction: row; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: baseline; align-self: stretch; font-size: 18px; line-height: var(--lh-loose); }   /* 【2026-09-20 ヒデさん依頼】「事業の推進力を、Anyflowが支えます。」を1行に(折り返さないようフォントを18pxへ縮小)。旧: 22px 2行 */
   html.mb #results.rfx-24 .res2-stats { flex-wrap: wrap; gap: var(--space-20) var(--space-16); justify-content: flex-start; width: 100%; }   /* 【2026-09-20 ヒデさん依頼】4項目は 2×2 で */
@@ -1703,7 +1705,7 @@
   .dm-msg.dm-user { justify-content: flex-end; }
   .dm-msg.dm-user p {
     max-width: 86%;
-    padding: var(--space-10) 14px;
+    padding: var(--space-10) var(--space-16);
     border-radius: var(--radius-md) var(--radius-md) var(--radius-xs) var(--radius-md);
     background: var(--glass-16);
     font-size: var(--fs-caption);
@@ -2431,7 +2433,7 @@
     /* 【2026-09-02】min-height:100vh(PC用)のままだと中身0.4倍で巨大な空白になる→内容の高さに合わせる */
     /* 【2026-09-09 ヒデさん指定「開発者体験1と2のギャップが広い」】上下 72px → 40px に詰める。
        ⚠️仮置き: カンプSP(node16534:22257)は 440px の暗い帯だけで中身(Strength01/02)の指定が無い。 */
-    .dev-block { padding: var(--space-40) 18px; gap: var(--space-28); min-height: 0; }
+    .dev-block { padding: var(--space-40) var(--space-16); gap: var(--space-28); min-height: 0; }
     .dev-center .dc-label { font-size: var(--fs-base); margin-bottom: var(--sec-head-gap, 6px); }   /* 【2026-09-19 仮置き】共通部品: SP の英字ラベルは 16px、間隔は --sec-head-gap(旧 14px / 8px) */
     .dev-center .dc-one { font-size: var(--fs-heading); line-height: var(--lh-heading); }   /* 【2026-09-19 仮置き】共通部品: SP の見出しは 24px/1.45(旧 22px/1.5) */
     /* CLI/SDKの箱もモバイル文字サイズに合わせて縮める(1行に収める) */
@@ -2462,7 +2464,7 @@
 
     /* --- 導入事例 (カンプ node16534:22646 準拠: 画像上・縦カード4枚を通常フローで縦積み) --- */
     .case-eyebrow { position: static; left: auto; right: auto; top: auto; text-align: center; margin: 0 var(--space-24) var(--sec-head-gap, 6px); font-size: var(--fs-base); }   /* 【2026-09-16】左→中央。【2026-09-19】間隔は共通変数 */
-    .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) 17px; font-weight: 600; font-size: 20px; line-height: var(--lh-heading); }   /* 【2026-09-20 #10】導入事例タイトルをSPで少し小さく(24→20px) */
+    .case-title { position: static; left: auto; right: auto; top: auto; margin: 0 var(--space-24) var(--space-16); font-weight: 600; font-size: 20px; line-height: var(--lh-heading); }   /* 【2026-09-20 #10】導入事例タイトルをSPで少し小さく(24→20px) */
     .case-grid { position: static; left: auto; top: auto; width: 100%; height: auto;
                  display: flex; flex-direction: column; gap: 0; }   /* カンプSP node16534:22646: カードは隙間なく積む(余白はカード内 padding 40) */
     .cg-vline { display: none; }

@@ -7031,7 +7031,7 @@ let resBlackK = 0;         /* 黒がどれだけ覆ったか(0→1)。dev1 の�
    仮置き: 尺(vh)・読む区間の配分は原本値。パネル「固定の長さ」で尺は可変。 */
 const RES_FX = {
   default: { vh: 0 },
-  '24-4': { vh: 240, mobileFlow: true },   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
+  '24-4': { vh: 240, mobileFlow: true, flow: true },   /* 【2026-09-27 ヒデさん依頼】PC も画面固定をやめ、スマホと同じく止まらずに流す。止める見せ方に戻す時は flow を外す(vh は残してある) */   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
   '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
   /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
 };
@@ -7342,7 +7342,8 @@ applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを�
 applyResSpGap();    /* 【2026-09-21】起動時にスマホの実績の縦余白を反映 */
 /* 【2026-09-19 ヒデさん依頼】セクション見出しの「ラベル→見出し」の間隔(Our Vision / Use Case / Contact / Strength)。既定 6px は仮置き */
 /* 【2026-09-19 ヒデさん依頼】ビジョン→実績の空白を詰める量(px)。既定 200 は仮置き */
-function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px'); }
+function applyVisResPull() { document.documentElement.style.setProperty('--vis-res-pull', (params.visResPull != null ? params.visResPull : 200) + 'px');
+  document.documentElement.style.setProperty('--vis-res-pull-flow', (params.visResPullFlow != null ? params.visResPullFlow : 0) + 'px'); }   /* 【2026-09-27】実績を止めずに流す時(PC)の引き上げ量。止める時の 200 のままだとビジョンの図に重なる */
 applyVisResPull();
 function applySecHeadGap() { document.documentElement.style.setProperty('--sec-head-gap', (params.secHeadGap != null ? params.secHeadGap : 6) + 'px'); }
 applySecHeadGap();
@@ -8783,7 +8784,7 @@ function applyGrid() {
      ページの上端を基準の1つの目にそろえる(機種によってはビジョンの境目で方眼がずれていた)。
    ・区切り線(実績の3本)は、縦にだけ一番近い方眼の線へ寄せる(translate。文字やブロックは動かさない・最大で半マス)。
      寄せた先で上下の要素との間が 12px 未満になる時は、反対側の線へ寄せる。
-   ・基準: スマホ=ページの上端(方眼がスクロールと一緒に動く) / PC=画面の上端(方眼は画面に固定)。PC の実績は止まっている間の位置で合わせる。
+   ・基準: ページの上端(PC もスマホも方眼はスクロールと一緒に動く。PC は 2026-09-27 に実績の画面固定をやめ、方眼も画面固定から変えた)。
    ・マスの大きさはその時の --grid-cell を読む(古い保存のマスでも合う)。方眼オフの時は元の位置に戻す。 */
 const GRID_SNAP_SEL = '#resHrTop, #results .res2-vline, #resHr';
 const GRID_SNAP_MIN_GAP = 12;
@@ -8794,22 +8795,21 @@ function alignGridAndLines() {
     const root = document.documentElement;
     const on = root.classList.contains('grid-on');
     const cell = parseFloat(getComputedStyle(root).getPropertyValue('--grid-cell')) || 44;
-    const mob = (typeof isMobile !== 'undefined' && isMobile);
     const mod = v => ((v % cell) + cell) % cell;
-    /* ① 方眼の面の目をそろえる(スマホだけ。PC は画面固定なので元からそろう) */
+    /* ① 方眼の面の目をそろえる */
     document.querySelectorAll('.stage-wrap, .pin-vp, .np-vp, #conversion.cvs-10').forEach(el => {
-      if (!on || !mob) { el.style.removeProperty('--grid-oy'); return; }
+      if (!on) { el.style.removeProperty('--grid-oy'); return; }
       el.style.setProperty('--grid-oy', (-mod(el.getBoundingClientRect().top + scrollY)).toFixed(2) + 'px');
     });
     /* ② 区切り線を一番近い方眼の線へ(横線だけ。PC の縦の仕切りは対象外) */
     document.querySelectorAll(GRID_SNAP_SEL).forEach(el => {
       const off = () => { el.style.removeProperty('translate'); delete el.dataset.gridSnap; };
       if (!on || getComputedStyle(el).display === 'none' || !(el.offsetWidth > el.offsetHeight * 4)) return off();
-      const vp = el.closest('.pin-vp');
-      if (!mob && !vp) return off();   /* PC で止まらない所は、方眼(画面固定)とスクロールで常にずれ続けるので寄せない */
+      let stk = null; for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) { if (getComputedStyle(a).position === 'sticky') { stk = a; break; } }
+      if (stk) return off();   /* 画面に止まる区間の中の線は、スクロールと一緒に動く方眼とそろえられないので寄せない(今は該当なし) */
       const cur = parseFloat(el.dataset.gridSnap || '0');   /* 今かけている分(画面px) */
       const r = el.getBoundingClientRect(), top0 = r.top - cur;
-      const y = mob ? top0 + scrollY : top0 - vp.getBoundingClientRect().top;   /* スマホ=ページの上から / PC=止まっている間の画面の上から */
+      const y = top0 + scrollY;   /* ページの上端から */
       const m = mod(y);
       /* 見た目で線のすぐ上・すぐ下にある中身(文字・図)。コードの並び順と見た目の順が違う所があるので、位置で探す。透明で見えていない物は数えない */
       const sec = el.closest('section') || document.body;
@@ -12311,8 +12311,15 @@ function buildPanel() {
   /* 【2026-08-26 整理】1項目だけの見出しが並んで冗長だったので「基本」にまとめた */
   /* 【2026-09-20 大改修】基本(余白)＋ぼかし(エフェクト)＋表示時間(アニメ)に分割。図→グラフィック、距離→ギャップ表記。 */
   sub(catVis, '余白（ギャップ）', false);
-  rows.push(slider('グラフィック↔実績', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
-    'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。既定 200px 仮置き。', { mbKey: 'visResPull' }));
+  /* 【2026-09-27】実績を止めずに流す時(PC)は、流す用の引き上げ量(visResPullFlow・既定0)を動かす。止める見せ方に戻したら従来の visResPull */
+  { const _pf = !!(RES_FX['24-4'] && RES_FX['24-4'].flow);
+    rows.push(slider('グラフィック↔実績', _pf ? -200 : 0, _pf ? 400 : 600, _pf ? 4 : 10,
+      () => _pf ? (params.visResPullFlow != null ? params.visResPullFlow : 0) : (params.visResPull != null ? params.visResPull : 200),
+      v => { if (_pf) params.visResPullFlow = v; else params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} },
+      v => (v > 0 ? '−' : v < 0 ? '+' : '') + Math.abs(Math.round(v)) + 'px',
+      _pf ? 'ビジョンのグラフィックの下から実績(for SaaS / for AI)が始まるまで。0＝ビジョンの舞台のすぐ下から。右へ動かすと実績を上へ詰め、左で下へ空けます。PCのみ。既定 0px 仮置き(2026-09-27 実績を止めずに流す形にしたため)。'
+          : 'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。既定 200px 仮置き。',
+      { mbKey: _pf ? 'visResPullFlow' : 'visResPull' })); }
   rows.push(slider('見出し↔グラフィック・ポイント（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
     'メッセージの下の余白。グラフィック(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px 仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
   rows.push(slider('グラフィック↔ポイント（左右）', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
@@ -12504,12 +12511,12 @@ function buildPanel() {
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
       '固定して読む区間の長さ(固定のある案のみ。4・12・30・33・38〜41 は固定なし)。大きいほどゆっくり進みます。'));
     { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
-      rfxDyn(_vr, ['24-4', '26']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
+      rfxDyn(_vr, RES_FX['24-4'].flow ? ['26'] : ['24-4', '26']); }   /* 【2026-09-27】24-4 を流す時は固定が無いので出さない */   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
     /* 【2026-09-26 整理】完全削除した案だけの調整(主役ピクト系・案14・案20・案21〜23)は削除。
        主役ピクト系のぼかし(hero.pictoBlur)は案24-4 が今も読むので値の既定(RFX_HERO_DEF)は残す */
     const pct = v => Math.round(v * 100) + '%';
     /* 案24: 文字の動き・区切り線(その案の時だけ出す) */
-    subT(catRes, () => '案' + rfxNos(['24-4']) + '：文字の動き・区切り線');
+    subT(catRes, () => '案' + rfxNos(['24-4']) + (RES_FX['24-4'].flow ? '：区切り線' : '：文字の動き・区切り線'));
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
     const F24 = { labelUp: 190, prodSize: 38 };
@@ -12518,9 +12525,9 @@ function buildPanel() {
     const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
     const s24 = (label, key, min, max, step, fmt, tip) => rows.push(pcOnly(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key })));
     /* 【2026-09-26 ヒデさん依頼】『ピクトの主役の大きさ』(heroScale)つまみは削除。いまの案24-4 はピクトをズームしない作り(ほぼ最終サイズ1.08倍固定)で、効かなかったため */
-    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
+    if (!RES_FX['24-4'].flow) s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
-    rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
+    if (!RES_FX['24-4'].flow) rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
       '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
     subgroup('区切り線', () => {
     rows.push(pcOnly(slider('上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',

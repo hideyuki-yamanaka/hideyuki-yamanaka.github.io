@@ -1086,8 +1086,15 @@ function buildPanel() {
   /* 【2026-08-26 整理】1項目だけの見出しが並んで冗長だったので「基本」にまとめた */
   /* 【2026-09-20 大改修】基本(余白)＋ぼかし(エフェクト)＋表示時間(アニメ)に分割。図→グラフィック、距離→ギャップ表記。 */
   sub(catVis, '余白（ギャップ）', false);
-  rows.push(slider('グラフィック↔実績', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
-    'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。既定 200px 仮置き。', { mbKey: 'visResPull' }));
+  /* 【2026-09-27】実績を止めずに流す時(PC)は、流す用の引き上げ量(visResPullFlow・既定0)を動かす。止める見せ方に戻したら従来の visResPull */
+  { const _pf = !!(RES_FX['24-4'] && RES_FX['24-4'].flow);
+    rows.push(slider('グラフィック↔実績', _pf ? -200 : 0, _pf ? 400 : 600, _pf ? 4 : 10,
+      () => _pf ? (params.visResPullFlow != null ? params.visResPullFlow : 0) : (params.visResPull != null ? params.visResPull : 200),
+      v => { if (_pf) params.visResPullFlow = v; else params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} },
+      v => (v > 0 ? '−' : v < 0 ? '+' : '') + Math.abs(Math.round(v)) + 'px',
+      _pf ? 'ビジョンのグラフィックの下から実績(for SaaS / for AI)が始まるまで。0＝ビジョンの舞台のすぐ下から。右へ動かすと実績を上へ詰め、左で下へ空けます。PCのみ。既定 0px 仮置き(2026-09-27 実績を止めずに流す形にしたため)。'
+          : 'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。既定 200px 仮置き。',
+      { mbKey: _pf ? 'visResPullFlow' : 'visResPull' })); }
   rows.push(slider('見出し↔グラフィック・ポイント（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
     'メッセージの下の余白。グラフィック(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px 仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
   rows.push(slider('グラフィック↔ポイント（左右）', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
@@ -1279,12 +1286,12 @@ function buildPanel() {
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
       '固定して読む区間の長さ(固定のある案のみ。4・12・30・33・38〜41 は固定なし)。大きいほどゆっくり進みます。'));
     { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
-      rfxDyn(_vr, ['24-4', '26']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
+      rfxDyn(_vr, RES_FX['24-4'].flow ? ['26'] : ['24-4', '26']); }   /* 【2026-09-27】24-4 を流す時は固定が無いので出さない */   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
     /* 【2026-09-26 整理】完全削除した案だけの調整(主役ピクト系・案14・案20・案21〜23)は削除。
        主役ピクト系のぼかし(hero.pictoBlur)は案24-4 が今も読むので値の既定(RFX_HERO_DEF)は残す */
     const pct = v => Math.round(v * 100) + '%';
     /* 案24: 文字の動き・区切り線(その案の時だけ出す) */
-    subT(catRes, () => '案' + rfxNos(['24-4']) + '：文字の動き・区切り線');
+    subT(catRes, () => '案' + rfxNos(['24-4']) + (RES_FX['24-4'].flow ? '：区切り線' : '：文字の動き・区切り線'));
     const _g24 = catRes.lastElementChild;
     const f24 = () => { const r = params.sections.results; r.fx24 = r.fx24 || {}; return r.fx24; };
     const F24 = { labelUp: 190, prodSize: 38 };
@@ -1293,9 +1300,9 @@ function buildPanel() {
     const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
     const s24 = (label, key, min, max, step, fmt, tip) => rows.push(pcOnly(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key })));
     /* 【2026-09-26 ヒデさん依頼】『ピクトの主役の大きさ』(heroScale)つまみは削除。いまの案24-4 はピクトをズームしない作り(ほぼ最終サイズ1.08倍固定)で、効かなかったため */
-    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
+    if (!RES_FX['24-4'].flow) s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
-    rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
+    if (!RES_FX['24-4'].flow) rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 38), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
       '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定38px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
     subgroup('区切り線', () => {
     rows.push(pcOnly(slider('上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
