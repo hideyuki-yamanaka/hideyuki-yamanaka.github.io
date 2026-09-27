@@ -416,7 +416,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
       {/* ── ヘッダー（マップの上にオーバーレイ） ── */}
       <header
         ref={headerRef}
-        className="absolute top-0 left-0 right-0 z-30 px-4 py-3.5 flex items-center"
+        className="absolute top-0 left-0 right-0 z-30 px-4 py-3 flex items-center"
       >
         <button
           onClick={() => router.push('/')}
@@ -462,7 +462,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
           onClick={() => setShowSettings(true)}
           className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
         >
-          <MoreHorizontal className="w-[18px] h-[18px] text-gray-700" />
+          <MoreHorizontal className="w-[16px] h-[16px] text-gray-700" />
         </button>
       </header>
 
@@ -525,7 +525,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                     data-active-tab={selectedDayIdx === idx + 1 ? 'true' : undefined}
                     onClick={() => handleDayTabClick(idx)}
                     className={cn(
-                      'flex-shrink-0 px-3.5 py-1.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap',
+                      'flex-shrink-0 px-3 py-1.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap',
                       selectedDayIdx === idx + 1
                         ? 'bg-gray-900 text-white'
                         : 'bg-gray-100 text-gray-500 active:bg-gray-200'
@@ -546,7 +546,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                     key={item.key}
                     onClick={() => setAssigneeFilter(item.key)}
                     className={cn(
-                      'px-2.5 py-1 rounded-md text-[13px] font-semibold transition-all whitespace-nowrap',
+                      'px-2.5 py-1 rounded-md text-[12px] font-semibold transition-all whitespace-nowrap',
                       assigneeFilter === item.key
                         ? cn('bg-white shadow-sm', item.activeText)
                         : 'text-gray-400'
@@ -639,7 +639,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                   {!reviewLoading && draftSpots.length > 0 ? (
                     <button
                       onClick={handleApplyReview}
-                      className="px-3 py-1.5 bg-blue-500 text-white text-[13px] font-semibold rounded-lg active:bg-blue-600 transition-colors"
+                      className="px-3 py-1.5 bg-blue-500 text-white text-[12px] font-semibold rounded-lg active:bg-blue-600 transition-colors"
                     >
                       確定
                     </button>
@@ -659,7 +659,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                           </svg>
                         </div>
                         <div>
-                          <p className="text-[15px] font-bold text-gray-900">旅程を分析中...</p>
+                          <p className="text-[14px] font-bold text-gray-900">旅程を分析中...</p>
                           <p className="text-[12px] text-gray-400 mt-0.5">抜け漏れをチェックしています</p>
                         </div>
                       </div>
@@ -675,7 +675,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                           >
                             {i % 3 === 1 ? (
                               /* 破線ドラフトカード風 */
-                              <div className="rounded-xl py-3 px-3.5 border-2 border-dashed border-blue-200 overflow-hidden">
+                              <div className="rounded-xl py-3 px-3 border-2 border-dashed border-blue-200 overflow-hidden">
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-full ai-shimmer" />
                                   <div className="flex-1 space-y-2">
@@ -689,14 +689,14 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                               </div>
                             ) : (
                               /* 通常カード風 */
-                              <div className="rounded-2xl p-3.5 bg-white ring-1 ring-black/[0.04] overflow-hidden">
+                              <div className="rounded-2xl p-3 bg-white ring-1 ring-black/[0.04] overflow-hidden">
                                 <div className="flex items-center gap-3">
                                   <div className="w-9 h-12 rounded-lg ai-shimmer" />
                                   <div className="flex-1 space-y-2">
                                     <div className="h-5 rounded-md ai-shimmer" style={{ width: `${55 + i * 8}%` }} />
                                     <div className="flex gap-2">
-                                      <div className="h-3.5 w-12 rounded-md ai-shimmer" />
-                                      <div className="h-3.5 w-10 rounded-full ai-shimmer" />
+                                      <div className="h-4 w-12 rounded-md ai-shimmer" />
+                                      <div className="h-4 w-10 rounded-full ai-shimmer" />
                                     </div>
                                   </div>
                                 </div>
@@ -724,7 +724,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                   ) : draftSpots.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <div className="text-5xl mb-4">✨</div>
-                      <h3 className="text-[17px] font-bold text-gray-900 mb-1">完璧な旅程です！</h3>
+                      <h3 className="text-[16px] font-bold text-gray-900 mb-1">完璧な旅程です！</h3>
                       <p className="text-[14px] text-gray-400">抜け漏れは見つかりませんでした</p>
                     </div>
                   ) : (
@@ -816,7 +816,7 @@ export default function SharePage({ params }: { params: Promise<{ shareId: strin
                 </div>
               </div>
               {!readOnly && (
-                <button onClick={handleDeleteTrip} className="flex items-center justify-center gap-2 w-full h-[44px] bg-red-50 text-red-600 rounded-xl text-[15px] font-medium mt-4">
+                <button onClick={handleDeleteTrip} className="flex items-center justify-center gap-2 w-full h-[44px] bg-red-50 text-red-600 rounded-xl text-[14px] font-medium mt-4">
                   <Trash2 className="w-4 h-4" />
                   旅行プランを削除
                 </button>

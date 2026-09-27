@@ -272,13 +272,13 @@ export default function HomePage() {
                             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                             if (e.key === 'Escape') setEditingTripId(null);
                           }}
-                          className="text-[17px] font-bold text-gray-900 w-full bg-transparent outline-none ring-1 ring-blue-500/40 rounded-lg px-2 py-0.5 -ml-2"
+                          className="text-[16px] font-bold text-gray-900 w-full bg-transparent outline-none ring-1 ring-blue-500/40 rounded-lg px-2 py-0.5 -ml-2"
                         />
                       ) : (
-                        <h3 className="text-[17px] font-bold text-gray-900 truncate">{trip.title}</h3>
+                        <h3 className="text-[16px] font-bold text-gray-900 truncate">{trip.title}</h3>
                       )}
-                      <div className="flex items-center gap-1.5 mt-1.5 text-[13px] text-gray-500">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                      <div className="flex items-center gap-1.5 mt-1.5 text-[12px] text-gray-500">
+                        <Calendar className="w-4 h-4 text-gray-400" />
                         <span>{formatDate(trip.startDate)} 〜 {formatDate(trip.endDate)}</span>
                       </div>
                       <p className="text-[12px] text-gray-400 mt-0.5">{dayCount}日間 · {spotCount}スポット</p>
@@ -331,12 +331,12 @@ export default function HomePage() {
                     <div key={trip.id} className="bg-gray-50 rounded-2xl ring-1 ring-black/[0.04] p-4">
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0 opacity-60">
-                          <h3 className="text-[15px] font-bold text-gray-700 truncate">{trip.title}</h3>
+                          <h3 className="text-[14px] font-bold text-gray-700 truncate">{trip.title}</h3>
                           <div className="flex items-center gap-1.5 mt-1 text-[12px] text-gray-400">
                             <Calendar className="w-3 h-3" />
                             <span>{formatDate(trip.startDate)} 〜 {formatDate(trip.endDate)}</span>
                           </div>
-                          <p className="text-[11px] text-gray-400 mt-0.5">
+                          <p className="text-[12px] text-gray-400 mt-0.5">
                             {dayCount}日間 · {spotCount}スポット · {deletedLabel}
                           </p>
                         </div>
@@ -345,14 +345,14 @@ export default function HomePage() {
                             onClick={() => handleRestore(trip.shareId)}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg ring-1 ring-black/[0.08] text-[12px] font-medium text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors"
                           >
-                            <RotateCcw className="w-3.5 h-3.5" />
+                            <RotateCcw className="w-4 h-4" />
                             復元
                           </button>
                           <button
                             onClick={() => setPermanentDeleteConfirm(trip.shareId)}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg ring-1 ring-black/[0.08] text-[12px] font-medium text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                             完全削除
                           </button>
                         </div>
@@ -429,14 +429,14 @@ export default function HomePage() {
         >
           <div className="bg-white rounded-2xl w-full max-w-[270px] overflow-hidden text-center">
             <div className="pt-5 pb-4 px-4">
-              <h3 className="text-[15px] font-semibold mb-1">ゴミ箱に移動</h3>
-              <p className="text-[13px] text-gray-500">ゴミ箱からいつでも復元できます</p>
+              <h3 className="text-[14px] font-semibold mb-1">ゴミ箱に移動</h3>
+              <p className="text-[12px] text-gray-500">ゴミ箱からいつでも復元できます</p>
             </div>
             <div className="border-t border-gray-100 flex">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 text-[15px] text-[var(--color-primary)] border-r border-gray-100">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 text-[14px] text-[var(--color-primary)] border-r border-gray-100">
                 キャンセル
               </button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3 text-[15px] text-red-500 font-semibold">
+              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3 text-[14px] text-red-500 font-semibold">
                 ゴミ箱へ
               </button>
             </div>
@@ -452,14 +452,14 @@ export default function HomePage() {
         >
           <div className="bg-white rounded-2xl w-full max-w-[270px] overflow-hidden text-center">
             <div className="pt-5 pb-4 px-4">
-              <h3 className="text-[15px] font-semibold mb-1">完全に削除</h3>
-              <p className="text-[13px] text-gray-500">この操作は取り消せません</p>
+              <h3 className="text-[14px] font-semibold mb-1">完全に削除</h3>
+              <p className="text-[12px] text-gray-500">この操作は取り消せません</p>
             </div>
             <div className="border-t border-gray-100 flex">
-              <button onClick={() => setPermanentDeleteConfirm(null)} className="flex-1 py-3 text-[15px] text-[var(--color-primary)] border-r border-gray-100">
+              <button onClick={() => setPermanentDeleteConfirm(null)} className="flex-1 py-3 text-[14px] text-[var(--color-primary)] border-r border-gray-100">
                 キャンセル
               </button>
-              <button onClick={() => handlePermanentDelete(permanentDeleteConfirm)} className="flex-1 py-3 text-[15px] text-red-500 font-semibold">
+              <button onClick={() => handlePermanentDelete(permanentDeleteConfirm)} className="flex-1 py-3 text-[14px] text-red-500 font-semibold">
                 完全削除
               </button>
             </div>

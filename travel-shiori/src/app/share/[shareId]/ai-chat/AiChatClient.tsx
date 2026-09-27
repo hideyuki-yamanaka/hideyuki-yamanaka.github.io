@@ -410,9 +410,9 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
       <header className="ios-nav flex items-center h-11 px-4 flex-shrink-0 z-10">
         <button onClick={() => router.push(`/share/${shareId}`)} className="flex items-center gap-0.5 text-blue-500 active:opacity-60 -ml-1">
           <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
-          <span className="text-[17px]">戻る</span>
+          <span className="text-[16px]">戻る</span>
         </button>
-        <h1 className="flex-1 text-center text-[17px] font-semibold truncate mx-4">
+        <h1 className="flex-1 text-center text-[16px] font-semibold truncate mx-4">
           AIアシスタント
         </h1>
         {messages.length > 0 ? (
@@ -434,8 +434,8 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
           <div className="flex flex-col items-center justify-center h-full text-gray-400 text-center gap-3">
             <Bot className="w-32 h-32 text-gray-300 -mb-3" strokeWidth={1.5} />
             <div>
-              <p className="text-[15px] font-medium text-gray-600">旅のAIアシスタント</p>
-              <p className="text-[13px] mt-0.5 leading-relaxed text-gray-400">
+              <p className="text-[14px] font-medium text-gray-600">旅のAIアシスタント</p>
+              <p className="text-[12px] mt-0.5 leading-relaxed text-gray-400">
                 プランの提案やアドバイスをAIがお手伝いします
               </p>
             </div>
@@ -487,7 +487,7 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] text-gray-700 truncate">{sessionTitle(s)}</p>
-                        <p className="text-[11px] text-gray-400">{timeAgo(s.updatedAt)}・{s.messages.length}件</p>
+                        <p className="text-[12px] text-gray-400">{timeAgo(s.updatedAt)}・{s.messages.length}件</p>
                       </div>
                     </button>
                   ))}
@@ -502,7 +502,7 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
             {/* メッセージ吹き出し */}
             <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap ${
                   msg.role === 'user'
                     ? 'bg-blue-500 text-white rounded-br-md'
                     : 'bg-white text-gray-800 rounded-bl-md shadow-sm'
@@ -586,7 +586,7 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
         {/* ストリーミング中の表示 */}
         {loading && displayStreamingText && (
           <div className="flex justify-start">
-            <div className="max-w-[85%] bg-white rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm text-[15px] leading-relaxed whitespace-pre-wrap text-gray-800">
+            <div className="max-w-[85%] bg-white rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm text-[14px] leading-relaxed whitespace-pre-wrap text-gray-800">
               {displayStreamingText}
               <span className="inline-block w-1.5 h-4 bg-gray-400 rounded-sm ml-0.5 animate-pulse align-text-bottom" />
             </div>
@@ -648,7 +648,7 @@ export default function AiChatPage({ params }: { params: Promise<{ shareId: stri
             onKeyDown={handleKeyDown}
             placeholder="メッセージを入力..."
             rows={1}
-            className="flex-1 resize-none rounded-2xl bg-[var(--color-bg)] px-4 py-2.5 text-[15px] outline-none focus:ring-2 focus:ring-blue-500 max-h-[120px]"
+            className="flex-1 resize-none rounded-2xl bg-[var(--color-bg)] px-4 py-2.5 text-[14px] outline-none focus:ring-2 focus:ring-blue-500 max-h-[120px]"
           />
           <button
             onClick={() => handleSend()}

@@ -73,10 +73,10 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  height: 48px;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 17px;
+  font-size: 16px;
   padding: 0 24px;
   transition: opacity 0.15s;
   width: 100%;
@@ -92,7 +92,7 @@ body {
   border: none;
   background: var(--color-bg);
   padding: 0 12px;
-  font-size: 17px;
+  font-size: 16px;
   outline: none;
   color: var(--color-text);
 }
@@ -186,7 +186,7 @@ body {
 
 /* 地図タイル読み込み中の背景色（Google Maps風のグレー） */
 .leaflet-container {
-  background: #E8EAED !important;
+  background: #E5E5EA !important;
 }
 
 /* PC向けフォントサイズアップ（768px以上） */

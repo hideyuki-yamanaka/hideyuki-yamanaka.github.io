@@ -396,7 +396,7 @@ export default function SpotEditModal({
         <div className={`spot-modal-sheet ${animateIn ? 'open' : ''}`}>
           {/* Drag handle */}
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px' }}>
-            <div style={{ width: 36, height: 5, borderRadius: 2.5, background: '#c7c7cc' }} />
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#c7c7cc' }} />
           </div>
 
           {/* Header */}
@@ -410,7 +410,7 @@ export default function SpotEditModal({
             <button
               onClick={onClose}
               style={{
-                width: 34, height: 34, borderRadius: '50%',
+                width: 36, height: 36, borderRadius: '50%',
                 background: '#e5e5ea', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer',
@@ -427,7 +427,7 @@ export default function SpotEditModal({
               onClick={handleSave}
               disabled={!name.trim()}
               style={{
-                width: 34, height: 34, borderRadius: '50%',
+                width: 36, height: 36, borderRadius: '50%',
                 background: name.trim() ? '#1a1a1a' : '#e5e5ea',
                 border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -478,7 +478,7 @@ export default function SpotEditModal({
                       onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
                     >
                       <div style={{ fontWeight: 500 }}>{result.display_name.split(',')[0]}</div>
-                      <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 12, color: '#8e8e93', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {result.display_name}
                       </div>
                     </div>
@@ -505,10 +505,10 @@ export default function SpotEditModal({
                       onClick={() => { setType(st); setIsMain(st === 'destination'); }}
                       style={{
                         flexShrink: 0, display: 'flex', alignItems: 'center',
-                        padding: '6px 14px', borderRadius: 20, border: 'none',
+                        padding: '6px 12px', borderRadius: 20, border: 'none',
                         background: selected ? config.color : '#fff',
                         color: selected ? '#fff' : '#000',
-                        fontSize: 13, fontWeight: selected ? 600 : 400,
+                        fontSize: 12, fontWeight: selected ? 600 : 400,
                         cursor: 'pointer', transition: 'all 0.2s',
                         boxShadow: selected ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
                       }}
@@ -541,7 +541,7 @@ export default function SpotEditModal({
                           padding: '6px 12px', borderRadius: 20, border: 'none',
                           background: selected ? '#1a1a1a' : '#fff',
                           color: selected ? '#fff' : '#000',
-                          fontSize: 13, fontWeight: selected ? 600 : 400,
+                          fontSize: 12, fontWeight: selected ? 600 : 400,
                           cursor: 'pointer', transition: 'all 0.2s',
                           boxShadow: selected ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
                         }}
@@ -568,11 +568,11 @@ export default function SpotEditModal({
                       key={at}
                       onClick={() => setAssignee(at)}
                       style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                         padding: '8px 10px', borderRadius: 12, border: 'none',
                         background: selected ? '#1a1a1a' : '#fff',
                         color: selected ? '#fff' : '#000',
-                        fontSize: 13, fontWeight: selected ? 600 : 400,
+                        fontSize: 12, fontWeight: selected ? 600 : 400,
                         cursor: 'pointer', transition: 'all 0.2s',
                         boxShadow: selected ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
                       }}
@@ -592,7 +592,7 @@ export default function SpotEditModal({
                   <label style={{ fontSize: 12, color: '#8e8e93', marginBottom: 6, display: 'block', paddingLeft: 4, fontWeight: 500 }}>
                     開始時刻
                   </label>
-                  <div style={{ background: '#fff', borderRadius: 14, padding: '4px 8px' }}>
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '4px 8px' }}>
                     <TimePicker value={time} onChange={setTime} />
                   </div>
                 </div>
@@ -605,7 +605,7 @@ export default function SpotEditModal({
                       <button
                         onClick={() => { setShowEndTime(false); setEndTime(''); }}
                         style={{
-                          width: 18, height: 18, borderRadius: '50%',
+                          width: 16, height: 16, borderRadius: '50%',
                           background: '#e5e5ea', border: 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', marginLeft: 'auto',
@@ -616,7 +616,7 @@ export default function SpotEditModal({
                         </svg>
                       </button>
                     </div>
-                    <div style={{ background: '#fff', borderRadius: 14, padding: '4px 8px' }}>
+                    <div style={{ background: '#fff', borderRadius: 12, padding: '4px 8px' }}>
                       <TimePicker value={endTime || time} onChange={setEndTime} />
                     </div>
                   </div>
@@ -632,7 +632,7 @@ export default function SpotEditModal({
                       }}
                       style={{
                         width: '100%', height: DRUM_H + 8,
-                        borderRadius: 14, border: '2px dashed #d1d1d6',
+                        borderRadius: 12, border: '2px dashed #d1d1d6',
                         background: '#f9f9f9',
                         display: 'flex', flexDirection: 'column',
                         alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -669,12 +669,12 @@ export default function SpotEditModal({
                           padding: '6px 12px', borderRadius: 20, border: 'none',
                           background: selected ? '#1a1a1a' : '#fff',
                           color: selected ? '#fff' : '#000',
-                          fontSize: 13, fontWeight: selected ? 600 : 400,
+                          fontSize: 12, fontWeight: selected ? 600 : 400,
                           cursor: 'pointer', transition: 'all 0.2s',
                           boxShadow: selected ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
                         }}
                       >
-                        <span style={{ fontSize: 15 }}>{tc?.icon}</span>
+                        <span style={{ fontSize: 14 }}>{tc?.icon}</span>
                         <span>{tc?.label}</span>
                       </button>
                     );
