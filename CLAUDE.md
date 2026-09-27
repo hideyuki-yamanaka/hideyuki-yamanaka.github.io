@@ -223,7 +223,9 @@ w("'SF Pro Text'");  // カンプの指定 → 一致すれば正しい
 - 配信するのは本番と同じファイルなので、見た目・挙動は本番と一致する
 - 上限に当たった時は `anyflow/deploy-v2-v3.sh` ／ `abashiri/deploy-v3.sh` ＋ 定期タスクで、
   リセット後に自動で上がる（どちらも成功したら `.done` マーカーを置いて自分で止まる。
-  網走V3は crontab に毎時5分で登録済み。ログは `abashiri/.deploy-v3.log`）
+  ログは `abashiri/.deploy-v3.log`）
+  ⚠️ 2026-09-27 に crontab の予約は全部外した（網走V3・AnyFlow V4/V5 の自動デプロイ、design-gallery の毎朝取得）。
+  使う時は登録し直す。外す前の控え: `~/.claude/backups/crontab-2026-09-27.txt`
 
 ## 🚨 本番反映チェックリスト（毎回必ず）
 
