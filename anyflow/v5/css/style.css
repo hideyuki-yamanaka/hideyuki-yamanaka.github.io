@@ -2166,7 +2166,7 @@
   #conversion.cv-fi .cv-inner { position: static; width: auto; height: auto; overflow: visible; margin: 0;
     flex: 1 1 auto; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
     padding-top: var(--cv-add-t, 0px); padding-bottom: var(--cv-add-b, 0px); }
-  #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: var(--cv-head-top, 150px) auto 120px; }
+  #conversion.cv-fi .cv-content { position: relative; z-index: 2; left: auto; top: auto; transform: none; margin: var(--cv-head-top, 120px) auto 120px; }
   #conversion.cv-fi .cv-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-40); position: relative; z-index: 2; padding: 28px max(120px, calc((100% - 1200px) / 2)) 36px; border-top: 1px solid var(--line-soft); color: var(--ink-strong); }   /* 左右は本文と同じグリッド(1200px 中央) */
   .cv-foot-r { display: flex; align-items: center; gap: var(--space-28); }
   /* 案11: ボタンをフッター帯に(見出し・本文は左) */
@@ -2207,7 +2207,7 @@
   #conversion.cvs-10 { overflow: visible; }
   #conversion.cvs-10 #cvCanvas { top: calc(-1 * var(--cv-rise, 0px)); height: calc(100% + var(--cv-rise, 0px)); }
   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白(既定210px)を調整パネルから変えられるように */
-  #conversion.cvs-10 .cv-content { margin: var(--cv-head-top, 210px) auto 120px; }
+  #conversion.cvs-10 .cv-content { margin: var(--cv-head-top, 120px) auto 120px; }
 
   /* ================= フッター (カンプ 16083:23592 に差し替え・2026-09-09) =================
      1440×327: 上100 / 下40 / 左右120。上段=「ロゴ+住所」と「2列ナビ」を両端寄せ、その下 60 に © を中央。
