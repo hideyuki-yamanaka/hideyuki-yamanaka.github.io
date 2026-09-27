@@ -43,8 +43,8 @@
   html:not(.mb).grid-on #conversion.cvs-10 {
     background-image: var(--grid-img);
     background-size: var(--grid-cell) var(--grid-cell);
-    background-attachment: scroll;   /* 【2026-09-27】PC も実績の画面固定をやめたので、方眼もスマホと同じくスクロールと一緒に動かす(区切り線といつもそろう) */
-    background-position: var(--grid-pos-x, 0px) var(--grid-oy, 0px);
+    background-attachment: fixed;
+    background-position: var(--grid-pos-x, 0px) 0;
   }
   /* スマホ(html.mb): 【2026-09-21 ヒデさん指摘】オーバーレイ(#gridBg)は content の前面に出てしまうので廃止。
      iOS では background-attachment:fixed が不安定なので scroll で地色面に重ねる=背景として content の後ろに出る。

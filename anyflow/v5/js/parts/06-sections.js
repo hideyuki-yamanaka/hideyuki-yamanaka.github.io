@@ -536,7 +536,7 @@ function applyGrid() {
      ページの上端を基準の1つの目にそろえる(機種によってはビジョンの境目で方眼がずれていた)。
    ・区切り線(実績の3本)は、縦にだけ一番近い方眼の線へ寄せる(translate。文字やブロックは動かさない・最大で半マス)。
      寄せた先で上下の要素との間が 12px 未満になる時は、反対側の線へ寄せる。
-   ・基準: ページの上端(PC もスマホも方眼はスクロールと一緒に動く。PC は 2026-09-27 に実績の画面固定をやめ、方眼も画面固定から変えた)。
+   ・基準: スマホ=ページの上端(方眼がスクロールと一緒に動く) / PC=画面の上端(方眼は画面に固定)。PC の実績は止まっている間の位置で合わせる。
    ・マスの大きさはその時の --grid-cell を読む(古い保存のマスでも合う)。方眼オフの時は元の位置に戻す。 */
 const GRID_SNAP_SEL = '#resHrTop, #results .res2-vline, #resHr';
 const GRID_SNAP_MIN_GAP = 12;
@@ -547,21 +547,22 @@ function alignGridAndLines() {
     const root = document.documentElement;
     const on = root.classList.contains('grid-on');
     const cell = parseFloat(getComputedStyle(root).getPropertyValue('--grid-cell')) || 44;
+    const mob = (typeof isMobile !== 'undefined' && isMobile);
     const mod = v => ((v % cell) + cell) % cell;
-    /* ① 方眼の面の目をそろえる */
+    /* ① 方眼の面の目をそろえる(スマホだけ。PC は画面固定なので元からそろう) */
     document.querySelectorAll('.stage-wrap, .pin-vp, .np-vp, #conversion.cvs-10').forEach(el => {
-      if (!on) { el.style.removeProperty('--grid-oy'); return; }
+      if (!on || !mob) { el.style.removeProperty('--grid-oy'); return; }
       el.style.setProperty('--grid-oy', (-mod(el.getBoundingClientRect().top + scrollY)).toFixed(2) + 'px');
     });
     /* ② 区切り線を一番近い方眼の線へ(横線だけ。PC の縦の仕切りは対象外) */
     document.querySelectorAll(GRID_SNAP_SEL).forEach(el => {
       const off = () => { el.style.removeProperty('translate'); delete el.dataset.gridSnap; };
       if (!on || getComputedStyle(el).display === 'none' || !(el.offsetWidth > el.offsetHeight * 4)) return off();
-      let stk = null; for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) { if (getComputedStyle(a).position === 'sticky') { stk = a; break; } }
-      if (stk) return off();   /* 画面に止まる区間の中の線は、スクロールと一緒に動く方眼とそろえられないので寄せない(今は該当なし) */
+      const vp = el.closest('.pin-vp');
+      if (!mob && !vp) return off();   /* PC で止まらない所は、方眼(画面固定)とスクロールで常にずれ続けるので寄せない */
       const cur = parseFloat(el.dataset.gridSnap || '0');   /* 今かけている分(画面px) */
       const r = el.getBoundingClientRect(), top0 = r.top - cur;
-      const y = top0 + scrollY;   /* ページの上端から */
+      const y = mob ? top0 + scrollY : top0 - vp.getBoundingClientRect().top;   /* スマホ=ページの上から / PC=止まっている間の画面の上から */
       const m = mod(y);
       /* 見た目で線のすぐ上・すぐ下にある中身(文字・図)。コードの並び順と見た目の順が違う所があるので、位置で探す。透明で見えていない物は数えない */
       const sec = el.closest('section') || document.body;
