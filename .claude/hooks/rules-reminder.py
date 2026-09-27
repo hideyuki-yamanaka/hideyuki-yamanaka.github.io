@@ -124,13 +124,8 @@ def main():
     except Exception:
         data = {}
     if mode == "tick":
-        try:  # DEBUG-KEYS（確かめが済んだら消す）
-            os.makedirs(TIMER_DIR, exist_ok=True)
-            with open(os.path.join(TIMER_DIR, "debug.log"), "a") as f:
-                f.write(json.dumps({"keys": sorted(data.keys()), "tool": data.get("tool_name"), "agent": data.get("agent_id")}) + "\n")
-        except Exception:
-            pass
         # 裏の手伝い役（サブエージェント）の中では合図を出さない。報告はメインの会話でする
+        # （手伝い役の道具の知らせには agent_id と agent_type が付く。2026-09-27 に実物で確認）
         if data.get("agent_id") or data.get("agent_type"):
             return
         if not timer_due(data):
