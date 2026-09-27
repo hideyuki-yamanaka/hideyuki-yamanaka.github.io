@@ -1,6 +1,6 @@
 {
- "at": "2026-09-27T08:02:11.201Z",
- "ok": 46,
+ "at": "2026-09-27T08:03:28.931Z",
+ "ok": 47,
  "total": 47,
  "results": [
   {
@@ -221,7 +221,7 @@
   {
    "name": "phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる",
    "ok": true,
-   "measured": "ボタン1押し → スマホモード=true・パネル=true・QRの窓=出た・同期フラグ=true・二重の帯=none／「スマホモード終了」→ 終わった・枠 消えた／送る保存キー [\"tp:tp-demo:v1\",\"tp:tp-demo:v1:mb\",\"tp:tp-demo:variants\"]"
+   "measured": "ボタン1押し → スマホモード=true・QRの窓=出た（http://192.168.0.2:62482/demo/index.html?live=phone）・二重の帯=none／スマホモードで文字サイズ41 → 中継へ送信 1 回・送った中身のスマホ値 41／2回目の押下 → QRだけ閉じた=true（モード継続=true）／「スマホモード終了」→ 終わった・枠 消えた／送る保存キー [\"tp:tp-demo:v1\",\"tp:tp-demo:v1:mb\",\"tp:tp-demo:variants\"]"
   },
   {
    "name": "壊れた保存値・知らないキー・型違い・無くなった選択肢は捨てて既定値へ／古い版は掃除",
@@ -235,8 +235,8 @@
   },
   {
    "name": "ページのエラー（console.error・例外）が出ない",
-   "ok": false,
-   "measured": "Failed to load resource: net::ERR_UNSAFE_PORT / Failed to load resource: net::ERR_UNSAFE_PORT"
+   "ok": true,
+   "measured": "0 件"
   }
  ]
 }

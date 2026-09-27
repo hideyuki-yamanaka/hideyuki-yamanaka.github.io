@@ -665,7 +665,7 @@ try {
     rec('スマホ実機は起動時に「案の値 → スマホ用の値」の順で当てる', applied.v === 'strong' && applied.size === 33 && applied.spTop === 40, `案=${applied.v}・文字サイズ ${applied.size}（PCの強調は80・スマホの上書き33）・ギャップ（スマホ）${applied.spTop}・画面の見出し ${applied.css}`);
     const hot = await sp.evaluate(() => { const r = document.querySelector('.tp-hot').getBoundingClientRect(); return r.width + '×' + r.height; });
     await showPanel(sp);
-    const sheet = await sp.evaluate(() => { const p = TunePanel.instances[0], r = p.el.getBoundingClientRect(); return { cls: p.el.classList.contains('tp-sheet'), top: Math.round(r.top), h: Math.round(r.height), w: Math.round(r.width), vis: Math.round(innerHeight - r.top), grip: getComputedStyle(p.grip).display, phoneBtn: p.phoneBtn.hidden }; });
+    const sheet = await sp.evaluate(() => { const p = TunePanel.instances[0], r = p.el.getBoundingClientRect(); return { cls: p.el.classList.contains('tp-sheet'), top: Math.round(r.top), h: Math.round(r.height), w: Math.round(r.width), vis: Math.round(innerHeight - r.top), grip: getComputedStyle(p.grip).display, phoneBtn: p.phoneBtn.hidden, zoom: getComputedStyle(p.body).zoom, radius: getComputedStyle(p.el).borderTopLeftRadius }; });
     const grip = await sp.evaluate(() => { const r = TunePanel.instances[0].grip.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
     await sp.mouse.move(grip.x, grip.y); await sp.mouse.down(); await sp.mouse.move(grip.x, grip.y - 300, { steps: 6 }); await sp.mouse.up();
     await sp.waitForTimeout(450);
@@ -695,8 +695,8 @@ try {
     await sp.mouse.move(grip3.x, grip3.y); await sp.mouse.down(); await sp.mouse.move(grip3.x, grip3.y + 120, { steps: 4 }); await sp.mouse.up();
     await sp.waitForTimeout(400);
     const hidden = await sp.evaluate(() => TunePanel.instances[0].el.classList.contains('tp-hide'));
-    rec('スマホは画面下からせり上がるシート（見出しだけ／画面の半分／しまう）', sheet.cls && sheet.w === 390 && sheet.vis < 80 && sheet.grip === 'flex' && opened.open && opened.top < sheet.top && !peek2.open && peek2.vis < 80 && hidden && hot === '72×72' && sheet.phoneBtn,
-      `出した直後: 幅 ${sheet.w}px・見えている高さ ${sheet.vis}px（見出しだけ）→ 上へスワイプ: 上端 ${opened.top}px（画面の半分）→ 下へ: 見えている ${peek2.vis}px → さらに下へ: ${hidden ? 'しまった' : '残った'}／隠しボックス ${hot}px／スマホモードのボタン ${sheet.phoneBtn ? '出さない' : '出る'}`);
+    rec('スマホは画面下からせり上がるシート（見出しだけ／画面の半分／しまう）', sheet.cls && sheet.w === 390 && sheet.vis < 80 && sheet.grip === 'flex' && opened.open && opened.top < sheet.top && !peek2.open && peek2.vis < 80 && hidden && hot === '72×72' && sheet.phoneBtn && sheet.zoom === '0.9',
+      `出した直後: 幅 ${sheet.w}px・角丸 ${sheet.radius}・見えている高さ ${sheet.vis}px（見出しだけ）→ 上へスワイプ: 上端 ${opened.top}px（画面の半分）→ 下へ: 見えている ${peek2.vis}px → さらに下へ: ${hidden ? 'しまった' : '残った'}／中身の縮尺 ${sheet.zoom}／隠しボックス ${hot}px／スマホモードのボタン ${sheet.phoneBtn ? '出さない' : '出る'}`);
     await context.close();
   }
 
@@ -722,22 +722,48 @@ try {
     await context.close();
   }
 
-  /* ============ 12. phone-mode.client.js とつなぐ（QR・実機への反映） ============ */
+  /* ============ 12. phone-mode.client.js とつなぐ（QR・実機への反映） ============
+     中継サーバ（phone-mode/server.mjs）の代わりに、同じ受け口を持つ小さな代役を立てて確かめる */
   {
+    const pushes = [];
+    const PNG1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+    const relay = http.createServer((req, res) => {
+      const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Cache-Control': 'no-store' };
+      if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
+      const u = new URL(req.url, 'http://x');
+      if (u.pathname === '/ip') { res.writeHead(200, { ...cors, 'Content-Type': 'application/json' }); res.end(JSON.stringify({ phoneUrl: `http://192.168.0.2:${PORT}/demo/index.html?live=phone`, clients: 1 })); return; }
+      if (u.pathname === '/qr') { res.writeHead(200, { ...cors, 'Content-Type': 'image/png' }); res.end(PNG1); return; }
+      if (u.pathname === '/push') { let b = ''; req.on('data', c => b += c); req.on('end', () => { pushes.push(b); res.writeHead(200, cors); res.end('ok'); }); return; }
+      res.writeHead(404, cors); res.end();
+    });
+    await new Promise(r => relay.listen(0, '127.0.0.1', r));
+    const RPORT = relay.address().port;
     const { context, page } = await newPage();
     await open(page);
-    await page.evaluate(() => { window.PHONE_MODE_CONFIG = TunePanel.instances[0].phoneModeConfig({ syncPort: 1 }); });
+    await page.evaluate(([rp]) => { window.PHONE_MODE_CONFIG = TunePanel.instances[0].phoneModeConfig({ syncPort: rp }); }, [RPORT]);
     await page.addScriptTag({ url: '/phone-mode/phone-mode.client.js' });
     await showPanel(page);
+    await tab(page, 'キービジュアル');
     await page.click('.tp-phone-btn');
-    await page.waitForTimeout(300);
-    const st = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), pop: !!document.querySelector('.pm-pop.show'), client: !!window.__phoneModeOn, dupBanner: getComputedStyle(document.querySelector('.pm-banner')).display, keys: JSON.stringify(window.PHONE_MODE_CONFIG.storageKeys) }));
+    await page.waitForTimeout(600);
+    const st = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), pop: !!document.querySelector('.pm-pop.show'), qr: (document.querySelector('.pm-pop .qr') || {}).src || '', url: (document.querySelector('.pm-pop .url') || {}).textContent, client: !!window.__phoneModeOn, dupBanner: getComputedStyle(document.querySelector('.pm-banner')).display, keys: JSON.stringify(window.PHONE_MODE_CONFIG.storageKeys) }));
+    const n0 = pushes.length;
+    await typeValue(page, 'kv.copySize', 41);
+    await page.waitForTimeout(600);
+    const last = pushes.length ? JSON.parse(pushes[pushes.length - 1]) : null;
+    const mb = last && last.store && last.store['tp:tp-demo:v1:mb'] ? JSON.parse(last.store['tp:tp-demo:v1:mb']) : {};
+    await page.click('.tp-phone-btn');   /* 2回目はQRの窓だけ閉じる（モードは続く） */
+    await page.waitForTimeout(150);
+    const second = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), pop: !!document.querySelector('.pm-pop.show') }));
+    await page.click('.tp-phone-btn');
+    await page.waitForTimeout(150);
     await page.click('#pmStop');
     await page.waitForTimeout(200);
     const off = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), frame: !!document.querySelector('.tp-pp.on') }));
-    rec('phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる', st.on && st.panel && st.pop && st.client && st.dupBanner === 'none' && !off.on && !off.panel && !off.frame,
-      `ボタン1押し → スマホモード=${st.on}・パネル=${st.panel}・QRの窓=${st.pop ? '出た' : '出ない'}・同期フラグ=${st.client}・二重の帯=${st.dupBanner}／「スマホモード終了」→ ${off.on ? '続く' : '終わった'}・枠 ${off.frame ? '残る' : '消えた'}／送る保存キー ${st.keys}`);
+    rec('phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる', st.on && st.panel && st.pop && /\/qr/.test(st.qr) && st.client && st.dupBanner === 'none' && pushes.length > n0 && mb['kv.copySize'] === 41 && second.on && !second.pop && !off.on && !off.panel && !off.frame,
+      `ボタン1押し → スマホモード=${st.on}・QRの窓=${st.pop ? '出た' : '出ない'}（${st.url}）・二重の帯=${st.dupBanner}／スマホモードで文字サイズ41 → 中継へ送信 ${pushes.length - n0} 回・送った中身のスマホ値 ${mb['kv.copySize']}／2回目の押下 → QRだけ閉じた=${!second.pop}（モード継続=${second.on}）／「スマホモード終了」→ ${off.on ? '続く' : '終わった'}・枠 ${off.frame ? '残る' : '消えた'}／送る保存キー ${st.keys}`);
     await context.close();
+    relay.close();
   }
 
   /* ============ 13. 旧来の書き方・壊れた保存値でも事故らない ============ */
@@ -766,6 +792,94 @@ try {
     });
     rec('旧オプション（autoCenter・search・saveMode・unit）を渡しても事故らない', legacy.min === 0 && legacy.max === 20 && legacy.val === '10ms' && !legacy.search && legacy.closed && legacy.shown && legacy.right === '20px',
       `autoCenter:true でも範囲は ${legacy.min}〜${legacy.max}（いまの値10が真ん中）・unit:'ms' の表示「${legacy.val}」・検索欄 ${legacy.search ? 'あり' : 'なし'}・startClosed=${legacy.closed}・secret:false で常時表示=${legacy.shown}・position 右 ${legacy.right}`);
+    await context.close();
+  }
+
+  /* ============ 14. 細かい見た目と操作（行の形・かたまりの間・補足文・ピルの吹き出し・タブ・箱の開閉の記憶） ============ */
+  {
+    const { context, page } = await newPage();
+    await open(page);
+    await showPanel(page);
+    await tab(page, 'キービジュアル');
+    const d = await page.evaluate(() => {
+      const q = s => document.querySelector(s), cs = (e, pe) => getComputedStyle(e, pe);
+      const rows = [...document.querySelectorAll('.tp-row')];
+      const segItem = q('.tp-item[data-key="kv.align"]'), xItem = q('.tp-item[data-key="kv.copyX"]'), yItem = q('.tp-item[data-key="kv.copyY"]');
+      const h2 = q('.tp-pane.on .tp-sec-head'), varHead = q('.tp-pane.on .tp-cs.var > .tp-cs-head');
+      const lab = q('.tp-item[data-key="kv.copyX"] label');
+      const pill = q('.tp-item[data-key="kv.variant"] .tp-pill[data-value="strong"]');
+      const segOn = q('.tp-item[data-key="kv.align"] .tp-seg button.on');
+      return {
+        rowsWithRst: rows.filter(r => r.querySelector('.tp-rst')).length, rows: rows.length,
+        gapSegToSlider: cs(xItem).marginTop, gapSliderToSlider: cs(yItem).marginTop, gapFirst: cs(segItem).marginTop,
+        h2: cs(h2).fontSize + '/' + cs(h2).fontWeight, varHead: varHead.textContent + '|' + cs(q('.tp-pane.on .tp-cs.var')).backgroundColor,
+        hintsShown: [...document.querySelectorAll('.tp-hint,.tp-note')].filter(e => e.offsetParent).length, labTitle: lab.title,
+        pillTitle: pill.title, desc: !!q('.tp-desc'), segOn: cs(segOn).backgroundColor,
+        tools: document.querySelectorAll('.tp-item-tools,[draggable="true"]').length, emoji: [...document.querySelectorAll('.tp-tab,.tp-cs-head,.tp-sec-head span:first-child')].filter(e => /\p{Extended_Pictographic}/u.test(e.textContent)).length
+      };
+    });
+    rec('1行の形（全部の行に↺）・違う種類の前は9px・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '9px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
+      `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
+    rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(9, 9, 9)',
+      `画面に出ている補足文 ${d.hintsShown}・項目名の吹き出し「${d.labTitle}」・ピルの吹き出し「${d.pillTitle}」・2〜3択の選択色 ${d.segOn}・項目の削除/並び替えの道具 ${d.tools}`);
+    await tab(page, '実績');
+    const cur = await page.evaluate(() => [...document.querySelectorAll('.tp-item[data-key="res.fx"] .tp-pill:not(.back)')].map(b => b.dataset.label + (b.querySelector('.tp-pill-x') ? '(⋯)' : '')));
+    rec('「現行」は先頭・番号なし（⋯ から消せる）', cur[0] === 'フェード(⋯)' && cur[1] === '1 スライド(⋯)' && cur[2] === '2 ズーム(⋯)', cur.join('・'));
+    /* カテゴリの箱の開閉とタブを覚える（リロード後も） */
+    await page.click('.tp-pane.on .tp-cs.card[data-grp="basic"] > .tp-cs-head');
+    const closed1 = await page.evaluate(() => document.querySelector('.tp-pane.on .tp-cs.card[data-grp="basic"]').classList.contains('closed'));
+    await page.waitForTimeout(100);
+    await page.reload(); await page.waitForTimeout(150);
+    await showPanel(page);
+    const after = await page.evaluate(() => ({ tab: TunePanel.instances[0]._activeTab, closed: document.querySelector('.tp-pane.on .tp-cs.card[data-grp="basic"]').classList.contains('closed'), others: [...document.querySelectorAll('.tp-pane.on .tp-cs.card')].filter(c => !c.classList.contains('closed')).map(c => c.dataset.grp) }));
+    rec('カテゴリの箱は既定で全部開く・押すと閉じる・選んだタブと開閉はリロード後も覚える', closed1 && after.tab === '実績' && after.closed && after.others.length >= 1,
+      `基本を押す → 閉じた=${closed1} → リロードして出す: タブ「${after.tab}」・基本 ${after.closed ? '閉じたまま' : '開いた'}・ほかの箱 ${after.others.join('・')} は開いたまま`);
+    /* 案の控え（隠した案・★・上書き）は本体の設定と別の入れ物 */
+    await pillMenu(page, 'res.picto', 'fill', '★ お気に入りにピン留め');
+    await page.waitForTimeout(1000);
+    const store = await page.evaluate(() => ({ main: Object.keys(JSON.parse(localStorage.getItem('tp:tp-demo:v1')) || {}), vars: JSON.parse(localStorage.getItem('tp:tp-demo:variants')) }));
+    rec('案の控え（隠した案・★・上書き）は本体の設定と別の入れ物に保存', !store.main.some(k => /hidden|fav|ov|gfx/.test(k)) && store.vars && store.vars.fav['res.picto'].includes('fill') && store.vars.ov['kv.variant'],
+      `本体 tp:tp-demo:v1 のキー ${store.main.join('・')}／tp:tp-demo:variants に ★ ${JSON.stringify(store.vars.fav['res.picto'])}・控え ${Object.keys(store.vars.ov).join('・')}`);
+    await context.close();
+  }
+
+  /* ============ 15. タブがはみ出る時・見出しの ↺ の出し分け・✏️ 編集のつなぎ口・スマホモードのボタンを出さない設定 ============ */
+  {
+    const { context, page } = await newPage();
+    await page.goto(`http://localhost:${PORT}/demo/index.html?tp-none=1`);
+    await page.waitForFunction(() => window.TunePanel && TunePanel.instances.length > 0);
+    const r = await page.evaluate(async () => {
+      const edits = [];
+      const prm = { a: { x: 10 } };
+      const cats = ['全体', 'キービジュアル（いちばん上）', 'ビジョン', '実績', '開発者体験', '導入事例', 'お問い合わせ', 'メニュー'].map((t, i) => ({ cat: t, items: [{ sub: '見出し' + i }, { slider: '値', path: 'a.x', min: 0, max: 20, step: 1 }, { sub: '説明だけ' }, { note: 'この見出しには戻す値が無い' }, { button: '押す', onClick: () => {} }] }));
+      const p = TunePanel.create({ params: prm, storageKey: 'tp-many', secret: false, phone: false, onEdit: on => edits.push(on), position: { left: 700, top: 40 }, size: { w: 300, h: 400 }, schema: cats });
+      await new Promise(res => setTimeout(res, 50));
+      const bar = p._tabBar, tabs = [...bar.querySelectorAll('.tp-tab')];
+      const oneRow = new Set(tabs.map(t => Math.round(t.getBoundingClientRect().top))).size === 1;
+      const over = bar.scrollWidth > bar.clientWidth;
+      tabs[6].click();
+      await new Promise(res => setTimeout(res, 700));
+      const centered = Math.abs((tabs[6].getBoundingClientRect().left + tabs[6].getBoundingClientRect().width / 2) - (bar.getBoundingClientRect().left + bar.clientWidth / 2)) < 30 || bar.scrollLeft >= bar.scrollWidth - bar.clientWidth - 1;
+      const label = tabs[1].textContent;
+      bar.scrollLeft = 10; bar.dispatchEvent(new Event('scroll'));
+      const scrolling = bar.classList.contains('is-scrolling');
+      const top0 = bar.getBoundingClientRect().top;
+      p.body.scrollTop = 200;
+      await new Promise(res => setTimeout(res, 50));
+      const sticky = Math.abs(bar.getBoundingClientRect().top - top0) < 1;
+      const noBtn = [...p.el.querySelectorAll('.tp-pane.on .tp-sec')].map(s => (s.dataset.title || '') + ':' + (s.querySelector('.tp-gbtn') ? '↺' : 'なし'));
+      p.editBtn.click();
+      const editOn = p.editBtn.classList.contains('on');
+      p.hide();
+      const out = { oneRow, over, centered, label, scrolling, sticky, noBtn, phoneHidden: p.phoneBtn.hidden, editShown: !p.editBtn.hidden, editOn, edits: edits.join(','), editOff: !p.editBtn.classList.contains('on') };
+      p.destroy();
+      return out;
+    });
+    rec('タブは横1列・はみ出たら横スクロール・選んだタブは真ん中へ・貼りつく・バーは動かしている間だけ', r.oneRow && r.over && r.centered && r.label === 'キービジュアル' && r.scrolling && r.sticky,
+      `8タブ: 1列=${r.oneRow}・はみ出し=${r.over}・7つ目を押す → 真ん中へ=${r.centered}・タブ名「${r.label}」（（…）は吹き出しへ）・スクロール中の印=${r.scrolling}・中身を送っても貼りつく=${r.sticky}`);
+    rec('戻す値の無い見出しには ↺ を出さない', r.noBtn.join(',') === '見出し6:↺,説明だけ:なし', r.noBtn.join(' ／ '));
+    rec('✏️ 編集は onEdit を渡した時だけ出る（隠すと編集も終わる）・phone:false でスマホモードのボタンを出さない', r.editShown && r.editOn && r.edits === 'true,false' && r.editOff && r.phoneHidden,
+      `✏️ 編集 表示=${r.editShown}・押す→${r.editOn ? '編集中' : '×'}・隠す→ onEdit(${r.edits})・スマホモードのボタン ${r.phoneHidden ? '出さない' : '出る'}`);
     await context.close();
   }
 } catch (e) {
