@@ -7,7 +7,7 @@
 <style>
   /* ── 見本のサイト（中身は仮の文言）。値はすべて調整パネルの params から CSS 変数で流し込む ── */
   :root {
-    --bg: #f6f7f9; --pad: 64px; --grid-cell: 40px; --grid-op: .3; --body-size: 15px; --body-lh: 1.7; --speed: 1;
+    --bg: #f6f7f9; --pad: 64px; --grid-cell: 40px; --grid-op: .3; --grid-color: 16, 24, 40; --grid-w: 1px; --head-font: inherit; --body-size: 15px; --body-lh: 1.7; --speed: 1;
     --copy-x: 0px; --copy-y: 0px; --copy-size: 56px; --copy-weight: 500; --copy-lh: 1.3;
     --gfx-size: 320px; --gfx-x: 0px; --gfx-z: 0; --sp-top: 0px; --gfx-color: #0EBBFF; --gfx-op: .9; --gfx-blur: 0px;
     --glow: .4; --ring: 2px; --kv-delay: .3s; --kv-dur: 1.2s;
@@ -22,8 +22,8 @@
   }
   body.grid-on {
     background-image:
-      linear-gradient(rgba(16, 24, 40, var(--grid-op)) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(16, 24, 40, var(--grid-op)) 1px, transparent 1px);
+      linear-gradient(rgba(var(--grid-color), var(--grid-op)) var(--grid-w), transparent var(--grid-w)),
+      linear-gradient(90deg, rgba(var(--grid-color), var(--grid-op)) var(--grid-w), transparent var(--grid-w));
     background-size: var(--grid-cell) var(--grid-cell);
   }
   [hidden] { display: none !important; }
@@ -39,6 +39,7 @@
   .kv { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 40px; min-height: 520px; padding: 24px 0 32px; }
   .kv[data-align="center"] { flex-direction: column; justify-content: center; text-align: center; }
   .kv-copy { transform: translate(var(--copy-x), var(--copy-y)); max-width: 620px; }
+  .kv-copy h1, .res h2 { font-family: var(--head-font); }
   .kv-copy h1 { margin: 0; font-size: var(--copy-size); font-weight: var(--copy-weight); line-height: var(--copy-lh); letter-spacing: .01em; }
   .kv-copy p { margin: 18px 0 0; color: #555; }
   .kv-gfx {
@@ -122,7 +123,7 @@
 /* ========== 1. 触りたい値を1か所にまとめる（これが既定値の原本） ========== */
 const DEFAULTS = {
   site: {
-    bg: '#f6f7f9', pad: 64, grid: false, gridCell: 40, gridOpacity: 30,
+    bg: '#f6f7f9', pad: 64, grid: false, gridCell: 40, gridOpacity: 30, gridColor: '#101828', gridWidth: 1, font: 'gothic',
     bodySize: 15, bodyLh: 1.7, replay: true, speed: 1,
     show: { header: true, logos: true, footer: true }, logo: 'TSUNAGU LAB'
   },
@@ -146,6 +147,10 @@ function apply() {
   const s = params.site, k = params.kv, r = params.res, st = document.documentElement.style;
   const set = (n, v) => st.setProperty(n, v);
   set('--bg', s.bg); set('--pad', s.pad + 'px'); set('--grid-cell', s.gridCell + 'px'); set('--grid-op', s.gridOpacity / 100);
+  const hx = /^#?([0-9a-f]{6})$/i.exec(s.gridColor || '');
+  if (hx) set('--grid-color', [0, 2, 4].map(i => parseInt(hx[1].substr(i, 2), 16)).join(', '));
+  set('--grid-w', s.gridWidth + 'px');
+  set('--head-font', { gothic: 'inherit', mincho: '"Hiragino Mincho ProN", "Yu Mincho", serif', round: '"Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", sans-serif' }[s.font] || 'inherit');
   set('--body-size', s.bodySize + 'px'); set('--body-lh', s.bodyLh); set('--speed', Math.max(0.05, s.speed));
   set('--copy-x', k.copyX + 'px'); set('--copy-y', k.copyY + 'px'); set('--copy-size', k.copySize + 'px');
   set('--copy-weight', k.copyWeight); set('--copy-lh', k.copyLh); set('--gfx-size', k.gfxSize + 'px'); set('--gfx-x', k.gfxX + 'px');
@@ -193,6 +198,19 @@ const panel = TunePanel.create({
       { sub: 'グリッドの細かさ', grp: 'fxtex', when: p => !!p.site.grid },
       { slider: 'マスの大きさ', path: 'site.gridCell', min: 8, max: 72, step: 1, fmt: 'px', hint: '方眼1マスの大きさ。小さいほど細かい方眼になる。' },
       { slider: '濃さ', path: 'site.gridOpacity', min: 0, max: 100, step: 1, unit: '%', clamp: true, hint: '方眼の線の濃さ。0〜100% で止まる（clamp の見本）。' },
+      /* 見出しには when が無いが、中の項目が全部 when で隠れると、まとまり「線」も見出し「グリッドの線」も一緒に隠れる */
+      { sub: 'グリッドの線', grp: 'fxtex' },
+      { subgroup: '線', items: [
+        { color: '色', path: 'site.gridColor', when: p => !!p.site.grid, hint: '方眼の線の色。' },
+        { slider: '太さ', path: 'site.gridWidth', min: 0.5, max: 4, step: 0.5, fmt: 'px', when: p => !!p.site.grid, hint: '方眼の線の太さ。' }
+      ]},
+      /* 名前つきの「選ぶ」行も案ピル（⋯ 付き）。1案だけ残すと、名前の行ごと欄が隠れ、見出しも隠れる */
+      { sub: '見出しの書体', grp: 'font' },
+      { pills: '書体', path: 'site.font', options: [
+        { name: 'ゴシック', value: 'gothic', desc: 'いまの書体。' },
+        { name: '明朝', value: 'mincho', desc: '見出しだけ明朝にする。' },
+        { name: '丸ゴシック', value: 'round', desc: '見出しだけ丸ゴシックにする。' }
+      ], hint: '見出し（キービジュアルと実績）の書体。' },
       { sub: '本文', grp: 'font' },
       { slider: '文字サイズ', path: 'site.bodySize', min: 10, max: 20, step: 0.5, fmt: 'px', hint: '本文の文字の大きさ。' },
       { slider: '行間', path: 'site.bodyLh', min: 1.2, max: 2.2, step: 0.05, fmt: 'n2', hint: '本文の行の高さ（倍）。上げると行と行が離れる。' },

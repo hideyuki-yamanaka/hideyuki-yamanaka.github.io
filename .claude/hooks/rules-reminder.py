@@ -46,6 +46,8 @@ TRIGGERS = [
     ("deploy", r"デプロイ(?!済|した|しました|完了|され|してあ)|本番(に|へ)(上げ|出し|反映)"),
     ("fix", r"直ってない|直ってへん|なおってない|治ってない|直らない|変わってない|かわってない|戻ってない"
             r"|まだ(ずれ|おかしい|出ない|動かない|効かない)"),
+    # 調整パネルの話（スライダーは「インジケーター」「つまみ」とも呼ばれる。音声入力の「インジゲーター」も）
+    ("panel", r"調整パネル|パネル|スライダー|インジケーター|インジゲーター|つまみ|tune-?panel"),
 ]
 
 LABELS = {
@@ -54,10 +56,12 @@ LABELS = {
     "scene-c": "場面C（作った画面をFigmaに書き出す）",
     "deploy": "デプロイ",
     "fix": "「直ってない」",
+    "panel": "調整パネル",
 }
 
 SUFFIX = {
     "deploy": "送り先の表は CLAUDE.md の「🚀 各プロジェクトの本番 URL とデプロイ先」。",
+    "panel": "調整パネルの仕様の正は settings/tune-panel/README.md の「📌 共通仕様（AnyFlow V5 準拠）」。新しく作る時は共通の部品 settings/tune-panel/tune-panel.js を使う。",
 }
 
 SESSION_HEAD = {
@@ -155,8 +159,12 @@ def main():
         return
 
     timer_reset(data)  # ヒデさんの指示が来たら、3分の時計はそこから数え直す
-    prompt = unicodedata.normalize("NFKC", str(data.get("prompt", ""))).lower()
+    raw = str(data.get("prompt", ""))
+    prompt = unicodedata.normalize("NFKC", raw).lower()
     hits = [name for name, pat in TRIGGERS if re.search(pat, prompt)]
+    # 裏の作業の知らせや、ほかの作業からの連絡はヒデさんの指示ではないので、場面の決まりは出さない（★0だけ出す）
+    if re.search(r"<task-notification>|<cross-session-message|\[SYSTEM NOTIFICATION", raw):
+        hits = []
     report_ctx = ("【ルールの自動表示・いちばん上の決まり】\n" + report) if report else ""
     if not hits:
         emit("UserPromptSubmit", report_ctx)

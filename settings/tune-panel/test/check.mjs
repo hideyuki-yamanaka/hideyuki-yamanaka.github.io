@@ -891,6 +891,80 @@ try {
       `✏️ 編集 表示=${r.editShown}・押す→${r.editOn ? '編集中' : '×'}・隠す→ onEdit(${r.edits})・スマホモードのボタン ${r.phoneHidden ? '出さない' : '出る'}`);
     await context.close();
   }
+
+  /* ============ 16. 名前だけ・見出しだけを残さない（1案で欄を隠す時は名前の行も・中身が全部隠れた見出しは見出しごと） ============ */
+  {
+    const { context, page } = await newPage();
+    await open(page);
+    await showPanel(page);
+    await tab(page, '全体');
+    const st = () => page.evaluate(() => {
+      const vis = e => !!(e && e.offsetParent);
+      const row = document.querySelector('.tp-item[data-key="site.font"]');
+      const lab = row.querySelector('.tp-var-lab');
+      const sec = document.querySelector('.tp-pane.on .tp-sec[data-title="見出しの書体"]');
+      const card = sec.closest('.tp-cs');
+      return { row: vis(row), lab: vis(lab), labText: lab.textContent, sec: vis(sec), card: vis(card), sel: TunePanel.instances[0].params.site.font };
+    });
+    const f0 = await st();
+    await pillMenu(page, 'site.font', 'mincho', '🗑 削除'); await page.click('.tp-mdl-btns button.danger'); await page.waitForTimeout(120);
+    const f1 = await st();
+    await pillMenu(page, 'site.font', 'round', '🗑 削除'); await page.click('.tp-mdl-btns button.danger'); await page.waitForTimeout(200);
+    const f2 = await st();
+    await page.evaluate(() => TunePanel.instances[0].restoreVariants('site.font'));
+    await page.waitForTimeout(100);
+    const f3 = await st();
+    rec('1案だけ残って欄を隠す時は、名前の行（書体）も見出しも一緒に隠れる・戻すと両方戻る', f0.row && f0.lab && f0.sec && f1.row && !f2.row && !f2.lab && !f2.sec && f2.card && f2.sel === 'gothic' && f3.row && f3.lab && f3.sec,
+      `3案: 欄=${f0.row ? '出' : '隠'}・名前「${f0.labText}」=${f0.lab ? '出' : '隠'}・見出し=${f0.sec ? '出' : '隠'} → 2案: 欄=${f1.row ? '出' : '隠'} → 1案: 欄=${f2.row ? '出' : '隠'}・名前=${f2.lab ? '出' : '隠'}・見出し「見出しの書体」=${f2.sec ? '出' : '隠'}・フォントの箱=${f2.card ? '出（本文があるので）' : '隠'}・選択=${f2.sel} → restoreVariants で戻す: 欄=${f3.row ? '出' : '隠'}・名前=${f3.lab ? '出' : '隠'}・見出し=${f3.sec ? '出' : '隠'}`);
+
+    const g = () => page.evaluate(() => {
+      const vis = e => !!(e && e.offsetParent);
+      const sec = document.querySelector('.tp-pane.on .tp-sec[data-title="グリッドの線"]');
+      const sg = sec.querySelector('.tp-subg[data-title="線"]');
+      return { sec: vis(sec), subg: vis(sg), mark: sec.classList.contains('tp-off') + '/' + sg.classList.contains('tp-off'), c: vis(document.querySelector('.tp-item[data-key="site.gridColor"]')), w: vis(document.querySelector('.tp-item[data-key="site.gridWidth"]')) };
+    });
+    const g0 = await g();
+    await page.click('.tp-item[data-key="site.grid"] .tp-seg button[data-value="true"]'); await page.waitForTimeout(80);
+    const g1 = await g();
+    await page.click('.tp-item[data-key="site.grid"] .tp-seg button[data-value="false"]'); await page.waitForTimeout(80);
+    const g2 = await g();
+    rec('中身が全部 when で隠れた まとまり・見出しは見出しごと隠れる・中身が戻ると戻る', !g0.sec && !g0.subg && !g0.c && !g0.w && g1.sec && g1.subg && g1.c && g1.w && !g2.sec && !g2.subg,
+      `グリッド「しない」: 見出し「グリッドの線」=${g0.sec ? '出' : '隠'}・まとまり「線」=${g0.subg ? '出' : '隠'}（部品の印 ${g0.mark}）→「する」: ${g1.sec ? '出' : '隠'}/${g1.subg ? '出' : '隠'}・色=${g1.c ? '出' : '隠'}・太さ=${g1.w ? '出' : '隠'} →「しない」: ${g2.sec ? '出' : '隠'}/${g2.subg ? '出' : '隠'}`);
+
+    /* カテゴリのカードとタブも、中身が全部隠れたら隠れる。作る人が自分で隠した部品には印を付けない */
+    const r = await page.evaluate(async () => {
+      const prm = { a: { x: 1, on: false, w: 2, c: '#ff0000', f: 'g' } };
+      const p = TunePanel.create({ params: prm, storageKey: 'tp-empty', secret: false, phone: false, position: { left: 700, top: 30 }, schema: [
+        { cat: 'A', items: [{ sub: '見出し', grp: 'basic' }, { toggle: '表示', path: 'a.on' }] },
+        { cat: 'B', items: [
+          { sub: '線', grp: 'fxtex' }, { subgroup: '枠', items: [{ slider: '太さ', path: 'a.w', min: 0, max: 8, step: 0.5, when: q => q.a.on }, { color: '色', path: 'a.c', when: q => q.a.on }] },
+          { sub: '書体', grp: 'font' }, { pills: '書体', path: 'a.f', options: [['ゴシック', 'g'], ['明朝', 'm']] },
+          { sub: '自前の部品', grp: 'other' }, { custom: el => { const d = document.createElement('div'); d.textContent = '自前'; d.style.display = 'none'; d.id = 'authorHidden'; el.appendChild(d); } }
+        ]},
+        { cat: 'C', items: [{ sub: 'Cの見出し', grp: 'anim', when: q => q.a.on }, { slider: '値', path: 'a.x', min: 0, max: 4, step: 1 }] }
+      ]});
+      /* 画面に出ているかではなく「部品が出す側にしているか」で見る（空になったタブは隠れて別のタブへ移るため） */
+      const vis = e => !!e && !e.closest('.tp-off');
+      const pane = t => p.el.querySelector(`.tp-pane[data-tab="${t}"]`);
+      const card = (t, g) => pane(t).querySelector(`.tp-cs[data-grp="${g}"]`);
+      const tabBtn = t => p.el.querySelector(`.tp-tab[data-tab="${t}"]`);
+      p._showTab('B');
+      const s0 = { fx: vis(card('B', 'fxtex')), font: vis(card('B', 'font')), other: vis(card('B', 'other')), tabC: !tabBtn('C').hidden, authorMark: document.getElementById('authorHidden').classList.contains('tp-off'), authorDisp: document.getElementById('authorHidden').style.display };
+      p._deleteVariant(p._ctlById('a.f'), 'm', '明朝', { noConfirm: true });
+      await new Promise(res => setTimeout(res, 30));
+      const s1 = { font: vis(card('B', 'font')), tabB: !tabBtn('B').hidden, active: p._activeTab };
+      prm.a.on = true; p.sync();
+      document.getElementById('authorHidden').style.display = ''; p.sync();
+      const s2 = { fx: vis(card('B', 'fxtex')), other: vis(card('B', 'other')), tabC: !tabBtn('C').hidden, tabB: !tabBtn('B').hidden };
+      p.restoreVariants('a.f');
+      const s3 = { font: vis(card('B', 'font')) };
+      p.destroy();
+      return { s0, s1, s2, s3 };
+    });
+    rec('中身が全部隠れたカテゴリのカードとタブも隠れる・作る人が自分で隠した部品には印を付けない', !r.s0.fx && r.s0.font && !r.s0.other && !r.s0.tabC && !r.s0.authorMark && r.s0.authorDisp === 'none' && !r.s1.font && !r.s1.tabB && r.s1.active === 'A' && r.s2.fx && r.s2.other && r.s2.tabC && r.s2.tabB && r.s3.font,
+      `when で空のカード「エフェクト」=${r.s0.fx ? '出' : '隠'}・中身を自分で隠した custom だけのカード「その他」=${r.s0.other ? '出' : '隠'}（その部品に部品の印=${r.s0.authorMark}・display=${r.s0.authorDisp} のまま）・中身が全部隠れたタブC=${r.s0.tabC ? '出' : '隠'} → 1案でカード「フォント」=${r.s1.font ? '出' : '隠'}（タブB が空になり隠れて、見ているタブは ${r.s1.active} へ）→ 条件を満たす: エフェクト=${r.s2.fx ? '出' : '隠'}・その他=${r.s2.other ? '出' : '隠'}・タブC=${r.s2.tabC ? '出' : '隠'} → 案を戻す: フォント=${r.s3.font ? '出' : '隠'}`);
+    await context.close();
+  }
 } catch (e) {
   console.error(e);
   rec('検査の実行', false, '途中で止まった: ' + (e && e.message ? e.message.split('\n')[0] : e));

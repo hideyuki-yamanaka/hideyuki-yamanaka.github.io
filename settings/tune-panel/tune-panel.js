@@ -1281,7 +1281,7 @@
       if (into._tpLast && into._tpLast !== 'b') br.classList.add('tp-gap');
       into._tpLast = 'b';
       into.appendChild(br);
-      parentV.kids.push({ el: br, test: this._cond(k.item, ctx) });
+      parentV.kids.push({ el: br, test: this._cond(k.item, ctx), author: true, inner: b });
       return;
     }
     if (k.t === 'custom') {
@@ -1290,7 +1290,7 @@
       if (into._tpLast) cw.classList.add('tp-gap');
       into._tpLast = 'c';
       try { k.item.custom(cw, this); } catch (e) { console.error(e); }
-      parentV.kids.push({ el: cw, test: this._cond(k.item, ctx) });
+      parentV.kids.push({ el: cw, test: this._cond(k.item, ctx), author: true });
       return;
     }
     /* 値を持つ行 */
@@ -1985,7 +1985,17 @@
   };
   Panel.prototype._spView = function () { return this._isPhone || this._phoneOn; };
 
-  /* 条件を見直して、見出しのかたまりごと出し入れする（中身がみんな隠れた見出し・カテゴリ・タブも隠す） */
+  /* 条件を見直して、見出しのかたまりごと出し入れする。
+     中身が全部隠れた まとまり・見出し・カテゴリのカード・案ごとの大見出し・タブは、見出しごと隠す（名前だけ・見出しだけを残さない）。
+     部品が隠した物には tp-off の印だけを付け、中身が戻ったらそれだけ戻す。作る人が自分で隠した物（custom・ボタンの
+     hidden / style.display='none'）は触らず、「見えている中身」に数えないだけ（AnyFlow の hideEmptyPanelGroups と同じ考え方） */
+  var authorHidden = function (e) {
+    if (!e || e.hidden || e.style.display === 'none') return true;
+    var kids = e.children;
+    if (!kids.length) return false;
+    for (var i = 0; i < kids.length; i++) { if (!(kids[i].hidden || kids[i].style.display === 'none')) return false; }
+    return true;
+  };
   Panel.prototype._applyVisibility = function () {
     var walk = function (v) {
       var ok = true;
@@ -1995,6 +2005,10 @@
         var any = false;
         for (var i = 0; i < v.kids.length; i++) { if (walk(v.kids[i])) any = true; }
         vis = any;
+      }
+      if (v.author) {   /* 作る人の部品：条件（when など）で隠す時だけ印を付ける */
+        if (v.el.classList.contains('tp-off') !== !ok) v.el.classList.toggle('tp-off', !ok);
+        return ok && !authorHidden(v.inner || v.el);
       }
       var off = !vis && !v.note;
       if (v.el.classList.contains('tp-off') !== off) v.el.classList.toggle('tp-off', off);
@@ -2511,6 +2525,7 @@
       this._accs.forEach(function (a) { if (!a.hasMB() && a.spDef() === undefined) a._put(self._pcBase, clone(a._get(self.params))); });
     }
     this._rows.forEach(function (r) { try { r.sync(); } catch (e) {} });
+    if (this._ready) { this._vpCache = null; this._applyVisibility(); }
     return this;
   };
   Panel.prototype.rebuild = function () {
@@ -2542,6 +2557,18 @@
   /* 案を外から選ぶ（path は案ピルの path） */
   Panel.prototype.setVariant = function (id, v) { var c = this._ctlById(id); if (c) this._choose(c, v, c.box); return this; };
   Panel.prototype.getVariant = function (id) { var c = this._ctlById(id); return c ? c.sel() : undefined; };
+  /* 隠した案を全部戻す（id を省くと全部の欄）。1案だけ残って欄ごと隠れた時は画面から戻せないので、これを呼ぶ */
+  Panel.prototype.restoreVariants = function (id) {
+    var self = this;
+    this._ctls.forEach(function (c) {
+      if (id != null && c.id !== String(id)) return;
+      c.st().hidden.length = 0;
+      c.fill();
+    });
+    this._applyVisibility();
+    this._touchVariants();
+    return this;
+  };
   /* いま画面に出ている値（スマホモード中はスマホで効く値） */
   Panel.prototype.value = function (key) {
     var a = this._accs.filter(function (x) { return x.key === String(key); })[0];
