@@ -246,8 +246,8 @@
     '.tp-tab.on{color:#111;border-bottom-color:#111;font-weight:700;}',
     '.tp-tab[hidden]{display:none;}',
     '.tp-pane{display:none;padding-top:6px;}',
-    '.tp-pane.on{display:flex;flex-direction:column;gap:32px;}',   /* 近接の法則(RULES 6-16・v2.2.0)：タブのいちばん外側＝カード同士・案の大見出し同士は 32px */
-    '.tp-pane-title{font-size:16px;font-weight:600;color:#000;padding:16px 2px 0;margin-bottom:-24px;}',   /* 大見出し→中身は 8px(32−24) */
+    '.tp-pane.on{display:flex;flex-direction:column;gap:8px;}',   /* 2026-09-29 夜 カード同士・案とカードの間 32→8px(カードは枠線で区切る) */   /* 近接の法則(RULES 6-16・v2.2.0)：タブのいちばん外側＝カード同士・案の大見出し同士は 32px */
+    '.tp-pane-title{font-size:16px;font-weight:600;color:#000;padding:16px 2px 0;margin-bottom:0;}',   /* 大見出し→中身は 8px */
     '.tp-off{display:none!important;}',
     /* ── カテゴリ（H1）。基本〜その他はカード、バリエーションは装飾なしの大見出し ── */
     '.tp-cs{margin:0;}',
@@ -258,8 +258,10 @@
     '.tp-cs.card{background:transparent;border:1px solid #e4e7eb;border-radius:10px;padding:0 12px 16px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',   /* 2026-09-28 v2.1.2 ヒデさん「セクションの枠の色を上下のブロックと同じ色に」＝中は塗らない(AnyFlow V5 と同じ) */
     '.tp-cs.card>.tp-cs-head{padding:12px 2px;cursor:pointer;}',
     '.tp-cs.var~.tp-cs.card>.tp-cs-head{letter-spacing:.02em;}',
-    '.tp-cs-body,.tp-vs-body{display:flex;flex-direction:column;gap:12px;}',   /* 2026-09-29 見出し同士 24→16→12px(カード同士の 32px より狭く) */   /* 見出しのまとまり同士は 24px(閉じたカードは下の .tp-cs.closed で隠れる) */
-    '.tp-vs-body>.tp-cs.card{margin-top:20px;}',   /* カード同士は 12+20＝32px */   /* 案ごとの大見出しの中のカード同士は 24+8＝32px */
+    '.tp-cs-body{display:flex;flex-direction:column;gap:12px;}',   /* 見出し同士 12px */
+    '.tp-vs-body{display:flex;flex-direction:column;gap:8px;}',   /* 案とカードの間 8px */
+    '.tp-vs-body>.tp-sec~.tp-sec{margin-top:4px;}',   /* 案のまとまり同士は 12px(8+4) */   /* 2026-09-29 見出し同士 24→16→12px(カード同士の 32px より狭く) */   /* 見出しのまとまり同士は 24px(閉じたカードは下の .tp-cs.closed で隠れる) */
+    '.tp-vs-body>.tp-cs.card{margin-top:0;}',   /* 案ごとの大見出しの中のカード同士は 24+8＝32px */
     '.tp-cs-chev{position:relative;width:22px;height:22px;flex:0 0 auto;transition:transform .2s;}',
     '.tp-cs-chev::before{content:"";position:absolute;inset:0;background:#8a8a8a;-webkit-mask:' + ICON_CHEV + ';mask:' + ICON_CHEV + ';}',
     '.tp-cs.card>.tp-cs-head:hover .tp-cs-chev::before{background:#333;}',

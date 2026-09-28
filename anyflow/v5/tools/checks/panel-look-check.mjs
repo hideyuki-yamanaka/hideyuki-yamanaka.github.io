@@ -6,6 +6,7 @@
  * ② 先頭の線: どのタブでも、タブの帯のすぐ下（中身の一番上）に区切り線が無いか
  *    区切り線＝上だけに線がある箱（左右にも線がある箱は「カード」の外枠なので数えない）
  * ③ 区切り線が「間」には残っているか（実績の 2つ目の案の見出し「ピクトグラム」の上）
+ * ④ カテゴリのカードを押すと畳めて、もう一度で開くか（2026-09-29 夜 追加）
  * 1つでも ❌ があれば終了コード 1
  */
 import { chromium } from '/Users/hideyuki/Developer/Claude Code/design-gallery/node_modules/playwright/index.mjs';
@@ -57,6 +58,12 @@ rows.push(['② どのタブも先頭に区切り線が無い', topLines.length 
 /* ③ 間の区切り線は残っている(実績の「ピクトグラム」) */
 const mid = await p.evaluate(() => { const v = [...document.querySelectorAll('.tools .vs-section')].find(x => /ピクトグラム/.test((x.querySelector('.cat-section-head') || {}).textContent || '')); return v ? getComputedStyle(v).borderTopWidth : '-'; });
 rows.push(['③ 案の見出しと見出しの間の線は残る（実績の「ピクトグラム」の上）', mid === '1px', `上線 ${mid}`]);
+/* ④ カテゴリのカードを押すと畳めるか(2026-09-29 夜: 余白の直しの並べ方が「畳んだ時は隠す」を上書きして、印は付くのに中身が隠れなかった) */
+const acc = await p.evaluate(async () => { const tb = [...document.querySelectorAll('.tools .pan-tabs > *')].find(x => x.textContent.trim() === 'コンバージョン'); if (tb) tb.click(); await new Promise(r => setTimeout(r, 150));
+  const c = document.querySelector('.tools .cat.tab-on .cat-section:not(.cs-variation)'); const bd = c.querySelector(':scope > .cat-section-body'); const shown = () => getComputedStyle(bd).display !== 'none';
+  const s0 = shown(); c.querySelector('.cs-chev, .cat-section-head').click(); await new Promise(r => setTimeout(r, 150)); const s1 = shown(); c.querySelector('.cat-section-head').click(); await new Promise(r => setTimeout(r, 150)); const s2 = shown();
+  return { s0, s1, s2 }; });
+rows.push(['④ カテゴリのカードを押すと畳める・もう一度で開く', acc.s0 && !acc.s1 && acc.s2, `初め ${acc.s0 ? '開' : '閉'} → 押す ${acc.s1 ? '開' : '閉'} → もう一度 ${acc.s2 ? '開' : '閉'}`]);
 rows.push(['ページのエラーが出ない', errs.length === 0, `${errs.length} 件`]);
 console.log(`調整パネルの見た目の確かめ（${URL}）\n\n| 項目 | 結果 | 測った値 |\n|---|---|---|`);
 rows.forEach(([n, ok, v]) => console.log(`| ${n} | ${ok ? '✅' : '❌'} | ${v} |`));

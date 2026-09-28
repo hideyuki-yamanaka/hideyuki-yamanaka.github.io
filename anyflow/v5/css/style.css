@@ -3132,13 +3132,15 @@
      深い順に: つまみ同士 0(行の高さ16px＝16pxおき) ＜ 小見出しとそのつまみ 4px(小見出しのまとまりの前後は16px空けて前後と切る) ＜ 見出しとつまみ・案のピルとその下のつまみ 8px ＜ 見出しのまとまり同士 24px ＜ カテゴリ(カード)同士 32px。
      間の取り方は「並べた物の“間”にだけ隙間(flex の gap)」＝隠れている行・見出しは数えない(margin や :first-child だと隠れた物まで数える・6-15 と同じ理由)。
      つまみの行の高さは 16px に詰める(↺ ボタン 16px・つまみの棒 4px・丸 10px) */
-  .panel-body.tabbed > .cat > .cat-body.prox { display: flex; flex-direction: column; gap: 32px; }   /* タブの中のいちばん外側: カード同士・案の大見出し同士は 32px(案の大見出しの間は、さらに区切り線) */
+  .panel-body.tabbed > .cat > .cat-body.prox { display: flex; flex-direction: column; gap: 8px; }   /* 【2026-09-29 夜 ヒデさん「セクションブロックの前・間が空きすぎ。4〜8px」】32→8px(カードは枠線で区切られるので外は小さくてよい) */   /* タブの中のいちばん外側: カード同士・案の大見出し同士は 32px(案の大見出しの間は、さらに区切り線) */
   .cat-body.prox > .cat-section { margin: 0; }
-  .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 12px; }                 /* 案のまとまり同士・案とカードの間(【2026-09-29 ヒデさん「見出し同士はもう少し詰めて」】24→16→12px) */
-  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 20px 0 0; }                         /* カード同士は 12+20＝32px(いちばん大きい余白のまま) */
+  .cat-body.prox .vs-section > .vs-body { display: flex; flex-direction: column; gap: 8px; }   /* 案とカードの間 8px(案の箱は .cat-section-body でもあるので、下の gap:12px に負けないよう強めに) */
+  .cat-body.prox .vs-body > .grp ~ .grp { margin-top: 4px; }   /* 案のまとまり同士は見出し同士と同じ 12px(8+4) */
+  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 0; }   /* カード同士は 8px(枠線で区切る) */
   .cat-body.prox .cat-section:not(.cs-variation) { padding: 0 12px 16px; }
   .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head { padding: 12px 2px 12px; }
-  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 12px; padding: 0; }   /* 見出しのまとまり同士(24→16→12px・カテゴリ同士の 32px より狭く) */
+  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 12px; padding: 0; }
+  .cat-body.prox .cat-section.closed > .cat-section-body { display: none; }   /* 【2026-09-29 夜 ヒデさん「アコーディオンを押しても畳めない」】上の display:flex が、畳んだ時の display:none(.cat-section.closed .cat-section-body)を上書きしていた＝今日の余白の直しで起きた。畳んだ時はこちらを優先 */   /* 見出しのまとまり同士(24→16→12px・カテゴリ同士の 32px より狭く) */
   .cat-body.prox .grp, .cat-body.prox .grp.fixed, .cat-body.prox .grp.bare, .cat-body.prox .grp.sub2 { margin: 0; }
   .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title,
   .cat-body.prox .cat-section-body > .grp:first-child > .grp-title { margin: 0 0 8px; }        /* 見出しとつまみ */
