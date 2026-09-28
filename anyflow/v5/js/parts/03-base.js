@@ -1284,6 +1284,8 @@ function applyDevTune() {
   sec.style.setProperty('--dev2-gap', (d.dev2Gap != null ? d.dev2Gap : 36) + 'px');   /* 【2026-09-26】既定 77→36(①と同じ)。②の束を上端基準にし、CSS で正面カードの内側8px×拡大を差し引くので、この値＝見出し→正面カードの見た目の間隔。旧77は中心基準の張り出しの打ち消しだった */
   sec.style.setProperty('--dev1-scale', String(d.dev1Scale != null ? d.dev1Scale : 1.1));
   sec.style.setProperty('--dev2-scale', String(d.dev2Scale != null ? d.dev2Scale : 1.1));
+  /* 【2026-09-28 ヒデさん依頼】①②の「見出し＋モック」をセットで上下にずらす(並べ方ごとに別の値) */
+  sec.style.setProperty('--dev-shift-y', (+(d.vAlign === 'group' ? d.shiftYGroup : d.shiftYMock) || 0) + 'px');
 }
 function applyDevStyle() {
   const sec = (typeof SECS !== 'undefined' && SECS.dev) || document.getElementById('dev'); if (!sec) return;

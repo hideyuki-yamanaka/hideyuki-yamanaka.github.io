@@ -302,13 +302,13 @@ export class SoftSlice {
 }
 
 /* ---------------- つかむ ---------------- */
-/* つまんだ所（上から見て近い所・厚み全部）だけを、指の位置へ動かす。ほかの所は重さで垂れて、
-   部分と部分の間で曲がるので、つまんで持ち上げると、ぐにゃっと折れる。 */
+/* 指でつまむように、つまんだ所（上から見て近い所・厚み全部）を、向きを保ったまま指の位置へ動かす。
+   ほかの所は重さで垂れる → 手前はテーブルからの坂、先はだらんと垂れて、ぐにゃっと折れる。 */
 export class SliceGrab {
   /** hitIdx＝つかんだ点に近い粒の番号 / target＝行き先 [x, y, z] */
   constructor(b, hitIdx, target, P) {
     this.b = b;
-    const q = b.q, n = b.n, R = b.R;
+    const q = b.q, x = b.x, n = b.n, R = b.R;
     const hx = q[3 * hitIdx], hz = q[3 * hitIdx + 2];
     const pinch = Math.min(1, Math.max(0, P.pinch));
     const ra = R * (0.3 - 0.2 * pinch), ra2 = ra * ra;
@@ -320,14 +320,33 @@ export class SliceGrab {
     }
     this.ids = Uint32Array.from(ids);
     this.ws = Float32Array.from(ws);
+    /* つまんだ所の、元の形での並びと、今の向き */
+    let sw = 0, qx = 0, qy = 0, qz = 0, cx = 0, cy = 0, cz = 0;
+    for (let k = 0; k < ids.length; k++) {
+      const i = 3 * ids[k], w = ws[k];
+      sw += w; qx += w * q[i]; qy += w * q[i + 1]; qz += w * q[i + 2]; cx += w * x[i]; cy += w * x[i + 1]; cz += w * x[i + 2];
+    }
+    qx /= sw; qy /= sw; qz /= sw; cx /= sw; cy /= sw; cz /= sw;
+    const A = new Float64Array(9);
+    for (let k = 0; k < ids.length; k++) {
+      const i = 3 * ids[k], w = ws[k];
+      const px = (x[i] - cx) * w, py = (x[i + 1] - cy) * w, pz = (x[i + 2] - cz) * w;
+      const ox = q[i] - qx, oy = q[i + 1] - qy, oz = q[i + 2] - qz;
+      A[0] += px * ox; A[1] += px * oy; A[2] += px * oz;
+      A[3] += py * ox; A[4] += py * oy; A[5] += py * oz;
+      A[6] += pz * ox; A[7] += pz * oy; A[8] += pz * oz;
+    }
+    const Rg = new Float64Array(9);
+    extractRotation(A, [0, 0, 0, 1], 12, Rg);
+    this.off = new Float32Array(3 * ids.length);
+    for (let k = 0; k < ids.length; k++) {
+      const i = 3 * ids[k], ox = q[i] - qx, oy = q[i + 1] - qy, oz = q[i + 2] - qz;
+      this.off[3 * k] = Rg[0] * ox + Rg[1] * oy + Rg[2] * oz;
+      this.off[3 * k + 1] = Rg[3] * ox + Rg[4] * oy + Rg[5] * oz;
+      this.off[3 * k + 2] = Rg[6] * ox + Rg[7] * oy + Rg[8] * oz;
+    }
+    this.cur = [cx, cy, cz];
     this.t = target.slice(); this.tv = [0, 0, 0];
-    this.cur = this.mean();
-  }
-  mean() {
-    const x = this.b.x, ids = this.ids, ws = this.ws;
-    let ax = 0, ay = 0, az = 0, sw = 0;
-    for (let k = 0; k < ids.length; k++) { const i = 3 * ids[k], w = ws[k]; ax += w * x[i]; ay += w * x[i + 1]; az += w * x[i + 2]; sw += w; }
-    return [ax / sw, ay / sw, az / sw];
   }
   constrain(P) {
     /* 行き先へは、決まった速さまでで近づく（いきなり飛ばない） */
@@ -336,9 +355,12 @@ export class SliceGrab {
     const d = Math.hypot(dx, dy, dz);
     if (d > lim) { dx *= lim / d; dy *= lim / d; dz *= lim / d; }
     c[0] += dx; c[1] += dy; c[2] += dz;
-    const a = this.mean(), k = P.grabStiff || 0.6;
-    const ex = (c[0] - a[0]) * k, ey = (c[1] - a[1]) * k, ez = (c[2] - a[2]) * k;
-    const x = this.b.x, ids = this.ids, ws = this.ws;
-    for (let j = 0; j < ids.length; j++) { const i = 3 * ids[j], w = ws[j]; x[i] += ex * w; x[i + 1] += ey * w; x[i + 2] += ez * w; }
+    const x = this.b.x, ids = this.ids, ws = this.ws, off = this.off, k = P.grabStiff || 0.6;
+    for (let j = 0; j < ids.length; j++) {
+      const i = 3 * ids[j], w = ws[j] * k;
+      x[i] += (c[0] + off[3 * j] - x[i]) * w;
+      x[i + 1] += (c[1] + off[3 * j + 1] - x[i + 1]) * w;
+      x[i + 2] += (c[2] + off[3 * j + 2] - x[i + 2]) * w;
+    }
   }
 }

@@ -1579,7 +1579,7 @@ function buildPanel() {
   /* 【2026-09-28 ヒデさん依頼「モックそのものが上下中央に来る案も作って、既定に」】①②の上下の並べ方(PC・タブレット) */
   sub(catDev, '並べ方（上下の位置）', true, { fixed: true, grp: 'variation' });
   optRow('devVAlign', '上下の位置', [['モックを上下中央（見出しはその上）', 'mock'], ['見出し＋モックを上下中央（今まで）', 'group']],
-    () => (sv().dev.vAlign === 'group' ? 'group' : 'mock'), v => { sv().dev.vAlign = v; markDirty(); fit(); renderFrame(); });
+    () => (sv().dev.vAlign === 'group' ? 'group' : 'mock'), v => { sv().dev.vAlign = v; markDirty(); fit(); applyDevTune(); renderFrame(); try { syncPanelRows(); } catch (e) {} });   /* 上下の位置のつまみも、その並べ方の値に入れ替える */
   /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
   Object.keys(DEV_DYN_SPEC).forEach(g => {
     const sp = DEV_DYN_SPEC[g];
@@ -1599,6 +1599,12 @@ function buildPanel() {
   rows.push(slider('内側の影・光', 0, 2, 0.05, () => (sv().dev.mockInner != null ? sv().dev.mockInner : 1), v => { sv().dev.mockInner = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', 'インナーシャドウ／インナーグロー／縁の光の強さ。', { mbKey: 'sections.dev.mockInner', fixedMax: true }));
   rows.push(slider('影の濃さ', 0, 1.5, 0.05, () => (sv().dev.mockShadow != null ? sv().dev.mockShadow : 1), v => { sv().dev.mockShadow = v; applyDevStyle(); }, v => Math.round(v * 100) + '%', '各案の落ち影の濃さ。', { mbKey: 'sections.dev.mockShadow', fixedMax: true }));
 
+  /* 【2026-09-28 ヒデさん依頼「見出しとモックのセットを上下に動かせるように」】①②まとめて。並べ方(上下の位置の案)ごとに別の値。PC・タブレットだけ(スマホモードでは隠す) */
+  sub(catDev, '①② 見出しとモック（PC）');
+  { const _k = () => (sv().dev.vAlign === 'group' ? 'shiftYGroup' : 'shiftYMock');
+    const _r = slider('上下の位置', -200, 200, 4, () => (+sv().dev[_k()] || 0), v => { sv().dev[_k()] = v; applyDevTune(); markDirty(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+      '見出しとモックをセットで上下にずらす(間隔はそのまま)。マイナスで上、プラスで下。0＝今の位置(並べ方の案で決まる中央)。並べ方の案ごとに別の値。', { signed: true });
+    _r.classList.add('pc-only-row'); rows.push(_r); }
   /* 【2026-09-20 ヒデさん依頼・#10】①②それぞれ 見出し↔モックの間隔・モックの大きさ(PCのみ。SPは別スケール) */
   sub(catDev, '① 見出しとモック（PC）');
   rows.push(slider('間隔', 0, 90, 2, () => (sv().dev.dev1Gap != null ? sv().dev.dev1Gap : 36), v => { sv().dev.dev1Gap = v; applyDevTune(); }, v => Math.round(v) + 'px', '開発者体験①の見出しとモックの上下の間隔。', { mbKey: 'sections.dev.dev1Gap', fixedMax: true }));

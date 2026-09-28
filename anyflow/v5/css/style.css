@@ -1455,6 +1455,10 @@
   /* 【2026-09-28 ヒデさん依頼「見出し＋モックではなく、モックそのものが上下中央に来る案も。既定に」】並べ方=モック(#dev.dev-vc-mock・PCとタブレット)。
      モックの下に「見出しの高さ＋拡大ではみ出す分」の見えない余白(--dev-vc-spacer・JS の fit() が測って入れる)を置く＝
      かたまり(見出し・間隔・モック・間隔・余白)の真ん中＝モックの見た目の真ん中＝画面の真ん中。間隔は見出し側と同じ(flex の gap) */
+  /* 【2026-09-28 ヒデさん依頼「見出しとモックのセットを上下に動かせるように」】--dev-shift-y(パネル 開発者体験 › ①② 見出しとモック（PC）› 上下の位置)。
+     translate は出方の動き(JS が書く transform)と別の指定なので重ねがけになり、ぶつからない。PC・タブレットだけ */
+  html:not(.mb) #dev.dev-pin .dev-blk-in { translate: 0 var(--dev-shift-y, 0px); }
+  html:not(.mb) #dev:not(.dev-pin) .dev-block { translate: 0 var(--dev-shift-y, 0px); }
   html:not(.mb) #dev.dev-pin.dev-vc-mock .dev-blk-in::after,
   html:not(.mb) #dev:not(.dev-pin).dev-vc-mock .dev-block::after { content: ''; display: block; flex: 0 0 auto; height: var(--dev-vc-spacer, 0px); }
   /* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②それぞれ 見出し↔モックの間隔(--devN-gap)とモックの拡大(--devN-scale)。PCのみ(SPは別scale) */
