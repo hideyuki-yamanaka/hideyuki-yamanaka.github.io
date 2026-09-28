@@ -149,6 +149,26 @@ try {
     localStorage.setItem('anyflow-kv-typespeed-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 ヒデさん依頼(2回目)「最初の2行はもっと早くて大丈夫」】1行目 0.025→0.015・2行目 0.045→0.025 s/字(焼き込み)。3行目はそのまま。
+   上の1回目の入れ替え(0.03→0.025・0.07→0.045)を済ませたブラウザも、まだのブラウザも(上で先に1回目が走る)、ここで1回だけ入れ替える。
+   前の値と違う値(パネルで自分で変えた値)は触らない。スマホの上書き(mb)も同じ。印 anyflow-kv-typespeed2-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-kv-typespeed2-20260928')) {
+    const _eq = (v, x) => v != null && Math.abs(+v - x) < 1e-6;
+    const _fix = kv => { if (!kv) return false; let ch = false;
+      if (_eq(kv.charDur, 0.025)) { kv.charDur = 0.015; ch = true; }
+      if (_eq(kv.charDur2, 0.045)) { kv.charDur2 = 0.025; ch = true; }
+      return ch; };
+    const _fixMb = mb => { if (!mb) return false; let ch = false;
+      if (_eq(mb['kv.charDur'], 0.025)) { mb['kv.charDur'] = 0.015; ch = true; }
+      if (_eq(mb['kv.charDur2'], 0.045)) { mb['kv.charDur2'] = 0.025; ch = true; }
+      return ch; };
+    _fix(params.kv); _fixMb(params.mb);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (_o && (_fix(_o.kv) | _fixMb(_o.mb))) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-kv-typespeed2-20260928', '1');
+  }
+} catch (e) {}
 function loadParams() {
   try {
     let s = JSON.parse(localStorage.getItem(STORAGE_KEY));
