@@ -187,7 +187,6 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 options: Object.entries(SPOT_DETAIL_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
-                  swatch: "#0070c9",
                   desc: p.note,
                 })),
               },

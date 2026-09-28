@@ -562,7 +562,6 @@ export default function TopTunePanel({
                 options: Object.entries(PAGE_TRANSITION_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
-                  swatch: "#0070c9",
                   desc: p.note,
                 })),
               },
@@ -1170,7 +1169,6 @@ export default function TopTunePanel({
                 options: Object.entries(MSG_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
-                  swatch: "#0070c9",
                   desc: p.note,
                 })),
               },
@@ -1407,7 +1405,6 @@ export default function TopTunePanel({
                 options: Object.entries(EVENT_LAYOUT_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
-                  swatch: "#0070c9",
                   desc: p.note,
                 })),
               },
@@ -1425,7 +1422,6 @@ export default function TopTunePanel({
                 options: Object.entries(EV_FLOWS).map(([v, f]) => ({
                   name: f.name,
                   value: Number(v),
-                  swatch: "#0070c9",
                   desc: f.note,
                 })),
               },
@@ -1634,11 +1630,11 @@ export default function TopTunePanel({
                 immediate: true,
                 autoNum: "案",
                 options: [
-                  { name: "案1", value: 1, swatch: "#0070c9", desc: "一斉にブラー解除。全体が同時にゆっくりピントが合う" },
-                  { name: "案2", value: 2, swatch: "#0070c9", desc: "中央から順に。真ん中が先に晴れて両隣が続く" },
-                  { name: "案3", value: 3, swatch: "#0070c9", desc: "左から順に。1枚ずつ順番に晴れていく" },
-                  { name: "案4", value: 4, swatch: "#0070c9", desc: "見出し→カードの二段階で晴れる" },
-                  { name: "案5", value: 5, swatch: "#0070c9", desc: "濃いブラー＋ほんの少し縮んで収まる（動きなし）" },
+                  { name: "案1", value: 1, desc: "一斉にブラー解除。全体が同時にゆっくりピントが合う" },
+                  { name: "案2", value: 2, desc: "中央から順に。真ん中が先に晴れて両隣が続く" },
+                  { name: "案3", value: 3, desc: "左から順に。1枚ずつ順番に晴れていく" },
+                  { name: "案4", value: 4, desc: "見出し→カードの二段階で晴れる" },
+                  { name: "案5", value: 5, desc: "濃いブラー＋ほんの少し縮んで収まる（動きなし）" },
                 ],
               },
               {

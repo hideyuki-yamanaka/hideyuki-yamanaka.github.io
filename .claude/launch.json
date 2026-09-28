@@ -232,6 +232,15 @@
       "cwd": "abashiri/v3"
     },
     {
+      "name": "abashiri-v3-prodcheck",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /tmp/ab-prod-build && exec npx next start -p 3199"
+      ],
+      "port": 3199
+    },
+    {
       "name": "nittei-chousei",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

@@ -143,8 +143,9 @@ try {
         left: Math.round(r.left), midY: Math.round(r.top + r.height / 2), vh: innerHeight
       };
     });
-    const lookOk = look.w === 450 && look.h === 520 && look.bg === 'rgba(255, 255, 255, 0.92)' && look.border === 'rgb(236, 236, 236)' && look.radius === '8px'
-      && look.font === '11px' && /blur\(12px\)/.test(look.blur) && look.title === '調整パネル' && look.cardBg === 'rgb(248, 249, 251)' && look.cardBorder === 'rgb(228, 231, 235)'
+    /* 地：AnyFlow は白92%＋ぼかし（白いページの上なので白く見える）。色の濃いページでも同じ白に見えるよう、部品は白100%・ぼかし無し（2026-09-28 ヒデさん「色味も合わせて」） */
+    const lookOk = look.w === 450 && look.h === 520 && look.bg === 'rgb(255, 255, 255)' && look.border === 'rgb(236, 236, 236)' && look.radius === '8px'
+      && look.font === '11px' && (!look.blur || look.blur === 'none') && look.title === '調整パネル' && look.cardBg === 'rgb(248, 249, 251)' && look.cardBorder === 'rgb(228, 231, 235)'
       && look.cardRadius === '10px' && look.labW === 100 && look.valW === 48 && look.tabBorder === 'solid rgb(17, 17, 17)' && look.tabWeight === '700';
     rec('見た目の寸法（AnyFlow V5 の値）', lookOk,
       `外寸 ${look.w}×${look.h} / 地 ${look.bg} / 枠 ${look.border} / 角丸 ${look.radius} / 文字 ${look.font} / ${look.blur} / タイトル「${look.title}」/ タブ下線 ${look.tabBorder}・太さ${look.tabWeight} / カード ${look.cardBg}・${look.cardBorder}・${look.cardRadius} / 項目名 ${look.labW}px・値 ${look.valW}px`);

@@ -194,7 +194,7 @@
     /* ── 枠：既定 450×520・最小 240×46・最大は画面の92%。外寸は固定で中身だけスクロール ── */
     '.tp{position:fixed;z-index:2147483000;display:flex;flex-direction:column;overflow:hidden;',
     '  width:450px;height:520px;min-width:240px;min-height:46px;max-width:92vw;max-height:92vh;resize:both;',
-    '  background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
+    '  background:#fff;',   /* AnyFlow は白92%＋ぼかし（白いページの上なので白く見える）。色の濃いページでも同じ白に見えるよう白100%（2026-09-28 ヒデさん「色味も合わせて」） */
     '  border:1px solid #ececec;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.10);',
     '  font-family:' + FONT + ';font-size:11px;line-height:normal;color:#101828;font-weight:400;text-align:left;letter-spacing:0;}',
     '.tp *{box-sizing:border-box;}',
@@ -215,7 +215,7 @@
     '.tp-chev{flex:0 0 auto;font-size:10px;color:#888;transition:transform .25s;cursor:pointer;}',
     '.tp.closed .tp-chev{transform:rotate(180deg);}',
     /* ── スマホモード中：帯が青っぽく＋上に「スマホモード」の帯 ── */
-    '.tp-banner{display:none;gap:6px;align-items:center;justify-content:center;font-size:11px;font-weight:600;line-height:1.35;color:#0b4bd6;',
+    '.tp-banner{display:none;gap:6px;align-items:center;justify-content:center;font:600 11px/1.35 -apple-system,system-ui,sans-serif;color:#0b4bd6;',
     '  background:linear-gradient(90deg,rgba(14,92,255,.10),rgba(14,187,255,.14));border-top:1px solid rgba(14,92,255,.22);',
     '  border-bottom:1px solid rgba(14,92,255,.22);padding:7px 12px;text-align:center;flex:0 0 auto;}',
     '.tp-banner b{font-weight:800;}',
