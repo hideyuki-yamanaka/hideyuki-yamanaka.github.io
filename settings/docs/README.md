@@ -65,17 +65,6 @@
 | [houmon-app/DESIGN-SYSTEM.md](houmon-app/DESIGN-SYSTEM.md) | デザインシステム（2026-09-27 整理: 色は役割の名前・角丸6段・影5つ・文字10/12/16/20/24・4の倍数ルール・マテリアルアイコン・画面ごとの決まり・運用ルール） |
 | [houmon-app/SHARE-LINKS.md](houmon-app/SHARE-LINKS.md) | 共有リンク（URL だけで訪問ログを見せる・招待との違い・作り） |
 
-### opus-metaverse（Opus 5.5 没入型コンセプトサイト）
-| ファイル | 中身 |
-|---|---|
-| [opus-metaverse/README.md](opus-metaverse/README.md) | 章構成とスクロール範囲・インタラクション一覧・仮置き一覧・明るさの注意（2026-09-25 新規） |
-
-### jelly-fruits（ぷるぷるフルーツ・ゼリーの果物で遊ぶ画面）
-| ファイル | 中身 |
-|---|---|
-| [jelly-fruits/README.md](jelly-fruits/README.md) | V3（参考画像「Citrus Matter.」のオレンジの輪切りの再現・参考との色の比較表）・V2（3D・みかんゼリー＋包丁）・V1（2D）の操作・ぷるぷるの仕組み（形の記憶・しわ取り・切り方・折れ方）・ファイル構成・仮置き一覧（2026-09-28 新規） |
-| [jelly-fruits/TASKS.md](jelly-fruits/TASKS.md) | 依頼の台帳 |
-
 ### anyflow
 | ファイル | 中身 |
 |---|---|

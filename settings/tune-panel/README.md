@@ -700,7 +700,7 @@ TunePanel.create({
 > 直す時は必ずマスターを直す。各サイトのコピーを v2.0.0 に上げるかはプロダクトごとに決め、上げる時は
 > そのサイトの schema を README の「部品の書き方」に照らして確かめ、見本の自動検査（test/check.mjs）と同じ観点で実測する。
 
-（2026-09-27 時点：マスターは v2.0.0。opus-metaverse・cyberpunk-motion・anyflow v2〜v4 の orb の6つは旧マスター v1.0.0（`tune-panel.v1.js`）と同じ。網走V2・V3 は v1 から先に進んだ別物のまま）
+（2026-09-27 時点：マスターは v2.0.0。opus-metaverse・cyberpunk-motion・anyflow v2〜v4 の orb の6つは旧マスター v1.0.0（`tune-panel.v1.js`）と同じ〔opus-metaverse・cyberpunk-motion は 2026-09-29 の断捨離で削除したので、今は4つ〕。網走V2・V3 は v1 から先に進んだ別物のまま）
 **各サイトのコピーは、そのサイトの調整パネルを次に触る時に v2.0.0 へ入れ替える**（2026-09-27 ヒデさん決定。今の見た目や保存値を急に変えないため。まとめて一斉には入れ替えない）
 
 ---

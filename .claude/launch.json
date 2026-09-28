@@ -201,24 +201,6 @@
       "port": 8779
     },
     {
-      "name": "cyberpunk-motion",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "-c",
-        "cd '/Users/hideyuki/Developer/Claude Code/cyberpunk-motion' && exec python3 -m http.server 8781"
-      ],
-      "port": 8781
-    },
-    {
-      "name": "opus-metaverse",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "-c",
-        "cd '/Users/hideyuki/Developer/Claude Code/opus-metaverse' && exec python3 -m http.server 8782"
-      ],
-      "port": 8782
-    },
-    {
       "name": "abashiri-v3",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
@@ -252,33 +234,6 @@
       ],
       "port": 3291,
       "cwd": "nittei-chousei"
-    },
-    {
-      "name": "jelly-fruits-v1",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "-c",
-        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v1' && exec python3 -m http.server 8783 --bind 0.0.0.0"
-      ],
-      "port": 8783
-    },
-    {
-      "name": "jelly-fruits-v2",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "-c",
-        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v2' && exec python3 -m http.server 8784 --bind 0.0.0.0"
-      ],
-      "port": 8784
-    },
-    {
-      "name": "jelly-fruits-v3",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": [
-        "-c",
-        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v3' && exec python3 -m http.server 8785 --bind 0.0.0.0"
-      ],
-      "port": 8785
     }
   ]
 }
