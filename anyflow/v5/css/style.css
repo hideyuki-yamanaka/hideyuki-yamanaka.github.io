@@ -3183,6 +3183,37 @@
   /* 【2026-09-28 ヒデさん依頼】今の設定では効かないつまみ(例: 開発者体験「止まっている長さ」＝止まるが OFF の時)は薄くする。
      隠すと切り替えた時に項目の位置が動くので、隠さず薄くするだけ(触れば値は変えられる) */
   .row.row-off { opacity: 0.4; }
+  /* ===== 【2026-09-29 ヒデさん依頼「デザインの4原則・近接の法則。関連の高い物は余白を狭く、低い物は広く」】調整パネルの余白を階層で分ける =====
+     見本: いまはコンバージョンのタブだけ(.cat-body.prox)。ヒデさんの確認後に全部のタブへ。値は⚠️仮置き(4の倍数)。
+     深い順に: つまみ同士 0(行の高さ20px＝20pxおき) ＜ 小見出しとそのつまみ 4px(小見出しのまとまりの上下は16px空けて前後と切る) ＜ 見出しとつまみ 8px ＜ 見出しのまとまり同士 24px ＜ カテゴリ(カード)同士 32px。
+     間の取り方は「並べた物の“間”にだけ隙間(flex の gap)」＝隠れている行・見出しは数えない(margin や :first-child だと隠れた物まで数える・6-15 と同じ理由)。
+     つまみの行の高さは 20px に詰める(↺ ボタン 18px) */
+  .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 24px; }                 /* 案のまとまり同士・案とカードの間 */
+  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 8px 0 0; }                          /* カード同士は 24+8＝32px */
+  .cat-body.prox .cat-section:not(.cs-variation) { padding: 0 12px 16px; }
+  .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head { padding: 12px 2px 12px; }
+  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 24px; padding: 0; }   /* 見出しのまとまり同士 */
+  .cat-body.prox .grp, .cat-body.prox .grp.fixed, .cat-body.prox .grp.bare, .cat-body.prox .grp.sub2 { margin: 0; }
+  .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title,
+  .cat-body.prox .cat-section-body > .grp:first-child > .grp-title { margin: 0 0 8px; }        /* 見出しとつまみ */
+  .cat-body.prox .grp > .grp-body { display: flex; flex-direction: column; gap: 0; padding-bottom: 0; }   /* つまみ同士(【2026-09-29 ヒデさん「インジケーター間の距離はもっと縮めていい」】行の高さ20px・隙間0＝20pxおき。旧 24+4＝28pxおき) */
+  .cat-body.prox .grp-body > .sw-row, .cat-body.prox .grp-body > .var-box, .cat-body.prox .grp-body > .gfx-edit, .cat-body.prox .grp-body > .np { margin-top: 4px; }   /* つまみ以外(ピル・編集の部品)は前と 4px 離す */
+  .cat-body.prox .grp-body > .pfirst { margin-top: 0; }
+  .cat-body.prox .row, .cat-body.prox .row + .row { margin: 0; min-height: 16px; }   /* 【2026-09-29 ヒデさん「もっと近づけていい」】20→16pxおき。文字が11pxなので、くっつかずに読める下限 */
+  /* つまみを細身に(棒 4px・丸 12px)。左の黒い塗りは JS が --p(0〜1)で渡す。丸の中心と塗りの端がそろうように 6px(丸の半分)ずらす */
+  .cat-body.prox .row input[type=range] { -webkit-appearance: none; appearance: none; height: 12px; margin: 0; background: transparent; cursor: pointer; }
+  .cat-body.prox .row input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, #090909 calc(6px + (100% - 12px) * var(--p, .5)), #e0e0e0 0); }
+  .cat-body.prox .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; margin-top: -4px; border: 0; border-radius: 50%; background: #090909; }
+  .cat-body.prox .row input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: #e0e0e0; }
+  .cat-body.prox .row input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: #090909; }
+  .cat-body.prox .row input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #090909; }
+  .cat-body.prox .sw-row { margin: 0; }
+  .cat-body.prox .cv-subg { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }   /* 小見出しのまとまりの上と下は 16px(後ろのつまみが仲間に見えないように) */
+  .cat-body.prox .cv-subg-lab { margin: 0 0 4px; }   /* 小見出しとつまみは 4px */
+  .cat-body.prox .grp-body > .cv-subg.pfirst { margin-top: 0; }   /* 見出しのすぐ下の小見出しは、見出しとの間 8px のまま(印は JS の hideEmptyPanelGroups) */
+  .cat-body.prox .grp-body > .cv-subg.plast { margin-bottom: 0; }   /* 見出しの最後の小見出しは、下に余分な余白を付けない(次の見出しまでは 24px) */
+  .cat-body.prox .rst { flex-basis: 16px; width: 16px; height: 16px; border-radius: 4px; }   /* ↺ を 26→16px に＝つまみの行の高さ 16px に収める */
+  .cat-body.prox .rst::after { width: 12px; height: 12px; }
   /* 見出しの下と、かたまりの終わりにも息をつかせる */
   .grp > .grp-body { padding-bottom: var(--space-4); }
   /* ⚠️ 2026-08-19: ラベルを分かりやすい日本語に書き直したら 92px では折り返した。

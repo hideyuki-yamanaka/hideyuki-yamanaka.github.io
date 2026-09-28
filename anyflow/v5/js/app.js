@@ -11126,12 +11126,17 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
   input.type = 'range';
   input.min = min; input.max = max; input.step = step;
   input.value = get();
+  /* 【2026-09-29 ヒデさん「もっと近づけていい」】つまみを細身に描き直した(css の .prox)ので、
+     左側の黒い塗り(今の値まで)は自分で描く。値や範囲が変わる所(触った時・範囲の取り直し・_sync)で毎回塗り直す */
+  const paintFill = () => { const lo = +input.min, hi = +input.max, v = +input.value; input.style.setProperty('--p', hi > lo ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))).toFixed(4) : '0.5'); };
+  paintFill();
   const val = document.createElement('span');
   val.className = 'val';
   const f = fmt || (v => v);
   val.textContent = f(get());
   const isLive = liveEdit;   /* 作った時点の設定を覚えておく (押した時ではなく) */
   input.addEventListener('input', () => {
+    paintFill();
     set(parseFloat(input.value));
     val.textContent = f(parseFloat(input.value));
     markDirty();
@@ -11152,6 +11157,7 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
       let nlo = c - span / 2, nhi = c + span / 2;
       if (nlo < r.lo) { nlo = r.lo; nhi = nlo + span; }
       input.min = nlo; input.max = nhi; input.value = v;
+      paintFill();
     }
   });
   const _mbOn = () => { try { return (opts && typeof opts.mbActive === 'function') && (typeof _vfPhoneOn === 'function') && _vfPhoneOn() && opts.mbActive(); } catch (e) { return false; } };
@@ -11159,7 +11165,7 @@ function slider(label, min, max, step, get, set, fmt, hint, opts) {
     /* 外から値が変わった時(プリセット・案の切替・直接編集)も、範囲から外れないようにする */
     const v = get();
     if (v < +input.min || v > +input.max) { const r = rangeFor(v); input.min = r.lo; input.max = r.hi; }
-    input.value = v; val.textContent = f(v);
+    input.value = v; val.textContent = f(v); paintFill();
     /* 【2026-09-20 ヒデさん依頼・#2】スマホモード中に SP 専用の上書きがある項目はブルーで印(row.mb-override) */
     try { row.classList.toggle('mb-override', !!_mbOn()); } catch (e) {}
   };
@@ -11477,6 +11483,9 @@ function hideEmptyPanelGroups() {
     [...root.querySelectorAll('.cv-subg')].reverse().forEach(g => setAuto(g, !hasVisible(g)));
     [...root.querySelectorAll('.grp')].reverse().forEach(g => { const bd = g.querySelector(':scope > .grp-body'); if (bd) setAuto(g, !hasVisible(bd)); });
     [...root.querySelectorAll('.cat-section')].reverse().forEach(s => { const bd = s.querySelector(':scope > .cat-section-body'); if (bd) setAuto(s, !hasVisible(bd)); });
+    /* 【2026-09-29 近接の法則】見出しのすぐ下で最初に見えている物に印(pfirst)。小見出しの上の余白(16px)を、見出しのすぐ下では付けないため。
+       :first-child は隠れている補足文なども1番目に数えるので使わない(6-15 と同じ理由) */
+    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); if (shown) { first = false; lastEl = ch; } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
   } catch (e) {}
 }
 function sub(target, html, deep, opts) {
@@ -13817,6 +13826,7 @@ function buildPanel() {
      絵文字・番号は付けない(後の改修がしやすいように)。階層の見せ方だけ5案(cvHier)で切替。 */
   /* subgroup(label, fn) は 06-sections.js の共通関数(2026-09-27 全タブで使うため共通化) */
   catCv.classList.add('hier-1');   /* 見せ方＝インデント固定(焼き込み) */
+  catCv.classList.add('prox');     /* 【2026-09-29 ヒデさん依頼「近接の法則」】余白の見本(このタブだけ)。確認後に全部のタブへ */
   /* 【2026-09-17 大掃除・ヒデさん指定】見せ方(5案)/CTA案(ボタン↔フォーム)/リキッドグラス5案/背景グラデ案(0〜3)/形の詳細(中心・広がり・回転・棒で編集)/
      境界(溶け込み)/余白・高さ の選択UIは削除。今の値(フォーム直置き・明るいリキッドグラス・放射グラデ・標準の溶け込み・余白120/0/0/60)に固定＝焼き込み。 */
   sub(catCv, 'フォーム（カード）', false, { grp: 'basic' }); B.formStyle();
