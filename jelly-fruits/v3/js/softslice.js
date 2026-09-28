@@ -356,11 +356,18 @@ export class SliceGrab {
     if (d > lim) { dx *= lim / d; dy *= lim / d; dz *= lim / d; }
     c[0] += dx; c[1] += dy; c[2] += dz;
     const x = this.b.x, ids = this.ids, ws = this.ws, off = this.off, k = P.grabStiff || 0.6;
+    const hold = Math.min(1, Math.max(0, P.hold || 0));
+    /* つまんだ所の今の真ん中（重みつき） */
+    let ax = 0, ay = 0, az = 0, sw = 0;
+    for (let j = 0; j < ids.length; j++) { const i = 3 * ids[j], w = ws[j]; ax += w * x[i]; ay += w * x[i + 1]; az += w * x[i + 2]; sw += w; }
+    ax /= sw; ay /= sw; az /= sw;
     for (let j = 0; j < ids.length; j++) {
       const i = 3 * ids[j], w = ws[j] * k;
-      x[i] += (c[0] + off[3 * j] - x[i]) * w;
-      x[i + 1] += (c[1] + off[3 * j + 1] - x[i + 1]) * w;
-      x[i + 2] += (c[2] + off[3 * j + 2] - x[i + 2]) * w;
+      /* hold 0：まるごと平行に動かす（自由に回れる）／1：元の向きの並びへ */
+      const gx = c[0] + (x[i] - ax) * (1 - hold) + off[3 * j] * hold;
+      const gy = c[1] + (x[i + 1] - ay) * (1 - hold) + off[3 * j + 1] * hold;
+      const gz = c[2] + (x[i + 2] - az) * (1 - hold) + off[3 * j + 2] * hold;
+      x[i] += (gx - x[i]) * w; x[i + 1] += (gy - x[i + 1]) * w; x[i + 2] += (gz - x[i + 2]) * w;
     }
   }
 }

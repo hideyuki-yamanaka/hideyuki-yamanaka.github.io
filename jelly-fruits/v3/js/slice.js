@@ -99,9 +99,12 @@ float sFlame(float r, float u, float seed) {
   float r0 = 0.1 + 0.28 * sHash(seed + 1.0);
   float r1 = min(0.84, r0 + 0.3 + 0.32 * sHash(seed + 2.0));
   float t = clamp((r - r0) / (r1 - r0), 0.0, 1.0);
-  float uc = 0.22 + 0.56 * sHash(seed + 3.0) + 0.22 * (sNoise(vec2(r * 3.4, seed)) - 0.5);
-  float wdt = (0.1 + 0.2 * sHash(seed + 4.0)) * pow(sin(3.14159 * t), 0.6) * (0.7 + 0.6 * sNoise(vec2(r * 6.0, seed + 7.0)));
-  return wdt - abs(u - uc);
+  float uc = 0.22 + 0.56 * sHash(seed + 3.0) + 0.34 * (sNoise(vec2(r * 3.4, seed)) - 0.5) + 0.08 * sin(r * 17.0 + seed);
+  float wdt = (0.08 + 0.2 * sHash(seed + 4.0)) * pow(sin(3.14159 * t), 0.6) * (0.6 + 0.8 * sNoise(vec2(r * 7.0, seed + 7.0)));
+  float du = u - uc;
+  /* 左右で太さを変える（ふぞろい） */
+  du *= du > 0.0 ? (0.7 + 0.6 * sHash(seed + 9.0)) : (0.7 + 0.6 * sHash(seed + 13.0));
+  return wdt - abs(du);
 }
 /* 輪切りの面の模様（p＝上から見た位置、半径1）
    参考画像の色の集まり（実測）：房の地 #F86712 が約半分／明るい所 #FA8B2B が約2割／赤っぽい炎の形 #E33A04 が約1.5割／
@@ -121,8 +124,13 @@ vec3 sFace(vec2 p) {
     float kink = (sHash(fk + 17.0) - 0.5) * 0.12 * smoothstep(0.35, 0.75, r);
     float a = a0 + bend * r * r + kink;
     float s = sWrap(phi - a);
-    dmin = min(dmin, abs(s) * r);
     if (s > 0.0 && s < best) { best = s; segId = fk; }
+    /* 線ごとに、真ん中から少しずれた所から出る（参考は1点に集まらず、小さく交わる） */
+    vec2 o = 0.045 * vec2(sHash(fk + 23.0) - 0.5, sHash(fk + 29.0) - 0.5);
+    vec2 q = p - o;
+    float rq = length(q);
+    float sq = sWrap(atan(q.y, q.x) - (a0 + bend * rq * rq + kink));
+    dmin = min(dmin, abs(sq) < 1.4 ? abs(sq) * rq : 10.0);
   }
   float u = best / segW;
   /* 赤っぽい炎の形：房の中に1〜2本、両はしがとがった細長い形（房に沿って外へ伸びる） */
@@ -133,10 +141,12 @@ vec3 sFace(vec2 p) {
   float f2 = sNoise(vec2(r * 2.2 + segId * 2.93 + 11.0, u * 1.8 + segId * 5.17)) + 0.35 * (r - 0.55);
   float e2 = fwidth(f2) + 0.003;
   float light = smoothstep(0.66 - e2, 0.66 + e2, f2) * (1.0 - dark);
+  float halo = smoothstep(-e1, e1, fl + 0.035) * (1.0 - dark);
   vec3 col = mix(mix(cSeg, cSegLight, light), cSegDeep, dark);
-  /* 細い筋（果肉のきめ） */
-  float gr = sNoise(vec2(r * 70.0, u * 30.0 + segId * 13.0));
-  col *= 1.0 + 0.06 * (gr - 0.5) * (1.0 - dark);
+  col = mix(col, mix(cSeg, cSegDeep, 0.45), halo * 0.8);
+  /* 細い筋（果肉のきめ・外へ向かう） */
+  float gr = sNoise(vec2(r * 90.0, u * 40.0 + segId * 13.0));
+  col *= 1.0 + 0.09 * (gr - 0.5) * (1.0 - dark);
   /* 小さなつぶ（濃い点＋片側に明るいふち） */
   vec2 cell = floor(p * 22.0);
   float pick = step(0.95, sHash2(cell + 7.0)) * step(0.06, r) * (1.0 - step(0.85, r));
@@ -188,12 +198,13 @@ export function sliceMaterial(envMap) {
         '#include <normal_fragment_maps>',
         /* ふちほど赤みが深い（厚い所を光が通る感じ） */
         'float sNV = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);',
-        'diffuseColor.rgb = mix(diffuseColor.rgb, cRed * vec3(0.9, 0.75, 0.7), pow(1.0 - sNV, 1.6) * uDeep);'
+        /* 平らな面を上から見た角度（約0.67）では赤くしない。ななめに見える所（折れた所・ふち）ほど赤く深く */
+        'diffuseColor.rgb = mix(diffuseColor.rgb, cRed * vec3(0.9, 0.75, 0.7), smoothstep(0.62, 0.12, sNV) * uDeep);'
       ].join('\n'))
       /* まわりの光の帯は「ツヤ（映り込み）」だけに使い、色の明るさには足さない（足すと白っぽく飛ぶ） */
       .replace('#include <lights_fragment_maps>', '#include <lights_fragment_maps>\niblIrradiance *= uEnvDiffuse;')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * uGlow * (0.6 + 0.4 * sNV);');
   };
-  m.customProgramCacheKey = () => 'citrus-slice-5';
+  m.customProgramCacheKey = () => 'citrus-slice-7';
   return m;
 }

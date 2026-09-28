@@ -1129,8 +1129,8 @@ function buildPanel() {
   sectionLenSlider('vision', 800);
   /* 【2026-09-28 ヒデさん依頼「ビジョンのアニメーションを全体的にもうちょっと早めに」】始まる位置(PC/SP別・既定 PC35%/スマホ25%・⚠️仮置き。旧は45%)。
      スクロール量で決まる演出の位置なのでアニメーションへ(6-13)。値は visEnterAt()(06-sections.js)が毎フレーム読む */
-  rows.push(slider('始まる位置', 0, 0.6, 0.05, () => (sv().vision.enterAt != null ? sv().vision.enterAt : 0.35), v => { sv().vision.enterAt = v; }, v => Math.round(v * 100) + '%',
-    'ビジョンの上の端が、画面の下からこの割合まで入ったら動き始めます。小さいほど早く始まります(0%＝画面に入った瞬間)。旧は45%。', { mbKey: 'sections.vision.enterAt', mbDefault: 0.25, fixedMax: true }));
+  rows.push(slider('始まる位置', 0, 0.6, 0.05, () => (sv().vision.enterAt != null ? sv().vision.enterAt : 0.2), v => { sv().vision.enterAt = v; }, v => Math.round(v * 100) + '%',
+    'ビジョンの上の端が、画面の下からこの割合まで入ったら動き始めます。小さいほど早く始まります(0%＝画面に入った瞬間)。PC 20%・スマホ 20%(2026-09-28。スマホは開いた時点で17%見えているので、それより小さいとスクロール前に動き終わる)。旧は45%→35%。', { mbKey: 'sections.vision.enterAt', mbDefault: 0.2, fixedMax: true }));
 
   /* 【2026-08-29 ヒデさん指定】固定追従なし(時間再生)の「ブロックの表示タイミング」を細かく調整。
      塊＝メッセージ / グラフィック / ポイント1 / ポイント2。メッセージ自体は上の「1行目が出るまで」。 */

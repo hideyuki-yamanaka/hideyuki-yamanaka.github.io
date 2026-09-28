@@ -148,6 +148,22 @@ try {
     localStorage.setItem('anyflow-kv-center-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「ビジョンを、画面に入ったらすぐパッと出るように」】ビジョンの時間割を短く(焼き込み・既定と同じ値)。
+   保存値が前の値のままの所だけ1回入れ替える(自分で変えた値は触らない)。出始めの位置も PC 0.35→0.2・スマホ 0.25→0.2。印 anyflow-vis-fast-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-vis-fast-20260928')) {
+    const NEWV = { labelAt: [0.15, 0.05], labelDur: [0.5, 0.35], line1At: [0.3, 0.1], line2Gap: [0.55, 0.35], revealDur: [1.4, 0.9], miniDur: [1, 0.6], npPointDur: [0.65, 0.4], enterAt: [0.35, 0.2] };
+    const same = (a, b) => a != null && Math.abs(+a - b) < 1e-6;
+    const fix = o => { const v = o && o.sections && o.sections.vision; let ch = false; if (!v) return false;
+      for (const k in NEWV) if (same(v[k], NEWV[k][0])) { v[k] = NEWV[k][1]; ch = true; }
+      if (o.mb && same(o.mb['sections.vision.enterAt'], 0.25)) { o.mb['sections.vision.enterAt'] = 0.2; ch = true; }
+      return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-vis-fast-20260928', '1');
+  }
+} catch (e) {}
 /* 【2026-09-28 ヒデさん依頼「実績のスロットをもう少し早めに止まる感じに」】1桁が止まるまで(sections.results.slotDur)を 1.4→1.0秒(焼き込み・既定)。
    保存値が前の値(1.4)のブラウザは1回だけ入れ替える。自分で変えた値は触らない。スマホの上書き(mb)も同じ。印 anyflow-slotdur-20260928 */
 try {

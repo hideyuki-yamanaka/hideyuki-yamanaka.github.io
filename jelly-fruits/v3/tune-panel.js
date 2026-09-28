@@ -19,7 +19,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '2.1.1';
+  var VERSION = '2.1.2';
 
   /* ============================================================
      0. 小道具
@@ -255,7 +255,7 @@
     '  letter-spacing:.03em;color:#111;user-select:none;-webkit-user-select:none;}',
     '.tp-cs.var{margin:0 0 4px;}',
     '.tp-cs.var>.tp-cs-head{font-size:14px;font-weight:800;color:#000;padding:15px 2px 6px;}',
-    '.tp-cs.card{background:#f8f9fb;border:1px solid #e4e7eb;border-radius:10px;padding:0 11px 6px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',
+    '.tp-cs.card{background:transparent;border:1px solid #e4e7eb;border-radius:10px;padding:0 11px 6px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',   /* 2026-09-28 v2.1.2 ヒデさん「セクションの枠の色を上下のブロックと同じ色に」＝中は塗らない(AnyFlow V5 と同じ) */
     '.tp-cs.card>.tp-cs-head{padding:11px 2px 8px;cursor:pointer;}',
     '.tp-cs.var~.tp-cs.card>.tp-cs-head{letter-spacing:.02em;}',
     '.tp-cs.card>.tp-cs-body{padding-bottom:4px;}',

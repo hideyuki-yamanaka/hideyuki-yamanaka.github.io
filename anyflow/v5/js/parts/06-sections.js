@@ -525,7 +525,7 @@ function applyCtaDir() {
 function visEnterAt() {
   const isMb = (typeof isMobile !== 'undefined' && isMobile), mb = (params && params.mb) || {};
   const v = (params && params.sections && params.sections.vision) || {};
-  const e = isMb ? (mb['sections.vision.enterAt'] != null ? mb['sections.vision.enterAt'] : 0.25) : (v.enterAt != null ? v.enterAt : 0.35);
+  const e = isMb ? (mb['sections.vision.enterAt'] != null ? mb['sections.vision.enterAt'] : 0.2) : (v.enterAt != null ? v.enterAt : 0.2);   /* 【2026-09-28 ヒデさん依頼「画面に入ったらすぐパッと出る」】PC 0.35→0.2・SP 0.25→0.2(⚠️仮置き)。SP は最初の画面の下にビジョンが既に17%見えているので、それより小さいとスクロール前に動き終わる */
   return Math.max(0, Math.min(0.9, +e || 0));
 }
 applyVpSize();
@@ -1661,8 +1661,9 @@ function fit() {
       const hf = (id, baseH, sc) => { const blk = document.getElementById(id); if (!blk) return 1;
         const hd = blk.querySelector('.dev-center'), inn = blk.querySelector('.dev-blk-in');
         const gap = inn ? (parseFloat(getComputedStyle(inn).rowGap) || 0) : 0;
-        /* モックを上下中央にする時は、見出し＋間隔の分を上と下の両方に取る(下は見えない余白)＝その分だけ小さく収める */
-        return (h - 176 - (vcMock ? 2 : 1) * ((hd ? hd.offsetHeight : 0) + gap)) / (baseH * sc); };
+        /* 【2026-09-28 ヒデさん指摘「モックがすごく小さくなった。本番の大きさに戻して」】モックの大きさは並べ方に関係なく今まで(本番)と同じ計算にする。
+           ❌ 誤り: いったん「モックを上下中央」の時だけ、見出し＋間隔の分を上下両方に取って小さく収めていた(1440×900 で ①554→488px) */
+        return (h - 176 - (hd ? hd.offsetHeight : 0) - gap) / (baseH * sc); };
       f1 = Math.max(0.3, Math.min(f1, hf('devBlock1', 504, dv.dev1Scale != null ? dv.dev1Scale : 1.1)));
       f2 = Math.max(0.3, Math.min(f2, hf('devBlock2', 520, dv.dev2Scale != null ? dv.dev2Scale : 1.1)));
       st.setProperty('--dev2-fit', f2.toFixed(3));

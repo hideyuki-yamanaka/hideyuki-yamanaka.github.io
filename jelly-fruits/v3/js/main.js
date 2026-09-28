@@ -11,9 +11,9 @@ const TAU = Math.PI * 2, DEG = Math.PI / 180;
 /* 調整パネルで触れる値（色は実測・ほかは仮置き） */
 const DEFAULTS = {
   look: { bg: '#F1F1EF', seg: '#F86712', segDeep: '#E33A04', segLight: '#FA8B2B', mem: '#F6D097', band: '#F59B2B', pith: '#FBCC87', rind: '#FC9C26', side: '#F97F16', red: '#FF4011', shadow: '#190F00' },
-  shape: { size: 62, thick: 0.16, segN: 11, cam: 42 },
+  shape: { size: 70, thick: 0.19, segN: 11, cam: 42 },
   fx: { deep: 0.75, glow: 0.16, gloss: 0.025, env: 1, shadow: 0.7, blur: 26 },
-  motion: { firm: 3, damp: 1, stretch: 0.2, bend: 0.5, pinch: 0.85, lift: 0.32, follow: 6, gravity: 1, slide: 1 }
+  motion: { firm: 3, damp: 1, stretch: 0.2, bend: 0.55, pinch: 0.8, hold: 0, lift: 0.55, follow: 6, gravity: 1.3, slide: 1 }
 };
 const params = structuredClone(DEFAULTS);
 
@@ -30,8 +30,8 @@ const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
 
 /* 明かり：色がほぼ参考の色のまま出るように、全体をやわらかく照らす（上の面・側面 ≒ 1、下を向いた面 ≒ 0.5）
    影は左奥の上からの明かりで落とす（影は右手前へ伸びる） */
-const key = new THREE.DirectionalLight(0xffffff, 1.0);
-key.position.set(-5.5, 7, -4);
+const key = new THREE.DirectionalLight(0xffffff, 1.26);
+key.position.set(-6.5, 6, -4.5);
 key.castShadow = true;
 key.shadow.mapSize.set(512, 512);
 key.shadow.camera.left = -7; key.shadow.camera.right = 7; key.shadow.camera.top = 7; key.shadow.camera.bottom = -7;
@@ -40,11 +40,11 @@ key.shadow.bias = -0.002;
 key.shadow.radius = params.fx.blur;
 key.shadow.blurSamples = 24;
 scene.add(key, key.target);
-const fill = new THREE.DirectionalLight(0xffffff, 1.28);
+const fill = new THREE.DirectionalLight(0xffffff, 1.45);
 fill.position.set(0, 3.5, 10);
 scene.add(fill, fill.target);
-scene.add(new THREE.AmbientLight(0xffffff, 1.19));
-scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.37));
+scene.add(new THREE.AmbientLight(0xffffff, 1.25));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.39));
 /* 床：影だけ見える透明な床（背景の色そのまま） */
 const floorMat = new THREE.ShadowMaterial({ color: new THREE.Color(params.look.shadow), opacity: params.fx.shadow });
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
@@ -57,7 +57,7 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 function stripEnv() {
   const s = new THREE.Scene();
   const geo = new THREE.SphereGeometry(30, 64, 32), pos = geo.attributes.position, col = [];
-  const top = new THREE.Color('#4a4642'), mid = new THREE.Color('#2e2b28'), low = new THREE.Color('#d9d4cb'), c = new THREE.Color();
+  const top = new THREE.Color('#4a4642'), mid = new THREE.Color('#2e2b28'), low = new THREE.Color('#403a34'), c = new THREE.Color(); /* 下も暗く：側面に床の白っぽさを映さない */
   for (let i = 0; i < pos.count; i++) {
     const y = pos.getY(i) / 30;
     if (y > 0.05) c.copy(mid).lerp(top, Math.min(1, (y - 0.05) / 0.6));
@@ -75,6 +75,8 @@ function stripEnv() {
   strip(12, 1.2, -3, 11, 8, 40);
   strip(10, 1.0, 9, 6, 3, 20);
   strip(3, 10, 12, 4, -6, 10);
+  /* 手前（カメラの後ろ）の大きな明かり：手前のふちに、大きな白い映り込みを作る */
+  strip(10, 4, -4, 6, 12, 20);
   const t = pmrem.fromScene(s, 0.01).texture;
   s.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
   return t;
@@ -127,7 +129,7 @@ function layout() {
   const tanH = Math.tan(camera.fov * DEG / 2);
   const dist = W >= H ? view.short / (2 * tanH) : view.short / (2 * tanH * camera.aspect);
   const el = clamp(params.shape.cam, 15, 89) * DEG;
-  const target = new THREE.Vector3(0.35, 0.2, 0.25);
+  const target = new THREE.Vector3(0.15, 0.2, 0.25);
   camera.position.set(target.x, target.y + dist * Math.sin(el), target.z + dist * Math.cos(el));
   camera.lookAt(target);
   camera.updateProjectionMatrix();
@@ -139,7 +141,7 @@ function physics() {
   const m = params.motion, w = TAU * Math.max(0.3, m.firm);
   return {
     k: w * w, wobbleDamp: 1.6 / Math.max(0.05, m.damp), stretch: clamp(m.stretch, 0, 0.9),
-    gravity: 30 * Math.max(0, m.gravity), grabSpeed: 2.4 * Math.max(0.5, m.follow), grabStiff: 0.6,
+    gravity: 30 * Math.max(0, m.gravity), grabSpeed: 2.4 * Math.max(0.5, m.follow), grabStiff: 0.6, hold: clamp(m.hold, 0, 1),
     pinch: clamp(m.pinch, 0, 1), floorFric: clamp(0.3 / Math.max(0.1, m.slide), 0, 0.95)
   };
 }
@@ -218,7 +220,7 @@ if (window.TunePanel) {
       { cat: 'オレンジの輪切り', items: [
         { sub: '輪切り', grp: 'basic', items: [
           { slider: '大きさ', path: 'shape.size', min: 20, max: 90, step: 1, unit: '%', grid: false, hint: '画面の短い辺に対する直径の割合。手を離すと作り直します。' },
-          { slider: '厚み', path: 'shape.thick', min: 0.06, max: 0.4, step: 0.01, fmt: 'n2', hint: '半径に対する厚み（参考画像の実測は約 0.16）。手を離すと作り直します。' },
+          { slider: '厚み', path: 'shape.thick', min: 0.06, max: 0.4, step: 0.01, fmt: 'n2', hint: '半径に対する厚み（参考画像からの見積もりは約 0.19）。手を離すと作り直します。' },
           { slider: '房の数', path: 'shape.segN', min: 6, max: 14, step: 1, fmt: 'int', hint: '房の数（参考画像はおよそ 11）。' }
         ]},
         { sub: 'カメラ', grp: 'basic', items: [
@@ -254,8 +256,9 @@ if (window.TunePanel) {
           { slider: '曲がりのなだらかさ', path: 'motion.bend', min: 0.3, max: 0.9, step: 0.05, fmt: 'n2', hint: '大きいほど、広い範囲でゆるやかに曲がる。小さいと、つまんだ所だけ急に折れる。手を離すと作り直します。' }
         ]},
         { sub: 'つかんだ時', grp: 'anim', items: [
-          { slider: '持ち上げる高さ', path: 'motion.lift', min: 0, max: 2, step: 0.01, fmt: 'x', hint: 'つまんだ所が持ち上がる高さ（半径の何倍か）。参考画像の画面の表示は LIFT 0.32。' },
+          { slider: '持ち上げる高さ', path: 'motion.lift', min: 0, max: 2, step: 0.01, fmt: 'x', hint: 'つまんだ所が持ち上がる高さ（半径の何倍か）。' },
           { slider: 'つまむ所の狭さ', path: 'motion.pinch', min: 0, max: 1, step: 0.01, fmt: 'n2', clamp: true, hint: '上げるほど、つまんだ所だけが持ち上がって、ほかは垂れる（折れる）。' },
+          { slider: 'つまんだ所の向きを保つ', path: 'motion.hold', min: 0, max: 1, step: 0.05, fmt: 'n2', clamp: true, hint: '0 でつまんだ所が自由に回る（ぶら下がる）。1 でつまんだ所の向きを保つ（指ではさんで持つ感じ）。' },
           { slider: '追従', path: 'motion.follow', min: 1, max: 16, step: 0.5, unit: 'Hz', hint: '指にどれだけ速くついてくるか。' }
         ]},
         { sub: 'テーブル', grp: 'anim', items: [
