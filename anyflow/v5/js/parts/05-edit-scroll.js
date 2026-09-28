@@ -1791,7 +1791,7 @@ function resFxRemoveBig() { resFxSt.big.forEach(d => d.remove()); resFxSt.big = 
    正二十面体の各面を freq 分割した球(freq3=頂点92・辺270。カンプの点89・線261とほぼ同数)を正射影する。
    ゆっくり回転(spin)・傾き(tilt)・奥の線/点ほど薄く。点はブランド色(ピンク/シアン/紺)を一部に、他は薄い青灰(#9DB0C9)。
    値は params.sections.vision.dome(未設定は VF_DEF)。下半球のフェードは容器の mask(applyVfFade)。 */
-const VF_DEF = { meshKind: 'geo', fn: 92, r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
+const VF_DEF = { sub: 1, subRound: 0, subDots: 1, meshKind: 'geo', fn: 92, r: 262, spin: 0.6, tilt: -14, lineAlpha: 0.85, lineWidth: 1, dot: 2.2, fadeA: 0.42, fadeB: 0.66, freq: 3, scale: 1.15, logoScale: 1, logoDx: 0, logoDy: 0, lineColor: '#5F5F5F', nodeMode: 'alt', levels: 1, pk: 0, variant: 'dome', logoAngle: 0, logoTiltX: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8, dx: 0, dy: 30, logoOn: 1, mx: 0, my: 0, mz: 0, spinOn: 1, roll: 0, yaw: 0, labelDist: 0.88, labGX: 0, labGY: 0, depthFade: 0, logoStick: 0, logoBackAlpha: 0.3, logoTiltY: 0, logoOpacity: 1, logoShadow: 0, logoPlate: 0, logoVar: 'flat', msx: 1, msy: 1, msz: 1, mpinch: 0 };   /* 【2026-09-21 ヒデさん依頼】メッシュを濃く(lineColor #8C8C8C→#5F5F5F / lineAlpha 0.6→0.85)＋回転を見えるように(spin 0.35→0.6)。既存の保存値(vision.dome/over.visMesh)がこれを隠すため下の移行で剥がす */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横/縦/奥のふくらみ・ひし形の尖り)。既定は球(1/1/1/0) */   /* 【2026-09-20 ヒデさん依頼】ロゴは既定で平面(傾き0・変形なし)。傾けたい時だけ下のつまみで */   /* spinOn=回転あり/なし / logo*=ロゴの案(左右の傾き・透明度・影・ガラスの板) */
 /* 【2026-09-19 ヒデさん依頼】ロゴの案: 案1=現状 / 3Dのメッシュに馴染ませる新案3つ */
 const VF_LOGO_KEYS = ['logoTiltX', 'logoTiltY', 'logoOpacity', 'logoShadow', 'logoPlate', 'logoStick', 'logoBackAlpha'];
 /* 【2026-09-26 ヒデさん判断】ロゴの案はノーマル(フラット)だけ。ロゴ追従(球に貼り付いて回る／面に焼き付け)は試した上で撤去。パネルにロゴの案の切替は出さない */
@@ -1801,7 +1801,7 @@ const VIS_LOGOS = [
 function vfLogoKey() { const v = String(vfCfg().logoVar || 'flat'); return (VIS_LOGOS.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visLogo', v))) ? v : 'flat'; }
 function vfApplyLogoVariant(key) { const m = VIS_LOGOS.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.logoVar = key; applyVfFade(); }   /* logoOn=ロゴの表示/非表示(2026-09-19 ヒデさん依頼。非表示なら後ろのぼかしも消す) */   /* dy=図だけの上下(px・Point は動かない。2026-09-19 ヒデさん指定 +30 は仮置き) / bg*=ロゴの後ろの楕円(ぼかし px / 地色の濃さ / 横・縦の広さ=ロゴの何倍)。案3 で使う */   /* 【2026-09-19 ヒデさん指定】ロゴは回さない。logoAngle=平面の角度(°)、logoTiltX=奥行きの傾き(°・メッシュの傾き −14 に合わせた仮置き) */
 /* 【2026-09-19 ヒデさん依頼】メッシュの案。案1=ドーム(Figma 18004:38209 の色味: 線 Neutral/400 #A6A6A6・点はピンク/シアン交互・奥ほど薄い4段の濃淡) / 案2=KV のケージをそのまま(測地線球 freq2・線 #6B7690・点 DOT_R×0.52・骨を走る光) */
-const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'depthFade', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH', 'msx', 'msy', 'msz', 'mpinch'];   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
+const VF_VAR_KEYS = ['r', 'spin', 'tilt', 'roll', 'yaw', 'depthFade', 'lineAlpha', 'lineWidth', 'dot', 'freq', 'lineColor', 'nodeMode', 'levels', 'pk', 'bgBlur', 'bgAlpha', 'bgW', 'bgH', 'msx', 'msy', 'msz', 'mpinch', 'sub', 'subRound', 'subDots'];   /* sub/subRound/subDots=【2026-09-28】面を平らなまま割る(案ごとに独立) */   /* msx/msy/msz/mpinch=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
 const VIS_MESHES_DOME_CFG = { r: 262, spin: 0.35, tilt: -14, lineAlpha: 0.6, lineWidth: 1, dot: 2.2, freq: 3, lineColor: '#8C8C8C', nodeMode: 'alt', levels: 1, pk: 0, bgBlur: 0, bgAlpha: 0, bgW: 1.6, bgH: 2.8 };   /* 案1 ドームの値(案4 が流用) */
 const VIS_MESHES = [
   { key: 'dome', name: '案1 ドーム（Figma 18004:38209 の色味）', fixed: true, tip: '線はニュートラルグレー #A6A6A6、点はブランドのピンク/シアン交互。奥ほど薄い4段の濃淡(線 0.1〜0.5・点 0.2〜1)。頂点92・線270。',
@@ -1814,6 +1814,8 @@ const VIS_MESHES = [
   /* 【2026-09-19 ヒデさん依頼】案4: 奥側の線・点を薄く(遠近感)。depthFade=奥をどれだけ薄くするか */
   { key: 'domeDepth', name: '案4 奥の線を薄く（遠近感）', tip: '案1 と同じ図で、球の奥側の線と点を薄く・細く(75%減)。手前と奥の差がはっきりして立体に見える。', cfg: Object.assign({}, VIS_MESHES_DOME_CFG, { depthFade: 0.75 }) },
 ];
+/* 【2026-09-28】どの案も「面を平らなまま割る」は既定 1(そのまま)・丸み 0・増えた点のドット 出す。案を切り替えた時に前の案の値が残らないよう、案の値に入れておく */
+VIS_MESHES.forEach(m => { if (m.cfg) { if (m.cfg.sub == null) m.cfg.sub = 1; if (m.cfg.subRound == null) m.cfg.subRound = 0; if (m.cfg.subDots == null) m.cfg.subDots = 1; } });
 function vfVarKey() { const v = String(vfCfg().variant || 'dome'); return (VIS_MESHES.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('visMesh', v))) ? v : 'dome'; }
 function vfApplyVariant(key) { const m = VIS_MESHES.find(x => x.key === key); if (!m) return; const v = params.sections.vision; if (!v.dome) v.dome = {}; Object.assign(v.dome, structuredClone(m.cfg)); v.dome.variant = key; vfMesh = null; applyVfFade(); }   /* scale=メッシュの大きさ(2026-09-19 ヒデさん指定で 1.15・仮置き)。機能名の文字サイズは変えず位置だけ中心から外へ */
 const VF_CX = 291, VF_CY = 315;   /* 球の中心(容器座標。カンプ: ケージ(29,49)＋(262,266)) */
@@ -1882,16 +1884,18 @@ function vfBuild(f) {
      頂点 (0,1,t) が真上(0,1,0)に来るよう X 軸まわりに −58.28° 回して、5本の線が集まる極を回転軸に置く */
   const th = -Math.atan2(t, 1), cth = Math.cos(th), sth = Math.sin(th);
   const base = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(nrm).map(v => [v[0], v[1] * cth - v[2] * sth, v[1] * sth + v[2] * cth]);
-  const faces = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  const ICO_F = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
   const verts = [], idx = new Map(); const key = (v) => v.map(x => x.toFixed(4)).join(',');
   const add = (v) => { const k = key(v); if (idx.has(k)) return idx.get(k); verts.push(v); idx.set(k, verts.length - 1); return verts.length - 1; };
   const edges = new Set(); const E = (a, b) => edges.add(a < b ? a * 65536 + b : b * 65536 + a);
-  for (const [ia, ib, ic] of faces) {
+  const faces = [];   /* ↓の [ia, ib, ic] of faces は正二十面体の面(ICO)。こちらは割った後の小さい三角形 */
+  for (const [ia, ib, ic] of ICO_F) {
     const A = base[ia], B = base[ib], C = base[ic]; const grid = [];
     for (let i = 0; i <= f; i++) { grid[i] = []; for (let j = 0; j <= f - i; j++) { const u = i / f, w = j / f; grid[i][j] = add(nrm([A[0] + (B[0] - A[0]) * u + (C[0] - A[0]) * w, A[1] + (B[1] - A[1]) * u + (C[1] - A[1]) * w, A[2] + (B[2] - A[2]) * u + (C[2] - A[2]) * w])); } }
-    for (let i = 0; i < f; i++) for (let j = 0; j < f - i; j++) { E(grid[i][j], grid[i + 1][j]); E(grid[i][j], grid[i][j + 1]); E(grid[i + 1][j], grid[i][j + 1]); }
+    for (let i = 0; i < f; i++) for (let j = 0; j < f - i; j++) { E(grid[i][j], grid[i + 1][j]); E(grid[i][j], grid[i][j + 1]); E(grid[i + 1][j], grid[i][j + 1]);
+      faces.push([grid[i][j], grid[i + 1][j], grid[i][j + 1]]); if (j < f - i - 1) faces.push([grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]]); }   /* faces=【2026-09-28】meshSubdivide 用 */
   }
-  return { verts, edges: Array.from(edges).map(k => [Math.floor(k / 65536), k % 65536]) };
+  return { verts, edges: Array.from(edges).map(k => [Math.floor(k / 65536), k % 65536]), faces };
 }
 let vfMesh = null, vfMeshFreq = 0, vfPk = [], vfPkNext = 0, vfLastT = null;
 function vfRgb(hex) { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')); const v = parseInt(m ? m[1] : 'a6a6a6', 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255].join(','); }
@@ -1901,8 +1905,9 @@ function vfDraw(tSec) {
   const sec = SECS && SECS.vision; if (sec) { const r = sec.getBoundingClientRect(); if (r.bottom < -50 || r.top > (window.innerHeight || 1) + 50) return; }   /* 画面外では描かない */
   const c = vfCfg(); const f = Math.max(1, Math.min(4, Math.round(c.freq)));
   const _fibo = c.meshKind === 'fibo', _fn = Math.max(12, Math.min(400, Math.round(c.fn || 92)));   /* 【2026-09-25 ヒデさん依頼】形=散らばり(三角網・点を1個ずつ)。KVとは別の値 */
-  const _mkey = _fibo ? 'f' + _fn : 'g' + f;
-  if (!vfMesh || vfMeshFreq !== _mkey) { vfMesh = _fibo ? sphereFiboHull(_fn) : vfBuild(f); vfMeshFreq = _mkey; }
+  const _sub = Math.max(1, Math.min(4, Math.round(c.sub || 1))), _subR = Math.max(0, Math.min(1, c.subRound || 0));   /* 【2026-09-28】面を平らなまま割る段数・丸み */
+  const _mkey = (_fibo ? 'f' + _fn : 'g' + f) + '_s' + _sub + '_' + _subR.toFixed(2);
+  if (!vfMesh || vfMeshFreq !== _mkey) { vfMesh = meshSubdivide(_fibo ? sphereFiboHull(_fn) : vfBuild(f), _sub, _subR); vfMeshFreq = _mkey; }
   const W = 900, H = 900, dpr = Math.min((typeof isMobile !== 'undefined' && isMobile) ? 1.5 : 2, window.devicePixelRatio || 1);   /* 【2026-09-21 ヒデさん依頼・SP軽量化】スマホはドームcanvasの解像度を2→1.5に(座標系はdprでスケール＝見た目ほぼ同じ・約44%省ピクセル) */
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
@@ -1938,7 +1943,8 @@ function vfDraw(tSec) {
     const al = quant ? c.lineAlpha * VF_LV_LINE[bin(k)] : c.lineAlpha * (0.42 + 0.58 * k);   /* 案1=4段 / 案2(KV)=連続 */
     g.strokeStyle = 'rgba(' + lc + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.lineWidth = (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k)); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
   const PINK = '255,93,151', CYAN = '14,187,255', NAVY = '14,68,151', PALE = '157,176,201';
-  for (let i = 0; i < P.length; i++) { const [x, y, k] = P[i]; let col, al, rad;
+  const _hideSubDots = c.subDots === 0 && vfMesh.sub;   /* 【2026-09-28】割って増えた点のドットを出さない設定 */
+  for (let i = 0; i < P.length; i++) { if (_hideSubDots && vfMesh.sub[i]) continue; const [x, y, k] = P[i]; let col, al, rad;
     if ((c.nodeMode || 'alt') === 'alt') { col = (i % 2) ? PINK : CYAN; if (quant) { al = VF_LV_NODE[bin(k)]; rad = c.dot * (0.55 + 0.45 * k); } else { const dep = 0.72 + 0.5 * k; al = 0.5 + 0.5 * dep; rad = c.dot * dep; } }
     else { const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; col = h < 0.12 ? PINK : h < 0.24 ? CYAN : h < 0.28 ? NAVY : PALE; al = (col === PALE) ? (0.3 + 0.45 * k) : (0.45 + 0.55 * k); rad = c.dot * (0.55 + 0.45 * k); }
     g.fillStyle = 'rgba(' + col + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad * (1 - 0.35 * df * (1 - k)), 0, Math.PI * 2); g.fill(); }

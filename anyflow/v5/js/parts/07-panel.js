@@ -19,7 +19,9 @@ const KV_VARIANTS = [
             mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
 ];
 const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
-const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread', 'msx', 'msy', 'msz', 'mpinch', 'meshShape'];   /* msx/msy/msz/mpinch/meshShape=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
+const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread', 'msx', 'msy', 'msz', 'mpinch', 'meshShape', 'cageSub', 'cageSubRound', 'cageSubDots'];   /* cageSub/cageSubRound/cageSubDots=【2026-09-28】面を平らなまま割る(案ごとに独立) */
+/* 【2026-09-28】どの案も「面を平らなまま割る」は既定 1(そのまま)・丸み 0・増えた点のドット 出す。案を切り替えた時に前の案の値が残らないよう、案の値に入れておく */
+KV_VARIANTS.forEach(v => { const m = (v.data || {}).mesh; if (m) { if (m.cageSub == null) m.cageSub = 1; if (m.cageSubRound == null) m.cageSubRound = 0; if (m.cageSubDots == null) m.cageSubDots = 1; } });   /* msx/msy/msz/mpinch/meshShape=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
 /* 【2026-09-21 ヒデさん依頼】KVメッシュの形状(基本のメッシュ)。ビジョンと同じ5案(VIS_MESH_SHAPES を流用) */
 /* 【2026-09-20 ヒデさん依頼・#7】KV要素の「位置移動(dx/dy)・パディング」も案別に独立させる(強調でずらした位置がノーマルに効かないように)。
    文字(fs/fw/lh/ls)は含めない=別系統(editsMb/共通)。対象要素は sec:'kv' の全て。 */
@@ -48,7 +50,7 @@ function applyKvVariant(key, quiet) {
    なぜ必要か: これまで大きさは params.edits.visMsg(＝全案で共有の1つの入れ物)に入っていたため、
    デフォルトで大きさを変えると強調にも移っていた(＝連動)。案ごとに控え(gfxVarOverride.visEmph)へ
    grab して切替時に put で入れ替える。 */
-const VIS_MSG_ED_KEYS = ['fs', 'lh', 'ls'];
+const VIS_MSG_ED_KEYS = ['fs', 'lh', 'ls', 'lsp'];   /* 【2026-09-28】lsp = 字間(%)。ls は古い px の値(読むだけ) */
 function visEmphGrabMsg(store) { if (!store || !store.visMsg) return null; const o = {}; VIS_MSG_ED_KEYS.forEach(k => { if (store.visMsg[k] != null) o[k] = store.visMsg[k]; }); return Object.keys(o).length ? o : null; }
 function visEmphPutMsg(store, src) { if (!store) return; const t = store.visMsg || (store.visMsg = {}); VIS_MSG_ED_KEYS.forEach(k => { delete t[k]; }); if (src) VIS_MSG_ED_KEYS.forEach(k => { if (src[k] != null) t[k] = src[k]; }); }
 const VAR_SNAP = {
@@ -695,6 +697,23 @@ function buildPanel() {
             v => { const k = Math.round(v); return '点' + k + '・線' + (3 * k - 6); },
             '散らばり(三角網)の点の数。1個ずつ増減できます。42＝整った網の面の数2と同じ点・線の数、92＝面の数3相当。多いほど細かく丸く。', { fixedMax: true, mbKey: 'conv.mesh.cageFiboN' });
         }
+        /* 【2026-09-28 ヒデさん依頼「形はある程度変えずに、面の数を増やせるつまみを。今のは増やすと球に近づく」】
+           上の「面の数」は増えた点を球の表面へ置き直すので丸くなる。こちらは今の三角形を平らなまま割る＝形はそのまま・面と線だけ増える */
+        subgroup('面を細かく（形はそのまま）', () => {
+        slider('割る細かさ', 1, 4, 1, () => (M.cageSub == null ? 1 : M.cageSub),
+          v => { M.cageSub = Math.round(v); renderFrame(); },
+          v => { const k = Math.round(v); if (k <= 1) return 'そのまま'; try { const b0 = (M.cageShape === 'geo') ? buildGeodesic(Math.max(1, Math.round(M.cageFreq == null ? 2 : M.cageFreq))) : sphereFiboHull(Math.max(8, Math.round(M.cageFiboN == null ? 42 : M.cageFiboN))); const g = meshSubdivide(b0, k, 0); return `${k}×${k}（面${g.faces.length}・線${g.edges.length}）`; } catch (e) { return k + '×' + k; } },
+          '今の網の三角形を、平らなまま 2×2・3×3・4×4 に割ります。角の位置と面の向きは変わらないので、形はそのままで面と線だけが増えます。4は線が多いので少し重くなります。', { fixedMax: true, mbKey: 'conv.mesh.cageSub' });
+        slider('丸み', 0, 1, 0.05, () => (M.cageSubRound || 0),
+          v => { M.cageSubRound = v; renderFrame(); },
+          v => v <= 0.001 ? '0（形そのまま）' : Math.round(v * 100) + '%',
+          '割って増えた点を、球の表面へどれだけ寄せるか。0＝今の形のまま平ら／100%＝球に近づく(上の「面の数」を増やした時と同じ丸さ)。割る細かさが「そのまま」の時は効きません。', { fixedMax: true, mbKey: 'conv.mesh.cageSubRound' });
+        /* 増えた点のドット(スマホモード中はスマホだけの値) */
+        { const _k = 'conv.mesh.cageSubDots', _pon = () => document.documentElement.classList.contains('phone-mode');
+          segRow('増えた点のドット', [['出す', 1], ['出さない', 0]],
+            () => { const v = (_pon() && params.mb && params.mb[_k] != null) ? params.mb[_k] : M.cageSubDots; return v === 0 ? 0 : 1; },
+            v => { if (_pon()) { if (!params.mb) params.mb = {}; params.mb[_k] = v; } else M.cageSubDots = v; markDirty(); renderFrame(); }); }
+        });
       }
       slider('全体の広がり', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
         v => '×' + v.toFixed(2), '網ぜんたいの広がり。大きいほどノードが外へ広がって大きな網になります。', { mbKey: 'conv.mesh.spread', fixedMax: true });
@@ -1194,6 +1213,14 @@ function buildPanel() {
   segRow('形', [['整った網', 'geo'], ['散らばり（1個ずつ）', 'fibo']], () => (vfCfg().meshKind === 'fibo' ? 'fibo' : 'geo'), v => { vfSet('meshKind', v); markDirty(); });
   vfS('細かさ（整った網）', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '形が「整った網」の時の球の分割数。3=カンプと同じ密度(点92・線270)。');
   vfS('面の数（散らばり・1個ずつ）', 'fn', 12, 300, 1, v => '点' + Math.round(v) + '・線' + (3 * Math.round(v) - 6), '形が「散らばり」の時の点の数。1個ずつ増減できます。92＝整った網の細かさ3(カンプ)と同じ点・線の数。');
+  });
+  /* 【2026-09-28 ヒデさん依頼「形はある程度変えずに、面の数を増やせるつまみを」】上の細かさは点を球の表面へ置き直すので丸くなる。こちらは今の三角形を平らなまま割る */
+  subgroup('面を細かく（形はそのまま）', () => {
+  vfS('割る細かさ', 'sub', 1, 4, 1, v => { const k = Math.round(v); if (k <= 1) return 'そのまま'; try { const c = vfCfg(); const b0 = c.meshKind === 'fibo' ? sphereFiboHull(Math.max(12, Math.round(c.fn || 92))) : vfBuild(Math.max(1, Math.min(4, Math.round(c.freq)))); const g = meshSubdivide(b0, k, 0); return `${k}×${k}（面${g.faces.length}・線${g.edges.length}）`; } catch (e) { return k + '×' + k; } },
+    '今の網の三角形を、平らなまま 2×2・3×3・4×4 に割ります。角の位置と面の向きは変わらないので、形はそのままで面と線だけが増えます。');
+  vfS('丸み', 'subRound', 0, 1, 0.05, v => v <= 0.001 ? '0（形そのまま）' : Math.round(v * 100) + '%',
+    '割って増えた点を、球の表面へどれだけ寄せるか。0＝今の形のまま平ら／100%＝球に近づく(上の「細かさ」を増やした時と同じ丸さ)。割る細かさが「そのまま」の時は効きません。');
+  segRow('増えた点のドット', [['出す', 1], ['出さない', 0]], () => (vfCfgVal('subDots') === 0 ? 0 : 1), v => { vfSet('subDots', v); markDirty(); });   /* vfCfgVal/vfSet＝スマホモード中はスマホだけの値 */
   });
   /* --- 基本: 機能名 --- */
   sub(catVis, '機能名', false);
@@ -2380,25 +2407,35 @@ const textTools = (() => {
          スマホモードで付けた SP 専用の上書き(editsMb)だけで決まる。→ PC のコピーのサイズをいじっても SP は連動しない。
          太さ・行間・字間(fw/lh/ls)は共通デザインなので base を引き継ぐ(SP専用の上書きがあればそちらが勝つ)。 */
       if (_isMb && (!_mob || _mob.fs == null)) delete e.fs;
+      /* 【2026-09-28】字間は新しい % (lsp) と古い px (ls) のどちらか1つだけにする(スマホの上書きにある方を優先) */
+      if (_mob && _mob.lsp != null) delete e.ls; else if (_mob && _mob.ls != null) delete e.lsp;
+      /* 【2026-09-28】スマホ用の CSS が 行間・字間 を自分で決めている文字は、PC(base)の値を引き継がない(スマホの上書きがあればそれを使う) */
+      if (_isMb) { const own = mbOwnFontProps(sp);
+        if (own.has('line-height') && (!_mob || _mob.lh == null)) delete e.lh;
+        if (own.has('letter-spacing') && (!_mob || (_mob.lsp == null && _mob.ls == null))) { delete e.lsp; delete e.ls; } }
       for (const el of specEls(sp)) {
         el.style.fontSize      = e.fs != null ? e.fs + 'px' : '';
         el.style.fontWeight    = e.fw != null ? String(e.fw) : '';
         el.style.lineHeight    = e.lh != null ? String(e.lh) : '';
-        el.style.letterSpacing = e.ls != null ? e.ls + 'px' : '';
-        const hasPad = ['pt', 'pr', 'pb', 'pl'].some(k => e[k] != null);
-        el.style.padding = hasPad
-          ? `${e.pt || 0}px ${e.pr || 0}px ${e.pb || 0}px ${e.pl || 0}px` : '';
+        el.style.letterSpacing = e.lsp != null ? (e.lsp / 100) + 'em' : (e.ls != null ? e.ls + 'px' : '');   /* 【2026-09-28】字間は %(文字の大きさに対する割合)。古い px の値も読む */
+        /* 【2026-09-28】余白は触った辺だけ上書きする(前は1辺だけ触ると、ほかの3辺が 0 になって崩れていた) */
+        el.style.padding = '';
+        el.style.paddingTop = e.pt != null ? e.pt + 'px' : ''; el.style.paddingRight = e.pr != null ? e.pr + 'px' : '';
+        el.style.paddingBottom = e.pb != null ? e.pb + 'px' : ''; el.style.paddingLeft = e.pl != null ? e.pl + 'px' : '';
         /* 位置移動は margin で反映(transformアニメと非競合。left/top指定要素にも効く)。
            【2026-09-17】rel の要素(margin:auto で中央寄せのフォーム等)は margin だと中央寄せが壊れるので、
            position:relative + left/top でずらす(static/relative の時だけ。absolute はそのまま margin)。 */
         let useRel = false;
         if (sp.rel) { const pos = getComputedStyle(el).position; if (pos === 'static') { el.style.position = 'relative'; useRel = true; } else if (pos === 'relative') useRel = true; }
+        /* 【2026-09-28 ヒデさん依頼「今の既定値から上下できるように・パネル全般」】位置は「CSS の値 ＋ ずらした量」にする。
+           前は CSS の余白(left/top)を丸ごと置き換えていたので、CSS に余白がある要素(例: 送信ボタン 上6px)は、↑1回・ドラッグの最初で 6px→1px に飛んでいた。
+           今ずらしている要素(ビジョンのメッセージ・メッシュ図)は CSS の余白が 0 なので見た目は変わらない(実測 2026-09-28) */
         if (useRel) {
-          el.style.left = e.dx ? e.dx + 'px' : ''; el.style.top = e.dy ? e.dy + 'px' : '';
-          el.style.marginLeft = ''; el.style.marginTop = '';
+          el.style.left = ''; el.style.top = ''; el.style.marginLeft = ''; el.style.marginTop = '';
+          if (e.dx || e.dy) { const c0 = getComputedStyle(el); if (e.dx) el.style.left = ((parseFloat(c0.left) || 0) + e.dx) + 'px'; if (e.dy) el.style.top = ((parseFloat(c0.top) || 0) + e.dy) + 'px'; }
         } else {
-          el.style.marginLeft = e.dx ? e.dx + 'px' : '';
-          el.style.marginTop  = e.dy ? e.dy + 'px' : '';
+          el.style.marginLeft = ''; el.style.marginTop = '';
+          if (e.dx || e.dy) { const c0 = getComputedStyle(el); if (e.dx) el.style.marginLeft = ((parseFloat(c0.marginLeft) || 0) + e.dx) + 'px'; if (e.dy) el.style.marginTop = ((parseFloat(c0.marginTop) || 0) + e.dy) + 'px'; }
         }
         if (sp.text && !sp.multi && e.text != null && el.textContent !== e.text) el.textContent = e.text;
       }
@@ -2446,15 +2483,19 @@ const textTools = (() => {
     document.body.appendChild(bar);
     return bar;
   }
-  function num(label, unit, get, setV, min, max, step) {
+  /* 【2026-09-28 ヒデさん依頼】cur = 触っていない時に入れておく「今の実際の値」。前は空欄(auto)から始まり、↑1回で
+     サイズ 8px・行間 0.8・字間 +0.1px に飛んでいた。空欄にせず今の値を入れておけば、そこから1段ずつ上下できる */
+  function num(label, unit, get, setV, min, max, step, cur0) {
     const wrap = document.createElement('label');
     wrap.className = 'tb-num';
     wrap.innerHTML = `<span>${label}</span>`;
     const inp = document.createElement('input');
     inp.type = 'number'; inp.min = min; inp.max = max; inp.step = step;
     const cur = get();
-    inp.value = (cur == null ? '' : cur);
-    inp.placeholder = 'auto';
+    const now = (typeof cur0 === 'function') ? cur0() : null;
+    inp.value = (cur != null ? cur : (now != null ? now : ''));
+    inp.placeholder = now != null ? String(now) : 'auto';
+    if (inp.value !== '') inp.min = txtAlignMin(inp.value, min, step);   /* 今の値を通る刻みにそろえる(↑↓で元に戻れる) */
     inp.oninput = () => {
       const v = inp.value === '' ? null : parseFloat(inp.value);
       setV(v); applyAll(); markDirty();
@@ -2476,13 +2517,13 @@ const textTools = (() => {
     b.appendChild(title);
     /* 位置 X/Y(移動可の要素のみ) */
     if (sel.move !== 0) {
-      b.appendChild(num('X', 'px', () => e.dx, v => { if (v == null) delete e.dx; else e.dx = v; }, -1200, 1200, 1));
-      b.appendChild(num('Y', 'px', () => e.dy, v => { if (v == null) delete e.dy; else e.dy = v; }, -1200, 1200, 1));
+      b.appendChild(num('X', 'px', () => e.dx, v => { if (v == null) delete e.dx; else e.dx = v; }, -1200, 1200, 1, () => 0));
+      b.appendChild(num('Y', 'px', () => e.dy, v => { if (v == null) delete e.dy; else e.dy = v; }, -1200, 1200, 1, () => 0));
     }
     if (sel.font !== 0) {
       /* サイズ */
       b.appendChild(num('サイズ', 'px', () => e.fs, v => { if (v == null) delete e.fs; else e.fs = v; },
-        8, 200, 1));
+        8, 200, 1, () => Math.round(parseFloat(cs.fontSize))));
       /* ウェイト */
       const wWrap = document.createElement('label'); wWrap.className = 'tb-num';
       wWrap.innerHTML = '<span>太さ</span>';
@@ -2495,18 +2536,21 @@ const textTools = (() => {
       wWrap.appendChild(wSel); b.appendChild(wWrap);
       /* 行間(倍) */
       b.appendChild(num('行間', '', () => e.lh, v => { if (v == null) delete e.lh; else e.lh = v; },
-        0.8, 3, 0.05));
-      /* 字間 */
-      b.appendChild(num('字間', 'px', () => e.ls, v => { if (v == null) delete e.ls; else e.ls = v; },
-        -5, 20, 0.1));
+        0.8, 3, 0.05, () => +txtLineRatio(el, cs).toFixed(2)));
+      /* 字間(%)【2026-09-28】文字の大きさに対する割合で持つ(px だと文字の小さいスマホで詰まりすぎた)。古い px の値は % に直して出す */
+      b.appendChild(num('字間', '%', () => { const v = txtEdLsPct(e, cs); return v != null ? +v.toFixed(1) : null; }, v => { delete e.ls; if (v == null) delete e.lsp; else e.lsp = v; },
+        -20, 50, 0.5, () => +txtLsPct(cs).toFixed(1)));
     }
     /* 余白: 上右下左 */
     const padWrap = document.createElement('div'); padWrap.className = 'tb-pad';
     padWrap.innerHTML = '<span>余白</span>';
     [['pt', '上'], ['pr', '右'], ['pb', '下'], ['pl', '左']].forEach(([k, lb]) => {
       const i = document.createElement('input');
-      i.type = 'number'; i.title = lb + '余白(px)'; i.placeholder = lb;
-      i.value = e[k] != null ? e[k] : '';
+      i.type = 'number'; i.title = lb + '余白(px)。今の余白が入っているので、そこから上下できます(触った辺だけ変わる)';
+      const _side = { pt: 'paddingTop', pr: 'paddingRight', pb: 'paddingBottom', pl: 'paddingLeft' }[k];
+      const _now = Math.round(parseFloat(cs[_side]) || 0);   /* 【2026-09-28】空欄にせず今の余白を入れる */
+      i.placeholder = String(_now);
+      i.value = e[k] != null ? e[k] : _now;
       i.oninput = () => { const v = i.value === '' ? null : parseFloat(i.value);
         if (v == null) delete e[k]; else e[k] = v; applyAll(); markDirty(); };
       i.onpointerdown = ev => ev.stopPropagation();
@@ -2522,8 +2566,10 @@ const textTools = (() => {
     }
     /* リセット */
     const rs = document.createElement('button'); rs.className = 'tb-btn'; rs.textContent = '↺ この要素をリセット';
+    rs.title = 'このページを開いた時の状態に戻す（決めてある既定の値は消さない）';
     rs.onpointerdown = ev => ev.stopPropagation();
-    rs.onclick = () => { params.edits[sel.key] = {}; applyAll(); markDirty(); renderBar(); };
+    /* 【2026-09-28】前は全部消して CSS のままに戻していた(焼き込んだ太さ・大きさまで消えて崩れた)。パネルの ↺ と同じく「開いた時の値」に戻す */
+    rs.onclick = () => { const st = (typeof SESSION_START !== 'undefined' && SESSION_START && SESSION_START.edits && SESSION_START.edits[sel.key]) || null; params.edits[sel.key] = st ? JSON.parse(JSON.stringify(st)) : {}; applyAll(); markDirty(); renderBar(); try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} };
     b.appendChild(rs);
     b.classList.add('on');
     positionBar(el);
@@ -2885,7 +2931,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       if (el) for (var j = 0; j < _mbRulesCache.length; j++) { try { if (el.matches(_mbRulesCache[j].sel)) _mbRulesCache[j].props.forEach(function (q) { props[q] = 1; }); } catch (e) {} }
       /* 【2026-09-20】CSSの@mediaだけでなく、実際にスマホモードで付けた上書き(editsMb)も青印にする */
       var _mk = row.dataset.key, _mo = (params.editsMb && params.editsMb[_mk]) || null;
-      if (_mo) { var _MAP = { fs: 'font-size', fw: 'font-weight', lh: 'line-height', ls: 'letter-spacing' }; for (var _k in _MAP) { if (_mo[_k] != null) props[_MAP[_k]] = 1; } }
+      if (_mo) { var _MAP = { fs: 'font-size', fw: 'font-weight', lh: 'line-height', ls: 'letter-spacing', lsp: 'letter-spacing' }; for (var _k in _MAP) { if (_mo[_k] != null) props[_MAP[_k]] = 1; } }
       row.classList.toggle('mb-override', Object.keys(props).length > 0);
       var inp = row.querySelectorAll('[data-prop]');
       for (var m = 0; m < inp.length; m++) inp[m].classList.toggle('mb-diff', !!props[inp[m].dataset.prop]);

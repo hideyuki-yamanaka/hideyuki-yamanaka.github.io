@@ -2836,6 +2836,74 @@ function segRow(label, opts, getDir, setDir) {
   mount.appendChild(row);
 }
 
+/* 【2026-09-28】下の部品は、パネルを作る時(フォント行)に使うので、パネルより前(ここ)に置く */
+/* ===== 【2026-09-28 ヒデさん依頼「フォントの行間・字間を上下すると値が飛んでデザインが崩れる。今の既定値から上下できるように。調整パネル全般」】 =====
+   文字の「今の実際の値」を読む共通の部品(パネルのフォント行・✏️編集の浮きバーで使う)。
+   ・行間が normal(おまかせ)の文字は、欄が空になり ↑ で一番小さい 0.8 に飛んでいた(PC 12行・スマホ 11行・実測)。
+     → その文字と同じ書体・大きさ・中身で2行の見本を作り、1行の高さを測って「今の行間(倍)」として出す
+   ・字間は「文字の大きさに対する %」で持つ(決まり 4-7)。px で持つと、PC で動かした値がそのまま文字の小さいスマホに入って詰まりすぎた */
+const __lhNormCache = new Map();
+function txtLineRatio(el, c) {
+  const fs = parseFloat(c.fontSize) || 16, lh = parseFloat(c.lineHeight);
+  if (isFinite(lh) && lh > 0) return lh / fs;
+  const txt = String(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 16) || 'Ag';
+  const key = [c.fontFamily, c.fontSize, c.fontWeight, c.fontStyle, txt].join('|');
+  if (__lhNormCache.has(key)) return __lhNormCache.get(key);
+  let v = 1.2;
+  try {
+    const doc = el.ownerDocument || document, d = doc.createElement('div');
+    d.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;line-height:normal;letter-spacing:0;padding:0;border:0;margin:0';
+    d.style.fontFamily = c.fontFamily; d.style.fontSize = c.fontSize; d.style.fontWeight = c.fontWeight; d.style.fontStyle = c.fontStyle;
+    d.textContent = txt + '\n' + txt; doc.body.appendChild(d);
+    const r = d.getBoundingClientRect().height / 2 / fs; d.remove();
+    if (isFinite(r) && r > 0.5) v = r;
+  } catch (e) {}
+  __lhNormCache.set(key, v); return v;
+}
+/* 数字の欄の ↑↓ は「最小値」を起点に刻みへ吸い付くので、今の値が刻みの上に無いと ↑↓ で元に戻らない(1.14 → ↑1.15 → ↓1.10)。
+   最小値を「今の値を通る刻み」にそろえて、今の値から1段ずつ上下して元に戻れるようにする */
+function txtAlignMin(cur, min, step) { cur = +cur; if (!isFinite(cur) || cur < min) return min; const k = Math.floor((cur - min) / step + 1e-9); return +(cur - k * step).toFixed(4); }
+function txtLsPct(c) { const fs = parseFloat(c.fontSize) || 16; return c.letterSpacing === 'normal' ? 0 : (parseFloat(c.letterSpacing) || 0) / fs * 100; }
+/* 保存された字間を % で返す(新しい lsp を優先。古い px の ls は、その文字の大きさで % に直して読む) */
+function txtEdLsPct(e, c) { if (!e) return null; if (e.lsp != null) return e.lsp; if (e.ls != null) { const fs = c ? (parseFloat(c.fontSize) || 16) : 16; return e.ls / fs * 100; } return null; }
+/* スマホ用の CSS(≤640px の @media ／ html.mb)が、その文字の 行間・字間 を自分で決めているか(パネルの青い印と同じ見分け方)。
+   決めている性質は、PC で動かした値をスマホへ引き継がない＝スマホがPCの数字へ飛ばない(決まり 6-8「PCで変えた値はスマホで上書きした所に出さない」) */
+let __mbFontRules = null;
+function mbFontRuleList() {
+  if (__mbFontRules) return __mbFontRules;
+  const FONT = ['font-size', 'font-weight', 'line-height', 'letter-spacing'], out = [];
+  const scan = (rules, mob) => { for (let i = 0; i < rules.length; i++) { const r = rules[i];
+    if (r.type === 4 && r.media) { const mm = (r.media.mediaText || '').match(/max-width:\s*(\d+)px/); scan(r.cssRules || [], mob || !!(mm && +mm[1] <= 640)); }
+    else if (r.type === 1 && r.selectorText) { const sel = r.selectorText; if (!(mob || /html\.mb\b/.test(sel))) continue; const pr = FONT.filter(q => r.style.getPropertyValue(q)); if (pr.length) out.push({ sel: sel.replace(/html\.mb\b\s*/g, '').replace(/html:not\(\.mb\)\b\s*/g, ''), props: pr }); } } };
+  for (let k = 0; k < document.styleSheets.length; k++) { try { scan(document.styleSheets[k].cssRules || [], false); } catch (e) {} }
+  if (out.length) __mbFontRules = out;   /* CSS の読み込み前(0件)は控えない */
+  return out;
+}
+const __mbOwnCache = {};
+function mbOwnFontProps(sp) {
+  if (__mbOwnCache[sp.key]) return __mbOwnCache[sp.key];
+  const set = new Set(); let el = null; try { el = document.querySelector(sp.sel); } catch (e) {}
+  if (el) mbFontRuleList().forEach(r => { try { if (el.matches(r.sel)) r.props.forEach(q => set.add(q)); } catch (e) {} });
+  if (el && __mbFontRules) __mbOwnCache[sp.key] = set;
+  return set;
+}
+/* 【2026-09-28】上の「スマホは自分の CSS がある 行間・字間 を PC から引き継がない」に変える前は、PC で決めた行間(例: Point の本文 1.8)が
+   スマホにも入っていた。スマホの見た目を変えないよう、その値をスマホの上書き(editsMb)へ1回だけ写す(焼き込みにも同じ値を入れてある)。
+   PC(スマホ幅でない)の時だけ・印 anyflow-lhls-mbkeep-20260928 */
+try {
+  if (!(typeof isMobile !== 'undefined' && isMobile) && !localStorage.getItem('anyflow-lhls-mbkeep-20260928') && params) {
+    const E = params.edits || {}, M = params.editsMb || (params.editsMb = {}); let ch = false;
+    for (const sp of TEXT_SPEC) {
+      const b0 = E[sp.key]; if (!b0 || (b0.lh == null && b0.ls == null && b0.lsp == null)) continue;
+      const own = mbOwnFontProps(sp), m = M[sp.key] || {};
+      if (own.has('line-height') && b0.lh != null && m.lh == null) { m.lh = b0.lh; ch = true; }
+      if (own.has('letter-spacing') && (b0.ls != null || b0.lsp != null) && m.ls == null && m.lsp == null) { if (b0.lsp != null) m.lsp = b0.lsp; else m.ls = b0.ls; ch = true; }
+      if (Object.keys(m).length) M[sp.key] = m;
+    }
+    if (ch) { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const o = JSON.parse(raw); o.editsMb = JSON.parse(JSON.stringify(M)); localStorage.setItem(STORAGE_KEY, JSON.stringify(o)); } }
+    localStorage.setItem('anyflow-lhls-mbkeep-20260928', '1');
+  }
+} catch (e) {}
 /* ===== 【2026-09-17 大掃除・ヒデさん依頼】「文字」の1行: 太さ(プルダウン)・行間・字間 =====
    TEXT_SPEC の1項目につき1行。値は params.edits[key] (✏️編集の浮きバーと同じ置き場)。
    空欄＝今のCSSの値をそのまま使う(カッコ内に実測値を出して「今いくつか」が読めるようにする)。 */
@@ -2869,31 +2937,37 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const ed = () => phoneOn() ? edMob() : edBase();
   /* 【2026-09-21 ヒデさん指摘・Y11】スマホモード中は「見えている実サイズ」をプレビュー枠(iframe=SP文脈)から測る。
      パネルは PC ページなので getComputedStyle は PC サイズを返し、SP プレビューの見た目と食い違っていた。 */
-  const cs = () => {
-    try { if (phoneOn()) { const f = document.getElementById('ppFrame'); if (f && f.contentDocument && f.contentWindow) { const el2 = f.contentDocument.querySelector(sp.sel); if (el2) return f.contentWindow.getComputedStyle(el2); } return null; /* 【2026-09-22】スマホモード中はSPプレビュー(iframe)からのみ読む。iframe未ロード時に親(=PC表示)の値を誤って拾わない(拾うと入力がPC値へ飛ぶ) */ } } catch (e) {}
-    const el = document.querySelector(sp.sel); return el ? getComputedStyle(el) : null;
+  /* 【2026-09-28】要素も一緒に返す(行間が normal の時に、その要素の書体と中身で1行の高さを測るため) */
+  const tgt = () => {
+    try { if (phoneOn()) { const f = document.getElementById('ppFrame'); if (f && f.contentDocument && f.contentWindow) { const el2 = f.contentDocument.querySelector(sp.sel); if (el2) return { el: el2, c: f.contentWindow.getComputedStyle(el2) }; } return null; /* 【2026-09-22】スマホモード中はSPプレビュー(iframe)からのみ読む。iframe未ロード時に親(=PC表示)の値を誤って拾わない(拾うと入力がPC値へ飛ぶ) */ } } catch (e) {}
+    const el = document.querySelector(sp.sel); return el ? { el, c: getComputedStyle(el) } : null;
   };
+  const cs = () => { const t = tgt(); return t ? t.c : null; };
   const apply = () => { try { textTools.applyAll(); textTools.refresh(); } catch (e) {} markDirty(); };
   const wSel = document.createElement('select'); wSel.className = 'txt-w'; wSel.title = '太さ(ウェイト)。自動＝CSSのまま';
   wSel.innerHTML = '<option value="">自動</option>' + [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => `<option value="${w}">${w}</option>`).join('');
   wSel.onchange = () => { const e = ed(); if (wSel.value === '') delete e.fw; else e.fw = +wSel.value; apply(); sync(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
   const numIn = (title, step, min, max, key) => {
     const i = document.createElement('input'); i.type = 'number'; i.className = 'txt-n'; i.title = title; i.step = step; i.min = min; i.max = max;
-    i.oninput = () => { const e = ed(); const v = i.value === '' ? null : parseFloat(i.value); if (v == null || isNaN(v)) delete e[key]; else e[key] = v; i.classList.toggle('is-auto', v == null); apply(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
+    i.oninput = () => { const e = ed(); const v = i.value === '' ? null : parseFloat(i.value); if (key === 'lsp') delete e.ls; /* 【2026-09-28】古い px の字間は消して % に置き換える */ if (v == null || isNaN(v)) delete e[key]; else e[key] = v; i.classList.toggle('is-auto', v == null); apply(); try { if (window.__markMbOverrides) window.__markMbOverrides(); } catch (e2) {} };
     i.onpointerdown = ev => ev.stopPropagation();
     return i;
   };
   const fsz = numIn('文字サイズ(px)。いまの大きさが入っているので、そこから上下できます。消すとCSSのまま(自動)に戻る', '1', '6', '200', 'fs');   /* 【2026-09-19 ヒデさん依頼】サイズは現在値からの相殺に */
-  const lh = numIn('行間(倍)。空欄＝CSSのまま', '0.05', '0.8', '3', 'lh');
-  const ls = numIn('字間(px)。空欄＝CSSのまま', '0.1', '-5', '20', 'ls');
+  const lh = numIn('行間(倍)。いまの行間が入っているので、そこから上下できます。消すとCSSのまま(自動)に戻る', '0.05', '0.8', '3', 'lh');
+  /* 【2026-09-28 ヒデさん依頼】字間は「文字の大きさに対する %」で持つ(決まり 4-7)。px だと PC で動かした値が文字の小さいスマホにそのまま入り、詰まりすぎた */
+  const ls = numIn('字間(%)。文字の大きさに対する割合。いまの字間が入っているので、そこから上下できます。消すとCSSのまま(自動)に戻る', '0.5', '-20', '50', 'lsp');
   fsz.dataset.prop = 'font-size'; wSel.dataset.prop = 'font-weight'; lh.dataset.prop = 'line-height'; ls.dataset.prop = 'letter-spacing';   /* 【2026-09-19】スマホモードで「モバイルで値が変わる」ものをオレンジに */
   const mkLab = (t, el, title) => { const pair = document.createElement('span'); pair.className = 'txt-pair'; const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; pair.append(l, el); box.append(pair); };
-  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(px)');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に */
+  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(%)・文字の大きさに対する割合');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に */
   function sync() {
     /* スマホモード中は「共有(base)＋スマホ上書き(mb)」を表示。通常は共有だけ */
     const _base = (params.edits && params.edits[sp.key]) || {};
     const _mob = (params.editsMb && params.editsMb[sp.key]) || {};
-    const e = phoneOn() ? Object.assign({}, _base, _mob) : _base, c = cs();
+    const e = phoneOn() ? Object.assign({}, _base, _mob) : _base, t = tgt(), c = t ? t.c : null;
+    if (phoneOn() && _mob.lsp != null) delete e.ls; else if (phoneOn() && _mob.ls != null) delete e.lsp;   /* 【2026-09-28】字間は新旧どちらか1つ */
+    /* 【2026-09-28】スマホモードで枠(スマホの画面)がまだ読み込めていない間は、今の値が読めないので触れないようにする(PCの値から動いてスマホが飛ぶのを防ぐ) */
+    [fsz, wSel, lh, ls].forEach(x => { x.disabled = !c; });
     const _eff = c ? Math.round(parseFloat(c.fontSize)) : '';
     /* 【2026-09-21 ヒデさん報告・導入事例で「40pxと出るのに見た目が違う」】文字サイズ(fs)は SP(実機 isMobile＝狭幅／スマホモード)では
        PC(base=edits)の fs を無視して描く(applyAll と同じ)。なのでパネルの表示も SP では base.fs を出さず、SP専用(editsMb.fs)か
@@ -2906,14 +2980,17 @@ st.textContent = '.txt-row{align-items:flex-start}'
     wSel.value = e.fw != null ? String(e.fw) : '';
     wSel.options[0].textContent = c ? `自動(${c.fontWeight})` : '自動';
     /* 【2026-09-20 ヒデさん依頼・#12】lh/ls も「いまの値」を入れておく → そこから上下できる(空欄起点で変な値へ飛ぶのを防ぐ)。触っていない間は e.lh/e.ls 未設定(=CSSのまま)で薄く表示 */
-    const _lhCur = c ? ((parseFloat(c.lineHeight) && parseFloat(c.fontSize)) ? +(parseFloat(c.lineHeight) / parseFloat(c.fontSize)).toFixed(2) : '') : '';
+    /* 【2026-09-28 ヒデさん依頼】行間が normal(おまかせ)でも空欄にしない＝実際の1行の高さを測って入れる(空欄だと ↑ で 0.8 に飛んで文字が重なっていた) */
+    const _lhCur = c ? +txtLineRatio(t.el, c).toFixed(2) : '';
     lh.value = e.lh != null ? e.lh : (c ? _lhCur : lh.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
     lh.placeholder = _lhCur + '';
     lh.classList.toggle('is-auto', e.lh == null);
-    const _lsCur = c ? (c.letterSpacing === 'normal' ? 0 : +parseFloat(c.letterSpacing).toFixed(1)) : '';
-    ls.value = e.ls != null ? e.ls : (c ? _lsCur : ls.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
+    const _lsCur = c ? +txtLsPct(c).toFixed(1) : '';   /* 【2026-09-28】字間は % で出す */
+    const _lsEd = txtEdLsPct(e, c);
+    ls.value = _lsEd != null ? +_lsEd.toFixed(1) : (c ? _lsCur : ls.value);   /* 【2026-09-22】iframe未ロード時は現在値を保持 */
     ls.placeholder = _lsCur + '';
-    ls.classList.toggle('is-auto', e.ls == null);
+    ls.classList.toggle('is-auto', _lsEd == null);
+    fsz.min = txtAlignMin(fsz.value, 6, 1); lh.min = txtAlignMin(lh.value, 0.8, 0.05); ls.min = txtAlignMin(ls.value, -20, 0.5);   /* 【2026-09-28】今の値から1段ずつ上下→元に戻れる */
   }
   sync();
   row._sync = sync;   /* 【2026-09-21 Y11】syncPanelRows から再syncできるように(スマホモードでSP実サイズを表示) */
@@ -2926,11 +3003,11 @@ st.textContent = '.txt-row{align-items:flex-start}'
        通常モードは「このセッションを開いた時の値」(SESSION_START.edits)に戻す(無ければ未設定=CSSのまま)。 */
     if (phoneOn()) {
       const store = params.editsMb && params.editsMb[sp.key];
-      if (store) ['fs', 'fw', 'lh', 'ls'].forEach(k => { delete store[k]; });
+      if (store) ['fs', 'fw', 'lh', 'ls', 'lsp'].forEach(k => { delete store[k]; });
     } else {
       const start = SESSION_START && SESSION_START.edits && SESSION_START.edits[sp.key];
       const store = (params.edits[sp.key] || (params.edits[sp.key] = {}));
-      ['fs', 'fw', 'lh', 'ls'].forEach(k => { if (start && start[k] != null) store[k] = start[k]; else delete store[k]; });
+      ['fs', 'fw', 'lh', 'ls', 'lsp'].forEach(k => { if (start && start[k] != null) store[k] = start[k]; else delete store[k]; });
     }
     apply(); sync();
     try { if (typeof window.__markMbOverrides === 'function') window.__markMbOverrides(); } catch (e) {}

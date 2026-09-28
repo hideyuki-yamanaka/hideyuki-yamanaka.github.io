@@ -814,7 +814,7 @@ function buildGeodesic(freq) {
   const eset = new Set(), edges = [];
   const addE = (a, b) => { const k = a < b ? a + '_' + b : b + '_' + a; if (!eset.has(k)) { eset.add(k); edges.push([a, b]); } };
   for (const [a, b, c] of faces) { addE(a, b); addE(b, c); addE(c, a); }
-  return { verts, edges };
+  return { verts, edges, faces };   /* faces=【2026-09-28】面を平らなまま割る(meshSubdivide)用 */
 }
 /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】フィボナッチ球(n点)を凸包で三角形分割した網。
    測地線球(buildGeodesic/vfBuild)は点が飛び飛び(12/42/92/162…)なので、点の数を1個ずつ変えたい時はこちら。
@@ -843,7 +843,31 @@ function sphereFiboHull(n) {
   }
   const es = new Set(), edges = [];
   for (const f of F) for (let k = 0; k < 3; k++) { const a = f.v[k], b = f.v[(k + 1) % 3]; const key = a < b ? a * 65536 + b : b * 65536 + a; if (!es.has(key)) { es.add(key); edges.push([Math.min(a, b), Math.max(a, b)]); } }
-  return { verts: P, edges };
+  return { verts: P, edges, faces: F.map(f => f.v.slice()) };   /* faces=【2026-09-28】meshSubdivide 用 */
+}
+/* 【2026-09-28 ヒデさん依頼「メッシュの形はある程度変えずに、面の数を増やせるつまみを。今のは面を増やすと球に近づく」】
+   今までの「面の数」は、増えた点を全部 球の表面へ置き直すので、面が細かいほど丸くなった(キービジュアル=80面の多面体 → 320面でほぼ球)。
+   こちらは今の網の三角形を【平らなまま】n×n に割る(新しい点は三角形の面の上に置く)＝角の位置と面の向きは変わらず、面と線だけが増える。
+   round(0〜1)で新しい点を球の表面へ寄せる(1＝今までの「面の数」と同じ丸さ)。元の点は元の番号のまま(色の並びを変えない)。
+   返り値の sub[i]＝割って増えた点か(「増えた点のドット：出さない」用) */
+function meshSubdivide(mesh, n, round) {
+  n = Math.max(1, Math.min(6, Math.round(n || 1))); round = Math.max(0, Math.min(1, +round || 0));
+  if (n <= 1 || !mesh || !mesh.faces || !mesh.faces.length) return mesh;
+  const verts = [], sub = [], idx = new Map();
+  const add = (p, isSub) => { const k = p[0].toFixed(5) + ',' + p[1].toFixed(5) + ',' + p[2].toFixed(5); let i = idx.get(k); if (i == null) { i = verts.length; verts.push(p); sub.push(isSub); idx.set(k, i); } return i; };
+  mesh.verts.forEach(v => add([v[0], v[1], v[2]], false));
+  const es = new Set(), edges = [], faces = [];
+  const E = (a, b) => { const k = a < b ? a * 1048576 + b : b * 1048576 + a; if (!es.has(k)) { es.add(k); edges.push([Math.min(a, b), Math.max(a, b)]); } };
+  for (const [ia, ib, ic] of mesh.faces) {
+    const A = mesh.verts[ia], B = mesh.verts[ib], C = mesh.verts[ic], g = [];
+    for (let i = 0; i <= n; i++) { g[i] = []; for (let j = 0; j <= n - i; j++) { const u = i / n, w = j / n;
+      g[i][j] = add([A[0] + (B[0] - A[0]) * u + (C[0] - A[0]) * w, A[1] + (B[1] - A[1]) * u + (C[1] - A[1]) * w, A[2] + (B[2] - A[2]) * u + (C[2] - A[2]) * w], true); } }
+    for (let i = 0; i < n; i++) for (let j = 0; j < n - i; j++) {
+      const a = g[i][j], b = g[i + 1][j], c = g[i][j + 1]; E(a, b); E(b, c); E(c, a); faces.push([a, b, c]);
+      if (j < n - i - 1) { const d = g[i + 1][j + 1]; E(b, d); E(d, c); faces.push([b, d, c]); } }
+  }
+  if (round > 0) for (let i = 0; i < verts.length; i++) { if (!sub[i]) continue; const v = verts[i], l = Math.hypot(v[0], v[1], v[2]) || 1; for (let k = 0; k < 3; k++) v[k] += (v[k] / l - v[k]) * round; }
+  return { verts, edges, faces, sub };
 }
 let convLine = null;   // 線(path)のプール。奥レイヤーに置く(惑星の後ろを通る線が自然に隠れる)
 /* 【2026-08-27 ヒデさん指定】惑星を「包囲する」ケージ用の線。
@@ -1908,22 +1932,24 @@ function convFrame(geoms) {
     /* 【2026-09-02 ヒデさん指定】geo=測地線球(整った面)。それ以外はフィボナッチ球(従来) */
     const shape = M.cageShape || 'fibo';
     const freq = Math.max(1, Math.round(M.cageFreq == null ? 2 : M.cageFreq));
+    const subN = Math.max(1, Math.min(4, Math.round(M.cageSub == null ? 1 : M.cageSub))), subR = Math.max(0, Math.min(1, M.cageSubRound || 0));   /* 【2026-09-28】面を平らなまま割る段数・丸み */
+    const subKey = subN + '_' + subR.toFixed(2) + '_' + (shape === 'geo' ? 'g' + freq : 'f' + fiboN);
     /* 球殻の上の位置は回しても関係が変わらないので、隣どうしの組は作る時に1回だけ決める */
-    if (!convMesh || convMesh.style !== 'cage' || convMesh.shape !== shape ||
-        (shape !== 'geo' && convMesh.nodes.length !== fiboN) || (shape === 'geo' && convMesh.freq !== freq)) {   /* 【2026-09-25】散らばりも三角網になったので骨の本数(links)は形に関係しない */
+    if (!convMesh || convMesh.style !== 'cage' || convMesh.shape !== shape || convMesh.subKey !== subKey ||
+        (shape !== 'geo' && convMesh.baseN !== fiboN) || (shape === 'geo' && convMesh.freq !== freq)) {   /* 【2026-09-25】散らばりも三角網になったので骨の本数(links)は形に関係しない */
       let base, pairs;
       if (shape === 'geo') {
         /* 測地線球: 頂点も辺も「整った面」そのもの。最近傍接続や縦潰しをしないので歪まない。 */
-        const g = buildGeodesic(freq);
-        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0 }));
+        const g = meshSubdivide(buildGeodesic(freq), subN, subR);   /* 【2026-09-28】面を平らなまま割る(1＝そのまま) */
+        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0, sub: !!(g.sub && g.sub[i]) }));
         pairs = g.edges;
       } else {
         /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】散らばり＝フィボナッチ球を凸包で三角網に(旧: 最寄りN点と結ぶ＝交差や穴が出てラフすぎた)。点の数は cageFiboN */
-        const g = sphereFiboHull(fiboN);
-        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0 }));
+        const g = meshSubdivide(sphereFiboHull(fiboN), subN, subR);   /* 【2026-09-28】面を平らなまま割る(1＝そのまま) */
+        base = g.verts.map((v, i) => ({ x: v[0], y: v[1], z: v[2], c: i % 2 ? CONV_PINK : CONV_BLUE, tw: 0, sub: !!(g.sub && g.sub[i]) }));
         pairs = g.edges;
       }
-      convMesh = { style: 'cage', shape, freq, nodes: base, pairs, links, pk: [], next: 0 };
+      convMesh = { style: 'cage', shape, freq, nodes: base, pairs, links, pk: [], next: 0, subKey, baseN: fiboN };
     }
     const spin = M.cageSpin == null ? 1 : M.cageSpin;
     const yaw = (convDotMoves() ? elapsed : 0) * 0.42 * spin * (params.direction || 1) + (M.cageYaw || 0) * Math.PI / 180;   /* cageYaw=【2026-09-19】向き(回転の位置のずらし) */
@@ -1965,7 +1991,8 @@ function convFrame(geoms) {
     for (let i = 0; i < nn; i++) {
       const p0 = P[i], q = convMesh.nodes[i], pk = pkts[i];
       const dep = 0.72 + 0.5 * (p0.z + 1) / 2;                 /* 手前ほど大きく明るく */
-      pktSet(pk, p0.x, p0.y, (DOT_R * M.size * dep).toFixed(2), q.c, (0.5 + 0.5 * dep).toFixed(3), p0.z > 0);
+      const _hideSub = q.sub && M.cageSubDots === 0;           /* 【2026-09-28】割って増えた点のドットを出さない設定 */
+      pktSet(pk, p0.x, p0.y, (DOT_R * M.size * dep).toFixed(2), q.c, _hideSub ? '0' : (0.5 + 0.5 * dep).toFixed(3), p0.z > 0);
     }
     /* --- パケット: 骨をたどって惑星へ届く --- */
     convMesh.next -= dt;
