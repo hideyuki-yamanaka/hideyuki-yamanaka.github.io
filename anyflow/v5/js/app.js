@@ -9429,23 +9429,24 @@ function updateKV() {
   } else {
     const L = kvEls.text.length - 1, fd = c.fillDelay != null ? c.fillDelay : 1.0, bf = c.blankFade != null ? c.blankFade : 0.3;
     kvEls.textNodes.forEach((tn, li) => { if (tn && li < L && tn.data !== kvEls.text[li]) tn.data = kvEls.text[li]; });   /* 1・2行目は最初から全部 */
-    /* 【2026-09-28 夜 ヒデさん依頼「一文字一文字ゆっくり打ってる感じに」】穴埋めは3行目を1文字ずつ一定の間隔(fillCharDur・既定0.3秒/字)で打つ。
-       1文字目は打ち始めと同時。打っている間はカーソルを点けっぱなし(人が打っている感じ)、待っている間と打ち終わりは点滅。
-       下線は打ち終わりの1拍(1文字ぶん)あとに消え始める */
-    const full = kvEls.text[L], n = full.length, cd = Math.max(0.03, c.fillCharDur != null ? c.fillCharDur : 0.3), tn3 = kvEls.textNodes[L];
-    const count = tt < fd ? 0 : Math.min(n, Math.floor((tt - fd) / cd) + 1);
+    /* 【2026-09-28 夜 ヒデさん依頼「タイピングはやりすぎた。前に戻して、少し遅くするぐらいで」】穴埋めの3行目は、前と同じ打ち方
+       (1文字あたりの平均時間×緩急「速度の変化」＝最初ゆっくり→だんだん速く・打っている間もカーソルは点滅・打ち終わったらすぐ下線が消え始める)。
+       速さだけ 3行目の 0.07秒/字 → 0.1秒/字(fillCharDur・⚠️仮置き)と少し遅く。
+       ❌ 直前の「一定の間隔 0.3秒/字・打っている間はカーソル点けっぱなし・1拍おいて下線が消える」はやりすぎだった */
+    const full = kvEls.text[L], n = full.length, cd = Math.max(0.01, c.fillCharDur != null ? c.fillCharDur : 0.1), tn3 = kvEls.textNodes[L];
+    let count = 0;
+    for (let ci = 0; ci < n; ci++) { if (tt - fd >= timeOf(ci, n, cd)) count = ci + 1; else break; }
     if (tn3 && tn3.data.length !== count) tn3.data = full.slice(0, count);
-    const typed = fd + (n - 1) * cd;        /* 最後の字が出た時刻(打ち始めの設定 typeAt からの秒) */
-    const fadeAt = typed + cd;              /* 1拍あとに下線が消え始める */
-    typeEnd = fadeAt + bf;                  /* 下線が消えきってから、横線・サブコピーへ */
-    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;
-    const solid = tt >= fd && tt < typed + cd * 0.5;   /* 打っている間は点けっぱなし */
-    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typeEnd) ? (solid ? 1 : blinkF) : 0; });
+    const typed = fd + timeOf(n, n, cd);   /* 3行目の打ち終わり(打ち始めの設定 typeAt からの秒) */
+    const fadeAt = typed;                 /* 打ち終わったら下線が消え始める(前と同じ) */
+    typeEnd = fadeAt + bf;                /* 下線が消えきってから、横線・サブコピーへ */
+    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;   /* 開いた時から点滅(空欄の頭) */
+    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typed + 0.5) ? blinkF : 0; });
     if (kvEls.blank) {
       if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full;
       kvEls.blank.style.opacity = (1 - clamp01((tt - fadeAt) / Math.max(0.05, bf))).toFixed(3);
       /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】濃さ・太さ(つまみ: エフェクト › コピー（穴埋め）) */
-      const ba = String(c.blankAlpha != null ? c.blankAlpha : 0.12), bw = (c.blankBw != null ? c.blankBw : 2) + 'px';
+      const ba = String(c.blankAlpha != null ? c.blankAlpha : 0.12), bw = (c.blankBw != null ? c.blankBw : 1) + 'px';   /* 【2026-09-28 夜「線幅を細く。もっとさりげなく」】既定 2→1px */
       if (kvEls.blank.style.getPropertyValue('--hl-blank-a') !== ba) kvEls.blank.style.setProperty('--hl-blank-a', ba);
       if (kvEls.blank.style.getPropertyValue('--hl-blank-bw') !== bw) kvEls.blank.style.setProperty('--hl-blank-bw', bw);
     }
@@ -12996,7 +12997,7 @@ function buildPanel() {
   { const isFill = () => _kvTypeMode() === 'fill';
     const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
     fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
-    { const r = slider('1文字の時間', 0.05, 1, 0.01, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.3), v => params.kv.fillCharDur = v, v => v.toFixed(2) + '秒/字', '「競争力を」を1文字ずつ打つ間隔。大きいほどゆっくり。一定の間隔で打つ(打っている間はカーソルを点けっぱなし)。', { mbKey: 'kv.fillCharDur' }); rows.push(r); showWhen(r, isFill); }
+    { const r = slider('1文字の時間', 0.01, 0.4, 0.005, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.1), v => params.kv.fillCharDur = v, v => v.toFixed(3) + '秒/字', '「競争力を」の1文字あたりの平均の時間。大きいほどゆっくり。打ち方は今の打ち込みと同じ(最初ゆっくり→だんだん速く＝コピー（タイピング）の「速度の変化」)。今の3行目は0.07。', { mbKey: 'kv.fillCharDur', fixedMax: true }); rows.push(r); showWhen(r, isFill); }
     fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
     fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
   }
@@ -13004,7 +13005,7 @@ function buildPanel() {
   sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'fxtex' });
   { const isFill = () => _kvTypeMode() === 'fill';
     const r1 = slider('下線の濃さ', 0, 0.8, 0.01, () => (params.kv.blankAlpha != null ? params.kv.blankAlpha : 0.12), v => params.kv.blankAlpha = v, v => Math.round(v * 100) + '%', '空欄の下線の濃さ(黒の何%)。小さいほど かすかなグレー。', { mbKey: 'kv.blankAlpha' }); rows.push(r1); showWhen(r1, isFill);
-    const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 2), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
+    const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 1), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
   }
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */

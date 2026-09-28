@@ -1112,7 +1112,7 @@ function buildPanel() {
   { const isFill = () => _kvTypeMode() === 'fill';
     const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
     fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
-    { const r = slider('1文字の時間', 0.05, 1, 0.01, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.3), v => params.kv.fillCharDur = v, v => v.toFixed(2) + '秒/字', '「競争力を」を1文字ずつ打つ間隔。大きいほどゆっくり。一定の間隔で打つ(打っている間はカーソルを点けっぱなし)。', { mbKey: 'kv.fillCharDur' }); rows.push(r); showWhen(r, isFill); }
+    { const r = slider('1文字の時間', 0.01, 0.4, 0.005, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.1), v => params.kv.fillCharDur = v, v => v.toFixed(3) + '秒/字', '「競争力を」の1文字あたりの平均の時間。大きいほどゆっくり。打ち方は今の打ち込みと同じ(最初ゆっくり→だんだん速く＝コピー（タイピング）の「速度の変化」)。今の3行目は0.07。', { mbKey: 'kv.fillCharDur', fixedMax: true }); rows.push(r); showWhen(r, isFill); }
     fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
     fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
   }
@@ -1120,7 +1120,7 @@ function buildPanel() {
   sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'fxtex' });
   { const isFill = () => _kvTypeMode() === 'fill';
     const r1 = slider('下線の濃さ', 0, 0.8, 0.01, () => (params.kv.blankAlpha != null ? params.kv.blankAlpha : 0.12), v => params.kv.blankAlpha = v, v => Math.round(v * 100) + '%', '空欄の下線の濃さ(黒の何%)。小さいほど かすかなグレー。', { mbKey: 'kv.blankAlpha' }); rows.push(r1); showWhen(r1, isFill);
-    const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 2), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
+    const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 1), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
   }
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */

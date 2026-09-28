@@ -793,23 +793,24 @@ function updateKV() {
   } else {
     const L = kvEls.text.length - 1, fd = c.fillDelay != null ? c.fillDelay : 1.0, bf = c.blankFade != null ? c.blankFade : 0.3;
     kvEls.textNodes.forEach((tn, li) => { if (tn && li < L && tn.data !== kvEls.text[li]) tn.data = kvEls.text[li]; });   /* 1・2行目は最初から全部 */
-    /* 【2026-09-28 夜 ヒデさん依頼「一文字一文字ゆっくり打ってる感じに」】穴埋めは3行目を1文字ずつ一定の間隔(fillCharDur・既定0.3秒/字)で打つ。
-       1文字目は打ち始めと同時。打っている間はカーソルを点けっぱなし(人が打っている感じ)、待っている間と打ち終わりは点滅。
-       下線は打ち終わりの1拍(1文字ぶん)あとに消え始める */
-    const full = kvEls.text[L], n = full.length, cd = Math.max(0.03, c.fillCharDur != null ? c.fillCharDur : 0.3), tn3 = kvEls.textNodes[L];
-    const count = tt < fd ? 0 : Math.min(n, Math.floor((tt - fd) / cd) + 1);
+    /* 【2026-09-28 夜 ヒデさん依頼「タイピングはやりすぎた。前に戻して、少し遅くするぐらいで」】穴埋めの3行目は、前と同じ打ち方
+       (1文字あたりの平均時間×緩急「速度の変化」＝最初ゆっくり→だんだん速く・打っている間もカーソルは点滅・打ち終わったらすぐ下線が消え始める)。
+       速さだけ 3行目の 0.07秒/字 → 0.1秒/字(fillCharDur・⚠️仮置き)と少し遅く。
+       ❌ 直前の「一定の間隔 0.3秒/字・打っている間はカーソル点けっぱなし・1拍おいて下線が消える」はやりすぎだった */
+    const full = kvEls.text[L], n = full.length, cd = Math.max(0.01, c.fillCharDur != null ? c.fillCharDur : 0.1), tn3 = kvEls.textNodes[L];
+    let count = 0;
+    for (let ci = 0; ci < n; ci++) { if (tt - fd >= timeOf(ci, n, cd)) count = ci + 1; else break; }
     if (tn3 && tn3.data.length !== count) tn3.data = full.slice(0, count);
-    const typed = fd + (n - 1) * cd;        /* 最後の字が出た時刻(打ち始めの設定 typeAt からの秒) */
-    const fadeAt = typed + cd;              /* 1拍あとに下線が消え始める */
-    typeEnd = fadeAt + bf;                  /* 下線が消えきってから、横線・サブコピーへ */
-    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;
-    const solid = tt >= fd && tt < typed + cd * 0.5;   /* 打っている間は点けっぱなし */
-    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typeEnd) ? (solid ? 1 : blinkF) : 0; });
+    const typed = fd + timeOf(n, n, cd);   /* 3行目の打ち終わり(打ち始めの設定 typeAt からの秒) */
+    const fadeAt = typed;                 /* 打ち終わったら下線が消え始める(前と同じ) */
+    typeEnd = fadeAt + bf;                /* 下線が消えきってから、横線・サブコピーへ */
+    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;   /* 開いた時から点滅(空欄の頭) */
+    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typed + 0.5) ? blinkF : 0; });
     if (kvEls.blank) {
       if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full;
       kvEls.blank.style.opacity = (1 - clamp01((tt - fadeAt) / Math.max(0.05, bf))).toFixed(3);
       /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】濃さ・太さ(つまみ: エフェクト › コピー（穴埋め）) */
-      const ba = String(c.blankAlpha != null ? c.blankAlpha : 0.12), bw = (c.blankBw != null ? c.blankBw : 2) + 'px';
+      const ba = String(c.blankAlpha != null ? c.blankAlpha : 0.12), bw = (c.blankBw != null ? c.blankBw : 1) + 'px';   /* 【2026-09-28 夜「線幅を細く。もっとさりげなく」】既定 2→1px */
       if (kvEls.blank.style.getPropertyValue('--hl-blank-a') !== ba) kvEls.blank.style.setProperty('--hl-blank-a', ba);
       if (kvEls.blank.style.getPropertyValue('--hl-blank-bw') !== bw) kvEls.blank.style.setProperty('--hl-blank-bw', bw);
     }

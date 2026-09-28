@@ -511,8 +511,8 @@
   .hl-line .hl-ch { display: none; }
   /* 【2026-09-28 夜 ヒデさん依頼】キービジュアルの打ち込みの案「穴埋め」: 3行目の空欄の下線。中身は透明な「競争力を」＝ちょうど入る幅。
      行の上下の真ん中に 1em の箱を置き、その下端に線(文字の下端あたり)。PC は左端から・スマホは真ん中寄せ。
-     【2026-09-28 夜 ヒデさん依頼「本当にかすかにグレーで」】線はごく薄いグレー(黒の12%)・2px(⚠️仮置き・つまみ: エフェクト › コピー（穴埋め）) */
-  .hl-blank { position: absolute; left: 0; top: 50%; transform: translateY(calc(-50% + 0.1em)); line-height: 1; color: transparent; border-bottom: var(--hl-blank-bw, 2px) solid rgba(0,0,0, var(--hl-blank-a, .12)); white-space: nowrap; pointer-events: none; user-select: none; font-style: normal; opacity: 0; }
+     【2026-09-28 夜 ヒデさん依頼「本当にかすかにグレーで」】線はごく薄いグレー(黒の12%)・1px(「線幅を細く。もっとさりげなく」で 2→1px・⚠️仮置き・つまみ: エフェクト › コピー（穴埋め）) */
+  .hl-blank { position: absolute; left: 0; top: 50%; transform: translateY(calc(-50% + 0.1em)); line-height: 1; color: transparent; border-bottom: var(--hl-blank-bw, 1px) solid rgba(0,0,0, var(--hl-blank-a, .12)); white-space: nowrap; pointer-events: none; user-select: none; font-style: normal; opacity: 0; }
   html.mb .hl-blank { left: 50%; transform: translate(-50%, calc(-50% + 0.1em)); }   /* 0.1em 下げる＝打った字の下の端に重ならない(2026-09-28 実測) */
   /* スマホの穴埋め: 3行目を空欄の幅にして真ん中へ置き、中は左寄せ＝カーソルと打つ字が空欄の左端から始まる(JS が --hl-fill-w を入れる) */
   html.mb .hl-line.hl-fillline { width: var(--hl-fill-w, auto); margin-left: auto; margin-right: auto; text-align: left; }
