@@ -2200,6 +2200,9 @@
   /* 【2026-09-18 ヒデさん依頼】フォームの角丸(--cvf-r)と入力欄の角丸(--cvf-in-r)は調整パネル(applyCvfGlass) */
   #conversion.cv-cta-form .cv-form { border-radius: var(--cvf-r, var(--radius-form)) !important; }
   .cv-form .cvf-in { border-radius: var(--cvf-in-r, var(--radius-input)) !important; }
+  /* 【2026-09-28 夜 ヒデさん依頼】フォームのカードの内側の余白(上・右・下・左)。値は JS(applyCvfGlass)が入れる(調整パネル「フォーム（カード）› 内側の余白」)。
+     PC/タブレット: 上下32・左右48px(左右 32→48・⚠️仮置き)。カードの無い型(fst-3)は余白0のまま。スマホは下のスマホの指定(上下24・左右20)が元 */
+  html:not(.mb) #conversion.cv-cta-form:not(.fst-3) .cv-form { padding: var(--cvf-pt, var(--space-32)) var(--cvf-pr, var(--space-48)) var(--cvf-pb, var(--space-32)) var(--cvf-pl, var(--space-48)); }
   /* 【2026-09-15 ヒデさん指定】ボタンのホバー色(パネル): --cv-hov-bg / --cv-hov-fg。白文字の案でも同じ指定が勝つ */
   #conversion .cv-btn.cv-btn:hover { background: var(--cv-hov-bg, var(--brand-cyan)); color: var(--cv-hov-fg, #fff); }
   /* 共通: フッター一体型(1・2・3・8・10) */
@@ -2551,7 +2554,7 @@
     /* 【2026-09-19 ヒデさん依頼】お問い合わせフォームを画面幅いっぱい(左右24px)に。中身も他のスタイルに合わせて詰める */
     #conversion.cv-cta-form .cv-content { padding-left: 0; padding-right: 0; }   /* 余分な内側24pxを外す→フォーム/見出しは cv-content のmargin24pxだけで画面から24px */
     #conversion.cv-cta-form .cv-content > *:not(.cv-form) { padding-left: var(--space-24); padding-right: var(--space-24); box-sizing: border-box; }   /* 見出し・本文は24px内側を維持 */
-    #conversion.cv-cta-form .cv-form { width: 100%; max-width: none; margin-left: 0; margin-right: 0; padding: var(--space-24) var(--space-20); gap: var(--space-16); }
+    #conversion.cv-cta-form .cv-form { width: 100%; max-width: none; margin-left: 0; margin-right: 0; padding: var(--cvf-pt, var(--space-24)) var(--cvf-pr, var(--space-20)) var(--cvf-pb, var(--space-24)) var(--cvf-pl, var(--space-20)); gap: var(--space-16); }   /* 【2026-09-28】余白はスマホで値を決めた時だけ変わる(調整パネルのスマホモード) */
     #conversion.cv-cta-form .cv-form .cvf-2col { gap: var(--space-12); }
     #conversion.cv-cta-form .cv-form .cvf-in { padding: var(--space-12) var(--space-16); }
     .cv-eyebrow { font-size: var(--fs-base); }   /* 【2026-09-19】共通部品: SP の英字ラベルは 16px(PC 20px) */

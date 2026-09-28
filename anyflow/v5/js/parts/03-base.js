@@ -148,6 +148,20 @@ try {
     localStorage.setItem('anyflow-kv-center-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 夜 ヒデさん依頼「お問い合わせと導入事例の距離をもっと上下詰めたい」】間隔 −20→−60px・お問い合わせの見出しの上 120→80px(焼き込みも同じ)。
+   保存値が前の値のままの所だけ1回入れ替える(自分で変えた値は触らない)。印 anyflow-cvgap2-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-cvgap2-20260928')) {
+    const fix = o => { if (!o || !o.cv) return false; let ch = false;
+      if (o.cv.gapTop === -20) { o.cv.gapTop = -60; ch = true; }
+      if (o.cv.headTop === 120) { o.cv.headTop = 80; ch = true; }
+      return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-cvgap2-20260928', '1');
+  }
+} catch (e) {}
 /* 【2026-09-28 21:00 焼き込み】4と8の倍数への寄せ(決まり4-13)は焼き込みにだけ入っていて、ブラウザの保存値は寄せる前のまま
    → 書き出すたびに元の値に戻っていた。保存値が寄せる前の値のままの所だけ1回寄せる(自分で変えた値は触らない)。印 anyflow-snap48-20260928
    キービジュアルのコピーの間隔 42→40(ノーマル)・ロゴの帯の間隔 54→56・開発者体験モックの枠の高さ 42→40・メニューの左の余白 130→128・
@@ -1015,12 +1029,13 @@ function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); con
    「導入事例との間隔が 60px(詰める前に見て決めた値) の時の空き」で固定する。間隔のつまみはお問い合わせの位置だけを動かす */
 const CV_RISE_GAP_REF = 60;
 const CV_BLEND_DEF = 260;      /* 【2026-09-16 改訂2】溶け込みの深さの既定 px。上(導入事例側)まで色を届かせつつ、rise＋本体で線を出さず溶かす */
-const CV_HEAD_TOP_DEF = 120;   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
+const CV_HEAD_TOP_DEF = 80;    /* 【2026-09-28 夜 ヒデさん依頼「導入事例との距離をもっと上下詰めたい」】120→80(⚠️仮置き・PC/タブレット。スマホは CSS の固定値)。つまみは導入事例タブ「お問い合わせとの間（PC）› 見出しまでの余白」 */
+/* 旧: const CV_HEAD_TOP_DEF = 120; */   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
 const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, swayDeg: 12, swaySec: 40, swayMode: 0, ramp: 0, addT: 0, addB: 0 };
 /* ===== 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。お問い合わせのグラデがどう揺れるかの性格を切り替える。
    URL: ?sway=0〜5。案を選ぶと「流れる雰囲気」のつまみにその案の値が入る(細かく変えたら ⋯「いまの設定で上書き」で保存) ===== */
-const SWAY_KEYS = ['swayMode', 'swayDeg', 'swaySec', 'wave', 'waveLen', 'waveSpd', 'speed', 'swell', 'flowScale', 'gcx', 'gcy', 'gr', 'swayPivot', 'waveAnchor', 'hueMode', 'moodSec', 'moodWhite', 'swapHold', 'core', 'coreSoft', 'coreSkip'];   /* 2026-09-19: 色の入れ替わり(hueMode 等)も案の一部に=別欄と喧嘩しない */   /* 2026-09-18: 白い光の中心(gcx/gcy)と広がり(gr)、揺らぎの軸・うねり抑制も案の値に */
-const SWAY_BASE = { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 0, waveAnchor: 0, hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, core: 0, coreSoft: 0, coreSkip: 0 };   /* 【2026-09-15 ヒデさん指摘】粒(fbm=speed/swell)を弱め、大きな波(wave)＋全体のゆらぎ(sway)で『面ごと』うねらせる */
+const SWAY_KEYS = ['swayMode', 'swayDeg', 'swaySec', 'wave', 'waveLen', 'waveSpd', 'speed', 'swell', 'flowScale', 'gcx', 'gcy', 'gr', 'swayPivot', 'waveAnchor', 'hueMode', 'moodSec', 'moodWhite', 'swapHold', 'core', 'coreSoft', 'coreSkip', 'flowMode', 'flowSec', 'flowAmp', 'flowLag', 'flowRise'];   /* 2026-09-28: グラデの揺らぎ(全体の配分が動く・案18〜21)も案の値に */   /* 2026-09-19: 色の入れ替わり(hueMode 等)も案の一部に=別欄と喧嘩しない */   /* 2026-09-18: 白い光の中心(gcx/gcy)と広がり(gr)、揺らぎの軸・うねり抑制も案の値に */
+const SWAY_BASE = { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 0, waveAnchor: 0, hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, core: 0, coreSoft: 0, coreSkip: 0, flowMode: 0, flowSec: 18, flowAmp: 0.12, flowLag: 0.3, flowRise: 0.3 };   /* 2026-09-28: flow*=グラデの揺らぎ(0=なし) */   /* 【2026-09-15 ヒデさん指摘】粒(fbm=speed/swell)を弱め、大きな波(wave)＋全体のゆらぎ(sway)で『面ごと』うねらせる */
 const CV_SWAYS = [
   { key: '0', name: '現行 ゆっくり流れる（うねり）', fixed: true, tip: '波全体がゆっくり左右にうねる。粒のざわつきは無く、色の面ごと大きく形が変わる。落ち着いた基本の動き。',
     cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9 } },
@@ -1043,8 +1058,26 @@ const CV_SWAYS = [
   /* 【2026-09-19 ヒデさん指定】「白エリアの領域を絞り、ゆらぎも基本は右上で範囲も抑えて」→ 広がり 0.9→0.55・中心を右上(0.84,0.10)・揺らぎの軸は白・傾き±6°・うねり 0.16・白の近くはうねらせない(0.9) */
   { key: '13', name: '案7 白なし・右上に留める（揺らぎ小）', tip: '白い領域を取り(中心は水色〜シアンから始まる)、いちばん明るい所を右上(84%,10%)に置く。揺らぎの軸を白に置いて傾き±6°・うねり 0.16 に抑え、白の近くはうねらせない＝白はほぼ右上に留まり、周りの色だけ静かに動く。',
     cv: {swayMode: 0,swayDeg: 6,swaySec: 40,wave: 0.16,waveLen: 0.5,waveSpd: 0.08,speed: 0.04,swell: 0.02,flowScale: 0.4,gcx: 0.84,gcy: 0.1,gr: 0.8,swayPivot: 1,waveAnchor: 0.9,hueMode: 'off',moodSec: 30,moodWhite: 0.85,swapHold: 0.45, core: 0, coreSoft: 0.12, coreSkip: 0.34} },
+  /* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ 4案(⚠️値は仮置き)。
+     ヒデさんの説明「境界線が細かく揺れる揺らぎではなく、波全体として 左からピンク・青・ライトブルー の配色が、ピンクの領域が左から少し多くなって
+     青とライトブルーが右に寄っていく、みたいな全体の揺らぎ」→ 色の境目は細かく揺らさず、色の配分(グラデの色の位置)だけをゆっくり動かす。
+     ❌ 最初に作った4案(うねりが流れる／色の波が進む／色の雲が流れる／色がループで流れる=旧14〜17)は、境目がくねる・模様が流れる動きで違っていたので外した。
+     見た目(白なし・明るい所は右上)は案7をヒデさんが調整した値のまま。その場のうねり・ゆらゆらは0(境目を揺らさない)。
+     flowSec=1往復の秒数 / flowAmp=大きさ(色の位置がずれる量) / flowLag=右へ伝わる遅れ(1往復の何割) / flowRise=押し寄せる時間(1往復の何割) */
+  { key: '18', name: '満ち引き（ピンクがふくらむ）', tip: 'ピンクの面が左からふくらんで、青と水色が右へ寄る。そしてまた戻る。両端(左下のピンク・右上の明るい所)は動かない。',
+    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
+          flowMode: 5, flowSec: 16, flowAmp: 0.18 } },
+  { key: '19', name: '押し出し（左→右へ順に）', tip: 'ピンクがふくらむと、少し遅れて青、さらに遅れて水色が右へ押し出される(左から右へ伝わる)。そしてまた戻る。',
+    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
+          flowMode: 6, flowSec: 18, flowAmp: 0.14, flowLag: 0.3 } },
+  { key: '20', name: '全体が寄る（そろって左右へ）', tip: 'ピンク・青・水色の並び全体が、そろって右へ寄って、また左へ戻る。',
+    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
+          flowMode: 7, flowSec: 20, flowAmp: 0.08 } },
+  { key: '21', name: '押し寄せて、ゆっくり戻る', tip: '押し出しと同じ動きで、押し寄せる時は速く、戻る時はゆっくり(波が打ち寄せて引くように)。',
+    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
+          flowMode: 8, flowSec: 18, flowAmp: 0.14, flowLag: 0.3, flowRise: 0.3 } },
 ];
-function cvSwayKey() { const v = String((params && params.cvSway) || '0'); return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
+function cvSwayKey() { const v0 = String((params && params.cvSway) || '0'), v = ['14', '15', '16', '17'].includes(v0) ? '13' : v0;   /* 2026-09-28: 外した案(旧14〜17)は今の動き(13)へ */ return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
 function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
 
 /* ===== 【2026-09-16 改訂・ヒデさん依頼】お問い合わせ上部の「溶け込み(馴染ませ)」=====
@@ -1198,6 +1231,15 @@ function applyCvfGlass() {
   set('--cvf-bw', g.bw != null ? g.bw : 1, 'px'); set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');
   set('--cvf-in-bw', g.inBw != null ? g.inBw : 1, 'px'); set('--cvf-in-bc', 'rgba(' + (g.inBDark ? '0,0,0' : '255,255,255') + ',' + (g.inBa != null ? g.inBa : 0.72) + ')', '');
   set('--cvf-ph-rgb', g.phDark === false ? '255,255,255' : '0,0,0', '');
+  /* 【2026-09-28 夜 ヒデさん依頼「お問い合わせフォームの上下左右の余白も変えられるように。左右は今よりもう少し広めに」】カードの内側の余白。
+     PC(タブレット含む): 上下32・左右48px(左右は 32→48 に広げた・⚠️仮置き)。スマホ: スマホで値を決めた時だけ入れる
+     (決めていなければ CSS のスマホの値 上下24・左右20 のまま)。スマホの実機は起動時にスマホの値が設定へ流し込まれるが、ここは params.mb を直接見る */
+  { const mob = (typeof isMobile !== 'undefined' && isMobile), mb = params.mb || {};
+    [['--cvf-pt', 'padT', 32], ['--cvf-pb', 'padB', 32], ['--cvf-pl', 'padL', 48], ['--cvf-pr', 'padR', 48]].forEach(([v, k, d]) => {
+      if (!mob) set(v, g[k] != null ? g[k] : d, 'px');
+      else if (mb['cvfGlass.' + k] != null) set(v, mb['cvfGlass.' + k], 'px');
+      else sec.style.removeProperty(v);
+    }); }
 }
 /* 【V5.0 2026-09-17 ヒデさん指定】選んだヘッダー案ごとの「スクロール後サイズ」微調整を header にインライン適用(その案の時だけ)。
    常時ではなく、パネルはその案を選んだ時だけ出す(buildPanel が hdrModeKey で出し分け)。 */
@@ -1506,6 +1548,7 @@ const cvBg = (function () {
   if (!canvas) return {};
   let gl = null, uni = {}, fail = false;
   const t0 = performance.now();
+  const cvFlow = { acc: 0, last: null };   /* 【2026-09-28】グラデの揺らぎ: 進んだ量(1往復=1。1で折り返す) */
   const VS = 'attribute vec2 aP; void main(){ gl_Position = vec4(aP, 0.0, 1.0); }';
   const FS = `
 precision mediump float;
@@ -1527,6 +1570,15 @@ uniform float uWaveAmp, uWaveLen, uWaveSpd;
    uSwayDeg=傾く角度(度) / uSwaySec=1往復の秒数 */
 uniform float uSwayDeg, uSwaySec, uSwayMode;   /* uSwayMode=揺らぎの型(0 ゆっくり傾く のみ。1〜6 は 2026-09-18 に完全削除) */
 uniform float uSwayPivot, uWaveAnchor;
+/* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ(案18〜21): 色の境目は揺らさず、色の配分(グラデの色の位置 t)だけを時間でゆっくり動かす。
+   uFlowMode 0〜4=なし / 5=満ち引き(ピンクがふくらむ) / 6=押し出し(左→右へ順に) / 7=全体が寄る / 8=押し寄せて、ゆっくり戻る
+   uFlowPh=いまの位相(JS が毎フレーム足し込む・0〜2π) / uFlowAmp=大きさ / uFlowLag=右へ伝わる遅れ(1往復の割合) / uFlowRise=押し寄せる時間(1往復の割合) */
+uniform float uFlowMode, uFlowAmp, uFlowLag, uFlowRise, uFlowPh;
+float swayWave(float ph, float rise, float asym) {   /* 1往復の形: ふつうは sin。asym=1 の時は「押し寄せる(速い)→戻る(ゆっくり)」 */
+  if (asym < 0.5) return sin(ph);
+  float u = fract(ph / 6.2832), a = clamp(rise, 0.05, 0.95);
+  return (u < a) ? -cos(3.14159 * u / a) : cos(3.14159 * (u - a) / (1.0 - a));
+}
 uniform float uCoreSkip;   /* 【2026-09-19 ヒデさん指定「白の領域を取る」】ランプの開始位置(0=白から / 0.34=白と淡ブルーを飛ばしてシアン寄りから) */
 uniform float uCoreSoft;   /* 【2026-09-19 ヒデさん指摘「白がくっきりし過ぎ」】白の縁のぼかし: 白の周りだけ、色の切り替わりを t の前後 ±2w で平均してやわらかく(白の大きさは変えない) */
 uniform float uCore;   /* 【2026-09-19 ヒデさん指定】白の絞り: 0=そのまま / 大きいほど白い芯だけ小さく(t を pow で中心側だけ圧縮。端の色の広がりは変えない) */   /* 【2026-09-18】揺らぎの軸(0=画面中心/1=白い光の中心) ／ 白い光の近くでうねりを弱める割合(0〜1) */
@@ -1631,6 +1683,20 @@ void main(){
     vec2 d = uvW - uGC; float ca = cos(uGAng), sa = sin(uGAng); d = vec2(d.x * ca - d.y * sa, d.x * sa + d.y * ca);
     t = (uGMode < 1.5) ? length(d / max(uGR, vec2(0.05))) : (d.x / max(uGR.x, 0.05) + 0.5);
   }
+  /* 【2026-09-28】グラデの揺らぎ(全体の配分)。t=0 が右上の明るい所・1 が左下のピンク。s>0 でピンク側が広がり、青・水色が右(右上)へ寄る */
+  if (uFlowMode > 4.5) {
+    float tc = clamp(t, 0.0, 1.0);
+    if (uFlowMode < 5.5) {   /* 満ち引き: 両端は動かさず、真ん中の色の位置だけを曲げる(ピンクがふくらむ⇄しぼむ) */
+      float s5 = sin(uFlowPh);
+      t = pow(tc, exp2(-2.0 * uFlowAmp * s5));
+    } else if (uFlowMode < 6.5 || uFlowMode > 7.5) {   /* 押し出し(6)・押し寄せて戻る(8): ピンク側から順に、少し遅れて右の色が動く。両端は動かさない */
+      float ph = uFlowPh - 6.2832 * clamp(uFlowLag, 0.0, 1.0) * (1.0 - tc);
+      float s6 = swayWave(ph, uFlowRise, uFlowMode > 7.5 ? 1.0 : 0.0);
+      t = tc + uFlowAmp * s6 * 4.0 * tc * (1.0 - tc);
+    } else {   /* 全体が寄る: 色の並び全体をそろってずらす */
+      t = tc + uFlowAmp * sin(uFlowPh);
+    }
+  }
   t = pow(clamp(t, 0.0, 1.0), 1.0 / (1.0 + max(0.0, uCore)));   /* 白の絞り(案7) */
   t = clamp(uCoreSkip, 0.0, 0.9) + t * (1.0 - clamp(uCoreSkip, 0.0, 0.9));   /* 白を取る: 中心の色を uCoreSkip の位置から始める */
   vec3 col;
@@ -1675,6 +1741,7 @@ void main(){
     for (const k of ['uRes', 'uTime', 'uCell', 'uLevels', 'uSpread', 'uSpeed', 'uSwell', 'uFlowScale', 'uBright', 'uContrast', 'uGA', 'uGB', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uS', 'uGMode', 'uGAng', 'uDark', 'uGC', 'uGR', 'uDarkCol', 'uHue', 'uTopCol', 'uWhite', 'uCeil', 'uGSpread', 'uRise', 'uCompRamp', 'uWaveAmp', 'uWaveLen', 'uWaveSpd', 'uSwayDeg', 'uSwaySec', 'uSwayMode'])
       uni[k] = gl.getUniformLocation(p, k);
     uni.uFormRect = gl.getUniformLocation(p, 'uFormRect'); uni.uFormCeil = gl.getUniformLocation(p, 'uFormCeil');   /* 2026-09-18 */
+    ['uFlowMode', 'uFlowAmp', 'uFlowLag', 'uFlowRise', 'uFlowPh'].forEach(k => { uni[k] = gl.getUniformLocation(p, k); });   /* 2026-09-28 グラデの揺らぎ */
     uni.uSwayPivot = gl.getUniformLocation(p, 'uSwayPivot'); uni.uWaveAnchor = gl.getUniformLocation(p, 'uWaveAnchor'); uni.uCore = gl.getUniformLocation(p, 'uCore'); uni.uCoreSoft = gl.getUniformLocation(p, 'uCoreSoft'); uni.uCoreSkip = gl.getUniformLocation(p, 'uCoreSkip');
   }
   function visible() {
@@ -1744,6 +1811,17 @@ void main(){
     gl.uniform1f(uni.uCoreSoft, c.coreSoft != null ? c.coreSoft : 0);   /* 2026-09-19 白の縁のぼかし */
     gl.uniform1f(uni.uCoreSkip, c.coreSkip != null ? c.coreSkip : 0);   /* 2026-09-19 白を取る */
     gl.uniform1f(uni.uSwayMode, c.swayMode != null ? c.swayMode : 0);   /* 揺らぎの型(案) */
+    /* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ(案18〜21)。進んだ量は毎フレーム「経った秒数 ÷ 1往復の秒数」を足し込む
+       (周期のつまみを動かしても絵が飛ばない)。見えていない間は進めない。1 で折り返す(小さい数のまま=スマホでもカクつかない) */
+    { const fm = c.flowMode || 0, nowS = performance.now() / 1000;
+      const dt = cvFlow.last == null ? 0 : Math.min(0.1, Math.max(0, nowS - cvFlow.last)); cvFlow.last = nowS;
+      const sec = Math.max(2, c.flowSec != null ? c.flowSec : 18);
+      if (fm > 4) cvFlow.acc = (cvFlow.acc + dt / sec) % 1;
+      gl.uniform1f(uni.uFlowMode, fm);
+      gl.uniform1f(uni.uFlowAmp, c.flowAmp != null ? c.flowAmp : 0.12);
+      gl.uniform1f(uni.uFlowLag, c.flowLag != null ? c.flowLag : 0.3);
+      gl.uniform1f(uni.uFlowRise, c.flowRise != null ? c.flowRise : 0.3);
+      gl.uniform1f(uni.uFlowPh, 2 * Math.PI * cvFlow.acc); }
     gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
     gl.uniform1f(uni.uCompRamp, (c.ramp === 'comp' || c.ramp === 1) ? 1 : 0);   /* 【2026-09-16】デザインカンプの13段ランプ */
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
@@ -1775,5 +1853,5 @@ void main(){
     };
     return { tl: read(0.05, 0.9), tr: read(0.95, 0.9), c: read(0.5, 0.5), bl: read(0.05, 0.1), br: read(0.95, 0.1) };
   }
-  return { sample };
+  return { sample, flowAcc: () => cvFlow.acc, flowSet: v => { cvFlow.acc = ((+v % 1) + 1) % 1; } };   /* 検証用: 揺らぎの進んだ量を読む/置く(1往復=1) */
 })();

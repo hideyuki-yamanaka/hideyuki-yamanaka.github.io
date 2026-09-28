@@ -82,8 +82,12 @@ const VAR_SNAP = {
                applyVpSize(); try { textTools.applyAll(); } catch (e) {} try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} }, reset: () => {} },
   cv:      { get: () => params.cv, set: s => Object.assign(params.cv, s), reset: () => Object.assign(params.cv, structuredClone(DEFAULTS_PRISTINE.cv)) },
   /* 【2026-09-15】揺らぎの案は「動きに関わるキーだけ」を控える(余白や色の設定を巻き込まない) */
-  cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; }); return o; },
-             set: s => Object.assign(params.cv, s), reset: () => cvApplySway(cvSwayKey()) },
+  /* 【2026-09-28】スマホの上書き(params.mb['cv.<鍵>'])も案ごとに控える(__mb)。控えに __mb が無い古い控え(焼き込みの案7など)はスマホの上書きに触らない */
+  cvSway:  { get: () => { const o = {}; SWAY_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; });
+                          const mb = {}; SWAY_KEYS.forEach(k => { const v = params.mb && params.mb['cv.' + k]; if (v != null) mb[k] = v; }); o.__mb = mb; return o; },
+             set: s => { const { __mb, ...rest } = s || {}; Object.assign(params.cv, rest);
+                         if (__mb) { if (!params.mb) params.mb = {}; SWAY_KEYS.forEach(k => { delete params.mb['cv.' + k]; }); Object.keys(__mb).forEach(k => { params.mb['cv.' + k] = __mb[k]; }); } },
+             reset: () => cvApplySway(cvSwayKey()) },
   /* 【2026-09-19】ビジョンのメッシュの案(描き方に関わるキーだけ。大きさ・フェード・ロゴは巻き込まない) */
   resSlotFx: { get: () => { const r = params.sections.results, o = {}; RES_SLOT_KEYS.forEach(k => { if (r[k] != null) o[k] = r[k]; }); return o; },
                set: s => { Object.assign(params.sections.results, s); applyResSlotFade(); }, reset: () => resApplySlotFx(resSlotFxKey()) },
@@ -108,7 +112,7 @@ const VAR_AUTOSAVE = [
   /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調)ごとにメッセージ/ポイントの文字サイズを独立(案別に控える) */
   { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: (key) => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; o.__vrp = VIS_RES_PULL_BY[key] != null ? VIS_RES_PULL_BY[key] : 200; return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
-  { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
+  { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); o.__mb = {}; return o; } },   /* __mb={}: 控えの無い案へ切り替えた時、前の案のスマホの上書きを持ち込まない */
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
      起動時の applyKvVariant で案の焼き込み値が再適用されるため、上書き控えを常に最新にしておかないと『デフォルトにしても戻る』。
      ここに入れることで、保存のたびに gfxVarOverride.kvVar[案] = いまの値 になり、起動時にそれが勝つ。 */
@@ -1716,8 +1720,13 @@ function buildPanel() {
   sub(catCase, 'お問い合わせとの間（PC）', null, { grp: 'basic' });
   { const _cvp = () => (params.cv || (params.cv = {}));   /* cvv はこの後(コンバージョン)で作るので、ここでは直接読む */
     const _r = slider('間隔', -120, 300, 4, () => (_cvp().gapTop || 0), v => { _cvp().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-      'カードの下からお問い合わせまでの間。マイナスで詰めると、お問い合わせの薄いグラデがカードの下にうっすら掛かります(グラデの形は変わりません)。カードが切れない所で自動で止まります。既定 −20px。', { signed: true, grp: 'basic' });
-    _r.classList.add('pc-only-row'); rows.push(_r); }
+      'カードの下からお問い合わせ(グラデの色の面)までの間。マイナスで詰めると、お問い合わせの薄いグラデがカードの下にうっすら掛かります(グラデの形は変わりません)。カードが切れない所で自動で止まります。既定 −60px。', { signed: true, grp: 'basic' });
+    _r.classList.add('pc-only-row'); rows.push(_r);
+    /* 【2026-09-28 夜 ヒデさん依頼「導入事例との距離をもっと上下詰めたい」】お問い合わせの見出し(Contact)の上の余白。値はお問い合わせの params.cv.headTop(入口はここ1つ)。
+       スマホは CSS の固定値(上40px)なので PC/タブレットだけ＝スマホモードでは隠す */
+    const _r2 = slider('見出しまでの余白', 0, 240, 4, () => (_cvp().headTop != null ? _cvp().headTop : CV_HEAD_TOP_DEF), v => { _cvp().headTop = v; applyCvStyle(); fit(); markDirty(); }, v => Math.round(v) + 'px',
+      'お問い合わせの色の面の上端から、見出し(Contact)までの余白。減らすほど導入事例と見出しが近づきます。既定 80px。', { grp: 'basic' });
+    _r2.classList.add('pc-only-row'); rows.push(_r2); }
 
   /* 【2026-08-30 ヒデさん指定】カードのホバーは「パスのトリミング(trim)」固定(既定)。選択UIは廃止。
      ホバーは case-grid の data-hover(= params.patterns.caseHover)で常に適用される。 */
@@ -1732,6 +1741,27 @@ function buildPanel() {
   catNote(catCv, 'カンプのラジアルグラデを、惑星と同じ発想で流れさせ、Bayerディザで粒立たせています。');
   panelVarsec('cv', 'お問い合わせ（案）');   /* 【2026-09-21 ヒデさん依頼】主役案をセクションに→配下に4カテゴリ */
   const cvv = () => (params.cv || (params.cv = {}));
+  /* 【2026-09-28 夜 ヒデさん依頼「揺らぎを調整できるパラメーター。左から右に色が流れていくような。何パターンかバリエーションで」「プラスパラメータでもいじれる」
+     「境界線が細かく揺れるのではなく、ピンクの領域が左から多くなって青・ライトブルーが右に寄っていく全体の揺らぎ」】
+     グラデの揺らぎの案(9/19 に外した「グラデの案と流れ」の欄の作り直し)。出すのは 今の動き(案7)＋全体の揺らぎ4案だけ(外した古い案は並べない)。
+     ❌ 最初に作った「境目がくねる・模様が流れる」4案(旧14〜17)は違っていたので外した。
+     案ごとの値は揺らぎの案(cvSway)の控えに入る(スマホの上書きも案ごと)。つまみは選んだ案で効く物だけ出す(6-14)。うねりの強さ等は下の「ウェーブ」(入口は1つ・6-2) */
+  const CV_FLOW_PILLS = ['13', '18', '19', '20', '21'].map(k => { const it = CV_SWAYS.find(x => x.key === k); return k === '13' ? Object.assign({}, it, { name: '今の動き（右上で揺れる）', tip: '今の本番の動き。白なし・明るい所は右上のまま、グラデ全体がゆっくり左右に傾いて揺れ、色の境目も少しうねる。' }) : it; }).filter(Boolean);
+  sub(catCv, 'グラデの揺らぎ', false, { grp: 'variation' });
+  varRowX('cvSway', CV_FLOW_PILLS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { autosave: true, snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  sub(catCv, 'グラデの揺らぎ', false, { grp: 'anim' });
+  { const fm = () => +(cvv().flowMode || 0), on = () => fm() > 4;
+    const fl = (label, key, min, max, step, def, fmt, hint, cond) => { const r = slider(label, min, max, step, () => (cvv()[key] != null ? cvv()[key] : def), v => { cvv()[key] = v; markDirty(); }, fmt, hint, { mbKey: 'cv.' + key, fixedMax: true }); rows.push(r); return showWhen(r, cond); };
+    fl('周期', 'flowSec', 6, 90, 1, 18, v => Math.round(v) + '秒', 'ピンクがふくらんで戻るまでの1往復の時間。長いほどゆったり。', on);
+    fl('大きさ', 'flowAmp', 0, 0.4, 0.01, 0.12, v => '×' + v.toFixed(2), '色の配分がどれだけ動くか(ピンクがどこまでふくらむか)。0で止まる。', on);
+    fl('右へ伝わる遅れ', 'flowLag', 0, 1, 0.05, 0.3, v => Math.round(v * 100) + '%', 'ピンクが動いてから、青・水色が動くまでの遅れ(1往復のうちの割合)。0%でそろって動く。', () => fm() === 6 || fm() === 8);
+    fl('押し寄せる時間', 'flowRise', 0.1, 0.9, 0.05, 0.3, v => Math.round(v * 100) + '%', '1往復のうち、押し寄せる(ピンクがふくらむ)側にかける時間の割合。小さいほど速く押し寄せて、ゆっくり戻る。', () => fm() === 8);
+    subgroup('ゆらゆら', () => {
+      const r1 = slider('大きさ', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; markDirty(); try { syncPanelRows(); } catch (e) {} }, v => v.toFixed(1) + '°', 'グラデ全体がゆっくり左右に傾く大きさ。0で止まる。', { mbKey: 'cv.swayDeg', fixedMax: true }); rows.push(r1);
+      const r2 = slider('周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; markDirty(); }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。', { mbKey: 'cv.swaySec', fixedMax: true }); rows.push(r2);
+      showWhen(r2, () => +(cvv().swayDeg || 0) > 0);
+    });
+  }
   /* 【2026-09-21 ヒデさん依頼】お問い合わせ背景グラデの「ウェーブ」調整(速さ/強さ/うねり)。エフェクト節に格納。値はシェーダのuniformで毎フレーム反映 */
   sub(catCv, 'ウェーブ（流れる背景）', null, { fixed: true, grp: 'fxtex' });   /* ※「流れる速さ」は既存(下の別ブロック)にあるので重複させない */
   rows.push(slider('速さ', 0, 0.4, 0.005, () => (cvv().waveSpd != null ? cvv().waveSpd : 0.11), v => { cvv().waveSpd = v; markDirty(); }, v => v.toFixed(3), 'うねり(波)が動く速さ。', { mbKey: 'cv.waveSpd', fixedMax: true }));
@@ -1762,6 +1792,12 @@ function buildPanel() {
       rows.push(slider('横幅', 440, 960, 10, () => (params.formWidth != null ? params.formWidth : 660), v => { params.formWidth = v; applyCvStyle(); }, v => Math.round(v) + 'px', 'お問い合わせフォームの横幅。広いほどゆったり。画面が狭い時は自動で収まります(最大94%)。', { mbKey: 'formWidth', fixedMax: true }));
       /* 【2026-09-17 ヒデさん依頼】背景・バックドロップフィルター・プレースホルダーの色味を後から個別調整できるように(白飛び対策) */
       const _g = () => (params.cvfGlass = params.cvfGlass || {});
+      /* 【2026-09-28 夜 ヒデさん依頼】カードの内側の余白(上・下・左・右)。4刻み(4-7)。PC既定 上下32・左右48(⚠️仮置き)／スマホ既定 上下24・左右20(スマホモードで別に決められる) */
+      subgroup('内側の余白', () => {
+        [['上', 'padT', 32, 24], ['下', 'padB', 32, 24], ['左', 'padL', 48, 20], ['右', 'padR', 48, 20]].forEach(([lab, k, d, dMb]) => {
+          rows.push(slider(lab, 0, 96, 4, () => (_g()[k] != null ? _g()[k] : d), v => { _g()[k] = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'フォームのカードの内側の余白(' + lab + ')。', { mbKey: 'cvfGlass.' + k, mbDefault: dMb, fixedMax: true }));
+        });
+      });
       /* 【2026-09-18 ヒデさん指定】「フォーム裏の明るさ上限」は見た目が想像と違うため取り下げ(既定 100%=効かない)。代わりに上の「流れ・ゆらゆら」の白い光の案(7〜9)で対応 */
       rows.push(slider('角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 20), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { mbKey: 'cvfGlass.radius', fixedMax: true }));
       rows.push(slider('色の透過率', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの色の濃さ(透過率)。下げるほど背景が透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
