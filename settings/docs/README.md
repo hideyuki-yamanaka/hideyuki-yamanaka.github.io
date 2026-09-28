@@ -55,6 +55,7 @@
 | [abashiri/TUNE-PANEL-V3.md](abashiri/TUNE-PANEL-V3.md) | 調整パネルを anyflow 仕様に統一した記録（四辺リサイズ・行ごとの↺・プリセット・スマホのシート） |
 | [abashiri/V1.1-STATUS.md](abashiri/V1.1-STATUS.md) | v1.1 のいまの状態・仮置き一覧・実装の地雷・次にやること（引き継ぎ用） |
 | [abashiri/TASKS.md](abashiri/TASKS.md) | ヒデさんからの依頼台帳（依頼・進捗・概算時間。受けたら即追記） |
+| [abashiri/HANDOFF-V3.md](abashiri/HANDOFF-V3.md) | **引き継ぎ**：2026-08-21〜09-28 の長い会話の要約（何を作っているか・時期ごとの流れ・決まったこと・判断待ち・守るルール・作りの要点）。次の会話の最初に読む |
 
 
 ### houmon-app（家庭訪問アプリ）
