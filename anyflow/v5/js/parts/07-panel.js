@@ -446,6 +446,14 @@ function buildPanel() {
     '右へ動かすほど、指を離しても長く流れ続けます。左でピタッと止まります。'));
 
   /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)テクスチャ。オン/オフ＋オンの時だけ細かさ等のつまみを出す(動的) */
+  /* 【2026-09-28 夜 ヒデさん依頼】文字の黒(サイト全体の黒い文字・線)。既定はロゴと同じ #000。スマホモード中は params.mb['theme.ink'] だけに書き、PC の見た目は触らない */
+  sub(catAll, '文字の黒', null, { fixed: true, grp: 'fxtex' });
+  { const KEY = 'theme.ink', pon = () => document.documentElement.classList.contains('phone-mode');
+    const getInk = () => (pon() && params.mb && params.mb[KEY] != null) ? params.mb[KEY] : ((params.theme && params.theme.ink) || '#000000');
+    const rowInk = colorRow('色', getInk, v => { if (pon()) { if (!params.mb) params.mb = {}; params.mb[KEY] = v; } else { params.theme = params.theme || {}; params.theme.ink = v; applyInk(); } },
+      'サイト全体の黒い文字(見出し・本文・ナビ)と黒い線の色。既定は Anyflow のロゴの文字と同じ #000000。スマホモード中はスマホだけの色になります。');
+    const lab = rowInk.querySelector('label'); const s0 = rowInk._sync; rowInk._sync = () => { if (s0) s0(); try { lab.classList.toggle('mb-override', pon() && !!(params.mb && params.mb[KEY] != null)); } catch (e) {} };
+  }
   sub(catAll, 'グリッド（背景の方眼）', null, { fixed: true, grp: 'fxtex' });
   segRow('表示', [['オン', 1], ['オフ', 0]],
     () => (params.grid && params.grid.on ? 1 : 0),
@@ -1104,8 +1112,15 @@ function buildPanel() {
   { const isFill = () => _kvTypeMode() === 'fill';
     const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
     fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
+    { const r = slider('1文字の時間', 0.05, 1, 0.01, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.3), v => params.kv.fillCharDur = v, v => v.toFixed(2) + '秒/字', '「競争力を」を1文字ずつ打つ間隔。大きいほどゆっくり。一定の間隔で打つ(打っている間はカーソルを点けっぱなし)。', { mbKey: 'kv.fillCharDur' }); rows.push(r); showWhen(r, isFill); }
     fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
     fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
+  }
+  /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】空欄の下線の濃さ・太さ(色と線の太さなのでエフェクト・6-13) */
+  sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'fxtex' });
+  { const isFill = () => _kvTypeMode() === 'fill';
+    const r1 = slider('下線の濃さ', 0, 0.8, 0.01, () => (params.kv.blankAlpha != null ? params.kv.blankAlpha : 0.12), v => params.kv.blankAlpha = v, v => Math.round(v * 100) + '%', '空欄の下線の濃さ(黒の何%)。小さいほど かすかなグレー。', { mbKey: 'kv.blankAlpha' }); rows.push(r1); showWhen(r1, isFill);
+    const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 2), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
   }
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
@@ -2138,6 +2153,7 @@ function __previewReapply() {
     C(function () { applyKvVariant(kvVarKey(), true); });
     C(function () { varApplyOverridesAtStartup(); });
     C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
+    C(function () { applyInk(); });   /* 2026-09-28 文字の黒 */
     C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
     C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
     C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
@@ -2898,6 +2914,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
          以前は前に流していたため、案の再適用が SP 値を上書きして戻してしまい、リロードするまで正しく見えなかった
          (リロード時は varApply→applyMb の順で正しかった。ここも同じ順に揃える)。 */
       call(function () { if (typeof applyMbToParams === 'function') applyMbToParams(); });
+      call(function () { if (typeof applyInk === 'function') applyInk(); });   /* 2026-09-28 文字の黒 */
       call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
       call(function () { if (typeof applyVisEmph === 'function') applyVisEmph(); });   /* 【2026-09-20】ビジョンのバリエーションもライブ反映 */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });

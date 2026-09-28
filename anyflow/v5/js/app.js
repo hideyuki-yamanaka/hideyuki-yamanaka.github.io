@@ -9173,6 +9173,15 @@ function visEnterAt() {
   return Math.max(0, Math.min(0.9, +e || 0));
 }
 applyVpSize();
+/* 【2026-09-28 夜 ヒデさん依頼「全体で使っている黒をもう少し濃く。調整パネルでも変えられるように。いったん Anyflow のロゴと同じ濃さに」】
+   文字の黒(--ink と --ink-strong)を1つの値で決める。既定はロゴの文字と同じ #000。
+   PC とスマホは別の値(スマホの実機は起動時に params.mb['theme.ink'] が params.theme.ink へ流し込まれる) */
+function applyInk() {
+  const c = (params.theme && params.theme.ink) || '#000000';
+  const r = document.documentElement.style;
+  if (r.getPropertyValue('--ink') !== c) { r.setProperty('--ink', c); r.setProperty('--ink-strong', c); }
+}
+applyInk();
 /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)。params.grid → html.grid-on と CSS変数(--grid-cell/-w/-line)へ。 */
 function applyGrid() {
   const g = (params && params.grid) || {};
@@ -9355,7 +9364,7 @@ setTimeout(function applyOverrideOnBoot() {
 }, 0);
 /* 【2026-09-18】KVのバリエーション(ノーマル/強調)は、上の起動案の再適用より【後】に流し込む(惑星やカゴの値が上書きされないように) */
 setTimeout(() => { try { applyKvVariant(kvVarKey(), true); } catch (e) {} }, 0);
-setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { if (typeof applyVisEmph === 'function') applyVisEmph(); } catch (e) {}   /* 【2026-09-20】ビジョンのバリエーション(強調/デフォルト)を焼き込み/保存値で組み直す */ try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
+setTimeout(() => { try { if (typeof varApplyOverridesAtStartup === 'function') varApplyOverridesAtStartup(); } catch (e) {} varCaptureReady = true; try { applyMbToParams(); } catch (e) {} try { applyInk(); } catch (e) {} try { if (typeof applyVisEmph === 'function') applyVisEmph(); } catch (e) {}   /* 【2026-09-20】ビジョンのバリエーション(強調/デフォルト)を焼き込み/保存値で組み直す */ try { SESSION_START = JSON.parse(JSON.stringify(params)); } catch (e) {}   /* 【2026-09-20】リセットの基準=開いた時の値を控える */ try { if (typeof renderFrame === 'function') renderFrame(); } catch (e) {} }, 0);   /* 【2026-09-19】ビジョン等の案の上書きをリロード後も反映。済んだら即時控えを解禁。【2026-09-20】スマホ(SP)は params.mb を本体へ流し込む */
 /* 【2026-09-20 ヒデさん依頼・PC/SP独立】スマホ(isMobile)の時だけ、スマホ専用の値 params.mb を本体 params の該当パスへ流し込む(PCでは何もしない=PCの値は不変) */
 function mbDeepSet(root, path, val) { const ks = String(path).split('.'); let o = root; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null || typeof o[ks[i]] !== 'object') o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = val; }
 /* 【2026-09-22 ヒデさん依頼】導入事例カードの上下パディング(スマホ)を調整パネルから可変に。--cg-pad-y を設定。
@@ -9420,15 +9429,26 @@ function updateKV() {
   } else {
     const L = kvEls.text.length - 1, fd = c.fillDelay != null ? c.fillDelay : 1.0, bf = c.blankFade != null ? c.blankFade : 0.3;
     kvEls.textNodes.forEach((tn, li) => { if (tn && li < L && tn.data !== kvEls.text[li]) tn.data = kvEls.text[li]; });   /* 1・2行目は最初から全部 */
-    const full = kvEls.text[L], n = full.length, dur = durOf(L), tn3 = kvEls.textNodes[L];
-    let count = 0;
-    for (let ci = 0; ci < n; ci++) { if (tt - fd >= timeOf(ci, n, dur)) count = ci + 1; else break; }
+    /* 【2026-09-28 夜 ヒデさん依頼「一文字一文字ゆっくり打ってる感じに」】穴埋めは3行目を1文字ずつ一定の間隔(fillCharDur・既定0.3秒/字)で打つ。
+       1文字目は打ち始めと同時。打っている間はカーソルを点けっぱなし(人が打っている感じ)、待っている間と打ち終わりは点滅。
+       下線は打ち終わりの1拍(1文字ぶん)あとに消え始める */
+    const full = kvEls.text[L], n = full.length, cd = Math.max(0.03, c.fillCharDur != null ? c.fillCharDur : 0.3), tn3 = kvEls.textNodes[L];
+    const count = tt < fd ? 0 : Math.min(n, Math.floor((tt - fd) / cd) + 1);
     if (tn3 && tn3.data.length !== count) tn3.data = full.slice(0, count);
-    const typed = fd + timeOf(n, n, dur);   /* 3行目の打ち終わり(打ち始めの設定 typeAt からの秒) */
-    typeEnd = typed + bf;                   /* 下線が消えきってから、横線・サブコピーへ */
-    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;   /* 開いた時から点滅(空欄の頭) */
-    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typed + 0.5) ? blinkF : 0; });
-    if (kvEls.blank) { if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full; kvEls.blank.style.opacity = (1 - clamp01((tt - typed) / Math.max(0.05, bf))).toFixed(3); }
+    const typed = fd + (n - 1) * cd;        /* 最後の字が出た時刻(打ち始めの設定 typeAt からの秒) */
+    const fadeAt = typed + cd;              /* 1拍あとに下線が消え始める */
+    typeEnd = fadeAt + bf;                  /* 下線が消えきってから、横線・サブコピーへ */
+    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;
+    const solid = tt >= fd && tt < typed + cd * 0.5;   /* 打っている間は点けっぱなし */
+    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typeEnd) ? (solid ? 1 : blinkF) : 0; });
+    if (kvEls.blank) {
+      if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full;
+      kvEls.blank.style.opacity = (1 - clamp01((tt - fadeAt) / Math.max(0.05, bf))).toFixed(3);
+      /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】濃さ・太さ(つまみ: エフェクト › コピー（穴埋め）) */
+      const ba = String(c.blankAlpha != null ? c.blankAlpha : 0.12), bw = (c.blankBw != null ? c.blankBw : 2) + 'px';
+      if (kvEls.blank.style.getPropertyValue('--hl-blank-a') !== ba) kvEls.blank.style.setProperty('--hl-blank-a', ba);
+      if (kvEls.blank.style.getPropertyValue('--hl-blank-bw') !== bw) kvEls.blank.style.setProperty('--hl-blank-bw', bw);
+    }
     /* スマホ(真ん中寄せ)でも、カーソルと打つ字が空欄の左端から始まるように、3行目を空欄の幅にして真ん中へ(CSS .hl-fillline) */
     { const l3 = kvEls.lines[L]; if (l3 && kvEls.blank) { if (!l3.classList.contains('hl-fillline')) l3.classList.add('hl-fillline'); const w = kvEls.blank.offsetWidth + 'px'; if (l3.style.getPropertyValue('--hl-fill-w') !== w) l3.style.setProperty('--hl-fill-w', w); } }
   }
@@ -12310,6 +12330,14 @@ function buildPanel() {
     '右へ動かすほど、指を離しても長く流れ続けます。左でピタッと止まります。'));
 
   /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)テクスチャ。オン/オフ＋オンの時だけ細かさ等のつまみを出す(動的) */
+  /* 【2026-09-28 夜 ヒデさん依頼】文字の黒(サイト全体の黒い文字・線)。既定はロゴと同じ #000。スマホモード中は params.mb['theme.ink'] だけに書き、PC の見た目は触らない */
+  sub(catAll, '文字の黒', null, { fixed: true, grp: 'fxtex' });
+  { const KEY = 'theme.ink', pon = () => document.documentElement.classList.contains('phone-mode');
+    const getInk = () => (pon() && params.mb && params.mb[KEY] != null) ? params.mb[KEY] : ((params.theme && params.theme.ink) || '#000000');
+    const rowInk = colorRow('色', getInk, v => { if (pon()) { if (!params.mb) params.mb = {}; params.mb[KEY] = v; } else { params.theme = params.theme || {}; params.theme.ink = v; applyInk(); } },
+      'サイト全体の黒い文字(見出し・本文・ナビ)と黒い線の色。既定は Anyflow のロゴの文字と同じ #000000。スマホモード中はスマホだけの色になります。');
+    const lab = rowInk.querySelector('label'); const s0 = rowInk._sync; rowInk._sync = () => { if (s0) s0(); try { lab.classList.toggle('mb-override', pon() && !!(params.mb && params.mb[KEY] != null)); } catch (e) {} };
+  }
   sub(catAll, 'グリッド（背景の方眼）', null, { fixed: true, grp: 'fxtex' });
   segRow('表示', [['オン', 1], ['オフ', 0]],
     () => (params.grid && params.grid.on ? 1 : 0),
@@ -12968,8 +12996,15 @@ function buildPanel() {
   { const isFill = () => _kvTypeMode() === 'fill';
     const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
     fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
+    { const r = slider('1文字の時間', 0.05, 1, 0.01, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.3), v => params.kv.fillCharDur = v, v => v.toFixed(2) + '秒/字', '「競争力を」を1文字ずつ打つ間隔。大きいほどゆっくり。一定の間隔で打つ(打っている間はカーソルを点けっぱなし)。', { mbKey: 'kv.fillCharDur' }); rows.push(r); showWhen(r, isFill); }
     fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
     fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
+  }
+  /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】空欄の下線の濃さ・太さ(色と線の太さなのでエフェクト・6-13) */
+  sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'fxtex' });
+  { const isFill = () => _kvTypeMode() === 'fill';
+    const r1 = slider('下線の濃さ', 0, 0.8, 0.01, () => (params.kv.blankAlpha != null ? params.kv.blankAlpha : 0.12), v => params.kv.blankAlpha = v, v => Math.round(v * 100) + '%', '空欄の下線の濃さ(黒の何%)。小さいほど かすかなグレー。', { mbKey: 'kv.blankAlpha' }); rows.push(r1); showWhen(r1, isFill);
+    const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 2), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
   }
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
@@ -14002,6 +14037,7 @@ function __previewReapply() {
     C(function () { applyKvVariant(kvVarKey(), true); });
     C(function () { varApplyOverridesAtStartup(); });
     C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
+    C(function () { applyInk(); });   /* 2026-09-28 文字の黒 */
     C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
     C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
     C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
@@ -14762,6 +14798,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
          以前は前に流していたため、案の再適用が SP 値を上書きして戻してしまい、リロードするまで正しく見えなかった
          (リロード時は varApply→applyMb の順で正しかった。ここも同じ順に揃える)。 */
       call(function () { if (typeof applyMbToParams === 'function') applyMbToParams(); });
+      call(function () { if (typeof applyInk === 'function') applyInk(); });   /* 2026-09-28 文字の黒 */
       call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
       call(function () { if (typeof applyVisEmph === 'function') applyVisEmph(); });   /* 【2026-09-20】ビジョンのバリエーションもライブ反映 */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });

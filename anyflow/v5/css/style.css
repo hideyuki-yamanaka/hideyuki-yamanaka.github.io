@@ -506,12 +506,13 @@
   .hl-line { display: block; position: relative; }
   /* 最終行「競争力を」はジャンプ率を付ける(調整版の焼き込み)。スマホ(.mb)は 9/9 のSPトレースのまま(仮置き: SPカンプ未確認) */
   html:not(.mb) .hl-main .hl-line:last-child { font-size: var(--kv-jump-size, 120px); line-height: var(--kv-last-lh, 1.2); font-weight: var(--kv-last-weight, 700); }   /* 【2026-09-18】Figma 17707:26490: 最終行「競争力を」は Bold(700)、1・2行目は ExtraBold(800) */
-  html:not(.mb) .hl-main .hl-line:last-child .hl-caret { height: calc(var(--kv-jump-size, 120px) * 0.86); }
-  html:not(.mb) .hl-caret { height: calc(var(--kv-main-size, 72px) * 0.86); }
+  /* 【2026-09-28 夜 ヒデさん依頼「カーソルの点滅も文字サイズに合わせて(縦幅など)」】カーソルの高さ・位置は下の .hl-caret で字の大きさ(em)から決める。
+     ❌ 以前は px の決め打ち(PC 行の大きさ×0.86・縦位置 −12px／スマホ 28px・48px)で、字の大きさを変えると短く・下にずれた */
   .hl-line .hl-ch { display: none; }
   /* 【2026-09-28 夜 ヒデさん依頼】キービジュアルの打ち込みの案「穴埋め」: 3行目の空欄の下線。中身は透明な「競争力を」＝ちょうど入る幅。
-     行の上下の真ん中に 1em の箱を置き、その下端に線(文字の下端あたり)。PC は左端から・スマホは真ん中寄せ。線の太さは⚠️仮置き */
-  .hl-blank { position: absolute; left: 0; top: 50%; transform: translateY(calc(-50% + 0.1em)); line-height: 1; color: transparent; border-bottom: max(2px, 0.03em) solid var(--ink); white-space: nowrap; pointer-events: none; user-select: none; font-style: normal; opacity: 0; }
+     行の上下の真ん中に 1em の箱を置き、その下端に線(文字の下端あたり)。PC は左端から・スマホは真ん中寄せ。
+     【2026-09-28 夜 ヒデさん依頼「本当にかすかにグレーで」】線はごく薄いグレー(黒の12%)・2px(⚠️仮置き・つまみ: エフェクト › コピー（穴埋め）) */
+  .hl-blank { position: absolute; left: 0; top: 50%; transform: translateY(calc(-50% + 0.1em)); line-height: 1; color: transparent; border-bottom: var(--hl-blank-bw, 2px) solid rgba(0,0,0, var(--hl-blank-a, .12)); white-space: nowrap; pointer-events: none; user-select: none; font-style: normal; opacity: 0; }
   html.mb .hl-blank { left: 50%; transform: translate(-50%, calc(-50% + 0.1em)); }   /* 0.1em 下げる＝打った字の下の端に重ならない(2026-09-28 実測) */
   /* スマホの穴埋め: 3行目を空欄の幅にして真ん中へ置き、中は左寄せ＝カーソルと打つ字が空欄の左端から始まる(JS が --hl-fill-w を入れる) */
   html.mb .hl-line.hl-fillline { width: var(--hl-fill-w, auto); margin-left: auto; margin-right: auto; text-align: left; }
@@ -519,10 +520,10 @@
   /* タイピングのカーソル */
   .hl-caret {
     display: inline-block;
-    width: 2px;
-    height: 60px;
+    width: max(2px, 0.035em);   /* 字の大きさに合わせる(60px で 2.1px・120px で 4.2px) */
+    height: 0.96em;             /* 字の黒い所の高さ(実測 約0.96em) */
     background: var(--ink);
-    vertical-align: -12px;
+    vertical-align: -0.11em;    /* 字の下端にそろえる(実測で合わせた・⚠️仮置き) */
     opacity: 0;
   }
   /* (旧「フォントテスト」の html.ft-on 上書きは 2026-09-17 の大掃除で撤去。調整版の値を上の基本ルールに焼き込んだ) */
@@ -663,7 +664,8 @@
     /* 色：ブランド */
     --brand-cyan:#0EBBFF; --brand-pink:#FF5D97; --brand-blue-deep:#0E4497;
     /* 色：インク（文字・マーク） */
-    --ink:#101828; --ink-strong:#000; --ink-on-dark:#fff; --surface-white:#FFF; --ink-muted:#545961;   /* 2026-09-19 整理: 白い面(ドロワーのCTA・開いた時のハンバーガー箱・黒セクション上の箱)は --surface-white、白い文字/線は --ink-on-dark */   /* 2026-09-09統合: --ink-label は本番(high)で #101828=--ink に収束していたため --ink に一本化 */
+    --ink:#000; --ink-strong:#000;   /* 【2026-09-28 夜 ヒデさん依頼「全体の黒が少し薄い。いったん Anyflow のロゴと同じ濃さに」】--ink #101828→#000(ロゴの文字 fill=black と同じ)。調整パネル「全体 › エフェクト › 文字の黒」で変えられる(JS が --ink と --ink-strong を同じ色で上書き) */
+    --ink-on-dark:#fff; --surface-white:#FFF; --ink-muted:#545961;   /* 2026-09-19 整理: 白い面(ドロワーのCTA・開いた時のハンバーガー箱・黒セクション上の箱)は --surface-white、白い文字/線は --ink-on-dark */   /* 2026-09-09統合: --ink-label は本番(high)で #101828=--ink に収束していたため --ink に一本化 */
     /* 色：サーフェス（背景） */
     --surface:#E7E7E7; --surface-dark-top:#161616; --surface-dark-bottom:#454545;
     --surface-footer-bottom:#363636; --surface-cta:#000;   /* フッター下端: 新カンプ 16083:23592 で #434343→#363636。2026-09-09統合: --surface-terminal(#080A0E) は high で #090909=--surface-cta に収束のため一本化 */
@@ -2370,9 +2372,9 @@
                 align-items: center; text-align: center; }
     .hl-main { font-size: var(--kv-main-size, var(--fs-hero)); line-height: var(--lh-tight); text-align: center; font-weight: 800; }   /* 【2026-09-19 仮置き】PCノーマル案(800/1.4)に合わせる(旧 100/1.4 は9/9のSPトレース)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-hero(34) */
     .hl-main .hl-line:last-child { font-size: var(--kv-jump-size, var(--fs-hero-jump)); line-height: var(--lh-snug); font-weight: 700; }   /* 【2026-09-19 仮置き】最終行「競争力を」の跳ね上げ(PC 90/700 の比例)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-hero-jump(60) */
-    .hl-main .hl-line:last-child .hl-caret { height: 48px; vertical-align: -6px; }   /* 46px / 1.4 中央。太さ100=9/9のSPトレースのまま(PCは調整版800。仮置き: SPカンプ未確認) */
+    /* 【2026-09-28 夜】スマホも字の大きさ(em)から決める(上の .hl-caret)。旧: 48px・−6px の決め打ち */   /* 46px / 1.4 中央。太さ100=9/9のSPトレースのまま(PCは調整版800。仮置き: SPカンプ未確認) */
     .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 400; }   /* 【2026-09-17 大掃除】PCのサブコピーは20px/Medium500(Figma)に焼き込んだので、SPは従来の12px/400を明示して据え置き(仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
-    .hl-caret { height: 28px; vertical-align: -4px; }   /* 2026-09-19: 34px に合わせて */
+    /* 【2026-09-28 夜】旧: .hl-caret { height: 28px; vertical-align: -4px; } の決め打ち → 字の大きさ(em)から決める */   /* 2026-09-19: 34px に合わせて */
     .hl-eyebrow { font-size: var(--kv-eyebrow-size, var(--fs-caption)); font-weight: 500; letter-spacing: 0.05em; gap: var(--space-4);   /* 2026-09-19: 太さ 300→500(PC サブコピー Medium と同じ・仮置き)。【2026-09-20 #3】パネルのサイズ(SP独立)を読む。未設定は --fs-caption(12) */
                   flex-wrap: nowrap; justify-content: center; margin-top: 0; }   /* カンプSP node16534:22199: Noto Light(300) 12px / 字間0.6 (PCの --kv-eyebrow-weight=400 は使わない) */
     .hl-eyebrow i { width: 10px; flex: 0 0 auto; }   /* カンプの罫線10px */
