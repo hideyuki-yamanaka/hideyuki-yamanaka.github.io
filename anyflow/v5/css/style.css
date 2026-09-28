@@ -2728,8 +2728,10 @@
     max-width: 92vw;
     max-height: 92vh;
     resize: both;            /* 右下つまみでサイズ変更 */
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(12px);
+    /* 【2026-09-28 ヒデさん依頼「パネルの帯ごとに色味が微妙に違う」】地は白100%・ぼかし無し(共通の部品と同じ)。
+       前は白92%＋後ろをぼかす(半分透ける)地で、タブの帯だけ白100%だった → 後ろが灰色の所では見出しと中身だけ灰色っぽく見えていた。
+       地の色はここ1か所で決め、中の帯(見出し・タブ・カード)は同じ白か塗らない(決まり 6-15) */
+    background: #fff;
     border: 1px solid #ececec;
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0,0,0,.10);
@@ -2908,8 +2910,11 @@
   .cat-section.cs-variation .cat-section-head:hover { color: #111; }
   /* 【2026-09-21 ヒデさん依頼】1タブに複数バリエーションセクション(演出/ピクトグラム等)がある時の入れ子。
      H1=バリエーションセクション見出し(.vs-section) / H2=その中のカテゴリ(.cs-nested)。 */
-  .vs-section { border-top: 1px solid #e6e6e6; margin-top: 8px; }
-  .vs-section:first-of-type { border-top: none; margin-top: 0; }
+  /* 【2026-09-28 ヒデさん依頼「セクションの冒頭の横線はいらない(一番最初)」】区切り線は、案の見出しと案の見出しの「間」にだけ引く(2つ目から)。
+     前は「全部に線→最初の1つだけ消す(:first-of-type)」だった。:first-of-type は“同じ種類の部品の1番目”を数えるので、
+     タブの先頭に隠してある補足文(div.cat-note)が1番目に数えられ、補足文のあるタブ(ビジョン・実績・開発者体験・コンバージョン)だけ線が残っていた(決まり 6-15) */
+  .vs-section { border-top: none; margin-top: 0; }
+  .vs-section ~ .vs-section { border-top: 1px solid #e6e6e6; margin-top: 8px; }
   .vs-section > .cat-section-head { font-size: 14px; font-weight: 800; color: #000; cursor: default; padding: 15px 2px 6px; }
   .vs-section > .cat-section-head:hover { color: #000; }
   .cat-section.cs-nested > .cat-section-head { font-size: 12px; font-weight: 600; color: #555; padding: 9px 2px 5px; letter-spacing: .02em; }

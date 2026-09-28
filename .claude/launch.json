@@ -270,6 +270,15 @@
         "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v2' && exec python3 -m http.server 8784 --bind 0.0.0.0"
       ],
       "port": 8784
+    },
+    {
+      "name": "jelly-fruits-v3",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v3' && exec python3 -m http.server 8785 --bind 0.0.0.0"
+      ],
+      "port": 8785
     }
   ]
 }
