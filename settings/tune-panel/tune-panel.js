@@ -247,14 +247,14 @@
     '.tp-tab[hidden]{display:none;}',
     '.tp-pane{display:none;padding-top:6px;}',
     '.tp-pane.on{display:flex;flex-direction:column;gap:32px;}',   /* 近接の法則(RULES 6-16・v2.2.0)：タブのいちばん外側＝カード同士・案の大見出し同士は 32px */
-    '.tp-pane-title{font-size:18px;font-weight:800;color:#000;padding:16px 2px 0;margin-bottom:-24px;}',   /* 大見出し→中身は 8px(32−24) */
+    '.tp-pane-title{font-size:16px;font-weight:600;color:#000;padding:16px 2px 0;margin-bottom:-24px;}',   /* 大見出し→中身は 8px(32−24) */
     '.tp-off{display:none!important;}',
     /* ── カテゴリ（H1）。基本〜その他はカード、バリエーションは装飾なしの大見出し ── */
     '.tp-cs{margin:0;}',
-    '.tp-cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 2px;font-size:16px;font-weight:800;',
-    '  letter-spacing:.03em;color:#111;user-select:none;-webkit-user-select:none;}',   /* 文字の段 2 カテゴリ(カードの見出し) 16px・800・#111(2026-09-29 決定) */
+    '.tp-cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 2px;font-size:14px;font-weight:600;',
+    '  letter-spacing:.03em;color:#111;user-select:none;-webkit-user-select:none;}',   /* 文字の段 2 カテゴリ(カードの見出し) 14px・600・#111(2026-09-29 夜 決定) */
     '.tp-cs.var{margin:0;}',
-    '.tp-cs.var>.tp-cs-head{font-size:18px;font-weight:800;color:#000;padding:16px 2px 8px;}',   /* 文字の段 1 案の大見出し 18px・800・黒 */
+    '.tp-cs.var>.tp-cs-head{font-size:16px;font-weight:600;color:#000;padding:16px 2px 8px;}',   /* 文字の段 1 案の大見出し 16px・600・黒(2026-09-29 夜 決定) */
     '.tp-cs.card{background:transparent;border:1px solid #e4e7eb;border-radius:10px;padding:0 12px 16px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',   /* 2026-09-28 v2.1.2 ヒデさん「セクションの枠の色を上下のブロックと同じ色に」＝中は塗らない(AnyFlow V5 と同じ) */
     '.tp-cs.card>.tp-cs-head{padding:12px 2px;cursor:pointer;}',
     '.tp-cs.var~.tp-cs.card>.tp-cs-head{letter-spacing:.02em;}',
@@ -268,7 +268,7 @@
     /* 案ごとの大見出し（1タブに主役の案が複数ある時） */
     '.tp-vs{margin:0;}',
     '.tp-vs~.tp-vs{border-top:1px solid #e6e6e6;}',   /* 案の大見出し同士はさらに区切り線(間にだけ・6-15) */
-    '.tp-vs-head{font-size:18px;font-weight:800;color:#000;padding:16px 2px 8px;}',
+    '.tp-vs-head{font-size:16px;font-weight:600;color:#000;padding:16px 2px 8px;}',
     /* ── H2＝モノの見出し 12px 太字／H3＝入れ子 11px グレー／まとまり（小見出し）。左の縦線は使わない ── */
     '.tp-sec{margin:0;}',
     '.tp-sec-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#222;margin:0 0 4px;min-height:20px;}',   /* 文字の段 3 見出し 12px・500・#222(2026-09-29 決定: 見出しの太さを下げる)。見出し→つまみ 4px */
