@@ -835,7 +835,7 @@ try {
       };
     });
     /* 2026-09-28：AnyFlow V5 と実測で突き合わせ、9px あけるのは「ピルの列の前」だけに（つまみ・2〜3択の行どうしは詰める） */
-    rec('1行の形（全部の行に↺）・ピルの列の前は4px（行どうしは詰める）・見出しは14px/700・バリエーションは装飾なし（v2.2.0 近接の法則）', d.rowsWithRst === d.rows && d.gapSegToSlider === '0px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.gapPills === '4px' && d.h2 === '14px/700' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
+    rec('1行の形（全部の行に↺）・ピルの列の前は4px（行どうしは詰める）・見出しは12px/500・バリエーションは装飾なし（v2.2.0 近接の法則・2026-09-29 決定）', d.rowsWithRst === d.rows && d.gapSegToSlider === '0px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.gapPills === '4px' && d.h2 === '12px/500' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
       `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・ピルの列の前 ${d.gapPills}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
     rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(0, 0, 0)',
       `画面に出ている補足文 ${d.hintsShown}・項目名の吹き出し「${d.labTitle}」・ピルの吹き出し「${d.pillTitle}」・2〜3択の選択色 ${d.segOn}・項目の削除/並び替えの道具 ${d.tools}`);

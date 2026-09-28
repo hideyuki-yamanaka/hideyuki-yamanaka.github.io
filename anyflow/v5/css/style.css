@@ -3134,11 +3134,11 @@
      つまみの行の高さは 16px に詰める(↺ ボタン 16px・つまみの棒 4px・丸 10px) */
   .panel-body.tabbed > .cat > .cat-body.prox { display: flex; flex-direction: column; gap: 32px; }   /* タブの中のいちばん外側: カード同士・案の大見出し同士は 32px(案の大見出しの間は、さらに区切り線) */
   .cat-body.prox > .cat-section { margin: 0; }
-  .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 16px; }                 /* 案のまとまり同士・案とカードの間(【2026-09-29 ヒデさん「見出し同士はもう少し詰めて」】24→16px) */
-  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 16px 0 0; }                         /* カード同士は 16+16＝32px(いちばん大きい余白のまま) */
+  .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 12px; }                 /* 案のまとまり同士・案とカードの間(【2026-09-29 ヒデさん「見出し同士はもう少し詰めて」】24→16→12px) */
+  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 20px 0 0; }                         /* カード同士は 12+20＝32px(いちばん大きい余白のまま) */
   .cat-body.prox .cat-section:not(.cs-variation) { padding: 0 12px 16px; }
   .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head { padding: 12px 2px 12px; }
-  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 16px; padding: 0; }   /* 見出しのまとまり同士(24→16px・カテゴリ同士の 32px より狭く) */
+  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 12px; padding: 0; }   /* 見出しのまとまり同士(24→16→12px・カテゴリ同士の 32px より狭く) */
   .cat-body.prox .grp, .cat-body.prox .grp.fixed, .cat-body.prox .grp.bare, .cat-body.prox .grp.sub2 { margin: 0; }
   .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title,
   .cat-body.prox .cat-section-body > .grp:first-child > .grp-title { margin: 0 0 8px; }        /* 見出しとつまみ */
@@ -3153,29 +3153,31 @@
   .cat-body.prox .row input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: #090909; }
   .cat-body.prox .row input[type=range]::-moz-range-thumb { width: 10px; height: 10px; border: 0; border-radius: 50%; background: #090909; }
   .cat-body.prox .sw-row { margin: 0; }
-  .cat-body.prox .cv-subg { display: flex; flex-direction: column; gap: 0; margin: 12px 0 0; }   /* 小見出しのまとまりの上は 12px(見出し同士の 16px より狭く) */
-  .cat-body.prox .grp-body > .grp { margin: 12px 0 0; }   /* 見出しの中に入れ子の見出しがある時も、小見出しのまとまりと同じ扱い */
+  .cat-body.prox .cv-subg { display: flex; flex-direction: column; gap: 0; margin: 8px 0 0; }   /* 小見出しのまとまりの上は 8px(見出し同士の 12px より狭く) */
+  .cat-body.prox .grp-body > .grp { margin: 8px 0 0; }   /* 見出しの中に入れ子の見出しがある時も、小見出しのまとまりと同じ扱い */
   .cat-body.prox .grp-body > .grp.bare:not(.pab) { margin-top: 0; }   /* 見出しを出さない入れ物(bare)は透明な箱＝自分では余白を足さない(中身の余白だけ効かせる) */
   .cat-body.prox .grp-body > .pav { margin-top: 8px; }    /* 案のピルのすぐ下のつまみは 8px(見出しとつまみと同じ・ピルとつまみがくっつかないように) */
-  .cat-body.prox .grp-body > .pab { margin-top: 12px; }   /* まとまりのすぐ後ろも 16px(後ろのつまみが仲間に見えないように)。まとまり同士も 16px(旧 16+16＝32px は見出し同士の 24px より遠い逆転だった) */
+  .cat-body.prox .grp-body > .pab { margin-top: 8px; }   /* まとまりのすぐ後ろも 16px(後ろのつまみが仲間に見えないように)。まとまり同士も 16px(旧 16+16＝32px は見出し同士の 24px より遠い逆転だった) */
   .cat-body.prox .cv-subg-lab { margin: 0 0 4px; }   /* 小見出しとつまみは 4px */
-  .cat-body.prox .grp-stack { display: flex; flex-direction: column; gap: 12px; }   /* 見出しの中の見出しをまとめて入れる箱(キービジュアル「グラフィック」の中の惑星・メッシュ等)は、小見出しのまとまり同士と同じ 16px */
+  .cat-body.prox .grp-stack { display: flex; flex-direction: column; gap: 8px; }   /* 見出しの中の見出しをまとめて入れる箱(キービジュアル「グラフィック」の中の惑星・メッシュ等)は、小見出しのまとまり同士と同じ 16px */
   .cat-body.prox .grp-body > .pfirst { margin-top: 0; }   /* 見出しのすぐ下は、見出しとの間 8px のまま(印 pfirst・pab は JS の hideEmptyPanelGroups) */
   .cat-body.prox .rst { flex-basis: 16px; width: 16px; height: 16px; border-radius: 4px; }   /* ↺ を 26→16px に＝つまみの行の高さ 16px に収める */
   .cat-body.prox .rst::after { width: 12px; height: 12px; }
   /* 【2026-09-29 ヒデさん「文字の濃さや大きさで階層が分かるように。上位概念が濃くて、下位概念が薄く。フォントサイズでもいい」→ 4案から「4 濃さ＋大きさ」に決定】
      1 案の見出し ＞ 2 カテゴリ(カードの見出し) ＞ 3 見出し ＞ 4 小見出し ＞ 5 つまみの名前。上ほど大きく黒く、下ほど小さく薄く。⚠️値は仮置き。
      つまみの名前・数値の大きさは、パネル全体の今の大きさ(11px)のまま(ここでは指定しない) */
-  .cat-body.prox { --t1-fs: 18px; --t1-fw: 800; --t1-c: #000; --t2-fs: 16px; --t2-fw: 700; --t2-c: #222; --t3-fs: 14px; --t3-fw: 700; --t3-c: #444;
-                   --t4-fs: 12px; --t4-fw: 600; --t4-c: #666; --t5-fw: 300; --t5-c: #888; --tv-c: #444; }   /* 【2026-09-29 ヒデさん「いちばん下の段の太さをもう少し下げて」】つまみの名前など 400→300 */
+  /* 【2026-09-29 ヒデさん「情報の階層やグルーピングがわかる太さ・大きさに」→ 案A/B→B2・B3・B4 を比べて「見出しの太さを下げる(B2)＋つまみの文字を小さく(B4)」に決定】
+     案の大見出し 18/800/黒 ＞ カテゴリ 16/800/#111 ＞ 見出し 12/500/#222 ＞ 小見出し 11/500/#666 ＞ いちばん下の段 10/300(名前 #888・数値と入力欄 #444)。⚠️値は仮置き */
+  .cat-body.prox { --t1-fs: 18px; --t1-fw: 800; --t1-c: #000; --t2-fs: 16px; --t2-fw: 800; --t2-c: #111; --t3-fs: 12px; --t3-fw: 500; --t3-c: #222;
+                   --t4-fs: 11px; --t4-fw: 500; --t4-c: #666; --t5-fw: 300; --t5-c: #888; --tv-c: #444; }   /* 4-7例外（小見出し 11px＝パネルの段の間を詰めるため・2026-09-29 ヒデさん決定） */   /* 【2026-09-29 ヒデさん「いちばん下の段の太さをもう少し下げて」】つまみの名前など 400→300 */
   .cat-body.prox .vs-section > .cat-section-head, .cat-body.prox .vs-section > .cat-section-head:hover { font-size: var(--t1-fs); font-weight: var(--t1-fw); color: var(--t1-c); }
   .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head, .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head:hover { font-size: var(--t2-fs); font-weight: var(--t2-fw); color: var(--t2-c); }
   .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title { font-size: var(--t3-fs); font-weight: var(--t3-fw); color: var(--t3-c); }
   .cat-body.prox .cv-subg-lab,
   .cat-body.prox .grp-body .grp > .grp-title { font-size: var(--t4-fs); font-weight: var(--t4-fw); color: var(--t4-c); }   /* 見出しの中の見出し(例: グラフィック＞惑星・2つの価値＞ポイント1・案＞for SaaS)は、どの深さでも小見出しと同じ段 */
   .cat-body.prox .grp-body .grp > .grp-title { margin-bottom: 4px; }   /* 小見出しとつまみと同じ 4px */
-  .cat-body.prox .row > label { font-weight: var(--t5-fw); color: var(--t5-c); }
-  .cat-body.prox .row .val { color: var(--tv-c); }
+  .cat-body.prox .row > label { font-size: 10px; font-weight: var(--t5-fw); color: var(--t5-c); }   /* いちばん下の段は 10px(2026-09-29 ヒデさん決定・旧 11px) */
+  .cat-body.prox .row .val { font-size: 10px; color: var(--tv-c); }
   /* 【2026-09-29 ヒデさん「見出しとインジケーター類の上下をもう少し、結構詰めて」】見出し→つまみ 8→4px。見出しの ↺ を 28→20px にして、見出しの行そのものも低くする */
   .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title,
   .cat-body.prox .cat-section-body > .grp:first-child > .grp-title { margin-bottom: 4px; }
@@ -3194,26 +3196,27 @@
   .cat-body.prox input[type=number]:focus, .cat-body.prox input[type=text]:focus, .cat-body.prox select:focus { outline: 2px solid rgba(14,187,255,.6); outline-offset: 0; }
   /* 【2026-09-29 ヒデさん「パネルの中でも決まりを統一。こっちは細い・こっちは太い、をなくす」「スペーシングやフォントサイズも一緒」】
      パネルの文字の決まり(段ごとに1つだけ。書体は全部 Noto Sans JP＝入力欄とタブも):
-       1 案の大見出し 18/800/黒 ／ 2 カテゴリ 16/700/#222 ／ 3 見出し 14/700/#444 ／ 4 小見出し 12/600/#666 ／
-       5 いちばん下の段 11/300 … つまみの名前・小さな名前(size・weight・lh・ls)・★ピン留めは #888、数値・入力欄は #444。ピル・2〜3択・チップの文字も 11/300
+       1 案の大見出し 18/800/黒 ／ 2 カテゴリ 16/800/#111 ／ 3 見出し 12/500/#222 ／ 4 小見出し 11/500/#666 ／
+       5 いちばん下の段 10/300 … つまみの名前・小さな名前(size・weight・lh・ls)・★ピン留めは #888、数値・入力欄は #444。ピル・2〜3択・チップの文字も 10/300(2026-09-29 決定で 11→10px)
        ほか: パネルの題名 16/700 ／ タブ 12/500(選んでいるタブ 700) ／ ボタン 12/400 ／ 注意書き 10/300/#888
      横の間は 4px(小さな名前と欄)・8px(それ以外の並び) だけ。⚠️値は仮置き */
   .cat-body.prox .row .val { font-weight: 300; }
   .cat-body.prox .row { gap: 8px; }
-  .cat-body.prox .txt-row > label { font-size: 11px; line-height: normal; padding-top: 2px; }   /* 文字の行の名前も、ほかの行と同じ 11px(旧 10px) */
+  .cat-body.prox .txt-row > label { font-size: 10px; line-height: normal; padding-top: 3px; }   /* 文字の行の名前も、ほかの行と同じ 10px */
   .cat-body.prox .txt-row .txt-ctl { gap: 4px 8px; }
   .cat-body.prox .txt-row .txt-pair { gap: 4px; }
   /* 文字の行を、いつもの幅(450px)で1行に収める(size・weight の名前が長くなった分): 数字の欄 38→32px(矢印を消したので 1.45・-12.5 も入る)・
      太さ 74→72px・名前の欄は 22%(最小 88px)・↺ はほかの行と同じ 16px */
   .cat-body.prox .txt-row input.txt-n { width: 32px; padding: 2px 3px; }
+  .cat-body.prox .txt-row select.txt-w { font-size: 10px; }   /* 太さのプルダウンも 10px(文字の行の部品が後から 11px を当てるので、ここで強めに) */
   .cat-body.prox .txt-row select.txt-w { width: 72px; padding: 2px 14px 2px 4px; }
   .cat-body.prox .txt-row > label { flex: 0 0 max(88px, 22%); }
   .cat-body.prox .txt-row > .rst { flex: 0 0 16px; width: 16px; height: 16px; margin: 2px 0 0; border-radius: 4px; }
-  .cat-body.prox .txt-row .txt-lab { font-size: 11px; font-weight: 300; color: #888; opacity: 1; }   /* size・weight・lh・ls(旧 10px・濃い色を60%に薄めていた) */
-  .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select { font-family: inherit; font-size: 11px; font-weight: 300; }   /* 入力欄も Noto Sans JP(旧 Arial) */
+  .cat-body.prox .txt-row .txt-lab { font-size: 10px; font-weight: 300; color: #888; opacity: 1; }   /* size・weight・lh・ls(濃い色を60%に薄めるのはやめた) */
+  .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select { font-family: inherit; font-size: 10px; font-weight: 300; }   /* 入力欄も Noto Sans JP(旧 Arial)・10px */
   .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select, .cat-body.prox .hexin, .cat-body.prox .txt-row input.txt-n { color: #444; }   /* 文字の行の数字の欄は「自動」の印(is-auto)で色が戻っていたので、強めに指定 */
-  .tools .panel .var-pill, .tools .panel .seg button, .tools .panel .chip-b { font-size: 11px; font-weight: 300; }   /* ピル・2〜3択・チップ(旧 10px/400) */
-  .tools .panel .var-favhead { font-size: 11px; font-weight: 300; color: #888; }
+  .tools .panel .var-pill, .tools .panel .seg button, .tools .panel .chip-b { font-size: 10px; font-weight: 300; }   /* ピル・2〜3択・チップ(いちばん下の段と同じ 10/300) */
+  .tools .panel .var-favhead { font-size: 10px; font-weight: 300; color: #888; }
   .tools .panel .panel-head-title { font-size: 16px; font-weight: 700; }   /* 旧 15px */
   .tools .panel .pan-tab { font-family: inherit; font-size: 12px; }   /* 旧 12.5px・Arial */
   .tools .panel .panel-edit-btn, .tools .panel .btns button { font-size: 12px; font-weight: 400; }   /* ボタンは 12/400 にそろえる(上の 📱・✏️ は旧 11px) */
