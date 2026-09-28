@@ -252,6 +252,15 @@
       ],
       "port": 3291,
       "cwd": "nittei-chousei"
+    },
+    {
+      "name": "jelly-fruits",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits' && exec python3 -m http.server 8783 --bind 0.0.0.0"
+      ],
+      "port": 8783
     }
   ]
 }

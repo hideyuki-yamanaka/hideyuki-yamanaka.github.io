@@ -518,6 +518,16 @@ function applyCtaDir() {
   const d = (isMb && mb['cv.ctaDir'] != null) ? mb['cv.ctaDir'] : (cv.ctaDir || 'left');
   document.documentElement.style.setProperty('--cta-marquee-dir', d === 'right' ? 'reverse' : 'normal');
 }
+/* 【2026-09-28 ヒデさん依頼「ビジョンのアニメーションを全体的にもうちょっと早めに」】ビジョンの始まる位置
+   ＝ セクションの上の端が画面の下からこの割合まで入ったら動き始める(小さいほど早い・0=入った瞬間)。
+   PC=params.sections.vision.enterAt(既定0.35・⚠️仮置き) / SP=params.mb['sections.vision.enterAt'](既定0.25・⚠️仮置き)。旧は PC/SP とも 0.45。
+   PC 0.35 は「動き始めた時にメッセージ2行目がほぼ画面に収まる」位置(1440×900 で下へのはみ出し約19px)。スマホは 0.25 でもメッセージ全体が収まる */
+function visEnterAt() {
+  const isMb = (typeof isMobile !== 'undefined' && isMobile), mb = (params && params.mb) || {};
+  const v = (params && params.sections && params.sections.vision) || {};
+  const e = isMb ? (mb['sections.vision.enterAt'] != null ? mb['sections.vision.enterAt'] : 0.25) : (v.enterAt != null ? v.enterAt : 0.35);
+  return Math.max(0, Math.min(0.9, +e || 0));
+}
 applyVpSize();
 /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)。params.grid → html.grid-on と CSS変数(--grid-cell/-w/-line)へ。 */
 function applyGrid() {
@@ -672,7 +682,8 @@ function updateKV() {
   const ease = x => x * (1 - e) + e * x * x;          // 0→1 を前半ゆっくりに
   const timeOf = (i, n, dur) => dur * n * ease(i / Math.max(1, n));
   /* 【2026-09-17】行数可変(2〜3行など)に一般化: 各行の開始時刻を累積で出す。1行目は素早く charDur、以降はゆったり charDur2。行間は lineGap */
-  const durOf = li => (li === 0 ? c.charDur : c.charDur2);
+  /* 【2026-09-28 ヒデさん依頼「最初の2行をもう少し短縮」】3行目以降は charDur3(無い古い保存値では前と同じ charDur2) */
+  const durOf = li => (li === 0 ? c.charDur : (li === 1 ? c.charDur2 : (c.charDur3 != null ? c.charDur3 : c.charDur2)));
   const starts = []; let acc = 0;
   kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
   const typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
@@ -731,8 +742,10 @@ function updateSections() {
   /* 【2026-08-29】Vision だけは固定追従なし＝入場進捗(preP)で自動再生。実績・事例は従来どおり。 */
   /* 【2026-08-29 ヒデさん指定】固定追従なしは「入った瞬間に発火」だと画面外(下に peek)で
      もう再生されてしまう。セクションがある程度画面に入ってから(上端が約75%より上)発火させる。 */
-  const NOPIN_ENTER = 0.45;   // preP をこのぶん遅らせて発火(大きいほど中に入ってから)。0.45=セクションが半分以上入ってから
-  const visProg = VIS_NOPIN ? clamp01(preP(SECS.vision) - NOPIN_ENTER) : prog(SECS.vision);
+  const NOPIN_ENTER = 0.45;   // preP をこのぶん遅らせて発火(大きいほど中に入ってから)。0.45=セクションが半分以上入ってから(導入事例・実績で使用)
+  /* 【2026-09-28 ヒデさん依頼「ビジョンのアニメーションを全体的にもうちょっと早めに」】ビジョンだけ始まる位置を独立(visEnterAt)。
+     旧はビジョンも 0.45(上の端が画面の上から55%まで来てから)。導入事例・実績は NOPIN_ENTER のまま */
+  const visProg = VIS_NOPIN ? clamp01(preP(SECS.vision) - visEnterAt()) : prog(SECS.vision);
   updateVision(progOverride.vision != null ? progOverride.vision : smoothTo('vision', visProg));
   updateDev(progOverride.dev != null ? progOverride.dev : smoothTo('dev', prog(SECS.dev)));
   updateDev2Stack();   /* dev2 の3枚カルーセル(ホバー切替) */

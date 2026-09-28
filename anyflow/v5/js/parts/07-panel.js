@@ -1038,10 +1038,13 @@ function buildPanel() {
     '「AIと事業を強くする」を1文字ずつ打ち始めるまで。', { mbKey: 'kv.typeAt' }));
   sub(copyRoot, 'コピー（タイピング）', false, { grp: 'anim' });
   note('打つ速さと間の取り方。触ると先頭から流し直します。');
-  rows.push(slider('1行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur, v => params.kv.charDur = v, v => v.toFixed(2) + 's/字',
-    '1文字あたりの時間。小さいほどタタタッと速く打ちます。', { mbKey: 'kv.charDur' }));
-  rows.push(slider('2行目の1文字の時間', 0.03, 0.4, 0.01, () => params.kv.charDur2, v => params.kv.charDur2 = v, v => v.toFixed(2) + 's/字',
-    'ゆっくりにすると、最後の一言が印象に残ります。', { mbKey: 'kv.charDur2' }));
+  /* 【2026-09-28 ヒデさん依頼「最初の2行をもう少し短縮」】3行目を2行目から分けた(charDur3)。1行目の下限を 0.03→0.01 に(0.025 を置けるように) */
+  rows.push(slider('1行目の1文字の時間', 0.01, 0.4, 0.005, () => params.kv.charDur, v => params.kv.charDur = v, v => v.toFixed(3) + 's/字',
+    '1文字あたりの時間。小さいほどタタタッと速く打ちます。', { mbKey: 'kv.charDur', fixedMax: true }));
+  rows.push(slider('2行目の1文字の時間', 0.01, 0.4, 0.005, () => params.kv.charDur2, v => params.kv.charDur2 = v, v => v.toFixed(3) + 's/字',
+    '2行目の1文字あたりの時間。小さいほど速く打ちます。', { mbKey: 'kv.charDur2', fixedMax: true }));
+  rows.push(slider('3行目の1文字の時間', 0.01, 0.4, 0.005, () => (params.kv.charDur3 != null ? params.kv.charDur3 : params.kv.charDur2), v => params.kv.charDur3 = v, v => v.toFixed(3) + 's/字',
+    'ゆっくりにすると、最後の一言が印象に残ります。', { mbKey: 'kv.charDur3', fixedMax: true }));
   rows.push(slider('速度の変化', 0, 1, 0.05, () => params.kv.typeEase, v => params.kv.typeEase = v, v => Math.round(v * 100) + '%',
     '大きいほど「最初は速く、最後はゆっくり」に。0で一定。', { mbKey: 'kv.typeEase' }));
   rows.push(slider('行と行の間', 0, 1.5, 0.05, () => params.kv.lineGap, v => params.kv.lineGap = v, v => v.toFixed(2) + '秒',
@@ -1097,6 +1100,10 @@ function buildPanel() {
     '文字・グラフィックが出る時/消える時のぼやけの強さ。', { mbKey: 'sections.vision.blur' }));
   sub(catVis, 'セクション（再生）', false, { grp: 'anim' });
   sectionLenSlider('vision', 800);
+  /* 【2026-09-28 ヒデさん依頼「ビジョンのアニメーションを全体的にもうちょっと早めに」】始まる位置(PC/SP別・既定 PC35%/スマホ25%・⚠️仮置き。旧は45%)。
+     スクロール量で決まる演出の位置なのでアニメーションへ(6-13)。値は visEnterAt()(06-sections.js)が毎フレーム読む */
+  rows.push(slider('始まる位置', 0, 0.6, 0.05, () => (sv().vision.enterAt != null ? sv().vision.enterAt : 0.35), v => { sv().vision.enterAt = v; }, v => Math.round(v * 100) + '%',
+    'ビジョンの上の端が、画面の下からこの割合まで入ったら動き始めます。小さいほど早く始まります(0%＝画面に入った瞬間)。旧は45%。', { mbKey: 'sections.vision.enterAt', mbDefault: 0.25, fixedMax: true }));
 
   /* 【2026-08-29 ヒデさん指定】固定追従なし(時間再生)の「ブロックの表示タイミング」を細かく調整。
      塊＝メッセージ / グラフィック / ポイント1 / ポイント2。メッセージ自体は上の「1行目が出るまで」。 */

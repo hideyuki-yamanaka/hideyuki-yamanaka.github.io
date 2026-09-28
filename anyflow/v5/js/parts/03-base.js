@@ -111,6 +111,44 @@ try {
     localStorage.setItem('anyflow-dev-nostop-20260927', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「キービジュアルのタイピングをもう少しだけ、ちょっと早めに」】打ち始め(kv.typeAt)を 0.65→0.40秒後に(焼き込み・既定)。
+   保存値に前の値(0.65)が残っているブラウザ(ローカルのヒデさんの画面も)は勝ってしまうので、1回だけ 0.40 へ入れ替える。
+   前の値と違う値(パネルで自分で変えた値)は触らない。スマホの上書き(mb['kv.typeAt'])も同じ扱い。印 anyflow-kv-typeat-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-kv-typeat-20260928')) {
+    const _OLD = 0.65, _NEW = 0.4, _was = v => v != null && Math.abs(+v - _OLD) < 1e-6;
+    if (params.kv && _was(params.kv.typeAt)) params.kv.typeAt = _NEW;
+    if (params.mb && _was(params.mb['kv.typeAt'])) params.mb['kv.typeAt'] = _NEW;
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); let _ch = false;
+      if (_o && _o.kv && _was(_o.kv.typeAt)) { _o.kv.typeAt = _NEW; _ch = true; }
+      if (_o && _o.mb && _was(_o.mb['kv.typeAt'])) { _o.mb['kv.typeAt'] = _NEW; _ch = true; }
+      if (_ch) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-kv-typeat-20260928', '1');
+  }
+} catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「最初の2行をもう少し短縮」】1行目 0.03→0.025・2行目 0.07→0.045 s/字(焼き込み)。3行目は charDur3 に分けて今の速さのまま。
+   保存値が前の値のままのブラウザは1回だけ入れ替える。3行目(charDur3)が無い保存値は、いまの2行目の値を3行目に写してから直す(3行目の速さは変わらない)。
+   前の値と違う値(パネルで自分で変えた値)は触らない。スマホの上書き(mb)も同じ。印 anyflow-kv-typespeed-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-kv-typespeed-20260928')) {
+    const _eq = (v, x) => v != null && Math.abs(+v - x) < 1e-6;
+    const _fix = kv => { if (!kv) return false; let ch = false;
+      if (kv.charDur3 == null && kv.charDur2 != null) { kv.charDur3 = kv.charDur2; ch = true; }
+      if (_eq(kv.charDur, 0.03)) { kv.charDur = 0.025; ch = true; }
+      if (_eq(kv.charDur2, 0.07)) { kv.charDur2 = 0.045; ch = true; }
+      return ch; };
+    const _fixMb = mb => { if (!mb) return false; let ch = false;
+      if (mb['kv.charDur3'] == null && mb['kv.charDur2'] != null) { mb['kv.charDur3'] = mb['kv.charDur2']; ch = true; }
+      if (_eq(mb['kv.charDur'], 0.03)) { mb['kv.charDur'] = 0.025; ch = true; }
+      if (_eq(mb['kv.charDur2'], 0.07)) { mb['kv.charDur2'] = 0.045; ch = true; }
+      return ch; };
+    _fix(params.kv); _fixMb(params.mb);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (_o && (_fix(_o.kv) | _fixMb(_o.mb))) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-kv-typespeed-20260928', '1');
+  }
+} catch (e) {}
 function loadParams() {
   try {
     let s = JSON.parse(localStorage.getItem(STORAGE_KEY));

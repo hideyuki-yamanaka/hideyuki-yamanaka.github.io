@@ -1,0 +1,214 @@
+/* ぷるぷるフルーツ — 画面の部品（道具バー・ふやすトレイ・音ボタン）
+   数値は 4 と 8 の倍数（10px 以下は 2 刻み）。色・大きさはすべて仮置き */
+:root {
+  --ink: #2B2622;
+  --ink-on: #FFFFFF;
+  --table: #F3EFE9;
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-line: rgba(43, 38, 34, 0.08);
+  --hover: rgba(43, 38, 34, 0.06);
+  --shadow: 0 8px 24px rgba(43, 38, 34, 0.12), 0 2px 4px rgba(43, 38, 34, 0.06);
+  --round: 999px;
+  --radius-tray: 24px;
+  --radius-chip: 16px;
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --btn-w: 64px;
+  --btn-h: 56px;
+  --btn-sp: 44px;
+  --round-btn: 48px;
+  --icon: 24px;
+  --thumb: 48px;
+  --label: 12px;
+  --dock-bottom: 24px;
+  --tray-bottom: 112px;
+  --font: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', system-ui, sans-serif;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--table);
+}
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* ---------- 道具バー ---------- */
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--dock-bottom) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+}
+.dock-group {
+  display: flex;
+  gap: var(--space-4);
+}
+.dock-btn {
+  width: var(--btn-w);
+  height: var(--btn-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  border-radius: var(--round);
+  background: transparent;
+  color: var(--ink);
+  font: 700 var(--label)/1 var(--font);
+  cursor: pointer;
+  transition: background-color .16s, color .16s, transform .16s;
+}
+.dock-btn svg,
+.round-btn svg {
+  width: var(--icon);
+  height: var(--icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dock-btn svg .thick { stroke-width: 3; }
+.dock-btn:hover { background: var(--hover); }
+.dock-btn:active { transform: scale(0.94); }
+.dock-btn[aria-pressed="true"],
+.dock-btn[aria-expanded="true"] {
+  background: var(--ink);
+  color: var(--ink-on);
+}
+.dock-btn:focus-visible,
+.round-btn:focus-visible,
+.tray-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.dock-sep {
+  width: 1px; /* 4-7例外（区切り線の細さ。線幅として扱う） */
+  height: 32px;
+  margin: 0 var(--space-4);
+  background: var(--glass-line);
+}
+
+/* ---------- ふやすトレイ ---------- */
+.tray {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tray-bottom) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 11;
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-12);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-tray);
+  box-shadow: var(--shadow);
+}
+.tray[hidden] { display: none; }
+.tray-btn {
+  width: var(--btn-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) 0;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--ink);
+  font: 700 var(--label)/1 var(--font);
+  cursor: pointer;
+  transition: background-color .16s, transform .16s;
+}
+.tray-btn:hover { background: var(--hover); }
+.tray-btn:active { transform: scale(0.94); }
+.tray-btn canvas {
+  width: var(--thumb);
+  height: var(--thumb);
+}
+
+/* ---------- 音ボタン（右上） ---------- */
+.round-btn {
+  position: fixed;
+  top: calc(var(--space-16) + env(safe-area-inset-top));
+  right: var(--space-16);
+  z-index: 10;
+  width: var(--round-btn);
+  height: var(--round-btn);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--glass-line);
+  border-radius: var(--round);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.round-btn .ic-off { display: none; }
+.round-btn[aria-pressed="false"] .ic-on { display: none; }
+.round-btn[aria-pressed="false"] .ic-off { display: block; }
+
+/* ---------- スマホ（幅600px以下）：右下の角は調整パネルの出し入れ用に空けておく ---------- */
+@media (max-width: 600px) {
+  :root {
+    --dock-bottom: 16px;
+    --tray-bottom: 88px;
+  }
+  .dock {
+    left: var(--space-16);
+    transform: none;
+  }
+  .dock-btn {
+    width: var(--btn-sp);
+    height: var(--btn-sp);
+  }
+  .dock-btn span { display: none; }
+  .tray {
+    left: var(--space-16);
+    right: var(--space-16);
+    transform: none;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: var(--space-8);
+  }
+  .tray-btn { width: var(--thumb); }
+}
