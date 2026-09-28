@@ -2161,6 +2161,20 @@ const CV_SWAYS = [
     cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
           flowMode: 8, flowSec: 18, flowAmp: 0.14, flowLag: 0.3, flowRise: 0.3 } },
 ];
+/* 【2026-09-28 夜 ヒデさん依頼】グラデの見え方(質感)の案。値は全部⚠️仮置き(0=今の見え方はヒデさんが調整した今の値のまま)。
+   levels=色の段の数(多いほど段の線が出にくい) / spread=粒の散らし方(1で段のあいだを均等に散らす＝線が出にくい。今は0.75) / contrast・bright / cell=粒の大きさ /
+   vivid=鮮やかさ / toneSoft=明るい所の丸め / dither=粒の種類('bayer' 格子 / 'noise' ランダム) */
+const LOOK_KEYS = ['levels', 'spread', 'contrast', 'bright', 'cell', 'vivid', 'toneSoft', 'dither'];
+const LOOK_BASE = { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' };
+const CV_LOOKS = [
+  { key: '0', name: '今の見え方', fixed: true, tip: '今の本番の見え方。色の段3・格子状の粒・コントラスト強め。', cv: { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' } },
+  { key: '1', name: 'なめらか（粒は細かく）', tip: '格子状の粒は残したまま、色の段を3→6に増やして粒を均等に散らす。段の線が消え、境目がなめらか。明るい所は丸めて折れ目を出さない。', cv: { levels: 6, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.22, toneSoft: true, dither: 'bayer' } },
+  { key: '2', name: '鮮やか（色を濃く）', tip: '色の段4・粒を均等に散らしたうえで、色の鮮やかさを上げる(くすみを取る)。明るい所は丸める。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.4, toneSoft: true, dither: 'bayer' } },
+  { key: '3', name: '自然な粒（ランダム）', tip: '粒を格子状からランダムに変える(フィルムの粒のような質感)。格子の模様や段の線が出にくい。少し鮮やかに。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
+  { key: '4', name: 'ほぼなめらか（粒ごく弱く）', tip: '色の段を12にして粒をごく弱く(近づくと分かる程度)。いちばんなめらかで鮮やか。', cv: { levels: 12, spread: 1, contrast: 1.25, bright: 1.03, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
+];
+function cvLookKey() { const v = String((params && params.cvLook) || '0'); return (CV_LOOKS.some(s => s.key === v) && !variantRemovedKey('cvLook', v)) ? v : '0'; }
+function cvApplyLook(key) { const c = CV_LOOKS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(LOOK_BASE), structuredClone(c.cv)); }
 function cvSwayKey() { const v0 = String((params && params.cvSway) || '0'), v = ['14', '15', '16', '17'].includes(v0) ? '13' : v0;   /* 2026-09-28: 外した案(旧14〜17)は今の動き(13)へ */ return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
 function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
 
@@ -2659,6 +2673,12 @@ uniform float uSwayPivot, uWaveAnchor;
    uFlowMode 0〜4=なし / 5=満ち引き(ピンクがふくらむ) / 6=押し出し(左→右へ順に) / 7=全体が寄る / 8=押し寄せて、ゆっくり戻る
    uFlowPh=いまの位相(JS が毎フレーム足し込む・0〜2π) / uFlowAmp=大きさ / uFlowLag=右へ伝わる遅れ(1往復の割合) / uFlowRise=押し寄せる時間(1往復の割合) */
 uniform float uFlowMode, uFlowAmp, uFlowLag, uFlowRise, uFlowPh;
+/* 【2026-09-28 夜 ヒデさん依頼「ディザや塵の効果はあってよいが、境目が不自然・くすんで見える。鮮やかで自然な境目に見える案を」】グラデの見え方(案)
+   uVivid=鮮やかさ(1=今まで) / uToneSoft=明るい所の丸め(1=コントラストを“なめらかな曲線”で掛け、上限に張り付いてできる折れ目を出さない) /
+   uDitherMode=粒の種類(0=今までの格子状の粒 Bayer / 1=ランダムな粒＝格子の模様や段の線が出にくい) */
+uniform float uVivid, uToneSoft, uDitherMode;
+float tanhF(float x) { float e = exp(2.0 * clamp(x, -9.0, 9.0)); return (e - 1.0) / (e + 1.0); }
+vec3 softTone(vec3 c, float k) { float kk = max(0.2, k), d = tanhF(kk); return vec3(0.5) + 0.5 * vec3(tanhF((c.r - 0.5) * 2.0 * kk), tanhF((c.g - 0.5) * 2.0 * kk), tanhF((c.b - 0.5) * 2.0 * kk)) / d; }
 float swayWave(float ph, float rise, float asym) {   /* 1往復の形: ふつうは sin。asym=1 の時は「押し寄せる(速い)→戻る(ゆっくり)」 */
   if (asym < 0.5) return sin(ph);
   float u = fract(ph / 6.2832), a = clamp(rise, 0.05, 0.95);
@@ -2790,8 +2810,13 @@ void main(){
     col = (rampAt(t - 2.0 * sw) + rampAt(t - sw) * 2.0 + rampAt(t) * 3.0 + rampAt(t + sw) * 2.0 + rampAt(t + 2.0 * sw)) / 9.0;   /* 白の縁のぼかし */
   } else col = rampAt(t);
   if (abs(uHue) > 0.001) col = clamp(hueRot(col, uHue), 0.0, 1.0);   /* 色味の移ろい: うねり全体が青になったりピンクになったり */
-  col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
-  col *= uBright;                          /* Brightness 104% */
+  if (abs(uVivid - 1.0) > 0.001) { float lum = dot(col, vec3(0.2126, 0.7152, 0.0722)); col = mix(vec3(lum), col, uVivid); }   /* 【2026-09-28】鮮やかさ */
+  if (uToneSoft > 0.5) {
+    col = softTone(col * uBright, uContrast);   /* 【2026-09-28】明るい所の丸め: 上限・下限に張り付かず、なめらかに寄せる(折れ目が出ない) */
+  } else {
+    col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
+    col *= uBright;                          /* Brightness 104% */
+  }
   /* 【2026-09-18 ヒデさん依頼】フォームの領域には白が来ないように: 範囲内だけ明るさの上限を下げる(縁60pxはなだらかに) */
   float fm = 0.0;
   if (uFormRect.z > uFormRect.x) { float fe = 140.0; vec2 fc2 = gl_FragCoord.xy;
@@ -2800,7 +2825,11 @@ void main(){
   { float mx = max(col.r, max(col.g, col.b)); float capF = min(uCeil, uFormCeil);   /* フォーム裏: 色味は変えずに明るさだけ上限へ(縁140pxはなだらか) */
     if (fm > 0.0 && mx > capF) col = mix(col, col * (capF / mx), fm); }
   col = mix(col, mix(uDarkCol, col, 0.42), uDark);   /* 暗さ: 黒ベースに寄せる(色は残り火のように残る) */
-  float dith = bayer16(cellId);
+  /* 【2026-09-28】粒の種類: 0=格子(Bayer) / 1=ランダム(格子の模様・段の線が出にくい)。
+     ❌ 最初は interleaved gradient noise にしたが、斜めの縞のくせが出た → くせの無いハッシュ(sin を使わない・256マスで一周＝スマホの精度でも崩れない)に */
+  float dith;
+  if (uDitherMode < 0.5) dith = bayer16(cellId);
+  else { vec2 pn = mod(cellId, 256.0); vec3 p3 = fract(vec3(pn.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); dith = fract((p3.x + p3.y) * p3.z); }
   vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread) + 0.5) / uLevels, 0.0, 1.0);
   gl_FragColor = vec4(q, 1.0);
 }`;
@@ -2827,6 +2856,7 @@ void main(){
       uni[k] = gl.getUniformLocation(p, k);
     uni.uFormRect = gl.getUniformLocation(p, 'uFormRect'); uni.uFormCeil = gl.getUniformLocation(p, 'uFormCeil');   /* 2026-09-18 */
     ['uFlowMode', 'uFlowAmp', 'uFlowLag', 'uFlowRise', 'uFlowPh'].forEach(k => { uni[k] = gl.getUniformLocation(p, k); });   /* 2026-09-28 グラデの揺らぎ */
+    ['uVivid', 'uToneSoft', 'uDitherMode'].forEach(k => { uni[k] = gl.getUniformLocation(p, k); });   /* 2026-09-28 グラデの見え方 */
     uni.uSwayPivot = gl.getUniformLocation(p, 'uSwayPivot'); uni.uWaveAnchor = gl.getUniformLocation(p, 'uWaveAnchor'); uni.uCore = gl.getUniformLocation(p, 'uCore'); uni.uCoreSoft = gl.getUniformLocation(p, 'uCoreSoft'); uni.uCoreSkip = gl.getUniformLocation(p, 'uCoreSkip');
   }
   function visible() {
@@ -2907,6 +2937,10 @@ void main(){
       gl.uniform1f(uni.uFlowLag, c.flowLag != null ? c.flowLag : 0.3);
       gl.uniform1f(uni.uFlowRise, c.flowRise != null ? c.flowRise : 0.3);
       gl.uniform1f(uni.uFlowPh, 2 * Math.PI * cvFlow.acc); }
+    /* 【2026-09-28 夜】グラデの見え方(案): 鮮やかさ・明るい所の丸め・粒の種類 */
+    gl.uniform1f(uni.uVivid, c.vivid != null ? c.vivid : 1);
+    gl.uniform1f(uni.uToneSoft, c.toneSoft ? 1 : 0);
+    gl.uniform1f(uni.uDitherMode, c.dither === 'noise' ? 1 : 0);
     gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
     gl.uniform1f(uni.uCompRamp, (c.ramp === 'comp' || c.ramp === 1) ? 1 : 0);   /* 【2026-09-16】デザインカンプの13段ランプ */
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
@@ -9009,6 +9043,14 @@ kvEls.textNodes = [null, null];
     kvEls.carets.push(caret);
   });
 })();
+/* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案「穴埋め」: 3行目の空欄の下線。見えない「競争力を」の幅で下線を引く(文字は透明・読み上げ対象外)。
+   サブコピーは「横線が伸びる→文字が出る」の順にするので、横線(i)と文字(.hl-eb-t)も持っておく */
+(function buildKvBlank() {
+  const L = kvEls.lines.length - 1, line = kvEls.lines[L]; if (!line) return;
+  const b = document.createElement('i'); b.className = 'hl-blank'; b.setAttribute('aria-hidden', 'true'); b.textContent = kvEls.text[L] || '';
+  line.appendChild(b); kvEls.blank = b;
+  const eb = kvEls.eyebrow; kvEls.ebDash = eb ? eb.querySelector(':scope > i') : null; kvEls.ebText = eb ? eb.querySelector('.hl-eb-t') : null;
+})();
 
 /* 【2026-09-26 整理】旧KV(iframe の kv/embed.html・A案/B案)の遅延読み込み・案の切替・入場の合図(postMessage)は撤去。
    KV は惑星だけ(params.kvDesign は読み込み時に 'planet' へそろえる)。 */
@@ -9348,33 +9390,65 @@ function updateKV() {
   /* 【2026-09-17】行数可変(2〜3行など)に一般化: 各行の開始時刻を累積で出す。1行目は素早く charDur、以降はゆったり charDur2。行間は lineGap */
   /* 【2026-09-28 ヒデさん依頼「最初の2行をもう少し短縮」】3行目以降は charDur3(無い古い保存値では前と同じ charDur2) */
   const durOf = li => (li === 0 ? c.charDur : (li === 1 ? c.charDur2 : (c.charDur3 != null ? c.charDur3 : c.charDur2)));
-  const starts = []; let acc = 0;
-  kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
-  const typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
-  kvEls.textNodes.forEach((tn, li) => {
-    if (!tn) return;
-    const full = kvEls.text[li], n = full.length, base = starts[li], dur = durOf(li);
-    /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後)。スパンは使わない */
+  /* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案。'type'=今まで(3行を順に打つ) / 'fill'=穴埋め(1・2行目は開いた時から出ていて、3行目「競争力を」だけ
+     空欄＝下線＋点滅カーソル → 打ち込む → 打ち終わったら下線がスッと消える → 横線が伸びる → サブコピー)。値は params.kv.typeMode / fillDelay / blankFade / dashDur */
+  const fillMode = c.typeMode === 'fill' && kvEls.text.length >= 2;
+  let typeEnd;
+  if (!fillMode) {
+    const starts = []; let acc = 0;
+    kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
+    typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
+    kvEls.textNodes.forEach((tn, li) => {
+      if (!tn) return;
+      const full = kvEls.text[li], n = full.length, base = starts[li], dur = durOf(li);
+      /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後)。スパンは使わない */
+      let count = 0;
+      for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
+      if (tn.data.length !== count) tn.data = full.slice(0, count);
+    });
+    const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
+    const typing = tt > -0.15 && tt < typeEnd + 0.5;
+    /* いま打っている行のキャレットだけ点滅(その行の開始〜次の行の開始まで) */
+    kvEls.carets.forEach((car, li) => {
+      if (!car) return;
+      const on0 = starts[li] - c.lineGap * 0.4;
+      const on1 = (li + 1 < starts.length) ? starts[li + 1] - c.lineGap * 0.4 : typeEnd + 0.5;
+      car.style.opacity = (typing && tt >= on0 && tt < on1) ? blink : 0;
+    });
+    if (kvEls.blank) kvEls.blank.style.opacity = '0';
+    { const l3 = kvEls.lines[kvEls.lines.length - 1]; if (l3 && l3.classList.contains('hl-fillline')) { l3.classList.remove('hl-fillline'); l3.style.removeProperty('--hl-fill-w'); } }
+  } else {
+    const L = kvEls.text.length - 1, fd = c.fillDelay != null ? c.fillDelay : 1.0, bf = c.blankFade != null ? c.blankFade : 0.3;
+    kvEls.textNodes.forEach((tn, li) => { if (tn && li < L && tn.data !== kvEls.text[li]) tn.data = kvEls.text[li]; });   /* 1・2行目は最初から全部 */
+    const full = kvEls.text[L], n = full.length, dur = durOf(L), tn3 = kvEls.textNodes[L];
     let count = 0;
-    for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
-    if (tn.data.length !== count) tn.data = full.slice(0, count);
-  });
-  const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
-  const typing = tt > -0.15 && tt < typeEnd + 0.5;
-  /* いま打っている行のキャレットだけ点滅(その行の開始〜次の行の開始まで) */
-  kvEls.carets.forEach((car, li) => {
-    if (!car) return;
-    const on0 = starts[li] - c.lineGap * 0.4;
-    const on1 = (li + 1 < starts.length) ? starts[li + 1] - c.lineGap * 0.4 : typeEnd + 0.5;
-    car.style.opacity = (typing && tt >= on0 && tt < on1) ? blink : 0;
-  });
+    for (let ci = 0; ci < n; ci++) { if (tt - fd >= timeOf(ci, n, dur)) count = ci + 1; else break; }
+    if (tn3 && tn3.data.length !== count) tn3.data = full.slice(0, count);
+    const typed = fd + timeOf(n, n, dur);   /* 3行目の打ち終わり(打ち始めの設定 typeAt からの秒) */
+    typeEnd = typed + bf;                   /* 下線が消えきってから、横線・サブコピーへ */
+    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;   /* 開いた時から点滅(空欄の頭) */
+    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typed + 0.5) ? blinkF : 0; });
+    if (kvEls.blank) { if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full; kvEls.blank.style.opacity = (1 - clamp01((tt - typed) / Math.max(0.05, bf))).toFixed(3); }
+    /* スマホ(真ん中寄せ)でも、カーソルと打つ字が空欄の左端から始まるように、3行目を空欄の幅にして真ん中へ(CSS .hl-fillline) */
+    { const l3 = kvEls.lines[L]; if (l3 && kvEls.blank) { if (!l3.classList.contains('hl-fillline')) l3.classList.add('hl-fillline'); const w = kvEls.blank.offsetWidth + 'px'; if (l3.style.getPropertyValue('--hl-fill-w') !== w) l3.style.setProperty('--hl-fill-w', w); } }
+  }
 
   /* 打ち終わってから小ラベル(罫線ごと) → グラフィック → ロゴ の順で出す
      (2026-08-14: 以前は小ラベルが先に出ていたが、タイピングの後に変更) */
   /* ブラーで出てくる所の速さはここでまとめて決める (2026-08-15: 速すぎるとの指摘でゆったりへ) */
   const RD = c.revealDur;
   const eyeAt = c.typeAt + typeEnd + c.eyebrowGap;
-  rv(kvEls.eyebrow, easeOutQ(clamp01((t - eyeAt) / RD)), isMobile ? 0 : 8, 8);   /* サブコピーの影対策(上記) */
+  if (fillMode && kvEls.ebText) {
+    /* 【2026-09-28 夜】穴埋め: 横線が左から伸びて(dashDur)、伸びきる少し前から文字がぼかしから出る */
+    const dd = c.dashDur != null ? c.dashDur : 0.45;
+    rv(kvEls.eyebrow, t >= eyeAt ? 1 : 0, 0);
+    if (kvEls.ebDash) { kvEls.ebDash.style.transformOrigin = 'left center'; kvEls.ebDash.style.transform = 'scaleX(' + easeOutQ(clamp01((t - eyeAt) / Math.max(0.05, dd))).toFixed(4) + ')'; }
+    rv(kvEls.ebText, easeOutQ(clamp01((t - eyeAt - dd * 0.6) / RD)), isMobile ? 0 : 8, 8);
+  } else {
+    if (kvEls.ebDash && kvEls.ebDash.style.transform) kvEls.ebDash.style.transform = '';
+    if (kvEls.ebText && kvEls.ebText.style.opacity) { kvEls.ebText.style.opacity = ''; kvEls.ebText.style.filter = ''; kvEls.ebText.style.transform = ''; kvEls.ebText.style.pointerEvents = ''; }
+    rv(kvEls.eyebrow, easeOutQ(clamp01((t - eyeAt) / RD)), isMobile ? 0 : 8, 8);   /* サブコピーの影対策(上記) */
+  }
   const gAt = eyeAt + c.graphicGap;
   const _orbReveal = easeOutQ(clamp01((t - gAt) / (RD * 1.5)));
   if (kvRevealElapsed == null && _orbReveal > 0.5) kvRevealElapsed = elapsed;
@@ -11878,6 +11952,12 @@ const VAR_SNAP = {
              set: s => { const { __mb, ...rest } = s || {}; Object.assign(params.cv, rest);
                          if (__mb) { if (!params.mb) params.mb = {}; SWAY_KEYS.forEach(k => { delete params.mb['cv.' + k]; }); Object.keys(__mb).forEach(k => { params.mb['cv.' + k] = __mb[k]; }); } },
              reset: () => cvApplySway(cvSwayKey()) },
+  /* 【2026-09-28 夜】グラデの見え方(質感)の案。見え方に関わる鍵だけを控える(スマホの上書きも __mb で案ごと) */
+  cvLook:  { get: () => { const o = {}; LOOK_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; });
+                          const mb = {}; LOOK_KEYS.forEach(k => { const v = params.mb && params.mb['cv.' + k]; if (v != null) mb[k] = v; }); o.__mb = mb; return o; },
+             set: s => { const { __mb, ...rest } = s || {}; Object.assign(params.cv, rest);
+                         if (__mb) { if (!params.mb) params.mb = {}; LOOK_KEYS.forEach(k => { delete params.mb['cv.' + k]; }); Object.keys(__mb).forEach(k => { params.mb['cv.' + k] = __mb[k]; }); } },
+             reset: () => cvApplyLook(cvLookKey()) },
   /* 【2026-09-19】ビジョンのメッシュの案(描き方に関わるキーだけ。大きさ・フェード・ロゴは巻き込まない) */
   resSlotFx: { get: () => { const r = params.sections.results, o = {}; RES_SLOT_KEYS.forEach(k => { if (r[k] != null) o[k] = r[k]; }); return o; },
                set: s => { Object.assign(params.sections.results, s); applyResSlotFade(); }, reset: () => resApplySlotFx(resSlotFxKey()) },
@@ -11903,6 +11983,7 @@ const VAR_AUTOSAVE = [
   { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: (key) => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; o.__vrp = VIS_RES_PULL_BY[key] != null ? VIS_RES_PULL_BY[key] : 200; return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); o.__mb = {}; return o; } },   /* __mb={}: 控えの無い案へ切り替えた時、前の案のスマホの上書きを持ち込まない */
+  { bucket: 'cvLook',    sel: () => cvLookKey(),    snap: () => VAR_SNAP.cvLook,    base: (key) => { const c = (CV_LOOKS.find(x => x.key === key) || CV_LOOKS[0]); const g = Object.assign({}, LOOK_BASE, c.cv || {}), o = {}; LOOK_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); o.__mb = {}; return o; } },   /* 2026-09-28 グラデの見え方 */
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
      起動時の applyKvVariant で案の焼き込み値が再適用されるため、上書き控えを常に最新にしておかないと『デフォルトにしても戻る』。
      ここに入れることで、保存のたびに gfxVarOverride.kvVar[案] = いまの値 になり、起動時にそれが勝つ。 */
@@ -12876,6 +12957,20 @@ function buildPanel() {
     '小ラベル基準で、右のモック→アイコン→軌道が出るタイミング。マイナスにすると小ラベルより前（タイピング中）に前倒しできます。', { mbKey: 'kv.graphicGap', signed: true }));
   rows.push(slider('ブラー解除の時間', 0.4, 3, 0.05, () => params.kv.revealDur, v => params.kv.revealDur = v, v => v.toFixed(2) + '秒',
     'ぼやけた状態からくっきりするまで。大きいほどゆったり。', { mbKey: 'kv.revealDur' }));
+  /* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案: 今の打ち込み(3行を順に)／穴埋め(1・2行目は開いた時から・3行目「競争力を」だけ空欄に下線＋点滅カーソル→打ち込む
+     →下線がスッと消える→横線が伸びる→サブコピー)。PC とスマホで別に選べる(スマホモード中は params.mb['kv.typeMode'] だけに書く) */
+  const _kvTypeMode = () => { const pon = document.documentElement.classList.contains('phone-mode'); return (pon && params.mb && params.mb['kv.typeMode'] != null) ? params.mb['kv.typeMode'] : (params.kv.typeMode || 'type'); };
+  sub(copyRoot, 'コピー（打ち込みの案）', false, { grp: 'variation' });
+  optRow('kvTypeMode', '打ち込み', [['今の打ち込み（3行を順に）', 'type'], ['穴埋め（「競争力を」だけ後から）', 'fill']], _kvTypeMode,
+    v => { if (document.documentElement.classList.contains('phone-mode')) { if (!params.mb) params.mb = {}; params.mb['kv.typeMode'] = v; } else { params.kv.typeMode = v; }
+           markDirty(); try { syncPanelRows(); } catch (e) {} try { applyEdit(false); } catch (e) {} });
+  sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'anim' });
+  { const isFill = () => _kvTypeMode() === 'fill';
+    const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
+    fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
+    fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
+    fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
+  }
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
 
@@ -13700,7 +13795,27 @@ function buildPanel() {
       applyCtaDir(); markDirty(); if (typeof fillDir === 'function') fillDir(); if (labDir && labDir._sync) labDir._sync();
     } });
   }
-  sub(catCv, '粒（ディザ）と流れ'); B.dither();
+  /* 【2026-09-28 夜 ヒデさん依頼「ディザや塵の効果はあってよいが、境目が不自然・くすんで見える。鮮やかで自然な境目に見える案を何パターンか」】
+     グラデの見え方(質感)の案。つまみは色・粒の性質なのでエフェクトへ(6-13)。旧「粒（ディザ）と流れ」の 粗さ/階調/散り はここへ引っ越し(入口は1つ・6-2)。
+     PC とスマホは別の値(スライダーは mbKey、切り替えはスマホモード中は params.mb だけに書く) */
+  sub(catCv, 'グラデの質感', false, { grp: 'variation' });
+  varRowX('cvLook', CV_LOOKS, () => cvLookKey(), v => { params.cvLook = String(v); cvApplyLook(String(v)); }, { autosave: true, snap: VAR_SNAP.cvLook, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  sub(catCv, 'グラデの質感', false, { grp: 'fxtex' });
+  { const pon = () => document.documentElement.classList.contains('phone-mode');
+    const lk = (label, key, min, max, step, def, fmt, hint) => rows.push(slider(label, min, max, step, () => (cvv()[key] != null ? cvv()[key] : def), v => { cvv()[key] = v; markDirty(); }, fmt, hint, { mbKey: 'cv.' + key, fixedMax: true }));
+    const tog = (label, key, opts, def) => { const g = () => (pon() && params.mb && params.mb['cv.' + key] != null) ? params.mb['cv.' + key] : (cvv()[key] != null ? cvv()[key] : def);
+      return segRow(label, opts, g, v => { if (pon()) { if (!params.mb) params.mb = {}; params.mb['cv.' + key] = v; } else cvv()[key] = v; markDirty(); }); };
+    lk('鮮やかさ', 'vivid', 0.6, 1.6, 0.02, 1, v => '×' + v.toFixed(2), '色の鮮やかさ。上げるほどくすみが取れる。1=今まで。');
+    lk('コントラスト', 'contrast', 0.8, 1.8, 0.02, 1.38, v => '×' + v.toFixed(2), '明るい所と暗い所の差。上げすぎると色が上限に張り付いて境目に折れ目が出る(下の「明るい所の丸め」で防げる)。');
+    lk('明るさ', 'bright', 0.8, 1.3, 0.01, 1.08, v => '×' + v.toFixed(2), '全体の明るさ。');
+    tog('明るい所の丸め', 'toneSoft', [['する', true], ['しない', false]], false);
+    subgroup('粒（ディザ）', () => {
+      tog('種類', 'dither', [['格子', 'bayer'], ['ランダム', 'noise']], 'bayer');
+      lk('色の段', 'levels', 2, 16, 1, 3, v => Math.round(v) + '段', '色を何段で表すか。少ないほど粒が目立ち、段の線も出やすい。多いほどなめらか。カンプは3段。');
+      lk('散らし方', 'spread', 0, 1.5, 0.05, 0.75, v => '×' + v.toFixed(2), '段と段のあいだを粒でどれだけ散らすか。1で均等(段の線が出にくい)。小さいほど段がくっきり。');
+      lk('大きさ', 'cell', 1, 8, 0.5, 1, v => v.toFixed(1) + 'px', '粒1つの大きさ。1でカンプ。');
+    });
+  }
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
   sub(catCv, '文字（太さ・行間・字間）', null, { fixed: true });

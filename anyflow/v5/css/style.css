@@ -509,6 +509,13 @@
   html:not(.mb) .hl-main .hl-line:last-child .hl-caret { height: calc(var(--kv-jump-size, 120px) * 0.86); }
   html:not(.mb) .hl-caret { height: calc(var(--kv-main-size, 72px) * 0.86); }
   .hl-line .hl-ch { display: none; }
+  /* 【2026-09-28 夜 ヒデさん依頼】キービジュアルの打ち込みの案「穴埋め」: 3行目の空欄の下線。中身は透明な「競争力を」＝ちょうど入る幅。
+     行の上下の真ん中に 1em の箱を置き、その下端に線(文字の下端あたり)。PC は左端から・スマホは真ん中寄せ。線の太さは⚠️仮置き */
+  .hl-blank { position: absolute; left: 0; top: 50%; transform: translateY(calc(-50% + 0.1em)); line-height: 1; color: transparent; border-bottom: max(2px, 0.03em) solid var(--ink); white-space: nowrap; pointer-events: none; user-select: none; font-style: normal; opacity: 0; }
+  html.mb .hl-blank { left: 50%; transform: translate(-50%, calc(-50% + 0.1em)); }   /* 0.1em 下げる＝打った字の下の端に重ならない(2026-09-28 実測) */
+  /* スマホの穴埋め: 3行目を空欄の幅にして真ん中へ置き、中は左寄せ＝カーソルと打つ字が空欄の左端から始まる(JS が --hl-fill-w を入れる) */
+  html.mb .hl-line.hl-fillline { width: var(--hl-fill-w, auto); margin-left: auto; margin-right: auto; text-align: left; }
+  html.mb .hl-line.hl-fillline .hl-blank { left: 0; transform: translateY(calc(-50% + 0.1em)); }
   /* タイピングのカーソル */
   .hl-caret {
     display: inline-block;
@@ -676,7 +683,7 @@
     --radius-full:50%; --radius-input:10px; --radius-form:20px;   /* 2026-09-19 整理②: フォームの入力欄・送信ボタン / フォームの箱(調整パネル --cvf-r / --cvf-in-r の既定) */   /* 2026-09-09: --radius-pill(999px) は未使用のため削除 */
     /* 影 */
     --shadow-mock-panel:0 22px 48px rgba(0,0,0,.2), inset 1px 1px 2px rgba(255,255,255,.2);
-    --shadow-form:0 20px 60px rgba(20,30,60,.14), inset 0 1px 0 var(--glass-60);   /* 2026-09-19 整理②: お問い合わせフォームの浮き */
+    --shadow-form:0 20px 60px rgba(20,30,60,.14), inset 0 0 0 1px var(--glass-60);   /* 2026-09-19 整理②: お問い合わせフォームの浮き。【2026-09-28 夜 ヒデさん依頼「枠線が上だけ白く光って横は無いように見える→均一に」】内側の白い線を上だけ(inset 0 1px 0)→四辺そろえて(inset 0 0 0 1px)。外枠の線(1px 白66%)と合わせて、どの辺も同じ太さ・明るさに */
     --shadow-lift:0 22px 44px rgba(16,24,40,calc(.12 * var(--cg-sh, 1)));   /* 2026-09-19 整理②: 導入事例カードのホバーの浮き(濃さは --cg-sh) */
     /* ぼかし */
     --blur-panel:75px; --blur-glass:20px; --blur-drawer:30px;   /* 2026-09-19 整理②: ヘッダーのガラス / メニューの地(26→30 に寄せた) */

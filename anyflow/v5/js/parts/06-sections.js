@@ -407,6 +407,14 @@ kvEls.textNodes = [null, null];
     kvEls.carets.push(caret);
   });
 })();
+/* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案「穴埋め」: 3行目の空欄の下線。見えない「競争力を」の幅で下線を引く(文字は透明・読み上げ対象外)。
+   サブコピーは「横線が伸びる→文字が出る」の順にするので、横線(i)と文字(.hl-eb-t)も持っておく */
+(function buildKvBlank() {
+  const L = kvEls.lines.length - 1, line = kvEls.lines[L]; if (!line) return;
+  const b = document.createElement('i'); b.className = 'hl-blank'; b.setAttribute('aria-hidden', 'true'); b.textContent = kvEls.text[L] || '';
+  line.appendChild(b); kvEls.blank = b;
+  const eb = kvEls.eyebrow; kvEls.ebDash = eb ? eb.querySelector(':scope > i') : null; kvEls.ebText = eb ? eb.querySelector('.hl-eb-t') : null;
+})();
 
 /* 【2026-09-26 整理】旧KV(iframe の kv/embed.html・A案/B案)の遅延読み込み・案の切替・入場の合図(postMessage)は撤去。
    KV は惑星だけ(params.kvDesign は読み込み時に 'planet' へそろえる)。 */
@@ -746,33 +754,65 @@ function updateKV() {
   /* 【2026-09-17】行数可変(2〜3行など)に一般化: 各行の開始時刻を累積で出す。1行目は素早く charDur、以降はゆったり charDur2。行間は lineGap */
   /* 【2026-09-28 ヒデさん依頼「最初の2行をもう少し短縮」】3行目以降は charDur3(無い古い保存値では前と同じ charDur2) */
   const durOf = li => (li === 0 ? c.charDur : (li === 1 ? c.charDur2 : (c.charDur3 != null ? c.charDur3 : c.charDur2)));
-  const starts = []; let acc = 0;
-  kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
-  const typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
-  kvEls.textNodes.forEach((tn, li) => {
-    if (!tn) return;
-    const full = kvEls.text[li], n = full.length, base = starts[li], dur = durOf(li);
-    /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後)。スパンは使わない */
+  /* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案。'type'=今まで(3行を順に打つ) / 'fill'=穴埋め(1・2行目は開いた時から出ていて、3行目「競争力を」だけ
+     空欄＝下線＋点滅カーソル → 打ち込む → 打ち終わったら下線がスッと消える → 横線が伸びる → サブコピー)。値は params.kv.typeMode / fillDelay / blankFade / dashDur */
+  const fillMode = c.typeMode === 'fill' && kvEls.text.length >= 2;
+  let typeEnd;
+  if (!fillMode) {
+    const starts = []; let acc = 0;
+    kvEls.text.forEach((full, li) => { starts.push(acc); acc += timeOf(full.length, full.length, durOf(li)) + c.lineGap; });
+    typeEnd = acc - c.lineGap;   // 最終行の打ち終わり
+    kvEls.textNodes.forEach((tn, li) => {
+      if (!tn) return;
+      const full = kvEls.text[li], n = full.length, base = starts[li], dur = durOf(li);
+      /* 打ち終わった文字数を数え、テキストノードを部分文字列に(＝カーソルは打った文字の直後)。スパンは使わない */
+      let count = 0;
+      for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
+      if (tn.data.length !== count) tn.data = full.slice(0, count);
+    });
+    const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
+    const typing = tt > -0.15 && tt < typeEnd + 0.5;
+    /* いま打っている行のキャレットだけ点滅(その行の開始〜次の行の開始まで) */
+    kvEls.carets.forEach((car, li) => {
+      if (!car) return;
+      const on0 = starts[li] - c.lineGap * 0.4;
+      const on1 = (li + 1 < starts.length) ? starts[li + 1] - c.lineGap * 0.4 : typeEnd + 0.5;
+      car.style.opacity = (typing && tt >= on0 && tt < on1) ? blink : 0;
+    });
+    if (kvEls.blank) kvEls.blank.style.opacity = '0';
+    { const l3 = kvEls.lines[kvEls.lines.length - 1]; if (l3 && l3.classList.contains('hl-fillline')) { l3.classList.remove('hl-fillline'); l3.style.removeProperty('--hl-fill-w'); } }
+  } else {
+    const L = kvEls.text.length - 1, fd = c.fillDelay != null ? c.fillDelay : 1.0, bf = c.blankFade != null ? c.blankFade : 0.3;
+    kvEls.textNodes.forEach((tn, li) => { if (tn && li < L && tn.data !== kvEls.text[li]) tn.data = kvEls.text[li]; });   /* 1・2行目は最初から全部 */
+    const full = kvEls.text[L], n = full.length, dur = durOf(L), tn3 = kvEls.textNodes[L];
     let count = 0;
-    for (let ci = 0; ci < n; ci++) { if (tt >= base + timeOf(ci, n, dur)) count = ci + 1; else break; }
-    if (tn.data.length !== count) tn.data = full.slice(0, count);
-  });
-  const blink = ((tt * 1.7) % 1 < 0.55) ? 1 : 0;
-  const typing = tt > -0.15 && tt < typeEnd + 0.5;
-  /* いま打っている行のキャレットだけ点滅(その行の開始〜次の行の開始まで) */
-  kvEls.carets.forEach((car, li) => {
-    if (!car) return;
-    const on0 = starts[li] - c.lineGap * 0.4;
-    const on1 = (li + 1 < starts.length) ? starts[li + 1] - c.lineGap * 0.4 : typeEnd + 0.5;
-    car.style.opacity = (typing && tt >= on0 && tt < on1) ? blink : 0;
-  });
+    for (let ci = 0; ci < n; ci++) { if (tt - fd >= timeOf(ci, n, dur)) count = ci + 1; else break; }
+    if (tn3 && tn3.data.length !== count) tn3.data = full.slice(0, count);
+    const typed = fd + timeOf(n, n, dur);   /* 3行目の打ち終わり(打ち始めの設定 typeAt からの秒) */
+    typeEnd = typed + bf;                   /* 下線が消えきってから、横線・サブコピーへ */
+    const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;   /* 開いた時から点滅(空欄の頭) */
+    kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typed + 0.5) ? blinkF : 0; });
+    if (kvEls.blank) { if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full; kvEls.blank.style.opacity = (1 - clamp01((tt - typed) / Math.max(0.05, bf))).toFixed(3); }
+    /* スマホ(真ん中寄せ)でも、カーソルと打つ字が空欄の左端から始まるように、3行目を空欄の幅にして真ん中へ(CSS .hl-fillline) */
+    { const l3 = kvEls.lines[L]; if (l3 && kvEls.blank) { if (!l3.classList.contains('hl-fillline')) l3.classList.add('hl-fillline'); const w = kvEls.blank.offsetWidth + 'px'; if (l3.style.getPropertyValue('--hl-fill-w') !== w) l3.style.setProperty('--hl-fill-w', w); } }
+  }
 
   /* 打ち終わってから小ラベル(罫線ごと) → グラフィック → ロゴ の順で出す
      (2026-08-14: 以前は小ラベルが先に出ていたが、タイピングの後に変更) */
   /* ブラーで出てくる所の速さはここでまとめて決める (2026-08-15: 速すぎるとの指摘でゆったりへ) */
   const RD = c.revealDur;
   const eyeAt = c.typeAt + typeEnd + c.eyebrowGap;
-  rv(kvEls.eyebrow, easeOutQ(clamp01((t - eyeAt) / RD)), isMobile ? 0 : 8, 8);   /* サブコピーの影対策(上記) */
+  if (fillMode && kvEls.ebText) {
+    /* 【2026-09-28 夜】穴埋め: 横線が左から伸びて(dashDur)、伸びきる少し前から文字がぼかしから出る */
+    const dd = c.dashDur != null ? c.dashDur : 0.45;
+    rv(kvEls.eyebrow, t >= eyeAt ? 1 : 0, 0);
+    if (kvEls.ebDash) { kvEls.ebDash.style.transformOrigin = 'left center'; kvEls.ebDash.style.transform = 'scaleX(' + easeOutQ(clamp01((t - eyeAt) / Math.max(0.05, dd))).toFixed(4) + ')'; }
+    rv(kvEls.ebText, easeOutQ(clamp01((t - eyeAt - dd * 0.6) / RD)), isMobile ? 0 : 8, 8);
+  } else {
+    if (kvEls.ebDash && kvEls.ebDash.style.transform) kvEls.ebDash.style.transform = '';
+    if (kvEls.ebText && kvEls.ebText.style.opacity) { kvEls.ebText.style.opacity = ''; kvEls.ebText.style.filter = ''; kvEls.ebText.style.transform = ''; kvEls.ebText.style.pointerEvents = ''; }
+    rv(kvEls.eyebrow, easeOutQ(clamp01((t - eyeAt) / RD)), isMobile ? 0 : 8, 8);   /* サブコピーの影対策(上記) */
+  }
   const gAt = eyeAt + c.graphicGap;
   const _orbReveal = easeOutQ(clamp01((t - gAt) / (RD * 1.5)));
   if (kvRevealElapsed == null && _orbReveal > 0.5) kvRevealElapsed = elapsed;

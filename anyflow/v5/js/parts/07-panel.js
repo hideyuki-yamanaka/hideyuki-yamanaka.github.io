@@ -88,6 +88,12 @@ const VAR_SNAP = {
              set: s => { const { __mb, ...rest } = s || {}; Object.assign(params.cv, rest);
                          if (__mb) { if (!params.mb) params.mb = {}; SWAY_KEYS.forEach(k => { delete params.mb['cv.' + k]; }); Object.keys(__mb).forEach(k => { params.mb['cv.' + k] = __mb[k]; }); } },
              reset: () => cvApplySway(cvSwayKey()) },
+  /* 【2026-09-28 夜】グラデの見え方(質感)の案。見え方に関わる鍵だけを控える(スマホの上書きも __mb で案ごと) */
+  cvLook:  { get: () => { const o = {}; LOOK_KEYS.forEach(k => { if (params.cv[k] != null) o[k] = params.cv[k]; });
+                          const mb = {}; LOOK_KEYS.forEach(k => { const v = params.mb && params.mb['cv.' + k]; if (v != null) mb[k] = v; }); o.__mb = mb; return o; },
+             set: s => { const { __mb, ...rest } = s || {}; Object.assign(params.cv, rest);
+                         if (__mb) { if (!params.mb) params.mb = {}; LOOK_KEYS.forEach(k => { delete params.mb['cv.' + k]; }); Object.keys(__mb).forEach(k => { params.mb['cv.' + k] = __mb[k]; }); } },
+             reset: () => cvApplyLook(cvLookKey()) },
   /* 【2026-09-19】ビジョンのメッシュの案(描き方に関わるキーだけ。大きさ・フェード・ロゴは巻き込まない) */
   resSlotFx: { get: () => { const r = params.sections.results, o = {}; RES_SLOT_KEYS.forEach(k => { if (r[k] != null) o[k] = r[k]; }); return o; },
                set: s => { Object.assign(params.sections.results, s); applyResSlotFade(); }, reset: () => resApplySlotFx(resSlotFxKey()) },
@@ -113,6 +119,7 @@ const VAR_AUTOSAVE = [
   { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: (key) => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; o.__vrp = VIS_RES_PULL_BY[key] != null ? VIS_RES_PULL_BY[key] : 200; return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); o.__mb = {}; return o; } },   /* __mb={}: 控えの無い案へ切り替えた時、前の案のスマホの上書きを持ち込まない */
+  { bucket: 'cvLook',    sel: () => cvLookKey(),    snap: () => VAR_SNAP.cvLook,    base: (key) => { const c = (CV_LOOKS.find(x => x.key === key) || CV_LOOKS[0]); const g = Object.assign({}, LOOK_BASE, c.cv || {}), o = {}; LOOK_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); o.__mb = {}; return o; } },   /* 2026-09-28 グラデの見え方 */
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
      起動時の applyKvVariant で案の焼き込み値が再適用されるため、上書き控えを常に最新にしておかないと『デフォルトにしても戻る』。
      ここに入れることで、保存のたびに gfxVarOverride.kvVar[案] = いまの値 になり、起動時にそれが勝つ。 */
@@ -1086,6 +1093,20 @@ function buildPanel() {
     '小ラベル基準で、右のモック→アイコン→軌道が出るタイミング。マイナスにすると小ラベルより前（タイピング中）に前倒しできます。', { mbKey: 'kv.graphicGap', signed: true }));
   rows.push(slider('ブラー解除の時間', 0.4, 3, 0.05, () => params.kv.revealDur, v => params.kv.revealDur = v, v => v.toFixed(2) + '秒',
     'ぼやけた状態からくっきりするまで。大きいほどゆったり。', { mbKey: 'kv.revealDur' }));
+  /* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案: 今の打ち込み(3行を順に)／穴埋め(1・2行目は開いた時から・3行目「競争力を」だけ空欄に下線＋点滅カーソル→打ち込む
+     →下線がスッと消える→横線が伸びる→サブコピー)。PC とスマホで別に選べる(スマホモード中は params.mb['kv.typeMode'] だけに書く) */
+  const _kvTypeMode = () => { const pon = document.documentElement.classList.contains('phone-mode'); return (pon && params.mb && params.mb['kv.typeMode'] != null) ? params.mb['kv.typeMode'] : (params.kv.typeMode || 'type'); };
+  sub(copyRoot, 'コピー（打ち込みの案）', false, { grp: 'variation' });
+  optRow('kvTypeMode', '打ち込み', [['今の打ち込み（3行を順に）', 'type'], ['穴埋め（「競争力を」だけ後から）', 'fill']], _kvTypeMode,
+    v => { if (document.documentElement.classList.contains('phone-mode')) { if (!params.mb) params.mb = {}; params.mb['kv.typeMode'] = v; } else { params.kv.typeMode = v; }
+           markDirty(); try { syncPanelRows(); } catch (e) {} try { applyEdit(false); } catch (e) {} });
+  sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'anim' });
+  { const isFill = () => _kvTypeMode() === 'fill';
+    const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
+    fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
+    fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
+    fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
+  }
 
   /* (旧「共通（見せ方）」の項目は 2026-08-27 に ③軌道 / ④ドット / ⑤惑星 へ振り分けた) */
 
@@ -1910,7 +1931,27 @@ function buildPanel() {
       applyCtaDir(); markDirty(); if (typeof fillDir === 'function') fillDir(); if (labDir && labDir._sync) labDir._sync();
     } });
   }
-  sub(catCv, '粒（ディザ）と流れ'); B.dither();
+  /* 【2026-09-28 夜 ヒデさん依頼「ディザや塵の効果はあってよいが、境目が不自然・くすんで見える。鮮やかで自然な境目に見える案を何パターンか」】
+     グラデの見え方(質感)の案。つまみは色・粒の性質なのでエフェクトへ(6-13)。旧「粒（ディザ）と流れ」の 粗さ/階調/散り はここへ引っ越し(入口は1つ・6-2)。
+     PC とスマホは別の値(スライダーは mbKey、切り替えはスマホモード中は params.mb だけに書く) */
+  sub(catCv, 'グラデの質感', false, { grp: 'variation' });
+  varRowX('cvLook', CV_LOOKS, () => cvLookKey(), v => { params.cvLook = String(v); cvApplyLook(String(v)); }, { autosave: true, snap: VAR_SNAP.cvLook, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
+  sub(catCv, 'グラデの質感', false, { grp: 'fxtex' });
+  { const pon = () => document.documentElement.classList.contains('phone-mode');
+    const lk = (label, key, min, max, step, def, fmt, hint) => rows.push(slider(label, min, max, step, () => (cvv()[key] != null ? cvv()[key] : def), v => { cvv()[key] = v; markDirty(); }, fmt, hint, { mbKey: 'cv.' + key, fixedMax: true }));
+    const tog = (label, key, opts, def) => { const g = () => (pon() && params.mb && params.mb['cv.' + key] != null) ? params.mb['cv.' + key] : (cvv()[key] != null ? cvv()[key] : def);
+      return segRow(label, opts, g, v => { if (pon()) { if (!params.mb) params.mb = {}; params.mb['cv.' + key] = v; } else cvv()[key] = v; markDirty(); }); };
+    lk('鮮やかさ', 'vivid', 0.6, 1.6, 0.02, 1, v => '×' + v.toFixed(2), '色の鮮やかさ。上げるほどくすみが取れる。1=今まで。');
+    lk('コントラスト', 'contrast', 0.8, 1.8, 0.02, 1.38, v => '×' + v.toFixed(2), '明るい所と暗い所の差。上げすぎると色が上限に張り付いて境目に折れ目が出る(下の「明るい所の丸め」で防げる)。');
+    lk('明るさ', 'bright', 0.8, 1.3, 0.01, 1.08, v => '×' + v.toFixed(2), '全体の明るさ。');
+    tog('明るい所の丸め', 'toneSoft', [['する', true], ['しない', false]], false);
+    subgroup('粒（ディザ）', () => {
+      tog('種類', 'dither', [['格子', 'bayer'], ['ランダム', 'noise']], 'bayer');
+      lk('色の段', 'levels', 2, 16, 1, 3, v => Math.round(v) + '段', '色を何段で表すか。少ないほど粒が目立ち、段の線も出やすい。多いほどなめらか。カンプは3段。');
+      lk('散らし方', 'spread', 0, 1.5, 0.05, 0.75, v => '×' + v.toFixed(2), '段と段のあいだを粒でどれだけ散らすか。1で均等(段の線が出にくい)。小さいほど段がくっきり。');
+      lk('大きさ', 'cell', 1, 8, 0.5, 1, v => v.toFixed(1) + 'px', '粒1つの大きさ。1でカンプ。');
+    });
+  }
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
   sub(catCv, '文字（太さ・行間・字間）', null, { fixed: true });

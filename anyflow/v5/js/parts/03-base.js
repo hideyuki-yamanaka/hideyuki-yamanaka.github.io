@@ -1077,6 +1077,20 @@ const CV_SWAYS = [
     cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
           flowMode: 8, flowSec: 18, flowAmp: 0.14, flowLag: 0.3, flowRise: 0.3 } },
 ];
+/* 【2026-09-28 夜 ヒデさん依頼】グラデの見え方(質感)の案。値は全部⚠️仮置き(0=今の見え方はヒデさんが調整した今の値のまま)。
+   levels=色の段の数(多いほど段の線が出にくい) / spread=粒の散らし方(1で段のあいだを均等に散らす＝線が出にくい。今は0.75) / contrast・bright / cell=粒の大きさ /
+   vivid=鮮やかさ / toneSoft=明るい所の丸め / dither=粒の種類('bayer' 格子 / 'noise' ランダム) */
+const LOOK_KEYS = ['levels', 'spread', 'contrast', 'bright', 'cell', 'vivid', 'toneSoft', 'dither'];
+const LOOK_BASE = { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' };
+const CV_LOOKS = [
+  { key: '0', name: '今の見え方', fixed: true, tip: '今の本番の見え方。色の段3・格子状の粒・コントラスト強め。', cv: { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' } },
+  { key: '1', name: 'なめらか（粒は細かく）', tip: '格子状の粒は残したまま、色の段を3→6に増やして粒を均等に散らす。段の線が消え、境目がなめらか。明るい所は丸めて折れ目を出さない。', cv: { levels: 6, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.22, toneSoft: true, dither: 'bayer' } },
+  { key: '2', name: '鮮やか（色を濃く）', tip: '色の段4・粒を均等に散らしたうえで、色の鮮やかさを上げる(くすみを取る)。明るい所は丸める。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.4, toneSoft: true, dither: 'bayer' } },
+  { key: '3', name: '自然な粒（ランダム）', tip: '粒を格子状からランダムに変える(フィルムの粒のような質感)。格子の模様や段の線が出にくい。少し鮮やかに。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
+  { key: '4', name: 'ほぼなめらか（粒ごく弱く）', tip: '色の段を12にして粒をごく弱く(近づくと分かる程度)。いちばんなめらかで鮮やか。', cv: { levels: 12, spread: 1, contrast: 1.25, bright: 1.03, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
+];
+function cvLookKey() { const v = String((params && params.cvLook) || '0'); return (CV_LOOKS.some(s => s.key === v) && !variantRemovedKey('cvLook', v)) ? v : '0'; }
+function cvApplyLook(key) { const c = CV_LOOKS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(LOOK_BASE), structuredClone(c.cv)); }
 function cvSwayKey() { const v0 = String((params && params.cvSway) || '0'), v = ['14', '15', '16', '17'].includes(v0) ? '13' : v0;   /* 2026-09-28: 外した案(旧14〜17)は今の動き(13)へ */ return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
 function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
 
@@ -1575,6 +1589,12 @@ uniform float uSwayPivot, uWaveAnchor;
    uFlowMode 0〜4=なし / 5=満ち引き(ピンクがふくらむ) / 6=押し出し(左→右へ順に) / 7=全体が寄る / 8=押し寄せて、ゆっくり戻る
    uFlowPh=いまの位相(JS が毎フレーム足し込む・0〜2π) / uFlowAmp=大きさ / uFlowLag=右へ伝わる遅れ(1往復の割合) / uFlowRise=押し寄せる時間(1往復の割合) */
 uniform float uFlowMode, uFlowAmp, uFlowLag, uFlowRise, uFlowPh;
+/* 【2026-09-28 夜 ヒデさん依頼「ディザや塵の効果はあってよいが、境目が不自然・くすんで見える。鮮やかで自然な境目に見える案を」】グラデの見え方(案)
+   uVivid=鮮やかさ(1=今まで) / uToneSoft=明るい所の丸め(1=コントラストを“なめらかな曲線”で掛け、上限に張り付いてできる折れ目を出さない) /
+   uDitherMode=粒の種類(0=今までの格子状の粒 Bayer / 1=ランダムな粒＝格子の模様や段の線が出にくい) */
+uniform float uVivid, uToneSoft, uDitherMode;
+float tanhF(float x) { float e = exp(2.0 * clamp(x, -9.0, 9.0)); return (e - 1.0) / (e + 1.0); }
+vec3 softTone(vec3 c, float k) { float kk = max(0.2, k), d = tanhF(kk); return vec3(0.5) + 0.5 * vec3(tanhF((c.r - 0.5) * 2.0 * kk), tanhF((c.g - 0.5) * 2.0 * kk), tanhF((c.b - 0.5) * 2.0 * kk)) / d; }
 float swayWave(float ph, float rise, float asym) {   /* 1往復の形: ふつうは sin。asym=1 の時は「押し寄せる(速い)→戻る(ゆっくり)」 */
   if (asym < 0.5) return sin(ph);
   float u = fract(ph / 6.2832), a = clamp(rise, 0.05, 0.95);
@@ -1706,8 +1726,13 @@ void main(){
     col = (rampAt(t - 2.0 * sw) + rampAt(t - sw) * 2.0 + rampAt(t) * 3.0 + rampAt(t + sw) * 2.0 + rampAt(t + 2.0 * sw)) / 9.0;   /* 白の縁のぼかし */
   } else col = rampAt(t);
   if (abs(uHue) > 0.001) col = clamp(hueRot(col, uHue), 0.0, 1.0);   /* 色味の移ろい: うねり全体が青になったりピンクになったり */
-  col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
-  col *= uBright;                          /* Brightness 104% */
+  if (abs(uVivid - 1.0) > 0.001) { float lum = dot(col, vec3(0.2126, 0.7152, 0.0722)); col = mix(vec3(lum), col, uVivid); }   /* 【2026-09-28】鮮やかさ */
+  if (uToneSoft > 0.5) {
+    col = softTone(col * uBright, uContrast);   /* 【2026-09-28】明るい所の丸め: 上限・下限に張り付かず、なめらかに寄せる(折れ目が出ない) */
+  } else {
+    col = (col - 0.5) * uContrast + 0.5;     /* カンプのディザ設定: Contrast 1.38 */
+    col *= uBright;                          /* Brightness 104% */
+  }
   /* 【2026-09-18 ヒデさん依頼】フォームの領域には白が来ないように: 範囲内だけ明るさの上限を下げる(縁60pxはなだらかに) */
   float fm = 0.0;
   if (uFormRect.z > uFormRect.x) { float fe = 140.0; vec2 fc2 = gl_FragCoord.xy;
@@ -1716,7 +1741,11 @@ void main(){
   { float mx = max(col.r, max(col.g, col.b)); float capF = min(uCeil, uFormCeil);   /* フォーム裏: 色味は変えずに明るさだけ上限へ(縁140pxはなだらか) */
     if (fm > 0.0 && mx > capF) col = mix(col, col * (capF / mx), fm); }
   col = mix(col, mix(uDarkCol, col, 0.42), uDark);   /* 暗さ: 黒ベースに寄せる(色は残り火のように残る) */
-  float dith = bayer16(cellId);
+  /* 【2026-09-28】粒の種類: 0=格子(Bayer) / 1=ランダム(格子の模様・段の線が出にくい)。
+     ❌ 最初は interleaved gradient noise にしたが、斜めの縞のくせが出た → くせの無いハッシュ(sin を使わない・256マスで一周＝スマホの精度でも崩れない)に */
+  float dith;
+  if (uDitherMode < 0.5) dith = bayer16(cellId);
+  else { vec2 pn = mod(cellId, 256.0); vec3 p3 = fract(vec3(pn.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); dith = fract((p3.x + p3.y) * p3.z); }
   vec3 q = clamp(floor(col * uLevels + vec3((dith - 0.5) * uSpread) + 0.5) / uLevels, 0.0, 1.0);
   gl_FragColor = vec4(q, 1.0);
 }`;
@@ -1743,6 +1772,7 @@ void main(){
       uni[k] = gl.getUniformLocation(p, k);
     uni.uFormRect = gl.getUniformLocation(p, 'uFormRect'); uni.uFormCeil = gl.getUniformLocation(p, 'uFormCeil');   /* 2026-09-18 */
     ['uFlowMode', 'uFlowAmp', 'uFlowLag', 'uFlowRise', 'uFlowPh'].forEach(k => { uni[k] = gl.getUniformLocation(p, k); });   /* 2026-09-28 グラデの揺らぎ */
+    ['uVivid', 'uToneSoft', 'uDitherMode'].forEach(k => { uni[k] = gl.getUniformLocation(p, k); });   /* 2026-09-28 グラデの見え方 */
     uni.uSwayPivot = gl.getUniformLocation(p, 'uSwayPivot'); uni.uWaveAnchor = gl.getUniformLocation(p, 'uWaveAnchor'); uni.uCore = gl.getUniformLocation(p, 'uCore'); uni.uCoreSoft = gl.getUniformLocation(p, 'uCoreSoft'); uni.uCoreSkip = gl.getUniformLocation(p, 'uCoreSkip');
   }
   function visible() {
@@ -1823,6 +1853,10 @@ void main(){
       gl.uniform1f(uni.uFlowLag, c.flowLag != null ? c.flowLag : 0.3);
       gl.uniform1f(uni.uFlowRise, c.flowRise != null ? c.flowRise : 0.3);
       gl.uniform1f(uni.uFlowPh, 2 * Math.PI * cvFlow.acc); }
+    /* 【2026-09-28 夜】グラデの見え方(案): 鮮やかさ・明るい所の丸め・粒の種類 */
+    gl.uniform1f(uni.uVivid, c.vivid != null ? c.vivid : 1);
+    gl.uniform1f(uni.uToneSoft, c.toneSoft ? 1 : 0);
+    gl.uniform1f(uni.uDitherMode, c.dither === 'noise' ? 1 : 0);
     gl.uniform1f(uni.uGSpread, c.gSpread != null ? c.gSpread : 1.5);
     gl.uniform1f(uni.uCompRamp, (c.ramp === 'comp' || c.ramp === 1) ? 1 : 0);   /* 【2026-09-16】デザインカンプの13段ランプ */
     /* 【2026-09-09】radial の gradientTransform をカンプ別に。PC=15993:43966 / SP=16534:22768(346×275)。
