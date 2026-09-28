@@ -1,7 +1,7 @@
 {
- "at": "2026-09-27T09:34:44.635Z",
- "ok": 60,
- "total": 60,
+ "at": "2026-09-28T00:49:34.818Z",
+ "ok": 61,
+ "total": 61,
  "results": [
   {
    "name": "リロードするとパネルは隠れている（右下の四角で出す）",
@@ -221,7 +221,7 @@
   {
    "name": "phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる",
    "ok": true,
-   "measured": "ボタン1押し → スマホモード=true・QRの窓=出た（http://192.168.0.2:64392/demo/index.html?live=phone）・二重の帯=none／スマホモードで文字サイズ41 → 中継へ送信 1 回・送った中身のスマホ値 40／2回目の押下 → QRだけ閉じた=true（モード継続=true）／「スマホモード終了」→ 終わった・枠 消えた／送る保存キー [\"tp:tp-demo:v1\",\"tp:tp-demo:v1:mb\",\"tp:tp-demo:variants\"]"
+   "measured": "ボタン1押し → スマホモード=true・QRの窓=出た（http://192.168.0.2:64604/demo/index.html?live=phone）・二重の帯=none／スマホモードで文字サイズ41 → 中継へ送信 1 回・送った中身のスマホ値 40／2回目の押下 → QRだけ閉じた=true（モード継続=true）／「スマホモード終了」→ 終わった・枠 消えた／送る保存キー [\"tp:tp-demo:v1\",\"tp:tp-demo:v1:mb\",\"tp:tp-demo:variants\"]"
   },
   {
    "name": "壊れた保存値・知らないキー・型違い・無くなった選択肢は捨てて既定値へ／古い版は掃除",
@@ -297,6 +297,11 @@
    "name": "つまみはデザインの数値の決まり（4-7）に止まる：余白・サイズ・角丸・文字サイズは4の倍数（10px以下は2刻み・文字は14と18も可）。位置・線幅は止めない",
    "ok": true,
    "measured": "ギャップ 14→16・パディング 10→10・6→6・角丸 5→6・枠線の太さ 0.5→0.5・方眼の線の太さ 1.5→1.5・文字サイズ 15→16・14→14・位置X 14→14"
+  },
+  {
+   "name": "つまみの名前から種類を見分ける：本文・見出し・ラベルは文字（14・18 のまま）、余白・幅・角丸・アイコンはそれぞれの決まり",
+   "ok": true,
+   "measured": "body=fontSize・bodySize=fontSize・head=fontSize・label=fontSize・headGap=spacing・bodyW=size・icon=size・titleR=radius・font=fontSize・snap14=14・snap18=18"
   },
   {
    "name": "ページのエラー（console.error・例外）が出ない",

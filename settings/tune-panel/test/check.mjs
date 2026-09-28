@@ -1010,6 +1010,19 @@ try {
     rec('つまみはデザインの数値の決まり（4-7）に止まる：余白・サイズ・角丸・文字サイズは4の倍数（10px以下は2刻み・文字は14と18も可）。位置・線幅は止めない',
       r.gap14 === 16 && r.pad10 === 10 && r.pad6 === 6 && r.rad5 === 6 && r.bw05 === 0.5 && r.fs15 === 16 && r.fs14 === 14 && r.x14 === 14 && (r.gw === 1.5 || r.gw === 'なし'),
       `ギャップ 14→${r.gap14}・パディング 10→${r.pad10}・6→${r.pad6}・角丸 5→${r.rad5}・枠線の太さ 0.5→${r.bw05}・方眼の線の太さ 1.5→${r.gw}・文字サイズ 15→${r.fs15}・14→${r.fs14}・位置X 14→${r.x14}`);
+    /* 名前から種類を見分ける（2026-09-28：「本文サイズ」「bodySize」が大きさ扱いになり、14・18 が寄ってしまっていた） */
+    const kinds = await page.evaluate(() => {
+      const k = (slider, path) => TunePanel.utils.gridKindOf({ slider, path, unit: 'px' });
+      return {
+        body: k('本文サイズ', 'dt.body'), bodySize: k('', 'detail.bodySize'), head: k('見出しの大きさ', 'dt.head'), label: k('ラベル', 'nav.labelSize'),
+        headGap: k('見出しの下の余白', 'dt.headGap'), bodyW: k('本文の幅', 'dt.bodyWidth'), icon: k('アイコンの大きさ', 'nav.iconSize'), titleR: k('タイトルの角丸', 'card.titleRadius'),
+        font: k('文字サイズ', 'kv.copySize'), snap14: TunePanel.utils.snapGrid(14, 'fontSize'), snap18: TunePanel.utils.snapGrid(18, 'fontSize'),
+      };
+    });
+    rec('つまみの名前から種類を見分ける：本文・見出し・ラベルは文字（14・18 のまま）、余白・幅・角丸・アイコンはそれぞれの決まり',
+      kinds.body === 'fontSize' && kinds.bodySize === 'fontSize' && kinds.head === 'fontSize' && kinds.label === 'fontSize' && kinds.headGap === 'spacing' &&
+      kinds.bodyW === 'size' && kinds.icon === 'size' && kinds.titleR === 'radius' && kinds.font === 'fontSize' && kinds.snap14 === 14 && kinds.snap18 === 18,
+      Object.entries(kinds).map(([a, b]) => a + '=' + b).join('・'));
     await context.close();
   }
 } catch (e) {

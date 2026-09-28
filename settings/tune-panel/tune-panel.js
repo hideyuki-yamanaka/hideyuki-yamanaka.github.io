@@ -125,10 +125,13 @@
     var t = String(item.slider || '') + ' ' + String(item.path || '');
     if (/位置|座標|ずらし|オフセット|offset|translate|shift|(^|[^a-z])[xyz]($|[^a-z])|top|left|right|bottom/i.test(t)) return null;
     if (/行間|字間|line-?height|letter|tracking|leading|影|shadow|ぼかし|ブラー|blur|線|太さ|stroke|border|不透明|opacity/i.test(t)) return null;   /* 線幅（0.5px・1pxも可）・影・ぼかし・不透明度は自由 */
-    if (/文字|フォント|font|text/i.test(t)) return 'fontSize';
+    /* 順番が大事：余白・角丸・幅と高さを先に見てから、文字の話か（本文・見出しなども）を見る。
+       「本文サイズ」「bodySize」が大きさ扱いになり、文字だけに許す 14・18 が 16・20 に寄っていた（2026-09-28 網走V3 で発覚） */
     if (/角丸|radius|round|corner/i.test(t)) return 'radius';
     if (/余白|ギャップ|パディング|マージン|間隔|gap|pad|margin|space|spacing|gutter/i.test(t)) return 'spacing';
-    if (/大きさ|サイズ|幅|高さ|width|height|size/i.test(t)) return 'size';
+    if (/幅|高さ|width|height/i.test(t)) return 'size';
+    if (/文字|フォント|font|text|本文|見出し|タイトル|title|heading|body|ラベル|label|キャプション|caption|コピー|copy/i.test(t)) return 'fontSize';
+    if (/大きさ|サイズ|size/i.test(t)) return 'size';
     return null;
   }
   function gridOk(x, kind) {
