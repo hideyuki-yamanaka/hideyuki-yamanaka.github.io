@@ -73,7 +73,7 @@
 ### jelly-fruits（ぷるぷるフルーツ・ゼリーの果物で遊ぶ画面）
 | ファイル | 中身 |
 |---|---|
-| [jelly-fruits/README.md](jelly-fruits/README.md) | 操作のしかた・3案・ぷるぷるの仕組み（形の記憶・切り方・押し合い）・ファイル構成・仮置き一覧（2026-09-28 新規） |
+| [jelly-fruits/README.md](jelly-fruits/README.md) | V2（3D・透明なゼリーの中に果物）と V1（2D）の操作・3案・ぷるぷるの仕組み（形の記憶・しわ取り・切り方・押し合い）・ファイル構成・仮置き一覧（2026-09-28 新規） |
 | [jelly-fruits/TASKS.md](jelly-fruits/TASKS.md) | 依頼の台帳 |
 
 ### anyflow

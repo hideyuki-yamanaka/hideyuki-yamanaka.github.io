@@ -14,20 +14,22 @@ export const KIND_NAME = { orange: 'オレンジ', strawberry: 'いちご', kiwi
 /* ---------- ゼリーの形（半径1で作り、あとで大きさを掛ける） ---------- */
 const baseCache = new Map();
 
+/** なめらかに下を平らにする（fy より下をつぶす。k はふちの丸み） */
+function softFloor(y, fy, k) {
+  const t = (y - fy) / k;
+  return fy + (t > 20 ? t : Math.log1p(Math.exp(t))) * k;
+}
 function shapeVertex(shape, x, y, z) {
   if (shape === 'cube') {
     const m = 6, r = Math.pow(Math.abs(x) ** m + Math.abs(y) ** m + Math.abs(z) ** m, -1 / m);
     x *= r; y *= r; z *= r;
-    if (y < -0.9) y = -0.9 + (y + 0.9) * 0.12;
-    return [x, y * 0.78, z];
+    return [x, softFloor(y, -0.9, 0.04) * 0.78, z];
   }
-  if (shape === 'ball') {
-    if (y < -0.8) y = -0.8 + (y + 0.8) * 0.12;
-    return [x, y * 0.95, z];
-  }
-  /* ドーム：下を平らにつぶした、少し背の低い丸 */
-  if (y < -0.25) y = -0.25 + (y + 0.25) * 0.1;
-  return [x, y * 0.82, z];
+  if (shape === 'ball') return [x, softFloor(y, -0.8, 0.05) * 0.95, z];
+  /* みかん：少しつぶれた丸（高さは幅の 0.82）。置いた時に転がらないよう、下だけわずかに平ら */
+  if (shape === 'mikan') return [x, softFloor(y, -0.93, 0.03) * 0.82, z];
+  /* ドーム：下を平らにつぶした丸（ふちは少し丸める） */
+  return [x, softFloor(y, -0.3, 0.07) * 0.96, z];
 }
 
 export function jellyBase(shape, detail) {
@@ -46,7 +48,7 @@ export function jellyBase(shape, detail) {
   }
   let maxY = -Infinity;
   for (let i = 1; i < P.length; i += 3) { P[i] -= minY; if (P[i] > maxY) maxY = P[i]; }
-  const res = { P, index: Uint32Array.from(g.index.array), height: maxY, spheres: null };
+  const res = { P, index: Uint32Array.from(g.index.array), height: maxY, cy: -minY, spheres: null };
   g.dispose();
   baseCache.set(key, res);
   return res;

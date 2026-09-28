@@ -28,6 +28,9 @@ export class JellyBody {
     this.q = new Float32Array(3 * n);
     for (let i = 0; i < n; i++) { this.q[3 * i] = o.Q[3 * i] - mx; this.q[3 * i + 1] = o.Q[3 * i + 1] - my; this.q[3 * i + 2] = o.Q[3 * i + 2] - mz; }
     this.vp = o.vp; this.index = o.index;
+    this.mode = o.mode || 'inside';
+    this.u0 = o.U ? Float32Array.from(o.U) : null;          /* 元のみかんの中の位置（切っても変わらない） */
+    this.flag = o.F ? Uint8Array.from(o.F) : new Uint8Array(o.vp.length);
     const Aqq = new Float64Array(9);
     for (let i = 0; i < n; i++) {
       const x = this.q[3 * i], y = this.q[3 * i + 1], z = this.q[3 * i + 2];
@@ -38,6 +41,7 @@ export class JellyBody {
     inv3(Aqq, this.iaqq);
     this.volume = Math.abs(meshVolume(this.q, this.vp, this.index));
     this.size = Math.cbrt(this.volume * 3 / (4 * Math.PI));
+    this.V0 = o.V0 || this.volume;
     if (o.fruit) {
       const F = Float32Array.from(o.fruit.P);
       for (let i = 0; i < F.length; i += 3) { F[i] -= mx; F[i + 1] -= my; F[i + 2] -= mz; }
@@ -52,7 +56,49 @@ export class JellyBody {
     this.c = [0, 0, 0]; this.minY = 0; this.rmax = this.size;
     this.press = null; this.grabbed = false; this.stuck = 0; this.ghost = 0;
     this.air = false;
+    this.buildAdj();
     this.frame(0);
+  }
+
+  /** となりの点の一覧（しわを作らないように、ずれを近所でならす時に使う） */
+  buildAdj() {
+    const n = this.n, vp = this.vp, idx = this.index, cnt = new Uint32Array(n + 1), pairs = [];
+    const seen = new Set();
+    const add = (a, b) => {
+      if (a === b) return;
+      const k = a < b ? a * 4194304 + b : b * 4194304 + a;
+      if (seen.has(k)) return;
+      seen.add(k); pairs.push(a, b); cnt[a]++; cnt[b]++;
+    };
+    for (let t = 0; t < idx.length; t += 3) {
+      const a = vp[idx[t]], b = vp[idx[t + 1]], c = vp[idx[t + 2]];
+      add(a, b); add(b, c); add(c, a);
+    }
+    const start = new Uint32Array(n + 1);
+    for (let i = 0; i < n; i++) start[i + 1] = start[i] + cnt[i];
+    const fill = start.slice(0, n), adj = new Uint32Array(start[n]);
+    for (let k = 0; k < pairs.length; k += 2) {
+      const a = pairs[k], b = pairs[k + 1];
+      adj[fill[a]++] = b; adj[fill[b]++] = a;
+    }
+    this.adjStart = start; this.adj = adj; this.dsm = new Float32Array(3 * n);
+  }
+
+  /** 元の形からのずれを、となりどうしでならす（細かいしわは消え、大きなぷるぷるは残る） */
+  smooth(lambda) {
+    if (lambda <= 0) return;
+    const n = this.n, x = this.x, g = this.g, S = this.adjStart, A = this.adj, d = this.dsm;
+    for (let i = 0; i < n; i++) {
+      const s0 = S[i], s1 = S[i + 1];
+      if (s1 === s0) { d[3 * i] = d[3 * i + 1] = d[3 * i + 2] = 0; continue; }
+      let sx = 0, sy = 0, sz = 0;
+      for (let k = s0; k < s1; k++) { const j = 3 * A[k]; sx += x[j] - g[j]; sy += x[j + 1] - g[j + 1]; sz += x[j + 2] - g[j + 2]; }
+      const inv = 1 / (s1 - s0);
+      d[3 * i] = sx * inv - (x[3 * i] - g[3 * i]);
+      d[3 * i + 1] = sy * inv - (x[3 * i + 1] - g[3 * i + 1]);
+      d[3 * i + 2] = sz * inv - (x[3 * i + 2] - g[3 * i + 2]);
+    }
+    for (let i = 0; i < 3 * n; i++) x[i] += d[i] * lambda;
   }
 
   /** いまの形にいちばん合う「元の形の置き方」（中心・回転・伸び） */
@@ -190,6 +236,16 @@ export class JellyBody {
   addVel(vx, vy, vz) {
     const v = this.v;
     for (let i = 0; i < v.length; i += 3) { v[i] += vx; v[i + 1] += vy; v[i + 2] += vz; }
+  }
+
+  /** まるごと回す（角速度 w、単位は ラジアン/秒） */
+  addSpin(wx, wy, wz) {
+    this.frame(0);
+    const x = this.x, v = this.v, c = this.c;
+    for (let i = 0; i < x.length; i += 3) {
+      const rx = x[i] - c[0], ry = x[i + 1] - c[1], rz = x[i + 2] - c[2];
+      v[i] += wy * rz - wz * ry; v[i + 1] += wz * rx - wx * rz; v[i + 2] += wx * ry - wy * rx;
+    }
   }
 
   /** 中心から外へ（a>0）はじく。単位は 1/秒 */
@@ -336,7 +392,7 @@ export class World3D {
     for (const b of B) { b.forces(P); b.updatePress(); }
     for (const g of this.grabs) g.apply(P);
     for (const b of B) b.predict();
-    for (const b of B) b.match(P);
+    for (const b of B) { b.match(P); b.smooth(0.35); }
     for (const b of B) b.spheresToWorld();
     for (let i = 0; i < B.length; i++) {
       const a = B[i];
@@ -389,11 +445,11 @@ export class World3D {
     if (this.bodies.length >= MAX_BODIES) return false;
     const idx = this.bodies.indexOf(b);
     if (idx < 0) return false;
-    const [A, B] = splitMesh({ P: b.x, A: [b.q, b.v], vp: b.vp, uv: null, index: b.index }, n, d, null);
+    const attrs = b.u0 ? [b.q, b.v, b.u0] : [b.q, b.v];
+    const [A, B] = splitMesh({ P: b.x, A: attrs, vp: b.vp, uv: null, F: b.flag, index: b.index }, n, d, null);
     if (!A || !B) return false;
-    const whole = 4 / 3 * Math.PI * b.R ** 3;
     const vA = meshVolume(A.A[0], A.vp, A.index), vB = meshVolume(B.A[0], B.vp, B.index);
-    if (vA < whole * 0.025 || vB < whole * 0.025) return false;
+    if (vA < b.V0 * 0.04 || vB < b.V0 * 0.04) return false;
     /* 元の形の上での平面（中の果物と当たり判定の玉はこちらで分ける） */
     b.frame(P.stretch);
     const T = b.T;
@@ -434,18 +490,26 @@ export class World3D {
         sph.c.push(mx / m, my / m, mz / m); sph.r.push(0.15 * b.R);
       }
       return new JellyBody({
-        P: side.P, Q: side.A[0], V: side.A[1], vp: side.vp, index: side.index,
+        P: side.P, Q: side.A[0], V: side.A[1], U: side.A[2] || null, F: side.F, vp: side.vp, index: side.index,
         fruit, spheres: { c: Float32Array.from(sph.c), r: Float32Array.from(sph.r) },
-        kind: b.kind, R: b.R, quat: b.quat
+        kind: b.kind, R: b.R, quat: b.quat, mode: b.mode, V0: b.V0
       });
     };
     const kA = make(A, fA, sphA), kB = make(B, fB, sphB);
     for (const g of [...this.grabs]) if (g.b === b) this.grabEnd(g);
     this.bodies.splice(idx, 1, kA, kB);
-    const sep = 0.9 * P.split;
-    kA.addVel(n[0] * sep, n[1] * sep, n[2] * sep);
-    kB.addVel(-n[0] * sep, -n[1] * sep, -n[2] * sep);
+    /* 切り口から離れる（横向きだけ。少し跳ねる） */
+    let hx = n[0], hz = n[2];
+    const hl = Math.hypot(hx, hz) || 1;
+    hx /= hl; hz /= hl;
+    const sep = 3.6 * P.split;
+    kA.addVel(hx * sep, 0.8 * P.split, hz * sep);
+    kB.addVel(-hx * sep, 0.8 * P.split, -hz * sep);
     kA.kickRadial(1.2 * P.split); kB.kickRadial(1.2 * P.split);
+    /* 断面を見せるため、それぞれ切り口が上を向く向きに倒す（＋側のかけらの切り口は −n を向いている） */
+    const spin = 6 * P.split;
+    kA.addSpin(hz * spin, 0, -hx * spin);
+    kB.addSpin(-hz * spin, 0, hx * spin);
     this.emit('cut', { body: b, kids: [kA, kB], n, d });
     return true;
   }

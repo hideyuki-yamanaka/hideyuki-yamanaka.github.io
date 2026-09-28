@@ -9,6 +9,7 @@ import * as THREE from 'three';
  *   A:     [Float32Array(3*np)…] 点ごとに一緒に分ける値（元の形・速さなど。3つ組）
  *   vp:    Uint32Array(nv)     描画の頂点 → 点
  *   uv:    Float32Array(2*nv) | null
+ *   F:     Uint8Array(nv) | null   描画の頂点ごとの印（1＝切り口のふた）
  *   index: Uint32Array(3*nt)
  * }
  * 平面は n·p = d。n の向きの側を「＋側」とする。
@@ -47,6 +48,13 @@ export function splitMesh(src, n, d, capUV) {
     return id;
   };
   const pointOfVert = r => (r < nv ? vp[r] : newVerts[r - nv].point);
+  const flagOf = r => {
+    const F = src.F;
+    if (!F) return 0;
+    if (r < nv) return F[r];
+    const e = newVerts[r - nv];
+    return Math.max(F[e.ra], F[e.rb]);
+  };
 
   const triPos = [], triNeg = [], segs = [];
   for (let t = 0; t < idx.length; t += 3) {
@@ -153,6 +161,7 @@ export function splitMesh(src, n, d, capUV) {
     const pMap = new Map(), pList = [];
     const vpOut = new Uint32Array(vList.length);
     const uvOut = new Float32Array(vList.length * 2);
+    const fOut = new Uint8Array(vList.length);
     const uvt = [0, 0];
     for (let i = 0; i < vList.length; i++) {
       const it = vList[i];
@@ -160,6 +169,7 @@ export function splitMesh(src, n, d, capUV) {
       let k = pMap.get(pid);
       if (k === undefined) { k = pList.length; pMap.set(pid, k); pList.push(pid); }
       vpOut[i] = k;
+      fOut[i] = it.cap !== undefined ? 1 : flagOf(it.r);
       if (it.cap !== undefined) {
         uvOut[2 * i] = capUV ? capUV[0] : 0; uvOut[2 * i + 1] = capUV ? capUV[1] : 0;
       } else {
@@ -176,7 +186,7 @@ export function splitMesh(src, n, d, capUV) {
         Aout[j][3 * k] = tmp[0]; Aout[j][3 * k + 1] = tmp[1]; Aout[j][3 * k + 2] = tmp[2];
       }
     }
-    return { P: Pout, A: Aout, vp: vpOut, uv: src.uv ? uvOut : null, index: new Uint32Array(outIdx), capCount: capMap.size };
+    return { P: Pout, A: Aout, vp: vpOut, uv: src.uv ? uvOut : null, F: fOut, index: new Uint32Array(outIdx), capCount: capMap.size };
   };
   return [build(triPos, 1), build(triNeg, -1)];
 }

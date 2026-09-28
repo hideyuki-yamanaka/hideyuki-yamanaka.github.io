@@ -749,6 +749,7 @@ function updateSections() {
   updateVision(progOverride.vision != null ? progOverride.vision : smoothTo('vision', visProg));
   updateDev(progOverride.dev != null ? progOverride.dev : smoothTo('dev', prog(SECS.dev)));
   updateDev2Stack();   /* dev2 の3枚カルーセル(ホバー切替) */
+  try { applyResAfterWeight(); } catch (e) {}   /* 【2026-09-28】実績の「全部出たあと」D: その間だけホイール1回の進みを小さく(それ以外は 1 に戻す) */
   /* 【2026-08-29】導入事例も固定追従なし＝入場進捗(preP)で自動再生。 */
   const casesProg = CASES_NOPIN ? clamp01(preP(SECS.cases) - NOPIN_ENTER) : prog(SECS.cases);
   updateCases(progOverride.cases != null ? progOverride.cases : smoothTo('cases', casesProg));
@@ -1713,7 +1714,9 @@ function fit() {
   { const _k = resFxActive(), _vh = resFxVh(_k);
     if (resFxFlowMode(_k)) SECS.results.style.height = 'auto';   /* 自然に流れる案(4、縦が短い端末の固定案): 中身なりの高さ */
     /* 【2026-09-28 ヒデさん依頼】出きったあとの止まりを切る: 固定で進む長さ(_vh-100)を resFxEnd 倍に(24-4 は 0.92)。つまみ「固定の長さ」の値は元の長さのまま */
-    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) : _vh) + 'vh'; }
+    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) + resAfterExtraVh() : _vh) + 'vh';   /* 【2026-09-28】全部出たあと a/b/e の分を足す */
+    /* 【2026-09-28】全部出たあと c: 実績の下に余白(次の開発者体験＝暗転の入口が遅れる) */
+    SECS.results.style.marginBottom = (!resFxFlowMode(_k) && _vh > 100 && resAfterMode() === 'c') ? resAfterLenVh('c') + 'vh' : ''; }
   /* 【2026-09-09 ヒデさん指定・見切れ根治】静的モバイル: pin-vp(100vh)より中身が高いセクションは
      下が見切れる。最下要素の位置から実コンテンツ高さを測り、section と pin-vp に明示的に設定して
      クリップを解除する(絶対配置でも最下要素のrectで測れる)。 */

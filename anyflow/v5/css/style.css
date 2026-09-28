@@ -998,6 +998,18 @@
   #results.slot-fx-blur .slot .rl.spin::before, #results.slot-fx-blur .slot .rl.spin::after { opacity: 1; }
   #results.slot-fx-blur .slot .rl::before { top: 0; -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); }
   #results.slot-fx-blur .slot .rl::after { bottom: 0; -webkit-mask-image: linear-gradient(to top, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); mask-image: linear-gradient(to top, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); }
+  /* 【2026-09-28 ヒデさん依頼「スロットの上下の切れ目に違和感。もっと自然に」】案5〜8。どれも ぼかしは使わない(2026-08-17「回転中のぼかしは要らない」)。
+     今の案2 は「回っている桁だけ窓が広がる」ので、上下に数字の切れ端がぼけて飛び出し、桁ごとに窓の高さもそろわない(実測 2026-09-28)＝ここを避ける */
+  /* 案5 パツッと切れる: 9/18 より前の作り(窓＝数字ぴったり 1em・薄くしない) */
+  #results.slot-fx-cut .slot .rl { height: 1em; padding: 0; margin: 0; -webkit-mask-image: none; mask-image: none; }
+  /* 案6〜8 共通: 窓の高さ(--slot-win-n 文字分)を回っている間も止まってからも変えない＝桁ごとに上下の線がそろう。
+     消える帯は「数字の色が付く部分」より外だけ(SF Pro Text 300 の数字は 1文字の枠の中心から ±0.37 文字分。実測 2026-09-28)＝止まった数字は薄くならない。
+     帯の中は案2と同じ「端ほどゆっくり薄くなる」曲線(0→.04→.16→.45→1)。S 字は切れ端が濃く残ったのでやめた(2026-09-28 撮影で確認)。
+     消える長さ(--slot-ramp)は 1 より大きくしても帯は数字にかからない所で止まる */
+  #results.slot-fx-still .slot .rl { height: calc(var(--slot-win-n, 1.4) * 1em); padding: calc((var(--slot-win-n, 1.4) - 1) * .5em) 0; margin: calc((1 - var(--slot-win-n, 1.4)) * .5em) 0;
+    --rr: calc(max(var(--slot-win-n, 1.4) * .5em - .37em, 0em) * min(var(--slot-ramp, 1), 1));
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.04) calc(var(--rr) * .25), rgba(0,0,0,.16) calc(var(--rr) * .5), rgba(0,0,0,.45) calc(var(--rr) * .75), #000 var(--rr), #000 calc(100% - var(--rr)), rgba(0,0,0,.45) calc(100% - var(--rr) * .75), rgba(0,0,0,.16) calc(100% - var(--rr) * .5), rgba(0,0,0,.04) calc(100% - var(--rr) * .25), transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.04) calc(var(--rr) * .25), rgba(0,0,0,.16) calc(var(--rr) * .5), rgba(0,0,0,.45) calc(var(--rr) * .75), #000 var(--rr), #000 calc(100% - var(--rr)), rgba(0,0,0,.45) calc(100% - var(--rr) * .75), rgba(0,0,0,.16) calc(100% - var(--rr) * .5), rgba(0,0,0,.04) calc(100% - var(--rr) * .25), transparent 100%); }
   .res-main { display: flex; flex-direction: column; gap: var(--space-32); color: var(--ink-strong); }
   .res-text { font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
   .res-stats { display: flex; align-items: center; color: var(--ink-strong); }

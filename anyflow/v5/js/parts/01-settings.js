@@ -745,7 +745,12 @@ const DEFAULTS = {
       entryBlur: 16, entryBlur44: 26, entryFrom: 0.4, entryTo: 0.95, entryOp: 1, bigStartY: 0.4,   // 【2026-09-19】for SaaS/AI の入場のぼかし(強さpx / 解け始め・解けきり=入場の進み 0〜1 / 出だしの薄さ 1=薄くしない)
       slotEnterAt: 0.85, // 数字が画面のどこまで入ったら回り出すか (1.0=下端 / 0.5=中央)
       slotFx: 'plain', slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1, slotDrumN: 12, slotDrumFade: 1.3,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)
+      slotDigitFade: 0.7, slotSwapRise: 0.3,   // 【2026-09-28】スロットの案7(数字ごとにふわっと薄く: 何文字分離れたら透明か)・案8(少し動いて入れ替わる: 動く距離 文字分)。仮置き
       slotEase: 5,       // 減速の強さ。大きいほど「最初速く→最後じりじり」になる (2〜9)
+      /* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・案24-4・パネルで比べる)。
+         afterMode: none=出きったらすぐ次へ(今まで) / a=ゆっくり通り過ぎる / b=やわらかく一息つく / c=次との間を空ける / d=スクロールを少し重く / e=画面固定(開発者体験と同じ)
+         afterLenA〜E=その見せ方を続ける長さ(vh・案ごと) / afterSpeed=A の速さ(スクロールの何割) / afterWeight=D の重さ(ホイール1回の進み)。値はすべて⚠️仮置き */
+      afterMode: 'none', afterLenA: 60, afterLenB: 60, afterLenC: 50, afterLenD: 80, afterLenE: 50, afterSpeed: 0.35, afterWeight: 0.35,
                          /* ⚠️ 回転中のぼかしは 2026-08-17 に「要らない」で確定。
                             パラメータごと削除したので、復活させる時は renderSlots にも戻すこと */
     },
