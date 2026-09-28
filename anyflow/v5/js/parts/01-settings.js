@@ -269,42 +269,9 @@ void main(){
 }
 
 const DESIGNS = {
-  A1: {
-    name: 'A1 ビビッドブルー',
-    swatch: 'linear-gradient(140deg, #ff5d97 5%, #fff 30%, #1e9bff 65%, #0b6bff 100%)',
-    src: 'assets/planet-b.png',
-    grainScale: '120.0',
-    /* ビビッド優先: 粒は乗算で粗く、白飛びさせない */
-    finish: `
-      col *= 1.0 + grain * 0.5 * uNoise;
-      float hi = pow(max(dot(n, normalize(vec3(-0.4, 0.65, 0.65))), 0.0), 2.5);
-      col = mix(col, vec3(1.0), hi * 0.08);
-      col *= 1.0 - pow(1.0 - n.z, 2.2) * 0.10;`,
-  },
-  A2: {
-    name: 'A2 ピンク×ブルー',
-    swatch: 'linear-gradient(160deg, #ff5d97 22%, #fff 50%, #26a9ff 78%)',
-    src: 'assets/planet-c.png',
-    grainScale: '150.0',
-    /* 2色の境界を活かす: 中くらいの粒を加算で */
-    finish: `
-      col += grain * 0.16 * uNoise;
-      float hi = pow(max(dot(n, normalize(vec3(-0.45, 0.6, 0.66))), 0.0), 2.2);
-      col = mix(col, vec3(1.0), hi * 0.12);
-      col *= 1.0 - pow(1.0 - n.z, 2.0) * 0.08;`,
-  },
-  A3: {
-    name: 'A3 ライトグレイン',
-    swatch: 'linear-gradient(200deg, #9fdcff 12%, #fff 45%, #ff9ac4 88%)',
-    src: 'assets/planet-d.png',
-    grainScale: '260.0',
-    /* 高密度の微粒が主役: 細かい粒を強めに */
-    finish: `
-      col += grain * 0.20 * uNoise;
-      float hi = pow(max(dot(n, normalize(vec3(-0.45, 0.6, 0.66))), 0.0), 2.2);
-      col = mix(col, vec3(1.0), hi * 0.12);
-      col *= 1.0 - pow(1.0 - n.z, 2.0) * 0.07;`,
-  },
+  /* 【2026-09-28 ヒデさん依頼「使っていないファイルの削除」】画像を貼る模様 A1 ビビッドブルー／A2 ピンク×ブルー／A3 ライトグレイン
+     (assets/planet-b/c/d.png・計3.8MB)は削除。9/19 に「惑星（模様）」の選択をパネルから消して B ハーフトーンで固定した後は、
+     どこからも読まれていなかった。古い保存値で A1〜A3 を選んだままでも B に寄せる(03-base.js) */
   B: {
     name: 'B ハーフトーン',
     swatch: 'radial-gradient(circle at 68% 30%, #fff 8%, #5fd2ff 40%, #0e9bff 72%, #ff4fd8 100%)',
@@ -858,14 +825,12 @@ const DEFAULTS = {
      アニメ案ごとに別々に持つ。案を切り替えると、その案の形に入れ替わる(引き継がない)。
      形が入っていない案は gfxDefault() = 最初に実装した位置関係で始まる。 */
   gfxByMode: {},         // { 案キー: {layout, outer, inner, planet} }
-  gfxPresets: {},        // { 案キー: [{name, data}] } 案ごとのプリセット
-  gfxPresetOn: {},       // { 案キー: 選んでいる番号 }
+  /* 【2026-09-28 ヒデさん依頼】プリセットのチップ(gfxPresets・選択中 gfxPresetOn・ゴミ箱 gfxPresetTrash・見せ方 presetUiStyle)は削除。
+     チップは 9/17 のパネル大掃除で撤去済み・中身は 8/30 に正式な案 P1〜(焼き込みの SHIPPED_PRESETS から作る)へ格上げ済み */
   gfxVariantOn: { mesh: 3 },      // { 案キー: 選んでいるバリエーションの番号 } 【V4.0 2026-09-09】既定 mesh:3＝『D 大きいケージ』(ネットワーク★1)
   gfxVariantHidden: {},  // { 案キー: [消したバリエーションの名前] } UI から削除したもの
-  gfxPresetTrash: {},    // { 案キー: [{name, data}] } 削除したプリセットのゴミ箱(復元用・2026-08-29)
   gfxVarOverride: {},    // { 案キー: { バリエーション名: 全設定 } } 「この設定で上書き」の控え(2026-08-30)
   gfxFav: [],            // 【2026-09-01】お気に入りピン留め [{m:モード, name:案名}] 並び順=ピン留め順
-  presetUiStyle: 'chips',// プリセットの見せ方: 'chips'(コンパクトチップ) / 'drop'(ドロップダウン)。2026-08-29
   conv: {
     showOuter: true, showInner: true,
     showDots: true,                                          // 軌道上のドット(7個)の表示/非表示

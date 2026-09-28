@@ -1,7 +1,9 @@
 function presetStoreLoad() {
   try {
     const j = JSON.parse(localStorage.getItem(PRESET_KEY) || 'null');
-    if (j && typeof j === 'object' && j.presets && typeof j.presets === 'object') return j;
+    /* 【2026-09-28】プリセットのチップ削除で presets を書かなくなったので、見分けは v:1(保存時に必ず入れる)でも行う。
+       ⚠️ presets だけで見分けたままだと、新しい書き方の箱が「無い」扱いになり、消した案・上書きの控え・お気に入りが焼き込みの初期値に戻ってしまう */
+    if (j && typeof j === 'object' && (j.v === 1 || (j.presets && typeof j.presets === 'object'))) return j;
   } catch (e) {}
   return null;
 }
@@ -15,11 +17,9 @@ function presetStoreSave() {
   if (window.__afModeReloading) return;
   try {
     localStorage.setItem(PRESET_KEY, JSON.stringify({
-      v: 1, presets: params.gfxPresets || {}, on: params.gfxPresetOn || {},
+      v: 1,   /* 【2026-09-28】プリセットのチップ(presets・選択中 on・ゴミ箱 trash)は削除。v:1 はこの箱の目印(presetStoreLoad) */
       /* 消したバリエーションの控えもここに置く。パネルを作り替えても残るように */
       hidden: params.gfxVariantHidden || {},
-      /* 【2026-08-29】削除したプリセットのゴミ箱(復元用)もここに置く */
-      trash: params.gfxPresetTrash || {},
       /* 【2026-08-30 ヒデさん指定】バリエーションの「この設定で上書き」の控え(案名→全設定) */
       over: params.gfxVarOverride || {},
       fav: params.gfxFav || [],   /* 【2026-09-01】お気に入りピン留め */
@@ -160,10 +160,10 @@ function loadParams() {
     gyro:   { ...DEFAULTS.conv.gyro,   ...((s.conv && s.conv.gyro)   || {}) },
   };
   if (typeof merged.orbitLayout !== 'string') merged.orbitLayout = DEFAULTS.orbitLayout;
-  /* 案ごとの形とプリセットの入れ物。古い保存値(全案共通の orbitPresets)からの引っ越しもここで */
+  /* 案ごとの形の入れ物。古い保存値(全案共通の orbitPresets)からの引っ越しもここで */
   if (!merged.gfxByMode || Array.isArray(merged.gfxByMode)) merged.gfxByMode = {};
-  if (!merged.gfxPresets || Array.isArray(merged.gfxPresets)) merged.gfxPresets = {};
-  if (!merged.gfxPresetOn || Array.isArray(merged.gfxPresetOn)) merged.gfxPresetOn = {};
+  /* 【2026-09-28】プリセットのチップは削除。古い保存値に残っていても持ち込まない */
+  delete merged.gfxPresets; delete merged.gfxPresetOn; delete merged.gfxPresetTrash; delete merged.presetUiStyle;
   if (!merged.gfxVariantOn || Array.isArray(merged.gfxVariantOn)) merged.gfxVariantOn = {};
   /* 案ごとの軌道回転。古い保存値(全案共通の orbitSpin)は、全案の初期値として配る */
   if (!merged.conv.orbitWidthBy || typeof merged.conv.orbitWidthBy !== 'object') {
@@ -192,8 +192,9 @@ function loadParams() {
   if (merged.converge === 'vein' || merged.converge === 'pulse') merged.converge = DEFAULTS.converge;
   /* 【2026-08-27 ヒデさん指定】消え方の選択は廃止。前面カット固定 */
   if (merged.conv.reel) merged.conv.reel.vanish = 'clip';
-  /* 惑星の模様 5〜7(C1/C2/C3)は 2026-08-27 に廃止。選んだままなら既定へ寄せる */
-  if (!['A1', 'A2', 'A3', 'B'].includes(merged.design)) merged.design = DEFAULTS.design;
+  /* 惑星の模様 5〜7(C1/C2/C3)は 2026-08-27 に廃止。選んだままなら既定へ寄せる
+     【2026-09-28】画像を貼る A1〜A3 も画像ごと削除(9/19 から B ハーフトーン固定)。選んだままなら B へ */
+  if (merged.design !== 'B') merged.design = DEFAULTS.design;
   /* 光り方は 2026-08-28 に パルス/波紋 の2つへ。廃止した案を選んだままなら寄せる */
   if (!['pulse', 'echo'].includes(merged.conv.glowKind)) merged.conv.glowKind = 'pulse';
   if (!['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9'].includes(merged.conv.glowEcho)) merged.conv.glowEcho = 'k8';
@@ -301,41 +302,22 @@ function loadParams() {
 function load() {
   const merged = loadParams();
   const st = presetStoreLoad();
+  /* 【2026-09-28 ヒデさん依頼】プリセットのチップ(presets・選択中 on・ゴミ箱 trash)は削除。古い箱に入っていても読まない。
+     同じ箱の「消した案・上書きの控え・お気に入り」はこれまでどおり読む */
   if (st) {
-    merged.gfxPresets = st.presets || {};
-    merged.gfxPresetOn = (st.on && typeof st.on === 'object') ? st.on : {};
     /* ⚠️ hidden が入っていない古い保管を読んだ時に {} で上書きすると、
        消した案が勝手に戻ってしまう。入っている時だけ差し替える (2026-08-28) */
     if (st.hidden && typeof st.hidden === 'object') merged.gfxVariantHidden = st.hidden;
-    if (st.trash && typeof st.trash === 'object') merged.gfxPresetTrash = st.trash;   /* 2026-08-29: 削除プリセットのゴミ箱を復元 */
     if (st.over && typeof st.over === 'object') merged.gfxVarOverride = st.over;      /* 2026-08-30: バリエーション上書きの控えを復元 */
     if (Array.isArray(st.fav)) merged.gfxFav = st.fav;                              /* 2026-09-01: お気に入りを復元 */
-  } else if (merged.gfxPresets && Object.keys(merged.gfxPresets).length) {
-    /* まだ別置きしていない古い持ち物は、ここで引っ越す */
-    try { localStorage.setItem(PRESET_KEY, JSON.stringify({ v: 1, presets: merged.gfxPresets, on: merged.gfxPresetOn || {} })); } catch (e) {}
   }
-  /* 【2026-08-30 ヒデさん指定】プリセット保管が無い(=本番の初回など)なら、
-     選択中プリセット・削除した案・ゴミ箱も焼き込み(SHIPPED_PRESET_STATE)から復元 */
+  /* 【2026-08-30 ヒデさん指定】保管が無い(=本番の初回など)なら、削除した案・上書き・お気に入りを焼き込み(SHIPPED_PRESET_STATE)から復元 */
   if (!st && typeof SHIPPED_PRESET_STATE !== 'undefined') {
-    /* 【2026-08-31 ヒデさん指定】プリセット保管が無い(=本番の初回など)は、devの最新状態を丸ごと初期値に:
-       残っているプリセットチップ(presets)・選択(on)・削除した案(hidden)。ゴミ箱(trash)は完全削除済み={}。 */
-    if (SHIPPED_PRESET_STATE.presets) merged.gfxPresets = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.presets));
-    merged.gfxPresetOn = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.on || {}));
     merged.gfxVariantHidden = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.hidden || {}));
-    merged.gfxPresetTrash = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.trash || {}));
     if (SHIPPED_PRESET_STATE.over) merged.gfxVarOverride = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.over));   /* 2026-09-01: 上書きも本番初期値へ */
     if (Array.isArray(SHIPPED_PRESET_STATE.fav)) merged.gfxFav = JSON.parse(JSON.stringify(SHIPPED_PRESET_STATE.fav));
   }
-  if (!merged.gfxPresets || Array.isArray(merged.gfxPresets)) merged.gfxPresets = {};
-  if (!merged.gfxPresetOn || Array.isArray(merged.gfxPresetOn)) merged.gfxPresetOn = {};
   if (!merged.gfxVariantHidden || Array.isArray(merged.gfxVariantHidden)) merged.gfxVariantHidden = {};
-  /* 【2026-08-29→08-31 改】SHIPPED_PRESETS(昇格バリエーションの土台・凍結)での seed は、
-     SHIPPED_PRESET_STATE に presets が無い古い焼き込みの時だけ。最新焼き込みでは
-     「ヒデさんがチップとして残したもの」だけを出す(削除したチップを本番で復活させない)。 */
-  try {
-    if (!(typeof SHIPPED_PRESET_STATE !== 'undefined' && SHIPPED_PRESET_STATE.presets))
-      for (const mk in SHIPPED_PRESETS) { if ((SHIPPED_PRESETS[mk] || []).length && (!merged.gfxPresets[mk] || !merged.gfxPresets[mk].length)) { merged.gfxPresets[mk] = SHIPPED_PRESETS[mk].map(function (p) { return { name: p.name, data: JSON.parse(JSON.stringify(p.data)) }; }); } }
-  } catch (e) {}
   return merged;
 }
 /* ⚠️【2026-08-27 事故対応】直接編集をオンにすると再生を止める(params.running=false)。
@@ -362,9 +344,10 @@ function save() {
     if (_v && params.gfxVarOverride && params.gfxVarOverride[_m] && params.gfxVarOverride[_m][_v.name]) { params.gfxVarOverride[_m][_v.name] = gfxSnapshotFull(); presetStoreSave(); }
   } catch (e) {}
   const out = { ...params, running: true };
-  /* プリセットと「消したバリエーション」は PRESET_KEY 側だけで持つ。本体に二重で持たせない
-     (二重に持つと、古いほうが勝って消した案が戻る事故になる) */
-  delete out.gfxPresets; delete out.gfxPresetOn; delete out.gfxVariantHidden; delete out.gfxFav;
+  /* 「消したバリエーション」とお気に入りは PRESET_KEY 側だけで持つ。本体に二重で持たせない
+     (二重に持つと、古いほうが勝って消した案が戻る事故になる)。
+     【2026-09-28】削除したプリセットのチップ関係(gfxPresets・gfxPresetOn・gfxPresetTrash・presetUiStyle)も書かない */
+  delete out.gfxPresets; delete out.gfxPresetOn; delete out.gfxPresetTrash; delete out.presetUiStyle; delete out.gfxVariantHidden; delete out.gfxFav;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
 }
 /* ===== 保存の考え方 (2026-08-19 ヒデさん指定) =====

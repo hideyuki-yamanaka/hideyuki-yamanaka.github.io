@@ -1108,9 +1108,9 @@ function buildPanel() {
   rows.push(slider('メッセージ→グラフィック', 0, 3, 0.05, () => sv().vision.npGap, v => sv().vision.npGap = v, v => v.toFixed(2) + '秒',
     '上の発火タイミングから、さらに追加で待つ間。0=発火と同時(既定)。', { mbKey: 'sections.vision.npGap' }));
   rows.push(slider('グラフィック→ポイント1', 0, 4, 0.05, () => sv().vision.npP1, v => sv().vision.npP1 = v, v => v.toFixed(2) + '秒',
-    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 01 が出るまでの間。0=出きったと同時。', { mbKey: 'sections.vision.npP1' }));
+    'グラフィックが見た目で出きった時点(③の「出きるまで」の45%＝濃さ95%。2026-09-28〜)から、Point 01 が出るまでの間。0=出きったと同時。', { mbKey: 'sections.vision.npP1' }));
   rows.push(slider('グラフィック→ポイント2', 0, 5, 0.05, () => sv().vision.npP2, v => sv().vision.npP2 = v, v => v.toFixed(2) + '秒',
-    'グラフィックが出きって(③の「出きるまで」経過後)から、Point 02 が出るまでの間。', { mbKey: 'sections.vision.npP2' }));
+    'グラフィックが見た目で出きった時点(③の「出きるまで」の45%＝濃さ95%。2026-09-28〜)から、Point 02 が出るまでの間。', { mbKey: 'sections.vision.npP2' }));
   rows.push(slider('ポイントの出現時間', 0.2, 3, 0.05, () => (sv().vision.npPointDur != null ? sv().vision.npPointDur : 0.8),
     v => sv().vision.npPointDur = v, v => v.toFixed(2) + '秒',
     'Point 01/02(と見出し)がブラーから出きるまでの長さ。大きいほどゆったり。', { mbKey: 'sections.vision.npPointDur' }));
@@ -1132,9 +1132,9 @@ function buildPanel() {
   rows.push(slider('位置 Y', -400, 600, 2, () => (editPos('visMsg').dy || 0),
     v => { editPos('visMsg').dy = v; textTools.applyAll(); }, v => v + 'px', 'メッセージの上下位置。', { mbKey: 'edits.visMsg.dy', signed: true }));
   sub(catVis, 'メッセージ', false, { grp: 'font' });   /* 【2026-09-20 ヒデさん依頼】文字サイズはフォント節へ */
-  rows.push(slider('文字サイズ', 28, 72, 1, () => (sv().vision.msgSize != null ? sv().vision.msgSize : 48),
-    v => { sv().vision.msgSize = v; applyVpSize(); }, v => Math.round(v) + 'px',
-    '「データをつなぐことが、強みになる時代へ。」の文字サイズ。カンプは50px。行間は1.7倍で自動追従。', { mbKey: 'sections.vision.msgSize', mbDefault: 28 }));
+  /* 【2026-09-28 ヒデさん判断「文字の行に1本化」】「文字サイズ」のつまみ(msgSize)は削除。
+     大きさの入口が2つあり、強調案では文字の行(✏️ edits.visMsg.fs・スマホは editsMb)の直書きが勝って、つまみを動かしても変わらなかった(同じ値の入口は1つ＝6-2)。
+     大きさは文字の行(ビジョン › フォントの「メッセージ」の サ)で変える。sections.vision.msgSize は CSS の土台(--vis-msg-size)として残る(案ごとの控えにも入ったまま) */
   /* 【2026-09-25 ヒデさん依頼】強調案の行間(1行目↔2行目の縦の間隔)。強調案だけに効く独立値。PC/SP独立(mbKey)。数値=1行目の頭からの距離(px) */
   rows.push(slider('行間（強調案・1↔2行目）', 30, 260, 2, () => (sv().vision.emphGap != null ? sv().vision.emphGap : 119),
     v => { sv().vision.emphGap = v; applyVpSize(); }, v => Math.round(v) + 'px',
@@ -1527,11 +1527,18 @@ function buildPanel() {
   /* 【2026-09-16 ヒデさん指定】①②で中央に来たら一旦止まる(固定スクロール) */
   sub(catDev, '①②で一旦止まる（固定スクロール）');
   note('①「開発スピードを加速」と②「開発環境に柔軟に適応」が、中央に来たら固定されて一旦止まり、スクロールすると次へ進みます（PC のみ）。');
+  /* 【2026-09-28 ヒデさん依頼】「止まっている長さ」は止まるが OFF の間は効かないので、その間は行を薄くする(.row-off)。
+     隠すと切り替えた時に項目の位置が動くので隠さない。値は薄いままでも変えられる */
+  let devDwellRow = null;
+  const devDwellDim = () => { try { if (devDwellRow) devDwellRow.classList.toggle('row-off', sv().dev.pinStops === 'off'); } catch (e) {} };
   optRow('devPinStops', '有無', [['止まる', 'on'], ['止まらない（通常）', 'off']],
     () => ((sv().dev.pinStops !== 'off') ? 'on' : 'off'),
-    v => { sv().dev.pinStops = v; fit(); renderFrame(); });
-  rows.push(slider('止まっている長さ', 30, 160, 5, () => (sv().dev.devDwell != null ? sv().dev.devDwell : 90), v => { sv().dev.devDwell = v; fit(); }, v => Math.round(v) + 'vh',
-    '各章が中央で止まっている距離。長いほど、しっかり止まって見えます。', { mbKey: 'sections.dev.devDwell', fixedMax: true }));
+    v => { sv().dev.pinStops = v; fit(); renderFrame(); devDwellDim(); });
+  devDwellRow = slider('止まっている長さ', 30, 160, 5, () => (sv().dev.devDwell != null ? sv().dev.devDwell : 90), v => { sv().dev.devDwell = v; fit(); }, v => Math.round(v) + 'vh',
+    '各章が中央で止まっている距離。長いほど、しっかり止まって見えます。', { mbKey: 'sections.dev.devDwell', fixedMax: true });
+  { const _s0 = devDwellRow._sync; devDwellRow._sync = () => { _s0(); devDwellDim(); }; }   /* 設定の読み込み・リセット・案の切替で値が外から変わった時も薄さを合わせる */
+  rows.push(devDwellRow);
+  devDwellDim();
 
   /* 【2026-08-30 ヒデさん指定】② はテキストスライド固定(既定)。リスト/スライドの選択UIは廃止。 */
   sub(catDev, '② の見出しのスロット（API / CLI / SDK の箱）', true, { fixed: true });
@@ -1736,6 +1743,22 @@ function buildPanel() {
   sub(catCv, 'ボタン（矢印）', false, { grp: 'basic' });
   rows.push(slider('線幅', 0.5, 4, 0.1, () => (cvv().ctaArrowW != null ? cvv().ctaArrowW : 2), v => { cvv().ctaArrowW = v; applyCtaArrow(); }, v => v.toFixed(1) + 'px',
     'お問い合わせボタンの矢印の線の太さ(画面上の実寸)。ヘッダーの「お問い合わせ」とお問い合わせセクションの「フォームを記入」の両方に効きます。旧は0.9px。', { mbKey: 'cv.ctaArrowW', mbDefault: 2 }));   /* 横幅などフォームの基本設定なので基本扱い(文字より前へ) */
+  /* 【2026-09-28 ヒデさん依頼】ボタンの流れる文字の向き(既定＝今までどおり「左へ」)。ヘッダーの「お問い合わせ」とセクションの「フォームを記入」共通。
+     アニメーションの性質なのでアニメーションへ(6-13)。PC/SP別(6-8): スマホモード中は params.mb['cv.ctaDir'] だけに書き、PC の値は触らない。
+     スマホで上書き中は名前の行に青い印(mb-override)。↺ はスマホモード中＝スマホの上書きだけ外す／通常＝このページを開いた時の値に戻す(ほかの行と同じ) */
+  sub(catCv, 'ボタン（流れる文字）', false, { grp: 'anim' });
+  { const KEY = 'cv.ctaDir', pon = () => document.documentElement.classList.contains('phone-mode');
+    const getDir = () => (pon() && params.mb && params.mb[KEY] != null) ? params.mb[KEY] : (cvv().ctaDir || 'left');
+    const fillDir = optRow('ctaDir', '向き', [['左へ', 'left'], ['右へ', 'right']], getDir,
+      v => { if (pon()) { if (!params.mb) params.mb = {}; params.mb[KEY] = v; } else { cvv().ctaDir = v; } applyCtaDir(); });
+    const boxDir = (mount || body).querySelector('.var-box[data-bucket="ctaDir"]'), labDir = boxDir && boxDir.previousElementSibling;
+    if (labDir) labDir._sync = () => { try { labDir.classList.toggle('mb-override', pon() && !!(params.mb && params.mb[KEY] != null)); } catch (e) {} };
+    if (subItems) subItems.push({ reset: () => {
+      if (pon()) { if (params.mb) delete params.mb[KEY]; }
+      else { const t = sessionOf(() => (params.cv || {}).ctaDir); if (t == null) delete cvv().ctaDir; else cvv().ctaDir = t; }
+      applyCtaDir(); markDirty(); if (typeof fillDir === 'function') fillDir(); if (labDir && labDir._sync) labDir._sync();
+    } });
+  }
   sub(catCv, '粒（ディザ）と流れ'); B.dither();
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
@@ -1834,7 +1857,7 @@ function buildPanel() {
     hiddenListRefresh();
     const nonEmpty = v => Array.isArray(v) ? v.length > 0 : !!(v && typeof v === 'object' && Object.keys(v).length);
     const pick = src => { const o = {}; for (const m in (src || {})) { if (nonEmpty(src[m])) o[m] = JSON.parse(JSON.stringify(src[m])); } return o; };
-    const payload = { hidden: pick(params.gfxVariantHidden), trash: pick(params.gfxPresetTrash) };
+    const payload = { hidden: pick(params.gfxVariantHidden) };   /* 2026-09-28: プリセットのゴミ箱(trash)はチップと一緒に削除 */
     const nHid = Object.values(payload.hidden).reduce((a, b) => a + (Array.isArray(b) ? b.length : 1), 0);
     const text = (nHid
       ? '【完全削除の依頼】以下の案を VARIANT_REMOVED_EXTRA に焼き込んで、コードから恒久的に消してください。(焼き込み済みの案は含めていません)\n'
@@ -1917,7 +1940,7 @@ function __previewReapply() {
     var newP = JSON.parse(mainText); if (!newP || typeof newP !== 'object') return;
     for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; }
     Object.assign(params, newP);
-    try { var ps = localStorage.getItem('anyflow-gfx-presets'); if (ps) { var stp = JSON.parse(ps); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } } catch (e) {}
+    try { var ps = localStorage.getItem('anyflow-gfx-presets'); if (ps) { var stp = JSON.parse(ps); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || [];   /* 2026-09-28: プリセットのチップ(presets/on/trash)は削除したので読まない */ } } } catch (e) {}
     var C = function (fn) { try { fn(); } catch (e) {} };
     try { vfMesh = null; } catch (e) {}
     C(function () { applyKvVariant(kvVarKey(), true); });
@@ -2654,7 +2677,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       if (!newP || typeof newP !== 'object') { location.reload(); return; }
       try { for (var k in params) { if (Object.prototype.hasOwnProperty.call(params, k) && !(k in newP)) delete params[k]; } } catch (e) {}
       try { Object.assign(params, newP); } catch (e) {}
-      if (presetText) { try { var stp = JSON.parse(presetText); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxPresets = stp.presets || {}; params.gfxPresetOn = stp.on || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || []; params.gfxPresetTrash = stp.trash || {}; } } catch (e) {} }
+      if (presetText) { try { var stp = JSON.parse(presetText); if (stp) { params.gfxVarOverride = stp.over || {}; params.gfxVariantHidden = stp.hidden || {}; params.gfxFav = stp.fav || [];   /* 2026-09-28: プリセットのチップ(presets/on/trash)は削除したので読まない */ } } catch (e) {} }
       var call = function (fn) { try { fn(); } catch (e) {} };
       try { vfMesh = null; } catch (e) {}
       call(function () { if (typeof applyKvVariant === 'function') applyKvVariant(kvVarKey(), true); });

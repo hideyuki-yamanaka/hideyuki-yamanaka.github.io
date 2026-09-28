@@ -416,7 +416,8 @@
   }
   .cta .cta-reel, .cv-btn .cta-reel { transition: transform var(--t-move) var(--e-out); display: block; will-change: transform; }   /* 【2026-09-21】will-change でレイヤーを常設=ホバー解除時の再ラスタライズによるちらつきを防ぐ */
   .cta .cta-row,  .cv-btn .cta-row  { height: 1.4em; display: block; }
-  .cta .cta-track,.cv-btn .cta-track{ width: max-content; animation: cta-marquee 9s linear infinite; display: flex; }
+  .cta .cta-track,.cv-btn .cta-track{ width: max-content; animation: cta-marquee 9s linear infinite; display: flex;
+    animation-direction: var(--cta-marquee-dir, normal); }   /* 【2026-09-28 ヒデさん依頼】流れる向き(パネル お問い合わせ › アニメーション › ボタン（流れる文字） › 向き)。normal=左へ(今までどおり・既定) / reverse=右へ。applyCtaDir() が入れる */
   .cta .cta-group,.cv-btn .cta-group{ flex: 0 0 auto; display: flex; }
   .cta .cta-copy, .cv-btn .cta-copy { flex: 0 0 auto; padding-right: .9em; display: block; }
   .cta:is(:hover,:focus-visible) .cta-reel,
@@ -2987,24 +2988,7 @@
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .12s, color .12s, border-color .12s; }
   .chip-b:hover { border-color: #999; }
   .chip-b.on { background: #090909; color: #fff; border-color: #090909; }
-  /* プリセットを1行に収める (2026-08-27 ヒデさん指定でコンパクト化) */
-  .pset { display: flex; align-items: flex-start; gap: var(--space-8); margin: 4px 0 2px; }
-  .pset-lab { flex: 0 0 auto; font-size: var(--fs-caption); color: #999; line-height: 22px; }
-  .pset-row { flex: 1 1 auto; margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: center; }
-  /* 【2026-08-29 ヒデさん指定】プリセットの見せ方2案(チップ/リスト)の切替 */
-  .pset-style { flex: 1 0 100%; display: flex; gap: var(--space-4); margin-bottom: var(--space-4); }
-  .pset-style-b { font-size: 10.5px; padding: 2px 10px; border: 1px solid #e0e0e0; background: #fafafa; border-radius: 999px; cursor: pointer; color: #777; }
-  .pset-style-b.on { background: var(--surface-cta); color: var(--ink-on-dark); border-color: #090909; }
-  /* A: コンパクト・チップ(名前＋小さな⋯を1粒に。折り返して縦を詰める) */
-  .pset-chip { display: inline-flex; align-items: stretch; border: 1px solid #e2e2e2; border-radius: 999px; overflow: hidden; background: var(--surface-white); }
-  .pset-chip.on { border-color: #0EBBFF; box-shadow: 0 0 0 1px #0EBBFF inset; }
-  .pset-chip-name { border: 0; background: transparent; padding: 3px 4px 3px 11px; font-size: var(--fs-caption); color: #333; cursor: pointer; max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pset-chip.on .pset-chip-name { color: #0a86b8; font-weight: 600; }
-  .pset-chip-menu { border: 0; background: transparent; padding: 3px 8px 3px 3px; font-size: var(--fs-caption); color: #bbb; cursor: pointer; }
-  .pset-chip-menu:hover { color: #666; }
-  /* B: ドロップダウン(いちばんコンパクト) */
-  .pset-drop { flex: 1 0 100%; display: flex; gap: var(--space-6); align-items: center; }
-  .pset-select { flex: 1 1 auto; min-width: 0; font-size: var(--fs-caption); padding: var(--space-5) var(--space-8); border: 1px solid #ddd; border-radius: 8px; background: var(--surface-white); color: #333; }
+  /* 【2026-09-28 ヒデさん依頼】プリセットのチップ(.pset-*)の見た目の指定は削除(チップ自体は 9/17 のパネル大掃除で撤去済み・8/30 に正式な案 P1〜 へ格上げ済み) */
   /* 【2026-08-27 ヒデさん指定】✎ で 1/2/3 を打たせるのをやめ、小さなメニューにした */
   .pmenu { position: fixed; z-index: 120; background: var(--surface-white); border: 1px solid #e4e4e4; border-radius: 9px;
            box-shadow: 0 8px 24px var(--line-soft); padding: var(--space-4); min-width: 138px; }
@@ -3132,9 +3116,12 @@
         補足文(.grp-note / .row-hint)は display:none でも DOM には残っているので、
         つまみの行とピルの行の【間に挟まって】隣接と見なされなかった(実測: 2px のままだった)。
         なので「部品の種類そのもの」に間を持たせる形にした。 */
-  .grp-body > .sw-row, .grp-body > .var-box, .grp-body > .pset,
+  .grp-body > .sw-row, .grp-body > .var-box,
   .grp-body > .gfx-edit, .grp-body > .np { margin-top: 9px; }
   .row + .row { margin-top: 2px; }
+  /* 【2026-09-28 ヒデさん依頼】今の設定では効かないつまみ(例: 開発者体験「止まっている長さ」＝止まるが OFF の時)は薄くする。
+     隠すと切り替えた時に項目の位置が動くので、隠さず薄くするだけ(触れば値は変えられる) */
+  .row.row-off { opacity: 0.4; }
   /* 見出しの下と、かたまりの終わりにも息をつかせる */
   .grp > .grp-body { padding-bottom: var(--space-4); }
   /* ⚠️ 2026-08-19: ラベルを分かりやすい日本語に書き直したら 92px では折り返した。

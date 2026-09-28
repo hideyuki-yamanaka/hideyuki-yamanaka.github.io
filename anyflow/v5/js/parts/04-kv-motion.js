@@ -587,7 +587,8 @@ GFX_VARIANTS.accre.push({
 });
 /* 【2026-08-30 ヒデさん指定】プリセット(devで保存した35個)を正式バリエーションへ昇格。
    preset: を持つバリエーションは、適用時にプリセットとまったく同じ関数(gfxApplyFull)で
-   全設定を再現する(変換ロスなし)。プリセットのチップ自体は「確認できるまで」残してある。 */
+   全設定を再現する(変換ロスなし)。プリセットのチップ自体は 9/17 のパネル大掃除で撤去・2026-09-28 に残りのデータも削除(ヒデさん依頼)。
+   ⚠️ 案 P1〜 はこの SHIPPED_PRESETS から作るので、SHIPPED_PRESETS は消さない。 */
 for (const _pm in SHIPPED_PRESETS) {
   if (!GFX_VARIANTS[_pm]) continue;
   (SHIPPED_PRESETS[_pm] || []).forEach((p, pi) => {

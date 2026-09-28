@@ -1394,7 +1394,13 @@ function updateVision(p) {
 
   /* 【2026-08-29 ヒデさん指定】no-pin は時間再生。グラフィックが出きった時点(miniAt+miniDur)を起点に、そこからディレイで Point01 → Point02 を1つずつ出す。
      【2026-09-19】Platform 文字・役割名・ドット停止後の処理は図の差し替えで削除 */
-  const C = noPin ? (A < 0 ? -99 : A - (miniAt + c.miniDur)) : (mvT < 0 ? -99 : mvT - c.moveDur);
+  /* 【2026-09-28 ヒデさん依頼「Point 01/02 が出るのにラグがある」「図がブラーで出たら、その後にパッパッと」】
+     原因: 図の出方は easeOutQ(5乗の減速)なので、時計の 45% の時点で見た目はもう濃さ95%(ほぼ出きり)。
+     なのに Point の起点を時計の終わり(miniAt+miniDur)にしていたため、見た目が止まってから約0.55秒(miniDur=1秒の時)
+     「何も起きない間」があった(実測: 図の濃さ95% 1.18秒 → Point 01 の出始め 1.74秒)。
+     起点を「図が見た目で出きった時点」(miniDur×0.45)に変える。グラフィック→ポイント1/2 のつまみ(npP1/npP2)は、そこからの間(秒)のまま */
+  const VIS_GFX_SEEN = 0.45;   /* easeOutQ が 0.95 になる時点(1-(1-t)^5=0.95 → t≈0.451) */
+  const C = noPin ? (A < 0 ? -99 : A - (miniAt + c.miniDur * VIS_GFX_SEEN)) : (mvT < 0 ? -99 : mvT - c.moveDur);
   /* ⚠️【2026-08-27】この横ズレは PC(1440座標系)で位置を合わせるためのもの。スマホは 390 の座標系で CSS 側が左右24pxに収めているので効かせない */
   const offX = isMobile ? 0 : 1;
   const P_IN = (c.npPointDur != null ? c.npPointDur : 0.8);   /* 2026-08-31: ポイントの出現時間(パネル) */

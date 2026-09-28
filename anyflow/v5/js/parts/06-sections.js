@@ -509,6 +509,14 @@ function applyCtaArrow() {
   const isMb = (typeof isMobile !== 'undefined' && isMobile), mb = (params && params.mb) || {}, cv = (params && params.cv) || {};
   const w = isMb ? (mb['cv.ctaArrowW'] != null ? mb['cv.ctaArrowW'] : 2) : (cv.ctaArrowW != null ? cv.ctaArrowW : 2);
   document.documentElement.style.setProperty('--cta-arrow-w', (+w || 2) + 'px');
+  try { applyCtaDir(); } catch (e) {}   /* 【2026-09-28】流れる文字の向きも同じ時に取り直す(起動・スマホ判定後・ライブ同期) */
+}
+/* 【2026-09-28 ヒデさん依頼】お問い合わせボタンの流れる文字の向き(PC/SP別)。ヘッダーの「お問い合わせ」とセクションの「フォームを記入」共通。
+   PC=params.cv.ctaDir / SP=params.mb['cv.ctaDir'](無ければ PC と同じ)。'left'=右から左へ流れる(今までどおり・既定) / 'right'=左から右へ */
+function applyCtaDir() {
+  const isMb = (typeof isMobile !== 'undefined' && isMobile), mb = (params && params.mb) || {}, cv = (params && params.cv) || {};
+  const d = (isMb && mb['cv.ctaDir'] != null) ? mb['cv.ctaDir'] : (cv.ctaDir || 'left');
+  document.documentElement.style.setProperty('--cta-marquee-dir', d === 'right' ? 'reverse' : 'normal');
 }
 applyVpSize();
 /* 【2026-09-21 ヒデさん依頼】背景グリッド(方眼)。params.grid → html.grid-on と CSS変数(--grid-cell/-w/-line)へ。 */
