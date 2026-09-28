@@ -1416,6 +1416,8 @@ export default function TopTunePanel({
                 pills: "流れ方",
                 path: "events.flow",
                 immediate: true,
+                /* ほかの案と同じ「案1」の形に（番号が「1 案1 床をすべる」と二重になっていた・2026-09-28 ヒデさん指摘） */
+                autoNum: "案",
                 /* 重ね写真の案32 だけ（案31 は 2026-09-26 にカードを切る動きになり、
                    下の「切る速さ／メリハリ」で調整する） */
                 when: (p: Params) => p.events.pattern === 32,

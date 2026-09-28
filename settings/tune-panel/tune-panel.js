@@ -19,7 +19,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '2.1.0';
+  var VERSION = '2.1.1';
 
   /* ============================================================
      0. 小道具
@@ -1775,15 +1775,20 @@
       : typeof item.autoNum === 'string' ? { prefix: item.autoNum, style: 'num' }
       : { prefix: item.autoNum.prefix || '', style: item.autoNum.style || 'num' };
     var ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    var plain = function (o) {
+    /* 名前から頭の「案1」「1」などを外した残り（何も残らない時は空） */
+    var rest = function (o) {
       var s = String(o.name);
       if (auto && auto.prefix) s = s.replace(new RegExp('^' + escRe(auto.prefix) + '\\s*[0-9A-Za-z]+\\s*'), '');
-      return s.replace(/^(\d+(?:-\d+)?|[A-Za-z]{1,2}\d{0,2})\s+/, '').trim() || String(o.name);
+      return s.replace(/^(\d+(?:-\d+)?|[A-Za-z]{1,2}\d{0,2})\s+/, '').trim();
     };
+    var plain = function (o) { return rest(o) || String(o.name); };
     var numbered = function (n, o) {
       if (!auto) return plain(o);
       var mark = auto.style === 'alpha' ? (ALPHA[n - 1] || String(n)) : String(n);
-      return auto.prefix ? (auto.prefix + mark + ' ' + plain(o)) : (mark + ' ' + plain(o));
+      var head = auto.prefix ? auto.prefix + mark : mark;
+      var r = rest(o);
+      /* 名前が「案1」だけの時は、番号の後ろに名前をもう一度付けない（「案1 案1」になっていた・2026-09-28 ヒデさん指摘） */
+      return r ? head + ' ' + r : head;
     };
     var mk = function (o, label, target, isFav) {
       var k = String(o.value), on = k === String(ctl.sel());

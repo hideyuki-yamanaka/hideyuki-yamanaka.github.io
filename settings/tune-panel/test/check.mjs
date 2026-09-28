@@ -840,6 +840,18 @@ try {
     await tab(page, '実績');
     const cur = await page.evaluate(() => [...document.querySelectorAll('.tp-item[data-key="res.fx"] .tp-pill:not(.back)')].map(b => b.dataset.label + (b.querySelector('.tp-pill-x') ? '(⋯)' : '')));
     rec('「現行」は先頭・番号なし（⋯ から消せる）', cur[0] === 'フェード(⋯)' && cur[1] === '1 スライド(⋯)' && cur[2] === '2 ズーム(⋯)', cur.join('・'));
+    /* 名前が「案1」だけの案ピルは「案1 案1」と二重にしない（2026-09-28 ヒデさん指摘） */
+    const names = await page.evaluate(() => {
+      const prm = { n: { v: 1 } };
+      const p = TunePanel.create({ params: prm, storageKey: 'tp-names', secret: false, phone: false, position: { left: 700, top: 40 }, size: { w: 300, h: 300 },
+        schema: [{ cat: '名前', items: [{ sub: '見出し' }, { pills: '案', path: 'n.v', autoNum: '案', options: [{ name: '案1', value: 1 }, { name: '案2 ほげ', value: 2 }, { name: '案3', value: 3 }] }] }] });
+      const labels = [...p.el.querySelectorAll('.tp-pill:not(.back)')].map(b => b.dataset.label);
+      const tip = (p.el.querySelector('.tp-pill[data-value="1"]') || {}).title || '';
+      if (p.destroy) p.destroy();
+      return { labels, tip };
+    });
+    rec('名前が「案1」だけの案ピルは「案1 案1」と二重にしない（名前のある案は「案2 ほげ」のまま）', names.labels.join('/') === '案1/案2 ほげ/案3' && /^案1（ID 1）/.test(names.tip),
+      `ピル ${names.labels.join('・')}／吹き出し「${names.tip}」`);
     /* カテゴリの箱の開閉とタブを覚える（リロード後も） */
     await page.click('.tp-pane.on .tp-cs.card[data-grp="basic"] > .tp-cs-head');
     const closed1 = await page.evaluate(() => document.querySelector('.tp-pane.on .tp-cs.card[data-grp="basic"]').classList.contains('closed'));
