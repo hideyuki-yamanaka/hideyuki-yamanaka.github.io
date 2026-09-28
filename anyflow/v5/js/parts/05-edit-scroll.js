@@ -1641,14 +1641,15 @@ function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
 function resFxFlowMode(k) { const c = RES_FX[k] || {}; return !!(c.flow || (isMobile && c.mobileFlow) || (resFxShort() && c.vh)); }
 /* 【2026-09-28】案の動きが出きる進み(RES_FX[k].end)。無い案は 1＝今までどおり固定の最後まで */
-function resFxEnd(k) { const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
+function resFxEnd(k) { if (k === '24-4' && resAfterMode() === 'orig') return 1;   /* 【2026-09-28】当時の作り: 固定の長さを切らない＝出きったあと約100px止まる(本番と同じ) */
+  const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
 /* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・固定のある案)。
    none=出きったらすぐ次へ(今まで) / a=ゆっくり通り過ぎる / b=やわらかく一息つく / c=次との間を空ける / d=スクロールを少し重く / e=画面固定(開発者体験と同じ)。
    a/b/e は実績の高さを足し、貼りつく入れ物(.pin-vp)の top を少しずつ上げる(a/b)ことで「止まらずにゆっくり」「止まってからなめらかに」を作る。
    固定が外れる所で位置がつながるよう、足す高さ＝長さ×(1−F(1))。c は下の余白、d は Lenis のホイール1回の進み(wheelMultiplier) */
-const RES_AFTER_MODES = ['none', 'a', 'b', 'c', 'd', 'e'];
-function resAfterMode() { const m = params.sections.results.afterMode; return (!isMobile && RES_AFTER_MODES.includes(m)) ? m : 'none'; }
-function resAfterLenVh(m) { m = m || resAfterMode(); if (m === 'none') return 0; return Math.max(0, +params.sections.results['afterLen' + m.toUpperCase()] || 0); }
+const RES_AFTER_MODES = ['orig', 'none', 'a', 'b', 'c', 'd', 'e'];   /* orig=【2026-09-28】当時の作り(既定) */
+function resAfterMode() { const m = params.sections.results.afterMode; return isMobile ? 'none' : (RES_AFTER_MODES.includes(m) ? m : 'orig'); }   /* スマホは流れる作りなので関係なし */
+function resAfterLenVh(m) { m = m || resAfterMode(); if (m === 'none' || m === 'orig') return 0; return Math.max(0, +params.sections.results['afterLen' + m.toUpperCase()] || 0); }
 /* 全部出たあと、長さ Z の中で入れ物が上がる量(Z に対する割合)。u=0〜1。速さ＝F'(u)(1=スクロールと同じ) */
 function resAfterF(m, u) {
   const s = Math.max(0.05, Math.min(0.9, +params.sections.results.afterSpeed || 0.35));

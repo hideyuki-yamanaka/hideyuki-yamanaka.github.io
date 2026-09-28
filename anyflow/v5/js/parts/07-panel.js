@@ -1505,13 +1505,17 @@ function buildPanel() {
 
   /* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・案24-4)。
      見せ方のピル＋長さ(案ごとに別の値)＋A の速さ＋D の重さ。効かない行は薄くする(隠すと位置が動くので隠さない)。スマホは流れる作りなので PC だけ(スマホモードでは隠す) */
-  sub(catRes, '全部出たあと（PC）', false, { grp: 'anim' });
-  { const RR = () => sv().results, mode = () => (RR().afterMode || 'none');
+  /* 【2026-09-28 ヒデさん依頼「実績でカクッと止まるのをやめたいと言った当時の作りに戻した案を作って、既定にしてみて」】
+     見せ方に「当時の作り」(orig＝出きったあと約100pxだけ止まってから次へ・本番と同じ)を足して既定に。
+     案を選ぶピルは「バリエーション」、長さ・速さ・重さのつまみは「アニメーション」へ、同じ見出し名で分ける(決まり6-13) */
+  sub(catRes, '全部出たあと（PC）', false, { grp: 'variation' });
+  { const RR = () => sv().results, mode = () => (RR().afterMode || 'orig');
     let syncAfterRows = () => {};
-    optRow('resAfter', '見せ方', [['なし（すぐ次へ）', 'none'], ['A ゆっくり通り過ぎる', 'a'], ['B やわらかく一息つく', 'b'], ['C 次との間を空ける', 'c'], ['D スクロールを少し重く', 'd'], ['E 画面固定', 'e']],
+    optRow('resAfter', '見せ方', [['当時の作り（出きったあと少し止まる）', 'orig'], ['なし（すぐ次へ）', 'none'], ['A ゆっくり通り過ぎる', 'a'], ['B やわらかく一息つく', 'b'], ['C 次との間を空ける', 'c'], ['D スクロールを少し重く', 'd'], ['E 画面固定', 'e']],
       () => mode(), v => { RR().afterMode = v; fit(); syncAfterRows(); });
     const boxAfter = (mount || body).querySelector('.var-box[data-bucket="resAfter"]');
     if (boxAfter) { boxAfter.classList.add('pc-only-row'); if (boxAfter.previousElementSibling) boxAfter.previousElementSibling.classList.add('pc-only-row'); }
+    sub(catRes, '全部出たあと（PC）', false, { grp: 'anim' });
     const lenRow = slider('長さ', 10, 150, 5, () => { const m = mode(); return m === 'none' ? 50 : (+RR()['afterLen' + m.toUpperCase()] || 50); },
       v => { const m = mode(); if (m !== 'none') { RR()['afterLen' + m.toUpperCase()] = v; fit(); } }, v => Math.round(v) + 'vh',
       '全部出たあと、その見せ方を続けるスクロールの長さ(100vh＝1画面分)。見せ方ごとに別の値。C は実績の下に足す余白の高さ。', { fixedMax: true });
@@ -1520,7 +1524,7 @@ function buildPanel() {
     const wtRow = slider('重さ（D）', 0.1, 0.9, 0.05, () => (RR().afterWeight != null ? +RR().afterWeight : 0.35), v => { RR().afterWeight = v; }, v => Math.round(v * 100) + '%',
       'D の時だけ効く。ホイール1回で進む量(100%＝いつもどおり)。小さいほど重い。', { fixedMax: true });
     [lenRow, spRow, wtRow].forEach(r => { r.classList.add('pc-only-row'); rows.push(r); const s0 = r._sync; r._sync = () => { s0(); syncAfterRows(); }; });
-    syncAfterRows = () => { const m = mode(); lenRow.classList.toggle('row-off', m === 'none'); spRow.classList.toggle('row-off', m !== 'a'); wtRow.classList.toggle('row-off', m !== 'd'); };
+    syncAfterRows = () => { const m = mode(); lenRow.classList.toggle('row-off', m === 'none' || m === 'orig'); spRow.classList.toggle('row-off', m !== 'a'); wtRow.classList.toggle('row-off', m !== 'd'); };
     syncAfterRows();
   }
 

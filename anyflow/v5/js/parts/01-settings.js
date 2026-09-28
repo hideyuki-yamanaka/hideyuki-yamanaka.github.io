@@ -750,7 +750,7 @@ const DEFAULTS = {
       /* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・案24-4・パネルで比べる)。
          afterMode: none=出きったらすぐ次へ(今まで) / a=ゆっくり通り過ぎる / b=やわらかく一息つく / c=次との間を空ける / d=スクロールを少し重く / e=画面固定(開発者体験と同じ)
          afterLenA〜E=その見せ方を続ける長さ(vh・案ごと) / afterSpeed=A の速さ(スクロールの何割) / afterWeight=D の重さ(ホイール1回の進み)。値はすべて⚠️仮置き */
-      afterMode: 'none', afterLenA: 60, afterLenB: 60, afterLenC: 50, afterLenD: 80, afterLenE: 50, afterSpeed: 0.35, afterWeight: 0.35,
+      afterMode: 'orig', afterLenA: 60,   /* 【2026-09-28 ヒデさん依頼「実績でカクッと止まるのをやめたいと言った当時の作りに戻した案を作って、既定に」】orig=当時の作り(出きったあと約100pxだけ止まる・本番と同じ) */ afterLenB: 60, afterLenC: 50, afterLenD: 80, afterLenE: 50, afterSpeed: 0.35, afterWeight: 0.35,
                          /* ⚠️ 回転中のぼかしは 2026-08-17 に「要らない」で確定。
                             パラメータごと削除したので、復活させる時は renderSlots にも戻すこと */
     },

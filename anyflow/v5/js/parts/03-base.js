@@ -143,6 +143,16 @@ try {
     localStorage.setItem('anyflow-slotdur-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「実績でカクッと止まるのをやめたいと言った当時の作りに戻した案を作って、既定にしてみて」】
+   全部出たあとの見せ方(sections.results.afterMode)を「当時の作り(orig)」に。パネルで A〜E などを試していたブラウザも、1回だけ orig に入れ替える。印 anyflow-resafter-orig-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-resafter-orig-20260928')) {
+    if (params.sections && params.sections.results) params.sections.results.afterMode = 'orig';
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (_o && _o.sections && _o.sections.results) { _o.sections.results.afterMode = 'orig'; localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); } }
+    localStorage.setItem('anyflow-resafter-orig-20260928', '1');
+  }
+} catch (e) {}
 /* 【2026-09-28 ヒデさん依頼「キービジュアルのタイピングをもう少しだけ、ちょっと早めに」】打ち始め(kv.typeAt)を 0.65→0.40秒後に(焼き込み・既定)。
    保存値に前の値(0.65)が残っているブラウザ(ローカルのヒデさんの画面も)は勝ってしまうので、1回だけ 0.40 へ入れ替える。
    前の値と違う値(パネルで自分で変えた値)は触らない。スマホの上書き(mb['kv.typeAt'])も同じ扱い。印 anyflow-kv-typeat-20260928 */
