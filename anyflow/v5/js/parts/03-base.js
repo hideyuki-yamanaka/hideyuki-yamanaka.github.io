@@ -148,6 +148,31 @@ try {
     localStorage.setItem('anyflow-kv-center-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 21:00 焼き込み】4と8の倍数への寄せ(決まり4-13)は焼き込みにだけ入っていて、ブラウザの保存値は寄せる前のまま
+   → 書き出すたびに元の値に戻っていた。保存値が寄せる前の値のままの所だけ1回寄せる(自分で変えた値は触らない)。印 anyflow-snap48-20260928
+   キービジュアルのコピーの間隔 42→40(ノーマル)・ロゴの帯の間隔 54→56・開発者体験モックの枠の高さ 42→40・メニューの左の余白 130→128・
+   強調案のサブの前の線 14→16 */
+try {
+  if (!localStorage.getItem('anyflow-snap48-20260928')) {
+    const one = (o, k, from, to) => { if (o && o[k] === from) { o[k] = to; return true; } return false; };
+    const fixS = o => { if (!o) return false; let ch = false;
+      if (!o.kvVar || o.kvVar === 'normal') ch = one(o.kv, 'copyGap', 42, 40) || ch;
+      ch = one(o.marquee, 'gap', 54, 56) || ch;
+      ch = one(o.sections && o.sections.dev, 'slotBoxH', 42, 40) || ch;
+      ch = one(o.drawer, 'padL', 130, 128) || ch;
+      return ch; };
+    const fixOv = ov => { if (!ov || !ov.kvVar) return false; let ch = false;
+      ch = one(ov.kvVar.normal && ov.kvVar.normal.kv, 'copyGap', 42, 40) || ch;
+      ch = one(ov.kvVar.strong && ov.kvVar.strong.kv, 'eyebrowDashW', 14, 16) || ch;
+      return ch; };
+    fixS(params); fixOv(params.gfxVarOverride);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fixS(_o) | fixOv(_o.gfxVarOverride)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    const _rawP = localStorage.getItem(PRESET_KEY);
+    if (_rawP) { const _o = JSON.parse(_rawP); if (fixOv(_o.over)) localStorage.setItem(PRESET_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-snap48-20260928', '1');
+  }
+} catch (e) {}
 /* 【2026-09-28 ヒデさん依頼「導入事例の下の余白を削って、グラデが3・4枚目にうっすら掛かるか掛からないかの距離に」】
    導入事例との間隔(PC) 60→−20px(焼き込みも同じ)。保存値が前の値(60)のままの所だけ1回入れ替える(自分で変えた値は触らない)。印 anyflow-cvgap-20260928 */
 try {
