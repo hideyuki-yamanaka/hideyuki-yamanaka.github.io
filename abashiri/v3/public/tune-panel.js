@@ -204,7 +204,7 @@
     /* ── 見出しの帯（タブと同じ白の不透明地。つかんで移動・押して開閉） ── */
     '.tp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 12px;cursor:grab;user-select:none;-webkit-user-select:none;flex:0 0 auto;}',
     '.tp-head:active{cursor:grabbing;}',
-    '.tp-title{font-size:16px;font-weight:700;letter-spacing:.02em;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}',
+    '.tp-title{font-size:18px;font-weight:700;letter-spacing:.02em;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}',
     '.tp-head-sub{font-size:10px;color:#999;margin-left:8px;font-weight:300;letter-spacing:0;}',
     '.tp:not(.closed) .tp-head-sub{display:none;}',
     '.tp-head-btns{margin-left:auto;margin-right:10px;display:flex;gap:6px;align-items:center;flex:0 0 auto;}',

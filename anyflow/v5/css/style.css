@@ -3198,7 +3198,7 @@
      パネルの文字の決まり(段ごとに1つだけ。書体は全部 Noto Sans JP＝入力欄とタブも):
        1 案の大見出し 16/600/黒 ／ 2 カテゴリ 14/600/#111 ／ 3 見出し 12/500/#222 ／ 4 小見出し 11/500/#666 ／
        5 いちばん下の段 10/300 … つまみの名前・小さな名前(size・weight・lh・ls)・★ピン留めは #888、数値・入力欄は #444。ピル・2〜3択・チップの文字も 10/300(2026-09-29 決定で 11→10px)
-       ほか: パネルの題名 16/700 ／ タブ 12/500(選んでいるタブ 700) ／ ボタン 12/400 ／ 注意書き 10/300/#888
+       ほか: パネルの題名 18/700/黒(いちばん上) ／ タブ 12/500(選んでいるタブ 700) ／ ボタン 12/400 ／ 注意書き 10/300/#888
      横の間は 4px(小さな名前と欄)・8px(それ以外の並び) だけ。⚠️値は仮置き */
   .cat-body.prox .row .val { font-weight: 300; }
   .cat-body.prox .row { gap: 8px; }
@@ -3217,7 +3217,7 @@
   .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select, .cat-body.prox .hexin, .cat-body.prox .txt-row input.txt-n { color: #444; }   /* 文字の行の数字の欄は「自動」の印(is-auto)で色が戻っていたので、強めに指定 */
   .tools .panel .var-pill, .tools .panel .seg button, .tools .panel .chip-b { font-size: 10px; font-weight: 300; }   /* ピル・2〜3択・チップ(いちばん下の段と同じ 10/300) */
   .tools .panel .var-favhead { font-size: 10px; font-weight: 300; color: #888; }
-  .tools .panel .panel-head-title { font-size: 16px; font-weight: 700; }   /* 旧 15px */
+  .tools .panel .panel-head-title { font-size: 18px; font-weight: 700; color: #000; }   /* パネルの題名はいちばん上の段: 18/700/黒(タブの中のいちばん上 16/600 より大きく濃く。2026-09-29 夜 ヒデさん「調整パネルという見出しがいちばん上位の概念」・旧 15px→16px) */
   .tools .panel .pan-tab { font-family: inherit; font-size: 12px; }   /* 旧 12.5px・Arial */
   .tools .panel .panel-edit-btn, .tools .panel .btns button { font-size: 12px; font-weight: 400; }   /* ボタンは 12/400 にそろえる(上の 📱・✏️ は旧 11px) */
   .tools .panel .grp-note.keep { font-size: 10px; font-weight: 300; color: #888; }   /* 注意書き(旧 8.5px) */
