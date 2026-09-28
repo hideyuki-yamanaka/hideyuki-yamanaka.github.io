@@ -10,7 +10,7 @@ const dsEls = {
 const DS_WORDS = ['CLI', 'SDK', 'API'], DS_SCREENS = ['cli', 'sdk', 'api'];
 const DS_WH = 34;
 /* 【2026-09-02】箱の幅はJSがインライン指定するのでCSSでは縮められない→ここで画面幅分岐 */
-const dsBoxW = () => (window.innerWidth <= 780 ? 76 : 112);
+const dsBoxW = () => (window.innerWidth <= MOBILE_MAX ? 76 : 112);   /* 【2026-09-28 ヒデさん依頼】旧 <=780 は 9/9 にスマホの境目を 780→600 に下げた時の取り残しで、601〜780幅は PC と同じ文字の大きさなのに箱だけスマホ用(76)で窮屈だった→スマホ(≤600)だけ 76 */
 function dsSnapEase(t, k) { return Math.pow(clamp01(t), k); }
 let dsStaticFilled = false;
 function dsFillStaticAll() {

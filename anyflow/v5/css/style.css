@@ -1461,6 +1461,9 @@
     line-height: var(--lh-heading);
     letter-spacing: 0;
   }
+  /* 【2026-09-28 ヒデさん依頼「速」の1文字落ち・案B】意味のかたまり(.dc-ph)の中では改行しない。
+     1行に入らない時だけ「自動生成で／開発スピードを加速」で折り返す(「速」「加速」だけが落ちる・「スピ／ード」と割れるのを防ぐ) */
+  .dc-one .dc-ph { display: inline-block; }
   /* 【2026-08-29 ヒデさん指定】テキストスライド案の見出しの箱(CLI/SDK/API)。
      既定(list案・slide発火前)は width:0 で隠れ、「開発環境に柔軟に適応」と連続表示になる。 */
   .dc-one .ds-w { display: inline; }
@@ -2252,16 +2255,25 @@
     .nav-links { gap: var(--space-20); }
     .nav-links a { font-size: var(--fs-base); }
     .cta { font-size: var(--fs-body); }   /* タブレット：マーキー化に伴い基本サイズは維持 */
-    .headline { left: 32px; }
+    /* 【2026-09-28 ヒデさん判断で削除】.headline { left: 32px; } … KVコピーは「左端をヘッダーロゴの左端にそろえる」作り(9/17・--kv-copy-base)なのに、
+       この幅だけ 32px で上書きしてロゴより 26〜33px 左にずれていた。外して PC・601〜780幅と同じ位置(ロゴの左端)に */
     .hl-eyebrow { font-size: var(--fs-base); }
     /* 2026-09-15: 中央揃えにしたので左アンカーの上書きは外す(左右 0 のまま中央) */
     .vis-label { left: 0; right: 0; }
     .vis-line { left: 0; right: 0; }
-    .val-point p { font-size: var(--fs-base); line-height: 1.5; }
     .cg-quote { font-size: var(--fs-base); }
-    .cg-tag { font-size: var(--fs-body); }
-    .dev-block { padding: var(--space-72) var(--space-32); }
+    .dev-block { padding-top: var(--space-72); padding-bottom: var(--space-72); }   /* 左右の 32px は下の 601〜1100幅へ(2026-09-28) */
     .dl-head span { font-size: var(--fs-base); }
+  }
+  /* 【2026-09-28 ヒデさん依頼】601〜780幅は上のタブレット用(781〜)が当たらず PC 用のままだった(9/9 にスマホの境目を 780→600 に下げた時の取り残し)。
+     ヒデさん判断で次の3つは 601〜1100幅(タブレット全体)で同じにする＝iPad mini(744幅)とふつうの iPad(820幅)で見た目がそろう。
+     ・開発者体験の左右の余白 32px(「速」の1文字落ち・案B。上下は 601〜780幅は 88px のまま)
+     ・ビジョンの Point の本文 16px/1.5(旧: 601〜780幅だけ PC と同じ 14px)
+     ・導入事例カードのタグ 14px(旧: 601〜780幅だけ PC と同じ 10px) */
+  @media (min-width: 601px) and (max-width: 1100px) {   /* 4-7例外（画面幅の境目） */
+    .dev-block { padding-left: var(--space-32); padding-right: var(--space-32); }
+    .val-point p { font-size: var(--fs-base); line-height: 1.5; }
+    .cg-tag { font-size: var(--fs-body); }
   }
 
   @media (max-width: 600px) {   /* 【2026-09-09】スマホ層の境界 780→600(JS MOBILE_MAX と一致)。601〜はデスクトップ層へ。※390×780 は設計フレームで別物 */

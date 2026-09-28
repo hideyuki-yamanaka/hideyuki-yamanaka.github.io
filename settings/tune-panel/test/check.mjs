@@ -63,9 +63,12 @@ async function showPanel(page) {
   const vp = page.viewportSize();
   await page.mouse.click(vp.width - 6, vp.height - 6);
   await page.waitForTimeout(250);
+  /* 書体（Noto Sans JP）はパネルを初めて出した時に読み込む。読み終わってから測る（途中だと文字の高さが1px変わる） */
+  await page.evaluate(() => document.fonts.ready).catch(() => {});
+  await page.waitForTimeout(60);
 }
 const P = 'TunePanel.instances[0]';
-async function tab(page, name) { await page.click(`.tp-tab[data-tab="${name}"]`); await page.waitForTimeout(120); }
+async function tab(page, name) { await page.click(`.tp-tab[data-tab="${name}"]`); await page.waitForTimeout(120); await page.evaluate(() => document.fonts.ready).catch(() => {}); }   /* 新しいタブの文字の太さ（書体）を読み終わってから測る */
 async function val(page, key) { return page.evaluate(([k]) => TunePanel.instances[0].value(k), [key]); }
 async function pc(page, p) { return page.evaluate(([pp]) => TunePanel.utils.getPath(TunePanel.instances[0].params, pp), [p]); }
 async function sig(page) { return page.evaluate(() => window.__demoSig()); }
@@ -149,7 +152,7 @@ try {
 
     const foot = await page.evaluate(() => ({ btns: [...document.querySelectorAll('.tp-btns button')].map(b => b.textContent), note: document.querySelector('.tp-savenote').textContent, primaryBg: getComputedStyle(document.querySelector('.tp-btns button.primary')).backgroundColor }));
     const NOTE = '調整は自動でこのブラウザに保存されます（リロード・ブラウザを閉じてもOK）。本番サイトに反映したい時は「設定書き出し」を押して、出てきたファイルをClaudeに渡してください。';
-    rec('下のボタン3つと注意書き（文言そのまま）', foot.btns.join('/') === 'デフォルトに設定/設定書き出し/バリエーション削除' && foot.note === NOTE && foot.primaryBg === 'rgb(9, 9, 9)',
+    rec('下のボタン3つと注意書き（文言そのまま）', foot.btns.join('/') === 'デフォルトに設定/設定書き出し/バリエーション削除' && foot.note === NOTE && foot.primaryBg === 'rgb(0, 0, 0)',
       `ボタン「${foot.btns.join('」「')}」・1つ目の地 ${foot.primaryBg}・注意書き ${foot.note === NOTE ? '一致' : '不一致:' + foot.note}`);
 
     /* 設定書き出し（JSON のダウンロード）とバリエーション削除（コピー） */
@@ -821,15 +824,17 @@ try {
       return {
         rowsWithRst: rows.filter(r => r.querySelector('.tp-rst')).length, rows: rows.length,
         gapSegToSlider: cs(xItem).marginTop, gapSliderToSlider: cs(yItem).marginTop, gapFirst: cs(segItem).marginTop,
+        gapPills: cs(q('.tp-item[data-key="kv.variant"] .tp-pills:not(.tp-favrow)')).marginTop,
         h2: cs(h2).fontSize + '/' + cs(h2).fontWeight, varHead: varHead.textContent + '|' + cs(q('.tp-pane.on .tp-cs.var')).backgroundColor,
         hintsShown: [...document.querySelectorAll('.tp-hint,.tp-note')].filter(e => e.offsetParent).length, labTitle: lab.title,
         pillTitle: pill.title, desc: !!q('.tp-desc'), segOn: cs(segOn).backgroundColor,
         tools: document.querySelectorAll('.tp-item-tools,[draggable="true"]').length, emoji: [...document.querySelectorAll('.tp-tab,.tp-cs-head,.tp-sec-head span:first-child')].filter(e => /\p{Extended_Pictographic}/u.test(e.textContent)).length
       };
     });
-    rec('1行の形（全部の行に↺）・違う種類の前は9px・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '9px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
-      `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
-    rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(9, 9, 9)',
+    /* 2026-09-28：AnyFlow V5 と実測で突き合わせ、9px あけるのは「ピルの列の前」だけに（つまみ・2〜3択の行どうしは詰める） */
+    rec('1行の形（全部の行に↺）・ピルの列の前だけ9px（行どうしは詰める）・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '0px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.gapPills === '9px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
+      `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・ピルの列の前 ${d.gapPills}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
+    rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(0, 0, 0)',
       `画面に出ている補足文 ${d.hintsShown}・項目名の吹き出し「${d.labTitle}」・ピルの吹き出し「${d.pillTitle}」・2〜3択の選択色 ${d.segOn}・項目の削除/並び替えの道具 ${d.tools}`);
     await tab(page, '実績');
     const cur = await page.evaluate(() => [...document.querySelectorAll('.tp-item[data-key="res.fx"] .tp-pill:not(.back)')].map(b => b.dataset.label + (b.querySelector('.tp-pill-x') ? '(⋯)' : '')));

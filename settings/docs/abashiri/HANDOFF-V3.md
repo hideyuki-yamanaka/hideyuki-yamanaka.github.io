@@ -107,7 +107,7 @@ V3 の中身:
 - 横並びはフッターの幅が1200px以上の時だけ
 
 **調整パネル**
-- AnyFlow と同じ見た目・仕様（共通部品 v2.0.0）
+- AnyFlow と同じ見た目・仕様（共通部品 v2.1.0。2026-09-28 に書体・大きさ・上下の間も AnyFlow と実測で一致させた）
 - 値は案ごと×PC/スマホごとに独立。スマホの値はスマホモードの上書き（青い印）で持つ
 - 詳細ページの「パソコン／スマホ」のつまみは1本にまとめた
 - 項目は画面の上から下の順。数値は一般的な単位と用語。スライダーは今の値が真ん中
@@ -183,7 +183,7 @@ V3 の中身:
 - 調整パネル：public/tune-panel.js（共通部品 v2.0.0 のコピー）。トップは TopTunePanel.tsx、詳細は SpotDetailPage.tsx
   - 案ピルと同じ見出しの中のつまみは案ごと。見出しより前のピルならタブ全体が案ごと
   - 文字サイズのつまみには grid:'fontSize'
-  - 共通部品は見分け方が直ったので、次に入れ替える時は最新の settings/tune-panel/tune-panel.js を入れる（急ぎではない）
+  - 2026-09-28 に最新の共通部品（v2.1.0）を入れた。共通部品（settings/tune-panel/tune-panel.js）を直したら、網走へは cp で同じファイルにする（本体の自動検査 `node settings/tune-panel/test/check.mjs` を通してから）
 - スマホモードの QR・実機への反映は public/phone-mode.client.js＋components/phoneMode.ts。中継サーバーは使う時だけ：
   `cd settings/tune-panel/phone-mode && (test -d node_modules || npm install) && PAGE_PORT=3095 SYNC_PORT=8780 node server.mjs`
 - 画面の検査は design-gallery の Playwright（swiftshader）を借りる。スクロールの「1回のはじき」は、ページの中から 16ms 間隔で WheelEvent を送る（mouse.wheel は間隔が空きすぎる）
