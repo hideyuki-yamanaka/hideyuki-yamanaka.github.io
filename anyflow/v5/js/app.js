@@ -2308,6 +2308,7 @@ function applyCvfGlass() {
   set('--cvf-blur', g.blur != null ? g.blur : 20, 'px');
   set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
   set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
+  set('--cvf-in-blur', g.inBlur != null ? g.inBlur : 0, 'px'); sec.classList.toggle('cvf-inblur', (+g.inBlur || 0) > 0);   /* 【2026-09-28 夜】入力欄の背景ぼかし(0=付けない) */
   set('--cvf-ph-a', g.phA != null ? g.phA : 0.32, '');
   set('--cvf-r', g.radius != null ? g.radius : 20, 'px');     /* 2026-09-18: フォームの角丸 */
   set('--cvf-in-r', g.inR != null ? g.inR : 10, 'px');       /* 2026-09-18: 入力欄の角丸 */
@@ -2735,7 +2736,7 @@ void main(){
   }
   /* 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。型ごとに動きの性格を変える。
      どの型も「ゆらゆらの大きさ」(uSwayDeg)と「周期」(uSwaySec)で強さ・速さを調整できる */
-  if (uSwayDeg > 0.001) {
+  if (abs(uSwayDeg) > 0.001) {   /* 【2026-09-28 夜 ヒデさん依頼】マイナスも受ける(マイナス＝傾き始める向きが逆) */
     float ph = uTime * 6.2832 / max(2.0, uSwaySec);
     vec2 pv = mix(vec2(0.5), uGC, clamp(uSwayPivot, 0.0, 1.0));   /* 揺らぎの軸: 画面中心 ↔ 白い光の中心(案4) */
     vec2 d = uvW - pv;
@@ -13546,9 +13547,10 @@ function buildPanel() {
     fl('右へ伝わる遅れ', 'flowLag', 0, 1, 0.05, 0.3, v => Math.round(v * 100) + '%', 'ピンクが動いてから、青・水色が動くまでの遅れ(1往復のうちの割合)。0%でそろって動く。', () => fm() === 6 || fm() === 8);
     fl('押し寄せる時間', 'flowRise', 0.1, 0.9, 0.05, 0.3, v => Math.round(v * 100) + '%', '1往復のうち、押し寄せる(ピンクがふくらむ)側にかける時間の割合。小さいほど速く押し寄せて、ゆっくり戻る。', () => fm() === 8);
     subgroup('ゆらゆら', () => {
-      const r1 = slider('大きさ', 0, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; markDirty(); try { syncPanelRows(); } catch (e) {} }, v => v.toFixed(1) + '°', 'グラデ全体がゆっくり左右に傾く大きさ。0で止まる。', { mbKey: 'cv.swayDeg', fixedMax: true }); rows.push(r1);
-      const r2 = slider('周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; markDirty(); }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。', { mbKey: 'cv.swaySec', fixedMax: true }); rows.push(r2);
-      showWhen(r2, () => +(cvv().swayDeg || 0) > 0);
+      /* 【2026-09-28 夜 ヒデさん依頼「マイナスの方向に変えようとしたらインジケーターが消えてしまう。マイナスの方向にも動かせるように」】
+         大きさは −14〜+14°(マイナス＝傾き始める向きが逆)。0 を通った時に下の「周期」が消えて戸惑うので、周期は出したままにする */
+      const r1 = slider('大きさ', -14, 14, 0.5, () => (cvv().swayDeg != null ? cvv().swayDeg : 5), v => { cvv().swayDeg = v; markDirty(); }, v => (v > 0 ? '+' : '') + v.toFixed(1) + '°', 'グラデ全体がゆっくり左右に傾く大きさ。0で止まる。マイナスにすると傾き始める向きが逆になる。', { mbKey: 'cv.swayDeg', fixedMax: true, signed: true }); rows.push(r1);
+      const r2 = slider('周期', 6, 90, 1, () => (cvv().swaySec != null ? cvv().swaySec : 26), v => { cvv().swaySec = v; markDirty(); }, v => Math.round(v) + '秒', '1往復の時間。長いほどゆったり。大きさが0の時は止まっているので効かない。', { mbKey: 'cv.swaySec', fixedMax: true }); rows.push(r2);
     });
   }
   /* 【2026-09-21 ヒデさん依頼】お問い合わせ背景グラデの「ウェーブ」調整(速さ/強さ/うねり)。エフェクト節に格納。値はシェーダのuniformで毎フレーム反映 */
@@ -13560,8 +13562,18 @@ function buildPanel() {
   /* 【2026-09-21 ヒデさん依頼】フォームの磨りガラス(バックドロップ・ぼかし/彩度)は「エフェクト」節へ */
   sub(catCv, 'フォーム（磨りガラス）', null, { fixed: true, grp: 'fxtex' });
   const _cg = () => (params.cvfGlass = params.cvfGlass || {});
-  rows.push(slider('ぼかし（バックドロップ）', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 20), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'フォームの磨りガラスのぼかし量(backdrop-filter)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
-  rows.push(slider('彩度', 1, 2.2, 0.05, () => (_cg().sat != null ? _cg().sat : 1.5), v => { _cg().sat = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(2), 'フォームの磨りガラスの彩度。上げると背景の色が残ります。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
+  /* 【2026-09-28 夜 ヒデさん依頼「入力欄の不透明度・フォームの箱・入力欄のぼかし・背景ぼかしを変えられるように」】
+     透け方のつまみをここ(エフェクト)に集めて、カード/入力欄で分けた(6-13: 不透明度・ぼかしはエフェクト)。
+     カードの不透明度(旧「色の透過率」)と入力欄の不透明度(旧「白さ」)は 基本 › フォーム（カード）から引っ越し(値の住み家は同じ・入口は1つ)。入力欄の背景ぼかしは新規 */
+  subgroup('カード', () => {
+    rows.push(slider('不透明度', 0, 1, 0.02, () => (_cg().bgA != null ? _cg().bgA : 0.5), v => { _cg().bgA = v; applyCvfGlass(); markDirty(); }, v => Math.round(v * 100) + '%', 'フォームのカード(箱)の色の濃さ。下げるほど後ろのグラデが透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
+    rows.push(slider('背景ぼかし', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 20), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'カードの後ろに透けて見えるグラデのぼかし量(Figma の背景ぼかし)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
+    rows.push(slider('彩度', 1, 2.2, 0.05, () => (_cg().sat != null ? _cg().sat : 1.5), v => { _cg().sat = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(2), 'カードの後ろに透けて見える色の鮮やかさ。上げると背景の色が残ります。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
+  });
+  subgroup('入力欄', () => {
+    rows.push(slider('不透明度', 0, 1, 0.02, () => (_cg().inA != null ? _cg().inA : 0.56), v => { _cg().inA = v; applyCvfGlass(); markDirty(); }, v => Math.round(v * 100) + '%', '入力欄の白い地の濃さ。下げるほどカードが透けます(入力した文字はそのまま)。', { mbKey: 'cvfGlass.inA', fixedMax: true }));
+    rows.push(slider('背景ぼかし', 0, 24, 1, () => (_cg().inBlur != null ? _cg().inBlur : 0), v => { _cg().inBlur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', '入力欄の後ろに透けて見える物のぼかし量。0で付けない(今まで)。不透明度を下げた時によく効きます。', { mbKey: 'cvfGlass.inBlur', fixedMax: true }));
+  });
   /* 【2026-09-16 ヒデさん確定】お問い合わせは「フッター一体型・溶け込む」(ID10)で確定。
      案を選ぶ項目はパネルから削除し、既定値として固定した。
      ⚠️ CV_STYLES の他の案(0/11/12/13)の定義と CSS は残してあるので、
@@ -13589,18 +13601,16 @@ function buildPanel() {
       });
       /* 【2026-09-18 ヒデさん指定】「フォーム裏の明るさ上限」は見た目が想像と違うため取り下げ(既定 100%=効かない)。代わりに上の「流れ・ゆらゆら」の白い光の案(7〜9)で対応 */
       rows.push(slider('角丸', 0, 48, 1, () => (_g().radius != null ? _g().radius : 20), v => { _g().radius = v; applyCvfGlass(); }, v => Math.round(v) + 'px', 'フォームのカード全体の角の丸さ。', { mbKey: 'cvfGlass.radius', fixedMax: true }));
-      rows.push(slider('色の透過率', 0, 0.9, 0.02, () => (_g().bgA != null ? _g().bgA : 0.5), v => { _g().bgA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', 'フォームカードの色の濃さ(透過率)。下げるほど背景が透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
-      colorRow('色', () => (_g().bgColor || '#ffffff'), v => { _g().bgColor = v; applyCvfGlass(); markDirty(); }, 'フォームカードの色そのもの。既定は白。透過率は上のつまみで。');   /* 【2026-09-21 ヒデさん依頼】色自体を変えられるように */
+      /* 【2026-09-28 夜】「色の透過率」はエフェクト › フォーム（磨りガラス）› カード › 不透明度 へ引っ越し */
+      colorRow('色', () => (_g().bgColor || '#ffffff'), v => { _g().bgColor = v; applyCvfGlass(); markDirty(); }, 'フォームカードの色そのもの。既定は白。濃さはエフェクト › フォーム（磨りガラス）› カード › 不透明度 で。');   /* 【2026-09-21 ヒデさん依頼】色自体を変えられるように */
       /* 【2026-09-27 ヒデさん依頼】見出しとくり返す言い方をやめ、同じ言葉で始まる項目は小見出しにまとめる(フォーム＝カード本体→枠線→入力欄→入力欄の枠線→プレースホルダー) */
       subgroup('枠線', () => {
       optRow('cvfCardBorder', '色', [['白系', 'w'], ['黒系', 'k']], () => (_g().bDark ? 'k' : 'w'), v => { _g().bDark = v === 'k'; applyCvfGlass(); });
       rows.push(slider('太さ', 0, 4, 0.5, () => (_g().bw != null ? _g().bw : 1), v => { _g().bw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', 'フォームのカードの外枠の線の太さ。0で線なし。', { mbKey: 'cvfGlass.bw', fixedMax: true }));
       rows.push(slider('濃さ', 0, 1, 0.02, () => (_g().ba != null ? _g().ba : 0.66), v => { _g().ba = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '外枠の線の不透明度。', { mbKey: 'cvfGlass.ba', fixedMax: true }));
       });
-      subgroup('入力欄', () => {
-      rows.push(slider('角丸', 0, 30, 1, () => (_g().inR != null ? _g().inR : 10), v => { _g().inR = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '入力欄・セレクトの角の丸さ。', { mbKey: 'cvfGlass.inR', fixedMax: true }));
-      rows.push(slider('白さ', 0, 0.9, 0.02, () => (_g().inA != null ? _g().inA : 0.56), v => { _g().inA = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '入力欄の地色の白さ。', { mbKey: 'cvfGlass.inA', fixedMax: true }));
-      });
+      /* 【2026-09-28 夜】入力欄の「白さ」はエフェクト › フォーム（磨りガラス）› 入力欄 › 不透明度 へ引っ越し。残る1つだけなので小見出しをやめた */
+      rows.push(slider('入力欄の角丸', 0, 30, 1, () => (_g().inR != null ? _g().inR : 10), v => { _g().inR = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '入力欄・セレクトの角の丸さ。', { mbKey: 'cvfGlass.inR', fixedMax: true }));
       subgroup('入力欄の枠線', () => {
       optRow('cvfInBorder', '色', [['白系', 'w'], ['黒系', 'k']], () => (_g().inBDark ? 'k' : 'w'), v => { _g().inBDark = v === 'k'; applyCvfGlass(); });
       rows.push(slider('太さ', 0, 4, 0.5, () => (_g().inBw != null ? _g().inBw : 1), v => { _g().inBw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', '入力欄・セレクトの枠線の太さ。0で線なし。', { mbKey: 'cvfGlass.inBw', fixedMax: true }));

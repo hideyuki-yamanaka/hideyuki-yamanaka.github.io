@@ -1224,6 +1224,7 @@ function applyCvfGlass() {
   set('--cvf-blur', g.blur != null ? g.blur : 20, 'px');
   set('--cvf-sat', g.sat != null ? g.sat : 1.5, '');
   set('--cvf-in-a', g.inA != null ? g.inA : 0.56, '');
+  set('--cvf-in-blur', g.inBlur != null ? g.inBlur : 0, 'px'); sec.classList.toggle('cvf-inblur', (+g.inBlur || 0) > 0);   /* 【2026-09-28 夜】入力欄の背景ぼかし(0=付けない) */
   set('--cvf-ph-a', g.phA != null ? g.phA : 0.32, '');
   set('--cvf-r', g.radius != null ? g.radius : 20, 'px');     /* 2026-09-18: フォームの角丸 */
   set('--cvf-in-r', g.inR != null ? g.inR : 10, 'px');       /* 2026-09-18: 入力欄の角丸 */
@@ -1651,7 +1652,7 @@ void main(){
   }
   /* 【2026-09-15 ヒデさん依頼】揺らぎのパターン(案)。型ごとに動きの性格を変える。
      どの型も「ゆらゆらの大きさ」(uSwayDeg)と「周期」(uSwaySec)で強さ・速さを調整できる */
-  if (uSwayDeg > 0.001) {
+  if (abs(uSwayDeg) > 0.001) {   /* 【2026-09-28 夜 ヒデさん依頼】マイナスも受ける(マイナス＝傾き始める向きが逆) */
     float ph = uTime * 6.2832 / max(2.0, uSwaySec);
     vec2 pv = mix(vec2(0.5), uGC, clamp(uSwayPivot, 0.0, 1.0));   /* 揺らぎの軸: 画面中心 ↔ 白い光の中心(案4) */
     vec2 d = uvW - pv;
