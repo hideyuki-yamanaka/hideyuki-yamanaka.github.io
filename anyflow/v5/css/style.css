@@ -3134,11 +3134,11 @@
      つまみの行の高さは 16px に詰める(↺ ボタン 16px・つまみの棒 4px・丸 10px) */
   .panel-body.tabbed > .cat > .cat-body.prox { display: flex; flex-direction: column; gap: 32px; }   /* タブの中のいちばん外側: カード同士・案の大見出し同士は 32px(案の大見出しの間は、さらに区切り線) */
   .cat-body.prox > .cat-section { margin: 0; }
-  .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 24px; }                 /* 案のまとまり同士・案とカードの間 */
-  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 8px 0 0; }                          /* カード同士は 24+8＝32px */
+  .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 16px; }                 /* 案のまとまり同士・案とカードの間(【2026-09-29 ヒデさん「見出し同士はもう少し詰めて」】24→16px) */
+  .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 16px 0 0; }                         /* カード同士は 16+16＝32px(いちばん大きい余白のまま) */
   .cat-body.prox .cat-section:not(.cs-variation) { padding: 0 12px 16px; }
   .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head { padding: 12px 2px 12px; }
-  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 24px; padding: 0; }   /* 見出しのまとまり同士 */
+  .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 16px; padding: 0; }   /* 見出しのまとまり同士(24→16px・カテゴリ同士の 32px より狭く) */
   .cat-body.prox .grp, .cat-body.prox .grp.fixed, .cat-body.prox .grp.bare, .cat-body.prox .grp.sub2 { margin: 0; }
   .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title,
   .cat-body.prox .cat-section-body > .grp:first-child > .grp-title { margin: 0 0 8px; }        /* 見出しとつまみ */
@@ -3153,13 +3153,13 @@
   .cat-body.prox .row input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: #090909; }
   .cat-body.prox .row input[type=range]::-moz-range-thumb { width: 10px; height: 10px; border: 0; border-radius: 50%; background: #090909; }
   .cat-body.prox .sw-row { margin: 0; }
-  .cat-body.prox .cv-subg { display: flex; flex-direction: column; gap: 0; margin: 16px 0 0; }   /* 小見出しのまとまりの上は 16px */
-  .cat-body.prox .grp-body > .grp { margin: 16px 0 0; }   /* 見出しの中に入れ子の見出しがある時も、小見出しのまとまりと同じ扱い */
+  .cat-body.prox .cv-subg { display: flex; flex-direction: column; gap: 0; margin: 12px 0 0; }   /* 小見出しのまとまりの上は 12px(見出し同士の 16px より狭く) */
+  .cat-body.prox .grp-body > .grp { margin: 12px 0 0; }   /* 見出しの中に入れ子の見出しがある時も、小見出しのまとまりと同じ扱い */
   .cat-body.prox .grp-body > .grp.bare:not(.pab) { margin-top: 0; }   /* 見出しを出さない入れ物(bare)は透明な箱＝自分では余白を足さない(中身の余白だけ効かせる) */
   .cat-body.prox .grp-body > .pav { margin-top: 8px; }    /* 案のピルのすぐ下のつまみは 8px(見出しとつまみと同じ・ピルとつまみがくっつかないように) */
-  .cat-body.prox .grp-body > .pab { margin-top: 16px; }   /* まとまりのすぐ後ろも 16px(後ろのつまみが仲間に見えないように)。まとまり同士も 16px(旧 16+16＝32px は見出し同士の 24px より遠い逆転だった) */
+  .cat-body.prox .grp-body > .pab { margin-top: 12px; }   /* まとまりのすぐ後ろも 16px(後ろのつまみが仲間に見えないように)。まとまり同士も 16px(旧 16+16＝32px は見出し同士の 24px より遠い逆転だった) */
   .cat-body.prox .cv-subg-lab { margin: 0 0 4px; }   /* 小見出しとつまみは 4px */
-  .cat-body.prox .grp-stack { display: flex; flex-direction: column; gap: 16px; }   /* 見出しの中の見出しをまとめて入れる箱(キービジュアル「グラフィック」の中の惑星・メッシュ等)は、小見出しのまとまり同士と同じ 16px */
+  .cat-body.prox .grp-stack { display: flex; flex-direction: column; gap: 12px; }   /* 見出しの中の見出しをまとめて入れる箱(キービジュアル「グラフィック」の中の惑星・メッシュ等)は、小見出しのまとまり同士と同じ 16px */
   .cat-body.prox .grp-body > .pfirst { margin-top: 0; }   /* 見出しのすぐ下は、見出しとの間 8px のまま(印 pfirst・pab は JS の hideEmptyPanelGroups) */
   .cat-body.prox .rst { flex-basis: 16px; width: 16px; height: 16px; border-radius: 4px; }   /* ↺ を 26→16px に＝つまみの行の高さ 16px に収める */
   .cat-body.prox .rst::after { width: 12px; height: 12px; }

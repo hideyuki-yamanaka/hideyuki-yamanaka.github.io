@@ -258,8 +258,8 @@
     '.tp-cs.card{background:transparent;border:1px solid #e4e7eb;border-radius:10px;padding:0 12px 16px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',   /* 2026-09-28 v2.1.2 ヒデさん「セクションの枠の色を上下のブロックと同じ色に」＝中は塗らない(AnyFlow V5 と同じ) */
     '.tp-cs.card>.tp-cs-head{padding:12px 2px;cursor:pointer;}',
     '.tp-cs.var~.tp-cs.card>.tp-cs-head{letter-spacing:.02em;}',
-    '.tp-cs-body,.tp-vs-body{display:flex;flex-direction:column;gap:24px;}',   /* 見出しのまとまり同士は 24px(閉じたカードは下の .tp-cs.closed で隠れる) */
-    '.tp-vs-body>.tp-cs.card{margin-top:8px;}',   /* 案ごとの大見出しの中のカード同士は 24+8＝32px */
+    '.tp-cs-body,.tp-vs-body{display:flex;flex-direction:column;gap:16px;}',   /* 2026-09-29 見出し同士 24→16px(カード同士の 32px より狭く) */   /* 見出しのまとまり同士は 24px(閉じたカードは下の .tp-cs.closed で隠れる) */
+    '.tp-vs-body>.tp-cs.card{margin-top:16px;}',   /* 案ごとの大見出しの中のカード同士は 24+8＝32px */
     '.tp-cs-chev{position:relative;width:22px;height:22px;flex:0 0 auto;transition:transform .2s;}',
     '.tp-cs-chev::before{content:"";position:absolute;inset:0;background:#8a8a8a;-webkit-mask:' + ICON_CHEV + ';mask:' + ICON_CHEV + ';}',
     '.tp-cs.card>.tp-cs-head:hover .tp-cs-chev::before{background:#333;}',
@@ -274,7 +274,7 @@
     '.tp-sec-head{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#444;margin:0 0 4px;min-height:20px;}',   /* 文字の段 3 見出し 14px・700・#444。見出し→つまみ 4px(2026-09-29 ヒデさん「結構詰めて」) */
     '.tp-sec-head>span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
     '.tp-sec-body,.tp-subg-body,.tp-deep-body{display:flex;flex-direction:column;gap:0;padding-bottom:0;}',   /* つまみ同士 0(行16px＝16pxおき) */
-    '.tp-deep,.tp-subg{margin:16px 0 0;}',   /* 小見出しのまとまりの上は 16px。すぐ後ろの物にも 16px(下の .tp-pab)＝まとまり同士も 16px で、見出し同士の 24px を超えない */
+    '.tp-deep,.tp-subg{margin:12px 0 0;}',   /* 小見出しのまとまりの上は 16px。すぐ後ろの物にも 16px(下の .tp-pab)＝まとまり同士も 16px で、見出し同士の 24px を超えない */
     '.tp-deep-head,.tp-subg-lab{font-size:12px;font-weight:600;color:#666;margin:0 0 4px;}',   /* 文字の段 4 小見出し 12px・600・#666。小見出し→つまみ 4px */
     /* まとまりの ↺（28px 角）。押すと「✓ 戻しました」 */
     '.tp-gbtn{position:relative;flex:0 0 auto;width:20px;height:20px;padding:0;border:1px solid #e0e0e0;border-radius:6px;background:#fff;',   /* 28→20px＝見出しの行を低く(見出し→つまみを詰める) */
@@ -291,7 +291,7 @@
     '.tp-item.tp-gap{margin-top:8px;}',
     /* 見えている物の前後の印（_applyVisibility が付ける。:first-child など隠れた物まで数える書き方はしない・6-15） */
     '.tp .tp-pav{margin-top:8px;}',   /* 案のピルのすぐ下のつまみ */
-    '.tp .tp-pab{margin-top:16px;}',  /* 小見出しのまとまりのすぐ後ろ */
+    '.tp .tp-pab{margin-top:12px;}',  /* 小見出しのまとまりのすぐ後ろ */
     '.tp .tp-pf{margin-top:0;}',      /* 見出しのすぐ下の最初の物 */
     '.tp-row{display:flex;align-items:center;gap:8px;margin:0;min-height:16px;}',
     '.tp-row>label{flex:0 0 max(100px,25%);min-width:0;color:#888;font-weight:300;}',   /* 文字の段 5 つまみの名前 11px・300・#888。欄は行の25%(最小100px)＝パネルを広げると名前の欄も広がる */
