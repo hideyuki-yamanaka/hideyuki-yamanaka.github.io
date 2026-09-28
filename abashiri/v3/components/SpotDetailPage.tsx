@@ -175,16 +175,15 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
             cat: "詳細ページ",
             open: true,
             items: [
-              { sub: "デザインと動きの案", grp: "variation" },
-              {
-                note: "詳細ページ（テンプレ）のデザイン＋スクロール演出。いま残っているのは5案です。案1 は最初からの案（写真が奥へ引き、白い本文がせり上がる）、案32〜36 は左の目次がスクロール位置に反応する案、案40 は案36 と同じ中身で、写真そのものがぼけて白へ溶ける案（いまの既定）。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので欠番があります。"
-              },
+              /* 【2026-09-28】案ピルは見出しより前に置く＝このタブの主役の案（部品の「バリエーション」）。
+                 見出しの中に置くと「その見出しの中だけの選択」扱いになり、渡り・文字の大きさが全案共通のままだった（検査で発覚） */
               {
                 pills: "案",
                 path: "detail.pattern",
                 immediate: true,
                 /* 案を消したら、残った数に応じて 案1 から振り直す（2026-09-16 ヒデさん指示） */
                 autoNum: "案",
+                hint: "詳細ページ（テンプレ）のデザイン＋スクロール演出。いま残っているのは5案です。案1 は最初からの案（写真が奥へ引き、白い本文がせり上がる）、案32〜36 は左の目次がスクロール位置に反応する案、案40 は案36 と同じ中身で、写真そのものがぼけて白へ溶ける案（いまの既定）。名前のうしろが【何を変えたか】です。番号は選定時の呼び方のままなので欠番があります。",
                 options: Object.entries(SPOT_DETAIL_PATTERNS).map(([v, p]) => ({
                   name: p.name,
                   value: Number(v),
@@ -225,6 +224,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               {
                 slider: "本文",
                 path: "detail.bodySize",
+                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
                 min: 12,
                 max: 20,
                 step: 0.5,
@@ -234,6 +234,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               {
                 slider: "見出し",
                 path: "detail.headSize",
+                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
                 min: 16,
                 max: 40,
                 step: 1,

@@ -768,6 +768,7 @@ export default function TopTunePanel({
               {
                 slider: "大きさ",
                 path: "secHead",
+                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
                 min: 20,
                 max: 64,
                 step: 1,
@@ -1445,6 +1446,7 @@ export default function TopTunePanel({
               {
                 slider: "大きさ",
                 path: "events.mqSize",
+                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
                 min: 40,
                 max: 200,
                 step: 2,
