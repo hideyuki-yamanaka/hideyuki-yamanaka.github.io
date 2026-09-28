@@ -803,12 +803,14 @@ function updateKV() {
     if (tn3 && tn3.data.length !== count) tn3.data = full.slice(0, count);
     const typed = fd + timeOf(n, n, cd);   /* 3行目の打ち終わり(打ち始めの設定 typeAt からの秒) */
     const fadeAt = typed;                 /* 打ち終わったら下線が消え始める(前と同じ) */
-    typeEnd = fadeAt + bf;                /* 下線が消えきってから、横線・サブコピーへ */
+    /* 【2026-09-28 夜 ヒデさん依頼「アンダースコアなしにしてみて」】下線は あり／なし(blankOn・既定なし)。なしの時は下線を出さず、打ち終わりからすぐ横線・サブコピーへ */
+    const blankOn = c.blankOn === true;
+    typeEnd = blankOn ? fadeAt + bf : typed;
     const blinkF = ((t * 1.7) % 1 < 0.55) ? 1 : 0;   /* 開いた時から点滅(空欄の頭) */
     kvEls.carets.forEach((car, li) => { if (car) car.style.opacity = (li === L && tt < typed + 0.5) ? blinkF : 0; });
     if (kvEls.blank) {
       if (kvEls.blank.textContent !== full) kvEls.blank.textContent = full;
-      kvEls.blank.style.opacity = (1 - clamp01((tt - fadeAt) / Math.max(0.05, bf))).toFixed(3);
+      kvEls.blank.style.opacity = blankOn ? (1 - clamp01((tt - fadeAt) / Math.max(0.05, bf))).toFixed(3) : '0';
       /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】濃さ・太さ(つまみ: エフェクト › コピー（穴埋め）) */
       const ba = String(c.blankAlpha != null ? c.blankAlpha : 0.12), bw = (c.blankBw != null ? c.blankBw : 1) + 'px';   /* 【2026-09-28 夜「線幅を細く。もっとさりげなく」】既定 2→1px */
       if (kvEls.blank.style.getPropertyValue('--hl-blank-a') !== ba) kvEls.blank.style.setProperty('--hl-blank-a', ba);

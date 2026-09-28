@@ -1104,6 +1104,7 @@ function buildPanel() {
   /* 【2026-09-28 夜 ヒデさん依頼】打ち込みの案: 今の打ち込み(3行を順に)／穴埋め(1・2行目は開いた時から・3行目「競争力を」だけ空欄に下線＋点滅カーソル→打ち込む
      →下線がスッと消える→横線が伸びる→サブコピー)。PC とスマホで別に選べる(スマホモード中は params.mb['kv.typeMode'] だけに書く) */
   const _kvTypeMode = () => { const pon = document.documentElement.classList.contains('phone-mode'); return (pon && params.mb && params.mb['kv.typeMode'] != null) ? params.mb['kv.typeMode'] : (params.kv.typeMode || 'type'); };
+  const _kvBlankOn = () => { const pon = document.documentElement.classList.contains('phone-mode'); const v = (pon && params.mb && params.mb['kv.blankOn'] != null) ? params.mb['kv.blankOn'] : params.kv.blankOn; return v === true; };
   sub(copyRoot, 'コピー（打ち込みの案）', false, { grp: 'variation' });
   optRow('kvTypeMode', '打ち込み', [['今の打ち込み（3行を順に）', 'type'], ['穴埋め（「競争力を」だけ後から）', 'fill']], _kvTypeMode,
     v => { if (document.documentElement.classList.contains('phone-mode')) { if (!params.mb) params.mb = {}; params.mb['kv.typeMode'] = v; } else { params.kv.typeMode = v; }
@@ -1113,12 +1114,17 @@ function buildPanel() {
     const fr = (label, key, min, max, def, hint) => { const r = slider(label, min, max, 0.05, () => (params.kv[key] != null ? params.kv[key] : def), v => params.kv[key] = v, v => v.toFixed(2) + '秒', hint, { mbKey: 'kv.' + key }); rows.push(r); showWhen(r, isFill); };
     fr('空欄を見せる時間', 'fillDelay', 0, 4, 1.0, '「文字を打ち始める」から、空欄に「競争力を」を打ち込み始めるまで。');
     { const r = slider('1文字の時間', 0.01, 0.4, 0.005, () => (params.kv.fillCharDur != null ? params.kv.fillCharDur : 0.1), v => params.kv.fillCharDur = v, v => v.toFixed(3) + '秒/字', '「競争力を」の1文字あたりの平均の時間。大きいほどゆっくり。打ち方は今の打ち込みと同じ(最初ゆっくり→だんだん速く＝コピー（タイピング）の「速度の変化」)。今の3行目は0.07。', { mbKey: 'kv.fillCharDur', fixedMax: true }); rows.push(r); showWhen(r, isFill); }
-    fr('下線が消える時間', 'blankFade', 0.05, 1.5, 0.3, '打ち終わってから、下線がスッと消えきるまで。');
+    { const r = slider('下線が消える時間', 0.05, 1.5, 0.05, () => (params.kv.blankFade != null ? params.kv.blankFade : 0.3), v => params.kv.blankFade = v, v => v.toFixed(2) + '秒', '打ち終わってから、下線がスッと消えきるまで。', { mbKey: 'kv.blankFade' }); rows.push(r); showWhen(r, () => isFill() && _kvBlankOn()); }   /* 下線「あり」の時だけ */
     fr('横線が伸びる時間', 'dashDur', 0.05, 1.5, 0.45, '下線が消えたあと、サブコピーの横線が左から伸びきるまで(伸びきる少し前から文字が出る)。');
   }
-  /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】空欄の下線の濃さ・太さ(色と線の太さなのでエフェクト・6-13) */
+  /* 【2026-09-28 夜 ヒデさん依頼「アンダースコアなしにしてみて」】空欄の下線の あり／なし(出す／出さない＝基本・6-13)。既定なし。PC とスマホで別に選べる */
+  sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'basic' });
+  { const r = segRow('下線', [['なし', false], ['あり', true]], _kvBlankOn,
+      v => { if (document.documentElement.classList.contains('phone-mode')) { if (!params.mb) params.mb = {}; params.mb['kv.blankOn'] = v; } else { params.kv.blankOn = v; } markDirty(); try { syncPanelRows(); } catch (e) {} });
+    showWhen(r, () => _kvTypeMode() === 'fill'); }
+  /* 【2026-09-28 夜 ヒデさん依頼「下線は本当にかすかにグレーで」】空欄の下線の濃さ・太さ(色と線の太さなのでエフェクト・6-13)。下線「あり」の時だけ出す */
   sub(copyRoot, 'コピー（穴埋め）', false, { grp: 'fxtex' });
-  { const isFill = () => _kvTypeMode() === 'fill';
+  { const isFill = () => _kvTypeMode() === 'fill' && _kvBlankOn();
     const r1 = slider('下線の濃さ', 0, 0.8, 0.01, () => (params.kv.blankAlpha != null ? params.kv.blankAlpha : 0.12), v => params.kv.blankAlpha = v, v => Math.round(v * 100) + '%', '空欄の下線の濃さ(黒の何%)。小さいほど かすかなグレー。', { mbKey: 'kv.blankAlpha' }); rows.push(r1); showWhen(r1, isFill);
     const r2 = slider('下線の太さ', 0.5, 6, 0.5, () => (params.kv.blankBw != null ? params.kv.blankBw : 1), v => params.kv.blankBw = v, v => v.toFixed(1) + 'px', '空欄の下線の太さ。', { mbKey: 'kv.blankBw' }); rows.push(r2); showWhen(r2, isFill);
   }
