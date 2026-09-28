@@ -1712,7 +1712,8 @@ function fit() {
   applyResFx();
   { const _k = resFxActive(), _vh = resFxVh(_k);
     if (resFxFlowMode(_k)) SECS.results.style.height = 'auto';   /* 自然に流れる案(4、縦が短い端末の固定案): 中身なりの高さ */
-    else if (_vh) SECS.results.style.height = _vh + 'vh'; }
+    /* 【2026-09-28 ヒデさん依頼】出きったあとの止まりを切る: 固定で進む長さ(_vh-100)を resFxEnd 倍に(24-4 は 0.92)。つまみ「固定の長さ」の値は元の長さのまま */
+    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) : _vh) + 'vh'; }
   /* 【2026-09-09 ヒデさん指定・見切れ根治】静的モバイル: pin-vp(100vh)より中身が高いセクションは
      下が見切れる。最下要素の位置から実コンテンツ高さを測り、section と pin-vp に明示的に設定して
      クリップを解除する(絶対配置でも最下要素のrectで測れる)。 */

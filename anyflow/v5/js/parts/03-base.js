@@ -100,15 +100,47 @@ try {
     localStorage.setItem('anyflow-vision-sig', _sig);
   }
 } catch (e) {}
-/* 【2026-09-27 ヒデさん依頼】開発者体験①②の「中央で一旦止まる」をやめる(全部出たらスクロールがカクッと止まるのをなくす)。
-   既定・焼き込みは 'off' にしたが、保存値に 'on' が残っているブラウザ(ローカルのヒデさんの画面も)は勝ってしまうので、1回だけ 'off' へ切り替える。
-   パネル(開発者体験 › ①②で一旦止まる › 有無)で「止まる」に戻せば、その後はそのまま残る(印 anyflow-dev-nostop-20260927)。 */
+/* 【2026-09-27】開発者体験①②の「中央で一旦止まる」をやめて、保存値も1回だけ 'off' に入れ替えていた(印 anyflow-dev-nostop-20260927)。
+   ❌ 誤り(2026-09-28 ヒデさん「なくしてほしいのは実績セクションの話。開発者体験①②は画面固定を挟んでほしい」)。この入れ替えは撤去し、下で 'on' に戻す */
+/* 【2026-09-28 ヒデさん依頼】開発者体験①②は「中央で一旦止まる(画面固定)」を挟む＝既定・焼き込みを 'on' に戻した。
+   9/27 の入れ替えで保存値が 'off' になっているブラウザ(ローカルのヒデさんの画面も)は勝ってしまうので、1回だけ 'on' へ戻す。
+   パネル(開発者体験 › ①②で一旦止まる › 有無)で「止まらない」にすれば、その後はそのまま残る(印 anyflow-dev-pinon-20260928) */
 try {
-  if (!localStorage.getItem('anyflow-dev-nostop-20260927')) {
-    if (params.sections && params.sections.dev) params.sections.dev.pinStops = 'off';
+  if (!localStorage.getItem('anyflow-dev-pinon-20260928')) {
+    if (params.sections && params.sections.dev) params.sections.dev.pinStops = 'on';
     const _raw = localStorage.getItem(STORAGE_KEY);
-    if (_raw) { const _o = JSON.parse(_raw); if (_o && _o.sections && _o.sections.dev) { _o.sections.dev.pinStops = 'off'; localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); } }
-    localStorage.setItem('anyflow-dev-nostop-20260927', '1');
+    if (_raw) { const _o = JSON.parse(_raw); if (_o && _o.sections && _o.sections.dev && _o.sections.dev.pinStops === 'off') { _o.sections.dev.pinStops = 'on'; localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); } }
+    localStorage.setItem('anyflow-dev-pinon-20260928', '1');
+  }
+} catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「標準版で実績以下をもう少し上へ」】グラフィック↔実績(visResPull)をビジョンの案ごとの控え(__vrp)に入れた。
+   すでにある控え(ローカルのヒデさんの画面など)には __vrp が無く、案を切り替えても値が変わらない(前の案の値が残る)ので、1回だけ足す
+   (デフォルト 300・強調 200＝VIS_RES_PULL_BY)。控えは起動時に今の案の分が当てられる(varApplyOverridesAtStartup)ので、今の画面にもそのまま効く。
+   ⚠️ presetStoreSave() はここではまだ呼べない(スマホ判定の isMobile が後で作られる)ので、保管の箱を直接書き直す。印 anyflow-visrespull-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-visrespull-20260928')) {
+    const _add = ov => { const ve = ov && ov.visEmph; let ch = false; if (!ve) return false;
+      for (const k in VIS_RES_PULL_BY) { if (ve[k] && typeof ve[k] === 'object' && ve[k].__vrp == null) { ve[k].__vrp = VIS_RES_PULL_BY[k]; ch = true; } }
+      return ch; };
+    _add(params.gfxVarOverride);
+    const _raw = localStorage.getItem(PRESET_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (_o && _add(_o.over)) localStorage.setItem(PRESET_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-visrespull-20260928', '1');
+  }
+} catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「実績のスロットをもう少し早めに止まる感じに」】1桁が止まるまで(sections.results.slotDur)を 1.4→1.0秒(焼き込み・既定)。
+   保存値が前の値(1.4)のブラウザは1回だけ入れ替える。自分で変えた値は触らない。スマホの上書き(mb)も同じ。印 anyflow-slotdur-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-slotdur-20260928')) {
+    const _was = v => v != null && Math.abs(+v - 1.4) < 1e-6;
+    if (params.sections && params.sections.results && _was(params.sections.results.slotDur)) params.sections.results.slotDur = 1.0;
+    if (params.mb && _was(params.mb['sections.results.slotDur'])) params.mb['sections.results.slotDur'] = 1.0;
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); let _ch = false;
+      if (_o && _o.sections && _o.sections.results && _was(_o.sections.results.slotDur)) { _o.sections.results.slotDur = 1.0; _ch = true; }
+      if (_o && _o.mb && _was(_o.mb['sections.results.slotDur'])) { _o.mb['sections.results.slotDur'] = 1.0; _ch = true; }
+      if (_ch) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-slotdur-20260928', '1');
   }
 } catch (e) {}
 /* 【2026-09-28 ヒデさん依頼「キービジュアルのタイピングをもう少しだけ、ちょっと早めに」】打ち始め(kv.typeAt)を 0.65→0.40秒後に(焼き込み・既定)。

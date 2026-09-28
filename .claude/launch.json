@@ -254,13 +254,22 @@
       "cwd": "nittei-chousei"
     },
     {
-      "name": "jelly-fruits",
+      "name": "jelly-fruits-v1",
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-c",
-        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits' && exec python3 -m http.server 8783 --bind 0.0.0.0"
+        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v1' && exec python3 -m http.server 8783 --bind 0.0.0.0"
       ],
       "port": 8783
+    },
+    {
+      "name": "jelly-fruits-v2",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/hideyuki/Developer/Claude Code/jelly-fruits/v2' && exec python3 -m http.server 8784 --bind 0.0.0.0"
+      ],
+      "port": 8784
     }
   ]
 }

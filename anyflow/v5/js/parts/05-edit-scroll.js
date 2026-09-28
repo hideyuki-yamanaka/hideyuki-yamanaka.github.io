@@ -1596,7 +1596,8 @@ let resBlackK = 0;         /* 黒がどれだけ覆ったか(0→1)。dev1 の�
    仮置き: 尺(vh)・読む区間の配分は原本値。パネル「固定の長さ」で尺は可変。 */
 const RES_FX = {
   default: { vh: 0 },
-  '24-4': { vh: 240, mobileFlow: true },   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
+  '24-4': { vh: 240, mobileFlow: true, end: 0.92 },   /* 【2026-09-28 ヒデさん依頼「実績の、全部出たあとにカクッと止まる所をなくす」】end=動きが出きる進み(最後の上の段 B が 0.92)。
+     固定の長さの end から先(出きったあとに何も動かず止まっていた約100px)を切り、end で固定が外れる(resFxEnd・06-sections.js の高さ)。動く速さ(1pxあたり)は同じ */   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
   '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
   /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
 };
@@ -1605,6 +1606,8 @@ function resFxKey() { const v = params.patterns && params.patterns.resFx; if (RE
 function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
 function resFxFlowMode(k) { const c = RES_FX[k] || {}; return !!(c.flow || (isMobile && c.mobileFlow) || (resFxShort() && c.vh)); }
+/* 【2026-09-28】案の動きが出きる進み(RES_FX[k].end)。無い案は 1＝今までどおり固定の最後まで */
+function resFxEnd(k) { const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
 function resFxVh(k) {
   const base = RES_FX[k] ? RES_FX[k].vh : 0;
   if (!base) return 0;
@@ -1936,7 +1939,8 @@ function resFxFrame(t) {
 
   if (k === '24-4') {
     /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
-    const p = resFxFlowMode(k) ? 1 : resFxPin(), H = rfxHero(), vh = rfxVH();
+    /* 【2026-09-28】固定の長さを end(0.92)で切ったので、進みも end 倍して「1px あたりの動き」を前と同じに保つ(固定が外れる時に進み=0.92=出きり) */
+    const p = resFxFlowMode(k) ? 1 : resFxPin() * resFxEnd(k), H = rfxHero(), vh = rfxVH();
     const F = Object.assign({ labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
        「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。

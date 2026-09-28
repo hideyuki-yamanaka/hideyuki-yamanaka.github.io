@@ -68,10 +68,13 @@ const VAR_SNAP = {
      dome(メッシュ)や grad は別バケット管理なので巻き込まない=サイズ系だけ控える。 */
   visEmph: { get: () => { const v = params.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (v[k] != null) o[k] = v[k]; });
                /* 【2026-09-21 Y14】メッセージのフォント行(サイズ/行間/字間)も案ごとに控える。PC=edits / スマホ=editsMb を別々に。 */
-               o.__vm = visEmphGrabMsg(params.edits); o.__vmMb = visEmphGrabMsg(params.editsMb); return o; },
+               o.__vm = visEmphGrabMsg(params.edits); o.__vmMb = visEmphGrabMsg(params.editsMb);
+               /* 【2026-09-28 ヒデさん依頼「標準版で実績以下をもう少し上へ」】グラフィック↔実績(visResPull)も案ごとに控える(強調200・デフォルト300) */
+               if (params.visResPull != null) o.__vrp = params.visResPull; return o; },
              set: s => { if (!s) return; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (s[k] != null) params.sections.vision[k] = s[k]; });
                if ('__vm' in s) visEmphPutMsg(params.edits || (params.edits = {}), s.__vm);
                if ('__vmMb' in s) visEmphPutMsg(params.editsMb || (params.editsMb = {}), s.__vmMb);
+               if (s.__vrp != null) { params.visResPull = s.__vrp; try { applyVisResPull(); } catch (e) {} }   /* 【2026-09-28】案ごとのグラフィック↔実績 */
                applyVpSize(); try { textTools.applyAll(); } catch (e) {} try { if (typeof syncPanelRows === 'function') syncPanelRows(); } catch (e) {} }, reset: () => {} },
   cv:      { get: () => params.cv, set: s => Object.assign(params.cv, s), reset: () => Object.assign(params.cv, structuredClone(DEFAULTS_PRISTINE.cv)) },
   /* 【2026-09-15】揺らぎの案は「動きに関わるキーだけ」を控える(余白や色の設定を巻き込まない) */
@@ -99,7 +102,7 @@ const VAR_AUTOSAVE = [
   { bucket: 'visLogo',   sel: () => vfLogoKey(),    snap: () => VAR_SNAP.visLogo,   base: (key) => { const m = (VIS_LOGOS.find(x => x.key === key) || VIS_LOGOS[0]); const o = {}; VF_LOGO_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'visGrad',   sel: () => visGradKey(),   snap: () => VAR_SNAP.visGrad,   base: (key) => { const g = (VIS_GRADS.find(x => x.key === key) || VIS_GRADS[0]); const m = Object.assign({ gradVar: key, gradSat: 1, gradBri: 1, gradDur: 7, gradAng: 67 }, g.v || {}), o = {}; ['gradVar', 'gradSat', 'gradBri', 'gradDur', 'gradAng'].forEach(k => { if (m[k] != null) o[k] = m[k]; }); return o; } },
   /* 【2026-09-21 ヒデさん依頼】ビジョンの案(デフォルト/強調)ごとにメッセージ/ポイントの文字サイズを独立(案別に控える) */
-  { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: () => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; return o; } },
+  { bucket: 'visEmph',   sel: () => visEmphMode(),  snap: () => VAR_SNAP.visEmph,   base: (key) => { const d = DEFAULTS_PRISTINE.sections.vision, o = {}; ['msgSize', 'pHSize', 'pPSize', 'pWidth'].forEach(k => { if (d[k] != null) o[k] = d[k]; }); o.__vm = null; o.__vmMb = null; o.__vrp = VIS_RES_PULL_BY[key] != null ? VIS_RES_PULL_BY[key] : 200; return o; } },
   { bucket: 'resSlotFx', sel: () => resSlotFxKey(), snap: () => VAR_SNAP.resSlotFx, base: (key) => { const m = (RES_SLOT_FX.find(x => x.key === key) || RES_SLOT_FX[0]); const o = {}; RES_SLOT_KEYS.forEach(k => { if (m.cfg[k] != null) o[k] = m.cfg[k]; }); return o; } },
   { bucket: 'cvSway',    sel: () => cvSwayKey(),    snap: () => VAR_SNAP.cvSway,    base: (key) => { const c = (CV_SWAYS.find(x => x.key === key) || CV_SWAYS[0]); const g = Object.assign({}, SWAY_BASE, c.cv || {}), o = {}; SWAY_KEYS.forEach(k => { if (g[k] != null) o[k] = g[k]; }); return o; } },
   /* 【2026-09-20 ヒデさん報告バグ修正】KV案(kvVar)が管理する 惑星/カゴ(mesh)/KVコピー(kv)/右グラフィック(kvGfx) は
@@ -1090,7 +1093,7 @@ function buildPanel() {
   /* 【2026-09-20 大改修】基本(余白)＋ぼかし(エフェクト)＋表示時間(アニメ)に分割。図→グラフィック、距離→ギャップ表記。 */
   sub(catVis, '余白（ギャップ）', false);
   rows.push(slider('グラフィック↔実績', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
-    'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。既定 200px 仮置き。', { mbKey: 'visResPull' }));
+    'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。ビジョンの案ごとに別の値(2026-09-28〜: デフォルト 300px・強調 200px・仮置き)。', { mbKey: 'visResPull' }));
   rows.push(slider('見出し↔グラフィック・ポイント（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
     'メッセージの下の余白。グラフィック(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px 仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
   rows.push(slider('グラフィック↔ポイント（左右）', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
