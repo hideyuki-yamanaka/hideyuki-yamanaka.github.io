@@ -105,12 +105,13 @@ def timer_due(data):
 
 
 def block(text, name):
-    m = re.search(r"<!-- %s:start -->\n(.*?)\n?<!-- %s:end -->" % (name, name), text, re.S)
-    if not m:
+    # 同じ名前の印が2か所以上ある時は、全部をつないで出す（例: panel＝6-8 と 6-13。2026-09-28）
+    found = re.findall(r"<!-- %s:start -->\n(.*?)\n?<!-- %s:end -->" % (name, name), text, re.S)
+    if not found:
         return ""
     # 中に入れ子になっている印（<!-- scene-a:start --> など）は、出す時には消す
-    body = re.sub(r"^<!-- [\w-]+:(start|end) -->\n?", "", m.group(1), flags=re.M)
-    return body.strip()
+    bodies = [re.sub(r"^<!-- [\w-]+:(start|end) -->\n?", "", b, flags=re.M).strip() for b in found]
+    return "\n\n".join(b for b in bodies if b)
 
 
 def emit(event, context):

@@ -550,7 +550,7 @@ export default function TopTunePanel({
                 unit: "ms",
                 immediate: true,
               },
-              { sub: "ページ遷移の演出", grp: "anim" },
+              { sub: "ページ遷移の演出", grp: "variation" },
               {
                 note: "ページを移る時にかぶせる幕。サイト内のどのリンク・ボタンから移っても同じ動きになります（2026-09-26 に統一）。既定は案7「じんわり溶ける」（前のページがうっすら白くぼやけながら溶けて、次のページが白の中から現れる）。行き先が「ぼーっと体験」の時だけ、幕の色がそのページと同じ青になります。選ぶとその場で一度再生して見せます。",
               },
@@ -565,10 +565,12 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
+              { sub: "ページ遷移の演出", grp: "anim" },
               /* 案7 を選んだ時だけ出す（2026-09-26） */
               {
                 slider: "切り替えの長さ",
                 path: "pageTrans.dur",
+                variant: "pageTrans.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 400,
                 max: 2400,
                 step: 50,
@@ -579,6 +581,7 @@ export default function TopTunePanel({
               {
                 slider: "ぼかし",
                 path: "pageTrans.blur",
+                variant: "pageTrans.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 0,
                 max: 12,
                 step: 1,
@@ -589,6 +592,7 @@ export default function TopTunePanel({
               {
                 slider: "白の濃さ",
                 path: "pageTrans.peak",
+                variant: "pageTrans.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 40,
                 max: 100,
                 step: 2,
@@ -726,6 +730,19 @@ export default function TopTunePanel({
                 fmt: "%",
                 hint: "画面の高さの何%ぶんスクロールしてフッターを見せるか。小さいほど早く終わる（既定155%）",
               },
+              { sub: "サイトマップ（右カラム）", deep: true },
+              {
+                slider: "位置 Y",
+                path: "footer.mapOffsetY",
+                min: -240,
+                max: 240,
+                step: 4,
+                fmt: "px",
+                signed: true,
+                hint: "サイトマップだけを上下にずらす（作字との高さを合わせる用）。マイナスで上へ",
+              },
+              { sub: "フッター（全ページ共通）", grp: "fxtex" },
+              { sub: "最後のセクションからの流れ", deep: true },
               {
                 slider: "グラデの長さ",
                 path: "footer.fadeH",
@@ -743,17 +760,6 @@ export default function TopTunePanel({
                 step: 2,
                 fmt: "%",
                 hint: "グラデのうち、真っ白のまま保つ割合。小さいほど早く写真が出てくる",
-              },
-              { sub: "サイトマップ（右カラム）", deep: true },
-              {
-                slider: "位置 Y",
-                path: "footer.mapOffsetY",
-                min: -240,
-                max: 240,
-                step: 4,
-                fmt: "px",
-                signed: true,
-                hint: "サイトマップだけを上下にずらす（作字との高さを合わせる用）。マイナスで上へ",
               },
             ],
           },
@@ -775,56 +781,6 @@ export default function TopTunePanel({
                 immediate: true,
               },
               { sub: "人物イラスト", grp: "basic" },
-              { sub: "出現", deep: true },
-              {
-                slider: "ディレイ",
-                path: "anim.illustDelay",
-                min: 0,
-                max: 10,
-                step: 0.5,
-                fmt: "s",
-                hint: "ボタンが出てから人物が登場するまでの待ち時間。上げると登場が遅くなり「間」ができ、下げるとすぐ出ます。変えると人物登場の直前から再生し直します。",
-              },
-              { sub: "バウンスとループ", deep: true },
-              {
-                note: "バウンスはホバーもループも同じ動き。ループでは、たまらねーとキラキラも一緒に出ます。",
-              },
-              /* バウンスの動き5案ピルは撤去。案1（ぴょこっ）で確定
-                 （2026-08-30 ヒデさん指示。パターン本体は Stage.tsx の BOUNCES） */
-              {
-                note: "強さを変えると、その場で人物が1回バウンスして違いを見せます。カーソルを乗せても試せます。",
-              },
-              {
-                toggle: "ループ前の横揺れ",
-                path: "loop.swayFirst",
-                hint: "ONにすると、ループの時だけ左右に小刻みに揺れてからバウンスします（以前のスイングの復活）。",
-              },
-              {
-                slider: "バウンスの強さ",
-                path: "anim.bounceStrength",
-                min: 20,
-                max: 250,
-                step: 10,
-                fmt: "%",
-                hint: "100が基準。大きいほど高く跳ねて、つぶれ方も大きくなります。人物にカーソルを乗せると確かめられます。",
-              },
-              {
-                slider: "ループの間隔",
-                path: "loop.cycle",
-                min: 5,
-                max: 60,
-                step: 5,
-                fmt: "s",
-                hint: "この間隔で、バウンス＋たまらねー＋キラキラが自動で出ます。",
-              },
-              {
-                slider: "表示時間",
-                path: "loop.show",
-                min: 0.5,
-                max: 6,
-                step: 0.5,
-                fmt: "s",
-              },
               { sub: "置き場所（枠ごと）", deep: true },
               {
                 slider: "位置 X（右基準）",
@@ -939,24 +895,6 @@ export default function TopTunePanel({
                 fmt: "px",
                 hint: "横幅。縦は元の比率のまま。カンプは 11.2px です。",
               },
-              {
-                slider: "線の太さ",
-                path: "face.mouthStroke",
-                min: 0.5,
-                max: 4,
-                step: 0.25,
-                fmt: "px",
-                hint: "カンプは 1.5px です。",
-              },
-              { sub: "確認用", deep: true },
-              {
-                toggle: "眉と口を出しっぱなしにする",
-                path: "preview.faceOn",
-              },
-              {
-                toggle: "パッチを赤くする",
-                path: "preview.patchRed",
-              },
               /* ── たまらねー ────────────────────── */
               /* 出方は現状の案で確定（2026-08-22 ヒデさん指示。案ピルは撤去。
                  パターン本体は tamaraneePatterns.ts） */
@@ -984,24 +922,6 @@ export default function TopTunePanel({
                 max: 200,
                 step: 1,
                 fmt: "px",
-              },
-              { sub: "たまらねー（初回の1回だけ）", deep: true },
-              {
-                slider: "出現ディレイ",
-                path: "intro.delay",
-                min: 0,
-                max: 2000,
-                step: 50,
-                fmt: "ms",
-              },
-              {
-                slider: "表示時間",
-                path: "intro.hold",
-                min: 500,
-                max: 8000,
-                step: 100,
-                fmt: "ms",
-                hint: "出したまま留めておく長さ。このあと引っ込みます。",
               },
               /* ── キラキラ ─────────────────────── */
               { sub: "キラキラ（1コマ目）", deep: true },
@@ -1048,6 +968,87 @@ export default function TopTunePanel({
                 fmt: "px",
                 hint: "−で上へ。",
               },
+              { sub: "人物イラスト", grp: "fxtex" },
+              { sub: "口", deep: true },
+              {
+                slider: "線の太さ",
+                path: "face.mouthStroke",
+                min: 0.5,
+                max: 4,
+                step: 0.25,
+                fmt: "px",
+                hint: "カンプは 1.5px です。",
+              },
+              { sub: "人物イラスト", grp: "anim" },
+              { sub: "出現", deep: true },
+              {
+                slider: "ディレイ",
+                path: "anim.illustDelay",
+                min: 0,
+                max: 10,
+                step: 0.5,
+                fmt: "s",
+                hint: "ボタンが出てから人物が登場するまでの待ち時間。上げると登場が遅くなり「間」ができ、下げるとすぐ出ます。変えると人物登場の直前から再生し直します。",
+              },
+              { sub: "バウンスとループ", deep: true },
+              {
+                note: "バウンスはホバーもループも同じ動き。ループでは、たまらねーとキラキラも一緒に出ます。",
+              },
+              /* バウンスの動き5案ピルは撤去。案1（ぴょこっ）で確定
+                 （2026-08-30 ヒデさん指示。パターン本体は Stage.tsx の BOUNCES） */
+              {
+                note: "強さを変えると、その場で人物が1回バウンスして違いを見せます。カーソルを乗せても試せます。",
+              },
+              {
+                toggle: "ループ前の横揺れ",
+                path: "loop.swayFirst",
+                hint: "ONにすると、ループの時だけ左右に小刻みに揺れてからバウンスします（以前のスイングの復活）。",
+              },
+              {
+                slider: "バウンスの強さ",
+                path: "anim.bounceStrength",
+                min: 20,
+                max: 250,
+                step: 10,
+                fmt: "%",
+                hint: "100が基準。大きいほど高く跳ねて、つぶれ方も大きくなります。人物にカーソルを乗せると確かめられます。",
+              },
+              {
+                slider: "ループの間隔",
+                path: "loop.cycle",
+                min: 5,
+                max: 60,
+                step: 5,
+                fmt: "s",
+                hint: "この間隔で、バウンス＋たまらねー＋キラキラが自動で出ます。",
+              },
+              {
+                slider: "表示時間",
+                path: "loop.show",
+                min: 0.5,
+                max: 6,
+                step: 0.5,
+                fmt: "s",
+              },
+              { sub: "たまらねー（初回の1回だけ）", deep: true },
+              {
+                slider: "出現ディレイ",
+                path: "intro.delay",
+                min: 0,
+                max: 2000,
+                step: 50,
+                fmt: "ms",
+              },
+              {
+                slider: "表示時間",
+                path: "intro.hold",
+                min: 500,
+                max: 8000,
+                step: 100,
+                fmt: "ms",
+                hint: "出したまま留めておく長さ。このあと引っ込みます。",
+              },
+              { sub: "キラキラ（2コマ目）", deep: true },
               {
                 slider: "切替の間隔",
                 path: "sparkle.period",
@@ -1055,6 +1056,16 @@ export default function TopTunePanel({
                 max: 4,
                 step: 0.1,
                 fmt: "s",
+              },
+              { sub: "人物イラスト", grp: "other" },
+              { sub: "確認用", deep: true },
+              {
+                toggle: "眉と口を出しっぱなしにする",
+                path: "preview.faceOn",
+              },
+              {
+                toggle: "パッチを赤くする",
+                path: "preview.patchRed",
               },
               /* ── 人物イラスト ─────────────────── */
               /* 登場のしかたは案3「ポンッ→プルン」で確定（2026-08-21 ヒデさん指示。
@@ -1144,20 +1155,7 @@ export default function TopTunePanel({
                  長いのでアコーディオン（タブ内の小見出しは折りたたみ・既定で閉じる） ── */
               /* ── メッセージ（KV直下・カンプ 15480:22896）。
                  文言・出方・見た目を1セクションに統合（2026-08-30 ヒデさん指示） ── */
-              { sub: "メッセージ（作字のあと）", grp: "anim" },
-              { sub: "文言", deep: true },
-              {
-                note: "ここで文章そのものを差し替えられます。本文は「空行で段落を分け、段落内は改行で行を分ける」書き方です。入力するとその場で反映されます。",
-              },
-              { text: "見出し", path: "msg.title" },
-              {
-                text: "本文",
-                path: "msg.body",
-                multiline: true,
-                rows: 14,
-                hint: "空行を1つ入れると段落が分かれ、改行だけなら同じ段落の次の行になります。",
-              },
-              { sub: "出現とスクロール", deep: true },
+              { sub: "メッセージ（作字のあと）", grp: "variation" },
               {
                 note: "作字が消えたあと、ブラーの背景の上に「網走は何もない。」の文章が出ます。スクロールで読み進み、読み終わるとぼーっとスポットへ。",
               },
@@ -1172,9 +1170,85 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
+              { sub: "メッセージ（作字のあと）", grp: "font" },
+              { sub: "文言", deep: true },
+              {
+                note: "ここで文章そのものを差し替えられます。本文は「空行で段落を分け、段落内は改行で行を分ける」書き方です。入力するとその場で反映されます。",
+              },
+              { text: "見出し", path: "msg.title", variant: "msg.pattern" },
+              {
+                text: "本文",
+                path: "msg.body",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                multiline: true,
+                rows: 14,
+                hint: "空行を1つ入れると段落が分かれ、改行だけなら同じ段落の次の行になります。",
+              },
+              { sub: "見出し", deep: true },
+              {
+                slider: "フォントウェイト",
+                path: "msg.titleWeight",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 100,
+                max: 500,
+                step: 100,
+                hint: "100=Thin（カンプ）〜500=Medium。",
+              },
+              {
+                slider: "行間",
+                path: "msg.titleLeading",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 0.8,
+                max: 1.6,
+                step: 0.1,
+              },
+              { sub: "本文", deep: true },
+              {
+                slider: "フォントウェイト",
+                path: "msg.bodyWeight",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 100,
+                max: 500,
+                step: 100,
+                hint: "300=Light がカンプ。",
+              },
+              {
+                slider: "行間",
+                path: "msg.bodyLeading",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 1.2,
+                max: 3,
+                step: 0.1,
+              },
+              { sub: "メッセージ（作字のあと）", grp: "fxtex" },
+              { sub: "見出し", deep: true },
+              {
+                slider: "不透明度",
+                path: "msg.titleOpacity",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 10,
+                max: 100,
+                step: 1,
+                fmt: "%",
+                hint: "「網走は何もない。」の不透明度。カンプは80%。",
+              },
+              { sub: "本文", deep: true },
+              {
+                slider: "未読テキストの不透明度",
+                path: "msg.minOpacity",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 0,
+                max: 60,
+                step: 1,
+                fmt: "%",
+                hint: "案2（浮かび上がり）で、まだ読んでいない文字の不透明度。",
+              },
+              { sub: "メッセージ（作字のあと）", grp: "anim" },
+              { sub: "出現とスクロール", deep: true },
               {
                 slider: "スクロール速度（KV→メッセージ）",
                 path: "scrollSpd.kvToMsg",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 20,
                 max: 300,
                 step: 10,
@@ -1182,17 +1256,9 @@ export default function TopTunePanel({
                 hint: "キービジュアルからメッセージまでの区間で、ホイール/スワイプ1回に進む量。100%が標準。下げるほどゆっくり進み（同じ距離に多くのスクロールが必要）、上げると速く進みます。",
               },
               {
-                slider: "未読テキストの不透明度",
-                path: "msg.minOpacity",
-                min: 0,
-                max: 60,
-                step: 1,
-                fmt: "%",
-                hint: "案2（浮かび上がり）で、まだ読んでいない文字の不透明度。",
-              },
-              {
                 slider: "アニメーション時間の倍率",
                 path: "msg.soft",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 1,
                 max: 6,
                 step: 0.5,
@@ -1202,6 +1268,7 @@ export default function TopTunePanel({
               {
                 slider: "表示開始",
                 path: "msg.fadeIn",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 0,
                 max: 2000,
                 step: 100,
@@ -1211,6 +1278,7 @@ export default function TopTunePanel({
               {
                 slider: "読み終わりまで",
                 path: "msg.len",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 800,
                 max: 5000,
                 step: 200,
@@ -1220,16 +1288,18 @@ export default function TopTunePanel({
               {
                 slider: "読み終わり後",
                 path: "msg.tail",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 0,
                 max: 2000,
                 step: 100,
                 fmt: "px",
                 hint: "最後の段落が出そろってから、次のセクションへ行くまでのスクロール量。小さいと最後の文章をゆっくり読めません。",
               },
-              { sub: "見た目（見出し）", deep: true },
+              { sub: "見出し", deep: true },
               {
                 slider: "出るまでのスクロール量",
                 path: "msg.titleDelay",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 0,
                 max: 1500,
                 step: 100,
@@ -1239,51 +1309,12 @@ export default function TopTunePanel({
               {
                 slider: "アニメーション時間",
                 path: "msg.titleAppearSec",
+                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 0.5,
                 max: 4,
                 step: 0.5,
                 fmt: "s",
                 hint: "「網走は何もない。」がブラーから現れる時間。長いほどゆったり出ます（本文と同じ出方）。",
-              },
-              {
-                slider: "不透明度",
-                path: "msg.titleOpacity",
-                min: 10,
-                max: 100,
-                step: 1,
-                fmt: "%",
-                hint: "「網走は何もない。」の不透明度。カンプは80%。",
-              },
-              {
-                slider: "フォントウェイト",
-                path: "msg.titleWeight",
-                min: 100,
-                max: 500,
-                step: 100,
-                hint: "100=Thin（カンプ）〜500=Medium。",
-              },
-              {
-                slider: "行間",
-                path: "msg.titleLeading",
-                min: 0.8,
-                max: 1.6,
-                step: 0.1,
-              },
-              { sub: "見た目（本文）", deep: true },
-              {
-                slider: "フォントウェイト",
-                path: "msg.bodyWeight",
-                min: 100,
-                max: 500,
-                step: 100,
-                hint: "300=Light がカンプ。",
-              },
-              {
-                slider: "行間",
-                path: "msg.bodyLeading",
-                min: 1.2,
-                max: 3,
-                step: 0.1,
               },
               /* ── KV → ぼーっとスポット ─────────── */
               { sub: "ぼーっとスポット", grp: "anim" },
@@ -1392,7 +1423,7 @@ export default function TopTunePanel({
                 path: "gourmet.pauseOnHover",
                 hint: "ONだと、カードにカーソルを乗せている間は流れが止まり、ホバーの文字をゆっくり読めます。",
               },
-              { sub: "体験セクション（グルメの下）", grp: "anim" },
+              { sub: "体験セクション（グルメの下）", grp: "variation" },
               {
                 note: "「意外とオモロい、網走。」の見せ方10案。どれも白地・余白多め・ミニマルで、トップの他のセクションと同じ書体づかいにしてあります（ホバーで開く仕掛けは廃止）。",
               },
@@ -1408,6 +1439,58 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
+              { sub: "体験セクション（グルメの下）", grp: "basic" },
+              {
+                slider: "下のマージン",
+                path: "events.tailPad",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 0,
+                max: 2000,
+                step: 50,
+                unit: "px",
+                immediate: true,
+                hint: "体験セクションとフッターのあいだの余白。もとは「体験がページ最後だったので動きを最後まで見るための逃げ」でしたが、フッターが入ったので既定は0です。動きをゆっくり最後まで見たい時だけ足してください。",
+              },
+              { sub: "案2 カードを切る：カード", deep: true, when: (p: Params) => p.events.pattern === 31 },
+              {
+                slider: "大きさ",
+                path: "events.shufCard",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                min: 60,
+                max: 140,
+                step: 1,
+                unit: "%",
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "重なったカードの大きさ（カンプの420×616pxが100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。",
+              },
+              { sub: "案5 3Dカルーセル：カード", deep: true, when: (p: Params) => p.events.pattern >= 34 },
+              {
+                seg: "縦横比",
+                path: "events.cardRatio",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                immediate: true,
+                /* 3Dカルーセルの案を選んだ時だけ出す（他の案には関係が無い） */
+                when: (p: Params) => p.events.pattern >= 34,
+                options: CARD_RATIOS.map((r, i) => ({ name: r.name, value: i })),
+                hint: "3Dカルーセルのカードの形。写真は cover で収まるので、比率を変えても伸びません。",
+              },
+              { sub: "体験セクション（グルメの下）", grp: "font" },
+              { sub: "案2 カードを切る：流れる文字", deep: true, when: (p: Params) => p.events.pattern === 31 },
+              {
+                slider: "大きさ",
+                path: "events.mqSize",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
+                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
+                min: 40,
+                max: 200,
+                step: 2,
+                unit: "px",
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "カードの後ろを右から左へ流れる「意外とオモロい、網走。」の大きさ。カンプは80px。大きくしても文字の中心の高さは変わりません。",
+              },
+              { sub: "体験セクション（グルメの下）", grp: "anim" },
               {
                 /* 【2026-09-26 ヒデさん指示】「1回スクロールすれば一定の速度で流れる。
                    リニアで機械的なので、自然に流れる案を3案。何が違うか明記」
@@ -1415,6 +1498,7 @@ export default function TopTunePanel({
                    もの。1回＝1枚になって効かなくなったので、流れ方の3案に差し替えた */
                 pills: "流れ方",
                 path: "events.flow",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 immediate: true,
                 /* ほかの案と同じ「案1」の形に（番号が「1 案1 床をすべる」と二重になっていた・2026-09-28 ヒデさん指摘） */
                 autoNum: "案",
@@ -1430,32 +1514,11 @@ export default function TopTunePanel({
               /* ── 案31（パネル表示は案2）を選んだ時だけ出るつまみ。画面の奥から手前の順 ──
                  【2026-09-26 ヒデさん指示】「この案を選んだら動的に出てきて、後ろのカルーセル
                    テキストのサイズ感や速度感、カードのサイズ感を変えられるように」 */
-              {
-                slider: "下のマージン",
-                path: "events.tailPad",
-                min: 0,
-                max: 2000,
-                step: 50,
-                unit: "px",
-                immediate: true,
-                hint: "体験セクションとフッターのあいだの余白。もとは「体験がページ最後だったので動きを最後まで見るための逃げ」でしたが、フッターが入ったので既定は0です。動きをゆっくり最後まで見たい時だけ足してください。",
-              },
               { sub: "案2 カードを切る：流れる文字", deep: true, when: (p: Params) => p.events.pattern === 31 },
-              {
-                slider: "大きさ",
-                path: "events.mqSize",
-                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
-                min: 40,
-                max: 200,
-                step: 2,
-                unit: "px",
-                immediate: true,
-                when: (p: Params) => p.events.pattern === 31,
-                hint: "カードの後ろを右から左へ流れる「意外とオモロい、網走。」の大きさ。カンプは80px。大きくしても文字の中心の高さは変わりません。",
-              },
               {
                 slider: "速さ",
                 path: "events.mqDur",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 8,
                 max: 90,
                 step: 1,
@@ -1466,19 +1529,9 @@ export default function TopTunePanel({
               },
               { sub: "案2 カードを切る：カード", deep: true, when: (p: Params) => p.events.pattern === 31 },
               {
-                slider: "大きさ",
-                path: "events.shufCard",
-                min: 60,
-                max: 140,
-                step: 1,
-                unit: "%",
-                immediate: true,
-                when: (p: Params) => p.events.pattern === 31,
-                hint: "重なったカードの大きさ（カンプの420×616pxが100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。",
-              },
-              {
                 slider: "切る速さ",
                 path: "events.shufDur",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 0.5,
                 max: 2,
                 step: 0.05,
@@ -1491,21 +1544,13 @@ export default function TopTunePanel({
               {
                 slider: "メリハリ",
                 path: "events.shufPow",
+                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
                 min: 1.5,
                 max: 5,
                 step: 0.1,
                 immediate: true,
                 when: (p: Params) => p.events.pattern === 31,
                 hint: "大きいほど、動き出しと止まり際はゆっくりで、途中がシャッと速くなります。小さいほど一定の速さに近づきます。",
-              },
-              {
-                seg: "縦横比",
-                path: "events.cardRatio",
-                immediate: true,
-                /* 3Dカルーセルの案を選んだ時だけ出す（他の案には関係が無い） */
-                when: (p: Params) => p.events.pattern >= 34,
-                options: CARD_RATIOS.map((r, i) => ({ name: r.name, value: i })),
-                hint: "3Dカルーセルのカードの形。写真は cover で収まるので、比率を変えても伸びません。",
               },
             ],
           },
@@ -1625,7 +1670,7 @@ export default function TopTunePanel({
                 step: 1,
                 fmt: "°",
               },
-              { sub: "場所えらびのカルーセル", grp: "anim" },
+              { sub: "場所えらびのカルーセル", grp: "variation" },
               {
                 pills: "案",
                 path: "expPick.pattern",
@@ -1642,7 +1687,7 @@ export default function TopTunePanel({
               {
                 note: "案を押すと、その場で場所えらびの画面から登場を再生し直します。",
               },
-              { sub: "動画まわり（遷移と再生画面）", grp: "anim" },
+              { sub: "動画まわり（遷移と再生画面）", grp: "basic" },
               { sub: "「ぼーっ」の吹き出し", deep: true },
               /* 出方は現状の案で確定（2026-08-21 ヒデさん指示。案ピルは撤去。
                  パターン本体は boPatterns.ts の DEFAULT_BO） */
@@ -1671,6 +1716,7 @@ export default function TopTunePanel({
                 step: 1,
                 fmt: "px",
               },
+              { sub: "動画まわり（遷移と再生画面）", grp: "anim" },
 
               { sub: "遷移（この場所にする → 再生画面）", deep: true },
               {
@@ -1747,6 +1793,17 @@ export default function TopTunePanel({
                 fmt: "s",
                 hint: "フェードイン/アウトにかける時間。長いほどふわーっと出入りします。",
               },
+              { sub: "再生ボタンとタイマー", deep: true },
+              {
+                slider: "表示時間",
+                path: "videoVol.uiHideSec",
+                min: 0.5,
+                max: 8,
+                step: 0.5,
+                fmt: "s",
+                hint: "再生開始やマウス操作のあと、再生マークとタイマーが消えるまでの時間。短いほど早く映像だけになります。",
+              },
+              { sub: "動画まわり（遷移と再生画面）", grp: "other" },
               { sub: "動画の音", deep: true },
               {
                 toggle: "音量をだんだん上げる",
@@ -1761,16 +1818,6 @@ export default function TopTunePanel({
                 step: 0.5,
                 fmt: "s",
                 hint: "音量が最大になるまでの時間。長いほどゆっくり大きくなります。",
-              },
-              { sub: "再生ボタンとタイマー", deep: true },
-              {
-                slider: "表示時間",
-                path: "videoVol.uiHideSec",
-                min: 0.5,
-                max: 8,
-                step: 0.5,
-                fmt: "s",
-                hint: "再生開始やマウス操作のあと、再生マークとタイマーが消えるまでの時間。短いほど早く映像だけになります。",
               },
             ],
           },

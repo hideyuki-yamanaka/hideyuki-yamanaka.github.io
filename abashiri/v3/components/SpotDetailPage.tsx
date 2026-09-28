@@ -205,6 +205,8 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 immediate: true,
                 hint: "ファーストビューで写真が占める高さ（画面の高さの何%）。スマホの値は、スマホモードで触ると別に持てます（上書きが無い間は52%）。",
               },
+              /* 渡る長さ＝スクロールで写真が白い本文へ変わる長さ＝動き。アニメーションへ（2026-09-28 分類の見直し） */
+              { sub: "写真から本文への渡り", grp: "anim" },
               {
                 slider: "渡る長さ",
                 path: "detail.fade",
