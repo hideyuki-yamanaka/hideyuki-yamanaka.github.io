@@ -2848,7 +2848,10 @@ function hideEmptyPanelGroups() {
     [...root.querySelectorAll('.cat-section')].reverse().forEach(s => { const bd = s.querySelector(':scope > .cat-section-body'); if (bd) setAuto(s, !hasVisible(bd)); });
     /* 【2026-09-29 近接の法則】見出しのすぐ下で最初に見えている物に印(pfirst)。小見出しの上の余白(16px)を、見出しのすぐ下では付けないため。
        :first-child は隠れている補足文なども1番目に数えるので使わない(6-15 と同じ理由) */
-    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); if (shown) { first = false; lastEl = ch; } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
+    /* 【2026-09-29】小見出しのまとまり(.cv-subg・入れ子の見出し)のすぐ後ろに見えている物には pab を付ける。
+       まとまりの前後を 16px にする時、まとまり同士が 16+16＝32px(見出し同士の 24px より遠い＝逆転)にならないように、余白は「上」だけで付ける */
+    const isBlk = el => el.classList.contains('cv-subg') || el.classList.contains('grp');
+    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null, prevBlk = false; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); ch.classList.toggle('pab', shown && prevBlk); if (shown) { first = false; lastEl = ch; prevBlk = isBlk(ch); } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
   } catch (e) {}
 }
 function sub(target, html, deep, opts) {

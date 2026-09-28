@@ -11485,7 +11485,10 @@ function hideEmptyPanelGroups() {
     [...root.querySelectorAll('.cat-section')].reverse().forEach(s => { const bd = s.querySelector(':scope > .cat-section-body'); if (bd) setAuto(s, !hasVisible(bd)); });
     /* 【2026-09-29 近接の法則】見出しのすぐ下で最初に見えている物に印(pfirst)。小見出しの上の余白(16px)を、見出しのすぐ下では付けないため。
        :first-child は隠れている補足文なども1番目に数えるので使わない(6-15 と同じ理由) */
-    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); if (shown) { first = false; lastEl = ch; } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
+    /* 【2026-09-29】小見出しのまとまり(.cv-subg・入れ子の見出し)のすぐ後ろに見えている物には pab を付ける。
+       まとまりの前後を 16px にする時、まとまり同士が 16+16＝32px(見出し同士の 24px より遠い＝逆転)にならないように、余白は「上」だけで付ける */
+    const isBlk = el => el.classList.contains('cv-subg') || el.classList.contains('grp');
+    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null, prevBlk = false; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); ch.classList.toggle('pab', shown && prevBlk); if (shown) { first = false; lastEl = ch; prevBlk = isBlk(ch); } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
   } catch (e) {}
 }
 function sub(target, html, deep, opts) {
@@ -13686,6 +13689,19 @@ function buildPanel() {
      ❌ 最初に作った「境目がくねる・模様が流れる」4案(旧14〜17)は違っていたので外した。
      案ごとの値は揺らぎの案(cvSway)の控えに入る(スマホの上書きも案ごと)。つまみは選んだ案で効く物だけ出す(6-14)。うねりの強さ等は下の「ウェーブ」(入口は1つ・6-2) */
   const CV_FLOW_PILLS = ['13', '18', '19', '20', '21'].map(k => { const it = CV_SWAYS.find(x => x.key === k); return k === '13' ? Object.assign({}, it, { name: '今の動き（右上で揺れる）', tip: '今の本番の動き。白なし・明るい所は右上のまま、グラデ全体がゆっくり左右に傾いて揺れ、色の境目も少しうねる。' }) : it; }).filter(Boolean);
+  /* 【2026-09-29 ヒデさん依頼「上位概念が濃くて、下位概念が薄く。フォントサイズでもいい。サンプルのバリエーションを作って提案して」】
+     調整パネルの文字の見せ方の案(見本＝このタブだけ・css の html[data-pty])。サイトの設定には入れず、このブラウザにだけ覚える。
+     決まったらその案を固定して、この欄は消す(決まり 6-7) */
+  sub(catCv, 'パネルの文字の見せ方（案）', false, { grp: 'variation' });
+  { const PTY = [['0', '今の見え方'], ['1', '1 色の濃さ'], ['2', '2 文字の大きさ'], ['3', '3 文字の太さ'], ['4', '4 濃さ＋大きさ']];
+    const get = () => { if (window.__pty) return window.__pty; try { return localStorage.getItem('anyflow-panel-type') || '0'; } catch (e) { return '0'; } };
+    const apply = k => { window.__pty = k; if (k === '0') delete document.documentElement.dataset.pty; else document.documentElement.dataset.pty = k; };
+    apply(get());
+    const box = document.createElement('div'); box.className = 'var-box';
+    const row = document.createElement('div'); row.className = 'sw-row'; box.appendChild(row);
+    const fill = () => { row.innerHTML = ''; PTY.forEach(([k, name]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'var-pill' + (get() === k ? ' on' : ''); b.textContent = name;
+      b.onclick = () => { apply(k); try { localStorage.setItem('anyflow-panel-type', k); } catch (e) {} fill(); }; row.appendChild(b); }); };
+    fill(); (mount || body).appendChild(box); }
   sub(catCv, 'グラデの揺らぎ', false, { grp: 'variation' });
   varRowX('cvSway', CV_FLOW_PILLS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { autosave: true, snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   sub(catCv, 'グラデの揺らぎ', false, { grp: 'anim' });
