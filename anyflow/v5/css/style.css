@@ -997,8 +997,6 @@
   .slot .stp { font-style: normal; display: block; }   /* 2026-09-15: will-change を外す(合成レイヤーだと拡大時に文字が荒れる。毎フレーム再描画で常にくっきり) */
   .slot .stp em { font-style: normal; display: block; height: 1em; line-height: 1; text-align: center; }
   .slot .fx { font-style: normal; display: inline-block; }
-  .slot .stp em.x { display: none; }   /* 案4 ドラム用の「次の数字」。ドラム以外では出さない */
-  #results.slot-fx-drum .slot .stp em.x { display: block; }
   /* 【2026-09-19 ヒデさん依頼】スロットの案2「ぼかして消える」: 窓の上下に段階的なぼかし(端ほど強く)を重ねて、数字が溶けるように消える。
      ::before/::after の backdrop-filter は .rl(マスク付き=backdrop root)の中の数字だけをぼかす。量は --slot-blur / 範囲は --slot-blur-zone(実績タブ) */
   /* 【2026-09-19 作り直し】窓の高さ(--slot-sw・文字数)を @property で「連続的に」動かす。回っている桁は --slot-win-n まで開き、止まると 1.24 に閉じる(0.4秒)。
@@ -1014,18 +1012,11 @@
   #results.slot-fx-blur .slot .rl.spin::before, #results.slot-fx-blur .slot .rl.spin::after { opacity: 1; }
   #results.slot-fx-blur .slot .rl::before { top: 0; -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); }
   #results.slot-fx-blur .slot .rl::after { bottom: 0; -webkit-mask-image: linear-gradient(to top, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); mask-image: linear-gradient(to top, #000 0, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 78%, transparent 100%); }
-  /* 【2026-09-28 ヒデさん依頼「スロットの上下の切れ目に違和感。もっと自然に」】案5〜8。どれも ぼかしは使わない(2026-08-17「回転中のぼかしは要らない」)。
+  /* 【2026-09-28 ヒデさん依頼「スロットの上下の切れ目に違和感。もっと自然に」】案5。ぼかしは使わない(2026-08-17「回転中のぼかしは要らない」)。
      今の案2 は「回っている桁だけ窓が広がる」ので、上下に数字の切れ端がぼけて飛び出し、桁ごとに窓の高さもそろわない(実測 2026-09-28)＝ここを避ける */
   /* 案5 パツッと切れる: 9/18 より前の作り(窓＝数字ぴったり 1em・薄くしない) */
   #results.slot-fx-cut .slot .rl { height: 1em; padding: 0; margin: 0; -webkit-mask-image: none; mask-image: none; }
-  /* 案6〜8 共通: 窓の高さ(--slot-win-n 文字分)を回っている間も止まってからも変えない＝桁ごとに上下の線がそろう。
-     消える帯は「数字の色が付く部分」より外だけ(SF Pro Text 300 の数字は 1文字の枠の中心から ±0.37 文字分。実測 2026-09-28)＝止まった数字は薄くならない。
-     帯の中は案2と同じ「端ほどゆっくり薄くなる」曲線(0→.04→.16→.45→1)。S 字は切れ端が濃く残ったのでやめた(2026-09-28 撮影で確認)。
-     消える長さ(--slot-ramp)は 1 より大きくしても帯は数字にかからない所で止まる */
-  #results.slot-fx-still .slot .rl { height: calc(var(--slot-win-n, 1.4) * 1em); padding: calc((var(--slot-win-n, 1.4) - 1) * .5em) 0; margin: calc((1 - var(--slot-win-n, 1.4)) * .5em) 0;
-    --rr: calc(max(var(--slot-win-n, 1.4) * .5em - .37em, 0em) * min(var(--slot-ramp, 1), 1));
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.04) calc(var(--rr) * .25), rgba(0,0,0,.16) calc(var(--rr) * .5), rgba(0,0,0,.45) calc(var(--rr) * .75), #000 var(--rr), #000 calc(100% - var(--rr)), rgba(0,0,0,.45) calc(100% - var(--rr) * .75), rgba(0,0,0,.16) calc(100% - var(--rr) * .5), rgba(0,0,0,.04) calc(100% - var(--rr) * .25), transparent 100%);
-            mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.04) calc(var(--rr) * .25), rgba(0,0,0,.16) calc(var(--rr) * .5), rgba(0,0,0,.45) calc(var(--rr) * .75), #000 var(--rr), #000 calc(100% - var(--rr)), rgba(0,0,0,.45) calc(100% - var(--rr) * .75), rgba(0,0,0,.16) calc(100% - var(--rr) * .5), rgba(0,0,0,.04) calc(100% - var(--rr) * .25), transparent 100%); }
+  /* 【2026-09-29 完全削除】案6〜8(slot-fx-still)・ドラム(slot-fx-drum)の見た目は消した。残りは 案3(slot-fx-blur)・案5(slot-fx-cut) */
   .res-main { display: flex; flex-direction: column; gap: var(--space-32); color: var(--ink-strong); }
   .res-text { font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); }
   .res-stats { display: flex; align-items: center; color: var(--ink-strong); }
@@ -1239,31 +1230,7 @@
   .r2v-big .r2v-big-prod { display: block; font-size: var(--r2v-prod-size, 40px); line-height: var(--lh-snug); margin-top: 0.12em; }
   html.mb .r2v-big .r2v-big-prod { font-size: calc(var(--r2v-prod-size, 40px) * 0.57); }
   .r2v-tag .r2v-prod { white-space: nowrap; }
-  /* 案28: 上段(見出し 左・数値 右)は案26と同じ。下は説明を同じ場所で切替(文章 左・ピクト 右) */
-  /* ===== 案26 数字が大きく→上段の終点→線→下段がブラー→横スクロール(絵コンテ Figma 17283:23622・2026-09-15)。
-     カンプ実測: 大きい数値 120px(「+」60)・上段: 見出し 34px/1.7(左・x90) 数値 70px(「+」40・ラベル16/24)(右・x677) / 線 y409 幅1214 /
-     下段: 説明 530(ラベル20・見出し44/1.6 1行・本文14/1.8) 左・ピクト 416枠(内容219) 右 ===== */
-  html:not(.mb) #results.rfx-26 .res2 { width: min(1224px, 100% - 120px); display: flex; flex-direction: column; gap: 0; }
-  #results.rfx-26 .res2-top { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: var(--space-40); }
-  #results.rfx-26 .res2-head { flex-direction: column; align-items: flex-start; justify-content: flex-start; font-size: var(--fs-stat); line-height: var(--lh-loose); }
-  #results.rfx-26 .res2-stats { gap: var(--space-44); align-items: flex-start; margin-top: var(--space-16); }
-  #results.rfx-26 .res2-stats .r2s { gap: var(--space-8); transform-origin: center center; }
-  #results.rfx-26 .res2-stats .r2s span { font-size: var(--fs-stat-lg); line-height: 1; }
-  #results.rfx-26 .res2-stats .r2s b { font-size: var(--fs-base); line-height: 1.5; }
-  #results.rfx-26 .slot .fx:last-child { font-size: var(--fs-xl); }
-  #results.rfx-26 .res2-hr { display: block; margin: 96px 0 0; transform-origin: left center; transform: scaleX(var(--rfx-hr, 0)); }
-  #results.rfx-26 .res2-vals { display: flex; width: 100%; overflow: hidden; margin: 0; }
-  #results.rfx-26 .r2v-track { display: flex; width: 100%; }
-  #results.rfx-26 .res2-vline { display: none; }
-  #results.rfx-26 .r2v { flex: 0 0 100%; box-sizing: border-box; min-width: 0; display: grid; grid-template-columns: 530px 1fr; gap: var(--space-40); align-items: center; padding: 0; min-height: 416px; }
-  #results.rfx-26 .r2v-text { order: 0; width: 528px; max-width: 528px; gap: var(--space-16); }
-  #results.rfx-26 .r2v-tagh { gap: var(--space-8); }
-  #results.rfx-26 .r2v-tag { font-size: var(--fs-lead); line-height: 1; }
-  #results.rfx-26 .r2v-h { font-size: var(--fs-h2); line-height: var(--lh-normal); white-space: nowrap; }
-  #results.rfx-26 .r2v-h br { display: none; }
-  #results.rfx-26 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
-  #results.rfx-26 .r2v-fig { display: block; order: 1; justify-self: end; margin-right: var(--space-60); }
-  #results.rfx-26 .r2v-graphic { width: 325px; height: 325px; }   /* 描画 148/220 → 219px ＝ カンプの内容 219px */   /* 4-7例外（ピクトの描画をカンプの大きさに合わせた逆算値） */
+  /* 【2026-09-29 完全削除】案26(数字が大きく→線→下段が横スクロール)の見た目(PC・スマホ・縦が短い端末)は消した。残りは 案24-4 */
 
   /* ===== 【2026-09-15 ヒデさん指定】モック(/mock/reveal/)に残っていた5案(No.01〜05)を本実装へ移植(動き・概念を踏襲。寸法はモックの値) ===== */
 
@@ -1300,31 +1267,12 @@
   html.mb #results.rfx-24 .r2v-graphic { width: min(300px, calc(100vw - 48px)); height: 224px; position: relative; left: 50%; transform: translateX(-50%); margin-bottom: -16px; }   /* 【2026-09-16】300→220。【2026-09-21 ヒデさん依頼】ピクトを大きく＋ディスプレイ幅にクランプ＋中央寄せ。【2026-09-21 Y8】もう少し大きく(高さ196→224)。【2026-09-21 ヒデさん依頼】ピクト箱はカード下端より約55px下まで伸びていて下の見た目余白が75pxに膨張→margin-bottom -15 で線を上げ、下の見た目余白を約60pxに(=上と揃える) */
   html.mb #results.rfx-24 .r2v:has(.r2v-tag-ai) .r2v-graphic { margin-bottom: -24px; }   /* 【2026-09-21 ヒデさん依頼】for AI のピクト(棒グラフ)は透明下余白が約63pxとSaaS(55px)より大きく、-15では下余白68pxになる→AIだけ -23 で下も約60pxに揃える */
   html.mb #results.rfx-24 .r2v-big { font-size: var(--fs-xl); }
-  /* --- 案26(SP): 上段は見出し(29px・2行)と数値(40px)を縦に。線 → 下段は図235×145 上/言葉 下の面が横に動く。数値の拡大は 1.1倍 --- */
-  html.mb #results.rfx-26 .res2 { width: 100%; padding: 24px 0 12px; }
-  html.mb #results.rfx-26 .res2-top { flex-direction: column; align-items: flex-start; gap: var(--space-16); padding: 0 var(--space-20); }
-  html.mb #results.rfx-26 .res2-head { flex-direction: column; align-items: flex-start; font-size: 28px; line-height: var(--lh-normal); }
-  html.mb #results.rfx-26 .res2-stats { flex-wrap: wrap; gap: var(--space-12) var(--space-24); justify-content: space-between; width: 100%; margin-top: 0; }
-  html.mb #results.rfx-26 .res2-stats .r2s span { font-size: var(--fs-xl); }
-  html.mb #results.rfx-26 .res2-stats .r2s b { font-size: var(--fs-caption); line-height: 1.5; }
-  html.mb #results.rfx-26 .res2-hr { margin: var(--space-28) var(--space-20) 0; width: auto; }
-  html.mb #results.rfx-26 .r2v { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-24) var(--space-20) 0; min-height: 0; }
-  html.mb #results.rfx-26 .r2v-fig { order: -1; align-self: center; width: 235px; margin: 0; }   /* 4-7例外（ピクトの枠＝グラフィックの大きさ） */
-  html.mb #results.rfx-26 .r2v-graphic { width: 235px; height: 145px; }   /* 4-7例外（ピクトの枠＝グラフィックの大きさ） */
-  html.mb #results.rfx-26 .r2v-text { max-width: none; width: 100%; gap: var(--space-10); margin-top: var(--space-10); }
-  html.mb #results.rfx-26 .r2v-tag { font-size: var(--fs-base); }
-  html.mb #results.rfx-26 .r2v-h { font-size: 24px; line-height: var(--lh-heading); white-space: nowrap; }
-  html.mb #results.rfx-26 .r2v-p { font-size: var(--fs-body); line-height: var(--lh-body); }
   /* --- 縦が短い端末(≤600px): 固定案(1/5/6)を縦流れに。面の移動・場面切替は JS が止める --- */
   html.mb.rfx-short #results .res2-stats { transform: none !important; }
   html.mb.rfx-short #results.rfx-24 .res2-top, html.mb.rfx-short #results.rfx-24 .r2v, html.mb.rfx-short #results.rfx-24 .r2v-fig, html.mb.rfx-short #results.rfx-24 .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
   html.mb.rfx-short #results.rfx-24 .res2-hr { transform: none !important; }
   html.mb.rfx-short #results.rfx-24 .r2v-big { display: none; }
   /* ===== SP: モック5案(37〜41)は縦積み(固定なし・sticky なし・JS の拡大や透過は使わない) (2026-09-15) ===== */
-  html.mb.rfx-short #results.rfx-26 .res2-vals { display: block; overflow: visible; }
-  html.mb.rfx-short #results.rfx-26 .r2v-track { display: block; transform: none !important; }
-  html.mb.rfx-short #results.rfx-26 .r2v-fig, html.mb.rfx-short #results.rfx-26 .r2v-text, html.mb.rfx-short #results.rfx-26 .res2-head, html.mb.rfx-short #results.rfx-26 .r2s { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
-  html.mb.rfx-short #results.rfx-26 .res2-hr { transform: none !important; }
   /* 案24(SP): 常に縦流れ(rfx-flow)。全部見せる */
   html.mb #results.rfx-24.rfx-flow .res2 { padding: var(--space-40) 0; }
   html.mb #results.rfx-24.rfx-flow .res2-top, html.mb #results.rfx-24.rfx-flow .r2v, html.mb #results.rfx-24.rfx-flow .r2v-fig, html.mb #results.rfx-24.rfx-flow .r2v-text { transform: none !important; opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
@@ -1463,15 +1411,11 @@
     flex-direction: column; align-items: center; justify-content: center;
     gap: var(--dev-blk-gap, var(--space-56)); padding: var(--space-88) var(--space-120); box-sizing: border-box;
   }
-  /* 【2026-09-28 ヒデさん依頼「見出し＋モックではなく、モックそのものが上下中央に来る案も。既定に」】並べ方=モック(#dev.dev-vc-mock・PCとタブレット)。
-     モックの下に「見出しの高さ＋拡大ではみ出す分」の見えない余白(--dev-vc-spacer・JS の fit() が測って入れる)を置く＝
-     かたまり(見出し・間隔・モック・間隔・余白)の真ん中＝モックの見た目の真ん中＝画面の真ん中。間隔は見出し側と同じ(flex の gap) */
+  /* 【2026-09-29 完全削除】並べ方「モックを上下中央」(#dev.dev-vc-mock・モックの下の見えない余白)は消した＝見出し＋モックを上下中央だけ */
   /* 【2026-09-28 ヒデさん依頼「見出しとモックのセットを上下に動かせるように」】--dev-shift-y(パネル 開発者体験 › ①② 見出しとモック（PC）› 上下の位置)。
      translate は出方の動き(JS が書く transform)と別の指定なので重ねがけになり、ぶつからない。PC・タブレットだけ */
   html:not(.mb) #dev.dev-pin .dev-blk-in { translate: 0 var(--dev-shift-y, 0px); }
   html:not(.mb) #dev:not(.dev-pin) .dev-block { translate: 0 var(--dev-shift-y, 0px); }
-  html:not(.mb) #dev.dev-pin.dev-vc-mock .dev-blk-in::after,
-  html:not(.mb) #dev:not(.dev-pin).dev-vc-mock .dev-block::after { content: ''; display: block; flex: 0 0 auto; height: var(--dev-vc-spacer, 0px); }
   /* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②それぞれ 見出し↔モックの間隔(--devN-gap)とモックの拡大(--devN-scale)。PCのみ(SPは別scale) */
   html:not(.mb) #devBlock1 { --dev-blk-gap: var(--dev1-gap, 36px); }
   html:not(.mb) #devBlock2 { --dev-blk-gap: calc(var(--dev2-gap, 36px) - 8px * var(--dev2-scale, 1.1)); }   /* 【2026-09-26 ヒデさん指摘・①と揃える根治】②は束(高さ520)の中で正面カード(504)が上下8pxずつ内側。その8px×拡大ぶんを引く＝設定値がそのまま「見出し→正面カードの見た目の間隔」(①と同じ意味)。下の束は上端基準で拡大 */
@@ -3184,10 +3128,12 @@
      隠すと切り替えた時に項目の位置が動くので、隠さず薄くするだけ(触れば値は変えられる) */
   .row.row-off { opacity: 0.4; }
   /* ===== 【2026-09-29 ヒデさん依頼「デザインの4原則・近接の法則。関連の高い物は余白を狭く、低い物は広く」】調整パネルの余白を階層で分ける =====
-     見本: いまはコンバージョンのタブだけ(.cat-body.prox)。ヒデさんの確認後に全部のタブへ。値は⚠️仮置き(4の倍数)。
-     深い順に: つまみ同士 0(行の高さ20px＝20pxおき) ＜ 小見出しとそのつまみ 4px(小見出しのまとまりの上下は16px空けて前後と切る) ＜ 見出しとつまみ 8px ＜ 見出しのまとまり同士 24px ＜ カテゴリ(カード)同士 32px。
+     コンバージョンのタブで見本を作って確認 → 全部のタブ(.cat-body.prox・category() で付ける)。値は⚠️仮置き(4の倍数)。
+     深い順に: つまみ同士 0(行の高さ16px＝16pxおき) ＜ 小見出しとそのつまみ 4px(小見出しのまとまりの前後は16px空けて前後と切る) ＜ 見出しとつまみ・案のピルとその下のつまみ 8px ＜ 見出しのまとまり同士 24px ＜ カテゴリ(カード)同士 32px。
      間の取り方は「並べた物の“間”にだけ隙間(flex の gap)」＝隠れている行・見出しは数えない(margin や :first-child だと隠れた物まで数える・6-15 と同じ理由)。
-     つまみの行の高さは 20px に詰める(↺ ボタン 18px) */
+     つまみの行の高さは 16px に詰める(↺ ボタン 16px・つまみの棒 4px・丸 10px) */
+  .panel-body.tabbed > .cat > .cat-body.prox { display: flex; flex-direction: column; gap: 32px; }   /* タブの中のいちばん外側: カード同士・案の大見出し同士は 32px(案の大見出しの間は、さらに区切り線) */
+  .cat-body.prox > .cat-section { margin: 0; }
   .cat-body.prox .vs-body { display: flex; flex-direction: column; gap: 24px; }                 /* 案のまとまり同士・案とカードの間 */
   .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 8px 0 0; }                          /* カード同士は 24+8＝32px */
   .cat-body.prox .cat-section:not(.cs-variation) { padding: 0 12px 16px; }
@@ -3199,39 +3145,79 @@
   .cat-body.prox .grp > .grp-body { display: flex; flex-direction: column; gap: 0; padding-bottom: 0; }   /* つまみ同士(【2026-09-29 ヒデさん「インジケーター間の距離はもっと縮めていい」】行の高さ20px・隙間0＝20pxおき。旧 24+4＝28pxおき) */
   .cat-body.prox .grp-body > .sw-row, .cat-body.prox .grp-body > .var-box, .cat-body.prox .grp-body > .gfx-edit, .cat-body.prox .grp-body > .np { margin-top: 4px; }   /* つまみ以外(ピル・編集の部品)は前と 4px 離す */
   .cat-body.prox .row, .cat-body.prox .row + .row { margin: 0; min-height: 16px; }   /* 【2026-09-29 ヒデさん「もっと近づけていい」】20→16pxおき。文字が11pxなので、くっつかずに読める下限 */
-  /* つまみを細身に(棒 4px・丸 12px)。左の黒い塗りは JS が --p(0〜1)で渡す。丸の中心と塗りの端がそろうように 6px(丸の半分)ずらす */
+  /* つまみを細身に(棒 4px・丸 10px【2026-09-29 ヒデさん「丸はもう少し小さくていい」12→10px】)。左の黒い塗りは JS が --p(0〜1)で渡す。丸の中心と塗りの端がそろうように 5px(丸の半分)ずらす */
   .cat-body.prox .row input[type=range] { -webkit-appearance: none; appearance: none; height: 12px; margin: 0; background: transparent; cursor: pointer; }
-  .cat-body.prox .row input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, #090909 calc(6px + (100% - 12px) * var(--p, .5)), #e0e0e0 0); }
-  .cat-body.prox .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; margin-top: -4px; border: 0; border-radius: 50%; background: #090909; }
+  .cat-body.prox .row input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, #090909 calc(5px + (100% - 10px) * var(--p, .5)), #e0e0e0 0); }
+  .cat-body.prox .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 10px; height: 10px; margin-top: -3px; border: 0; border-radius: 50%; background: #090909; }
   .cat-body.prox .row input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: #e0e0e0; }
   .cat-body.prox .row input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: #090909; }
-  .cat-body.prox .row input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #090909; }
+  .cat-body.prox .row input[type=range]::-moz-range-thumb { width: 10px; height: 10px; border: 0; border-radius: 50%; background: #090909; }
   .cat-body.prox .sw-row { margin: 0; }
   .cat-body.prox .cv-subg { display: flex; flex-direction: column; gap: 0; margin: 16px 0 0; }   /* 小見出しのまとまりの上は 16px */
   .cat-body.prox .grp-body > .grp { margin: 16px 0 0; }   /* 見出しの中に入れ子の見出しがある時も、小見出しのまとまりと同じ扱い */
+  .cat-body.prox .grp-body > .grp.bare:not(.pab) { margin-top: 0; }   /* 見出しを出さない入れ物(bare)は透明な箱＝自分では余白を足さない(中身の余白だけ効かせる) */
+  .cat-body.prox .grp-body > .pav { margin-top: 8px; }    /* 案のピルのすぐ下のつまみは 8px(見出しとつまみと同じ・ピルとつまみがくっつかないように) */
   .cat-body.prox .grp-body > .pab { margin-top: 16px; }   /* まとまりのすぐ後ろも 16px(後ろのつまみが仲間に見えないように)。まとまり同士も 16px(旧 16+16＝32px は見出し同士の 24px より遠い逆転だった) */
   .cat-body.prox .cv-subg-lab { margin: 0 0 4px; }   /* 小見出しとつまみは 4px */
+  .cat-body.prox .grp-stack { display: flex; flex-direction: column; gap: 16px; }   /* 見出しの中の見出しをまとめて入れる箱(キービジュアル「グラフィック」の中の惑星・メッシュ等)は、小見出しのまとまり同士と同じ 16px */
   .cat-body.prox .grp-body > .pfirst { margin-top: 0; }   /* 見出しのすぐ下は、見出しとの間 8px のまま(印 pfirst・pab は JS の hideEmptyPanelGroups) */
   .cat-body.prox .rst { flex-basis: 16px; width: 16px; height: 16px; border-radius: 4px; }   /* ↺ を 26→16px に＝つまみの行の高さ 16px に収める */
   .cat-body.prox .rst::after { width: 12px; height: 12px; }
-  /* 【2026-09-29 ヒデさん「文字の濃さや大きさで階層が分かるように。上位概念が濃くて、下位概念が薄く。フォントサイズでもいい。サンプルのバリエーションを」】
-     文字の見せ方の案(見本のタブだけ)。階層は 1 案の見出し ＞ 2 カテゴリ(カードの見出し) ＞ 3 見出し ＞ 4 小見出し ＞ 5 つまみの名前。
-     案は html[data-pty] で切り替え(パネルの「パネルの文字の見せ方（案）」・このブラウザだけに覚える)。無し＝今の見え方。⚠️値は仮置き。
-     13px・11px は今の大きさのまま比べるための値(4-7例外・決まったら 4の倍数に直す) */
-  .cat-body.prox { --t1-fs: 14px; --t1-fw: 800; --t1-c: #000; --t2-fs: 13px; --t2-fw: 700; --t2-c: #111; --t3-fs: 12px; --t3-fw: 600; --t3-c: #333;   /* 4-7例外（13px は今の大きさのまま比べる値・決まったら4の倍数に直す） */
-                   --t4-fs: 12px; --t4-fw: 600; --t4-c: #8a8a8a; --t5-fs: 11px; --t5-fw: 300; --t5-c: #555; --tv-c: #333; }   /* 今の見え方(小見出しが一番薄い＝逆転している) */   /* 4-7例外（11px は今の大きさのまま比べる値・決まったら直す） */
-  html[data-pty="1"] .cat-body.prox { --t2-c: #222; --t3-c: #444; --t4-c: #666; --t5-fw: 400; --t5-c: #888; --tv-c: #444; }   /* 1 色の濃さ: 大きさはそのまま、上から黒→灰へ5段 */
-  html[data-pty="2"] .cat-body.prox { --t1-fs: 18px; --t1-fw: 700; --t1-c: #222; --t2-fs: 16px; --t2-c: #222; --t3-fs: 14px; --t3-fw: 700; --t3-c: #222;
-                                      --t4-fs: 12px; --t4-fw: 700; --t4-c: #222; --t5-fw: 400; --t5-c: #222; --tv-c: #222; }   /* 2 文字の大きさ: 色は全部同じ、18→16→14→12→11 */
-  html[data-pty="3"] .cat-body.prox { --t1-c: #222; --t2-c: #222; --t3-c: #222; --t4-fw: 500; --t4-c: #222; --t5-c: #222; --tv-c: #222; }   /* 3 文字の太さ: 色と大きさはそのまま、800→700→600→500→300 */
-  html[data-pty="4"] .cat-body.prox { --t1-fs: 18px; --t2-fs: 16px; --t2-c: #222; --t3-fs: 14px; --t3-fw: 700; --t3-c: #444;
-                                      --t4-c: #666; --t5-fw: 400; --t5-c: #888; --tv-c: #444; }   /* 4 濃さ＋大きさ: 上ほど大きく黒く、下ほど小さく薄く */
+  /* 【2026-09-29 ヒデさん「文字の濃さや大きさで階層が分かるように。上位概念が濃くて、下位概念が薄く。フォントサイズでもいい」→ 4案から「4 濃さ＋大きさ」に決定】
+     1 案の見出し ＞ 2 カテゴリ(カードの見出し) ＞ 3 見出し ＞ 4 小見出し ＞ 5 つまみの名前。上ほど大きく黒く、下ほど小さく薄く。⚠️値は仮置き。
+     つまみの名前・数値の大きさは、パネル全体の今の大きさ(11px)のまま(ここでは指定しない) */
+  .cat-body.prox { --t1-fs: 18px; --t1-fw: 800; --t1-c: #000; --t2-fs: 16px; --t2-fw: 700; --t2-c: #222; --t3-fs: 14px; --t3-fw: 700; --t3-c: #444;
+                   --t4-fs: 12px; --t4-fw: 600; --t4-c: #666; --t5-fw: 300; --t5-c: #888; --tv-c: #444; }   /* 【2026-09-29 ヒデさん「いちばん下の段の太さをもう少し下げて」】つまみの名前など 400→300 */
   .cat-body.prox .vs-section > .cat-section-head, .cat-body.prox .vs-section > .cat-section-head:hover { font-size: var(--t1-fs); font-weight: var(--t1-fw); color: var(--t1-c); }
   .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head, .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head:hover { font-size: var(--t2-fs); font-weight: var(--t2-fw); color: var(--t2-c); }
   .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title { font-size: var(--t3-fs); font-weight: var(--t3-fw); color: var(--t3-c); }
-  .cat-body.prox .cv-subg-lab { font-size: var(--t4-fs); font-weight: var(--t4-fw); color: var(--t4-c); }
-  .cat-body.prox .row > label { font-size: var(--t5-fs); font-weight: var(--t5-fw); color: var(--t5-c); }
+  .cat-body.prox .cv-subg-lab,
+  .cat-body.prox .grp-body .grp > .grp-title { font-size: var(--t4-fs); font-weight: var(--t4-fw); color: var(--t4-c); }   /* 見出しの中の見出し(例: グラフィック＞惑星・2つの価値＞ポイント1・案＞for SaaS)は、どの深さでも小見出しと同じ段 */
+  .cat-body.prox .grp-body .grp > .grp-title { margin-bottom: 4px; }   /* 小見出しとつまみと同じ 4px */
+  .cat-body.prox .row > label { font-weight: var(--t5-fw); color: var(--t5-c); }
   .cat-body.prox .row .val { color: var(--tv-c); }
+  /* 【2026-09-29 ヒデさん「見出しとインジケーター類の上下をもう少し、結構詰めて」】見出し→つまみ 8→4px。見出しの ↺ を 28→20px にして、見出しの行そのものも低くする */
+  .cat-body.prox .grp-title, .cat-body.prox .grp.fixed .grp-title, .cat-body.prox .grp.sub2 > .grp-title,
+  .cat-body.prox .cat-section-body > .grp:first-child > .grp-title { margin-bottom: 4px; }
+  .cat-body.prox .grp-title .gbtn:not(.done) { width: 20px; height: 20px; border-radius: 6px; }
+  .cat-body.prox .grp-title .gbtn::after { width: 12px; height: 12px; }
+  /* 【2026-09-29 ヒデさん「パネルを横に広げたら、左の項目名(折り返している所)も一緒に伸びるように」】項目名の欄は行の幅の 25%(いちばん狭い時は今の 100px)。
+     広げるほど名前の欄も広がり、折り返していた名前が1行に収まっていく(つまみの棒も一緒に伸びる) */
+  .cat-body.prox .row > label { flex: 0 0 max(100px, 25%); }
+  /* 【2026-09-29 ヒデさん「lh・ls などの数字が見切れている(前から直っていない)。丁寧に調べて直す」】
+     原因(実測): 数字の欄(input[type=number])の右に、上下の小さな矢印(▲▼)の場所が、見えていない時も約15px取られていた。
+     38px の欄で文字に使えるのは約13px → 120 が「12」、1.45 が「1.4」、-2.5 が「-2.」に切れていた。矢印を消して欄の幅を全部文字に使う(数字は ↑↓キーで1段ずつ変えられる) */
+  .cat-body.prox input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  .cat-body.prox input[type=number]::-webkit-inner-spin-button, .cat-body.prox input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  /* 【2026-09-29 ヒデさん「入力欄は枠線ではなく、枠線なしで入力エリアをグレーに」】数字・文字の入力欄とプルダウンは、枠線なし＋灰色の地。触っている欄だけ水色の輪 */
+  .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select { border: 0; border-radius: 4px; background-color: #f0f0f0; color: #333; }
+  .cat-body.prox input[type=number]:focus, .cat-body.prox input[type=text]:focus, .cat-body.prox select:focus { outline: 2px solid rgba(14,187,255,.6); outline-offset: 0; }
+  /* 【2026-09-29 ヒデさん「パネルの中でも決まりを統一。こっちは細い・こっちは太い、をなくす」「スペーシングやフォントサイズも一緒」】
+     パネルの文字の決まり(段ごとに1つだけ。書体は全部 Noto Sans JP＝入力欄とタブも):
+       1 案の大見出し 18/800/黒 ／ 2 カテゴリ 16/700/#222 ／ 3 見出し 14/700/#444 ／ 4 小見出し 12/600/#666 ／
+       5 いちばん下の段 11/300 … つまみの名前・小さな名前(size・weight・lh・ls)・★ピン留めは #888、数値・入力欄は #444。ピル・2〜3択・チップの文字も 11/300
+       ほか: パネルの題名 16/700 ／ タブ 12/500(選んでいるタブ 700) ／ ボタン 12/400 ／ 注意書き 10/300/#888
+     横の間は 4px(小さな名前と欄)・8px(それ以外の並び) だけ。⚠️値は仮置き */
+  .cat-body.prox .row .val { font-weight: 300; }
+  .cat-body.prox .row { gap: 8px; }
+  .cat-body.prox .txt-row > label { font-size: 11px; line-height: normal; padding-top: 2px; }   /* 文字の行の名前も、ほかの行と同じ 11px(旧 10px) */
+  .cat-body.prox .txt-row .txt-ctl { gap: 4px 8px; }
+  .cat-body.prox .txt-row .txt-pair { gap: 4px; }
+  /* 文字の行を、いつもの幅(450px)で1行に収める(size・weight の名前が長くなった分): 数字の欄 38→32px(矢印を消したので 1.45・-12.5 も入る)・
+     太さ 74→72px・名前の欄は 22%(最小 88px)・↺ はほかの行と同じ 16px */
+  .cat-body.prox .txt-row input.txt-n { width: 32px; padding: 2px 3px; }
+  .cat-body.prox .txt-row select.txt-w { width: 72px; padding: 2px 14px 2px 4px; }
+  .cat-body.prox .txt-row > label { flex: 0 0 max(88px, 22%); }
+  .cat-body.prox .txt-row > .rst { flex: 0 0 16px; width: 16px; height: 16px; margin: 2px 0 0; border-radius: 4px; }
+  .cat-body.prox .txt-row .txt-lab { font-size: 11px; font-weight: 300; color: #888; opacity: 1; }   /* size・weight・lh・ls(旧 10px・濃い色を60%に薄めていた) */
+  .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select { font-family: inherit; font-size: 11px; font-weight: 300; }   /* 入力欄も Noto Sans JP(旧 Arial) */
+  .cat-body.prox input[type=number], .cat-body.prox input[type=text], .cat-body.prox select, .cat-body.prox .hexin, .cat-body.prox .txt-row input.txt-n { color: #444; }   /* 文字の行の数字の欄は「自動」の印(is-auto)で色が戻っていたので、強めに指定 */
+  .tools .panel .var-pill, .tools .panel .seg button, .tools .panel .chip-b { font-size: 11px; font-weight: 300; }   /* ピル・2〜3択・チップ(旧 10px/400) */
+  .tools .panel .var-favhead { font-size: 11px; font-weight: 300; color: #888; }
+  .tools .panel .panel-head-title { font-size: 16px; font-weight: 700; }   /* 旧 15px */
+  .tools .panel .pan-tab { font-family: inherit; font-size: 12px; }   /* 旧 12.5px・Arial */
+  .tools .panel .panel-edit-btn, .tools .panel .btns button { font-size: 12px; font-weight: 400; }   /* ボタンは 12/400 にそろえる(上の 📱・✏️ は旧 11px) */
+  .tools .panel .grp-note.keep { font-size: 10px; font-weight: 300; color: #888; }   /* 注意書き(旧 8.5px) */
   /* 見出しの下と、かたまりの終わりにも息をつかせる */
   .grp > .grp-body { padding-bottom: var(--space-4); }
   /* ⚠️ 2026-08-19: ラベルを分かりやすい日本語に書き直したら 92px では折り返した。

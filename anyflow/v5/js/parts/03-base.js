@@ -1055,24 +1055,13 @@ const CV_SWAYS = [
     cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85, hueMode: 'swap', moodSec: 30, moodWhite: 0.85, swapHold: 0.45 } },
   { key: '12', name: '案6 左右入れ替え（案4の動き＋ピンク⇄水色）', tip: '案4の動きのまま、ピンクと水色が内外で入れ替わる往復(白はそのまま)。',
     cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85, hueMode: 'flip', moodSec: 30, moodWhite: 0.85, swapHold: 0.45 } },
-  /* 【2026-09-19 ヒデさん指定】「白エリアの領域を絞り、ゆらぎも基本は右上で範囲も抑えて」→ 広がり 0.9→0.55・中心を右上(0.84,0.10)・揺らぎの軸は白・傾き±6°・うねり 0.16・白の近くはうねらせない(0.9) */
-  { key: '13', name: '案7 白なし・右上に留める（揺らぎ小）', tip: '白い領域を取り(中心は水色〜シアンから始まる)、いちばん明るい所を右上(84%,10%)に置く。揺らぎの軸を白に置いて傾き±6°・うねり 0.16 に抑え、白の近くはうねらせない＝白はほぼ右上に留まり、周りの色だけ静かに動く。',
-    cv: {swayMode: 0,swayDeg: 6,swaySec: 40,wave: 0.16,waveLen: 0.5,waveSpd: 0.08,speed: 0.04,swell: 0.02,flowScale: 0.4,gcx: 0.84,gcy: 0.1,gr: 0.8,swayPivot: 1,waveAnchor: 0.9,hueMode: 'off',moodSec: 30,moodWhite: 0.85,swapHold: 0.45, core: 0, coreSoft: 0.12, coreSkip: 0.34} },
   /* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ 4案(⚠️値は仮置き)。
      ヒデさんの説明「境界線が細かく揺れる揺らぎではなく、波全体として 左からピンク・青・ライトブルー の配色が、ピンクの領域が左から少し多くなって
      青とライトブルーが右に寄っていく、みたいな全体の揺らぎ」→ 色の境目は細かく揺らさず、色の配分(グラデの色の位置)だけをゆっくり動かす。
      ❌ 最初に作った4案(うねりが流れる／色の波が進む／色の雲が流れる／色がループで流れる=旧14〜17)は、境目がくねる・模様が流れる動きで違っていたので外した。
      見た目(白なし・明るい所は右上)は案7をヒデさんが調整した値のまま。その場のうねり・ゆらゆらは0(境目を揺らさない)。
+     【2026-09-29 完全削除】今の動き(13)・満ち引き(18)・押し出し(19)・全体が寄る(20)は消した＝押し寄せて、ゆっくり戻る(21)だけ
      flowSec=1往復の秒数 / flowAmp=大きさ(色の位置がずれる量) / flowLag=右へ伝わる遅れ(1往復の何割) / flowRise=押し寄せる時間(1往復の何割) */
-  { key: '18', name: '満ち引き（ピンクがふくらむ）', tip: 'ピンクの面が左からふくらんで、青と水色が右へ寄る。そしてまた戻る。両端(左下のピンク・右上の明るい所)は動かない。',
-    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
-          flowMode: 5, flowSec: 16, flowAmp: 0.18 } },
-  { key: '19', name: '押し出し（左→右へ順に）', tip: 'ピンクがふくらむと、少し遅れて青、さらに遅れて水色が右へ押し出される(左から右へ伝わる)。そしてまた戻る。',
-    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
-          flowMode: 6, flowSec: 18, flowAmp: 0.14, flowLag: 0.3 } },
-  { key: '20', name: '全体が寄る（そろって左右へ）', tip: 'ピンク・青・水色の並び全体が、そろって右へ寄って、また左へ戻る。',
-    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
-          flowMode: 7, flowSec: 20, flowAmp: 0.08 } },
   { key: '21', name: '押し寄せて、ゆっくり戻る', tip: '押し出しと同じ動きで、押し寄せる時は速く、戻る時はゆっくり(波が打ち寄せて引くように)。',
     cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
           flowMode: 8, flowSec: 18, flowAmp: 0.14, flowLag: 0.3, flowRise: 0.3 } },
@@ -1083,15 +1072,11 @@ const CV_SWAYS = [
 const LOOK_KEYS = ['levels', 'spread', 'contrast', 'bright', 'cell', 'vivid', 'toneSoft', 'dither'];
 const LOOK_BASE = { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' };
 const CV_LOOKS = [
-  { key: '0', name: '今の見え方', fixed: true, tip: '今の本番の見え方。色の段3・格子状の粒・コントラスト強め。', cv: { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' } },
-  { key: '1', name: 'なめらか（粒は細かく）', tip: '格子状の粒は残したまま、色の段を3→6に増やして粒を均等に散らす。段の線が消え、境目がなめらか。明るい所は丸めて折れ目を出さない。', cv: { levels: 6, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.22, toneSoft: true, dither: 'bayer' } },
   { key: '2', name: '鮮やか（色を濃く）', tip: '色の段4・粒を均等に散らしたうえで、色の鮮やかさを上げる(くすみを取る)。明るい所は丸める。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.4, toneSoft: true, dither: 'bayer' } },
-  { key: '3', name: '自然な粒（ランダム）', tip: '粒を格子状からランダムに変える(フィルムの粒のような質感)。格子の模様や段の線が出にくい。少し鮮やかに。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
-  { key: '4', name: 'ほぼなめらか（粒ごく弱く）', tip: '色の段を12にして粒をごく弱く(近づくと分かる程度)。いちばんなめらかで鮮やか。', cv: { levels: 12, spread: 1, contrast: 1.25, bright: 1.03, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
 ];
-function cvLookKey() { const v = String((params && params.cvLook) || '0'); return (CV_LOOKS.some(s => s.key === v) && !variantRemovedKey('cvLook', v)) ? v : '0'; }
+function cvLookKey() { const v = String((params && params.cvLook) || '2'); return (CV_LOOKS.some(s => s.key === v) && !variantRemovedKey('cvLook', v)) ? v : '2'; }   /* 【2026-09-29 完全削除】見え方は 鮮やか(2) だけ */
 function cvApplyLook(key) { const c = CV_LOOKS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(LOOK_BASE), structuredClone(c.cv)); }
-function cvSwayKey() { const v0 = String((params && params.cvSway) || '0'), v = ['14', '15', '16', '17'].includes(v0) ? '13' : v0;   /* 2026-09-28: 外した案(旧14〜17)は今の動き(13)へ */ return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
+function cvSwayKey() { const v = String((params && params.cvSway) || '21'); return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '21'; }   /* 【2026-09-29 完全削除】揺らぎは 押し寄せて、ゆっくり戻る(21) だけ。消した案・古い案はすべて 21 へ */
 function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
 
 /* ===== 【2026-09-16 改訂・ヒデさん依頼】お問い合わせ上部の「溶け込み(馴染ませ)」=====
@@ -1397,7 +1382,7 @@ function applyDevTune() {
   sec.style.setProperty('--dev1-scale', String(d.dev1Scale != null ? d.dev1Scale : 1.1));
   sec.style.setProperty('--dev2-scale', String(d.dev2Scale != null ? d.dev2Scale : 1.1));
   /* 【2026-09-28 ヒデさん依頼】①②の「見出し＋モック」をセットで上下にずらす(並べ方ごとに別の値) */
-  sec.style.setProperty('--dev-shift-y', (+(d.vAlign === 'group' ? d.shiftYGroup : d.shiftYMock) || 0) + 'px');
+  sec.style.setProperty('--dev-shift-y', (+d.shiftYGroup || 0) + 'px');   /* 【2026-09-29】並べ方は見出し＋モック(group)だけ */
 }
 function applyDevStyle() {
   const sec = (typeof SECS !== 'undefined' && SECS.dev) || document.getElementById('dev'); if (!sec) return;
@@ -1586,7 +1571,7 @@ uniform float uWaveAmp, uWaveLen, uWaveSpd;
 uniform float uSwayDeg, uSwaySec, uSwayMode;   /* uSwayMode=揺らぎの型(0 ゆっくり傾く のみ。1〜6 は 2026-09-18 に完全削除) */
 uniform float uSwayPivot, uWaveAnchor;
 /* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ(案18〜21): 色の境目は揺らさず、色の配分(グラデの色の位置 t)だけを時間でゆっくり動かす。
-   uFlowMode 0〜4=なし / 5=満ち引き(ピンクがふくらむ) / 6=押し出し(左→右へ順に) / 7=全体が寄る / 8=押し寄せて、ゆっくり戻る
+   uFlowMode 0〜7=なし / 8=押し寄せて、ゆっくり戻る(【2026-09-29】5〜7 の案は完全削除)
    uFlowPh=いまの位相(JS が毎フレーム足し込む・0〜2π) / uFlowAmp=大きさ / uFlowLag=右へ伝わる遅れ(1往復の割合) / uFlowRise=押し寄せる時間(1往復の割合) */
 uniform float uFlowMode, uFlowAmp, uFlowLag, uFlowRise, uFlowPh;
 /* 【2026-09-28 夜 ヒデさん依頼「ディザや塵の効果はあってよいが、境目が不自然・くすんで見える。鮮やかで自然な境目に見える案を」】グラデの見え方(案)
@@ -1705,18 +1690,12 @@ void main(){
     t = (uGMode < 1.5) ? length(d / max(uGR, vec2(0.05))) : (d.x / max(uGR.x, 0.05) + 0.5);
   }
   /* 【2026-09-28】グラデの揺らぎ(全体の配分)。t=0 が右上の明るい所・1 が左下のピンク。s>0 でピンク側が広がり、青・水色が右(右上)へ寄る */
-  if (uFlowMode > 4.5) {
+  if (uFlowMode > 7.5) {   /* 【2026-09-29 完全削除】満ち引き(5)・押し出し(6)・全体が寄る(7)は消した＝押し寄せて戻る(8)だけ */
     float tc = clamp(t, 0.0, 1.0);
-    if (uFlowMode < 5.5) {   /* 満ち引き: 両端は動かさず、真ん中の色の位置だけを曲げる(ピンクがふくらむ⇄しぼむ) */
-      float s5 = sin(uFlowPh);
-      t = pow(tc, exp2(-2.0 * uFlowAmp * s5));
-    } else if (uFlowMode < 6.5 || uFlowMode > 7.5) {   /* 押し出し(6)・押し寄せて戻る(8): ピンク側から順に、少し遅れて右の色が動く。両端は動かさない */
-      float ph = uFlowPh - 6.2832 * clamp(uFlowLag, 0.0, 1.0) * (1.0 - tc);
-      float s6 = swayWave(ph, uFlowRise, uFlowMode > 7.5 ? 1.0 : 0.0);
-      t = tc + uFlowAmp * s6 * 4.0 * tc * (1.0 - tc);
-    } else {   /* 全体が寄る: 色の並び全体をそろってずらす */
-      t = tc + uFlowAmp * sin(uFlowPh);
-    }
+    /* ピンク側から順に、少し遅れて右の色が動く。押し寄せる時は速く、戻る時はゆっくり。両端は動かさない */
+    float ph = uFlowPh - 6.2832 * clamp(uFlowLag, 0.0, 1.0) * (1.0 - tc);
+    float s6 = swayWave(ph, uFlowRise, 1.0);
+    t = tc + uFlowAmp * s6 * 4.0 * tc * (1.0 - tc);
   }
   t = pow(clamp(t, 0.0, 1.0), 1.0 / (1.0 + max(0.0, uCore)));   /* 白の絞り(案7) */
   t = clamp(uCoreSkip, 0.0, 0.9) + t * (1.0 - clamp(uCoreSkip, 0.0, 0.9));   /* 白を取る: 中心の色を uCoreSkip の位置から始める */

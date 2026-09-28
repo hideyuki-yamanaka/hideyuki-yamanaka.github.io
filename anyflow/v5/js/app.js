@@ -736,7 +736,7 @@ const DEFAULTS = {
       /* 【2026-09-26 整理】完全削除した案の設定(主役ピクト系 hero・案14/20/21)は削除。
          案24-4 が読む出現ブラー(hero.pictoBlur)は RFX_HERO_DEF の既定 18 がそのまま効く(値は同じ) */
       fx24: { labelUp: 190, prodSize: 40 },   /* prodSize: 登場の大きい文字の下に付く「Product」のサイズ(px)。2026-09-18 */   // 案24: 文字が上へ動く距離(px)。【2026-09-26】主役の大きさ(heroScale)は24-4で効かないので削除
-      fx26: { numScale: 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 },   /* 2026-09-15: SaaS を読む区間 4%→15%(下段が出てすぐ横へ動いて「表示されない」に見えていた) */   // 案26: 数値の大きさ(120/70)・収まり・線・横移動(固定区間の割合)
+      /* 【2026-09-29 完全削除】fx26(案26 の数値・線・横移動)は、案ごと消した */
       /* 数字のスロット (2026-08-17 指定)。
          数字は最初から出しておき、回転そのものを見せる。ブラー出現は見出しだけ。
          ⚠️ 下の4つは「回転が見えるように」仮で置いた値。パネルで詰めてください */
@@ -746,13 +746,9 @@ const DEFAULTS = {
       slotCycles: 3,     // 止まるまでに 0〜9 を何周流すか
       entryBlur: 16, entryBlur44: 26, entryFrom: 0.4, entryTo: 0.95, entryOp: 1, bigStartY: 0.4,   // 【2026-09-19】for SaaS/AI の入場のぼかし(強さpx / 解け始め・解けきり=入場の進み 0〜1 / 出だしの薄さ 1=薄くしない)
       slotEnterAt: 0.85, // 数字が画面のどこまで入ったら回り出すか (1.0=下端 / 0.5=中央)
-      slotFx: 'plain', slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1, slotDrumN: 12, slotDrumFade: 1.3,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)
-      slotDigitFade: 0.7, slotSwapRise: 0.3,   // 【2026-09-28】スロットの案7(数字ごとにふわっと薄く: 何文字分離れたら透明か)・案8(少し動いて入れ替わる: 動く距離 文字分)。仮置き
+      slotFx: 'cut', slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1,   // 【2026-09-19】スロットの案(plain=現状 / blur=ぼかして消える)と、そのつまみ(ぼかし px・範囲 %・窓の高さ em)   /* 【2026-09-29 完全削除】案は 案3(melt)・案5(cut) だけ。既定は焼き込み済みの cut。ドラム・案7・案8 のつまみ(slotDrumN/slotDrumFade/slotDigitFade/slotSwapRise)は消した */
       slotEase: 5,       // 減速の強さ。大きいほど「最初速く→最後じりじり」になる (2〜9)
-      /* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・案24-4・パネルで比べる)。
-         afterMode: none=出きったらすぐ次へ(今まで) / a=ゆっくり通り過ぎる / b=やわらかく一息つく / c=次との間を空ける / d=スクロールを少し重く / e=画面固定(開発者体験と同じ)
-         afterLenA〜E=その見せ方を続ける長さ(vh・案ごと) / afterSpeed=A の速さ(スクロールの何割) / afterWeight=D の重さ(ホイール1回の進み)。値はすべて⚠️仮置き */
-      afterMode: 'none', afterLenA: 60,   /* 【2026-09-28】orig=当時の作り(出きったあと約100pxだけ止まる)。既定は焼き込み(19:25 ヒデさんの設定)に合わせて none */ afterLenB: 60, afterLenC: 50, afterLenD: 80, afterLenE: 50, afterSpeed: 0.35, afterWeight: 0.35,
+      /* 【2026-09-29 完全削除】全部出たあとの見せ方(afterMode・afterLenA〜E・afterSpeed・afterWeight)は消した＝出きったらすぐ次へだけ */
                          /* ⚠️ 回転中のぼかしは 2026-08-17 に「要らない」で確定。
                             パラメータごと削除したので、復活させる時は renderSlots にも戻すこと */
     },
@@ -776,8 +772,7 @@ const DEFAULTS = {
                mockInner: 1, mockBlur: 24, mockShadow: 1, stv: {},
                slotBoxY: 0, slotBoxH: 44,   /* 2026-09-15: ②のスロットの箱の上下位置・高さ */
                pinStops: 'on', devDwell: 40,
-               vAlign: 'group',   /* 【2026-09-28 21:00 焼き込み】ヒデさんの設定で「見出しとモックのセット」で中央に戻った(昼は 'mock') */
-               shiftYMock: 0, shiftYGroup: -32 },   /* 【2026-09-28 ヒデさん依頼】①②の「見出し＋モック」をセットで上下にずらす量(px・上＝マイナス)。並べ方(vAlign)ごとに別の値。PC・タブレットだけ */   /* 【2026-09-28 ヒデさん依頼】①②の上下の並べ方: mock=モックそのものを画面の上下中央に(見出しはその上)／group=見出し＋モックのかたまりを上下中央(今まで)。既定は mock(仮・試しに既定) */   /* 【2026-09-28 ヒデさん依頼】①②は「中央で一旦止まる(画面固定)」を挟む＝既定を 'on' に戻した。❌ 9/27 の 'off'(「カクッと止まる」をやめる)は誤り＝ヒデさんが言っていたのは実績セクションの話だった */   /* 2026-09-16 ①②で中央に固定して一旦止まる。devDwell=止まっている長さ(vh)。2026-09-17: 90→40 で“優しく”短めに(急に止めすぎない)。'off'で通常スクロール */
+               shiftYGroup: -32 },   /* 【2026-09-29】並べ方の案(vAlign・モックを上下中央 shiftYMock)は完全削除＝見出し＋モックだけ */   /* 【2026-09-28 ヒデさん依頼】①②の「見出し＋モック」をセットで上下にずらす量(px・上＝マイナス)。並べ方(vAlign)ごとに別の値。PC・タブレットだけ */   /* 【2026-09-28 ヒデさん依頼】①②の上下の並べ方: mock=モックそのものを画面の上下中央に(見出しはその上)／group=見出し＋モックのかたまりを上下中央(今まで)。既定は mock(仮・試しに既定) */   /* 【2026-09-28 ヒデさん依頼】①②は「中央で一旦止まる(画面固定)」を挟む＝既定を 'on' に戻した。❌ 9/27 の 'off'(「カクッと止まる」をやめる)は誤り＝ヒデさんが言っていたのは実績セクションの話だった */   /* 2026-09-16 ①②で中央に固定して一旦止まる。devDwell=止まっている長さ(vh)。2026-09-17: 90→40 で“優しく”短めに(急に止めすぎない)。'off'で通常スクロール */
     /* 【2026-08-25 刷新・カンプ 15800:24526/24258】導入事例 = 2×2グリッド。
        見出し(ブラー) → 水平線3本が左から(上→下でディレイ) → 中央の垂直線 → カード4枚がブラーで登場。 */
     cases:   { lenVh: 200, driveLen: 3.0, playSec: 2.0, inBlur: 20,
@@ -2140,24 +2135,13 @@ const CV_SWAYS = [
     cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85, hueMode: 'swap', moodSec: 30, moodWhite: 0.85, swapHold: 0.45 } },
   { key: '12', name: '案6 左右入れ替え（案4の動き＋ピンク⇄水色）', tip: '案4の動きのまま、ピンクと水色が内外で入れ替わる往復(白はそのまま)。',
     cv: { swayMode: 0, swayDeg: 12, swaySec: 40, wave: 0.30, waveLen: 0.50, waveSpd: 0.09, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.9, swayPivot: 1, waveAnchor: 0.85, hueMode: 'flip', moodSec: 30, moodWhite: 0.85, swapHold: 0.45 } },
-  /* 【2026-09-19 ヒデさん指定】「白エリアの領域を絞り、ゆらぎも基本は右上で範囲も抑えて」→ 広がり 0.9→0.55・中心を右上(0.84,0.10)・揺らぎの軸は白・傾き±6°・うねり 0.16・白の近くはうねらせない(0.9) */
-  { key: '13', name: '案7 白なし・右上に留める（揺らぎ小）', tip: '白い領域を取り(中心は水色〜シアンから始まる)、いちばん明るい所を右上(84%,10%)に置く。揺らぎの軸を白に置いて傾き±6°・うねり 0.16 に抑え、白の近くはうねらせない＝白はほぼ右上に留まり、周りの色だけ静かに動く。',
-    cv: {swayMode: 0,swayDeg: 6,swaySec: 40,wave: 0.16,waveLen: 0.5,waveSpd: 0.08,speed: 0.04,swell: 0.02,flowScale: 0.4,gcx: 0.84,gcy: 0.1,gr: 0.8,swayPivot: 1,waveAnchor: 0.9,hueMode: 'off',moodSec: 30,moodWhite: 0.85,swapHold: 0.45, core: 0, coreSoft: 0.12, coreSkip: 0.34} },
   /* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ 4案(⚠️値は仮置き)。
      ヒデさんの説明「境界線が細かく揺れる揺らぎではなく、波全体として 左からピンク・青・ライトブルー の配色が、ピンクの領域が左から少し多くなって
      青とライトブルーが右に寄っていく、みたいな全体の揺らぎ」→ 色の境目は細かく揺らさず、色の配分(グラデの色の位置)だけをゆっくり動かす。
      ❌ 最初に作った4案(うねりが流れる／色の波が進む／色の雲が流れる／色がループで流れる=旧14〜17)は、境目がくねる・模様が流れる動きで違っていたので外した。
      見た目(白なし・明るい所は右上)は案7をヒデさんが調整した値のまま。その場のうねり・ゆらゆらは0(境目を揺らさない)。
+     【2026-09-29 完全削除】今の動き(13)・満ち引き(18)・押し出し(19)・全体が寄る(20)は消した＝押し寄せて、ゆっくり戻る(21)だけ
      flowSec=1往復の秒数 / flowAmp=大きさ(色の位置がずれる量) / flowLag=右へ伝わる遅れ(1往復の何割) / flowRise=押し寄せる時間(1往復の何割) */
-  { key: '18', name: '満ち引き（ピンクがふくらむ）', tip: 'ピンクの面が左からふくらんで、青と水色が右へ寄る。そしてまた戻る。両端(左下のピンク・右上の明るい所)は動かない。',
-    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
-          flowMode: 5, flowSec: 16, flowAmp: 0.18 } },
-  { key: '19', name: '押し出し（左→右へ順に）', tip: 'ピンクがふくらむと、少し遅れて青、さらに遅れて水色が右へ押し出される(左から右へ伝わる)。そしてまた戻る。',
-    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
-          flowMode: 6, flowSec: 18, flowAmp: 0.14, flowLag: 0.3 } },
-  { key: '20', name: '全体が寄る（そろって左右へ）', tip: 'ピンク・青・水色の並び全体が、そろって右へ寄って、また左へ戻る。',
-    cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
-          flowMode: 7, flowSec: 20, flowAmp: 0.08 } },
   { key: '21', name: '押し寄せて、ゆっくり戻る', tip: '押し出しと同じ動きで、押し寄せる時は速く、戻る時はゆっくり(波が打ち寄せて引くように)。',
     cv: { swayMode: 0, swayDeg: 0, swaySec: 40, wave: 0, waveLen: 0.5, waveSpd: 0.08, speed: 0.04, swell: 0.02, flowScale: 0.4, gcx: 0.78, gcy: 0.12, gr: 0.8, swayPivot: 1, waveAnchor: 0.9, hueMode: 'off', core: 0, coreSoft: 0.12, coreSkip: 0.34,
           flowMode: 8, flowSec: 18, flowAmp: 0.14, flowLag: 0.3, flowRise: 0.3 } },
@@ -2168,15 +2152,11 @@ const CV_SWAYS = [
 const LOOK_KEYS = ['levels', 'spread', 'contrast', 'bright', 'cell', 'vivid', 'toneSoft', 'dither'];
 const LOOK_BASE = { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' };
 const CV_LOOKS = [
-  { key: '0', name: '今の見え方', fixed: true, tip: '今の本番の見え方。色の段3・格子状の粒・コントラスト強め。', cv: { levels: 3, spread: 0.75, contrast: 1.38, bright: 1.08, cell: 1, vivid: 1, toneSoft: false, dither: 'bayer' } },
-  { key: '1', name: 'なめらか（粒は細かく）', tip: '格子状の粒は残したまま、色の段を3→6に増やして粒を均等に散らす。段の線が消え、境目がなめらか。明るい所は丸めて折れ目を出さない。', cv: { levels: 6, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.22, toneSoft: true, dither: 'bayer' } },
   { key: '2', name: '鮮やか（色を濃く）', tip: '色の段4・粒を均等に散らしたうえで、色の鮮やかさを上げる(くすみを取る)。明るい所は丸める。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.4, toneSoft: true, dither: 'bayer' } },
-  { key: '3', name: '自然な粒（ランダム）', tip: '粒を格子状からランダムに変える(フィルムの粒のような質感)。格子の模様や段の線が出にくい。少し鮮やかに。', cv: { levels: 4, spread: 1, contrast: 1.3, bright: 1.04, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
-  { key: '4', name: 'ほぼなめらか（粒ごく弱く）', tip: '色の段を12にして粒をごく弱く(近づくと分かる程度)。いちばんなめらかで鮮やか。', cv: { levels: 12, spread: 1, contrast: 1.25, bright: 1.03, cell: 1, vivid: 1.28, toneSoft: true, dither: 'noise' } },
 ];
-function cvLookKey() { const v = String((params && params.cvLook) || '0'); return (CV_LOOKS.some(s => s.key === v) && !variantRemovedKey('cvLook', v)) ? v : '0'; }
+function cvLookKey() { const v = String((params && params.cvLook) || '2'); return (CV_LOOKS.some(s => s.key === v) && !variantRemovedKey('cvLook', v)) ? v : '2'; }   /* 【2026-09-29 完全削除】見え方は 鮮やか(2) だけ */
 function cvApplyLook(key) { const c = CV_LOOKS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(LOOK_BASE), structuredClone(c.cv)); }
-function cvSwayKey() { const v0 = String((params && params.cvSway) || '0'), v = ['14', '15', '16', '17'].includes(v0) ? '13' : v0;   /* 2026-09-28: 外した案(旧14〜17)は今の動き(13)へ */ return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '0'; }
+function cvSwayKey() { const v = String((params && params.cvSway) || '21'); return (CV_SWAYS.some(s => s.key === v) && !variantRemovedKey('cvSway', v)) ? v : '21'; }   /* 【2026-09-29 完全削除】揺らぎは 押し寄せて、ゆっくり戻る(21) だけ。消した案・古い案はすべて 21 へ */
 function cvApplySway(key) { const c = CV_SWAYS.find(s => s.key === key); if (!c) return; params.cv = params.cv || {}; Object.assign(params.cv, structuredClone(SWAY_BASE), structuredClone(c.cv)); }
 
 /* ===== 【2026-09-16 改訂・ヒデさん依頼】お問い合わせ上部の「溶け込み(馴染ませ)」=====
@@ -2482,7 +2462,7 @@ function applyDevTune() {
   sec.style.setProperty('--dev1-scale', String(d.dev1Scale != null ? d.dev1Scale : 1.1));
   sec.style.setProperty('--dev2-scale', String(d.dev2Scale != null ? d.dev2Scale : 1.1));
   /* 【2026-09-28 ヒデさん依頼】①②の「見出し＋モック」をセットで上下にずらす(並べ方ごとに別の値) */
-  sec.style.setProperty('--dev-shift-y', (+(d.vAlign === 'group' ? d.shiftYGroup : d.shiftYMock) || 0) + 'px');
+  sec.style.setProperty('--dev-shift-y', (+d.shiftYGroup || 0) + 'px');   /* 【2026-09-29】並べ方は見出し＋モック(group)だけ */
 }
 function applyDevStyle() {
   const sec = (typeof SECS !== 'undefined' && SECS.dev) || document.getElementById('dev'); if (!sec) return;
@@ -2671,7 +2651,7 @@ uniform float uWaveAmp, uWaveLen, uWaveSpd;
 uniform float uSwayDeg, uSwaySec, uSwayMode;   /* uSwayMode=揺らぎの型(0 ゆっくり傾く のみ。1〜6 は 2026-09-18 に完全削除) */
 uniform float uSwayPivot, uWaveAnchor;
 /* 【2026-09-28 夜 ヒデさん依頼】グラデの揺らぎ(案18〜21): 色の境目は揺らさず、色の配分(グラデの色の位置 t)だけを時間でゆっくり動かす。
-   uFlowMode 0〜4=なし / 5=満ち引き(ピンクがふくらむ) / 6=押し出し(左→右へ順に) / 7=全体が寄る / 8=押し寄せて、ゆっくり戻る
+   uFlowMode 0〜7=なし / 8=押し寄せて、ゆっくり戻る(【2026-09-29】5〜7 の案は完全削除)
    uFlowPh=いまの位相(JS が毎フレーム足し込む・0〜2π) / uFlowAmp=大きさ / uFlowLag=右へ伝わる遅れ(1往復の割合) / uFlowRise=押し寄せる時間(1往復の割合) */
 uniform float uFlowMode, uFlowAmp, uFlowLag, uFlowRise, uFlowPh;
 /* 【2026-09-28 夜 ヒデさん依頼「ディザや塵の効果はあってよいが、境目が不自然・くすんで見える。鮮やかで自然な境目に見える案を」】グラデの見え方(案)
@@ -2790,18 +2770,12 @@ void main(){
     t = (uGMode < 1.5) ? length(d / max(uGR, vec2(0.05))) : (d.x / max(uGR.x, 0.05) + 0.5);
   }
   /* 【2026-09-28】グラデの揺らぎ(全体の配分)。t=0 が右上の明るい所・1 が左下のピンク。s>0 でピンク側が広がり、青・水色が右(右上)へ寄る */
-  if (uFlowMode > 4.5) {
+  if (uFlowMode > 7.5) {   /* 【2026-09-29 完全削除】満ち引き(5)・押し出し(6)・全体が寄る(7)は消した＝押し寄せて戻る(8)だけ */
     float tc = clamp(t, 0.0, 1.0);
-    if (uFlowMode < 5.5) {   /* 満ち引き: 両端は動かさず、真ん中の色の位置だけを曲げる(ピンクがふくらむ⇄しぼむ) */
-      float s5 = sin(uFlowPh);
-      t = pow(tc, exp2(-2.0 * uFlowAmp * s5));
-    } else if (uFlowMode < 6.5 || uFlowMode > 7.5) {   /* 押し出し(6)・押し寄せて戻る(8): ピンク側から順に、少し遅れて右の色が動く。両端は動かさない */
-      float ph = uFlowPh - 6.2832 * clamp(uFlowLag, 0.0, 1.0) * (1.0 - tc);
-      float s6 = swayWave(ph, uFlowRise, uFlowMode > 7.5 ? 1.0 : 0.0);
-      t = tc + uFlowAmp * s6 * 4.0 * tc * (1.0 - tc);
-    } else {   /* 全体が寄る: 色の並び全体をそろってずらす */
-      t = tc + uFlowAmp * sin(uFlowPh);
-    }
+    /* ピンク側から順に、少し遅れて右の色が動く。押し寄せる時は速く、戻る時はゆっくり。両端は動かさない */
+    float ph = uFlowPh - 6.2832 * clamp(uFlowLag, 0.0, 1.0) * (1.0 - tc);
+    float s6 = swayWave(ph, uFlowRise, 1.0);
+    t = tc + uFlowAmp * s6 * 4.0 * tc * (1.0 - tc);
   }
   t = pow(clamp(t, 0.0, 1.0), 1.0 / (1.0 + max(0.0, uCore)));   /* 白の絞り(案7) */
   t = clamp(uCoreSkip, 0.0, 0.9) + t * (1.0 - clamp(uCoreSkip, 0.0, 0.9));   /* 白を取る: 中心の色を uCoreSkip の位置から始める */
@@ -3325,7 +3299,7 @@ const VARIANT_REMOVED = {
 };
 /* 【2026-08-30 ヒデさん指定】devで削除したバリエーションの完全削除ぶん(設定ダンプのhiddenを焼き込み)。
    VARIANT_REMOVED と合わせて恒久除外＝メニューにも復元一覧にも出ない。 */
-const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":["ripple"],"valSaas":["S1","S5","S8","S16","S10","S17","S4","S3"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27","A30","A4"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22","33","30","10","18","1","default","20","24-2","24-5","24-3"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2","5","8","1"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13","14","10","15","1"],"burgerIcon":["3","4","5"],"cvSway":["1","2","3","4","5","6"],"devTone":["blue","cyan","pink"],"pictoSpeed":["0.7","1.4","1.9"],"darkVar":["1","3","4"],"cvfCardBorder":["k"],"cvfInBorder":["k"],"cvfPh":["w"]};   /* 2026-09-20 追加(ヒデさん依頼・完全削除): resFx default/20/24-2/24-5/24-3、devTone blue/cyan/pink、pictoSpeed 0.7/1.4/1.9、darkVar 1/3/4、cvfCardBorder k、cvfInBorder k、cvfPh w */   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) / 2026-09-18 追加: ピクト S3・A30・A4、実績の案 1/10/18、開発者体験モックの案 1/5/8、お問い合わせの揺らぎ 1〜6、エフェクト「波紋」(ripple)(定義・CSS・シェーダも削除済み) */
+const VARIANT_REMOVED_EXTRA = {"off":["H 縦のクロス","C 薄く広がる皿","A カンプ通り","D 立ちクロス"],"reel":["F 惑星に寄る","P1 プリセット 1","P4 プリセット 7","P5 プリセット 14","P6 プリセット 16","ジャイロ・縦のクロス","P2 プリセット 4","ジャイロ・ゆるやか","J 地平線・横揺れ"],"mesh":["E 細かいケージ","C 包囲ケージ","P5 プリセット 5","P3 プリセット 3","K 斜めの流れ","P4 プリセット 4","I 大小の入れ子","A ふわふわ漂う"],"accre":["D 立ちクロス＋円盤","P3 プリセット 3","P4 プリセット 4","P1 プリセット 1","P2 プリセット 2"],"duplex":["A 標準","ジャイロ・ゆるやか"],"gyro":["B 立ちクロスで転がる","H 縦のクロス"],"beads":["P2 プリセット 2","P3 プリセット 3","P1 プリセット 1"],"spiral":["コメット","A 標準の渦","ジャイロ・速い","P2 プリセット 4","P4 プリセット 7","P8 プリセット 12","P12 プリセット 19","P13 プリセット 20","P14 プリセット 21","P16 プリセット 22","土星の輪","ジャイロ・ゆるやか","P3 プリセット 6","ジャイロ・直交","D 立ちクロスの渦","周回レイアウトで吸収","P15 プリセット 21","P5 プリセット 8"],"glowKind":["ripple"],"valSaas":["S1","S5","S8","S16","S10","S17","S4","S3"],"valAi":["A24","A1","A6","A8","A10","A16","A22","A25","A26","A28","A29","A31","A32","A23","A27","A30","A4"],"glowEcho":[],"resFx":["4","6","11","13","14","15","16","17","19","21","5","12","23","27","29","31","32","34","35","36","28","38","40","41","24","25","37","39","22","33","30","10","18","1","default","20","24-2","24-5","24-3","26"],"cvStyle":["11","13","12","1"],"cvColor":["C4","C5","C6","C8","C9","C10","C7"],"visGrad":["1"],"devStyle":["4","6","7","9","10","13","14","15","12","3","2","5","8","1"],"cvShape":["1","2","3","4","5"],"caseHover":["ct-brand","ct-gray","nolines"],"formStyle":["5","2"],"hdrMode":["2","3","4","6","7","9","11","13","14","10","15","1"],"burgerIcon":["3","4","5"],"cvSway":["1","2","3","4","5","6","20","18","13","19"],"devTone":["blue","cyan","pink"],"pictoSpeed":["0.7","1.4","1.9"],"darkVar":["1","3","4"],"cvfCardBorder":["k"],"cvfInBorder":["k"],"cvfPh":["w"],"resSlotFx":["still","fade","swap","drum","blur","plain"],"resAfter":["e","c","d","b","a","orig"],"devVAlign":["mock"],"cvLook":["4","3","1","0"]};   /* 2026-09-20 追加(ヒデさん依頼・完全削除): resFx default/20/24-2/24-5/24-3、devTone blue/cyan/pink、pictoSpeed 0.7/1.4/1.9、darkVar 1/3/4、cvfCardBorder k、cvfInBorder k、cvfPh w */   /* 2026-09-16 追加: フォームスタイル2/5・ヘッダー案2/3/4/6/7/9/11/13 を完全削除(焼き込み) / 2026-09-15 最新化: お問い合わせの案1・ウェーブ造形1〜5、開発者体験モックの案 4/6/7/9/10/13/14/15 を追加(定義とCSS・シェーダも削除済み) / 2026-09-18 追加: ピクト S3・A30・A4、実績の案 1/10/18、開発者体験モックの案 1/5/8、お問い合わせの揺らぎ 1〜6、エフェクト「波紋」(ripple)(定義・CSS・シェーダも削除済み) */   /* 2026-09-29 追加(ヒデさん依頼・完全削除): 実績の演出 26、お問い合わせの揺らぎ 13/18/19/20(残り 21)、見え方 0/1/3/4(残り 2)、数字の演出 still/fade/swap/drum/blur/plain(残り cut・melt)、全部出たあと orig/a/b/c/d/e(残り none)、開発者体験の並べ方 mock(残り group) */
 const variantRemoved = (m, name) => (VARIANT_REMOVED[m] || []).includes(name) || (VARIANT_REMOVED_EXTRA[m] || []).includes(name);
 /* 【2026-08-29 ヒデさん指定】variantRow(glowEcho/valSaas/valAi)は key で管理するので、key で恒久除外する。 */
 const VARIANT_REMOVED_KEY = {
@@ -7240,8 +7214,6 @@ function buildSlots() {
           em.textContent = String(d);
           stp.appendChild(em);
         }
-        /* 【2026-09-19 ヒデさん依頼】案4「ドラム」用: 目的の数字の後ろにも次の数字を3つ置く(円筒の下側に見える)。ドラム以外では display:none */
-        for (let x = 1; x <= 3; x++) { const em = document.createElement('em'); em.className = 'x'; em.textContent = String((Number(ch) + x) % 10); stp.appendChild(em); }
         rl.appendChild(stp);
         wrap.appendChild(rl);
         reels.push({ rl, stp, len: seq.length, ems: Array.from(stp.children) });
@@ -7266,57 +7238,9 @@ function slotEnd() {
 }
 
 /* ts = 数字ブロックが出はじめてからの秒数。マイナスなら先頭(0)で待たせる */
-/* 【2026-09-19 ヒデさん依頼「消え方をもっと自然に」】案4 ドラム(円筒): 数字を円筒の面に貼ったように、中心から離れるほど縦に縮み(cosθ)・薄くなる(cosθ^k)。
-   帯(.stp)は動かさず、見えている数字(±88°)だけを translateY(R·sinθ − j) scaleY(cosθ) で置く。R = N/(2π) 文字分(N=ドラムの分割数) */
-function slotDrumPose(re, e, c) {
-  const N = Math.max(8, Math.round(c.slotDrumN || 12)), R = N / (2 * Math.PI), step = 360 / N, kf = (c.slotDrumFade != null ? c.slotDrumFade : 1.3);
-  const f = (re.len - 1) * e; re.drum = true; if (re.stp.style.transform) re.stp.style.transform = '';
-  const ems = re.ems || (re.ems = Array.from(re.stp.children));
-  for (let j = 0; j < ems.length; j++) {
-    const th = (j - f) * step, em = ems[j];
-    if (Math.abs(th) >= 88) { if (em._v !== false) { em.style.visibility = 'hidden'; em._v = false; } continue; }
-    const r = th * Math.PI / 180, cs = Math.cos(r);
-    if (em._v !== true) { em.style.visibility = ''; em._v = true; }
-    em.style.transform = 'translateY(' + (R * Math.sin(r) - j).toFixed(3) + 'em) scaleY(' + cs.toFixed(3) + ')';
-    em.style.opacity = Math.pow(cs, kf).toFixed(3);
-  }
-}
-function slotDrumClear(re) { (re.ems || []).forEach(em => { em.style.transform = ''; em.style.opacity = ''; em.style.visibility = ''; em._v = undefined; em._o = undefined; em._t = undefined; }); re.drum = false; re.stp._s_transform = undefined; }
-/* 【2026-09-28 ヒデさん依頼「上下の切れ目をもっと自然に」】案6〜8: 1文字ずつ薄さ(と位置)を決める。ぼかしは使わない。
-   still(案6): 帯(.stp)の動きは今のまま。止まった時に1つ上の数字の端がうっすら残らないよう、中心から 0.85〜1 文字離れた数字だけ消す
-   fade(案7):  帯の動きは今のまま。数字そのものが中心から離れるほど薄くなる(slotDigitFade 文字分で透明・S字)
-   swap(案8):  帯は動かさず、今の数字と次の数字の2つだけ出す。出ていく数字は slotSwapRise 文字分だけ上へ動きながら消え、次の数字は下から同じだけ動いて現れる
-   re.drum = 「1文字ずつ置いた」印(ドラムと共通)。ほかの案に戻る時は slotDrumClear で全部消す */
-function slotDigitPose(re, e, c, mode) {
-  const f = (re.len - 1) * e; re.drum = true;
-  const ems = re.ems || (re.ems = Array.from(re.stp.children));
-  const hide = em => { if (em._o !== '0') { em.style.opacity = '0'; em._o = '0'; } };
-  const put = (em, o, tf) => { const os = o.toFixed(3); if (em._o !== os) { em.style.opacity = os; em._o = os; } if (em._t !== tf) { em.style.transform = tf; em._t = tf; } };
-  const ss = t => { t = clamp01(t); return t * t * (3 - 2 * t); };
-  if (mode === 'swap') {
-    setStyle(re.stp, 'transform', '');
-    const S = Math.max(0, c.slotSwapRise != null ? +c.slotSwapRise : 0.3);
-    const j0 = Math.min(re.len - 1, Math.floor(f + 1e-6)), fr = Math.max(0, f - j0), j1 = j0 + 1;
-    for (let j = 0; j < ems.length; j++) {
-      const em = ems[j];
-      if (j === j0) put(em, 1 - ss(fr / 0.75), 'translateY(' + (-j - fr * S).toFixed(3) + 'em)');
-      else if (j === j1 && j1 < re.len && fr > 0.001) put(em, ss((fr - 0.25) / 0.75), 'translateY(' + (-j + (1 - fr) * S).toFixed(3) + 'em)');
-      else hide(em);
-    }
-    return;
-  }
-  setStyle(re.stp, 'transform', `translateY(${(-f).toFixed(4)}em)`);
-  const D = Math.max(0.2, c.slotDigitFade != null ? +c.slotDigitFade : 0.7);
-  for (let j = 0; j < ems.length; j++) {
-    const d = Math.abs(j - f), em = ems[j];
-    if (d >= 1.6) { hide(em); continue; }
-    put(em, mode === 'fade' ? 1 - ss(d / D) : clamp01((1 - d) / 0.15), '');
-  }
-}
+/* 【2026-09-29 完全削除】ドラム(案4)・1文字ずつ薄くする案(案6〜8)の描き方(slotDrumPose/slotDigitPose)は、案ごと消した。残りは 案3・案5＝帯を動かすだけ */
 function renderSlots(ts) {
   const c = params.sections.results;
-  const mode = (typeof resSlotFxKey === 'function') ? resSlotFxKey() : 'plain';
-  const perDigit = (mode === 'still' || mode === 'fade' || mode === 'swap');   /* 【2026-09-28】案6〜8 */
   for (let si = 0; si < slots.length; si++) {
     const s = slots[si];
     const tsi = Array.isArray(ts) ? (ts[si] != null ? ts[si] : -1) : ts;   /* 案28: 数値ごとの再生位置(配列) */
@@ -7326,10 +7250,7 @@ function renderSlots(ts) {
          n=2 でゆるやか / n=5 が既定 / n=9 でかなり粘って止まる。
          ⚠️ easeSlick(臨界減衰) だと全体的に均一で、スロットらしい溜めが出なかった */
       const e = 1 - Math.pow(1 - k, Math.max(1, c.slotEase));
-      if (re.mode !== mode) { if (re.drum) slotDrumClear(re); re.mode = mode; }   /* 案が変わったら、1文字ずつ置いた見た目を一度消してから描き直す */
-      if (mode === 'drum') { slotDrumPose(re, e, c); }
-      else if (perDigit) { slotDigitPose(re, e, c, mode); }
-      else { setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`); }
+      setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`);
       if (re.spin !== (k > 0 && k < 1)) { re.spin = (k > 0 && k < 1); re.rl.classList.toggle('spin', re.spin); }   /* 【2026-09-19】案2「ぼかして消える」用: 回っている桁に印 */
       /* ⚠️ 回転中のぼかしは入れない（2026-08-17 に「要らない」で確定）。
          数字はくっきりしたまま回して止める */
@@ -7370,47 +7291,18 @@ const RES_FX = {
   default: { vh: 0 },
   '24-4': { vh: 240, mobileFlow: true, end: 0.92 },   /* 【2026-09-28 ヒデさん依頼「実績の、全部出たあとにカクッと止まる所をなくす」】end=動きが出きる進み(最後の上の段 B が 0.92)。
      固定の長さの end から先(出きったあとに何も動かず止まっていた約100px)を切り、end で固定が外れる(resFxEnd・06-sections.js の高さ)。動く速さ(1pxあたり)は同じ */   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
-  '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
-  /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
+  /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除／【2026-09-29】26 も完全削除＝24-4 だけ */
 };
-const RES_FX_KEYS = ['24-4', '26'];
+const RES_FX_KEYS = ['24-4'];
 function resFxKey() { const v = params.patterns && params.patterns.resFx; if (RES_FX[v] && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resFx', v))) return v; return (Object.keys(RES_FX).find(k => !variantRemovedKey('resFx', k)) || '24-4'); }   /* 【2026-09-20】既定24-5・フォールバックdefault も完全削除したため、生存案(24-4/26)の先頭へ落とす */
 function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
 function resFxFlowMode(k) { const c = RES_FX[k] || {}; return !!(c.flow || (isMobile && c.mobileFlow) || (resFxShort() && c.vh)); }
 /* 【2026-09-28】案の動きが出きる進み(RES_FX[k].end)。無い案は 1＝今までどおり固定の最後まで */
-function resFxEnd(k) { if (k === '24-4' && resAfterMode() === 'orig') return 1;   /* 【2026-09-28】当時の作り: 固定の長さを切らない＝出きったあと約100px止まる(本番と同じ) */
-  const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
-/* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・固定のある案)。
-   none=出きったらすぐ次へ(今まで) / a=ゆっくり通り過ぎる / b=やわらかく一息つく / c=次との間を空ける / d=スクロールを少し重く / e=画面固定(開発者体験と同じ)。
-   a/b/e は実績の高さを足し、貼りつく入れ物(.pin-vp)の top を少しずつ上げる(a/b)ことで「止まらずにゆっくり」「止まってからなめらかに」を作る。
-   固定が外れる所で位置がつながるよう、足す高さ＝長さ×(1−F(1))。c は下の余白、d は Lenis のホイール1回の進み(wheelMultiplier) */
-const RES_AFTER_MODES = ['orig', 'none', 'a', 'b', 'c', 'd', 'e'];   /* orig=【2026-09-28】当時の作り(既定) */
-function resAfterMode() { const m = params.sections.results.afterMode; return isMobile ? 'none' : (RES_AFTER_MODES.includes(m) ? m : 'none'); }   /* スマホは流れる作りなので関係なし */
-function resAfterLenVh(m) { m = m || resAfterMode(); if (m === 'none' || m === 'orig') return 0; return Math.max(0, +params.sections.results['afterLen' + m.toUpperCase()] || 0); }
-/* 全部出たあと、長さ Z の中で入れ物が上がる量(Z に対する割合)。u=0〜1。速さ＝F'(u)(1=スクロールと同じ) */
-function resAfterF(m, u) {
-  const s = Math.max(0.05, Math.min(0.9, +params.sections.results.afterSpeed || 0.35));
-  if (m === 'a') return s * u + (1 - s) * u * u * u / 3;   /* a: 速さ s で流れはじめ、最後は普通の速さに(つなぎ目で速さが飛ばない) */
-  if (m === 'b') return u * u * u / 3;                     /* b: 止まった所から、なめらかに普通の速さへ */
-  return 0;                                                /* e: ずっと止まる(画面固定) */
-}
-function resAfterExtraVh() { const m = resAfterMode(), L = resAfterLenVh(m); if (m === 'a' || m === 'b') return L * (1 - resAfterF(m, 1)); if (m === 'e') return L; return 0; }
+function resFxEnd(k) { const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
+/* 【2026-09-29 完全削除】全部出たあとの見せ方(当時の作り・A〜E)は消した＝出きったらすぐ次へ(なし)だけ。resAfterMode などの関数もなし */
 /* 動きが出きるまでのスクロール量(px)＝固定で進む長さ×end */
 function resFxRevealPx(k) { const vh = resFxVh(k); return vh > 100 ? (vh - 100) * resFxEnd(k) * (innerHeight || 1) / 100 : 0; }
-/* d: 全部出たあとの長さの間だけ、ホイール1回で進む量を小さく(毎フレーム呼ぶ。範囲の外・他の案・スマホは 1 に戻す) */
-function applyResAfterWeight() {
-  if (typeof lenis === 'undefined' || !lenis || !lenis.options) return;
-  let w = 1;
-  try {
-    const k = resFxActive();
-    if (resAfterMode() === 'd' && k === '24-4' && !resFxFlowMode(k)) {
-      const y = -rectOf(SECS.results).top, R = resFxRevealPx(k), Z = resAfterLenVh('d') * (innerHeight || 1) / 100;
-      if (y >= R && y <= R + Z) w = Math.max(0.1, Math.min(1, +params.sections.results.afterWeight || 0.35));
-    }
-  } catch (e) {}
-  if (lenis.options.wheelMultiplier !== w) lenis.options.wheelMultiplier = w;
-}
 function resFxVh(k) {
   const base = RES_FX[k] ? RES_FX[k].vh : 0;
   if (!base) return 0;
@@ -7703,22 +7595,15 @@ function applyResSpGap() { try { const r = (params.sections && params.sections.r
 function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
   /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
   d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win-n', String(r.slotWin != null ? r.slotWin : 1.6)); d.setProperty('--slot-ramp', String(r.slotRamp != null ? r.slotRamp : 1));
-  const sec = document.getElementById('results'); if (sec) { const k = resSlotFxKey(); sec.classList.toggle('slot-fx-blur', k === 'blur' || k === 'melt' || k === 'drum'); sec.classList.toggle('slot-fx-drum', k === 'drum');
-    sec.classList.toggle('slot-fx-cut', k === 'cut'); sec.classList.toggle('slot-fx-still', k === 'still' || k === 'fade' || k === 'swap'); } }   /* 【2026-09-28】案5=cut / 案6〜8=still(窓を動かさない) */
+  const sec = document.getElementById('results'); if (sec) { const k = resSlotFxKey(); sec.classList.toggle('slot-fx-blur', k === 'melt'); sec.classList.toggle('slot-fx-cut', k === 'cut'); } }   /* 【2026-09-29 完全削除】案は 案3(melt)・案5(cut) だけ */
 /* 【2026-09-19 ヒデさん依頼】数字のスロットの案(案1=現状 / 案2=上下のマスクにぼかしをかけて徐々に消える)。値は仮置き */
-const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp', 'slotDrumN', 'slotDrumFade', 'slotDigitFade', 'slotSwapRise'];
+const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp'];
 const RES_SLOT_FX = [
-  { key: 'plain', name: '案1 上下をうすく消す', fixed: true, tip: '窓の上下 14% をグラデで消すだけ。ぼかし無し。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
-  { key: 'blur',  name: '案2 なめらかに溶ける（今の）', tip: '回っている桁だけ窓を 1.6 文字分に開き、端ほどゆっくり薄くなる曲線で消す＋端に弱いぼかし(2.5px)。止まると窓が 0.4 秒で閉じる(切り替わりの段差なし)。', cfg: { slotFade: 14, slotBlur: 2.5, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
   { key: 'melt',  name: '案3 さらに長く溶ける', tip: '案2 より窓を高く(2.0 文字分)、消える帯も長め(×1.15)、ぼかしは弱め(2px)。前後の数字が長い距離をかけて消える。', cfg: { slotFade: 14, slotBlur: 2, slotBlurZone: 55, slotWin: 2.0, slotRamp: 1.15 } },
-  { key: 'drum',  name: '案4 ドラム（円筒に貼った数字）', tip: '数字を円筒の面に貼ったように回す。中心から離れるほど縦に縮んで薄くなるので、端で自然に消える(ぼかし無し)。回っている間は窓を 1.7 文字分に開き(上のラベルに重ならない範囲)、止まると閉じる。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.7, slotRamp: 0.8, slotDrumN: 12, slotDrumFade: 1.3 } },
-  /* 【2026-09-28 ヒデさん依頼「上下の切れ目に違和感。今の・前のパツッと切れる・ほか3案をパネルで」】案5〜8(値は仮置き)。どれも ぼかしは使わない */
+  /* 【2026-09-29 完全削除】案1(plain)・案2(blur)・案4(drum)・案6〜8(still/fade/swap)は消した。残りは 案3(melt)・案5(cut) */
   { key: 'cut',   name: '案5 パツッと切れる（前の作り）', tip: '9/18 より前の作り。窓は数字ぴったりの高さで、上下を薄くしない。数字が窓の線でスパッと切れて入れ替わる。', cfg: { slotWin: 1, slotRamp: 1 } },
-  { key: 'still', name: '案6 今のからぼかしを抜いて、窓を動かさない', tip: '今の(案2)から「端のぼかし」と「回っている間だけ窓が広がる動き」を抜いたもの。窓は 1.4 文字分のまま動かないので、桁ごとに上下の線がそろう。薄くなる帯は数字の外側だけなので、止まった数字は薄くならない。止まった時に上の数字の端が残らないよう、1文字離れた数字は消す。', cfg: { slotWin: 1.4, slotRamp: 1 } },
-  { key: 'fade',  name: '案7 数字ごとにふわっと薄く', tip: '切れ目の線で消すのではなく、数字そのものが中心から離れるほど薄くなる(0.7 文字分離れると透明)。上下に切れた数字の端が見えにくい。窓は動かさない(1.4 文字分)。', cfg: { slotWin: 1.4, slotRamp: 1, slotDigitFade: 0.7 } },
-  { key: 'swap',  name: '案8 少し動いて入れ替わる', tip: '数字の帯を長く流さず、今の数字と次の数字だけを出す。出ていく数字は 0.3 文字分だけ上へ動きながら消え、次の数字は下から同じだけ動いて現れる。窓の線まで届かないので切れ目が出ない。回り始めの速い所は数字がパラパラ入れ替わって見える。', cfg: { slotWin: 1.4, slotRamp: 1, slotSwapRise: 0.3 } },
 ];
-function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'plain'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'plain'; }
+function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'cut'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'cut'; }   /* 【2026-09-29】既定・行き先は 案5(cut＝焼き込み済みの案) */
 function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
 applyResSlotFade();
 applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを反映 */
@@ -7749,19 +7634,13 @@ function resFxFrame(t) {
     SECS.results.style.removeProperty('--rfx-line');
     SECS.results.style.removeProperty('--rfx-tag-ink');
   }
-  /* 縦が短い端末(SP・高さ600px以下)は固定案(26)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
-  if (k === '26' && resFxShort()) { valTOv.saas = null; valTOv.ai = null; return; }   /* 【2026-09-26 整理】元は固定案の一覧(生きているのは26だけ。24-4 は入っていない) */
 
   if (k === '24-4') {
     /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
     /* 【2026-09-28】固定の長さを end(0.92)で切ったので、進みも end 倍して「1px あたりの動き」を前と同じに保つ(固定が外れる時に進み=0.92=出きり)。
-       さらに「全部出たあと」(resAfterMode)で高さを足しても動きが変わらないよう、進みは「出きるまでのスクロール量」(resFxRevealPx)から出す */
+       進みは「出きるまでのスクロール量」(resFxRevealPx)から出す */
     const _flow24 = resFxFlowMode(k), _R24 = resFxRevealPx(k), _y24 = -rectOf(SECS.results).top;
     const p = _flow24 ? 1 : (_R24 > 1 ? clamp01(_y24 / _R24) : resFxPin()) * resFxEnd(k), H = rfxHero(), vh = rfxVH();
-    /* 全部出たあと a/b: 貼りつく入れ物の top を上げて「ゆっくり流れる／止まってからなめらかに」(それ以外は top を CSS に戻す) */
-    { const _vp = SECS.results.querySelector('.pin-vp'), _m = resAfterMode();
-      if (_vp) { if (!_flow24 && (_m === 'a' || _m === 'b')) { const Z = resAfterLenVh(_m) * (innerHeight || 1) / 100, u = Z > 0 ? clamp01((_y24 - _R24) / Z) : 0; setStyle(_vp, 'top', (-(Z * resAfterF(_m, u))).toFixed(1) + 'px'); }
-        else setStyle(_vp, 'top', ''); } }
     const F = Object.assign({ labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
        「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。
@@ -7812,36 +7691,6 @@ function resFxFrame(t) {
         kids.forEach(kd => { setStyle(kd, 'opacity', ''); tf(kd, ''); });   /* 見出し・本文の個別指定は持たない(元は 24-5 の名残を消す処理。挙動を変えないため残置) */
         setStyle(tx, 'opacity', (on ? TK : 0).toFixed(3)); tf(tx, `translateY(${((1 - TK) * 16).toFixed(2)}px)`);
       }
-    });
-  } else if (k === '26') {
-    const p = resFxPin(), W = rfxVW(), vh = rfxVH();
-    const F = Object.assign({ numScale: 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 }, (params.sections.results.fx26 || {}));   /* 2026-09-15: 場面表を詰めて SaaS の読む区間を確保(0.41〜0.56) */
-    /* 【案26 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール】(絵コンテ Figma 17283:23622・2026-09-15 ヒデさん指定)
-       A: 3つの数値が中央に大きく(120px相当=1.714倍) → 上段の終点(見出し 左・数値 右)へ収まり、見出しが薄く現れる
-       B: 横線が左から伸びきる → C: 下段(説明 左・ピクト 右)がブラーで現れる(ピクト→文章の順) → D: 下段が横に動いて for AI(到着の終盤にブラーで) → 読む → 縦に戻って開発者体験へ。パネル「案26」 */
-    setStyle(resEls.vals, 'opacity', '1'); setStyle(resEls.vals, 'filter', ''); setStyle(resEls.vals, 'pointerEvents', '');
-    const shrink = rfxRange(p, F.settleAt, F.settleAt + Math.max(0.05, F.settleLen));
-    const S0 = isMobile ? 1.1 : F.numScale;
-    const OFF = isMobile ? [-100, 0, 100] : [-423, -10, 412];   /* 絵コンテ: 大きい時の3つの中心(画面中央からのずれ) */
-    E.r2s.forEach((el, i) => {
-      const cx = rfxCenterX(el, 0), cy = rfxCenterY(el);
-      const dx = (W / 2 + OFF[i] - cx) * (1 - shrink), dy = (vh / 2 - 25 - cy) * (1 - shrink);
-      tf(el, `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${(S0 - (S0 - 1) * shrink).toFixed(4)})`);
-    });
-    const hk = rfxRange(p, F.settleAt + F.settleLen * 0.6, F.settleAt + F.settleLen + 0.04);   /* 見出し(上段左)は数値が収まる終盤に */
-    if (resEls.head) { setStyle(resEls.head, 'opacity', hk.toFixed(3)); setStyle(resEls.head, 'pointerEvents', hk < 0.02 ? 'none' : ''); tf(resEls.head, `translateY(${((1 - hk) * 16).toFixed(2)}px)`); }
-    const lineEnd = F.lineAt + Math.max(0.03, F.lineLen);
-    E.res2.style.setProperty('--rfx-hr', rfxRange(p, F.lineAt, lineEnd).toFixed(3));
-    const fk = rfxRange(p, lineEnd, lineEnd + 0.06), tk = rfxRange(p, lineEnd + 0.03, lineEnd + 0.09);   /* 2026-09-15: 線が伸びきったらすぐ(ピクト→文章)   /* 線が伸びきってから: ピクト → 文章 */
-    const pos = rfxHeld(p, [[F.panAt, F.panAt + Math.max(0.05, F.panLen)]]);
-    tf(E.track, `translateX(${(-pos * 100).toFixed(3)}%)`);
-    E.r2v.forEach((el, i) => {
-      const fig = E.fig[i], tx = E.tx[i];
-      const arrive = rfxRange(pos, 0.35, 0.95);   /* 2026-09-15: 到着する面は横移動の途中から見え始め、着く前に読める濃さに */
-      const kf = on ? (i === 0 ? fk : arrive) : 0, kt = on ? (i === 0 ? tk : arrive) : 0;
-      if (fig) rv(fig, kf, 14, 0);
-      if (tx) rv(tx, kt, 14, 0);
-      vis(el, on ? 1 : 0);
     });
   }
 }
@@ -9511,7 +9360,6 @@ function updateSections() {
   updateVision(progOverride.vision != null ? progOverride.vision : smoothTo('vision', visProg));
   updateDev(progOverride.dev != null ? progOverride.dev : smoothTo('dev', prog(SECS.dev)));
   updateDev2Stack();   /* dev2 の3枚カルーセル(ホバー切替) */
-  try { applyResAfterWeight(); } catch (e) {}   /* 【2026-09-28】実績の「全部出たあと」D: その間だけホイール1回の進みを小さく(それ以外は 1 に戻す) */
   /* 【2026-08-29】導入事例も固定追従なし＝入場進捗(preP)で自動再生。 */
   const casesProg = CASES_NOPIN ? clamp01(preP(SECS.cases) - NOPIN_ENTER) : prog(SECS.cases);
   updateCases(progOverride.cases != null ? progOverride.cases : smoothTo('cases', casesProg));
@@ -10418,7 +10266,6 @@ function fit() {
   { const wf = Math.max(0.3, Math.min(1, (w - 160) / 840));
     let f1 = wf, f2 = wf;
     const dv = (params.sections && params.sections.dev) || {};
-    const vcMock = !isMobile && dv.vAlign !== 'group';   /* 【2026-09-28】並べ方=モックを上下中央 */
     if (!isMobile && dv.pinStops !== 'off') {
       const hf = (id, baseH, sc) => { const blk = document.getElementById(id); if (!blk) return 1;
         const hd = blk.querySelector('.dev-center'), inn = blk.querySelector('.dev-blk-in');
@@ -10431,13 +10278,7 @@ function fit() {
       st.setProperty('--dev2-fit', f2.toFixed(3));
     }
     st.setProperty('--dev1-fit', isMobile ? '1' : f1.toFixed(3));
-    /* 【2026-09-28】並べ方=モックを上下中央: モックの下の見えない余白 = 見出しの高さ ＋ 拡大(×1.1 など)で下へはみ出す分。
-       モックは上端基準で拡大され、下の詰め(負のマージン)は画面幅の縮み(fit)の分だけなので、拡大の分だけ見た目がレイアウトより下へ長い */
-    { const sec = document.getElementById('dev'); if (sec) sec.classList.toggle('dev-vc-mock', vcMock);
-      const spc = (id, baseH, fitK, sc) => { const blk = document.getElementById(id); if (!blk) return; const hd = blk.querySelector('.dev-center');
-        blk.style.setProperty('--dev-vc-spacer', vcMock ? ((hd ? hd.offsetHeight : 0) + baseH * fitK * (sc - 1)).toFixed(1) + 'px' : '0px'); };
-      const s1 = dv.dev1Scale != null ? dv.dev1Scale : 1.1, s2 = dv.dev2Scale != null ? dv.dev2Scale : 1.1;
-      spc('devBlock1', 504, isMobile ? 1 : f1, s1); spc('devBlock2', 520, f2, s2); }
+    /* 【2026-09-29 完全削除】並べ方「モックを上下中央」(#dev.dev-vc-mock と下の見えない余白)は消した＝見出し＋モックを上下中央だけ */
     st.setProperty('--dev-sp-fit', Math.max(0.3, Math.min(1, (w - 32) / 840)).toFixed(3)); }
   /* 【2026-09-09 カンプSP 準拠】スマホの KV は次セクション(Our Vision y741 = section 667 + label 74)の
      直前で切る。設計フレーム DH=780 のままだと下に空白が残り、KV→ビジョンが空きすぎていた。
@@ -10492,9 +10333,8 @@ function fit() {
   { const _k = resFxActive(), _vh = resFxVh(_k);
     if (resFxFlowMode(_k)) SECS.results.style.height = 'auto';   /* 自然に流れる案(4、縦が短い端末の固定案): 中身なりの高さ */
     /* 【2026-09-28 ヒデさん依頼】出きったあとの止まりを切る: 固定で進む長さ(_vh-100)を resFxEnd 倍に(24-4 は 0.92)。つまみ「固定の長さ」の値は元の長さのまま */
-    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) + resAfterExtraVh() : _vh) + 'vh';   /* 【2026-09-28】全部出たあと a/b/e の分を足す */
-    /* 【2026-09-28】全部出たあと c: 実績の下に余白(次の開発者体験＝暗転の入口が遅れる) */
-    SECS.results.style.marginBottom = (!resFxFlowMode(_k) && _vh > 100 && resAfterMode() === 'c') ? resAfterLenVh('c') + 'vh' : ''; }
+    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) : _vh) + 'vh';
+  }   /* 【2026-09-29 完全削除】全部出たあとの見せ方(a/b/c/e の高さ・余白)は消した */
   /* 【2026-09-09 ヒデさん指定・見切れ根治】静的モバイル: pin-vp(100vh)より中身が高いセクションは
      下が見切れる。最下要素の位置から実コンテンツ高さを測り、section と pin-vp に明示的に設定して
      クリップを解除する(絶対配置でも最下要素のrectで測れる)。 */
@@ -11348,7 +11188,7 @@ function category(title, open) {
   head.className = 'cat-head';
   head.innerHTML = `<span>${title}</span><span class="cat-chev">▾</span>`;
   const content = document.createElement('div');
-  content.className = 'cat-body';
+  content.className = 'cat-body prox';   /* 【2026-09-29 ヒデさん依頼「近接の法則」＋文字の濃さ・大きさで階層】全部のタブで同じ余白と文字(css の .cat-body.prox) */
   head.onclick = () => {
     const nowClosed = cat.classList.toggle('closed');
     catOpen[title] = !nowClosed;
@@ -11487,8 +11327,9 @@ function hideEmptyPanelGroups() {
        :first-child は隠れている補足文なども1番目に数えるので使わない(6-15 と同じ理由) */
     /* 【2026-09-29】小見出しのまとまり(.cv-subg・入れ子の見出し)のすぐ後ろに見えている物には pab を付ける。
        まとまりの前後を 16px にする時、まとまり同士が 16+16＝32px(見出し同士の 24px より遠い＝逆転)にならないように、余白は「上」だけで付ける */
+    /* 案のピル(.var-box)のすぐ後ろに見えているつまみには pav(8px)。まとまり(小見出し)が来る時は pab と同じ 16px のまま */
     const isBlk = el => el.classList.contains('cv-subg') || el.classList.contains('grp');
-    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null, prevBlk = false; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); ch.classList.toggle('pab', shown && prevBlk); if (shown) { first = false; lastEl = ch; prevBlk = isBlk(ch); } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
+    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null, prevBlk = false, prevVar = false; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); ch.classList.toggle('pab', shown && prevBlk); ch.classList.toggle('pav', shown && prevVar && !isBlk(ch)); if (shown) { first = false; lastEl = ch; prevBlk = isBlk(ch); prevVar = ch.classList.contains('var-box'); } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
   } catch (e) {}
 }
 function sub(target, html, deep, opts) {
@@ -11762,7 +11603,7 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const ls = numIn('字間(%)。文字の大きさに対する割合。いまの字間が入っているので、そこから上下できます。消すとCSSのまま(自動)に戻る', '0.5', '-20', '50', 'lsp');
   fsz.dataset.prop = 'font-size'; wSel.dataset.prop = 'font-weight'; lh.dataset.prop = 'line-height'; ls.dataset.prop = 'letter-spacing';   /* 【2026-09-19】スマホモードで「モバイルで値が変わる」ものをオレンジに */
   const mkLab = (t, el, title) => { const pair = document.createElement('span'); pair.className = 'txt-pair'; const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; pair.append(l, el); box.append(pair); };
-  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(%)・文字の大きさに対する割合');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に */
+  mkLab('size', fsz, 'サイズ(px)'); mkLab('weight', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(%)・文字の大きさに対する割合');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に／【2026-09-29 ヒデさん依頼】サ→size・太→weight */
   function sync() {
     /* スマホモード中は「共有(base)＋スマホ上書き(mb)」を表示。通常は共有だけ */
     const _base = (params.edits && params.edits[sp.key]) || {};
@@ -12465,6 +12306,7 @@ function buildPanel() {
 
   liveEdit = false;
   const animBody = document.createElement('div');
+  animBody.className = 'grp-stack';   /* 【2026-09-29 近接の法則】中の見出し(惑星・メッシュ等)同士を 24px 空ける(css の .grp-stack) */
   aRoot.appendChild(animBody);
   /* 【2026-08-27 リロード感の解消】説明文は要素を使い回して文字だけ差し替え、
      作り直すのは「この案の調整」の箱だけにする。共通の項目は一度きり作って触らない。
@@ -12472,6 +12314,7 @@ function buildPanel() {
   /* 【2026-08-27 ヒデさん指定】案の説明は常時出さない(縦が伸びるため)。
      文面は選択ピルにマウスを乗せた時の吹き出しで読める */
   const animModeBox = document.createElement('div');
+  animModeBox.className = 'grp-stack';
   animBody.appendChild(animModeBox);
   /* 【2026-08-29 ヒデさん指定】案ごとに「効く項目だけ」出す仕組み。グループ要素と表示条件を控え、
      案切替(fillAnimBody)のたびに表示/非表示を同期する。使わない案では丸ごと隠す。 */
@@ -13257,7 +13100,6 @@ function buildPanel() {
   {
     const RFX_OPTS = [
       ['24-4 for SaaS/for AI から入る(要素移動)', '24-4', '【2026-09-17 新】ピクトを大きくズームさせず、ほぼ最終サイズのままフェード＋位置移動だけで終点へ運ぶ版。3枚カードが途中で「別の絵柄に切り替わって見える」印象を消し、絵(SVG)は同じまま要素の移動で補完する(固定・240vh)。'],
-      ['26 数値→線→下段が横へ', '26', '絵コンテ(Figma 17283:23622): 3つの数値が中央に大きく→上段の終点(見出し 左・数値 右)へ→横線が伸びきる→下段(説明・ピクト)がブラーで→横に動いて for AI→縦に戻る(固定・560vh)。'],
     ];
     /* 【2026-09-14 ヒデさん指定】案は × で消せる(KV のバリエーションと同じ仕組み。「現行」は消せない・番号は振り直さない) */
     resFxRow(RFX_OPTS);
@@ -13268,7 +13110,7 @@ function buildPanel() {
       v => { const k = resFxKey(); return (RES_FX[k] && RES_FX[k].vh) ? v + 'vh' : '固定なし'; },
       '固定して読む区間の長さ(固定のある案のみ。4・12・30・33・38〜41 は固定なし)。大きいほどゆっくり進みます。'));
     { const _vr = [...mount.querySelectorAll('.row')].find(r => (r.textContent || '').includes('固定の長さ'));
-      rfxDyn(_vr, ['24-4', '26']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
+      rfxDyn(_vr, ['24-4']); }   /* 4/12/30/33/38〜41 は固定なし */   /* 固定のある案の時だけ出す */
     /* 【2026-09-26 整理】完全削除した案だけの調整(主役ピクト系・案14・案20・案21〜23)は削除。
        主役ピクト系のぼかし(hero.pictoBlur)は案24-4 が今も読むので値の既定(RFX_HERO_DEF)は残す */
     const pct = v => Math.round(v * 100) + '%';
@@ -13296,26 +13138,7 @@ function buildPanel() {
     try { _spGap.classList.add('sp-only-row'); } catch (e) {} rows.push(_spGap);
     });
     rfxDyn(_g24, ['24-4']);
-    /* 案26: 数値・線・横移動(その案の時だけ出す) */
-    subT(catRes, () => '案' + rfxNo('26') + '：数値・線・横移動');
-    const _g26 = catRes.lastElementChild;
-    const f26 = () => { const r = params.sections.results; r.fx26 = r.fx26 || {}; return r.fx26; };
-    const F26 = { numScale: 1.714, settleAt: 0.06, settleLen: 0.20, lineAt: 0.28, lineLen: 0.14, panAt: 0.58, panLen: 0.20 };
-    const s26 = (label, key, min, max, step, fmt, tip) => rows.push(slider(label, min, max, step, () => (f26()[key] != null ? f26()[key] : F26[key]), v => { f26()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx26.' + key }));
-    subgroup('数値', () => {
-    s26('大きさ', 'numScale', 1.2, 3, 0.05, v => '×' + v.toFixed(2), '最初に中央へ大きく出す倍率(70px に対して。絵コンテは 120px=1.71倍)。');
-    s26('収まり始める位置', 'settleAt', 0, 0.3, 0.01, pct, '固定区間のどこから上段の終点へ動き始めるか。');
-    s26('収まる長さ', 'settleLen', 0.05, 0.5, 0.01, pct, '終点に収まり切るまでの長さ。');
-    });
-    subgroup('線', () => {
-    s26('伸び始める位置', 'lineAt', 0.1, 0.6, 0.01, pct, '横線が左から伸び始める位置。伸びきると下段がブラーで現れます。');
-    s26('伸びる長さ', 'lineLen', 0.03, 0.4, 0.01, pct, '線が伸びきるまでの長さ。');
-    });
-    subgroup('横移動', () => {
-    s26('動き始める位置', 'panAt', 0.3, 0.85, 0.01, pct, '下段が for SaaS → for AI へ動き始める位置。');
-    s26('長さ', 'panLen', 0.05, 0.5, 0.01, pct, '横移動にかける長さ。');
-    });
-    rfxDyn(_g26, ['26']);
+    /* 【2026-09-29 完全削除】案26(数値・線・横移動)のつまみは、案ごと消した */
     syncRfxDyn();
   }
 
@@ -13380,32 +13203,16 @@ function buildPanel() {
     '大きいほど「左からパタパタ」に。0で全桁同時。', { mbKey: 'sections.results.slotStagger' }));
   rows.push(slider('何周まわすか', 1, 6, 1, () => sv().results.slotCycles, v => sv().results.slotCycles = v, v => v + '周',
     '0〜9 を何回流すか。多いほど勢いよく見えます。', { mbKey: 'sections.results.slotCycles' }));
-  rows.push(slotFor(slider('上下のなじませ', 0, 30, 1, () => (sv().results.slotFade != null ? sv().results.slotFade : 14), v => { sv().results.slotFade = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%', '案1用。数字の窓の上下を透明へグラデで消す幅(窓の高さに対する%)。0でパツッと切れる。', { mbKey: 'sections.results.slotFade', fixedMax: true }), ['plain']));
-  subgroup('上下のぼかし（案2/3）', () => {
+  subgroup('上下のぼかし（案3）', () => {
   rows.push(slotFor(slider('強さ', 0, 8, 0.5, () => (sv().results.slotBlur != null ? sv().results.slotBlur : 0), v => { sv().results.slotBlur = v; applyResSlotFade(); markDirty(); }, v => v === 0 ? 'なし' : v.toFixed(1) + 'px',
-    '案2/3用。窓の上下に重ねるぼかしの強さ(端ほど強い)。0でぼかし無し。', { mbKey: 'sections.results.slotBlur' }), ['blur', 'melt']));
+    '案3用。窓の上下に重ねるぼかしの強さ(端ほど強い)。0でぼかし無し。', { mbKey: 'sections.results.slotBlur' }), ['melt']));
   rows.push(slotFor(slider('範囲', 10, 60, 1, () => (sv().results.slotBlurZone != null ? sv().results.slotBlurZone : 45), v => { sv().results.slotBlurZone = v; applyResSlotFade(); markDirty(); }, v => Math.round(v) + '%',
-    '案2/3用。窓の高さの何%までぼかしを重ねるか(上下それぞれ)。', { mbKey: 'sections.results.slotBlurZone' }), ['blur', 'melt']));
+    '案3用。窓の高さの何%までぼかしを重ねるか(上下それぞれ)。', { mbKey: 'sections.results.slotBlurZone' }), ['melt']));
   });
   rows.push(slotFor(slider('窓の高さ', 1, 2, 0.02, () => (sv().results.slotWin != null ? sv().results.slotWin : 1.6), v => { sv().results.slotWin = v; applyResSlotFade(); markDirty(); }, v => v.toFixed(2) + '文字分',
-    '案2/3/4用: 回っている間だけ広がる窓の高さ(止まると 1.24 に戻る)。案6/7/8用: ずっとこの高さ(動かさない)。1＝数字ぴったり。高いほど前後の数字がのぞく。上のラベルまでは 1.4 くらいが目安。行の高さは変わりません。', { mbKey: 'sections.results.slotWin' }), ['blur', 'melt', 'drum', 'still', 'fade', 'swap']));
+    '案3用: 回っている間だけ広がる窓の高さ(止まると 1.24 に戻る)。1＝数字ぴったり。高いほど前後の数字がのぞく。上のラベルまでは 1.4 くらいが目安。行の高さは変わりません。', { mbKey: 'sections.results.slotWin' }), ['melt']));
   rows.push(slotFor(slider('消える長さ', 0.6, 2, 0.05, () => (sv().results.slotRamp != null ? sv().results.slotRamp : 1), v => { sv().results.slotRamp = v; applyResSlotFade(); markDirty(); }, v => '×' + v.toFixed(2),
-    '案2/3/4/6/7/8用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける。案6/7/8 は ×1 で「止まった数字にかからない一番長い帯」になり、それより大きくしても変わりません。', { mbKey: 'sections.results.slotRamp' }), ['blur', 'melt', 'drum', 'still', 'fade', 'swap']));
-  subgroup('ドラム（案4）', () => {
-  rows.push(slotFor(slider('丸み（分割数）', 8, 20, 1, () => (sv().results.slotDrumN != null ? sv().results.slotDrumN : 12), v => { sv().results.slotDrumN = v; markDirty(); }, v => Math.round(v) + '分割',
-    '案4用。円筒を何分割して数字を貼るか。少ないほど丸みが強く(前後の数字が大きく傾く)、多いほど平らに近づく。', { mbKey: 'sections.results.slotDrumN' }), ['drum']));
-  rows.push(slotFor(slider('端の薄さ', 0.5, 3, 0.1, () => (sv().results.slotDrumFade != null ? sv().results.slotDrumFade : 1.3), v => { sv().results.slotDrumFade = v; markDirty(); }, v => '×' + v.toFixed(1),
-    '案4用。端(傾いた数字)をどれだけ薄くするか。大きいほど早く薄くなる。', { mbKey: 'sections.results.slotDrumFade' }), ['drum']));
-  });
-  /* 【2026-09-28 ヒデさん依頼】案7・案8 のつまみ(値は仮置き) */
-  subgroup('数字ごとにふわっと薄く（案7）', () => {
-  rows.push(slotFor(slider('透明になる距離', 0.3, 1.2, 0.05, () => (sv().results.slotDigitFade != null ? sv().results.slotDigitFade : 0.7), v => { sv().results.slotDigitFade = v; markDirty(); }, v => v.toFixed(2) + '文字分',
-    '案7用。数字が真ん中から何文字分離れたら透明になるか。小さいほど早く薄くなり、大きいほど前後の数字がうっすら残る。', { mbKey: 'sections.results.slotDigitFade' }), ['fade']));
-  });
-  subgroup('少し動いて入れ替わる（案8）', () => {
-  rows.push(slotFor(slider('動く距離', 0, 0.6, 0.05, () => (sv().results.slotSwapRise != null ? sv().results.slotSwapRise : 0.3), v => { sv().results.slotSwapRise = v; markDirty(); }, v => v.toFixed(2) + '文字分',
-    '案8用。入れ替わる時に数字が上へ動く距離。0でその場で入れ替わる(動かない)。大きいほど下から上へ流れて見える。', { mbKey: 'sections.results.slotSwapRise' }), ['swap']));
-  });
+    '案3用。端で薄くなっていく帯の長さの倍率。長いほどゆっくり溶ける。', { mbKey: 'sections.results.slotRamp' }), ['melt']));
   rows.push(slider('回り出す位置', 0.4, 1, 0.05, () => sv().results.slotEnterAt, v => sv().results.slotEnterAt = v, v => Math.round(v * 100) + '%',
     '100%＝画面の下に出た瞬間 / 50%＝真ん中まで来てから。', { mbKey: 'sections.results.slotEnterAt' }));
   rows.push(slider('止まり際の粘り', 2, 9, 0.5, () => sv().results.slotEase, v => sv().results.slotEase = v, v => '×' + v.toFixed(1),
@@ -13455,31 +13262,7 @@ function buildPanel() {
 
   panelVarsec('fx', '演出');   /* 【2026-09-21】以降(つなぎ・文字)は「演出」セクションへ戻す */
 
-  /* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・案24-4)。
-     見せ方のピル＋長さ(案ごとに別の値)＋A の速さ＋D の重さ。効かない行は薄くする(隠すと位置が動くので隠さない)。スマホは流れる作りなので PC だけ(スマホモードでは隠す) */
-  /* 【2026-09-28 ヒデさん依頼「実績でカクッと止まるのをやめたいと言った当時の作りに戻した案を作って、既定にしてみて」】
-     見せ方に「当時の作り」(orig＝出きったあと約100pxだけ止まってから次へ・本番と同じ)を足して既定に。
-     案を選ぶピルは「バリエーション」、長さ・速さ・重さのつまみは「アニメーション」へ、同じ見出し名で分ける(決まり6-13) */
-  sub(catRes, '全部出たあと（PC）', false, { grp: 'variation' });
-  { const RR = () => sv().results, mode = () => (RR().afterMode || 'none');
-    let syncAfterRows = () => {};
-    optRow('resAfter', '見せ方', [['当時の作り（出きったあと少し止まる）', 'orig'], ['なし（すぐ次へ）', 'none'], ['A ゆっくり通り過ぎる', 'a'], ['B やわらかく一息つく', 'b'], ['C 次との間を空ける', 'c'], ['D スクロールを少し重く', 'd'], ['E 画面固定', 'e']],
-      () => mode(), v => { RR().afterMode = v; fit(); syncAfterRows(); });
-    const boxAfter = (mount || body).querySelector('.var-box[data-bucket="resAfter"]');
-    if (boxAfter) { boxAfter.classList.add('pc-only-row'); if (boxAfter.previousElementSibling) boxAfter.previousElementSibling.classList.add('pc-only-row'); }
-    sub(catRes, '全部出たあと（PC）', false, { grp: 'anim' });
-    const lenRow = slider('長さ', 10, 150, 5, () => { const m = mode(); return m === 'none' ? 50 : (+RR()['afterLen' + m.toUpperCase()] || 50); },
-      v => { const m = mode(); if (m !== 'none') { RR()['afterLen' + m.toUpperCase()] = v; fit(); } }, v => Math.round(v) + 'vh',
-      '全部出たあと、その見せ方を続けるスクロールの長さ(100vh＝1画面分)。見せ方ごとに別の値。C は実績の下に足す余白の高さ。', { fixedMax: true });
-    const spRow = slider('ゆっくりの速さ（A）', 0.1, 0.8, 0.05, () => (RR().afterSpeed != null ? +RR().afterSpeed : 0.35), v => { RR().afterSpeed = v; fit(); }, v => Math.round(v * 100) + '%',
-      'A の時だけ効く。全部出たあと、スクロールの何割の速さで流れはじめるか(最後は普通の速さに戻る)。小さいほどゆっくり。', { fixedMax: true });
-    const wtRow = slider('重さ（D）', 0.1, 0.9, 0.05, () => (RR().afterWeight != null ? +RR().afterWeight : 0.35), v => { RR().afterWeight = v; }, v => Math.round(v * 100) + '%',
-      'D の時だけ効く。ホイール1回で進む量(100%＝いつもどおり)。小さいほど重い。', { fixedMax: true });
-    [lenRow, spRow, wtRow].forEach(r => { r.classList.add('pc-only-row'); rows.push(r); const s0 = r._sync; r._sync = () => { s0(); syncAfterRows(); }; });
-    /* 【2026-09-28 ヒデさん依頼】選んだ見せ方で使うつまみだけを出す(前は薄くして全部並べていた)。当時の作り・なしの時は、長さなども出さない。決まり 6-14 */
-    syncAfterRows = () => { const m = mode(); lenRow.style.display = ['a', 'b', 'c', 'd', 'e'].includes(m) ? '' : 'none'; spRow.style.display = m === 'a' ? '' : 'none'; wtRow.style.display = m === 'd' ? '' : 'none'; try { hideEmptyPanelGroups(); } catch (e) {} };
-    syncAfterRows();
-  }
+  /* 【2026-09-29 完全削除】「全部出たあと（PC）」の見せ方の案(当時の作り・A〜E)を消した＝出きったらすぐ次へ(なし)だけ。見出しとつまみも消した */
 
   sub(catRes, '次のセクションへのつなぎ（明→黒）');
   note('実績セクションの背景が、下へスクロールするほど白→黒へ変わり、開発者体験(黒画面)へつながります。'
@@ -13522,10 +13305,7 @@ function buildPanel() {
   note('正面のまま(傾け・重ねなし)で立体感を出す10案(1〜10)と、AI らしい5案(11〜15: 光が縁を走る／オーロラ／スキャン／粒／脈)。案を選ぶと下の「この案の調整」が入れ替わります。配色とも組み合わせられます。');
   sub(catDev, '配色', true, { fixed: true, grp: 'variation' });
   varRowX('devTone', DEV_TONES, () => devToneKey(), v => { params.devTone = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); } });
-  /* 【2026-09-28 ヒデさん依頼「モックそのものが上下中央に来る案も作って、既定に」】①②の上下の並べ方(PC・タブレット) */
-  sub(catDev, '並べ方（上下の位置）', true, { fixed: true, grp: 'variation' });
-  optRow('devVAlign', '上下の位置', [['モックを上下中央（見出しはその上）', 'mock'], ['見出し＋モックを上下中央（今まで）', 'group']],
-    () => (sv().dev.vAlign === 'group' ? 'group' : 'mock'), v => { sv().dev.vAlign = v; markDirty(); fit(); applyDevTune(); renderFrame(); try { syncPanelRows(); } catch (e) {} });   /* 上下の位置のつまみも、その並べ方の値に入れ替える */
+  /* 【2026-09-29 完全削除】①②の並べ方の案「モックを上下中央」を消した＝見出し＋モックを上下中央(group)だけ。案のピルも消した */
   /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
   Object.keys(DEV_DYN_SPEC).forEach(g => {
     const sp = DEV_DYN_SPEC[g];
@@ -13547,9 +13327,9 @@ function buildPanel() {
 
   /* 【2026-09-28 ヒデさん依頼「見出しとモックのセットを上下に動かせるように」】①②まとめて。並べ方(上下の位置の案)ごとに別の値。PC・タブレットだけ(スマホモードでは隠す) */
   sub(catDev, '①② 見出しとモック（PC）');
-  { const _k = () => (sv().dev.vAlign === 'group' ? 'shiftYGroup' : 'shiftYMock');
+  { const _k = () => 'shiftYGroup';   /* 【2026-09-29】並べ方は見出し＋モック(group)だけになった */
     const _r = slider('上下の位置', -200, 200, 4, () => (+sv().dev[_k()] || 0), v => { sv().dev[_k()] = v; applyDevTune(); markDirty(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-      '見出しとモックをセットで上下にずらす(間隔はそのまま)。マイナスで上、プラスで下。0＝今の位置(並べ方の案で決まる中央)。並べ方の案ごとに別の値。', { signed: true });
+      '見出しとモックをセットで上下にずらす(間隔はそのまま)。マイナスで上、プラスで下。0＝今の位置(見出し＋モックの上下中央)。', { signed: true });
     _r.classList.add('pc-only-row'); rows.push(_r); }
   /* 【2026-09-20 ヒデさん依頼・#10】①②それぞれ 見出し↔モックの間隔・モックの大きさ(PCのみ。SPは別スケール) */
   sub(catDev, '① 見出しとモック（PC）');
@@ -13688,28 +13468,14 @@ function buildPanel() {
      グラデの揺らぎの案(9/19 に外した「グラデの案と流れ」の欄の作り直し)。出すのは 今の動き(案7)＋全体の揺らぎ4案だけ(外した古い案は並べない)。
      ❌ 最初に作った「境目がくねる・模様が流れる」4案(旧14〜17)は違っていたので外した。
      案ごとの値は揺らぎの案(cvSway)の控えに入る(スマホの上書きも案ごと)。つまみは選んだ案で効く物だけ出す(6-14)。うねりの強さ等は下の「ウェーブ」(入口は1つ・6-2) */
-  const CV_FLOW_PILLS = ['13', '18', '19', '20', '21'].map(k => { const it = CV_SWAYS.find(x => x.key === k); return k === '13' ? Object.assign({}, it, { name: '今の動き（右上で揺れる）', tip: '今の本番の動き。白なし・明るい所は右上のまま、グラデ全体がゆっくり左右に傾いて揺れ、色の境目も少しうねる。' }) : it; }).filter(Boolean);
-  /* 【2026-09-29 ヒデさん依頼「上位概念が濃くて、下位概念が薄く。フォントサイズでもいい。サンプルのバリエーションを作って提案して」】
-     調整パネルの文字の見せ方の案(見本＝このタブだけ・css の html[data-pty])。サイトの設定には入れず、このブラウザにだけ覚える。
-     決まったらその案を固定して、この欄は消す(決まり 6-7) */
-  sub(catCv, 'パネルの文字の見せ方（案）', false, { grp: 'variation' });
-  { const PTY = [['0', '今の見え方'], ['1', '1 色の濃さ'], ['2', '2 文字の大きさ'], ['3', '3 文字の太さ'], ['4', '4 濃さ＋大きさ']];
-    const get = () => { if (window.__pty) return window.__pty; try { return localStorage.getItem('anyflow-panel-type') || '0'; } catch (e) { return '0'; } };
-    const apply = k => { window.__pty = k; if (k === '0') delete document.documentElement.dataset.pty; else document.documentElement.dataset.pty = k; };
-    apply(get());
-    const box = document.createElement('div'); box.className = 'var-box';
-    const row = document.createElement('div'); row.className = 'sw-row'; box.appendChild(row);
-    const fill = () => { row.innerHTML = ''; PTY.forEach(([k, name]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'var-pill' + (get() === k ? ' on' : ''); b.textContent = name;
-      b.onclick = () => { apply(k); try { localStorage.setItem('anyflow-panel-type', k); } catch (e) {} fill(); }; row.appendChild(b); }); };
-    fill(); (mount || body).appendChild(box); }
-  sub(catCv, 'グラデの揺らぎ', false, { grp: 'variation' });
+  const CV_FLOW_PILLS = ['21'].map(k => CV_SWAYS.find(x => x.key === k));   /* 【2026-09-29 完全削除】今の動き(13)・満ち引き(18)・押し出し(19)・全体が寄る(20)を消した＝押し寄せて、ゆっくり戻る(21)だけ */
   varRowX('cvSway', CV_FLOW_PILLS, () => cvSwayKey(), v => { params.cvSway = String(v); cvApplySway(String(v)); }, { autosave: true, snap: VAR_SNAP.cvSway, after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
   sub(catCv, 'グラデの揺らぎ', false, { grp: 'anim' });
   { const fm = () => +(cvv().flowMode || 0), on = () => fm() > 4;
     const fl = (label, key, min, max, step, def, fmt, hint, cond) => { const r = slider(label, min, max, step, () => (cvv()[key] != null ? cvv()[key] : def), v => { cvv()[key] = v; markDirty(); }, fmt, hint, { mbKey: 'cv.' + key, fixedMax: true }); rows.push(r); return showWhen(r, cond); };
     fl('周期', 'flowSec', 6, 90, 1, 18, v => Math.round(v) + '秒', 'ピンクがふくらんで戻るまでの1往復の時間。長いほどゆったり。', on);
     fl('大きさ', 'flowAmp', 0, 0.4, 0.01, 0.12, v => '×' + v.toFixed(2), '色の配分がどれだけ動くか(ピンクがどこまでふくらむか)。0で止まる。', on);
-    fl('右へ伝わる遅れ', 'flowLag', 0, 1, 0.05, 0.3, v => Math.round(v * 100) + '%', 'ピンクが動いてから、青・水色が動くまでの遅れ(1往復のうちの割合)。0%でそろって動く。', () => fm() === 6 || fm() === 8);
+    fl('右へ伝わる遅れ', 'flowLag', 0, 1, 0.05, 0.3, v => Math.round(v * 100) + '%', 'ピンクが動いてから、青・水色が動くまでの遅れ(1往復のうちの割合)。0%でそろって動く。', () => fm() === 8);
     fl('押し寄せる時間', 'flowRise', 0.1, 0.9, 0.05, 0.3, v => Math.round(v * 100) + '%', '1往復のうち、押し寄せる(ピンクがふくらむ)側にかける時間の割合。小さいほど速く押し寄せて、ゆっくり戻る。', () => fm() === 8);
     subgroup('ゆらゆら', () => {
       /* 【2026-09-28 夜 ヒデさん依頼「マイナスの方向に変えようとしたらインジケーターが消えてしまう。マイナスの方向にも動かせるように」】
@@ -13842,7 +13608,6 @@ function buildPanel() {
      絵文字・番号は付けない(後の改修がしやすいように)。階層の見せ方だけ5案(cvHier)で切替。 */
   /* subgroup(label, fn) は 06-sections.js の共通関数(2026-09-27 全タブで使うため共通化) */
   catCv.classList.add('hier-1');   /* 見せ方＝インデント固定(焼き込み) */
-  catCv.classList.add('prox');     /* 【2026-09-29 ヒデさん依頼「近接の法則」】余白の見本(このタブだけ)。確認後に全部のタブへ */
   /* 【2026-09-17 大掃除・ヒデさん指定】見せ方(5案)/CTA案(ボタン↔フォーム)/リキッドグラス5案/背景グラデ案(0〜3)/形の詳細(中心・広がり・回転・棒で編集)/
      境界(溶け込み)/余白・高さ の選択UIは削除。今の値(フォーム直置き・明るいリキッドグラス・放射グラデ・標準の溶け込み・余白120/0/0/60)に固定＝焼き込み。 */
   sub(catCv, 'フォーム（カード）', false, { grp: 'basic' }); B.formStyle();

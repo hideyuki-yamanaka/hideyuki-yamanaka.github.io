@@ -1,5 +1,5 @@
 /*!
- * tune-panel.js v2.0.0 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し）
+ * tune-panel.js v2.2.0 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段）
  * 1ファイル / 依存なし / CSSも自分で流し込む。
  *
  *   <script src="tune-panel.js"></script>
@@ -19,7 +19,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '2.1.2';
+  var VERSION = '2.2.0';
 
   /* ============================================================
      0. 小道具
@@ -246,37 +246,36 @@
     '.tp-tab.on{color:#111;border-bottom-color:#111;font-weight:700;}',
     '.tp-tab[hidden]{display:none;}',
     '.tp-pane{display:none;padding-top:6px;}',
-    '.tp-pane.on{display:block;}',
-    '.tp-pane-title{font-size:14px;font-weight:800;color:#000;padding:14px 2px 2px;}',
+    '.tp-pane.on{display:flex;flex-direction:column;gap:32px;}',   /* 近接の法則(RULES 6-16・v2.2.0)：タブのいちばん外側＝カード同士・案の大見出し同士は 32px */
+    '.tp-pane-title{font-size:18px;font-weight:800;color:#000;padding:16px 2px 0;margin-bottom:-24px;}',   /* 大見出し→中身は 8px(32−24) */
     '.tp-off{display:none!important;}',
     /* ── カテゴリ（H1）。基本〜その他はカード、バリエーションは装飾なしの大見出し ── */
-    '.tp-cs{margin:8px 0;}',
-    '.tp-cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 2px 7px;font-size:13px;font-weight:700;',
-    '  letter-spacing:.03em;color:#111;user-select:none;-webkit-user-select:none;}',
-    '.tp-cs.var{margin:0 0 4px;}',
-    '.tp-cs.var>.tp-cs-head{font-size:14px;font-weight:800;color:#000;padding:15px 2px 6px;}',
-    '.tp-cs.card{background:transparent;border:1px solid #e4e7eb;border-radius:10px;padding:0 11px 6px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',   /* 2026-09-28 v2.1.2 ヒデさん「セクションの枠の色を上下のブロックと同じ色に」＝中は塗らない(AnyFlow V5 と同じ) */
-    '.tp-cs.card>.tp-cs-head{padding:11px 2px 8px;cursor:pointer;}',
+    '.tp-cs{margin:0;}',
+    '.tp-cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 2px;font-size:16px;font-weight:700;',
+    '  letter-spacing:.03em;color:#222;user-select:none;-webkit-user-select:none;}',   /* 文字の段 2 カテゴリ(カードの見出し) 16px・700・#222 */
+    '.tp-cs.var{margin:0;}',
+    '.tp-cs.var>.tp-cs-head{font-size:18px;font-weight:800;color:#000;padding:16px 2px 8px;}',   /* 文字の段 1 案の大見出し 18px・800・黒 */
+    '.tp-cs.card{background:transparent;border:1px solid #e4e7eb;border-radius:10px;padding:0 12px 16px;box-shadow:0 1px 2px rgba(16,24,40,.04);}',   /* 2026-09-28 v2.1.2 ヒデさん「セクションの枠の色を上下のブロックと同じ色に」＝中は塗らない(AnyFlow V5 と同じ) */
+    '.tp-cs.card>.tp-cs-head{padding:12px 2px;cursor:pointer;}',
     '.tp-cs.var~.tp-cs.card>.tp-cs-head{letter-spacing:.02em;}',
-    '.tp-cs.card>.tp-cs-body{padding-bottom:4px;}',
+    '.tp-cs-body,.tp-vs-body{display:flex;flex-direction:column;gap:24px;}',   /* 見出しのまとまり同士は 24px(閉じたカードは下の .tp-cs.closed で隠れる) */
+    '.tp-vs-body>.tp-cs.card{margin-top:8px;}',   /* 案ごとの大見出しの中のカード同士は 24+8＝32px */
     '.tp-cs-chev{position:relative;width:22px;height:22px;flex:0 0 auto;transition:transform .2s;}',
     '.tp-cs-chev::before{content:"";position:absolute;inset:0;background:#8a8a8a;-webkit-mask:' + ICON_CHEV + ';mask:' + ICON_CHEV + ';}',
     '.tp-cs.card>.tp-cs-head:hover .tp-cs-chev::before{background:#333;}',
     '.tp-cs.closed .tp-cs-chev{transform:rotate(-90deg);}',
     '.tp-cs.closed>.tp-cs-body{display:none;}',
     /* 案ごとの大見出し（1タブに主役の案が複数ある時） */
-    '.tp-vs{margin:6px 0 4px;}',
-    '.tp-vs-head{font-size:14px;font-weight:800;color:#000;padding:15px 2px 6px;}',
+    '.tp-vs{margin:0;}',
+    '.tp-vs~.tp-vs{border-top:1px solid #e6e6e6;}',   /* 案の大見出し同士はさらに区切り線(間にだけ・6-15) */
+    '.tp-vs-head{font-size:18px;font-weight:800;color:#000;padding:16px 2px 8px;}',
     /* ── H2＝モノの見出し 12px 太字／H3＝入れ子 11px グレー／まとまり（小見出し）。左の縦線は使わない ── */
-    '.tp-sec{margin-top:4px;}',
-    '.tp-sec-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#333;margin:12px 0 5px;min-height:20px;}',
-    '.tp-cs-body>.tp-sec:first-child>.tp-sec-head{margin-top:4px;}',
+    '.tp-sec{margin:0;}',
+    '.tp-sec-head{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#444;margin:0 0 8px;min-height:20px;}',   /* 文字の段 3 見出し 14px・700・#444。見出し→つまみ 8px */
     '.tp-sec-head>span:first-child{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
-    '.tp-sec-body{padding-bottom:4px;}',
-    '.tp-deep{margin:2px 0 6px;}',
-    '.tp-deep-head{font-size:12px;font-weight:600;color:#8a8a8a;margin:4px 0 6px;}',
-    '.tp-subg{margin:2px 0 6px;}',
-    '.tp-subg-lab{font-size:12px;font-weight:600;color:#8a8a8a;margin:4px 0 6px;}',
+    '.tp-sec-body,.tp-subg-body,.tp-deep-body{display:flex;flex-direction:column;gap:0;padding-bottom:0;}',   /* つまみ同士 0(行16px＝16pxおき) */
+    '.tp-deep,.tp-subg{margin:16px 0 0;}',   /* 小見出しのまとまりの上は 16px。すぐ後ろの物にも 16px(下の .tp-pab)＝まとまり同士も 16px で、見出し同士の 24px を超えない */
+    '.tp-deep-head,.tp-subg-lab{font-size:12px;font-weight:600;color:#666;margin:0 0 4px;}',   /* 文字の段 4 小見出し 12px・600・#666。小見出し→つまみ 4px */
     /* まとまりの ↺（28px 角）。押すと「✓ 戻しました」 */
     '.tp-gbtn{position:relative;flex:0 0 auto;width:28px;height:28px;padding:0;border:1px solid #e0e0e0;border-radius:8px;background:#fff;',
     '  color:transparent;-webkit-text-fill-color:transparent;font:-webkit-small-control;font-size:14px;line-height:26px;text-align:center;cursor:pointer;',
@@ -289,17 +288,27 @@
     '.tp-gbtn.done::after{display:none;}',
     /* ── 1行：項目名100px → つまみ → 値48px（右寄せ・桁ぞろえ）→ ↺ ── */
     '.tp-item{position:relative;}',
-    '.tp-item.tp-gap{margin-top:9px;}',
-    '.tp-row{display:flex;align-items:center;gap:6px;margin:2px 0;min-height:24px;}',
-    '.tp-row>label{flex:0 0 100px;min-width:0;color:#555;font-weight:300;}',
+    '.tp-item.tp-gap{margin-top:8px;}',
+    /* 見えている物の前後の印（_applyVisibility が付ける。:first-child など隠れた物まで数える書き方はしない・6-15） */
+    '.tp .tp-pav{margin-top:8px;}',   /* 案のピルのすぐ下のつまみ */
+    '.tp .tp-pab{margin-top:16px;}',  /* 小見出しのまとまりのすぐ後ろ */
+    '.tp .tp-pf{margin-top:0;}',      /* 見出しのすぐ下の最初の物 */
+    '.tp-row{display:flex;align-items:center;gap:6px;margin:0;min-height:16px;}',
+    '.tp-row>label{flex:0 0 100px;min-width:0;color:#888;font-weight:400;}',   /* 文字の段 5 つまみの名前 11px・400・#888 */
     '.tp-row.seg>label{flex:0 0 74px;}',
-    '.tp-row input[type=range]{flex:1;min-width:0;margin:0;accent-color:#090909;}',
-    '.tp-val{flex:0 0 48px;text-align:right;font-variant-numeric:tabular-nums;color:#333;white-space:nowrap;overflow:hidden;cursor:pointer;}',
+    /* つまみは細身(棒 4px・丸 10px)。左の黒い塗りは JS が --p(0〜1)で渡す。丸の中心と塗りの端がそろうように 5px(丸の半分)ずらす */
+    '.tp-row input[type=range]{flex:1;min-width:0;margin:0;height:12px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;}',
+    '.tp-row input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,#090909 calc(5px + (100% - 10px) * var(--p,.5)),#e0e0e0 0);}',
+    '.tp-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:10px;height:10px;margin-top:-3px;border:0;border-radius:50%;background:#090909;}',
+    '.tp-row input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#e0e0e0;}',
+    '.tp-row input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:#090909;}',
+    '.tp-row input[type=range]::-moz-range-thumb{width:10px;height:10px;border:0;border-radius:50%;background:#090909;}',
+    '.tp-val{flex:0 0 48px;text-align:right;font-variant-numeric:tabular-nums;color:#444;white-space:nowrap;overflow:hidden;cursor:pointer;}',
     '.tp-val:hover{color:#000;text-decoration:underline dashed #aaa;}',
     '.tp-row .tp-num{flex:0 0 64px;min-width:0;padding:2px 5px;border:1px solid #0EBBFF;border-radius:5px;font:inherit;text-align:right;background:#fff;color:inherit;}',
-    '.tp-rst{position:relative;flex:0 0 26px;width:26px;height:26px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;',
+    '.tp-rst{position:relative;flex:0 0 16px;width:16px;height:16px;padding:0;border:1px solid transparent;border-radius:4px;background:transparent;',   /* ↺ 16px＝行の高さ 16px に収める */
     '  color:transparent;-webkit-text-fill-color:transparent;cursor:pointer;transition:background .15s,border-color .15s;}',
-    '.tp-rst::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;background:#8a8a8a;pointer-events:none;-webkit-mask:' + ICON_RST + ';mask:' + ICON_RST + ';}',
+    '.tp-rst::after{content:"";position:absolute;inset:0;margin:auto;width:12px;height:12px;background:#8a8a8a;pointer-events:none;-webkit-mask:' + ICON_RST + ';mask:' + ICON_RST + ';}',
     '.tp-rst:hover{background:#f0f0f0;border-color:#e0e0e0;}',
     '.tp-rst:hover::after{background:#333;}',
     '.tp-fill{flex:1 1 auto;}',
@@ -324,12 +333,12 @@
     '.tp-row.col>label{flex:1 1 100%;}',
     '.tp-row textarea{flex:1 1 auto;min-width:0;padding:6px 8px;border:1px solid #d8d8d8;border-radius:6px;font-family:inherit;font-size:11px;line-height:1.6;background:#fff;color:inherit;resize:vertical;}',
     /* ── 案ピル（水色 #0EBBFF・角丸小さめ・10px）と ⋯ メニュー ── */
-    '.tp-var{margin:2px 0 0;}',
-    '.tp-var-lab{font-size:11px;color:#555;font-weight:300;margin:2px 0 0;}',
+    '.tp-var{margin:0;}',
+    '.tp-var-lab{font-size:11px;color:#888;font-weight:400;margin:0;}',
     '.tp-var-lab[hidden]{display:none;}',
     '.tp-favhead{font-size:11.5px;font-weight:500;color:#666;margin:9px 0 2px;}',
-    '.tp-favhead[hidden]~.tp-pills:not(.tp-favrow){margin-top:9px;}',
-    '.tp-pills{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0;}',
+    '.tp-favhead[hidden]~.tp-pills:not(.tp-favrow){margin-top:4px;}',   /* 名前→ピル・前の行→ピルは 4px */
+    '.tp-pills{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0;}',
     '.tp-favrow{margin-bottom:4px;}',
     '.tp-favhead[hidden],.tp-favrow[hidden]{display:none!important;}',
     '.tp-pill{position:relative;display:inline-flex;align-items:center;gap:4px;padding:3px 17px 3px 7px;border:1px solid #dcdcdc;border-radius:6px;',
@@ -435,6 +444,7 @@
     '.tp.dark .tp-cs.card{background:#1b1b1e;border-color:#2e2e32;}',
     '.tp.dark .tp-cs-head,.tp.dark .tp-vs-head,.tp.dark .tp-pane-title{color:#eee;}',
     '.tp.dark .tp-sec-head{color:#ddd;}',
+    '.tp.dark .tp-subg-lab,.tp.dark .tp-deep-head{color:#bbb;}',
     '.tp.dark .tp-row>label,.tp.dark .tp-var-lab{color:#aaa;}',
     '.tp.dark .tp-val{color:#ddd;}',
     '.tp.dark .tp-seg,.tp.dark .tp-chip,.tp.dark .tp-row select,.tp.dark .tp-row input[type=text],.tp.dark .tp-row textarea,',
@@ -444,7 +454,11 @@
     '.tp.dark .tp-btns button.primary{background:#fff;color:#111;border-color:#fff;}',
     '.tp.dark .tp-pill{background:#1b1b1e;border-color:#3a3a3f;color:#ccc;}',
     '.tp.dark .tp-pill.on{background:#0EBBFF;border-color:#0EBBFF;color:#fff;}',
-    '.tp.dark input[type=range]{accent-color:#fff;}'
+    '.tp.dark .tp-row input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,#fff calc(5px + (100% - 10px) * var(--p,.5)),#3a3a3f 0);}',
+    '.tp.dark .tp-row input[type=range]::-webkit-slider-thumb{background:#fff;}',   /* ブラウザ専用の書き方は1つずつ分ける(知らない書き方が混ざると、その行ごと無視されるため) */
+    '.tp.dark .tp-row input[type=range]::-moz-range-thumb{background:#fff;}',
+    '.tp.dark .tp-row input[type=range]::-moz-range-progress{background:#fff;}',
+    '.tp.dark .tp-row input[type=range]::-moz-range-track{background:#3a3a3f;}'
   ].join('\n');
 
   function loadPanelFont(cfg) {
@@ -1523,6 +1537,8 @@
       if (!(isFinite(lo) && isFinite(hi) && v >= lo && v <= hi)) { var r = rangeFor(v, dMin, dMax, step, signed); setRange(r.lo, r.hi); }
     };
     var read = function () { var v = parseFloat(input.value); return isFinite(v) ? +v.toFixed(dec) : 0; };
+    /* つまみの左の黒い塗り(今の値まで)。細身のつまみは自分で塗るので、値や範囲が変わるたびに塗り直す(v2.2.0) */
+    var paint = function () { var lo = +input.min, hi = +input.max, v = +input.value; input.style.setProperty('--p', hi > lo ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))).toFixed(4) : '0.5'); };
     var v0 = num(acc.view());
     if (fixed) setRange(dMin, dMax);
     else { var r0 = rangeFor(isFinite(v0) ? v0 : dMin, dMin, dMax, step, signed); setRange(r0.lo, r0.hi); }
@@ -1531,6 +1547,7 @@
     row.sync = function () {
       var v = num(acc.view());
       if (isFinite(v)) { fit(v); input.value = v; }
+      paint();
       val.textContent = isFinite(v) ? fmt(v) : '–';
       row.mark();
     };
@@ -1538,6 +1555,7 @@
     input.addEventListener('input', function () {
       var v = snap(read());
       if (gk && +input.value !== v) input.value = v;
+      paint();
       acc.write(v);
       val.textContent = fmt(v);
       row.mark();
@@ -1556,6 +1574,7 @@
           input.value = v;
         }
       }
+      paint();
       self._changed({ item: item, path: item.path, value: v, immediate: true, row: row });
     });
     /* 右の数値を押すと直接打ち込める（Enter／外を押すと決定、Esc で取り消し） */
@@ -2098,10 +2117,28 @@
       if (t.btn && t.btn.hidden !== !vis) t.btn.hidden = !vis;
       if (t.title === self._activeTab && vis) activeOk = true;
     });
+    this._markSpacing();
     if (this._tabBar && !activeOk) {
       var first = this._tabs.filter(function (t) { return !t.btn || !t.btn.hidden; })[0];
       if (first && first.title !== this._activeTab) this._showTab(first.title, { quiet: true });
     }
+  };
+
+  /* 近接の法則(RULES 6-16・v2.2.0)：見えている物の前後に印を付ける。先頭＝tp-pf(0)・小見出しのまとまりのすぐ後ろ＝tp-pab(16px)・
+     案のピルのすぐ後ろ＝tp-pav(8px)。隠れた物(tp-off・hidden・display:none)は数えない＝:first-child は使わない(6-15 と同じ理由) */
+  Panel.prototype._markSpacing = function () {
+    if (!this.el) return;
+    var shown = function (e) { return !e.classList.contains('tp-off') && !e.hidden && e.style.display !== 'none' && getComputedStyle(e).display !== 'none'; };
+    [].forEach.call(this.el.querySelectorAll('.tp-sec-body,.tp-subg-body,.tp-deep-body'), function (bd) {
+      var first = true, prevBlk = false, prevPill = false;
+      [].forEach.call(bd.children, function (c) {
+        var s = shown(c), blk = c.classList.contains('tp-subg') || c.classList.contains('tp-deep');
+        c.classList.toggle('tp-pf', s && first);
+        c.classList.toggle('tp-pab', s && prevBlk);
+        c.classList.toggle('tp-pav', s && prevPill && !blk);
+        if (s) { first = false; prevBlk = blk; prevPill = c.dataset.kind === 'pills'; }
+      });
+    });
   };
 
   Panel.prototype._showTab = function (title, opts) {

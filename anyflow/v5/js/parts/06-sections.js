@@ -874,7 +874,6 @@ function updateSections() {
   updateVision(progOverride.vision != null ? progOverride.vision : smoothTo('vision', visProg));
   updateDev(progOverride.dev != null ? progOverride.dev : smoothTo('dev', prog(SECS.dev)));
   updateDev2Stack();   /* dev2 の3枚カルーセル(ホバー切替) */
-  try { applyResAfterWeight(); } catch (e) {}   /* 【2026-09-28】実績の「全部出たあと」D: その間だけホイール1回の進みを小さく(それ以外は 1 に戻す) */
   /* 【2026-08-29】導入事例も固定追従なし＝入場進捗(preP)で自動再生。 */
   const casesProg = CASES_NOPIN ? clamp01(preP(SECS.cases) - NOPIN_ENTER) : prog(SECS.cases);
   updateCases(progOverride.cases != null ? progOverride.cases : smoothTo('cases', casesProg));
@@ -1781,7 +1780,6 @@ function fit() {
   { const wf = Math.max(0.3, Math.min(1, (w - 160) / 840));
     let f1 = wf, f2 = wf;
     const dv = (params.sections && params.sections.dev) || {};
-    const vcMock = !isMobile && dv.vAlign !== 'group';   /* 【2026-09-28】並べ方=モックを上下中央 */
     if (!isMobile && dv.pinStops !== 'off') {
       const hf = (id, baseH, sc) => { const blk = document.getElementById(id); if (!blk) return 1;
         const hd = blk.querySelector('.dev-center'), inn = blk.querySelector('.dev-blk-in');
@@ -1794,13 +1792,7 @@ function fit() {
       st.setProperty('--dev2-fit', f2.toFixed(3));
     }
     st.setProperty('--dev1-fit', isMobile ? '1' : f1.toFixed(3));
-    /* 【2026-09-28】並べ方=モックを上下中央: モックの下の見えない余白 = 見出しの高さ ＋ 拡大(×1.1 など)で下へはみ出す分。
-       モックは上端基準で拡大され、下の詰め(負のマージン)は画面幅の縮み(fit)の分だけなので、拡大の分だけ見た目がレイアウトより下へ長い */
-    { const sec = document.getElementById('dev'); if (sec) sec.classList.toggle('dev-vc-mock', vcMock);
-      const spc = (id, baseH, fitK, sc) => { const blk = document.getElementById(id); if (!blk) return; const hd = blk.querySelector('.dev-center');
-        blk.style.setProperty('--dev-vc-spacer', vcMock ? ((hd ? hd.offsetHeight : 0) + baseH * fitK * (sc - 1)).toFixed(1) + 'px' : '0px'); };
-      const s1 = dv.dev1Scale != null ? dv.dev1Scale : 1.1, s2 = dv.dev2Scale != null ? dv.dev2Scale : 1.1;
-      spc('devBlock1', 504, isMobile ? 1 : f1, s1); spc('devBlock2', 520, f2, s2); }
+    /* 【2026-09-29 完全削除】並べ方「モックを上下中央」(#dev.dev-vc-mock と下の見えない余白)は消した＝見出し＋モックを上下中央だけ */
     st.setProperty('--dev-sp-fit', Math.max(0.3, Math.min(1, (w - 32) / 840)).toFixed(3)); }
   /* 【2026-09-09 カンプSP 準拠】スマホの KV は次セクション(Our Vision y741 = section 667 + label 74)の
      直前で切る。設計フレーム DH=780 のままだと下に空白が残り、KV→ビジョンが空きすぎていた。
@@ -1855,9 +1847,8 @@ function fit() {
   { const _k = resFxActive(), _vh = resFxVh(_k);
     if (resFxFlowMode(_k)) SECS.results.style.height = 'auto';   /* 自然に流れる案(4、縦が短い端末の固定案): 中身なりの高さ */
     /* 【2026-09-28 ヒデさん依頼】出きったあとの止まりを切る: 固定で進む長さ(_vh-100)を resFxEnd 倍に(24-4 は 0.92)。つまみ「固定の長さ」の値は元の長さのまま */
-    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) + resAfterExtraVh() : _vh) + 'vh';   /* 【2026-09-28】全部出たあと a/b/e の分を足す */
-    /* 【2026-09-28】全部出たあと c: 実績の下に余白(次の開発者体験＝暗転の入口が遅れる) */
-    SECS.results.style.marginBottom = (!resFxFlowMode(_k) && _vh > 100 && resAfterMode() === 'c') ? resAfterLenVh('c') + 'vh' : ''; }
+    else if (_vh) SECS.results.style.height = (_vh > 100 ? 100 + (_vh - 100) * resFxEnd(_k) : _vh) + 'vh';
+  }   /* 【2026-09-29 完全削除】全部出たあとの見せ方(a/b/c/e の高さ・余白)は消した */
   /* 【2026-09-09 ヒデさん指定・見切れ根治】静的モバイル: pin-vp(100vh)より中身が高いセクションは
      下が見切れる。最下要素の位置から実コンテンツ高さを測り、section と pin-vp に明示的に設定して
      クリップを解除する(絶対配置でも最下要素のrectで測れる)。 */
@@ -2711,7 +2702,7 @@ function category(title, open) {
   head.className = 'cat-head';
   head.innerHTML = `<span>${title}</span><span class="cat-chev">▾</span>`;
   const content = document.createElement('div');
-  content.className = 'cat-body';
+  content.className = 'cat-body prox';   /* 【2026-09-29 ヒデさん依頼「近接の法則」＋文字の濃さ・大きさで階層】全部のタブで同じ余白と文字(css の .cat-body.prox) */
   head.onclick = () => {
     const nowClosed = cat.classList.toggle('closed');
     catOpen[title] = !nowClosed;
@@ -2850,8 +2841,9 @@ function hideEmptyPanelGroups() {
        :first-child は隠れている補足文なども1番目に数えるので使わない(6-15 と同じ理由) */
     /* 【2026-09-29】小見出しのまとまり(.cv-subg・入れ子の見出し)のすぐ後ろに見えている物には pab を付ける。
        まとまりの前後を 16px にする時、まとまり同士が 16+16＝32px(見出し同士の 24px より遠い＝逆転)にならないように、余白は「上」だけで付ける */
+    /* 案のピル(.var-box)のすぐ後ろに見えているつまみには pav(8px)。まとまり(小見出し)が来る時は pab と同じ 16px のまま */
     const isBlk = el => el.classList.contains('cv-subg') || el.classList.contains('grp');
-    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null, prevBlk = false; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); ch.classList.toggle('pab', shown && prevBlk); if (shown) { first = false; lastEl = ch; prevBlk = isBlk(ch); } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
+    root.querySelectorAll('.grp-body').forEach(bd => { let first = true, lastEl = null, prevBlk = false, prevVar = false; for (const ch of bd.children) { const shown = !off(ch) && getComputedStyle(ch).display !== 'none'; ch.classList.toggle('pfirst', first && shown); ch.classList.remove('plast'); ch.classList.toggle('pab', shown && prevBlk); ch.classList.toggle('pav', shown && prevVar && !isBlk(ch)); if (shown) { first = false; lastEl = ch; prevBlk = isBlk(ch); prevVar = ch.classList.contains('var-box'); } } if (lastEl) lastEl.classList.add('plast'); });   /* plast＝最後に見えている物(小見出しの後ろの余白を、見出しの終わりでは付けない) */
   } catch (e) {}
 }
 function sub(target, html, deep, opts) {
@@ -3125,7 +3117,7 @@ st.textContent = '.txt-row{align-items:flex-start}'
   const ls = numIn('字間(%)。文字の大きさに対する割合。いまの字間が入っているので、そこから上下できます。消すとCSSのまま(自動)に戻る', '0.5', '-20', '50', 'lsp');
   fsz.dataset.prop = 'font-size'; wSel.dataset.prop = 'font-weight'; lh.dataset.prop = 'line-height'; ls.dataset.prop = 'letter-spacing';   /* 【2026-09-19】スマホモードで「モバイルで値が変わる」ものをオレンジに */
   const mkLab = (t, el, title) => { const pair = document.createElement('span'); pair.className = 'txt-pair'; const l = document.createElement('span'); l.className = 'txt-lab'; l.textContent = t; if (title) l.title = title; pair.append(l, el); box.append(pair); };
-  mkLab('サ', fsz, 'サイズ(px)'); mkLab('太', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(%)・文字の大きさに対する割合');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に */
+  mkLab('size', fsz, 'サイズ(px)'); mkLab('weight', wSel, '太さ(ウェイト)'); mkLab('lh', lh, '行間(倍)'); mkLab('ls', ls, '字間(%)・文字の大きさに対する割合');   /* 【2026-09-20 ヒデさん依頼】行間=lh・字間=ls 表記に／【2026-09-29 ヒデさん依頼】サ→size・太→weight */
   function sync() {
     /* スマホモード中は「共有(base)＋スマホ上書き(mb)」を表示。通常は共有だけ */
     const _base = (params.edits && params.edits[sp.key]) || {};

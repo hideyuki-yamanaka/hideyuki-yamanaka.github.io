@@ -1502,8 +1502,6 @@ function buildSlots() {
           em.textContent = String(d);
           stp.appendChild(em);
         }
-        /* 【2026-09-19 ヒデさん依頼】案4「ドラム」用: 目的の数字の後ろにも次の数字を3つ置く(円筒の下側に見える)。ドラム以外では display:none */
-        for (let x = 1; x <= 3; x++) { const em = document.createElement('em'); em.className = 'x'; em.textContent = String((Number(ch) + x) % 10); stp.appendChild(em); }
         rl.appendChild(stp);
         wrap.appendChild(rl);
         reels.push({ rl, stp, len: seq.length, ems: Array.from(stp.children) });
@@ -1528,57 +1526,9 @@ function slotEnd() {
 }
 
 /* ts = 数字ブロックが出はじめてからの秒数。マイナスなら先頭(0)で待たせる */
-/* 【2026-09-19 ヒデさん依頼「消え方をもっと自然に」】案4 ドラム(円筒): 数字を円筒の面に貼ったように、中心から離れるほど縦に縮み(cosθ)・薄くなる(cosθ^k)。
-   帯(.stp)は動かさず、見えている数字(±88°)だけを translateY(R·sinθ − j) scaleY(cosθ) で置く。R = N/(2π) 文字分(N=ドラムの分割数) */
-function slotDrumPose(re, e, c) {
-  const N = Math.max(8, Math.round(c.slotDrumN || 12)), R = N / (2 * Math.PI), step = 360 / N, kf = (c.slotDrumFade != null ? c.slotDrumFade : 1.3);
-  const f = (re.len - 1) * e; re.drum = true; if (re.stp.style.transform) re.stp.style.transform = '';
-  const ems = re.ems || (re.ems = Array.from(re.stp.children));
-  for (let j = 0; j < ems.length; j++) {
-    const th = (j - f) * step, em = ems[j];
-    if (Math.abs(th) >= 88) { if (em._v !== false) { em.style.visibility = 'hidden'; em._v = false; } continue; }
-    const r = th * Math.PI / 180, cs = Math.cos(r);
-    if (em._v !== true) { em.style.visibility = ''; em._v = true; }
-    em.style.transform = 'translateY(' + (R * Math.sin(r) - j).toFixed(3) + 'em) scaleY(' + cs.toFixed(3) + ')';
-    em.style.opacity = Math.pow(cs, kf).toFixed(3);
-  }
-}
-function slotDrumClear(re) { (re.ems || []).forEach(em => { em.style.transform = ''; em.style.opacity = ''; em.style.visibility = ''; em._v = undefined; em._o = undefined; em._t = undefined; }); re.drum = false; re.stp._s_transform = undefined; }
-/* 【2026-09-28 ヒデさん依頼「上下の切れ目をもっと自然に」】案6〜8: 1文字ずつ薄さ(と位置)を決める。ぼかしは使わない。
-   still(案6): 帯(.stp)の動きは今のまま。止まった時に1つ上の数字の端がうっすら残らないよう、中心から 0.85〜1 文字離れた数字だけ消す
-   fade(案7):  帯の動きは今のまま。数字そのものが中心から離れるほど薄くなる(slotDigitFade 文字分で透明・S字)
-   swap(案8):  帯は動かさず、今の数字と次の数字の2つだけ出す。出ていく数字は slotSwapRise 文字分だけ上へ動きながら消え、次の数字は下から同じだけ動いて現れる
-   re.drum = 「1文字ずつ置いた」印(ドラムと共通)。ほかの案に戻る時は slotDrumClear で全部消す */
-function slotDigitPose(re, e, c, mode) {
-  const f = (re.len - 1) * e; re.drum = true;
-  const ems = re.ems || (re.ems = Array.from(re.stp.children));
-  const hide = em => { if (em._o !== '0') { em.style.opacity = '0'; em._o = '0'; } };
-  const put = (em, o, tf) => { const os = o.toFixed(3); if (em._o !== os) { em.style.opacity = os; em._o = os; } if (em._t !== tf) { em.style.transform = tf; em._t = tf; } };
-  const ss = t => { t = clamp01(t); return t * t * (3 - 2 * t); };
-  if (mode === 'swap') {
-    setStyle(re.stp, 'transform', '');
-    const S = Math.max(0, c.slotSwapRise != null ? +c.slotSwapRise : 0.3);
-    const j0 = Math.min(re.len - 1, Math.floor(f + 1e-6)), fr = Math.max(0, f - j0), j1 = j0 + 1;
-    for (let j = 0; j < ems.length; j++) {
-      const em = ems[j];
-      if (j === j0) put(em, 1 - ss(fr / 0.75), 'translateY(' + (-j - fr * S).toFixed(3) + 'em)');
-      else if (j === j1 && j1 < re.len && fr > 0.001) put(em, ss((fr - 0.25) / 0.75), 'translateY(' + (-j + (1 - fr) * S).toFixed(3) + 'em)');
-      else hide(em);
-    }
-    return;
-  }
-  setStyle(re.stp, 'transform', `translateY(${(-f).toFixed(4)}em)`);
-  const D = Math.max(0.2, c.slotDigitFade != null ? +c.slotDigitFade : 0.7);
-  for (let j = 0; j < ems.length; j++) {
-    const d = Math.abs(j - f), em = ems[j];
-    if (d >= 1.6) { hide(em); continue; }
-    put(em, mode === 'fade' ? 1 - ss(d / D) : clamp01((1 - d) / 0.15), '');
-  }
-}
+/* 【2026-09-29 完全削除】ドラム(案4)・1文字ずつ薄くする案(案6〜8)の描き方(slotDrumPose/slotDigitPose)は、案ごと消した。残りは 案3・案5＝帯を動かすだけ */
 function renderSlots(ts) {
   const c = params.sections.results;
-  const mode = (typeof resSlotFxKey === 'function') ? resSlotFxKey() : 'plain';
-  const perDigit = (mode === 'still' || mode === 'fade' || mode === 'swap');   /* 【2026-09-28】案6〜8 */
   for (let si = 0; si < slots.length; si++) {
     const s = slots[si];
     const tsi = Array.isArray(ts) ? (ts[si] != null ? ts[si] : -1) : ts;   /* 案28: 数値ごとの再生位置(配列) */
@@ -1588,10 +1538,7 @@ function renderSlots(ts) {
          n=2 でゆるやか / n=5 が既定 / n=9 でかなり粘って止まる。
          ⚠️ easeSlick(臨界減衰) だと全体的に均一で、スロットらしい溜めが出なかった */
       const e = 1 - Math.pow(1 - k, Math.max(1, c.slotEase));
-      if (re.mode !== mode) { if (re.drum) slotDrumClear(re); re.mode = mode; }   /* 案が変わったら、1文字ずつ置いた見た目を一度消してから描き直す */
-      if (mode === 'drum') { slotDrumPose(re, e, c); }
-      else if (perDigit) { slotDigitPose(re, e, c, mode); }
-      else { setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`); }
+      setStyle(re.stp, 'transform', `translateY(${(-(re.len - 1) * e).toFixed(4)}em)`);
       if (re.spin !== (k > 0 && k < 1)) { re.spin = (k > 0 && k < 1); re.rl.classList.toggle('spin', re.spin); }   /* 【2026-09-19】案2「ぼかして消える」用: 回っている桁に印 */
       /* ⚠️ 回転中のぼかしは入れない（2026-08-17 に「要らない」で確定）。
          数字はくっきりしたまま回して止める */
@@ -1632,47 +1579,18 @@ const RES_FX = {
   default: { vh: 0 },
   '24-4': { vh: 240, mobileFlow: true, end: 0.92 },   /* 【2026-09-28 ヒデさん依頼「実績の、全部出たあとにカクッと止まる所をなくす」】end=動きが出きる進み(最後の上の段 B が 0.92)。
      固定の長さの end から先(出きったあとに何も動かず止まっていた約100px)を切り、end で固定が外れる(resFxEnd・06-sections.js の高さ)。動く速さ(1pxあたり)は同じ */   // 【2026-09-17】案24 の要素移動版: ピクトを大きくズームさせずフェード＋移動で終点へ(絵柄が途中で変わって見えない)。CSS は rfx-24 共用
-  '26': { vh: 620 },   /* 2026-09-15: 560→620(読む区間を確保) */                     // 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール(絵コンテ Figma 17283:23622)
-  /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除 */
+  /* 【2026-09-26 整理】完全削除した案(4〜41 のうち 24-4/26 以外)は定義ごと削除／【2026-09-29】26 も完全削除＝24-4 だけ */
 };
-const RES_FX_KEYS = ['24-4', '26'];
+const RES_FX_KEYS = ['24-4'];
 function resFxKey() { const v = params.patterns && params.patterns.resFx; if (RES_FX[v] && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resFx', v))) return v; return (Object.keys(RES_FX).find(k => !variantRemovedKey('resFx', k)) || '24-4'); }   /* 【2026-09-20】既定24-5・フォールバックdefault も完全削除したため、生存案(24-4/26)の先頭へ落とす */
 function resFxActive() { return resFxKey(); }   /* SP でも案を出す(MD 6章)。SP の配置は CSS の html.mb #results.rfx-N */
 function resFxShort() { return isMobile && (innerHeight || 0) <= 600; }   /* 縦が短い端末: 固定をやめて縦流れ(原本の @media(max-height:600px) 相当) */
 function resFxFlowMode(k) { const c = RES_FX[k] || {}; return !!(c.flow || (isMobile && c.mobileFlow) || (resFxShort() && c.vh)); }
 /* 【2026-09-28】案の動きが出きる進み(RES_FX[k].end)。無い案は 1＝今までどおり固定の最後まで */
-function resFxEnd(k) { if (k === '24-4' && resAfterMode() === 'orig') return 1;   /* 【2026-09-28】当時の作り: 固定の長さを切らない＝出きったあと約100px止まる(本番と同じ) */
-  const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
-/* 【2026-09-28 ヒデさん相談「全部出た状態でしっかり見てから下へ。カクッという明確な画面固定は使いたくない」】全部出たあとの見せ方(PC・固定のある案)。
-   none=出きったらすぐ次へ(今まで) / a=ゆっくり通り過ぎる / b=やわらかく一息つく / c=次との間を空ける / d=スクロールを少し重く / e=画面固定(開発者体験と同じ)。
-   a/b/e は実績の高さを足し、貼りつく入れ物(.pin-vp)の top を少しずつ上げる(a/b)ことで「止まらずにゆっくり」「止まってからなめらかに」を作る。
-   固定が外れる所で位置がつながるよう、足す高さ＝長さ×(1−F(1))。c は下の余白、d は Lenis のホイール1回の進み(wheelMultiplier) */
-const RES_AFTER_MODES = ['orig', 'none', 'a', 'b', 'c', 'd', 'e'];   /* orig=【2026-09-28】当時の作り(既定) */
-function resAfterMode() { const m = params.sections.results.afterMode; return isMobile ? 'none' : (RES_AFTER_MODES.includes(m) ? m : 'none'); }   /* スマホは流れる作りなので関係なし */
-function resAfterLenVh(m) { m = m || resAfterMode(); if (m === 'none' || m === 'orig') return 0; return Math.max(0, +params.sections.results['afterLen' + m.toUpperCase()] || 0); }
-/* 全部出たあと、長さ Z の中で入れ物が上がる量(Z に対する割合)。u=0〜1。速さ＝F'(u)(1=スクロールと同じ) */
-function resAfterF(m, u) {
-  const s = Math.max(0.05, Math.min(0.9, +params.sections.results.afterSpeed || 0.35));
-  if (m === 'a') return s * u + (1 - s) * u * u * u / 3;   /* a: 速さ s で流れはじめ、最後は普通の速さに(つなぎ目で速さが飛ばない) */
-  if (m === 'b') return u * u * u / 3;                     /* b: 止まった所から、なめらかに普通の速さへ */
-  return 0;                                                /* e: ずっと止まる(画面固定) */
-}
-function resAfterExtraVh() { const m = resAfterMode(), L = resAfterLenVh(m); if (m === 'a' || m === 'b') return L * (1 - resAfterF(m, 1)); if (m === 'e') return L; return 0; }
+function resFxEnd(k) { const e = RES_FX[k] && RES_FX[k].end; return (e > 0 && e < 1) ? e : 1; }
+/* 【2026-09-29 完全削除】全部出たあとの見せ方(当時の作り・A〜E)は消した＝出きったらすぐ次へ(なし)だけ。resAfterMode などの関数もなし */
 /* 動きが出きるまでのスクロール量(px)＝固定で進む長さ×end */
 function resFxRevealPx(k) { const vh = resFxVh(k); return vh > 100 ? (vh - 100) * resFxEnd(k) * (innerHeight || 1) / 100 : 0; }
-/* d: 全部出たあとの長さの間だけ、ホイール1回で進む量を小さく(毎フレーム呼ぶ。範囲の外・他の案・スマホは 1 に戻す) */
-function applyResAfterWeight() {
-  if (typeof lenis === 'undefined' || !lenis || !lenis.options) return;
-  let w = 1;
-  try {
-    const k = resFxActive();
-    if (resAfterMode() === 'd' && k === '24-4' && !resFxFlowMode(k)) {
-      const y = -rectOf(SECS.results).top, R = resFxRevealPx(k), Z = resAfterLenVh('d') * (innerHeight || 1) / 100;
-      if (y >= R && y <= R + Z) w = Math.max(0.1, Math.min(1, +params.sections.results.afterWeight || 0.35));
-    }
-  } catch (e) {}
-  if (lenis.options.wheelMultiplier !== w) lenis.options.wheelMultiplier = w;
-}
 function resFxVh(k) {
   const base = RES_FX[k] ? RES_FX[k].vh : 0;
   if (!base) return 0;
@@ -1965,22 +1883,15 @@ function applyResSpGap() { try { const r = (params.sections && params.sections.r
 function applyResSlotFade() { const r = (params.sections && params.sections.results) || {}; const d = document.documentElement.style; d.setProperty('--slot-fade', (r.slotFade != null ? r.slotFade : 14) + '%');
   /* 【2026-09-19 ヒデさん依頼】スロットの案: 案2 はぼかし・範囲・窓の高さも */
   d.setProperty('--slot-blur', (r.slotBlur != null ? r.slotBlur : 0) + 'px'); d.setProperty('--slot-blur-zone', (r.slotBlurZone != null ? r.slotBlurZone : 45) + '%'); d.setProperty('--slot-win-n', String(r.slotWin != null ? r.slotWin : 1.6)); d.setProperty('--slot-ramp', String(r.slotRamp != null ? r.slotRamp : 1));
-  const sec = document.getElementById('results'); if (sec) { const k = resSlotFxKey(); sec.classList.toggle('slot-fx-blur', k === 'blur' || k === 'melt' || k === 'drum'); sec.classList.toggle('slot-fx-drum', k === 'drum');
-    sec.classList.toggle('slot-fx-cut', k === 'cut'); sec.classList.toggle('slot-fx-still', k === 'still' || k === 'fade' || k === 'swap'); } }   /* 【2026-09-28】案5=cut / 案6〜8=still(窓を動かさない) */
+  const sec = document.getElementById('results'); if (sec) { const k = resSlotFxKey(); sec.classList.toggle('slot-fx-blur', k === 'melt'); sec.classList.toggle('slot-fx-cut', k === 'cut'); } }   /* 【2026-09-29 完全削除】案は 案3(melt)・案5(cut) だけ */
 /* 【2026-09-19 ヒデさん依頼】数字のスロットの案(案1=現状 / 案2=上下のマスクにぼかしをかけて徐々に消える)。値は仮置き */
-const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp', 'slotDrumN', 'slotDrumFade', 'slotDigitFade', 'slotSwapRise'];
+const RES_SLOT_KEYS = ['slotFade', 'slotBlur', 'slotBlurZone', 'slotWin', 'slotRamp'];
 const RES_SLOT_FX = [
-  { key: 'plain', name: '案1 上下をうすく消す', fixed: true, tip: '窓の上下 14% をグラデで消すだけ。ぼかし無し。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
-  { key: 'blur',  name: '案2 なめらかに溶ける（今の）', tip: '回っている桁だけ窓を 1.6 文字分に開き、端ほどゆっくり薄くなる曲線で消す＋端に弱いぼかし(2.5px)。止まると窓が 0.4 秒で閉じる(切り替わりの段差なし)。', cfg: { slotFade: 14, slotBlur: 2.5, slotBlurZone: 45, slotWin: 1.6, slotRamp: 1 } },
   { key: 'melt',  name: '案3 さらに長く溶ける', tip: '案2 より窓を高く(2.0 文字分)、消える帯も長め(×1.15)、ぼかしは弱め(2px)。前後の数字が長い距離をかけて消える。', cfg: { slotFade: 14, slotBlur: 2, slotBlurZone: 55, slotWin: 2.0, slotRamp: 1.15 } },
-  { key: 'drum',  name: '案4 ドラム（円筒に貼った数字）', tip: '数字を円筒の面に貼ったように回す。中心から離れるほど縦に縮んで薄くなるので、端で自然に消える(ぼかし無し)。回っている間は窓を 1.7 文字分に開き(上のラベルに重ならない範囲)、止まると閉じる。', cfg: { slotFade: 14, slotBlur: 0, slotBlurZone: 45, slotWin: 1.7, slotRamp: 0.8, slotDrumN: 12, slotDrumFade: 1.3 } },
-  /* 【2026-09-28 ヒデさん依頼「上下の切れ目に違和感。今の・前のパツッと切れる・ほか3案をパネルで」】案5〜8(値は仮置き)。どれも ぼかしは使わない */
+  /* 【2026-09-29 完全削除】案1(plain)・案2(blur)・案4(drum)・案6〜8(still/fade/swap)は消した。残りは 案3(melt)・案5(cut) */
   { key: 'cut',   name: '案5 パツッと切れる（前の作り）', tip: '9/18 より前の作り。窓は数字ぴったりの高さで、上下を薄くしない。数字が窓の線でスパッと切れて入れ替わる。', cfg: { slotWin: 1, slotRamp: 1 } },
-  { key: 'still', name: '案6 今のからぼかしを抜いて、窓を動かさない', tip: '今の(案2)から「端のぼかし」と「回っている間だけ窓が広がる動き」を抜いたもの。窓は 1.4 文字分のまま動かないので、桁ごとに上下の線がそろう。薄くなる帯は数字の外側だけなので、止まった数字は薄くならない。止まった時に上の数字の端が残らないよう、1文字離れた数字は消す。', cfg: { slotWin: 1.4, slotRamp: 1 } },
-  { key: 'fade',  name: '案7 数字ごとにふわっと薄く', tip: '切れ目の線で消すのではなく、数字そのものが中心から離れるほど薄くなる(0.7 文字分離れると透明)。上下に切れた数字の端が見えにくい。窓は動かさない(1.4 文字分)。', cfg: { slotWin: 1.4, slotRamp: 1, slotDigitFade: 0.7 } },
-  { key: 'swap',  name: '案8 少し動いて入れ替わる', tip: '数字の帯を長く流さず、今の数字と次の数字だけを出す。出ていく数字は 0.3 文字分だけ上へ動きながら消え、次の数字は下から同じだけ動いて現れる。窓の線まで届かないので切れ目が出ない。回り始めの速い所は数字がパラパラ入れ替わって見える。', cfg: { slotWin: 1.4, slotRamp: 1, slotSwapRise: 0.3 } },
 ];
-function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'plain'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'plain'; }
+function resSlotFxKey() { const r = (params.sections && params.sections.results) || {}; const v = String(r.slotFx || 'cut'); return (RES_SLOT_FX.some(m => m.key === v) && !(typeof variantRemovedKey === 'function' && variantRemovedKey('resSlotFx', v))) ? v : 'cut'; }   /* 【2026-09-29】既定・行き先は 案5(cut＝焼き込み済みの案) */
 function resApplySlotFx(key) { const m = RES_SLOT_FX.find(x => x.key === key); if (!m) return; const r = params.sections.results; Object.assign(r, structuredClone(m.cfg)); r.slotFx = key; applyResSlotFade(); }
 applyResSlotFade();
 applyPictoDisp();   /* 【2026-09-21】起動時にピクト表示サイズを反映 */
@@ -2011,19 +1922,13 @@ function resFxFrame(t) {
     SECS.results.style.removeProperty('--rfx-line');
     SECS.results.style.removeProperty('--rfx-tag-ink');
   }
-  /* 縦が短い端末(SP・高さ600px以下)は固定案(26)を縦流れにする＝面の移動や場面切替は行わない(CSS が全面を積む) */
-  if (k === '26' && resFxShort()) { valTOv.saas = null; valTOv.ai = null; return; }   /* 【2026-09-26 整理】元は固定案の一覧(生きているのは26だけ。24-4 は入っていない) */
 
   if (k === '24-4') {
     /* 【2026-09-20 ヒデさん依頼】固定(スクロール停止)しない案(flow)の時は、最初から完成した状態(進み=1)で見せて普通に流す */
     /* 【2026-09-28】固定の長さを end(0.92)で切ったので、進みも end 倍して「1px あたりの動き」を前と同じに保つ(固定が外れる時に進み=0.92=出きり)。
-       さらに「全部出たあと」(resAfterMode)で高さを足しても動きが変わらないよう、進みは「出きるまでのスクロール量」(resFxRevealPx)から出す */
+       進みは「出きるまでのスクロール量」(resFxRevealPx)から出す */
     const _flow24 = resFxFlowMode(k), _R24 = resFxRevealPx(k), _y24 = -rectOf(SECS.results).top;
     const p = _flow24 ? 1 : (_R24 > 1 ? clamp01(_y24 / _R24) : resFxPin()) * resFxEnd(k), H = rfxHero(), vh = rfxVH();
-    /* 全部出たあと a/b: 貼りつく入れ物の top を上げて「ゆっくり流れる／止まってからなめらかに」(それ以外は top を CSS に戻す) */
-    { const _vp = SECS.results.querySelector('.pin-vp'), _m = resAfterMode();
-      if (_vp) { if (!_flow24 && (_m === 'a' || _m === 'b')) { const Z = resAfterLenVh(_m) * (innerHeight || 1) / 100, u = Z > 0 ? clamp01((_y24 - _R24) / Z) : 0; setStyle(_vp, 'top', (-(Z * resAfterF(_m, u))).toFixed(1) + 'px'); }
-        else setStyle(_vp, 'top', ''); } }
     const F = Object.assign({ labelUp: 190 }, (params.sections.results.fx24 || {}));
     /* 【案24-4 要素移動版】(2026-09-17 ヒデさん指定) ピクトを大きくズームさせず(ほぼ最終サイズのまま)、フェード＋位置移動だけで終点へ運ぶ＝
        「途中で別の絵柄に切り替わって見える」印象を消す。絵(SVG)は同じまま、要素の移動で補完する。
@@ -2074,36 +1979,6 @@ function resFxFrame(t) {
         kids.forEach(kd => { setStyle(kd, 'opacity', ''); tf(kd, ''); });   /* 見出し・本文の個別指定は持たない(元は 24-5 の名残を消す処理。挙動を変えないため残置) */
         setStyle(tx, 'opacity', (on ? TK : 0).toFixed(3)); tf(tx, `translateY(${((1 - TK) * 16).toFixed(2)}px)`);
       }
-    });
-  } else if (k === '26') {
-    const p = resFxPin(), W = rfxVW(), vh = rfxVH();
-    const F = Object.assign({ numScale: 1.714, settleAt: 0.05, settleLen: 0.16, lineAt: 0.22, lineLen: 0.10, panAt: 0.56, panLen: 0.18 }, (params.sections.results.fx26 || {}));   /* 2026-09-15: 場面表を詰めて SaaS の読む区間を確保(0.41〜0.56) */
-    /* 【案26 数字が大きく→上段の終点→線が伸びる→下段がブラーで→横スクロール】(絵コンテ Figma 17283:23622・2026-09-15 ヒデさん指定)
-       A: 3つの数値が中央に大きく(120px相当=1.714倍) → 上段の終点(見出し 左・数値 右)へ収まり、見出しが薄く現れる
-       B: 横線が左から伸びきる → C: 下段(説明 左・ピクト 右)がブラーで現れる(ピクト→文章の順) → D: 下段が横に動いて for AI(到着の終盤にブラーで) → 読む → 縦に戻って開発者体験へ。パネル「案26」 */
-    setStyle(resEls.vals, 'opacity', '1'); setStyle(resEls.vals, 'filter', ''); setStyle(resEls.vals, 'pointerEvents', '');
-    const shrink = rfxRange(p, F.settleAt, F.settleAt + Math.max(0.05, F.settleLen));
-    const S0 = isMobile ? 1.1 : F.numScale;
-    const OFF = isMobile ? [-100, 0, 100] : [-423, -10, 412];   /* 絵コンテ: 大きい時の3つの中心(画面中央からのずれ) */
-    E.r2s.forEach((el, i) => {
-      const cx = rfxCenterX(el, 0), cy = rfxCenterY(el);
-      const dx = (W / 2 + OFF[i] - cx) * (1 - shrink), dy = (vh / 2 - 25 - cy) * (1 - shrink);
-      tf(el, `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${(S0 - (S0 - 1) * shrink).toFixed(4)})`);
-    });
-    const hk = rfxRange(p, F.settleAt + F.settleLen * 0.6, F.settleAt + F.settleLen + 0.04);   /* 見出し(上段左)は数値が収まる終盤に */
-    if (resEls.head) { setStyle(resEls.head, 'opacity', hk.toFixed(3)); setStyle(resEls.head, 'pointerEvents', hk < 0.02 ? 'none' : ''); tf(resEls.head, `translateY(${((1 - hk) * 16).toFixed(2)}px)`); }
-    const lineEnd = F.lineAt + Math.max(0.03, F.lineLen);
-    E.res2.style.setProperty('--rfx-hr', rfxRange(p, F.lineAt, lineEnd).toFixed(3));
-    const fk = rfxRange(p, lineEnd, lineEnd + 0.06), tk = rfxRange(p, lineEnd + 0.03, lineEnd + 0.09);   /* 2026-09-15: 線が伸びきったらすぐ(ピクト→文章)   /* 線が伸びきってから: ピクト → 文章 */
-    const pos = rfxHeld(p, [[F.panAt, F.panAt + Math.max(0.05, F.panLen)]]);
-    tf(E.track, `translateX(${(-pos * 100).toFixed(3)}%)`);
-    E.r2v.forEach((el, i) => {
-      const fig = E.fig[i], tx = E.tx[i];
-      const arrive = rfxRange(pos, 0.35, 0.95);   /* 2026-09-15: 到着する面は横移動の途中から見え始め、着く前に読める濃さに */
-      const kf = on ? (i === 0 ? fk : arrive) : 0, kt = on ? (i === 0 ? tk : arrive) : 0;
-      if (fig) rv(fig, kf, 14, 0);
-      if (tx) rv(tx, kt, 14, 0);
-      vis(el, on ? 1 : 0);
     });
   }
 }
