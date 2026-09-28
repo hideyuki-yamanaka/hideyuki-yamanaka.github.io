@@ -2036,6 +2036,16 @@
   .cg-img { position: relative; flex: 0 0 260px; width: 260px; height: 173px; overflow: hidden; }   /* 4-7例外（事例の写真の枠 260×173＝写真の縦横比） */
   .cg-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cg-body { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-28); }
+  /* 【2026-09-28 ヒデさん依頼「導入事例の4枚の縦のライン(写真の左端・文字の左端)を方眼の線にそろえたい」】
+     値は JS(06-sections の alignCaseCards)が画面の大きさごとに測って入れる(方眼は縮まないがカードは縮むため)。PC/タブレットだけ。
+     位置合わせの値なので 4 と 8 の倍数の決まりの外(4-7 の例外「位置」) */
+  html:not(.mb) #caseGrid.cg-snap .cg-tl, html:not(.mb) #caseGrid.cg-snap .cg-bl { padding-left: var(--cg-pl1); }
+  html:not(.mb) #caseGrid.cg-snap .cg-tr, html:not(.mb) #caseGrid.cg-snap .cg-br { padding-left: var(--cg-pl2); }
+  html:not(.mb) #caseGrid.cg-snap .cg-cell { gap: var(--cg-gap); }
+  html:not(.mb) #caseGrid.cg-snap .cg-img { flex-basis: var(--cg-img-w); width: var(--cg-img-w); height: var(--cg-img-h); }
+  /* 文字の幅はもとのまま＝改行の位置が変わらない(右の余白に食い込んでよい。収まらない時だけ JS が縮めてよいにする) */
+  html:not(.mb) #caseGrid.cg-snap .cg-tl .cg-body, html:not(.mb) #caseGrid.cg-snap .cg-bl .cg-body { flex: 0 var(--cg-body-shrink, 0) var(--cg-bw1); }
+  html:not(.mb) #caseGrid.cg-snap .cg-tr .cg-body, html:not(.mb) #caseGrid.cg-snap .cg-br .cg-body { flex: 0 var(--cg-body-shrink, 0) var(--cg-bw2); }
   .cg-quote {
     font-weight: 300;          /* カンプ 15800:24533: Noto Sans JP Light 20px */
     font-size: var(--fs-base);
@@ -2559,6 +2569,9 @@
     .ft-logo { width: 200px; height: auto; }
     .ft-addr { white-space: normal; }
     .ft-nav  { gap: var(--space-32); }
+    /* 【2026-09-28 ヒデさん依頼「スマホのフッターの 導入事例・お問い合わせ が遠すぎる。上の行(ビジョン・提供できること・使用イメージ)に近づけたい」】
+       行と行の間だけ 28→16px(⚠️仮置き)。横の間隔(28px)はそのまま。スマホだけ */
+    .cv-foot-nav { row-gap: var(--space-16); }
     .ft-copy { font-size: var(--fs-caption); }
 
     /* --- お問い合わせのデザイン案(cvs-N)のスマホ: 一体型は縦積み、横並びの案は1カラムに --- */

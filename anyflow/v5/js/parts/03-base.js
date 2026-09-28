@@ -148,6 +148,17 @@ try {
     localStorage.setItem('anyflow-kv-center-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「導入事例の下の余白を削って、グラデが3・4枚目にうっすら掛かるか掛からないかの距離に」】
+   導入事例との間隔(PC) 60→−20px(焼き込みも同じ)。保存値が前の値(60)のままの所だけ1回入れ替える(自分で変えた値は触らない)。印 anyflow-cvgap-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-cvgap-20260928')) {
+    const fix = o => { if (o && o.cv && o.cv.gapTop === 60) { o.cv.gapTop = -20; return true; } return false; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-cvgap-20260928', '1');
+  }
+} catch (e) {}
 /* 【2026-09-28 ヒデさん依頼「ビジョンを、画面に入ったらすぐパッと出るように」】ビジョンの時間割を短く(焼き込み・既定と同じ値)。
    保存値が前の値のままの所だけ1回入れ替える(自分で変えた値は触らない)。出始めの位置も PC 0.35→0.2・スマホ 0.25→0.2。印 anyflow-vis-fast-20260928 */
 try {
@@ -975,6 +986,9 @@ function cvSwapAt(p, mode, cols5, hold) {
   return { five, comp };
 }
 function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); const v = parseInt((m ? m[1] : String(d).replace('#', '')), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; }
+/* 【2026-09-28 ヒデさん依頼「グラデはそのまま、導入事例の下の余白だけ削って短く」】グラデを上へ伸ばす量は
+   「導入事例との間隔が 60px(詰める前に見て決めた値) の時の空き」で固定する。間隔のつまみはお問い合わせの位置だけを動かす */
+const CV_RISE_GAP_REF = 60;
 const CV_BLEND_DEF = 260;      /* 【2026-09-16 改訂2】溶け込みの深さの既定 px。上(導入事例側)まで色を届かせつつ、rise＋本体で線を出さず溶かす */
 const CV_HEAD_TOP_DEF = 120;   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
 const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, swayDeg: 12, swaySec: 40, swayMode: 0, ramp: 0, addT: 0, addB: 0 };
@@ -1384,8 +1398,12 @@ function cvApplyFade(sec) {
     const _deep = Math.min(_deepRaw, Math.round(base * 0.95));   /* 本体の高さを超えない=下端は必ず満色になる */
     /* 上端を導入事例の下の空きへ“少しだけ”逃がす(隙間があれば)。無くても本体の中で溶けるので線は出ない */
     let _room = 0;
-    const _gr = document.getElementById('caseGrid');
-    if (_gr) _room = Math.max(0, Math.round(sec.getBoundingClientRect().top - _gr.getBoundingClientRect().bottom - 2));
+    const _gr = document.getElementById('caseGrid'), _csB = document.getElementById('cases');
+    /* 【2026-09-28 ヒデさん依頼「グラデはそのまま、導入事例の下の余白を削って短く」】
+       ❌ 以前は「いまの空き(お問い合わせの上端〜カードの下)」まで伸ばしていた → 間隔を詰めるとグラデの薄い所まで縮み、形が変わった。
+       → 空きは「間隔が CV_RISE_GAP_REF(60px) の時」で測る(＝導入事例の中の空き＋60)。間隔を詰めてもグラデの形は変わらず、
+          詰めた分は薄い上端がカードの裏へ潜ってうっすら掛かる(導入事例が上・地色は透明なので隠れない)。 */
+    if (_gr && _csB) _room = Math.max(0, Math.round(_csB.getBoundingClientRect().bottom - _gr.getBoundingClientRect().bottom + CV_RISE_GAP_REF - 2));
     /* 【2026-09-16 ヒデさん案】お問い合わせを z-index で導入事例の“下”に潜らせ、グラデでカードを淡く染める。
        cases は z-index:1 で上・pin-vp 透明なので、canvas を余分に上げるとカードの裏でグラデが淡く透ける。 */
     const _under = Math.max(0, (params.cv && params.cv.underCards != null) ? params.cv.underCards : 0);   /* カードの裏へ潜り込ませる量(px)。0=従来(カード直下で止める) */

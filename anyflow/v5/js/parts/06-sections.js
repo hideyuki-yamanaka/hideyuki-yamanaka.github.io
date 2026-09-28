@@ -603,6 +603,68 @@ function alignGridAndLines() {
       el.style.setProperty('translate', '0 ' + (d / sc).toFixed(2) + 'px');
     });
   } catch (e) {}
+  try { alignCaseCards(); } catch (e) {}   /* ③ 導入事例の4枚の縦のライン(2026-09-28) */
+}
+/* 【2026-09-28 ヒデさん依頼「導入事例の4枚の縦のライン(写真の左端・文字の左端)を方眼の線にそろえたい」】
+   方眼(44px のマス・画面の真ん中に線)は画面に対して縮まないが、カードは画面に合わせて縮む(幅の --s と高さ合わせ)ので、
+   決まった数値ではそろわない。→ 画面の大きさごとに測って寄せる(PC/タブレットだけ。スマホはカードが縦積みの別の作り)。
+   ・写真の左端: いちばん近い方眼の線へ(最大で半マス)。左の列は画面の左端から、右の列は真ん中の線から数える。
+   ・文字の左端: 写真の左端から「マスの整数倍」の所へ。写真の幅と写真〜文字のすき間を同じ割合で少し伸び縮みさせて合わせる
+     (左右の列で同じ大きさ・写真の縦横比はそのまま)。
+   ・文字のかたまりの幅はもとのまま(＝改行の位置が変わらない)。かたまりごと線へ動き、右の余白に食い込んでよい(カードの右端から 8px 手前まで)。
+     ❌ 最初は文字の幅を広げて合わせたら「実物」が「実／物」で割れる等、改行の位置が変わった。
+     ❌ 次に幅を固定しても「縮んでよい」にしていたので、右へ動くと右の余白に押されて幅が縮み、また改行が変わった(2026-09-28)
+   ・どの線に寄せるか(写真の左端は両隣の線・マスの数は前後)は、動く量(写真の左端・文字の左端・写真の大きさ)の合計が
+     いちばん小さい組み合わせを選ぶ。文字が右の余白に収まらない組み合わせは選ばない(全部だめな時だけ、文字の幅を縮めて収める)。
+   ・値は位置合わせなので 4 と 8 の倍数の決まりの外(4-7 の例外「位置」)。
+   ・パネル「導入事例 › 基本 › カード（PC）」で 方眼にそろえる／もとの位置 を切り替え(params.sections.cases.gridSnap)。方眼オフの時もそろえない。 */
+const CG_SNAP_VARS = ['--cg-pl1', '--cg-pl2', '--cg-gap', '--cg-img-w', '--cg-img-h', '--cg-bw1', '--cg-bw2', '--cg-body-shrink'];
+function alignCaseCards() {
+  const grid = document.getElementById('caseGrid'); if (!grid) return;
+  const root = document.documentElement;
+  const cs = (params.sections && params.sections.cases) || {};
+  const want = root.classList.contains('grid-on') && !root.classList.contains('mb') && cs.gridSnap !== false;
+  grid.classList.remove('cg-snap');   /* もとの並びに戻して測る(何度呼んでも同じ結果になる) */
+  if (!want) { CG_SNAP_VARS.forEach(v => grid.style.removeProperty(v)); return; }
+  const c0 = document.getElementById('caseCard0'), c1 = document.getElementById('caseCard1');
+  const im = c0 && c0.querySelector('.cg-img'), bd = c0 && c0.querySelector('.cg-body'), bd1 = c1 && c1.querySelector('.cg-body');
+  if (!c0 || !c1 || !im || !bd || !bd1 || !im.offsetWidth) return;
+  const k = im.getBoundingClientRect().width / im.offsetWidth;   /* 画面の px ÷ カードの中の px(縮み) */
+  if (!(k > 0.05)) return;
+  const st = getComputedStyle(c0);
+  const P = parseFloat(st.paddingLeft) || 0, PR = parseFloat(st.paddingRight) || 0, G = parseFloat(st.columnGap) || 0, W = im.offsetWidth, H = im.offsetHeight;
+  /* 文字の幅は小数点まで(offsetWidth は整数に丸めるので 0.4px 広がって改行が変わった・2026-09-28)。左右の列それぞれ */
+  const BW0 = bd.getBoundingClientRect().width / k, BW1 = bd1.getBoundingClientRect().width / k;
+  const cell = parseFloat(getComputedStyle(root).getPropertyValue('--grid-cell')) || 44;
+  const cx = innerWidth / 2;   /* 方眼のタテ線は画面の真ん中を通る(applyGrid の --grid-pos-x) */
+  const L0 = c0.getBoundingClientRect().left, L1 = c1.getBoundingClientRect().left;
+  const Pv = P * k, D = (W + G) * k;
+  /* 写真の左端の候補: 両隣の線(端から 16px 未満は除く) */
+  const imgCands = L => { const m = (L + Pv - cx) / cell; return [...new Set([Math.floor(m), Math.ceil(m)])].map(i => cx + i * cell).filter(x => x - L >= 16); };
+  const room = PR * k - 8;   /* 文字が右へ動いてよい量(画面px)＝右の余白からカードの端の 8px 手前まで */
+  let best = null, bestAny = null;
+  for (const n of [...new Set([Math.floor(D / cell), Math.ceil(D / cell)])].filter(v => v >= 1)) {
+    const dD = n * cell - D;   /* 写真＋すき間 の伸び縮み(画面px) */
+    for (const x0 of imgCands(L0)) for (const x1 of imgCands(L1)) {
+      const s0 = x0 - (L0 + Pv), s1 = x1 - (L1 + Pv);
+      const cost = Math.abs(s0) + Math.abs(s0 + dD) + Math.abs(s1) + Math.abs(s1 + dD) + 2 * Math.abs(dD);
+      const cand = { cost, n, x0, x1 };
+      if (!bestAny || cost < bestAny.cost) bestAny = cand;
+      if (s0 + dD <= room && s1 + dD <= room && (!best || cost < best.cost)) best = cand;
+    }
+  }
+  const fits = !!best; if (!best) best = bestAny;
+  if (!best) return;
+  const f = (best.n * cell) / D;
+  grid.style.setProperty('--cg-pl1', ((best.x0 - L0) / k).toFixed(3) + 'px');
+  grid.style.setProperty('--cg-pl2', ((best.x1 - L1) / k).toFixed(3) + 'px');
+  grid.style.setProperty('--cg-gap', (G * f).toFixed(3) + 'px');
+  grid.style.setProperty('--cg-img-w', (W * f).toFixed(3) + 'px');
+  grid.style.setProperty('--cg-img-h', (H * f).toFixed(3) + 'px');
+  grid.style.setProperty('--cg-bw1', BW0.toFixed(3) + 'px');
+  grid.style.setProperty('--cg-bw2', BW1.toFixed(3) + 'px');
+  grid.style.setProperty('--cg-body-shrink', fits ? '0' : '1');   /* 収まる時は縮ませない(改行の位置が変わらない) */
+  grid.classList.add('cg-snap');
 }
 try { new ResizeObserver(scheduleGridAlign).observe(document.body); } catch (e) {}   /* 中身の高さが変わったら合わせ直す(寄せ自体は高さを変えないので繰り返さない) */
 window.addEventListener('load', () => setTimeout(scheduleGridAlign, 300));

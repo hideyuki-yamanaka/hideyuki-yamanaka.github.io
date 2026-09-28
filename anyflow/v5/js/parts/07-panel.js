@@ -1699,10 +1699,25 @@ function buildPanel() {
   rows.push(slider('1枚が出きるまで', 0.05, 1, 0.02, () => sv().cases.cardDur, v => sv().cases.cardDur = v, v => v.toFixed(2),
     '1枚がぼけから出きるまでの長さ。', { mbKey: 'sections.cases.cardDur' }));
 
+  /* 【2026-09-28 ヒデさん依頼】PC: 写真と文字の左端を方眼の線にそろえる／もとの位置(06-sections の alignCaseCards)。スマホは別の作りなので隠す */
+  sub(catCase, 'カード（PC）', null, { grp: 'basic' });
+  { const _r = segRow('写真と文字の左端', [['方眼にそろえる', 'on'], ['もとの位置', 'off']], () => (sv().cases.gridSnap === false ? 'off' : 'on'),
+      v => { sv().cases.gridSnap = v === 'on'; alignCaseCards(); markDirty(); });
+    if (_r && _r.classList) _r.classList.add('pc-only-row'); }
+
   /* 【2026-09-22 ヒデさん依頼】カードの上下パディング(スマホ)。カードが縦積みなので、この値×2＝カード間の余白。詰めるとカードが近づく。--cg-pad-y へ */
   sub(catCase, 'カード（スマホ）', null, { grp: 'basic' });
   rows.push(slider('上下パディング', 4, 48, 2, () => (sv().cases.cardPadY != null ? sv().cases.cardPadY : 24), v => { sv().cases.cardPadY = v; applyCasesPad(); markDirty(); }, v => Math.round(v) + 'px',
     'スマホの導入事例カードの上下の余白。カードは縦積みなので、この値×2 がカード同士の隙間になります。詰めるとカードが近づきます。既定24px。', { mbKey: 'sections.cases.cardPadY', grp: 'basic' }));
+
+  /* 【2026-09-28 ヒデさん依頼「導入事例の下の余白を削って短く。この値も導入事例のタブで調整したい」】
+     お問い合わせとの間隔(PC)。値の住み家は今まで通り params.cv.gapTop(コンバージョンのタブから引っ越し。入口は1つだけ・6-2)。
+     グラデの形は変わらない(伸ばす量は 03-base の CV_RISE_GAP_REF で固定)。スマホは効かないのでスマホモード中は隠す */
+  sub(catCase, 'お問い合わせとの間（PC）', null, { grp: 'basic' });
+  { const _cvp = () => (params.cv || (params.cv = {}));   /* cvv はこの後(コンバージョン)で作るので、ここでは直接読む */
+    const _r = slider('間隔', -120, 300, 4, () => (_cvp().gapTop || 0), v => { _cvp().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+      'カードの下からお問い合わせまでの間。マイナスで詰めると、お問い合わせの薄いグラデがカードの下にうっすら掛かります(グラデの形は変わりません)。カードが切れない所で自動で止まります。既定 −20px。', { signed: true, grp: 'basic' });
+    _r.classList.add('pc-only-row'); rows.push(_r); }
 
   /* 【2026-08-30 ヒデさん指定】カードのホバーは「パスのトリミング(trim)」固定(既定)。選択UIは廃止。
      ホバーは case-grid の data-hover(= params.patterns.caseHover)で常に適用される。 */
@@ -1820,7 +1835,7 @@ function buildPanel() {
       rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px', '減らすほど導入事例との間が詰まります。', { mbKey: 'cv.headTop', fixedMax: true }));
       rows.push(slider('上に足す高さ', 0, 600, 10, () => (cvv().addT != null ? cvv().addT : 0), v => { cvv().addT = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', '見出しの上に色の面を足す。', { mbKey: 'cv.addT', fixedMax: true }));
       rows.push(slider('下に足す高さ', 0, 600, 10, () => (cvv().addB != null ? cvv().addB : 0), v => { cvv().addB = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'ボタンの下(フッターとの間)に足す。', { mbKey: 'cv.addB', fixedMax: true }));
-      rows.push(slider('導入事例との間隔', -120, 300, 5, () => (cvv().gapTop || 0), v => { cvv().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'あいだの余白。マイナスは導入事例の下の空きを詰めます(カードが切れない所で自動停止)。', { mbKey: 'cv.gapTop', signed: true }));
+      /* 【2026-09-28 ヒデさん依頼】「導入事例との間隔」は導入事例のタブ(お問い合わせとの間（PC）)へ引っ越し。値の住み家は同じ params.cv.gapTop */
     },
   };
   /* 【V5.0 2026-09-16 ヒデさん依頼】要素別に固定。CTAの中に「フォーム」が入る等の“包含関係”を入れ子(cv-subg)で見せる。
