@@ -1509,7 +1509,7 @@ function buildPanel() {
      見せ方に「当時の作り」(orig＝出きったあと約100pxだけ止まってから次へ・本番と同じ)を足して既定に。
      案を選ぶピルは「バリエーション」、長さ・速さ・重さのつまみは「アニメーション」へ、同じ見出し名で分ける(決まり6-13) */
   sub(catRes, '全部出たあと（PC）', false, { grp: 'variation' });
-  { const RR = () => sv().results, mode = () => (RR().afterMode || 'orig');
+  { const RR = () => sv().results, mode = () => (RR().afterMode || 'none');
     let syncAfterRows = () => {};
     optRow('resAfter', '見せ方', [['当時の作り（出きったあと少し止まる）', 'orig'], ['なし（すぐ次へ）', 'none'], ['A ゆっくり通り過ぎる', 'a'], ['B やわらかく一息つく', 'b'], ['C 次との間を空ける', 'c'], ['D スクロールを少し重く', 'd'], ['E 画面固定', 'e']],
       () => mode(), v => { RR().afterMode = v; fit(); syncAfterRows(); });

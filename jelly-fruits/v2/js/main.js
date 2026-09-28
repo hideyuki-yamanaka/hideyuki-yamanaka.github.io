@@ -18,15 +18,15 @@ const MIKAN_TINT = '#FF9A2E';
 const DEFAULTS = {
   look: { variant: 'mikan' },
   base: { shape: 'dome', size: 40, count: 3, fruit: 1, cam: 52, knife: 1 },
-  fx: { ior: 1.34, thick: 1, rough: 0.06, tint: 1, rainbow: 0.3, env: 1, mikanTrans: 0.9, peelSee: 0.3, bump: 0.5, fruitGloss: 0.6, table: '#F3EFE9', shadow: 1, caustic: 1 },
+  fx: { ior: 1.34, thick: 1, rough: 0.18, tint: 1, rainbow: 0.15, env: 1, mikanTrans: 0.3, peelSee: 0.2, bump: 0.3, deep: 0.7, glow: 0.18, fruitGloss: 0.6, table: '#F1F0EC', shadow: 1, caustic: 1 },
   motion: { hz: 3.8, keep: 1, stretch: 0.3, press: 1, poke: 1, follow: 7, lift: 0.7, pinch: 0.5, gravity: 1, slide: 1, split: 1, chop: 1 },
   other: { sound: 1, volume: 1, vibrate: 1 }
 };
 /* 案ごとの最初の値（みかん以外は、中に果物を入れたゼリー） */
 const LOOK_VALUES = {
-  clear: { 'fx.ior': 1.3, 'fx.thick': 0.5, 'fx.rough': 0.02, 'fx.tint': 0.7, 'fx.rainbow': 0.5 },
-  color: { 'fx.ior': 1.3, 'fx.thick': 0.5, 'fx.rough': 0.05, 'fx.tint': 4, 'fx.rainbow': 0.3 },
-  frost: { 'fx.ior': 1.3, 'fx.thick': 0.7, 'fx.rough': 0.2, 'fx.tint': 1.1, 'fx.rainbow': 0, 'motion.hz': 3, 'motion.keep': 1.3 }
+  clear: { 'fx.ior': 1.3, 'fx.thick': 0.5, 'fx.rough': 0.02, 'fx.tint': 0.7, 'fx.rainbow': 0.5, 'fx.table': '#F3EFE9' },
+  color: { 'fx.ior': 1.3, 'fx.thick': 0.5, 'fx.rough': 0.05, 'fx.tint': 4, 'fx.rainbow': 0.3, 'fx.table': '#F3EFE9' },
+  frost: { 'fx.ior': 1.3, 'fx.thick': 0.7, 'fx.rough': 0.2, 'fx.tint': 1.1, 'fx.rainbow': 0, 'fx.table': '#F3EFE9', 'motion.hz': 3, 'motion.keep': 1.3 }
 };
 const INSIDE = ['clear', 'color', 'frost'];
 const params = structuredClone(DEFAULTS);
@@ -53,19 +53,21 @@ scene.add(keyLight);
 scene.add(new THREE.HemisphereLight(0xffffff, 0xe9e1d6, 0.5));
 
 /* テーブル（方眼があると、透明なゼリー越しに曲がって見える） */
-function tableTexture() {
+function tableTexture(grid) {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
   const g = c.getContext('2d');
   const img = g.createImageData(256, 256);
   for (let i = 0; i < img.data.length; i += 4) {
-    const v = 255 - Math.random() * 9;
+    const v = 255 - Math.random() * (grid ? 9 : 5);
     img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
   }
   g.putImageData(img, 0, 0);
-  g.strokeStyle = 'rgba(80,62,44,0.34)';
-  g.lineWidth = 4;
-  g.strokeRect(0, 0, 256, 256);
+  if (grid) {
+    g.strokeStyle = 'rgba(80,62,44,0.34)';
+    g.lineWidth = 4;
+    g.strokeRect(0, 0, 256, 256);
+  }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.colorSpace = THREE.SRGBColorSpace;
@@ -73,9 +75,10 @@ function tableTexture() {
   return t;
 }
 const TILE = 0.8, TABLE = 90;
-const tableTex = tableTexture();
+const tableTex = tableTexture(true), plainTex = tableTexture(false);
 tableTex.repeat.set(TABLE / TILE, TABLE / TILE);
-const tableMat = new THREE.MeshStandardMaterial({ map: tableTex, color: params.fx.table, roughness: 0.95, metalness: 0 });
+plainTex.repeat.set(TABLE / TILE, TABLE / TILE);
+const tableMat = new THREE.MeshStandardMaterial({ map: plainTex, color: params.fx.table, roughness: 0.95, metalness: 0 });
 const table = new THREE.Mesh(new THREE.PlaneGeometry(TABLE, TABLE), tableMat);
 table.rotation.x = -Math.PI / 2;
 table.renderOrder = 0;
@@ -131,7 +134,8 @@ function studioEnv() {
   };
   box(10, 6, -10, 12, 6, 30);
   box(7, 3, 11, 8, -3, 14);
-  box(20, 4, 0, 15, -10, 26);
+  box(12, 2.5, 0, 19, -4, 22);
+  box(14, 2, 0, 5, -15, 10);
   box(4, 8, 14, 4, 8, 6);
   const t = pmrem.fromScene(s, 0.015).texture;
   s.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
@@ -181,11 +185,16 @@ function updateMaterials() {
   mikanMat.ior = clamp(f.ior, 1, 2.333);
   mikanMat.thickness = Math.max(0, f.thick) * R * 0.6;
   mikanMat.transmission = clamp(f.mikanTrans, 0, 1);
-  mikanMat.attenuationDistance = R * 3 / Math.max(0.05, f.tint);
+  mikanMat.attenuationDistance = R * 1.1 / Math.max(0.05, f.tint);
   mikanMat.dispersion = Math.max(0, f.rainbow) * 2;
+  mikanMat.envMapIntensity = Math.max(0, f.env) * 0.5;
   mikanUniforms.uPeelSee.value = clamp(f.peelSee, 0, 1);
   mikanUniforms.uBump.value = Math.max(0, f.bump);
-  mikanMat.envMapIntensity = Math.max(0, f.env) * 0.8;
+  mikanUniforms.uDeep.value = clamp(f.deep, 0, 1.5);
+  mikanUniforms.uGlow.value = Math.max(0, f.glow);
+  /* みかんの時は方眼なしのテーブル（ほかの案は、透けがわかるように方眼あり） */
+  const tex = sceneLook === 'mikan' ? plainTex : tableTex;
+  if (tableMat.map !== tex) { tableMat.map = tex; tableMat.needsUpdate = true; }
   tableMat.color.set(f.table);
   scene.background.set(f.table);
 }
@@ -226,9 +235,10 @@ function attach(b) {
     b.fruitMesh.frustumCulled = false;
     scene.add(b.fruitMesh);
   }
-  b.shadow = shadowMesh('#6d6258', 1);
+  b.shadow = shadowMesh(b.mode === 'mikan' ? '#524841' : '#6d6258', 1);
   b.glow = shadowMesh(b.mode === 'mikan' ? MIKAN_TINT : TINT[b.kind], 2);
-  scene.add(b.shadow, b.glow);
+  b.contact = shadowMesh('#3a2f27', 1);
+  scene.add(b.shadow, b.glow, b.contact);
   sync(b);
 }
 function detach(b) {
@@ -237,6 +247,7 @@ function detach(b) {
   if (b.fruitMesh) { scene.remove(b.fruitMesh); b.fruitMesh.geometry.dispose(); }
   scene.remove(b.shadow); b.shadow.material.dispose();
   scene.remove(b.glow); b.glow.material.dispose();
+  scene.remove(b.contact); b.contact.material.dispose();
   b.mesh = null;
 }
 const fm = new THREE.Matrix4();
@@ -259,9 +270,13 @@ function sync(b) {
   }
   const lift = Math.max(0, b.minY), fade = Math.max(0, 1 - lift / (3 * b.R));
   const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-  b.shadow.position.set(cx + 0.1 * b.R + lift * 0.25, 0.001, cz + 0.16 * b.R + lift * 0.35);
-  b.shadow.scale.set(w * 1.3 + lift * 0.6, d * 1.3 + lift * 0.6, 1);
-  b.shadow.material.uniforms.strength.value = 0.62 * Math.max(0, params.fx.shadow) * fade;
+  const mk = b.mode === 'mikan';
+  b.shadow.position.set(cx + (mk ? 0.22 : 0.1) * b.R + lift * 0.25, 0.001, cz + (mk ? 0.3 : 0.16) * b.R + lift * 0.35);
+  b.shadow.scale.set(w * (mk ? 1.45 : 1.3) + lift * 0.6, d * (mk ? 1.45 : 1.3) + lift * 0.6, 1);
+  b.shadow.material.uniforms.strength.value = (mk ? 0.85 : 0.62) * Math.max(0, params.fx.shadow) * fade;
+  b.contact.position.set(cx + 0.04 * b.R, 0.0015, cz + 0.06 * b.R);
+  b.contact.scale.set(w * 0.95, d * 0.95, 1);
+  b.contact.material.uniforms.strength.value = (mk ? 0.6 : 0.3) * Math.max(0, params.fx.shadow) * Math.max(0, 1 - lift / (0.6 * b.R));
   b.glow.position.set(cx + 0.18 * b.R + lift * 0.3, 0.002, cz + 0.34 * b.R + lift * 0.45);
   b.glow.scale.set(w * 0.95, d * 0.95, 1);
   b.glow.material.uniforms.strength.value = (sceneLook === 'frost' ? 0.3 : 0.6) * Math.max(0, params.fx.caustic) * fade;
@@ -700,7 +715,7 @@ document.addEventListener('pointerdown', e => {
 let panel = null;
 if (window.TunePanel) {
   panel = TunePanel.create({
-    title: '調整パネル', storageKey: 'jelly-fruits-3d', version: 2,
+    title: '調整パネル', storageKey: 'jelly-fruits-3d', version: 3,
     params, defaults: DEFAULTS,
     schema: [
       { cat: 'ゼリー', items: [
@@ -739,7 +754,9 @@ if (window.TunePanel) {
         { sub: 'みかん', grp: 'fxtex', only: 'mikan', items: [
           { slider: '透け具合', path: 'fx.mikanTrans', min: 0, max: 1, step: 0.01, fmt: 'n2', clamp: true, hint: 'みかん全体の透け方。0 で透けない（ふつうのみかん）、1 で一番みずみずしく透ける。' },
           { slider: '皮の透け', path: 'fx.peelSee', min: 0, max: 1, step: 0.01, fmt: 'n2', clamp: true, hint: '皮越しに、中の房がうっすら見える量。' },
-          { slider: 'でこぼこ', path: 'fx.bump', min: 0, max: 3, step: 0.05, fmt: 'x', hint: '皮の毛穴のようなくぼみと、果肉のつぶつぶの立体感。' }
+          { slider: 'でこぼこ', path: 'fx.bump', min: 0, max: 3, step: 0.05, fmt: 'x', hint: '皮のうすいでこぼこ。0 でつるつる。' },
+          { slider: 'ふちの赤み', path: 'fx.deep', min: 0, max: 1.5, step: 0.05, fmt: 'n2', hint: 'ふちに行くほど赤みが深くなる量（厚みのある所を光が通る感じ）。' },
+          { slider: '内側の光', path: 'fx.glow', min: 0, max: 1, step: 0.01, fmt: 'n2', hint: 'ゼリーの中で光が回って、ほんのり光って見える量。' }
         ]},
         { sub: '中の果物', grp: 'fxtex', only: INSIDE, items: [
           { slider: 'ツヤ', path: 'fx.fruitGloss', min: 0, max: 1, step: 0.05, fmt: 'n2', clamp: true, hint: '果物の表面のみずみずしい照り返し。' }

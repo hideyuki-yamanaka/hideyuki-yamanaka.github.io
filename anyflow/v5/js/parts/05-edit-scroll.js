@@ -1648,7 +1648,7 @@ function resFxEnd(k) { if (k === '24-4' && resAfterMode() === 'orig') return 1; 
    a/b/e は実績の高さを足し、貼りつく入れ物(.pin-vp)の top を少しずつ上げる(a/b)ことで「止まらずにゆっくり」「止まってからなめらかに」を作る。
    固定が外れる所で位置がつながるよう、足す高さ＝長さ×(1−F(1))。c は下の余白、d は Lenis のホイール1回の進み(wheelMultiplier) */
 const RES_AFTER_MODES = ['orig', 'none', 'a', 'b', 'c', 'd', 'e'];   /* orig=【2026-09-28】当時の作り(既定) */
-function resAfterMode() { const m = params.sections.results.afterMode; return isMobile ? 'none' : (RES_AFTER_MODES.includes(m) ? m : 'orig'); }   /* スマホは流れる作りなので関係なし */
+function resAfterMode() { const m = params.sections.results.afterMode; return isMobile ? 'none' : (RES_AFTER_MODES.includes(m) ? m : 'none'); }   /* スマホは流れる作りなので関係なし */
 function resAfterLenVh(m) { m = m || resAfterMode(); if (m === 'none' || m === 'orig') return 0; return Math.max(0, +params.sections.results['afterLen' + m.toUpperCase()] || 0); }
 /* 全部出たあと、長さ Z の中で入れ物が上がる量(Z に対する割合)。u=0〜1。速さ＝F'(u)(1=スクロールと同じ) */
 function resAfterF(m, u) {
