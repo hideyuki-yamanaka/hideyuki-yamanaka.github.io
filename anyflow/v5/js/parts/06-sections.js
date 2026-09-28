@@ -1622,6 +1622,23 @@ function fit() {
      使える幅 ≒ viewport − 240、左右余白ぶん −64 して 840px を収める倍率を算出し、dev1 と同様に余白を保つ。
      モバイル(≤600)は @media の scale(0.42) が優先されるので影響しない。 */
   st.setProperty('--dev2-fit', isMobile ? '1' : String(Math.max(0.3, Math.min(1, (w - 160) / 840)).toFixed(3)));
+  /* 【2026-09-28 ヒデさん依頼「開発者体験のモックは縦横比固定でレスポンシブ」】①も②と同じ倍率で縮める(--dev1-fit・PC/タブレット)。
+     「①②で一旦止まる」を使う時(PC)は、画面の高さにも収める(上下の余白88×2＋見出し＋間隔＋モックが 100vh に入る倍率)。
+     スマホ(≤600)は左右の余白16px×2を除いた幅いっぱい(--dev-sp-fit・仮置き。旧 0.42倍固定)。 */
+  { const wf = Math.max(0.3, Math.min(1, (w - 160) / 840));
+    let f1 = wf, f2 = wf;
+    const dv = (params.sections && params.sections.dev) || {};
+    if (!isMobile && dv.pinStops !== 'off') {
+      const hf = (id, baseH, sc) => { const blk = document.getElementById(id); if (!blk) return 1;
+        const hd = blk.querySelector('.dev-center'), inn = blk.querySelector('.dev-blk-in');
+        const gap = inn ? (parseFloat(getComputedStyle(inn).rowGap) || 0) : 0;
+        return (h - 176 - (hd ? hd.offsetHeight : 0) - gap) / (baseH * sc); };
+      f1 = Math.max(0.3, Math.min(f1, hf('devBlock1', 504, dv.dev1Scale != null ? dv.dev1Scale : 1.1)));
+      f2 = Math.max(0.3, Math.min(f2, hf('devBlock2', 520, dv.dev2Scale != null ? dv.dev2Scale : 1.1)));
+      st.setProperty('--dev2-fit', f2.toFixed(3));
+    }
+    st.setProperty('--dev1-fit', isMobile ? '1' : f1.toFixed(3));
+    st.setProperty('--dev-sp-fit', Math.max(0.3, Math.min(1, (w - 32) / 840)).toFixed(3)); }
   /* 【2026-09-09 カンプSP 準拠】スマホの KV は次セクション(Our Vision y741 = section 667 + label 74)の
      直前で切る。設計フレーム DH=780 のままだと下に空白が残り、KV→ビジョンが空きすぎていた。
      .stage-wrap は overflow:hidden なので、はみ出す分(ロゴ帯 664 より下の空白)は見えない。 */
