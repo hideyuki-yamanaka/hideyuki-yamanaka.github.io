@@ -659,9 +659,10 @@ function buildPanel() {
         v => Math.round(v * 100) + '%', '惑星の大きさ。100%が基準。右上の ✏️編集 で惑星の角をつまんでも変えられます。', { mbKey: 'planet.scale' });
       sub(animModeBox, 'メッシュ', true);
       /* 【2026-09-17 大掃除・ヒデさん指定】「頂点は自動配置」ボタンと案内は削除(ケージは立体並びで手置き不可のため常に空振りだった) */
-      slider('ノードの数', 3, 60, 1, () => params.conv.mesh.nodes,
+      /* 【2026-09-28 ヒデさん依頼・決まり 6-14】包囲ケージ(いまの形)では点の数を「面の数」で決めるので、ケージ以外の形の時だけ出す */
+      showWhen(slider('ノードの数', 3, 60, 1, () => params.conv.mesh.nodes,
         v => { M.nodes = v; if (M.pts && M.pts.length !== Math.round(v)) M.pts = null; },
-        v => v + '個', '「散らばり（フィボナッチ）」の時の点の数。「整った網（測地線）」では下の「面の数」で決まります。', { mbKey: 'conv.mesh.nodes', fixedMax: true });
+        v => v + '個', 'ケージ以外の形の時の点の数。', { mbKey: 'conv.mesh.nodes', fixedMax: true }), () => (M.style || 'organic') !== 'cage');
       slider('ノードの大きさ', 0.1, 3, 0.02, () => params.conv.mesh.size, v => M.size = v, v => '×' + v.toFixed(2),
         'この案のノードだけの大きさ（全体の「ドットの大きさ」に掛かります）。', { mbKey: 'conv.mesh.size', fixedMax: true });
       /* 惑星の大きさは上の「惑星」見出しへ移動(2026-09-20 大改修) */
@@ -700,19 +701,21 @@ function buildPanel() {
         /* 【2026-09-28 ヒデさん依頼「形はある程度変えずに、面の数を増やせるつまみを。今のは増やすと球に近づく」】
            上の「面の数」は増えた点を球の表面へ置き直すので丸くなる。こちらは今の三角形を平らなまま割る＝形はそのまま・面と線だけ増える */
         subgroup('面を細かく（形はそのまま）', () => {
+        /* 【2026-09-28・決まり 6-14】割る細かさが「そのまま」の時は、丸み・ドットは出さない(スマホモード中はスマホの値で判断) */
+        const _kvSub2 = () => { const pon = document.documentElement.classList.contains('phone-mode'), mv = params.mb && params.mb['conv.mesh.cageSub']; return Math.round((pon && mv != null) ? mv : (M.cageSub == null ? 1 : M.cageSub)) >= 2; };
         slider('割る細かさ', 1, 4, 1, () => (M.cageSub == null ? 1 : M.cageSub),
-          v => { M.cageSub = Math.round(v); renderFrame(); },
+          v => { M.cageSub = Math.round(v); renderFrame(); try { syncPanelRows(); } catch (e) {} },
           v => { const k = Math.round(v); if (k <= 1) return 'そのまま'; try { const b0 = (M.cageShape === 'geo') ? buildGeodesic(Math.max(1, Math.round(M.cageFreq == null ? 2 : M.cageFreq))) : sphereFiboHull(Math.max(8, Math.round(M.cageFiboN == null ? 42 : M.cageFiboN))); const g = meshSubdivide(b0, k, 0); return `${k}×${k}（面${g.faces.length}・線${g.edges.length}）`; } catch (e) { return k + '×' + k; } },
           '今の網の三角形を、平らなまま 2×2・3×3・4×4 に割ります。角の位置と面の向きは変わらないので、形はそのままで面と線だけが増えます。4は線が多いので少し重くなります。', { fixedMax: true, mbKey: 'conv.mesh.cageSub' });
-        slider('丸み', 0, 1, 0.05, () => (M.cageSubRound || 0),
+        showWhen(slider('丸み', 0, 1, 0.05, () => (M.cageSubRound || 0),
           v => { M.cageSubRound = v; renderFrame(); },
           v => v <= 0.001 ? '0（形そのまま）' : Math.round(v * 100) + '%',
-          '割って増えた点を、球の表面へどれだけ寄せるか。0＝今の形のまま平ら／100%＝球に近づく(上の「面の数」を増やした時と同じ丸さ)。割る細かさが「そのまま」の時は効きません。', { fixedMax: true, mbKey: 'conv.mesh.cageSubRound' });
+          '割って増えた点を、球の表面へどれだけ寄せるか。0＝今の形のまま平ら／100%＝球に近づく(上の「面の数」を増やした時と同じ丸さ)。割る細かさが「そのまま」の時は効きません。', { fixedMax: true, mbKey: 'conv.mesh.cageSubRound' }), _kvSub2);
         /* 増えた点のドット(スマホモード中はスマホだけの値) */
         { const _k = 'conv.mesh.cageSubDots', _pon = () => document.documentElement.classList.contains('phone-mode');
-          segRow('増えた点のドット', [['出す', 1], ['出さない', 0]],
+          showWhen(segRow('増えた点のドット', [['出す', 1], ['出さない', 0]],
             () => { const v = (_pon() && params.mb && params.mb[_k] != null) ? params.mb[_k] : M.cageSubDots; return v === 0 ? 0 : 1; },
-            v => { if (_pon()) { if (!params.mb) params.mb = {}; params.mb[_k] = v; } else M.cageSubDots = v; markDirty(); renderFrame(); }); }
+            v => { if (_pon()) { if (!params.mb) params.mb = {}; params.mb[_k] = v; } else M.cageSubDots = v; markDirty(); renderFrame(); }), _kvSub2); }
         });
       }
       slider('全体の広がり', 0.4, 2, 0.02, () => params.conv.mesh.spread == null ? 1 : params.conv.mesh.spread, v => M.spread = v,
@@ -1193,7 +1196,7 @@ function buildPanel() {
   /* 【2026-09-20 大改修・ヒデさん依頼】③「図（網目のドーム）」→ グラフィックの「メッシュ」に統一。案(visMesh)を削除し現在の見た目を既定に。位置/向き/半径=基本、線/点/パケット/フェード=エフェクト、回転=アニメ、透明度=エフェクト に振り分け。機能名の個別位置はX/Yスライダーに。 */
   sub(catVis, 'メッシュ', false);
   note('Figma 18004:38228 のグラフィックをコードで描画(正二十面体を分割した球)。位置は ✏️編集でもドラッグ可。');
-  const vfS = (label, key, min, max, step, fmt, tip, o) => rows.push(slider(label, min, max, step, () => vfCfgVal(key), v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); }, fmt, tip, Object.assign({ fixedMax: true, mbActive: () => { const _v = params.sections.vision; return !!(_v && _v.domeMb && _v.domeMb[key] != null); }, mbClear: () => { const _v = params.sections.vision; if (_v && _v.domeMb) { delete _v.domeMb[key]; applyVfFade(); } } }, o || {})));
+  const vfS = (label, key, min, max, step, fmt, tip, o) => { const _row = slider(label, min, max, step, () => vfCfgVal(key), v => { vfSet(key, v); if (key === 'freq') vfMesh = null; markDirty(); if (key === 'sub') { try { syncPanelRows(); } catch (e) {} } }, fmt, tip, Object.assign({ fixedMax: true, mbActive: () => { const _v = params.sections.vision; return !!(_v && _v.domeMb && _v.domeMb[key] != null); }, mbClear: () => { const _v = params.sections.vision; if (_v && _v.domeMb) { delete _v.domeMb[key]; applyVfFade(); } } }, o || {})); rows.push(_row); return _row; };   /* 【2026-09-28】行を返す(showWhen で出し入れするため) */
   /* 【2026-09-25 ヒデさん依頼】メッシュの形状バリエーション＋横/縦のふくらみ＋尖りのつまみは削除。
      現状(焼き込み済み)を既定として固定。形状はいじらせず、細かさ(面の数)だけ下に残す。 */
   subgroup('セット（メッシュ＋ロゴ＋機能名）', () => {
@@ -1210,17 +1213,18 @@ function buildPanel() {
   vfS('傾き（左右）', 'roll', -45, 45, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', 'メッシュの軸を左右に倒す。0＝いまの向き。', { signed: true });
   vfS('向き（回転の位置）', 'yaw', -180, 180, 1, v => (v > 0 ? '+' : '') + Math.round(v) + '°', '縦軸まわりの向きをずらす。', { signed: true });
   /* 【2026-09-25 ヒデさん依頼・面の数を1個ずつ】形: 整った網(測地線・点が飛び飛び)／散らばり(三角網・点を1個ずつ)。既定は今の整った網。KVとは別の値 */
-  segRow('形', [['整った網', 'geo'], ['散らばり（1個ずつ）', 'fibo']], () => (vfCfg().meshKind === 'fibo' ? 'fibo' : 'geo'), v => { vfSet('meshKind', v); markDirty(); });
-  vfS('細かさ（整った網）', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '形が「整った網」の時の球の分割数。3=カンプと同じ密度(点92・線270)。');
-  vfS('面の数（散らばり・1個ずつ）', 'fn', 12, 300, 1, v => '点' + Math.round(v) + '・線' + (3 * Math.round(v) - 6), '形が「散らばり」の時の点の数。1個ずつ増減できます。92＝整った網の細かさ3(カンプ)と同じ点・線の数。');
+  segRow('形', [['整った網', 'geo'], ['散らばり（1個ずつ）', 'fibo']], () => (vfCfgVal('meshKind') === 'fibo' ? 'fibo' : 'geo'), v => { vfSet('meshKind', v); markDirty(); try { syncPanelRows(); } catch (e) {} });   /* 【2026-09-28】形に合うつまみだけ下に出す(決まり 6-14) */
+  showWhen(vfS('細かさ（整った網）', 'freq', 1, 4, 1, v => Math.round(v) + '（点 ' + [0, 12, 42, 92, 162][Math.round(v)] + '）', '形が「整った網」の時の球の分割数。3=カンプと同じ密度(点92・線270)。'), () => vfCfgVal('meshKind') !== 'fibo');   /* 整った網の時だけ */
+  showWhen(vfS('面の数（散らばり・1個ずつ）', 'fn', 12, 300, 1, v => '点' + Math.round(v) + '・線' + (3 * Math.round(v) - 6), '形が「散らばり」の時の点の数。1個ずつ増減できます。92＝整った網の細かさ3(カンプ)と同じ点・線の数。'), () => vfCfgVal('meshKind') === 'fibo');   /* 散らばりの時だけ */
   });
   /* 【2026-09-28 ヒデさん依頼「形はある程度変えずに、面の数を増やせるつまみを」】上の細かさは点を球の表面へ置き直すので丸くなる。こちらは今の三角形を平らなまま割る */
   subgroup('面を細かく（形はそのまま）', () => {
   vfS('割る細かさ', 'sub', 1, 4, 1, v => { const k = Math.round(v); if (k <= 1) return 'そのまま'; try { const c = vfCfg(); const b0 = c.meshKind === 'fibo' ? sphereFiboHull(Math.max(12, Math.round(c.fn || 92))) : vfBuild(Math.max(1, Math.min(4, Math.round(c.freq)))); const g = meshSubdivide(b0, k, 0); return `${k}×${k}（面${g.faces.length}・線${g.edges.length}）`; } catch (e) { return k + '×' + k; } },
     '今の網の三角形を、平らなまま 2×2・3×3・4×4 に割ります。角の位置と面の向きは変わらないので、形はそのままで面と線だけが増えます。');
-  vfS('丸み', 'subRound', 0, 1, 0.05, v => v <= 0.001 ? '0（形そのまま）' : Math.round(v * 100) + '%',
-    '割って増えた点を、球の表面へどれだけ寄せるか。0＝今の形のまま平ら／100%＝球に近づく(上の「細かさ」を増やした時と同じ丸さ)。割る細かさが「そのまま」の時は効きません。');
-  segRow('増えた点のドット', [['出す', 1], ['出さない', 0]], () => (vfCfgVal('subDots') === 0 ? 0 : 1), v => { vfSet('subDots', v); markDirty(); });   /* vfCfgVal/vfSet＝スマホモード中はスマホだけの値 */
+  const _visSub2 = () => Math.round(vfCfgVal('sub') || 1) >= 2;   /* 【2026-09-28】割る細かさが「そのまま」の時は、丸み・ドットは出さない(決まり 6-14) */
+  showWhen(vfS('丸み', 'subRound', 0, 1, 0.05, v => v <= 0.001 ? '0（形そのまま）' : Math.round(v * 100) + '%',
+    '割って増えた点を、球の表面へどれだけ寄せるか。0＝今の形のまま平ら／100%＝球に近づく(上の「細かさ」を増やした時と同じ丸さ)。'), _visSub2);
+  showWhen(segRow('増えた点のドット', [['出す', 1], ['出さない', 0]], () => (vfCfgVal('subDots') === 0 ? 0 : 1), v => { vfSet('subDots', v); markDirty(); }), _visSub2);   /* vfCfgVal/vfSet＝スマホモード中はスマホだけの値 */
   });
   /* --- 基本: 機能名 --- */
   sub(catVis, '機能名', false);
@@ -1257,8 +1261,8 @@ function buildPanel() {
   vfS('透明度', 'logoOpacity', 0.2, 1, 0.02, v => Math.round(v * 100) + '%', '薄くすると後ろのメッシュが透けて馴染む。');
   /* --- アニメーション: メッシュの回転＋グラフィックの出現 --- */
   sub(catVis, 'メッシュ', false, { grp: 'anim' });
-  segRow('回転', [['あり', 1], ['なし', 0]], () => (vfCfg().spinOn === 0 ? 0 : 1), v => { vfSet('spinOn', v ? 1 : 0); markDirty(); });
-  vfS('速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '「回転 あり」の時の速さ。0.35 で約2分半で1周。');
+  segRow('回転', [['あり', 1], ['なし', 0]], () => (vfCfgVal('spinOn') === 0 ? 0 : 1), v => { vfSet('spinOn', v ? 1 : 0); markDirty(); try { syncPanelRows(); } catch (e) {} });   /* 【2026-09-28】「なし」の時は下の速さを出さない(決まり 6-14) */
+  showWhen(vfS('速さ', 'spin', 0, 2, 0.05, v => '×' + v.toFixed(2), '「回転 あり」の時の速さ。0.35 で約2分半で1周。'), () => { const o = vfCfgVal('spinOn'); return !(o === 0 || o === false); });   /* 回転「あり」の時だけ */
   sub(catVis, 'グラフィックの出現', false, { grp: 'anim' });
   rows.push(slider('出きるまで', 0.4, 3, 0.1, () => sv().vision.miniDur, v => sv().vision.miniDur = v, v => v.toFixed(1) + '秒',
     'ぼけた状態からくっきり出るまでの時間。', { mbKey: 'sections.vision.miniDur' }));
@@ -1380,8 +1384,8 @@ function buildPanel() {
   /* 【2026-09-19 ヒデさん依頼】for SaaS / for AI の大きな文字は、画面の下に見えている間はぼけていて、上がってくるにつれてはっきり */
   sub(catRes, '入場のぼかし（for SaaS / for AI が下から上がる間）');
   note('セクションが画面下から入ってくる進み具合(0%=下端に顔を出す / 50%=大きな文字が画面の下端に出る / 100%=所定の位置)に連動。所定の位置に着いたら効きません。');
-  rows.push(slider('強さ（24-4・強め）', 0, 60, 1, () => (sv().results.entryBlur44 != null ? sv().results.entryBlur44 : 26), v => sv().results.entryBlur44 = v, v => Math.round(v) + 'px', '演出の案が 24-4 の時の、入ってきた直後のぼけ(強め)。0でぼかし無し。', { mbKey: 'sections.results.entryBlur44' }));
-  rows.push(slider('強さ（24-5）', 0, 60, 1, () => (sv().results.entryBlur != null ? sv().results.entryBlur : 16), v => sv().results.entryBlur = v, v => Math.round(v) + 'px', '演出の案が 24-5(と 24/24-2/24-3)の時の、入ってきた直後のぼけ。0でぼかし無し。', { mbKey: 'sections.results.entryBlur' }));
+  { const _eb = slider('強さ（24-4・強め）', 0, 60, 1, () => (sv().results.entryBlur44 != null ? sv().results.entryBlur44 : 26), v => sv().results.entryBlur44 = v, v => Math.round(v) + 'px', '演出の案が 24-4 の時の、入ってきた直後のぼけ(強め)。0でぼかし無し。', { mbKey: 'sections.results.entryBlur44' }); rows.push(_eb); rfxDyn(_eb, ['24-4']); }   /* 【2026-09-28・決まり 6-14】その演出の案の時だけ出す */
+  { const _eb = slider('強さ（24-5）', 0, 60, 1, () => (sv().results.entryBlur != null ? sv().results.entryBlur : 16), v => sv().results.entryBlur = v, v => Math.round(v) + 'px', '演出の案が 24-5(と 24/24-2/24-3)の時の、入ってきた直後のぼけ。0でぼかし無し。', { mbKey: 'sections.results.entryBlur' }); rows.push(_eb); rfxDyn(_eb, ['24-5']); syncRfxDyn(); }   /* 24-5 は消した案＝今は出ない。登録したらすぐ出し入れを合わせる */
   rows.push(slider('はっきりし始める', 0, 1, 0.05, () => (sv().results.entryFrom != null ? sv().results.entryFrom : 0.4), v => sv().results.entryFrom = v, v => Math.round(v * 100) + '%', 'ここまでは最大のぼけのまま。「出だしの高さ」と同じ%＝文字が画面の下端に出た時。', { mbKey: 'sections.results.entryFrom', fixedMax: true }));
   rows.push(slider('はっきりしきる', 0.05, 1, 0.05, () => (sv().results.entryTo != null ? sv().results.entryTo : 0.95), v => sv().results.entryTo = v, v => Math.round(v * 100) + '%', 'ここで完全にくっきり。100%=所定の位置に着いた時。', { mbKey: 'sections.results.entryTo', fixedMax: true }));
   rows.push(slider('出だしの薄さ', 0, 1, 0.05, () => (sv().results.entryOp != null ? sv().results.entryOp : 1), v => sv().results.entryOp = v, v => Math.round(v * 100) + '%', '入ってきた直後の不透明度。100%=薄くしない(ぼかしだけ)。', { mbKey: 'sections.results.entryOp', fixedMax: true }));
@@ -1417,9 +1421,9 @@ function buildPanel() {
   /* 【2026-09-28 不具合修正】案を選ぶ処理(choose)の途中で markDirty を呼ぶと、選んだ案の素の値が「控え」に先に書き込まれ、
      上書きしてあった値(案2 の なじませ22%・ぼかし3px・窓1.5)が消えていた(本番でも再現)。markDirty は choose が控えを重ねた後に呼ぶので、ここでは呼ばない(ほかの自動控えの列と同じ) */
   varRowX('resSlotFx', RES_SLOT_FX, () => resSlotFxKey(), v => { resApplySlotFx(String(v)); }, { autosave: true, snap: VAR_SNAP.resSlotFx, after: () => { if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-  note('案を選ぶと下のつまみに値が入ります。細かく変えたら ⋯「この設定で上書き」。選んでいる案で効かないつまみは薄く表示します。');
-  /* 【2026-09-28】選んでいる案で効かないつまみは .row-off で薄くする(案が8つに増えたので、どれがどの案用か見て分かるように) */
-  const slotFor = (row, keys) => { const s0 = row._sync; row._sync = () => { if (s0) s0(); try { row.classList.toggle('row-off', !keys.includes(resSlotFxKey())); } catch (e) {} }; row._sync(); return row; };
+  note('案を選ぶと、その案で使うつまみだけが下に出ます。細かく変えたら ⋯「この設定で上書き」。');
+  /* 【2026-09-28 ヒデさん依頼】選んでいる案で使うつまみだけを出す(前は使わない物を薄くして全部並べていた)。決まり 6-14 */
+  const slotFor = (row, keys) => showWhen(row, () => keys.includes(resSlotFxKey()));
   rows.push(slider('回り出すまで', 0, 2, 0.05, () => sv().results.slotAt, v => sv().results.slotAt = v, v => v.toFixed(2) + '秒後',
     'セクションが始まってから回り出すまで。0で即。', { mbKey: 'sections.results.slotAt' }));
   rows.push(slider('1桁が止まるまで', 0.3, 3, 0.05, () => sv().results.slotDur, v => sv().results.slotDur = v, v => v.toFixed(2) + '秒',
@@ -1524,7 +1528,8 @@ function buildPanel() {
     const wtRow = slider('重さ（D）', 0.1, 0.9, 0.05, () => (RR().afterWeight != null ? +RR().afterWeight : 0.35), v => { RR().afterWeight = v; }, v => Math.round(v * 100) + '%',
       'D の時だけ効く。ホイール1回で進む量(100%＝いつもどおり)。小さいほど重い。', { fixedMax: true });
     [lenRow, spRow, wtRow].forEach(r => { r.classList.add('pc-only-row'); rows.push(r); const s0 = r._sync; r._sync = () => { s0(); syncAfterRows(); }; });
-    syncAfterRows = () => { const m = mode(); lenRow.classList.toggle('row-off', m === 'none' || m === 'orig'); spRow.classList.toggle('row-off', m !== 'a'); wtRow.classList.toggle('row-off', m !== 'd'); };
+    /* 【2026-09-28 ヒデさん依頼】選んだ見せ方で使うつまみだけを出す(前は薄くして全部並べていた)。当時の作り・なしの時は、長さなども出さない。決まり 6-14 */
+    syncAfterRows = () => { const m = mode(); lenRow.style.display = ['a', 'b', 'c', 'd', 'e'].includes(m) ? '' : 'none'; spRow.style.display = m === 'a' ? '' : 'none'; wtRow.style.display = m === 'd' ? '' : 'none'; try { hideEmptyPanelGroups(); } catch (e) {} };
     syncAfterRows();
   }
 
@@ -1602,10 +1607,9 @@ function buildPanel() {
   /* 【2026-09-16 ヒデさん指定】①②で中央に来たら一旦止まる(固定スクロール) */
   sub(catDev, '①②で一旦止まる（固定スクロール）');
   note('①「開発スピードを加速」と②「開発環境に柔軟に適応」が、中央に来たら固定されて一旦止まり、スクロールすると次へ進みます（PC のみ）。');
-  /* 【2026-09-28 ヒデさん依頼】「止まっている長さ」は止まるが OFF の間は効かないので、その間は行を薄くする(.row-off)。
-     隠すと切り替えた時に項目の位置が動くので隠さない。値は薄いままでも変えられる */
+  /* 【2026-09-28 ヒデさん依頼】「止まっている長さ」は「止まる」を選んだ時だけ出す(前は OFF の間も薄くして並べていた)。決まり 6-14 */
   let devDwellRow = null;
-  const devDwellDim = () => { try { if (devDwellRow) devDwellRow.classList.toggle('row-off', sv().dev.pinStops === 'off'); } catch (e) {} };
+  const devDwellDim = () => { try { if (devDwellRow) { devDwellRow.style.display = sv().dev.pinStops === 'off' ? 'none' : ''; hideEmptyPanelGroups(); } } catch (e) {} };
   optRow('devPinStops', '有無', [['止まる', 'on'], ['止まらない（通常）', 'off']],
     () => ((sv().dev.pinStops !== 'off') ? 'on' : 'off'),
     v => { sv().dev.pinStops = v; fit(); renderFrame(); devDwellDim(); });

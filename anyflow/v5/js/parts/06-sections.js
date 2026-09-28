@@ -2447,6 +2447,7 @@ function syncPanelRows() {
   for (const r of rows) { if (r && r._sync) r._sync(); }
   body.querySelectorAll('.row').forEach(r => { if (r._sync) r._sync(); });
   body.querySelectorAll('.txt-row').forEach(r => { if (r._sync) r._sync(); });   /* 【2026-09-21 Y11】フォント行も再sync(スマホモードでSP実サイズを表示し直す) */
+  try { if (typeof hideEmptyPanelGroups === 'function') hideEmptyPanelGroups(); } catch (e) {}   /* 【2026-09-28】出し入れ(showWhen)で空になった小見出し・見出しを畳む／中身が戻れば開く */
 }
 
 /* ===== 【2026-09-15 ヒデさん依頼】グラデーション編集ギズモ(Figma風の棒＋両端ハンドル) =====
@@ -2834,6 +2835,18 @@ function segRow(label, opts, getDir, setDir) {
   row.appendChild(mkReset(getDir, v => { setDir(v); sync(); }, null, isLive));
   if (subItems) subItems.push({ reset: () => { const d = defaultOf(getDir); if (d != null) { setDir(d); sync(); } } });
   mount.appendChild(row);
+  row._sync = sync;   /* 【2026-09-28】showWhen で出し入れできるように行を返す */
+  return row;
+}
+/* 【2026-09-28 ヒデさん依頼「案(バリエーション)の配下のつまみは、使わない物を薄くして全部並べるのではなく、中身が変わる形に」】
+   選んでいる案(や「する／しない」)で使うつまみだけを出す。行の _sync(＝syncPanelRows)のたびに出し入れし、
+   中が空になった小見出し・見出しは hideEmptyPanelGroups が畳む。切り替えボタンより上の行は動かない(出し入れは下だけ)。決まり 6-14 */
+function showWhen(row, cond) {
+  if (!row) return row;
+  const s0 = row._sync;
+  row._sync = () => { if (s0) s0(); let on = true; try { on = !!cond(); } catch (e) {} row.style.display = on ? '' : 'none'; };
+  row._sync();
+  return row;
 }
 
 /* 【2026-09-28】下の部品は、パネルを作る時(フォント行)に使うので、パネルより前(ここ)に置く */

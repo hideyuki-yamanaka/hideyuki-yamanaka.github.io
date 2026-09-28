@@ -2918,7 +2918,8 @@
   /* 【2026-09-25 ヒデさん確定】セクション区切りは カード/ブロック(比較3案の③)。節=.cat-section:not(.cs-variation)(案がある所は .cs-nested・無い所は直下)。
      案の見出し(.cs-variation=.vs-section)は装飾しない。入れ子の節見出しは 12px/#555 と弱かったので 13px/700/#111 に揃える。①線/②帯の案は削除 */
   .cat-section:not(.cs-variation) > .cat-section-head { font-size: 13px; font-weight: 700; color: #111; padding: 11px 2px 8px; }
-  .cat-section:not(.cs-variation) { background: #f8f9fb; border: 1px solid #e4e7eb; border-radius: 10px; margin: 8px 0; padding: 0 11px 6px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  /* 【2026-09-28 ヒデさん依頼「セクションの枠の色を上下のブロックと同じ色に」】枠の中は塗らない(パネルの地の色がそのまま見える)。線・角丸・余白・影はそのまま */
+  .cat-section:not(.cs-variation) { background: transparent; border: 1px solid #e4e7eb; border-radius: 10px; margin: 8px 0; padding: 0 11px 6px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
 
   /* H2: オブジェクト小見出し(メッシュ/コピー/ロゴ 等)。開閉なし・区切り線なし・左線なし。余白だけで区切る */
   .grp { margin-top: 4px; }
