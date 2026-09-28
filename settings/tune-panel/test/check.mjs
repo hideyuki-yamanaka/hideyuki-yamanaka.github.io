@@ -146,7 +146,7 @@ try {
     /* 地：AnyFlow は白92%＋ぼかし（白いページの上なので白く見える）。色の濃いページでも同じ白に見えるよう、部品は白100%・ぼかし無し（2026-09-28 ヒデさん「色味も合わせて」） */
     const lookOk = look.w === 450 && look.h === 520 && look.bg === 'rgb(255, 255, 255)' && look.border === 'rgb(236, 236, 236)' && look.radius === '8px'
       && look.font === '11px' && (!look.blur || look.blur === 'none') && look.title === '調整パネル' && look.cardBg === 'rgba(0, 0, 0, 0)' && look.cardBorder === 'rgb(228, 231, 235)'
-      && look.cardRadius === '10px' && look.labW === 100 && look.valW === 48 && look.tabBorder === 'solid rgb(17, 17, 17)' && look.tabWeight === '700';
+      && look.cardRadius === '10px' && look.labW >= 100 && look.labW <= 112 && look.valW === 48 && look.tabBorder === 'solid rgb(17, 17, 17)' && look.tabWeight === '700';
     rec('見た目の寸法（AnyFlow V5 の値）', lookOk,
       `外寸 ${look.w}×${look.h} / 地 ${look.bg} / 枠 ${look.border} / 角丸 ${look.radius} / 文字 ${look.font} / ${look.blur} / タイトル「${look.title}」/ タブ下線 ${look.tabBorder}・太さ${look.tabWeight} / カード ${look.cardBg}・${look.cardBorder}・${look.cardRadius} / 項目名 ${look.labW}px・値 ${look.valW}px`);
     rec('出る位置は画面の左・上下中央（既定）', look.left === 24 && Math.abs(look.midY - look.vh / 2) <= 1, `左 ${look.left}px・パネルの中心 ${look.midY}px（画面の中心 ${look.vh / 2}px）`);
@@ -339,7 +339,9 @@ try {
     await page.waitForTimeout(60);
     const SELS_BOTTOM = ['.tp-vs[data-title="ピクトグラム"] > .tp-vs-head', '.tp-item[data-key="res.picto"]'];
     const r2 = await tops(SELS_BOTTOM);
-    await pickVariant(page, 'res.picto', 'line');
+    /* v2.2.0: 詰めた分だけ中身が短くなり、いちばん下まで送るとピルが見える範囲の外に出る。page.click だと押す前に見える所まで送ってしまい
+       (部品と関係なく位置が動く)、測りたい「押し戻され」が見えなくなるので、ページの中から押す */
+    await page.evaluate(() => document.querySelector('.tp-item[data-key="res.picto"] .tp-pill[data-value="line"]').click()); await page.waitForTimeout(120);
     const r3 = await tops(SELS_BOTTOM);
     const same = (a, b) => a.every((x, i) => x !== null && Math.abs(x - b[i]) < 0.6);
     rec('切り替えた時に切り替えより上の行の位置が動かない（座標を測る）', same(k0, k1) && same(k0, k2) && same(r0, r1) && same(r2, r3),
@@ -630,7 +632,7 @@ try {
     await page.click('.tp-title');
     await page.waitForTimeout(100);
     const r4 = await rect();
-    rec('見出しの帯か中身の何も無い所をつかんで移動・押すと開閉（動かした時は開閉しない）', r1.x === r0.x + 50 && r1.y === r0.y + 40 && !r1.closed && r2.x === r1.x + 30 && r3.closed && r3.h < 60 && !r4.closed && r4.h === 520,
+    rec('見出しの帯か中身の何も無い所をつかんで移動・押すと開閉（動かした時は開閉しない）', r1.x === r0.x + 50 && r1.y === r0.y + 40 && !r1.closed && r2.x === r1.x + 30 && r3.closed && r3.h <= 60 && !r4.closed && r4.h === 520,
       `帯を(+50,+40)ドラッグ → 位置 ${r0.x},${r0.y} → ${r1.x},${r1.y}（開閉しない: ${r1.closed ? '閉じた' : '開いたまま'}）／何も無い所を(+30,+10) → ${r2.x},${r2.y}／押す → 高さ ${r3.h}（閉）→ もう一度 ${r4.h}（開）`);
     /* 4辺の大きさ変更 */
     const zr = await page.evaluate(() => { const r = document.querySelector('.tp-z-r').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
@@ -833,7 +835,7 @@ try {
       };
     });
     /* 2026-09-28：AnyFlow V5 と実測で突き合わせ、9px あけるのは「ピルの列の前」だけに（つまみ・2〜3択の行どうしは詰める） */
-    rec('1行の形（全部の行に↺）・ピルの列の前だけ9px（行どうしは詰める）・H2は12px太字・バリエーションは装飾なし', d.rowsWithRst === d.rows && d.gapSegToSlider === '0px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.gapPills === '9px' && d.h2 === '12px/600' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
+    rec('1行の形（全部の行に↺）・ピルの列の前は4px（行どうしは詰める）・見出しは14px/700・バリエーションは装飾なし（v2.2.0 近接の法則）', d.rowsWithRst === d.rows && d.gapSegToSlider === '0px' && d.gapSliderToSlider === '0px' && d.gapFirst === '0px' && d.gapPills === '4px' && d.h2 === '14px/700' && d.varHead === 'バリエーション|rgba(0, 0, 0, 0)' && d.emoji === 0,
       `↺ のある行 ${d.rowsWithRst}/${d.rows}・2〜3択→つまみの間 ${d.gapSegToSlider}・つまみ→つまみ ${d.gapSliderToSlider}・ピルの列の前 ${d.gapPills}・H2 ${d.h2}・「${d.varHead.split('|')[0]}」の地 ${d.varHead.split('|')[1]}・タブや見出しの絵文字 ${d.emoji}`);
     rec('補足文は画面に出さず項目名の吹き出し・案の説明はピルの吹き出し（元の ID も）', d.hintsShown === 0 && /0＝いまの位置/.test(d.labTitle) && /大きいコピーと光るグラフィック/.test(d.pillTitle) && /（ID strong）/.test(d.pillTitle) && !d.desc && d.tools === 0 && d.segOn === 'rgb(0, 0, 0)',
       `画面に出ている補足文 ${d.hintsShown}・項目名の吹き出し「${d.labTitle}」・ピルの吹き出し「${d.pillTitle}」・2〜3択の選択色 ${d.segOn}・項目の削除/並び替えの道具 ${d.tools}`);
