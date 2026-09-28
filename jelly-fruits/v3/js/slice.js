@@ -9,7 +9,7 @@ import * as THREE from 'three';
  * 厚み t の円盤。ふちは丸く、上の面は少しだけふくらむ。
  * 返す値: { P（点）, vp（描画の頂点→点）, face（描画の頂点ごと：0＝上の面・1＝下の面・2＝側面）, index }
  */
-export function buildSlice({ M = 96, K = 12, NB = 3, t = 0.16, bevel = 0.05, dome = 0.012 } = {}) {
+export function buildSlice({ M = 96, K = 12, NB = 3, t = 0.16, bevel = 0.06, dome = 0.012 } = {}) {
   const b = Math.min(bevel, t * 0.45);
   const P = [];
   const addP = (x, y, z) => { P.push(x, y, z); return P.length / 3 - 1; };
@@ -30,9 +30,17 @@ export function buildSlice({ M = 96, K = 12, NB = 3, t = 0.16, bevel = 0.05, dom
 
   const vp = [], face = [], idx = [], region = [];
   const addV = (pid, f) => { vp.push(pid); face.push(f); return vp.length - 1; };
+  /* 上の面・下の面の頂点。側面の上の丸みは上の面の模様（皮）、下の丸みは下の面の模様の続きにする。
+     面と丸みの境目の頂点は共有して、なめらかにつなぐ（折り目の光の線を出さない） */
   const topV = top.map(r => r.map(p => addV(p, 0))), topCV = addV(topC, 0);
-  const sideV = side.map(r => r.map(p => addV(p, 2)));
   const botV = bot.map(r => r.map(p => addV(p, 1))), botCV = addV(botC, 1);
+  const last = side.length - 1;
+  const sideV = side.map((r, si) => {
+    if (si === 0) return topV[0];
+    if (si === last) return botV[0];
+    const f = si < NB ? 0 : (si > last - NB ? 1 : 2);
+    return r.map(p => addV(p, f));
+  });
   const quad = (a, b2, c, d, reg) => { idx.push(a, b2, c, a, c, d); region.push(reg, reg); };
   for (let j = 0; j < K - 1; j++) for (let i = 0; i < M; i++) { const i2 = (i + 1) % M; quad(topV[j][i], topV[j][i2], topV[j + 1][i2], topV[j + 1][i], 0); }
   for (let i = 0; i < M; i++) { idx.push(topV[K - 1][i], topV[K - 1][(i + 1) % M], topCV); region.push(0); }
@@ -60,12 +68,14 @@ export const sliceUniforms = {
   uDeep: { value: 0.75 },
   uGlow: { value: 0.16 },
   uT: { value: 0.16 },
-  cSeg: { value: new THREE.Color('#F86A0C') },
-  cSegDeep: { value: new THREE.Color('#F0500F') },
-  cSegLight: { value: new THREE.Color('#F68B1A') },
-  cMem: { value: new THREE.Color('#F4D39A') },
-  cPith: { value: new THREE.Color('#F8C87C') },
-  cRind: { value: new THREE.Color('#F68B1A') },
+  uEnvDiffuse: { value: 0 },
+  cSeg: { value: new THREE.Color('#F86712') },
+  cSegDeep: { value: new THREE.Color('#E33A04') },
+  cSegLight: { value: new THREE.Color('#FA8B2B') },
+  cMem: { value: new THREE.Color('#F6D097') },
+  cBand: { value: new THREE.Color('#F59B2B') },
+  cPith: { value: new THREE.Color('#FBCC87') },
+  cRind: { value: new THREE.Color('#FC9C26') },
   cSide: { value: new THREE.Color('#F97F16') },
   cRed: { value: new THREE.Color('#FF4011') }
 };
@@ -73,8 +83,8 @@ export const sliceUniforms = {
 const GLSL = /* glsl */`
 varying vec3 vU0;
 varying float vFace;
-uniform float uSegN, uDeep, uGlow, uT;
-uniform vec3 cSeg, cSegDeep, cSegLight, cMem, cPith, cRind, cSide, cRed;
+uniform float uSegN, uDeep, uGlow, uT, uEnvDiffuse;
+uniform vec3 cSeg, cSegDeep, cSegLight, cMem, cBand, cPith, cRind, cSide, cRed;
 float sHash(float n) { return fract(sin(n * 127.1) * 43758.5453); }
 float sHash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float sNoise(vec2 x) {
@@ -83,47 +93,73 @@ float sNoise(vec2 x) {
   return mix(mix(sHash2(i), sHash2(i + vec2(1.0, 0.0)), f.x), mix(sHash2(i + vec2(0.0, 1.0)), sHash2(i + vec2(1.0, 1.0)), f.x), f.y);
 }
 float sWrap(float a) { return mod(a + 3.14159265, 6.2831853) - 3.14159265; }
-/* 輪切りの面の模様（p＝上から見た位置、半径1） */
+float sLine(float d, float w, float aa) { return 1.0 - smoothstep(w - aa, w + aa, d); }
+/* 炎の形（中なら正）：r0〜r1 の間で、両はしが細くなる。真ん中の線はゆるく揺れる */
+float sFlame(float r, float u, float seed) {
+  float r0 = 0.1 + 0.28 * sHash(seed + 1.0);
+  float r1 = min(0.84, r0 + 0.3 + 0.32 * sHash(seed + 2.0));
+  float t = clamp((r - r0) / (r1 - r0), 0.0, 1.0);
+  float uc = 0.22 + 0.56 * sHash(seed + 3.0) + 0.22 * (sNoise(vec2(r * 3.4, seed)) - 0.5);
+  float wdt = (0.1 + 0.2 * sHash(seed + 4.0)) * pow(sin(3.14159 * t), 0.6) * (0.7 + 0.6 * sNoise(vec2(r * 6.0, seed + 7.0)));
+  return wdt - abs(u - uc);
+}
+/* 輪切りの面の模様（p＝上から見た位置、半径1）
+   参考画像の色の集まり（実測）：房の地 #F86712 が約半分／明るい所 #FA8B2B が約2割／赤っぽい炎の形 #E33A04 が約1.5割／
+   薄皮の線 #F6D097。形は、ぼかさずに、はっきりした境目で塗り分ける（イラストのような塗り） */
 vec3 sFace(vec2 p) {
   float r = length(p);
   float phi = atan(p.y, p.x);
-  float aa = max(fwidth(r), 0.002) * 1.5;
-  /* 房の境目（不ぞろいな角度・外へ行くほど少し曲がる） */
+  float aa = max(fwidth(r), 0.0015) * 1.2;
+  float segW = 6.2831853 / uSegN;
+  /* 房の境目（不ぞろいな角度・ほぼまっすぐ・外の方で少し曲がる） */
   float dmin = 10.0, segId = 0.0, best = 10.0;
   for (int k = 0; k < 14; k++) {
     if (float(k) >= uSegN) break;
     float fk = float(k);
-    float a0 = fk / uSegN * 6.2831853 + (sHash(fk + 3.0) - 0.5) * 0.32 + 0.4;
-    float bend = (sHash(fk + 11.0) - 0.5) * 0.5;
-    float a = a0 + bend * r * r + 0.04 * sin(r * 9.0 + fk);
-    float d = abs(sWrap(phi - a));
-    float dist = d * r;
-    if (dist < dmin) dmin = dist;
+    float a0 = fk * segW + (sHash(fk + 3.0) - 0.5) * segW * 0.45 + 0.4;
+    float bend = (sHash(fk + 11.0) - 0.5) * 0.35;
+    float kink = (sHash(fk + 17.0) - 0.5) * 0.12 * smoothstep(0.35, 0.75, r);
+    float a = a0 + bend * r * r + kink;
     float s = sWrap(phi - a);
+    dmin = min(dmin, abs(s) * r);
     if (s > 0.0 && s < best) { best = s; segId = fk; }
   }
-  /* 房の中：地の橙に、外へ向かう濃い炎のような模様と、明るい所 */
-  float n1 = sNoise(vec2(r * 3.2, phi * 5.0 + segId * 1.7));
-  float n2 = sNoise(vec2(r * 1.6, phi * 11.0 + segId * 3.1));
-  vec3 col = mix(cSeg, cSegLight, smoothstep(0.55, 0.9, n1) * 0.7);
-  col = mix(col, cSegDeep, smoothstep(0.5, 0.85, n2) * 0.75);
-  col = mix(col, cSegLight, (1.0 - smoothstep(0.0, 0.05, dmin)) * 0.35);
-  /* 小さな点（果汁のつぶ・くぼみ） */
-  vec2 cell = floor(p * 26.0);
-  float dotv = step(0.965, sHash2(cell + 7.0));
-  vec2 cp = (cell + 0.5) / 26.0;
-  float dd = length(p - cp) * 26.0;
-  col = mix(col, cSegDeep * 0.82, dotv * (1.0 - smoothstep(0.08, 0.16, dd)) * 0.9);
-  /* 薄皮の線（クリーム色・細い） */
-  float w = 0.0065 + 0.003 * (1.0 - r);
-  float mem = 1.0 - smoothstep(w - aa, w + aa, dmin);
-  col = mix(col, cMem, mem * smoothstep(0.02, 0.06, r));
-  /* 真ん中 */
-  col = mix(col, cMem, 1.0 - smoothstep(0.02 - aa, 0.035 + aa, r));
-  /* 外から：皮・わたの輪・細い橙の線 */
-  col = mix(col, cSeg, smoothstep(0.918 - aa, 0.918 + aa, r) * (1.0 - smoothstep(0.93 - aa, 0.93 + aa, r)));
-  col = mix(col, cPith, smoothstep(0.93 - aa, 0.93 + aa, r));
-  col = mix(col, cRind, smoothstep(0.968 - aa, 0.968 + aa, r));
+  float u = best / segW;
+  /* 赤っぽい炎の形：房の中に1〜2本、両はしがとがった細長い形（房に沿って外へ伸びる） */
+  float fl = max(sFlame(r, u, segId * 13.7 + 1.0), sFlame(r, u, segId * 13.7 + 5.0) - step(0.45, sHash(segId + 41.0)));
+  float e1 = fwidth(fl) + 0.002;
+  float dark = smoothstep(-e1, e1, fl);
+  /* 明るい所：外側に多い、大きくてなだらかな形 */
+  float f2 = sNoise(vec2(r * 2.2 + segId * 2.93 + 11.0, u * 1.8 + segId * 5.17)) + 0.35 * (r - 0.55);
+  float e2 = fwidth(f2) + 0.003;
+  float light = smoothstep(0.66 - e2, 0.66 + e2, f2) * (1.0 - dark);
+  vec3 col = mix(mix(cSeg, cSegLight, light), cSegDeep, dark);
+  /* 細い筋（果肉のきめ） */
+  float gr = sNoise(vec2(r * 70.0, u * 30.0 + segId * 13.0));
+  col *= 1.0 + 0.06 * (gr - 0.5) * (1.0 - dark);
+  /* 小さなつぶ（濃い点＋片側に明るいふち） */
+  vec2 cell = floor(p * 22.0);
+  float pick = step(0.95, sHash2(cell + 7.0)) * step(0.06, r) * (1.0 - step(0.85, r));
+  vec2 cp = (cell + 0.3 + 0.4 * vec2(sHash2(cell + 1.0), sHash2(cell + 2.0))) / 22.0;
+  vec2 dp = (p - cp) * 22.0;
+  float dotR = 0.14 + 0.1 * sHash2(cell + 5.0);
+  float dd = length(dp * vec2(1.0, 1.35));
+  float ea = fwidth(dd) + 0.01;
+  float dotv = pick * (1.0 - smoothstep(dotR - ea, dotR + ea, dd));
+  float rim = pick * (1.0 - smoothstep(0.0, 0.05 + ea, abs(dd - dotR * 0.8))) * step(0.02, dp.y - dp.x);
+  col = mix(col, cSegDeep * 0.9, dotv * 0.8);
+  col = mix(col, cSegLight, rim * 0.6);
+  /* 薄皮の線（細い・クリーム色。きわが少し濃い）と、真ん中 */
+  float w = 0.0042 + 0.0015 * (1.0 - r);
+  float inSeg = smoothstep(0.02, 0.05, r) * (1.0 - smoothstep(0.855, 0.865, r));
+  col = mix(col, cSegDeep, sLine(dmin, w * 2.4, aa) * 0.18 * inSeg);
+  col = mix(col, cMem, sLine(dmin, w, aa) * inSeg);
+  col = mix(col, cMem, 1.0 - smoothstep(0.018 - aa, 0.03 + aa, r));
+  /* 外から（参考の拡大から実測・半径に対して）：皮 0.065 → わたの輪 0.04 → 明るい橙の帯 0.03 → 房の外側の細い線 */
+  col = mix(col, cBand, smoothstep(0.865 - aa, 0.865 + aa, r));
+  col = mix(col, mix(cMem, cBand, 0.35), sLine(abs(r - 0.865), 0.003, aa));
+  col = mix(col, cPith, smoothstep(0.895 - aa, 0.895 + aa, r));
+  col = mix(col, cRind, smoothstep(0.935 - aa, 0.935 + aa, r));
   return col;
 }
 /* 側面：皮の橙。上のふちが少し明るく、下は少し深い */
@@ -136,7 +172,7 @@ vec3 sSide(vec3 u) {
 
 export function sliceMaterial(envMap) {
   const m = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, metalness: 0, roughness: 0.38, specularIntensity: 0.6,
+    color: 0xffffff, metalness: 0, roughness: 0.38, specularIntensity: 0.1,
     clearcoat: 1, clearcoatRoughness: 0.025, envMap, envMapIntensity: 1,
     transmission: 0, thickness: 0.3, ior: 1.36, attenuationColor: new THREE.Color('#FF5A10'), attenuationDistance: 0.6
   });
@@ -154,8 +190,10 @@ export function sliceMaterial(envMap) {
         'float sNV = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);',
         'diffuseColor.rgb = mix(diffuseColor.rgb, cRed * vec3(0.9, 0.75, 0.7), pow(1.0 - sNV, 1.6) * uDeep);'
       ].join('\n'))
+      /* まわりの光の帯は「ツヤ（映り込み）」だけに使い、色の明るさには足さない（足すと白っぽく飛ぶ） */
+      .replace('#include <lights_fragment_maps>', '#include <lights_fragment_maps>\niblIrradiance *= uEnvDiffuse;')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * uGlow * (0.6 + 0.4 * sNV);');
   };
-  m.customProgramCacheKey = () => 'citrus-slice-1';
+  m.customProgramCacheKey = () => 'citrus-slice-5';
   return m;
 }

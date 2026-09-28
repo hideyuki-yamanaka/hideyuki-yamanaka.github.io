@@ -128,6 +128,26 @@ try {
     localStorage.setItem('anyflow-visrespull-20260928', '1');
   }
 } catch (e) {}
+/* 【2026-09-28 ヒデさん依頼「キービジュアルのコピー＋グラフィックを左右中央に。ノーマル案だけ」】ノーマル案のコピーの位置 X 64→52・グラフィックの位置 X 70→58
+   (かたまりごと 12px 左へ＝左右の余白 114/90 → 102/102)＋コピーの左端も舞台に合わせて縮む(copyBase='stage')。焼き込み・案の値にも入れてある。
+   ブラウザの保存値が前の値のままの所だけ1回入れ替える(自分で変えた値は触らない)。案の控えは保管の箱を直接書き直す。印 anyflow-kv-center-20260928 */
+try {
+  if (!localStorage.getItem('anyflow-kv-center-20260928')) {
+    const _fix = o => { if (!o) return false; let ch = false;
+      if (o.kv) { if (o.kv.copyX === 64) { o.kv.copyX = 52; ch = true; } if (o.kv.copyBase == null) { o.kv.copyBase = 'stage'; ch = true; } }
+      if (o.kvGfx && o.kvGfx.ox === 70) { o.kvGfx.ox = 58; ch = true; }
+      return ch; };
+    const _nrm = ov => ov && ov.kvVar && ov.kvVar.normal;
+    _fix(_nrm(params.gfxVarOverride));
+    const _isN = o => !o || !o.kvVar || o.kvVar === 'normal';
+    if (_isN(params)) _fix(params);
+    const _rawP = localStorage.getItem(PRESET_KEY);
+    if (_rawP) { const _o = JSON.parse(_rawP); if (_fix(_nrm(_o.over))) localStorage.setItem(PRESET_KEY, JSON.stringify(_o)); }
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (_isN(_o) && _fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-kv-center-20260928', '1');
+  }
+} catch (e) {}
 /* 【2026-09-28 ヒデさん依頼「実績のスロットをもう少し早めに止まる感じに」】1桁が止まるまで(sections.results.slotDur)を 1.4→1.0秒(焼き込み・既定)。
    保存値が前の値(1.4)のブラウザは1回だけ入れ替える。自分で変えた値は触らない。スマホの上書き(mb)も同じ。印 anyflow-slotdur-20260928 */
 try {

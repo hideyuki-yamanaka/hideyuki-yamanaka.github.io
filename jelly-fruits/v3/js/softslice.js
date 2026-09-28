@@ -14,7 +14,7 @@ export class SoftSlice {
    * geo.P 元の形（半径1の単位）/ geo.vp 描画の頂点→点 / geo.index 三角形
    * R 大きさ（ワールドの半径）/ at 置く場所 [x, y, z]
    */
-  constructor(geo, R, at) {
+  constructor(geo, R, at, opts = {}) {
     const n = geo.P.length / 3;
     this.n = n; this.R = R;
     this.vp = geo.vp; this.index = geo.index;
@@ -31,48 +31,90 @@ export class SoftSlice {
     this.d = new Float32Array(3 * n);
     this.c = [0, 0, 0]; this.minY = 0;
     this.press = null;
-    this.buildClusters(geo.P);
+    this.buildClusters(geo.P, opts.spacing || 0.3, opts.radius || 0.5);
     this.buildAdj();
+    this.buildThick(geo.P);
   }
 
-  /** 重なり合った部分（上から見て 0.3 おきに、半径 0.45 の円柱で切り取る） */
-  buildClusters(U, spacing = 0.3, radius = 0.45) {
-    const n = this.n, list = [];
-    for (let gx = -1.05; gx <= 1.05; gx += spacing) {
-      for (let gz = -1.05; gz <= 1.05; gz += spacing) {
+  /** 重なり合った部分（上から見て 0.3 おきに、半径 0.5 の円柱）。真ん中ほど重く、ふちへ行くほど軽い重みで入る
+      （重みがなめらかなので、部分の境目に折り目やしわが出ない） */
+  buildClusters(U, spacing = 0.3, radius = 0.5) {
+    const n = this.n, list = [], r2 = radius * radius;
+    for (let gx = -1.05; gx <= 1.051; gx += spacing) {
+      for (let gz = -1.2; gz <= 1.21; gz += spacing) {
         const off = (Math.round((gx + 1.05) / spacing) % 2) * spacing / 2;
         const cx = gx, cz = gz + off;
         if (Math.hypot(cx, cz) > 1.08) continue;
-        const ids = [];
-        for (let i = 0; i < n; i++) if (Math.hypot(U[3 * i] - cx, U[3 * i + 2] - cz) <= radius) ids.push(i);
-        if (ids.length >= 12) list.push(ids);
+        const ids = [], ws = [];
+        for (let i = 0; i < n; i++) {
+          const d2 = (U[3 * i] - cx) ** 2 + (U[3 * i + 2] - cz) ** 2;
+          if (d2 < r2) { const s = 1 - d2 / r2; ids.push(i); ws.push(s * s); }
+        }
+        if (ids.length >= 12) list.push({ ids, ws });
       }
     }
-    /* どの部分にも入らない点が無いように（念のため） */
-    const cover = new Uint8Array(n);
-    for (const ids of list) for (const i of ids) cover[i] = 1;
+    /* どの部分にもほとんど入らない点が無いように（念のため） */
+    const tot = new Float32Array(n);
+    for (const c of list) c.ids.forEach((i, k) => { tot[i] += c.ws[k]; });
     for (let i = 0; i < n; i++) {
-      if (cover[i]) continue;
+      if (tot[i] > 0.05) continue;
       let best = 0, bd = Infinity;
-      list.forEach((ids, k) => { const j = ids[0], d = Math.hypot(U[3 * i] - U[3 * j], U[3 * i + 2] - U[3 * j + 2]); if (d < bd) { bd = d; best = k; } });
-      list[best].push(i);
+      list.forEach((c, k) => { let mx = 0, mz = 0; c.ids.forEach(j => { mx += U[3 * j]; mz += U[3 * j + 2]; }); mx /= c.ids.length; mz /= c.ids.length; const d = Math.hypot(U[3 * i] - mx, U[3 * i + 2] - mz); if (d < bd) { bd = d; best = k; } });
+      list[best].ids.push(i); list[best].ws.push(0.1);
     }
     const q = this.q;
-    this.clusters = list.map(ids => {
-      const m = Uint32Array.from(ids);
-      let bx = 0, by = 0, bz = 0;
-      for (const i of m) { bx += q[3 * i]; by += q[3 * i + 1]; bz += q[3 * i + 2]; }
-      bx /= m.length; by /= m.length; bz /= m.length;
+    this.clusters = list.map(({ ids, ws }) => {
+      const m = Uint32Array.from(ids), w = Float32Array.from(ws);
+      let W = 0, bx = 0, by = 0, bz = 0;
+      for (let k = 0; k < m.length; k++) { const i = m[k], a = w[k]; W += a; bx += a * q[3 * i]; by += a * q[3 * i + 1]; bz += a * q[3 * i + 2]; }
+      bx /= W; by /= W; bz /= W;
       const Aqq = new Float64Array(9);
-      for (const i of m) {
+      for (let k = 0; k < m.length; k++) {
+        const i = m[k], a = w[k];
         const x = q[3 * i] - bx, y = q[3 * i + 1] - by, z = q[3 * i + 2] - bz;
-        Aqq[0] += x * x; Aqq[1] += x * y; Aqq[2] += x * z; Aqq[4] += y * y; Aqq[5] += y * z; Aqq[8] += z * z;
+        Aqq[0] += a * x * x; Aqq[1] += a * x * y; Aqq[2] += a * x * z; Aqq[4] += a * y * y; Aqq[5] += a * y * z; Aqq[8] += a * z * z;
       }
       Aqq[3] = Aqq[1]; Aqq[6] = Aqq[2]; Aqq[7] = Aqq[5];
       const iA = new Float64Array(9);
       inv3(Aqq, iA);
-      return { m, bar: [bx, by, bz], iA, quat: [0, 0, 0, 1], A: new Float64Array(9), L: new Float64Array(9), Rm: new Float64Array(9), T: new Float64Array(9) };
+      return { m, w, W, bar: [bx, by, bz], iA, quat: [0, 0, 0, 1], A: new Float64Array(9), L: new Float64Array(9), Rm: new Float64Array(9), T: new Float64Array(9) };
     });
+  }
+
+  /** 厚みを保つ組（上から見て同じ所にある、上の面と下の面の点どうし） */
+  buildThick(U) {
+    const map = new Map(), n = this.n, q = this.q;
+    for (let i = 0; i < n; i++) {
+      const key = Math.round(U[3 * i] * 2000) + ',' + Math.round(U[3 * i + 2] * 2000);
+      let a = map.get(key);
+      if (!a) map.set(key, a = []);
+      a.push(i);
+    }
+    const pairs = [];
+    for (const ids of map.values()) {
+      if (ids.length < 2) continue;
+      ids.sort((a, b) => U[3 * a + 1] - U[3 * b + 1]);
+      for (let k = 0; k + 1 < ids.length; k++) pairs.push(ids[k], ids[k + 1]);
+      if (ids.length > 2) pairs.push(ids[0], ids[ids.length - 1]);
+    }
+    this.tp = Uint32Array.from(pairs);
+    this.tl = new Float32Array(pairs.length / 2);
+    for (let k = 0; k < this.tl.length; k++) {
+      const a = 3 * pairs[2 * k], b = 3 * pairs[2 * k + 1];
+      this.tl[k] = Math.hypot(q[a] - q[b], q[a + 1] - q[b + 1], q[a + 2] - q[b + 2]);
+    }
+  }
+
+  /** 厚みを保つ（重さでつぶれて、ぺらぺらにならないように） */
+  keepThick(s) {
+    const x = this.x, tp = this.tp, tl = this.tl;
+    for (let k = 0; k < tl.length; k++) {
+      const a = 3 * tp[2 * k], b = 3 * tp[2 * k + 1];
+      const dx = x[a] - x[b], dy = x[a + 1] - x[b + 1], dz = x[a + 2] - x[b + 2];
+      const d = Math.hypot(dx, dy, dz) || 1e-9, c = (d - tl[k]) / d * 0.5 * s;
+      x[a] -= dx * c; x[a + 1] -= dy * c; x[a + 2] -= dz * c;
+      x[b] += dx * c; x[b + 1] += dy * c; x[b + 2] += dz * c;
+    }
   }
 
   buildAdj() {
@@ -123,14 +165,14 @@ export class SoftSlice {
     const x = this.x, q = this.q, g = this.g, cnt = this.cnt, beta = P.stretch;
     g.fill(0); cnt.fill(0);
     for (const cl of this.clusters) {
-      const m = cl.m, A = cl.A, bar = cl.bar;
+      const m = cl.m, w = cl.w, A = cl.A, bar = cl.bar;
       let cx = 0, cy = 0, cz = 0;
-      for (let k = 0; k < m.length; k++) { const j = 3 * m[k]; cx += x[j]; cy += x[j + 1]; cz += x[j + 2]; }
-      cx /= m.length; cy /= m.length; cz /= m.length;
+      for (let k = 0; k < m.length; k++) { const j = 3 * m[k], a = w[k]; cx += a * x[j]; cy += a * x[j + 1]; cz += a * x[j + 2]; }
+      cx /= cl.W; cy /= cl.W; cz /= cl.W;
       A.fill(0);
       for (let k = 0; k < m.length; k++) {
-        const j = 3 * m[k];
-        const px = x[j] - cx, py = x[j + 1] - cy, pz = x[j + 2] - cz;
+        const j = 3 * m[k], a = w[k];
+        const px = (x[j] - cx) * a, py = (x[j + 1] - cy) * a, pz = (x[j + 2] - cz) * a;
         const qx = q[j] - bar[0], qy = q[j + 1] - bar[1], qz = q[j + 2] - bar[2];
         A[0] += px * qx; A[1] += px * qy; A[2] += px * qz;
         A[3] += py * qx; A[4] += py * qy; A[5] += py * qz;
@@ -148,16 +190,19 @@ export class SoftSlice {
         }
       }
       for (let k = 0; k < m.length; k++) {
-        const i = m[k], j = 3 * i;
+        const i = m[k], j = 3 * i, a = w[k];
         const qx = q[j] - bar[0], qy = q[j + 1] - bar[1], qz = q[j + 2] - bar[2];
-        g[j] += T[0] * qx + T[1] * qy + T[2] * qz + cx;
-        g[j + 1] += T[3] * qx + T[4] * qy + T[5] * qz + cy;
-        g[j + 2] += T[6] * qx + T[7] * qy + T[8] * qz + cz;
-        cnt[i]++;
+        g[j] += a * (T[0] * qx + T[1] * qy + T[2] * qz + cx);
+        g[j + 1] += a * (T[3] * qx + T[4] * qy + T[5] * qz + cy);
+        g[j + 2] += a * (T[6] * qx + T[7] * qy + T[8] * qz + cz);
+        cnt[i] += a;
       }
     }
     const n = this.n;
-    for (let i = 0; i < n; i++) { const w = 1 / (cnt[i] || 1); g[3 * i] *= w; g[3 * i + 1] *= w; g[3 * i + 2] *= w; }
+    for (let i = 0; i < n; i++) {
+      if (cnt[i] < 1e-6) { g[3 * i] = x[3 * i]; g[3 * i + 1] = x[3 * i + 1]; g[3 * i + 2] = x[3 * i + 2]; continue; }
+      const w = 1 / cnt[i]; g[3 * i] *= w; g[3 * i + 1] *= w; g[3 * i + 2] *= w;
+    }
     const pr = this.press;
     if (pr && pr.depth > 1e-4) {
       const R = this.R, amp = pr.depth * R, sig2 = (R * 0.35) ** 2;
@@ -246,53 +291,54 @@ export class SoftSlice {
   step(P, bounds, grab) {
     this.forces(P);
     this.updatePress();
-    if (grab) grab.apply(P);
     this.predict();
     this.match(P);
     this.smooth(0.3);
+    this.keepThick(0.8);
+    if (grab) grab.constrain(P);
     this.constrain(P, bounds);
     this.settle();
   }
 }
 
 /* ---------------- つかむ ---------------- */
+/* つまんだ所（上から見て近い所・厚み全部）だけを、指の位置へ動かす。ほかの所は重さで垂れて、
+   部分と部分の間で曲がるので、つまんで持ち上げると、ぐにゃっと折れる。 */
 export class SliceGrab {
-  /** hitIdx＝つかんだ点に近い粒の番号（元の形の上で近い所をまとめて引っぱる） */
+  /** hitIdx＝つかんだ点に近い粒の番号 / target＝行き先 [x, y, z] */
   constructor(b, hitIdx, target, P) {
     this.b = b;
     const q = b.q, n = b.n, R = b.R;
-    const hx = q[3 * hitIdx], hy = q[3 * hitIdx + 1], hz = q[3 * hitIdx + 2];
-    const sa2 = (R * 0.12) ** 2, so2 = (R * 0.32) ** 2, g = 1 - P.pinch;
+    const hx = q[3 * hitIdx], hz = q[3 * hitIdx + 2];
+    const pinch = Math.min(1, Math.max(0, P.pinch));
+    const ra = R * (0.3 - 0.2 * pinch), ra2 = ra * ra;
     const ids = [], ws = [];
-    let sw = 0, so = 0;
-    this.om = new Float32Array(n);
     for (let i = 0; i < n; i++) {
-      const dx = q[3 * i] - hx, dy = q[3 * i + 1] - hy, dz = q[3 * i + 2] - hz, d2 = dx * dx + dy * dy + dz * dz;
-      const w = Math.exp(-d2 / sa2);
-      if (w > 1e-3) { ids.push(i); ws.push(w); sw += w; }
-      const o = g + (1 - g) * Math.exp(-d2 / so2);
-      this.om[i] = o; so += o;
+      const dx = q[3 * i] - hx, dz = q[3 * i + 2] - hz;
+      const w = Math.exp(-(dx * dx + dz * dz) / ra2);
+      if (w > 0.03) { ids.push(i); ws.push(w); }
     }
     this.ids = Uint32Array.from(ids);
-    this.ws = Float32Array.from(ws.map(w => w / sw));
-    const k = n / so;
-    for (let i = 0; i < n; i++) this.om[i] *= k;
+    this.ws = Float32Array.from(ws);
     this.t = target.slice(); this.tv = [0, 0, 0];
+    this.cur = this.mean();
   }
-  apply(P) {
-    const b = this.b, x = b.x, v = b.v, ids = this.ids, ws = this.ws;
-    let ax = 0, ay = 0, az = 0, vx = 0, vy = 0, vz = 0;
-    for (let k = 0; k < ids.length; k++) {
-      const i = 3 * ids[k], w = ws[k];
-      ax += w * x[i]; ay += w * x[i + 1]; az += w * x[i + 2];
-      vx += w * v[i]; vy += w * v[i + 1]; vz += w * v[i + 2];
-    }
-    let fx = P.followK * (this.t[0] - ax) + P.followC * (this.tv[0] - vx);
-    let fy = P.followK * (this.t[1] - ay) + P.followC * (this.tv[1] - vy) + P.gravity;
-    let fz = P.followK * (this.t[2] - az) + P.followC * (this.tv[2] - vz);
-    const m = Math.hypot(fx, fy, fz), lim = 1200;
-    if (m > lim) { fx *= lim / m; fy *= lim / m; fz *= lim / m; }
-    const om = this.om;
-    for (let i = 0; i < b.n; i++) { const o = om[i] * STEP; v[3 * i] += fx * o; v[3 * i + 1] += fy * o; v[3 * i + 2] += fz * o; }
+  mean() {
+    const x = this.b.x, ids = this.ids, ws = this.ws;
+    let ax = 0, ay = 0, az = 0, sw = 0;
+    for (let k = 0; k < ids.length; k++) { const i = 3 * ids[k], w = ws[k]; ax += w * x[i]; ay += w * x[i + 1]; az += w * x[i + 2]; sw += w; }
+    return [ax / sw, ay / sw, az / sw];
+  }
+  constrain(P) {
+    /* 行き先へは、決まった速さまでで近づく（いきなり飛ばない） */
+    const c = this.cur, lim = (P.grabSpeed || 14) * STEP;
+    let dx = this.t[0] - c[0], dy = this.t[1] - c[1], dz = this.t[2] - c[2];
+    const d = Math.hypot(dx, dy, dz);
+    if (d > lim) { dx *= lim / d; dy *= lim / d; dz *= lim / d; }
+    c[0] += dx; c[1] += dy; c[2] += dz;
+    const a = this.mean(), k = P.grabStiff || 0.6;
+    const ex = (c[0] - a[0]) * k, ey = (c[1] - a[1]) * k, ez = (c[2] - a[2]) * k;
+    const x = this.b.x, ids = this.ids, ws = this.ws;
+    for (let j = 0; j < ids.length; j++) { const i = 3 * ids[j], w = ws[j]; x[i] += ex * w; x[i + 1] += ey * w; x[i + 2] += ez * w; }
   }
 }

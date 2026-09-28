@@ -464,8 +464,8 @@ function applyKvCopy() {
     const logo = document.querySelector('.logo'), st = document.getElementById('stage');
     let base = 50;
     const sr = st ? st.getBoundingClientRect() : null;
-    if (sr && sr.left > 1) {
-      base = 50;   /* 広い画面: ステージが中央寄せ → コピーもステージ基準の設計値で中央へ */
+    if (sr && (sr.left > 1 || k.copyBase === 'stage')) {
+      base = 50;   /* 広い画面: ステージが中央寄せ → コピーもステージ基準の設計値で中央へ。【2026-09-28】copyBase='stage'(ノーマル案)はどの幅でもこちら＝グラフィックと一緒に縮むので、左右の余白がどの幅でも同じ */
     } else if (logo && sr) {
       const sc = sr.width > 0 ? (sr.width / 1440) : 1;
       const lr = logo.getBoundingClientRect();
@@ -941,7 +941,12 @@ function sphereAngles() {
   return [a + sp.tilt * Math.PI / 180, a * sp.tumble];
 }
 
+/* 【2026-09-28 ヒデさん依頼「リロードすると惑星の所に白い四角が一瞬見える」】GPU の描画が止まった(context lost)時は台紙を隠して待ち、
+   戻ったら(restored)作り直して描く。止まったまま戻らない時は、Chrome が白い四角を出し続けるので隠したままにする(惑星の画像に差し替えると絵が変わるため) */
+sphereCanvas.addEventListener('webglcontextlost', e => { e.preventDefault(); sphereCanvas.classList.remove('drawn'); sphereGL = null; }, false);
+sphereCanvas.addEventListener('webglcontextrestored', () => { try { initSphere(); renderSphere(); } catch (e) {} }, false);
 function renderSphere() {
+  if (sphereGL && sphereGL.gl.isContextLost && sphereGL.gl.isContextLost()) { sphereCanvas.classList.remove('drawn'); return; }
   if (!sphereGL) {
     if (sphereCanvas.classList.contains('fallback')) {
       const ds = DESIGNS[params.design] || DESIGNS[Object.keys(DESIGNS)[0]];
@@ -968,6 +973,7 @@ function renderSphere() {
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
+  if (!sphereCanvas.classList.contains('drawn') && !gl.isContextLost()) sphereCanvas.classList.add('drawn');   /* 【2026-09-28】1回きちんと描けたら台紙を見せる */
 }
 initSphere();
 
@@ -1650,16 +1656,25 @@ function fit() {
   { const wf = Math.max(0.3, Math.min(1, (w - 160) / 840));
     let f1 = wf, f2 = wf;
     const dv = (params.sections && params.sections.dev) || {};
+    const vcMock = !isMobile && dv.vAlign !== 'group';   /* 【2026-09-28】並べ方=モックを上下中央 */
     if (!isMobile && dv.pinStops !== 'off') {
       const hf = (id, baseH, sc) => { const blk = document.getElementById(id); if (!blk) return 1;
         const hd = blk.querySelector('.dev-center'), inn = blk.querySelector('.dev-blk-in');
         const gap = inn ? (parseFloat(getComputedStyle(inn).rowGap) || 0) : 0;
-        return (h - 176 - (hd ? hd.offsetHeight : 0) - gap) / (baseH * sc); };
+        /* モックを上下中央にする時は、見出し＋間隔の分を上と下の両方に取る(下は見えない余白)＝その分だけ小さく収める */
+        return (h - 176 - (vcMock ? 2 : 1) * ((hd ? hd.offsetHeight : 0) + gap)) / (baseH * sc); };
       f1 = Math.max(0.3, Math.min(f1, hf('devBlock1', 504, dv.dev1Scale != null ? dv.dev1Scale : 1.1)));
       f2 = Math.max(0.3, Math.min(f2, hf('devBlock2', 520, dv.dev2Scale != null ? dv.dev2Scale : 1.1)));
       st.setProperty('--dev2-fit', f2.toFixed(3));
     }
     st.setProperty('--dev1-fit', isMobile ? '1' : f1.toFixed(3));
+    /* 【2026-09-28】並べ方=モックを上下中央: モックの下の見えない余白 = 見出しの高さ ＋ 拡大(×1.1 など)で下へはみ出す分。
+       モックは上端基準で拡大され、下の詰め(負のマージン)は画面幅の縮み(fit)の分だけなので、拡大の分だけ見た目がレイアウトより下へ長い */
+    { const sec = document.getElementById('dev'); if (sec) sec.classList.toggle('dev-vc-mock', vcMock);
+      const spc = (id, baseH, fitK, sc) => { const blk = document.getElementById(id); if (!blk) return; const hd = blk.querySelector('.dev-center');
+        blk.style.setProperty('--dev-vc-spacer', vcMock ? ((hd ? hd.offsetHeight : 0) + baseH * fitK * (sc - 1)).toFixed(1) + 'px' : '0px'); };
+      const s1 = dv.dev1Scale != null ? dv.dev1Scale : 1.1, s2 = dv.dev2Scale != null ? dv.dev2Scale : 1.1;
+      spc('devBlock1', 504, isMobile ? 1 : f1, s1); spc('devBlock2', 520, f2, s2); }
     st.setProperty('--dev-sp-fit', Math.max(0.3, Math.min(1, (w - 32) / 840)).toFixed(3)); }
   /* 【2026-09-09 カンプSP 準拠】スマホの KV は次セクション(Our Vision y741 = section 667 + label 74)の
      直前で切る。設計フレーム DH=780 のままだと下に空白が残り、KV→ビジョンが空きすぎていた。

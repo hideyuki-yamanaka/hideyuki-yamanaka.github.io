@@ -9,16 +9,18 @@ const KV_VARIANTS = [
        グラフィック＝コンプ画像(2倍スクショ 1508×1258 を 774×646 に配置)を画素で測り、球の中心(1009,426.5)・直径227、カゴ(線)の範囲 557×549 に
        自動で寄せた実測値(2026-09-18: 球は完全一致、カゴは 543×566 で平均一致・縦横比は回転位相の差)。 */
     data: { kv: { mainSize: 50, jumpSize: 90, eyebrowSize: 20, copyX: 86, copyY: 24, copyGap: 40, eyebrowDash: true, eyebrowDashW: 40, dashGap: 20,
-                  mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 1.6, eyebrowLayout: 'col' },
+                  mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 1.6, eyebrowLayout: 'col',
+                  copyBase: 'stage' },   /* copyBase=【2026-09-28 ヒデさん依頼・コピー＋グラフィックを左右中央に】コピーの左端も舞台(1440)に合わせて縮む＝どの幅でも左右の余白が同じ */
             kvGfx: { scale: 1, dx: 31.9, dy: 15 }, planet: { scale: 1.004, dx: 31, dy: 45, flat: 1 },
             mesh: { cageR: 2.22, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
   { key: 'strong', name: '強調', tip: '2026-09-17 の調整版(Figma 17435:22386)。コピー 70px/120px・大きいグラフィック(1.21倍)。',
     data: { kv: { mainSize: 72, jumpSize: 120, eyebrowSize: 20, copyX: 0, copyY: 0, copyGap: 32, eyebrowDash: true, eyebrowDashW: 16, dashGap: 10,
-                  mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row' },
+                  mainWeight: 800, mainLh: 1.4, lastWeight: 700, lastLh: 1.2, eyebrowWeight: 500, eyebrowLh: 0, eyebrowLayout: 'row',
+                  copyBase: 'logo' },   /* 強調は今まで通り: 1440以下はヘッダーのロゴの左端に合わせる */
             kvGfx: { scale: 1.21, dx: 148, dy: 184 }, planet: { scale: 1.3, dx: 31, dy: 45, flat: 1 },
             mesh: { cageR: 2.7, size: 0.52, nodes: 32, cageFreq: 2, cageTilt: -11, cageSpin: 0.4, lineAlpha: 0.25, lineWidth: 1.5 } } },
 ];
-const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout'];
+const KV_VAR_KV_KEYS = ['mainSize', 'jumpSize', 'eyebrowSize', 'copyX', 'copyY', 'copyGap', 'eyebrowDash', 'eyebrowDashW', 'dashGap', 'mainWeight', 'mainLh', 'lastWeight', 'lastLh', 'eyebrowWeight', 'eyebrowLh', 'eyebrowLayout', 'copyBase'];
 const KV_VAR_MESH_KEYS = ['cageR', 'size', 'nodes', 'cageFreq', 'cageTilt', 'cageRoll', 'cageYaw', 'cageSpin', 'lineAlpha', 'lineWidth', 'spread', 'msx', 'msy', 'msz', 'mpinch', 'meshShape', 'cageSub', 'cageSubRound', 'cageSubDots'];   /* cageSub/cageSubRound/cageSubDots=【2026-09-28】面を平らなまま割る(案ごとに独立) */
 /* 【2026-09-28】どの案も「面を平らなまま割る」は既定 1(そのまま)・丸み 0・増えた点のドット 出す。案を切り替えた時に前の案の値が残らないよう、案の値に入れておく */
 KV_VARIANTS.forEach(v => { const m = (v.data || {}).mesh; if (m) { if (m.cageSub == null) m.cageSub = 1; if (m.cageSubRound == null) m.cageSubRound = 0; if (m.cageSubDots == null) m.cageSubDots = 1; } });   /* msx/msy/msz/mpinch/meshShape=【2026-09-21】メッシュの形状(横長/縦長/ひし形) */
@@ -1574,6 +1576,10 @@ function buildPanel() {
   note('正面のまま(傾け・重ねなし)で立体感を出す10案(1〜10)と、AI らしい5案(11〜15: 光が縁を走る／オーロラ／スキャン／粒／脈)。案を選ぶと下の「この案の調整」が入れ替わります。配色とも組み合わせられます。');
   sub(catDev, '配色', true, { fixed: true, grp: 'variation' });
   varRowX('devTone', DEV_TONES, () => devToneKey(), v => { params.devTone = String(v); }, { snap: VAR_SNAP.dev, after: () => { applyDevStyle(); renderFrame(); } });
+  /* 【2026-09-28 ヒデさん依頼「モックそのものが上下中央に来る案も作って、既定に」】①②の上下の並べ方(PC・タブレット) */
+  sub(catDev, '並べ方（上下の位置）', true, { fixed: true, grp: 'variation' });
+  optRow('devVAlign', '上下の位置', [['モックを上下中央（見出しはその上）', 'mock'], ['見出し＋モックを上下中央（今まで）', 'group']],
+    () => (sv().dev.vAlign === 'group' ? 'group' : 'mock'), v => { sv().dev.vAlign = v; markDirty(); fit(); renderFrame(); });
   /* 【2026-09-15 ヒデさん指定】案ごとのつまみ。選んでいる案のまとまりだけ出す(syncDevDyn) */
   Object.keys(DEV_DYN_SPEC).forEach(g => {
     const sp = DEV_DYN_SPEC[g];

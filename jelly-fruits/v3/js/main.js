@@ -10,17 +10,17 @@ const TAU = Math.PI * 2, DEG = Math.PI / 180;
 
 /* 調整パネルで触れる値（色は実測・ほかは仮置き） */
 const DEFAULTS = {
-  look: { bg: '#F1F1EF', seg: '#F86A0C', segDeep: '#F0500F', segLight: '#F68B1A', mem: '#F4D39A', pith: '#F8C87C', rind: '#F68B1A', side: '#F97F16', red: '#FF4011' },
-  shape: { size: 58, thick: 0.16, segN: 11, cam: 42 },
-  fx: { deep: 0.75, glow: 0.16, gloss: 0.025, env: 1, shadow: 0.72, blur: 16 },
-  motion: { firm: 3, damp: 1, stretch: 0.2, pinch: 0.85, lift: 0.9, follow: 6, gravity: 1, slide: 1 }
+  look: { bg: '#F1F1EF', seg: '#F86712', segDeep: '#E33A04', segLight: '#FA8B2B', mem: '#F6D097', band: '#F59B2B', pith: '#FBCC87', rind: '#FC9C26', side: '#F97F16', red: '#FF4011', shadow: '#190F00' },
+  shape: { size: 62, thick: 0.16, segN: 11, cam: 42 },
+  fx: { deep: 0.75, glow: 0.16, gloss: 0.025, env: 1, shadow: 0.7, blur: 26 },
+  motion: { firm: 3, damp: 1, stretch: 0.2, bend: 0.5, pinch: 0.85, lift: 0.32, follow: 6, gravity: 1, slide: 1 }
 };
 const params = structuredClone(DEFAULTS);
 
 const canvas = document.querySelector('#stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMapping = THREE.NoToneMapping; /* 色を白っぽくしない（参考の濃い橙のまま出す） */
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.VSMShadowMap;
@@ -28,20 +28,25 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(params.look.bg);
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
 
-/* 明かり：左奥の上から（影は右手前へ伸びる）＋空からのやわらかい光 */
-const key = new THREE.DirectionalLight(0xffffff, 2.4);
+/* 明かり：色がほぼ参考の色のまま出るように、全体をやわらかく照らす（上の面・側面 ≒ 1、下を向いた面 ≒ 0.5）
+   影は左奥の上からの明かりで落とす（影は右手前へ伸びる） */
+const key = new THREE.DirectionalLight(0xffffff, 1.0);
 key.position.set(-5.5, 7, -4);
 key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.camera.left = -6; key.shadow.camera.right = 6; key.shadow.camera.top = 6; key.shadow.camera.bottom = -6;
+key.shadow.mapSize.set(512, 512);
+key.shadow.camera.left = -7; key.shadow.camera.right = 7; key.shadow.camera.top = 7; key.shadow.camera.bottom = -7;
 key.shadow.camera.near = 1; key.shadow.camera.far = 30;
-key.shadow.bias = -0.0004;
+key.shadow.bias = -0.002;
 key.shadow.radius = params.fx.blur;
 key.shadow.blurSamples = 24;
 scene.add(key, key.target);
-scene.add(new THREE.HemisphereLight(0xffffff, 0xdcd6cc, 0.9));
+const fill = new THREE.DirectionalLight(0xffffff, 1.28);
+fill.position.set(0, 3.5, 10);
+scene.add(fill, fill.target);
+scene.add(new THREE.AmbientLight(0xffffff, 1.19));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.37));
 /* 床：影だけ見える透明な床（背景の色そのまま） */
-const floorMat = new THREE.ShadowMaterial({ color: new THREE.Color('#1e1914'), opacity: params.fx.shadow });
+const floorMat = new THREE.ShadowMaterial({ color: new THREE.Color(params.look.shadow), opacity: params.fx.shadow });
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -65,10 +70,11 @@ function stripEnv() {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k), side: THREE.DoubleSide }));
     m.position.set(x, y, z); m.lookAt(0, 0, 0); s.add(m);
   };
-  strip(16, 1.6, -7, 10, -3, 55);
-  strip(12, 1.2, 6, 9, -8, 38);
-  strip(10, 1.0, -2, 7, 9, 26);
-  strip(4, 9, 13, 5, 2, 12);
+  /* 光の帯は、平らな上の面に映らない向き（真後ろの斜め上は空ける）に置く → 曲がった所とふちにだけ、くっきり映る */
+  strip(14, 1.4, -9, 8, 2, 30);
+  strip(12, 1.2, -3, 11, 8, 40);
+  strip(10, 1.0, 9, 6, 3, 20);
+  strip(3, 10, 12, 4, -6, 10);
   const t = pmrem.fromScene(s, 0.01).texture;
   s.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
   return t;
@@ -86,7 +92,7 @@ function makeSlice() {
   const t = clamp(params.shape.thick, 0.04, 0.5);
   geoInfo = buildSlice({ M: innerWidth <= 600 ? 72 : 96, K: innerWidth <= 600 ? 10 : 12, t });
   const R = sliceR();
-  body = new SoftSlice(geoInfo, R, [-0.1 * R, R * 0.6, 0]);
+  body = new SoftSlice(geoInfo, R, [-0.1 * R, R * 0.6, 0], { radius: clamp(params.motion.bend, 0.3, 0.9) });
   const nv = geoInfo.vp.length, g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nv * 3), 3).setUsage(THREE.DynamicDrawUsage));
   const aU0 = new Float32Array(nv * 3);
@@ -102,7 +108,7 @@ function makeSlice() {
   lastShape = shapeKey();
   sync();
 }
-const shapeKey = () => `${params.shape.size}|${params.shape.thick}|${innerWidth <= 600}`;
+const shapeKey = () => `${params.shape.size}|${params.shape.thick}|${params.motion.bend}|${innerWidth <= 600}`;
 function sync() {
   const pos = mesh.geometry.attributes.position.array, vp = geoInfo.vp, x = body.x;
   for (let r = 0; r < vp.length; r++) { const p = 3 * vp[r]; pos[3 * r] = x[p]; pos[3 * r + 1] = x[p + 1]; pos[3 * r + 2] = x[p + 2]; }
@@ -130,10 +136,10 @@ function layout() {
 
 /* ---------- 物理の値 ---------- */
 function physics() {
-  const m = params.motion, w = TAU * Math.max(0.3, m.firm), f = TAU * Math.max(0.5, m.follow);
+  const m = params.motion, w = TAU * Math.max(0.3, m.firm);
   return {
     k: w * w, wobbleDamp: 1.6 / Math.max(0.05, m.damp), stretch: clamp(m.stretch, 0, 0.9),
-    gravity: 30 * Math.max(0, m.gravity), followK: f * f, followC: 2 * 0.9 * f,
+    gravity: 30 * Math.max(0, m.gravity), grabSpeed: 2.4 * Math.max(0.5, m.follow), grabStiff: 0.6,
     pinch: clamp(m.pinch, 0, 1), floorFric: clamp(0.3 / Math.max(0.1, m.slide), 0, 0.95)
   };
 }
@@ -220,12 +226,13 @@ if (window.TunePanel) {
         ]},
         { sub: '色', grp: 'fxtex', items: [
           { color: '背景', path: 'look.bg', hint: '実測 #F1F1EF。' },
-          { color: '房', path: 'look.seg', hint: '実測 #F86A0C。' },
-          { color: '房の濃い所', path: 'look.segDeep', hint: '実測 #FA5C0F 前後。' },
-          { color: '房の明るい所', path: 'look.segLight', hint: '実測 #F68B1A 前後。' },
-          { color: '薄皮の線', path: 'look.mem', hint: '線が細く実測できず、仮置き。' },
-          { color: 'わたの輪', path: 'look.pith', hint: '実測 #F8C87C。' },
-          { color: '皮', path: 'look.rind', hint: '実測 #F68B1A。' },
+          { color: '房', path: 'look.seg', hint: '房の地の色。実測 #F86712（面の約半分）。' },
+          { color: '房の炎の形', path: 'look.segDeep', hint: '赤っぽい炎のような形。実測 #E33A04（面の約1.5割）。' },
+          { color: '房の明るい所', path: 'look.segLight', hint: '実測 #FA8B2B（面の約2割）。' },
+          { color: '薄皮の線', path: 'look.mem', hint: '実測 #F6D097。' },
+          { color: '外側の帯', path: 'look.band', hint: 'わたの輪のすぐ内側の、明るい橙の帯。実測 #F59B2B。' },
+          { color: 'わたの輪', path: 'look.pith', hint: '実測 #FBCC87。' },
+          { color: '皮', path: 'look.rind', hint: '実測 #FC9C26。' },
           { color: '側面', path: 'look.side', hint: '実測 #F97F16。' },
           { color: 'ふちの赤', path: 'look.red', hint: '折れて厚く見える所の色。実測 #FF4011。' }
         ]},
@@ -236,16 +243,18 @@ if (window.TunePanel) {
           { slider: '映り込み', path: 'fx.env', min: 0, max: 3, step: 0.05, fmt: 'x', hint: 'まわりの光の帯の映り込みの強さ。' }
         ]},
         { sub: '影', grp: 'fxtex', items: [
-          { slider: '濃さ', path: 'fx.shadow', min: 0, max: 1, step: 0.01, fmt: 'n2', clamp: true, hint: '床に落ちる影の濃さ（参考画像の中心は #5A5348）。' },
-          { slider: 'ぼかし', path: 'fx.blur', min: 1, max: 40, step: 1, fmt: 'int', hint: '影のふちのやわらかさ。' }
+          { color: '色', path: 'look.shadow', hint: '影の色（濃さ 0.7 で、参考画像の影のまん中 #5A5348 になる色）。' },
+          { slider: '濃さ', path: 'fx.shadow', min: 0, max: 1, step: 0.01, fmt: 'n2', clamp: true, hint: '床に落ちる影の濃さ。' },
+          { slider: 'ぼかし', path: 'fx.blur', min: 1, max: 60, step: 1, fmt: 'int', hint: '影のふちのやわらかさ。' }
         ]},
         { sub: 'ぷるぷる', grp: 'anim', items: [
           { slider: '硬さ', path: 'motion.firm', min: 0.5, max: 8, step: 0.1, unit: 'Hz', hint: '1秒に何回揺れるか。下げるほど、ぐにゃっと折れやすい。' },
           { slider: '揺れの減り', path: 'motion.damp', min: 0.1, max: 3, step: 0.05, fmt: 'x', hint: '揺れが止まるまでの長さ。' },
-          { slider: '伸びやすさ', path: 'motion.stretch', min: 0, max: 0.9, step: 0.05, fmt: 'n2', clamp: true, hint: 'むにっと伸び縮みする量。' }
+          { slider: '伸びやすさ', path: 'motion.stretch', min: 0, max: 0.9, step: 0.05, fmt: 'n2', clamp: true, hint: 'むにっと伸び縮みする量。' },
+          { slider: '曲がりのなだらかさ', path: 'motion.bend', min: 0.3, max: 0.9, step: 0.05, fmt: 'n2', hint: '大きいほど、広い範囲でゆるやかに曲がる。小さいと、つまんだ所だけ急に折れる。手を離すと作り直します。' }
         ]},
         { sub: 'つかんだ時', grp: 'anim', items: [
-          { slider: '持ち上げる高さ', path: 'motion.lift', min: 0, max: 2, step: 0.05, fmt: 'x', hint: 'つまんだ所が持ち上がる高さ（半径の何倍か）。' },
+          { slider: '持ち上げる高さ', path: 'motion.lift', min: 0, max: 2, step: 0.01, fmt: 'x', hint: 'つまんだ所が持ち上がる高さ（半径の何倍か）。参考画像の画面の表示は LIFT 0.32。' },
           { slider: 'つまむ所の狭さ', path: 'motion.pinch', min: 0, max: 1, step: 0.01, fmt: 'n2', clamp: true, hint: '上げるほど、つまんだ所だけが持ち上がって、ほかは垂れる（折れる）。' },
           { slider: '追従', path: 'motion.follow', min: 1, max: 16, step: 0.5, unit: 'Hz', hint: '指にどれだけ速くついてくるか。' }
         ]},
@@ -255,7 +264,7 @@ if (window.TunePanel) {
         ]}
       ]}
     ],
-    onSettle: info => { if (info && (info.path === 'shape.size' || info.path === 'shape.thick' || info.reset || info.imported)) makeSlice(); if (info && info.path === 'shape.cam') layout(); }
+    onSettle: info => { if (info && (info.path === 'shape.size' || info.path === 'shape.thick' || info.path === 'motion.bend' || info.reset || info.imported)) makeSlice(); if (info && info.path === 'shape.cam') layout(); }
   });
 }
 
@@ -278,13 +287,14 @@ function loop(now) {
   const L = params.look;
   scene.background.set(L.bg);
   sliceUniforms.cSeg.value.set(L.seg); sliceUniforms.cSegDeep.value.set(L.segDeep); sliceUniforms.cSegLight.value.set(L.segLight);
-  sliceUniforms.cMem.value.set(L.mem); sliceUniforms.cPith.value.set(L.pith); sliceUniforms.cRind.value.set(L.rind);
+  sliceUniforms.cMem.value.set(L.mem); sliceUniforms.cBand.value.set(L.band); sliceUniforms.cPith.value.set(L.pith); sliceUniforms.cRind.value.set(L.rind);
   sliceUniforms.cSide.value.set(L.side); sliceUniforms.cRed.value.set(L.red);
   sliceUniforms.uSegN.value = clamp(Math.round(params.shape.segN), 6, 14);
   sliceUniforms.uDeep.value = params.fx.deep; sliceUniforms.uGlow.value = params.fx.glow;
   mat.clearcoatRoughness = clamp(params.fx.gloss, 0, 1);
   mat.envMapIntensity = Math.max(0, params.fx.env);
   floorMat.opacity = clamp(params.fx.shadow, 0, 1);
+  floorMat.color.set(L.shadow);
   key.shadow.radius = Math.max(1, params.fx.blur);
   renderer.render(scene, camera);
   requestAnimationFrame(loop);

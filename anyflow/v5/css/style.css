@@ -569,6 +569,11 @@
     position: absolute; left: 176.06px; top: -17.68px; width: 520px; height: 520px;
     z-index: 1; pointer-events: none; transform-origin: 50% 50%; opacity: 0;
   }
+  /* 【2026-09-28 ヒデさん依頼「リロードすると惑星の所に白い四角が一瞬見える」】惑星の台紙(WebGL)は、1回きちんと描けるまで見せない。
+     Chrome は GPU の描画が止まった・まだ届いていない台紙を白い四角(困り顔のマーク付き)で出すことがあり、それが惑星の所に見えていた。
+     描けたら .drawn を付けて見せる。描画が止まったら外して隠し、戻ったら描き直してまた見せる(06-sections.js initSphere) */
+  #sphere { visibility: hidden; }
+  #sphere.drawn, #sphere.fallback { visibility: visible; }
   #sphere.fallback {
     background-size: 230px 230px;
     background-position: center;
@@ -1447,6 +1452,11 @@
     flex-direction: column; align-items: center; justify-content: center;
     gap: var(--dev-blk-gap, var(--space-56)); padding: var(--space-88) var(--space-120); box-sizing: border-box;
   }
+  /* 【2026-09-28 ヒデさん依頼「見出し＋モックではなく、モックそのものが上下中央に来る案も。既定に」】並べ方=モック(#dev.dev-vc-mock・PCとタブレット)。
+     モックの下に「見出しの高さ＋拡大ではみ出す分」の見えない余白(--dev-vc-spacer・JS の fit() が測って入れる)を置く＝
+     かたまり(見出し・間隔・モック・間隔・余白)の真ん中＝モックの見た目の真ん中＝画面の真ん中。間隔は見出し側と同じ(flex の gap) */
+  html:not(.mb) #dev.dev-pin.dev-vc-mock .dev-blk-in::after,
+  html:not(.mb) #dev:not(.dev-pin).dev-vc-mock .dev-block::after { content: ''; display: block; flex: 0 0 auto; height: var(--dev-vc-spacer, 0px); }
   /* 【2026-09-20 ヒデさん依頼・#10】開発者体験①②それぞれ 見出し↔モックの間隔(--devN-gap)とモックの拡大(--devN-scale)。PCのみ(SPは別scale) */
   html:not(.mb) #devBlock1 { --dev-blk-gap: var(--dev1-gap, 36px); }
   html:not(.mb) #devBlock2 { --dev-blk-gap: calc(var(--dev2-gap, 36px) - 8px * var(--dev2-scale, 1.1)); }   /* 【2026-09-26 ヒデさん指摘・①と揃える根治】②は束(高さ520)の中で正面カード(504)が上下8pxずつ内側。その8px×拡大ぶんを引く＝設定値がそのまま「見出し→正面カードの見た目の間隔」(①と同じ意味)。下の束は上端基準で拡大 */
