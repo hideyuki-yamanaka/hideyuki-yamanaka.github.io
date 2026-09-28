@@ -2327,7 +2327,7 @@ function applyCvfGlass() {
   set('--cvf-r', g.radius != null ? g.radius : 20, 'px');     /* 2026-09-18: フォームの角丸 */
   set('--cvf-in-r', g.inR != null ? g.inR : 10, 'px');       /* 2026-09-18: 入力欄の角丸 */
   /* 【2026-09-18 ヒデさん依頼】枠線(カード/入力欄)の色系・太さ・濃さ、プレースホルダーの色系 */
-  set('--cvf-bw', g.bw != null ? g.bw : 1, 'px'); set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');
+  set('--cvf-bw', g.bw != null ? g.bw : 2, 'px');   /* 【2026-09-28 夜】既定 1→2px(内側の白い線をやめた分。今と同じ見た目) */ set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');
   set('--cvf-in-bw', g.inBw != null ? g.inBw : 1, 'px'); set('--cvf-in-bc', 'rgba(' + (g.inBDark ? '0,0,0' : '255,255,255') + ',' + (g.inBa != null ? g.inBa : 0.72) + ')', '');
   set('--cvf-ph-rgb', g.phDark === false ? '255,255,255' : '0,0,0', '');
   /* 【2026-09-28 夜 ヒデさん依頼「お問い合わせフォームの上下左右の余白も変えられるように。左右は今よりもう少し広めに」】カードの内側の余白。
@@ -13701,8 +13701,8 @@ function buildPanel() {
       /* 【2026-09-27 ヒデさん依頼】見出しとくり返す言い方をやめ、同じ言葉で始まる項目は小見出しにまとめる(フォーム＝カード本体→枠線→入力欄→入力欄の枠線→プレースホルダー) */
       subgroup('枠線', () => {
       optRow('cvfCardBorder', '色', [['白系', 'w'], ['黒系', 'k']], () => (_g().bDark ? 'k' : 'w'), v => { _g().bDark = v === 'k'; applyCvfGlass(); });
-      rows.push(slider('太さ', 0, 4, 0.5, () => (_g().bw != null ? _g().bw : 1), v => { _g().bw = v; applyCvfGlass(); }, v => v.toFixed(1) + 'px', 'フォームのカードの外枠の線の太さ。0で線なし。', { mbKey: 'cvfGlass.bw', fixedMax: true }));
-      rows.push(slider('濃さ', 0, 1, 0.02, () => (_g().ba != null ? _g().ba : 0.66), v => { _g().ba = v; applyCvfGlass(); }, v => Math.round(v * 100) + '%', '外枠の線の不透明度。', { mbKey: 'cvfGlass.ba', fixedMax: true }));
+      rows.push(slider('太さ', 0, 6, 0.5, () => (_g().bw != null ? _g().bw : 2), v => { _g().bw = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(1) + 'px', 'フォームのカードの外枠の線の太さ。0で線なし。既定2px。', { mbKey: 'cvfGlass.bw', fixedMax: true }));
+      rows.push(slider('濃さ', 0, 1, 0.02, () => (_g().ba != null ? _g().ba : 0.66), v => { _g().ba = v; applyCvfGlass(); markDirty(); }, v => Math.round(v * 100) + '%', '外枠の線の不透明度。0で線なし。', { mbKey: 'cvfGlass.ba', fixedMax: true }));
       });
       /* 【2026-09-28 夜】入力欄の「白さ」はエフェクト › フォーム（磨りガラス）› 入力欄 › 不透明度 へ引っ越し。残る1つだけなので小見出しをやめた */
       rows.push(slider('入力欄の角丸', 0, 30, 1, () => (_g().inR != null ? _g().inR : 10), v => { _g().inR = v; applyCvfGlass(); }, v => Math.round(v) + 'px', '入力欄・セレクトの角の丸さ。', { mbKey: 'cvfGlass.inR', fixedMax: true }));

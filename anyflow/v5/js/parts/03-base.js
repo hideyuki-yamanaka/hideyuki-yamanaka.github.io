@@ -1243,7 +1243,7 @@ function applyCvfGlass() {
   set('--cvf-r', g.radius != null ? g.radius : 20, 'px');     /* 2026-09-18: フォームの角丸 */
   set('--cvf-in-r', g.inR != null ? g.inR : 10, 'px');       /* 2026-09-18: 入力欄の角丸 */
   /* 【2026-09-18 ヒデさん依頼】枠線(カード/入力欄)の色系・太さ・濃さ、プレースホルダーの色系 */
-  set('--cvf-bw', g.bw != null ? g.bw : 1, 'px'); set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');
+  set('--cvf-bw', g.bw != null ? g.bw : 2, 'px');   /* 【2026-09-28 夜】既定 1→2px(内側の白い線をやめた分。今と同じ見た目) */ set('--cvf-bc', 'rgba(' + (g.bDark ? '0,0,0' : '255,255,255') + ',' + (g.ba != null ? g.ba : 0.66) + ')', '');
   set('--cvf-in-bw', g.inBw != null ? g.inBw : 1, 'px'); set('--cvf-in-bc', 'rgba(' + (g.inBDark ? '0,0,0' : '255,255,255') + ',' + (g.inBa != null ? g.inBa : 0.72) + ')', '');
   set('--cvf-ph-rgb', g.phDark === false ? '255,255,255' : '0,0,0', '');
   /* 【2026-09-28 夜 ヒデさん依頼「お問い合わせフォームの上下左右の余白も変えられるように。左右は今よりもう少し広めに」】カードの内側の余白。

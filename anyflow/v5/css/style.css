@@ -683,7 +683,9 @@
     --radius-full:50%; --radius-input:10px; --radius-form:20px;   /* 2026-09-19 整理②: フォームの入力欄・送信ボタン / フォームの箱(調整パネル --cvf-r / --cvf-in-r の既定) */   /* 2026-09-09: --radius-pill(999px) は未使用のため削除 */
     /* 影 */
     --shadow-mock-panel:0 22px 48px rgba(0,0,0,.2), inset 1px 1px 2px rgba(255,255,255,.2);
-    --shadow-form:0 20px 60px rgba(20,30,60,.14), inset 0 0 0 1px var(--glass-60);   /* 2026-09-19 整理②: お問い合わせフォームの浮き。【2026-09-28 夜 ヒデさん依頼「枠線が上だけ白く光って横は無いように見える→均一に」】内側の白い線を上だけ(inset 0 1px 0)→四辺そろえて(inset 0 0 0 1px)。外枠の線(1px 白66%)と合わせて、どの辺も同じ太さ・明るさに */
+    --shadow-form:0 20px 60px rgba(20,30,60,.14);   /* 2026-09-19 整理②: お問い合わせフォームの浮き。
+       【2026-09-28 夜】❌ 内側の白い線(inset)を四辺そろえて足したら、つまみ(枠線の太さ・濃さ)と関係ない線が残り「つまみが効かない」ように見えた(ヒデさん報告)。
+       → 内側の線はやめ、枠線1本だけにした(太さ・濃さ・色は全部つまみで変わる)。今と同じ見た目になるよう、枠線の既定の太さを 1→2px に */
     --shadow-lift:0 22px 44px rgba(16,24,40,calc(.12 * var(--cg-sh, 1)));   /* 2026-09-19 整理②: 導入事例カードのホバーの浮き(濃さは --cg-sh) */
     /* ぼかし */
     --blur-panel:75px; --blur-glass:20px; --blur-drawer:30px;   /* 2026-09-19 整理②: ヘッダーのガラス / メニューの地(26→30 に寄せた) */
@@ -2184,7 +2186,7 @@
   /* --- fst-1 リキッドグラス(明): 磨りガラスの白カード。背景グラデが透ける(既定) --- */
   /* 【2026-09-17 ヒデさん依頼】フォームカードの地色の白さ・ぼかし・彩度をパネルから調整可能に(--cvf-bg-a/--cvf-blur/--cvf-sat)。
      背景に白が来た時の白飛び対策として、白さを下げたり彩度を上げたりできる。 */
-  #conversion.fst-1 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(var(--cvf-bg-rgb, 255,255,255), var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 20px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 20px)) saturate(var(--cvf-sat, 1.5)); border: var(--cvf-bw, 1px) solid var(--cvf-bc, var(--glass-72)); box-shadow: var(--shadow-form); }
+  #conversion.fst-1 .cv-form { padding: var(--space-32) var(--space-32); border-radius: var(--radius-form); background: rgba(var(--cvf-bg-rgb, 255,255,255), var(--cvf-bg-a, .5)); -webkit-backdrop-filter: blur(var(--cvf-blur, 20px)) saturate(var(--cvf-sat, 1.5)); backdrop-filter: blur(var(--cvf-blur, 20px)) saturate(var(--cvf-sat, 1.5)); border: var(--cvf-bw, 2px) solid var(--cvf-bc, var(--glass-72)); box-shadow: var(--shadow-form); }
   #conversion.fst-1 .cvf-in { background: rgba(255,255,255, var(--cvf-in-a, .56)); border-color: var(--cvf-in-bc, var(--glass-72)); }
   /* 【2026-09-28 夜 ヒデさん依頼】入力欄の背景ぼかし(調整パネル「エフェクト › フォーム（磨りガラス）› 入力欄 › 背景ぼかし」)。0 の時は付けない(今までどおり) */
   #conversion.cvf-inblur .cv-form .cvf-in { -webkit-backdrop-filter: blur(var(--cvf-in-blur, 0px)); backdrop-filter: blur(var(--cvf-in-blur, 0px)); }

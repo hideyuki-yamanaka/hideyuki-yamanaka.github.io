@@ -88,17 +88,21 @@
 
 ### 🧹 消してよい古いブランチ（役目を終えたもの）
 
-`abashiri-v1.0` と `main` 以外は、ヒデさんの判断で消してよい。
-⚠️ **この環境（Claude Code Remote）からはブランチ削除ができない**（`git push --delete` が
+削除厳禁の表のブランチと `main` 以外は、ヒデさんの判断で消してよい。
+⚠️ **Claude Code Remote（クラウド）からはブランチ削除ができない**（`git push --delete` が
 403 で弾かれる）。消す時は GitHub の Branches 画面か、ヒデさんのローカルから実行する。
+
+**2026-09-28 の断捨離で、この表にあった5本を含む GitHub 上の11本と、手元の28本（`claude/〜` と `release/v2.0`）を消した。**
+戻す時の名前と番号の控え: `~/Developer/_backups/cleanup-2026-09-28.txt`（`git branch <名前> <番号>` で戻せる）
+
+いま残している、凍結以外のブランチ（2026-09-28 時点）:
 
 | ブランチ | 状態 |
 |---|---|
-| `restore-abashiri-before-design-system` | 役目終了（2026-08-16 にヒデさん確認済み） |
-| `claude/laughing-maxwell` / `claude/tender-bartik` | 過去の自動ブランチ。本番未反映トラブルの元 |
-| `claude/design-system-figma-docs-toi8q2` | 今回の作業ブランチ。main に統合済み |
-| `claude/abashiri-speech-bubble-animation-rrs13o` | 統合済みなら不要 |
-| `release/v2.0` | 中身を確認してから判断 |
+| `restore-anyflow-v3-before-design-system` | AnyFlow V3 の戻し用。古い版は全部残す判断（2026-09-28 ヒデさん）なので残す |
+| `restore-anyflow-v5-before-design-system` / `anyflow-v5-backup-20260920` | AnyFlow V5 の最近の戻し用 |
+| `claude/backdrop-filter-effect-tafpv7` | AnyFlow V2 の KV 案I（すりガラス）の作りかけ。main に入っていない |
+| `backup-2026-08-17`（手元だけ） | 使わなかった高画質の流氷動画2本だけが入っている |
 
 ## 🚀 各プロジェクトの本番 URL とデプロイ先
 
