@@ -98,7 +98,7 @@
   /* 【2026-09-17 ヒデさん指定】ロゴは常に縦横比を保つ＝高さ基準＋width:auto。縮小案も transition は height だけ動かし、
      幅は比率で自動追従(=どのフレームでも潰れない)。自然サイズ 255×47(比 5.426)。 */
   .header .logo { position: relative; }
-  .header .logo img { height: 47px; width: auto; display: block; }   /* 4-7例外（ロゴ画像の実寸 255×47） */
+  .header .logo img { height: var(--hdr-logo-base, 47px); width: auto; display: block; }   /* 4-7例外（ロゴ画像の実寸 255×47）。【2026-09-30 ヒデさん依頼】高さは調整パネル「キービジュアル › 基本 › ヘッダー › ロゴの大きさ」(--hdr-logo-base・PC とスマホで別の値) */
   /* 白版ロゴ(反転用)は色版の上に重ねてクロスフェード。色版がフローで箱サイズを決め、白版は絶対配置で追従(morph の height 補間は両方に効く) */
   .header .logo .logo-w { position: absolute; top: 0; left: 0; opacity: 0; pointer-events: none; }
   .nav { display: flex; align-items: center; gap: var(--space-32); }
@@ -164,7 +164,7 @@
     border: var(--hdr-skin-border, 0 solid transparent);
   }
   html:not(.mb).hdr-follow .header .logo img {
-    height: calc(47px - (47px - var(--hdr-logo-h, 47px)) * var(--hdr-t, 0)); width: auto;   /* 高さのみ補間＝比率固定で潰れない */
+    height: calc(var(--hdr-logo-base, 47px) - (var(--hdr-logo-base, 47px) - var(--hdr-logo-h, var(--hdr-logo-base, 47px))) * var(--hdr-t, 0)); width: auto;   /* 高さのみ補間＝比率固定で潰れない(元の高さは --hdr-logo-base) */
   }
   /* 少しでもスクロールしたら KVイントロ(rv)の opacity/blur/transform を打ち消して必ず可視に */
   html:not(.mb).hdr-follow .header.hdr-stuck { opacity: 1 !important; filter: none !important; transform: none !important; }
@@ -228,6 +228,16 @@
   /* 【2026-09-18 ヒデさん指定】メニューのお問い合わせ＝ヘッダーと同じマーキーCTA(.cta)。暗い地に溶けないよう白黒反転(白地・黒文字)、ホバーはヘッダーと同じシアン */
   .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-24); font-family: var(--font-jp); font-size: 24px; line-height: 1; gap: 0; align-items: center; background: var(--surface-white); color: var(--ink-strong); width: 400px; height: 60px; transition: background-color var(--t-move) var(--e-out), color var(--t-move) var(--e-out); }   /* 特異性を .drw-3 の a より上げる。【2026-09-21 ヒデさん依頼】提供できること(424px)くらいの幅＋サイズUP。色はなめらかに切替(ホバー戻りのちらつき対策) */
   .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta:hover { background: var(--brand-cyan); color: var(--ink-on-dark); }
+  /* 【2026-09-30 ヒデさん依頼「スマホメニューのお問い合わせ: 流れる文字同士の左右の間をもうちょっと詰めたい・左右の溶け込むグラデーションをもう少し増やしたい。調整パネルでも」】
+     メニューの中のボタンだけ(ヘッダー・フォームのボタンは今のまま)。値は調整パネル「ハンバーガーメニュー › お問い合わせボタン（流れる文字）」(PC とスマホで別の値)。
+     スマホ 間 12px・溶け込み 13px(＝PC と同じ見た目の割合「文字の約0.7個分」。一度 36px にしたが PC より強かった・⚠️仮置き)。PC は値を入れるまで今のまま(間 0.9文字・溶け込み 5%) */
+  .hdr-drawer .hdr-drawer-cta .cta-copy { padding-right: var(--dr-cta-gap, .9em); }
+  /* 【2026-09-30 ヒデさん依頼「スマホメニューのお問い合わせボタンの左右のパディングをもうちょっと増やして。ホバーした時に矢印がボタンの外へはみ出る」】
+     左右の余白も同じつまみの欄で(スマホ 左24・右20px・⚠️仮置き)。値が無ければ今の余白(PC 左20・右16 ／ スマホは下の @media の 左16・右12) */
+  .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { padding-left: var(--dr-cta-pl, var(--space-20)); padding-right: var(--dr-cta-pr, var(--space-16)); gap: var(--dr-cta-agap, 0px); }   /* 【2026-09-30 ヒデさん「矢印の左の、文字が白へ溶ける所の白い領域を PC と同じ感じに増やして」】文字の窓と矢印の間(スマホ 12px・PC は 0 のまま＝PC は矢印の箱の中に 4px の余白がある。4px では「あまり変わってない」だったので 12px に) */
+  .hdr-drawer .hdr-drawer-cta .cta-window {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--dr-cta-fade, 5%), #000 calc(100% - var(--dr-cta-fade, 5%)), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 var(--dr-cta-fade, 5%), #000 calc(100% - var(--dr-cta-fade, 5%)), transparent 100%); }
   .cvf-in option { font-weight: inherit; }   /* 2026-09-18: セレクトの選択肢も入力欄と同じ太さ(300) */
   /* ===== 【V5.0 2026-09-17 ヒデさん依頼】ハンバーガーを押した先の画面 3案(drw-1/2/3) ===== */
   /* 1: フルスクリーン中央・すりガラス(既定) — base のまま */
@@ -445,7 +455,7 @@
     .cta, .cv-btn, .cta .cta-arrow svg, .cv-btn .cta-arrow svg,
     .cta .cta-reel, .cv-btn .cta-reel { transition: none; }
     .cta .cta-track, .cv-btn .cta-track { animation: none; }
-    .cta .cta-window, .cv-btn .cta-window { -webkit-mask-image: none; mask-image: none; }
+    .cta .cta-window, .cv-btn .cta-window, .hdr-drawer .hdr-drawer-cta .cta-window { -webkit-mask-image: none; mask-image: none; }   /* 2026-09-30 メニューのボタンも(動きを止める設定の時は溶け込みなし) */
     .cta .cta-group:nth-child(2), .cta .cta-copy:nth-child(2),
     .cv-btn .cta-group:nth-child(2), .cv-btn .cta-copy:nth-child(2) { display: none; }
     .cta .cta-copy, .cv-btn .cta-copy { padding: 0; }
@@ -1255,7 +1265,7 @@
   html.mb #results.rfx-24 .res2-hr-top { margin: var(--space-4) 0 44px; }   /* 【2026-09-21 Y9】for SaaS 上の線の下余白(既定56px)を他の線(vline/res2-hr=4px)と統一＝各ボックス上下の余白を揃える(SPのみ・PCは非表示) */   /* 【2026-09-21 ヒデさん依頼】線→for SaaS の見た目余白を約60pxに(下margin 4→46) */
   html.mb #results.rfx-24 .res2-top { order: 2; /* 【2026-09-19 ヒデさん依頼】数値の実績はピクトの後 */ display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-20); padding-top: 0; }   /* 【2026-09-16】V3.0: 見出し・数値を先頭に。【2026-09-21 ヒデさん依頼】線→事業の推進力見出しの余白を他の線と統一(24px→20px。padding-top 4px を除去) */
   html.mb #results.rfx-24 .res2-head { flex-direction: row; flex-wrap: nowrap; white-space: nowrap; justify-content: center; align-items: baseline; align-self: stretch; font-size: 18px; line-height: var(--lh-loose); }   /* 【2026-09-20 ヒデさん依頼】「事業の推進力を、Anyflowが支えます。」を1行に(折り返さないようフォントを18pxへ縮小)。旧: 22px 2行 */
-  html.mb #results.rfx-24 .res2-stats { flex-wrap: wrap; gap: var(--space-20) var(--space-16); justify-content: flex-start; width: 100%; }   /* 【2026-09-20 ヒデさん依頼】4項目は 2×2 で */
+  html.mb #results.rfx-24 .res2-stats { flex-wrap: wrap; gap: var(--space-20) var(--space-16); justify-content: flex-start; width: min(100%, var(--r2s-w-mb, 288px)); align-self: center; }   /* 【2026-09-30 ヒデさん依頼「スマホのコンテンツ間の左右のギャップが空きすぎ。導入企業と連携実績・連携アプリ数と iPaaS サービスの中央のギャップを詰める」】2×2 のまとまりの幅 342→288px にして真ん中へ(列が内へ寄る・⚠️仮置き)。調整パネル「実績 › 基本 › 数値の実績（スマホ） › 並びの幅」 */   /* 【2026-09-20 ヒデさん依頼】4項目は 2×2 で */
   html.mb #results.rfx-24 .res2-stats .r2s { flex: 0 0 calc(50% - var(--space-16) / 2); box-sizing: border-box; align-items: center; text-align: center; }   /* 【2026-09-20 ヒデさん依頼】SP は見出し＋数値を中央揃え */   /* 2列 */   /* 【2026-09-16】V3.0: 3つ横1列(数値がV3より数px広いので gap14・nowrapで確実に1列) */
   html.mb #results.rfx-24 .res2-stats .r2s span { font-size: var(--fs-stat); }   /* 【2026-09-16】V3.0: 34px=--fs-stat */
   html.mb #results.rfx-24 .slot .fx:last-child { font-size: var(--fs-lead); }   /* 【2026-09-16 ヒデさん依頼】+マークをPC同様に数字より小さく上側に(34pxに対し20px=PCの40/70比) */
@@ -2097,6 +2107,7 @@
      下の段のカードをホバーした時の影がそこでスパッと切れていた。重なり順を導入事例のほうを上にして、
      影はお問い合わせの上に自然に落ちるようにする（導入事例の地色は transparent なので下は隠れない）。 */
   html:not(.mb) #cases { position: relative; z-index: 1; }
+  html.mb #cases { position: relative; z-index: 1; }   /* 【2026-09-30】スマホも導入事例を上に重ねる＝お問い合わせのグラデ(上へ伸ばした端)がカードの裏へ潜る(文字の上には乗らない) */
   html:not(.mb) #conversion.cv-fi { display: flex; flex-direction: column; min-height: var(--cv-h, 0px); }
   html:not(.mb) #conversion.cv-fi .cv-foot { margin-top: auto; }
   /* 暗い配色(カラー案 8〜10 や「暗さ」)では文字を白に。params.cv.ink = auto(色から判定) / dark / light */
@@ -2280,7 +2291,7 @@
     /* --- ヘッダー --- */
     /* カンプSP node16534:22176: ヘッダーは左右 17px・ロゴ 180×33・ボタン 120幅(padding 6px 16px / 角丸4 / #090909 / Light 14px) */
     .header { left: 17px; right: 17px; top: 18px; }
-    .header .logo img { width: 180px; height: 33px; }   /* 4-7例外（ロゴ画像の縦横比 180×33） */
+    .header .logo img { width: auto; height: var(--hdr-logo-base, 36px); }   /* 【2026-09-30 ヒデさん依頼「スマホの方でもう少しだけロゴを大きく」】180×33 → 高さ 36px(幅は比率で約195px・⚠️仮置き)。調整パネルのスマホの値で変わる */
     .nav-links { display: none; }            /* カンプSP にナビリンクは無い(ロゴ＋お問い合わせのみ) */
     .cta { width: 148px; height: 36px; font-size: var(--fs-caption); padding: var(--space-6) var(--space-12) var(--space-6) var(--space-16); gap: var(--space-10); border-radius: var(--radius-btn); }   /* 【V4.0 2026-09-13】マーキー化に伴いスマホでも矢印+マーキー入る幅を確保 */
     .cta .cta-arrow { width: 16px; height: 16px; }
@@ -2305,7 +2316,7 @@
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav { padding: 0 var(--space-24); gap: var(--space-16); }
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a { font-size: var(--fs-stat); }
     html.mb .hdr-drawer.drw-3 .hdr-drawer-nav a .hdr-drawer-num { font-size: var(--fs-caption); }
-    html.mb .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-16); width: 268px; height: 52px; font-size: 18px; }   /* 【2026-09-21 ヒデさん依頼】SP は 提供できること(268px)くらいの幅＋サイズUP */
+    html.mb .hdr-drawer .hdr-drawer-nav a.cta.hdr-drawer-cta { margin-top: var(--space-16); width: 268px; height: 52px; font-size: 18px; padding-left: var(--dr-cta-pl, var(--space-16)); padding-right: var(--dr-cta-pr, var(--space-12)); }   /* 【2026-09-21 ヒデさん依頼】SP は 提供できること(268px)くらいの幅＋サイズUP */
 
     /* --- キービジュアル (2026-09-02 ヒデさん指定: モバイルは【グラフィックが上・コピーが下】) --- */
     /* 軌道(メッシュ)は JS 側で約0.43倍。原点を左上にして上部に中央寄せで置く */
@@ -2373,11 +2384,11 @@
     /* 【2026-09-25 ヒデさん依頼】強調案の2行目の行間をSPでも独立調整。1行目top(96px・上の .vis-l1)＋--vis-emph-gap(SP既定50)。強調案だけに効く */
     #vision.vis-emph .vis-l2 { top: calc(96px + var(--vis-emph-gap, 50px)); }
     /* 【2026-09-19 仮置き・SPカンプ未取得】SVG 書き出しの図は旧図と同じ 0.488 倍(1052→513px)で、左へはみ出して置く */
-    .vf-wrap { left: 49px; top: 235px; width: 640px; height: 600px; transform: scale(0.50); transform-origin: 0 0; }   /* 【2026-09-20 #4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に。【2026-09-21 ヒデさん依頼】見出し↔メッシュをもう少し詰める(255→235)。【2026-09-21 ヒデさん依頼】メッシュをもう少し小さく(0.555→0.50)。ラベルSDKは215→217でほぼ不動・下の Point を詰める。【2026-09-21 ヒデさん依頼・左寄り修正】0.50縮小(原点左上)で球中心が174pxと左へずれていた→left 28→49で球中心を画面中央195pxへ */
+    .vf-wrap { left: 49px; top: calc(235px + var(--vis-mb-shift, -16px)); width: 640px; height: 600px; transform: scale(0.50); transform-origin: 0 0; }   /* 【2026-09-30】上下は「グラフィック・ポイントの上下（スマホ）」(既定 −16px＝メッセージの下の中身を少し上へ・仮置き) */   /* 【2026-09-20 #4】メッシュを少しサイズダウン(0.6→0.555)＋球の中心を画面中央(≈196px)に。【2026-09-21 ヒデさん依頼】見出し↔メッシュをもう少し詰める(255→235)。【2026-09-21 ヒデさん依頼】メッシュをもう少し小さく(0.555→0.50)。ラベルSDKは215→217でほぼ不動・下の Point を詰める。【2026-09-21 ヒデさん依頼・左寄り修正】0.50縮小(原点左上)で球中心が174pxと左へずれていた→left 28→49で球中心を画面中央195pxへ */
     .vf-wrap .vf-lab b { font-size: 24px; }        /* 【2026-09-20 #5】5つの機能名をSPで大きく(16→21)。【2026-09-21】メッシュ縮小(0.555→0.50)で機能名も小さくならないよう文字を+2(21→23・0.50で≈11.5px＝従来維持) */
     .vf-wrap .vf-lab span { font-size: 12px; }     /* 補足も少し大きく(8→11)。【2026-09-21】縮小相殺(11→12) */
     /* 右カラムはPCでは右アンカーだが、スマホは画面いっぱいの1カラムにする */
-    .val-group { left: 0; right: auto; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: var(--space-16); padding: 468px 24px 0; box-sizing: border-box; }   /* 【2026-09-26 ヒデさん指摘・重なりの根治】スマホは Point01/02 を縦に積む(02 は 01 の実際の下端＋16px に続く＝本文が折り返しても重ならない)。旧: 01 top470・02 top555 の固定位置で、本文が2行だと 01 と 02 の間が5pxまで詰まり重なった(02 の位置は 671→650→593→555 と数値調整を重ねていた)。本文1行なら旧と同じ約85px間隔。01 の開始位置 470px は旧のまま */
+    .val-group { left: 0; right: auto; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: var(--vis-mb-pgap, 24px); padding: calc(462px + var(--vis-mb-shift, -16px)) 24px 0; box-sizing: border-box; }   /* 【2026-09-30 ヒデさん依頼】間は「ポイント1↔2（スマホ）」(既定 24px)。上は 462px(＝前に見えていた位置: 468 から PC のずらし −6 が漏れていた分)＋「グラフィック・ポイントの上下（スマホ）」 */   /* 【2026-09-26 ヒデさん指摘・重なりの根治】スマホは Point01/02 を縦に積む(02 は 01 の実際の下端＋16px に続く＝本文が折り返しても重ならない)。旧: 01 top470・02 top555 の固定位置で、本文が2行だと 01 と 02 の間が5pxまで詰まり重なった(02 の位置は 671→650→593→555 と数値調整を重ねていた)。本文1行なら旧と同じ約85px間隔。01 の開始位置 470px は旧のまま */
     .val-head { left: 24px; right: 24px; top: 372px; width: auto; }
     .val-head .vh-s { font-size: var(--fs-body); }
     .val-head .vh-l { font-size: var(--fs-stat); }

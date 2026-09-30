@@ -501,6 +501,15 @@ function buildPanel() {
 
   /* 【2026-09-20 ヒデさん依頼】KVの余白: ヘッダー↔コピー / グラフィック↔コピー の距離。PC/SP独立(mbKey)。既存の「位置 縦/横」は別に残す */
   liveEdit = true;
+  /* 【2026-09-30 ヒデさん依頼「ヘッダーのロゴの大きさを変えられるように、PC・SP で調整パネルにも。スマホはもう少しだけ大きく」】
+     画面のいちばん上なので、基本の先頭に「ヘッダー」(6-5)。大きさ・間隔なので基本(6-13)。PC とスマホで別の値(6-8) */
+  sub(catKv, 'ヘッダー', false, { grp: 'basic' });
+  rows.push(slider('ロゴの大きさ', 24, 72, 1, () => (params.hdrLogoH > 0 ? params.hdrLogoH : 47), v => { params.hdrLogoH = v; applyHdrLogo(); }, v => Math.round(v) + 'px',
+    'ヘッダーの Anyflow のロゴの高さ(幅は比率で自動)。PC 47px・スマホ 36px(2026-09-30 33→36・仮置き)。スマホモードではスマホの値だけ変わります。', { mbKey: 'hdrLogoH', mbDefault: 36 }));
+  rows.push(slider('ナビ項目の間隔', 12, 64, 1, () => (params.kv.navGap != null ? params.kv.navGap : 32),
+    v => { params.kv.navGap = v; applyNavGap(); }, v => Math.round(v) + 'px',
+    'ヘッダーのナビ(ビジョン/提供できること…)の左右の間隔。', { mbKey: 'kv.navGap' }));
+
   sub(catKv, '余白（ギャップ）');
   slider('ヘッダー↔コピー', -160, 300, 2, () => (params.kv.hlOff || 0), v => { params.kv.hlOff = v; applyKvCopy(); markDirty(); },
     v => (v > 0 ? '+' : '') + Math.round(v) + 'px', 'コピー(見出し)をヘッダーから上下にずらします。0＝いまの位置。プラスで下へ。PC・スマホは別々に持てます(スマホモード中に変えるとスマホだけに効く)。', { signed: true, mbKey: 'kv.hlOff' });
@@ -1079,9 +1088,7 @@ function buildPanel() {
   note('数字はページを開いてから何秒後か。上から出る順です。');
   /* 【2026-09-09 ヒデさん確定】ヘッダーのホバーアニメは テキスト=上下ロール / ボタン=矢印 に確定＝焼き込み。
      選択パネル(5案ずつ)は削除。実装は header の data-navhover="roll" / data-btnhover="arrow" 固定(下のJS)。 */
-  rows.push(slider('ナビ項目の間隔', 12, 64, 1, () => (params.kv.navGap != null ? params.kv.navGap : 32),
-    v => { params.kv.navGap = v; applyNavGap(); }, v => Math.round(v) + 'px',
-    'ヘッダーのナビ(ビジョン/提供できること…)の左右の間隔。', { mbKey: 'kv.navGap' }));
+  /* 【2026-09-30】「ナビ項目の間隔」は キービジュアル › 基本 › ヘッダー へ移した(ここはアニメーションの見出しの中だった・決まり 6-13) */
   rows.push(slider('ヘッダーが出る', 0, 3, 0.05, () => params.kv.headerAt, v => params.kv.headerAt = v, v => v.toFixed(2) + '秒後',
     'いちばん上のロゴとメニューが、ぼけた状態から現れるまで。', { mbKey: 'kv.headerAt' }));
   rows.push(slider('文字を打ち始める', 0, 6, 0.05, () => params.kv.typeAt, v => params.kv.typeAt = v, v => v.toFixed(2) + '秒後',
@@ -1173,6 +1180,11 @@ function buildPanel() {
     'メッセージの下の余白。グラフィック(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px 仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
   rows.push(slider('グラフィック↔ポイント（左右）', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
     '左のグラフィックと Point 01/02 の横の間隔。＋で右・−で左。0＝いまの位置(PCのみ)。', { mbKey: 'sections.vision.pointsX', signed: true }));
+  /* 【2026-09-30 ヒデさん依頼「スマホで Point 1・2 の余白をもう少し詰める。メッセージの下の中身をもうちょっとだけ上へ。つまみが無ければ用意」】スマホだけに効く2つ(PC には効かない) */
+  rows.push(slider('グラフィック・ポイントの上下（スマホ）', -120, 120, 4, () => (sv().vision.mbShiftY != null ? sv().vision.mbShiftY : -16), v => { sv().vision.mbShiftY = v; applyVisBelow(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
+    'スマホだけ。メッセージの下の図(機能名・ロゴ)と Point 01/02 を、まとめて上下に動かします。マイナスで上へ。2026-09-30 −16px(仮置き)。', { signed: true }));
+  rows.push(slider('ポイント1↔2（スマホ）', 0, 80, 4, () => (sv().vision.mbPointGap != null ? sv().vision.mbPointGap : 24), v => { sv().vision.mbPointGap = v; applyVisBelow(); }, v => Math.round(v) + 'px',
+    'スマホだけ。Point 01 と 02 の間。前は 32px(PC 用の上下のずらしが漏れていた)→ 24px(2026-09-30・仮置き)。'));
   sub(catVis, '出現のぼかし', false, { grp: 'fxtex' });
   rows.push(slider('強さ', 0, 30, 1, () => sv().vision.blur, v => sv().vision.blur = v, v => v + 'px',
     '文字・グラフィックが出る時/消える時のぼやけの強さ。', { mbKey: 'sections.vision.blur' }));
@@ -1517,6 +1529,10 @@ function buildPanel() {
   sub(catRes, '大きさ・線', true, { fixed: true, grp: 'basic' });
   rows.push(slider('大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
   rows.push(slider('線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
+  /* 【2026-09-30 ヒデさん依頼「スマホのコンテンツ間の左右のギャップが空きすぎているので詰めて(導入企業と連携実績・連携アプリ数と iPaaS サービス)」】スマホだけ(PC には効かない) */
+  sub(catRes, '数値の実績（スマホ）', false, { grp: 'basic' });
+  rows.push(slider('並びの幅', 256, 342, 4, () => (sv().results.statsWMb > 0 ? sv().results.statsWMb : 288), v => { sv().results.statsWMb = v; applyStatsMb(); }, v => Math.round(v) + 'px',
+    'スマホだけ。導入企業・連携実績・連携アプリ数・iPaaS サービスの 2×2 のまとまりの幅。狭いほど左右の列が真ん中へ寄って、中央の間が詰まります。前は 342px(画面いっぱい)→ 288px(2026-09-30・仮置き)。256px より狭いと「20,000+」がはみ出します。', { fixedMax: true }));
   sub(catRes, '動き', true, { fixed: true, grp: 'anim' });
   optRow('pictoSpeed', '速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
     () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
@@ -1867,7 +1883,9 @@ function buildPanel() {
     },
     edge() {
       varRowX('cvEdge', CV_EDGES, () => cvEdgeKey(), v => { applyCvEdge(String(v)); }, { after: () => { applyCvStyle(); renderFrame(); if (typeof syncPanelRows === 'function') syncPanelRows(); } });
-      rows.push(slider('溶け込みの深さ', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', '色が満色になるまでの距離。大きいほど徐々に溶け、境目の線が出ません。', { mbKey: 'cv.blend', fixedMax: true }));
+      rows.push(slider('溶け込みの深さ', 60, 520, 10, () => (cvv().blend != null ? cvv().blend : CV_BLEND_DEF), v => { cvv().blend = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', '色が満色になるまでの距離。大きいほど徐々に溶け、境目の線が出ません。', { mbKey: 'cv.blend', mbDefault: 160, fixedMax: true }));
+      /* 【2026-09-30 ヒデさん「もうちょいグラデーションを上に伸ばして、インフォボックスのところにかかるかかからないかぐらい」】上の端を導入事例のカードの裏へ伸ばす量。PC 0・スマホ 40(仮置き) */
+      rows.push(slider('上へ伸ばす（カードの裏へ）', 0, 200, 4, () => (cvv().underCards != null ? cvv().underCards : 0), v => { cvv().underCards = v; applyCvStyle(); renderFrame(); }, v => Math.round(v) + 'px', 'グラデの上の端(ほぼ透明)を、導入事例の最後のカードの裏へ伸ばす量。大きいほど上から色が乗ります。PC 0・スマホ 40px(2026-09-30・仮置き)。', { mbKey: 'cv.underCards', mbDefault: 40 }));
     },
     spacing() {
       rows.push(slider('見出しの上の余白', 0, 400, 10, () => (cvv().headTop != null ? cvv().headTop : CV_HEAD_TOP_DEF), v => { cvv().headTop = v; applyCvStyle(); fit(); }, v => Math.round(v) + 'px', '減らすほど導入事例との間が詰まります。', { mbKey: 'cv.headTop', fixedMax: true }));
@@ -1951,6 +1969,21 @@ function buildPanel() {
     ds('長さ', 'barW', 20, 12, 36, 1, v => Math.round(v) + 'px', '右上のハンバーガー(2本線)の横幅。');
     ds('太さ', 'barH', 2, 1, 5, 0.5, v => v.toFixed(1) + 'px', '2本の線の太さ。');
     ds('間隔', 'barGap', 6, 2, 14, 0.5, v => v.toFixed(1) + 'px', '2本の線の上下の間隔(線の中心どうし)。');
+    /* 【2026-09-30 ヒデさん依頼「スマホメニューのお問い合わせ: 流れる文字同士の左右の間をもうちょっと詰めたい・左右の溶け込むグラデーションをもう少し増やしたい。調整パネルでも」】
+       間は基本・溶け込みはエフェクト(決まり 6-13)。PC とスマホで別の値(6-8)。PC は触るまで今の見た目(0.9文字≒22px・5%≒17px) */
+    sub(catMenu, 'お問い合わせボタン（流れる文字）', false);
+    rows.push(slider('文字同士の間', 0, 48, 1, () => dv('ctaGap', 22), v => { D().ctaGap = v; applyDrawerTune(); markDirty(); }, v => Math.round(v) + 'px',
+      '流れる「お問い合わせ」と「お問い合わせ」の間。PC は今 0.9文字(約22px)・スマホ 12px(2026-09-30 16→12・仮置き)。', { fixedMax: true, mbKey: 'drawer.ctaGap', mbDefault: 12 }));
+    /* 【2026-09-30 ヒデさん依頼「ボタン内の左右のパディングをもうちょっと増やして(ホバーで矢印がはみ出る)」】 */
+    rows.push(slider('左の余白', 0, 48, 1, () => dv('ctaPadL', 20), v => { D().ctaPadL = v; applyDrawerTune(); markDirty(); }, v => Math.round(v) + 'px',
+      'ボタンの左端から文字までの余白。PC 20px・スマホ 24px(2026-09-30 16→24・仮置き)。', { fixedMax: true, mbKey: 'drawer.ctaPadL', mbDefault: 24 }));
+    rows.push(slider('右の余白', 0, 48, 1, () => dv('ctaPadR', 16), v => { D().ctaPadR = v; applyDrawerTune(); markDirty(); }, v => Math.round(v) + 'px',
+      '矢印からボタンの右端までの余白(ホバーで矢印が右へ3px動く)。PC 16px・スマホ 20px(2026-09-30 12→20・仮置き)。', { fixedMax: true, mbKey: 'drawer.ctaPadR', mbDefault: 20 }));
+    rows.push(slider('文字と矢印の間', 0, 24, 1, () => dv('ctaArrowGap', 0), v => { D().ctaArrowGap = v; applyDrawerTune(); markDirty(); }, v => Math.round(v) + 'px',
+      '流れる文字の窓と矢印の間。広いほど、文字が白へ溶けてから矢印までの白い所が広がります。PC 0px(矢印の箱の中に 4px の余白あり)・スマホ 12px(2026-09-30 4px では差が小さかった・仮置き)。', { fixedMax: true, mbKey: 'drawer.ctaArrowGap', mbDefault: 12 }));
+    sub(catMenu, 'お問い合わせボタン（流れる文字）', false, { grp: 'fxtex' });
+    rows.push(slider('左右の溶け込み', 0, 80, 1, () => dv('ctaFade', 17), v => { D().ctaFade = v; applyDrawerTune(); markDirty(); }, v => Math.round(v) + 'px',
+      '流れる文字が左右の端で溶けて消える幅(片側)。PC は今 5%(約17px＝文字の約0.7個分)・スマホ 13px(2026-09-30 ヒデさん「PC と同じ見た目の割合で」＝文字の約0.7個分・仮置き)。', { fixedMax: true, mbKey: 'drawer.ctaFade', mbDefault: 13 }));
     sub(catMenu, 'その他', false);
     ds('スクロール時のナビのぼかし', 'navBlur', 8, 0, 24, 1, v => Math.round(v) + 'px', 'スクロールでナビ(ビジョン〜導入事例)が右へ格納される時、徐々にかかるぼかしの最大量。0でぼかし無し。');
   }
@@ -2111,6 +2144,7 @@ function __previewReapply() {
     C(function () { varApplyOverridesAtStartup(); });
     C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
     C(function () { applyInk(); });   /* 2026-09-28 文字の黒 */
+    C(function () { applyHdrLogo(); });   /* 2026-09-30 ヘッダーのロゴの高さ */
     C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
     C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
     C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
@@ -2874,6 +2908,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       call(function () { if (typeof applyInk === 'function') applyInk(); });   /* 2026-09-28 文字の黒 */
       call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
       call(function () { if (typeof applyVisEmph === 'function') applyVisEmph(); });   /* 【2026-09-20】ビジョンのバリエーションもライブ反映 */
+      call(function () { if (typeof applyHdrLogo === 'function') applyHdrLogo(); });   /* 【2026-09-30】ヘッダーのロゴの高さもライブ反映 */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
       call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
       call(function () { if (typeof applySway === 'function') applySway(); });

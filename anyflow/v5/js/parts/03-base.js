@@ -1028,7 +1028,47 @@ function cvHex(h, d) { const m = /^#?([0-9a-f]{6})$/i.exec(String(h || '')); con
 /* 【2026-09-28 ヒデさん依頼「グラデはそのまま、導入事例の下の余白だけ削って短く」】グラデを上へ伸ばす量は
    「導入事例との間隔が 60px(詰める前に見て決めた値) の時の空き」で固定する。間隔のつまみはお問い合わせの位置だけを動かす */
 const CV_RISE_GAP_REF = 60;
+const CV_UNDER_DEF_MB = 40;    /* 【2026-09-30 ヒデさん依頼】スマホ: グラデの上の端を導入事例の最後のカードの裏へ伸ばす量 px(PC は params.cv.underCards・既定 0)(⚠️仮置き) */
+const CV_BLEND_DEF_MB = 160;   /* 【2026-09-30 ヒデさん依頼】スマホの「溶け込みの深さ」の既定 px(PC は CV_BLEND_DEF)。スマホの上書き mb['cv.blend'] が無い時に使う(⚠️仮置き) */
 const CV_BLEND_DEF = 260;      /* 【2026-09-16 改訂2】溶け込みの深さの既定 px。上(導入事例側)まで色を届かせつつ、rise＋本体で線を出さず溶かす */
+/* 【2026-09-30】❌ PC の「見出し↔グラフィック・ポイント（上下）」を 0→−16px にした直しは取り消し(ヒデさん「PC は変えなくて大丈夫。スマホの方だけ」)。
+   その直し(印 anyflow-vis-below-20260930)が既に入ったブラウザで、値が −16 のままの所だけ 0 に戻す。印 anyflow-vis-below-undo-20260930 */
+try {
+  if (localStorage.getItem('anyflow-vis-below-20260930') && !localStorage.getItem('anyflow-vis-below-undo-20260930')) {
+    const fix = o => { const v = o && o.sections && o.sections.vision; if (v && v.belowGap === -16) { v.belowGap = 0; return true; } return false; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-vis-below-undo-20260930', '1');
+  }
+} catch (e) {}
+/* 【2026-09-30 ヒデさん依頼「ヘッダーのロゴの大きさを PC・スマホ別に調整パネルで。スマホはもう少しだけ大きく」】ロゴの高さを CSS 変数 --hdr-logo-base へ。
+   PC＝params.hdrLogoH(既定 47)・スマホ＝スマホの上書き mb.hdrLogoH(既定 36)。値が無ければ CSS の既定(47/36)のまま */
+function applyHdrLogo() {
+  try { const de = document.documentElement, mob = (typeof isMobile !== 'undefined' && isMobile);
+    const v = mob ? (params.mb && params.mb.hdrLogoH) : params.hdrLogoH;
+    if (v > 0) de.style.setProperty('--hdr-logo-base', v + 'px'); else de.style.removeProperty('--hdr-logo-base'); } catch (e) {}
+}
+try {
+  if (!localStorage.getItem('anyflow-hdr-logo-mb-20260930')) {
+    const fix = o => { if (!o) return false; if (!o.mb) o.mb = {}; if (o.mb.hdrLogoH == null) { o.mb.hdrLogoH = 36; return true; } return false; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-hdr-logo-mb-20260930', '1');
+  }
+} catch (e) {}
+applyHdrLogo();
+/* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
+try {
+  if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
+    const fix = o => { if (!o) return false; if (!o.mb) o.mb = {}; let ch = false; if (o.mb['cv.blend'] == null) { o.mb['cv.blend'] = CV_BLEND_DEF_MB; ch = true; } if (o.mb['cv.underCards'] == null) { o.mb['cv.underCards'] = CV_UNDER_DEF_MB; ch = true; } return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-cv-mb-blend-20260930', '1');
+  }
+} catch (e) {}
 const CV_HEAD_TOP_DEF = 80;    /* 【2026-09-28 夜 ヒデさん依頼「導入事例との距離をもっと上下詰めたい」】120→80(⚠️仮置き・PC/タブレット。スマホは CSS の固定値)。つまみは導入事例タブ「お問い合わせとの間（PC）› 見出しまでの余白」 */
 /* 旧: const CV_HEAD_TOP_DEF = 120; */   /* 【2026-09-15 ヒデさん指摘】導入事例との間の余白を詰めたい。見出しの上の余白 210→120(仮置き)。調整パネル「見出しの上の余白」で 0〜400 に変えられる */
 const CV_BASE = { cell: 1, levels: 3, spread: 1.0, speed: 0.25, swell: 0.12, flowScale: 3.0, bright: 1.04, contrast: 1.38, colors: CV_DEF_COLORS, gMode: 0, gcx: 0.60, gcy: 0.00, gr: 0.9, gAspect: 1, gAng: 0, dark: 0, darkCol: '#0d0f14', ink: 'auto', hueMode: 'off', moodSec: 30, moodWhite: 0.85, swapHold: 0.45, topCol: '#7cc9e8', topWhite: 0.12, ceil: 0.9, gOffX: 0.18, gOffY: 0.12, gSpread: 1.5, headTop: CV_HEAD_TOP_DEF, blend: CV_BLEND_DEF, wave: 0.40, waveLen: 0.50, waveSpd: 0.09, swayDeg: 12, swaySec: 40, swayMode: 0, ramp: 0, addT: 0, addB: 0 };
@@ -1445,6 +1485,9 @@ function cvNaturalH(sec) {
   return cvNatH || h;
 }
 let cvRisePx = 0;                 /* 【2026-09-15】canvas を上へはみ出させている量(CSSpx)。シェーダへ渡す */
+/* 【2026-09-30】スマホ: 導入事例の最後のカードの下〜お問い合わせの上端の空き(px)。置き場所(offset)で測る＝動きの途中のずれを含まない */
+let cvMbGapUsed = null;
+function cvMbGapNow(sec) { const gr = document.getElementById('caseGrid'); if (!sec || !gr) return 0; const top = el => { let y = 0; for (let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; }; return Math.max(0, Math.round(top(sec) - (top(gr) + gr.offsetHeight))); }
 function cvApplyFade(sec) {
   const base = cvNaturalH(sec) || sec.getBoundingClientRect().height || 609;
   const f0 = (params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0;
@@ -1454,12 +1497,24 @@ function cvApplyFade(sec) {
   const _mbF = document.documentElement.classList.contains('mb');
   const _cvCanvasEl = document.getElementById('cvCanvas');
   if (_mbF) {
-    cvRisePx = 0;
-    sec.style.setProperty('--cv-rise', '0px');
-    sec.style.setProperty('--cv-fade0', Math.round(base * f0 / 100) + 'px');
-    sec.style.setProperty('--cv-fade1', Math.round(base * f1 / 100) + 'px');
-    /* SP は従来の CSS 変数マスクへ戻す(PC で付けたインラインマスクを解除) */
-    if (_cvCanvasEl) { ['maskImage','webkitMaskImage','maskSize','webkitMaskSize','maskRepeat','webkitMaskRepeat','maskPosition','webkitMaskPosition','maskComposite','webkitMaskComposite'].forEach(k => _cvCanvasEl.style[k] = ''); }
+    /* 【2026-09-30 ヒデさん依頼「スマホのお問い合わせがスマホに最適化されておらず、背景のグラデーションが PC のように上まで覆われていない」】
+       ❌ 前のスマホは「セクションの高さの fade1%(焼き込み 64%＝約970px)かけて濃くなる」作りで、見出し〜説明文が灰色の地のままだった。
+       → スマホも PC と同じ作りに: 上の空き(導入事例の最後のカードの下〜ここ)へ少しはみ出し、「溶け込みの深さ」px で満色。
+         はみ出しは実際の空きまで(スマホは導入事例が上に重なる作りではないので、カードには掛けない)。
+         深さはスマホ別の値(スマホの上書き mb['cv.blend']・既定 CV_BLEND_DEF_MB＝160px・⚠️仮置き)。PC は下の else のまま(変えない) */
+    const _mbDeepRaw = (params.mb && params.mb['cv.blend'] != null) ? params.mb['cv.blend'] : CV_BLEND_DEF_MB;
+    const _deep = Math.min(Math.max(0, _mbDeepRaw), Math.round(base * 0.95));
+    const _gap = cvMbGapNow(sec); cvMbGapUsed = _gap;   /* 読み込み直後は並びが決まりきる前で 0 と出ることがある → cvSyncStretch が測り直して合わせ直す */
+    /* 【2026-09-30 ヒデさん「もうちょいグラデーションを上に伸ばして、インフォボックスのところにかかるかかからないかぐらい」】
+       空きの上にさらに「上へ伸ばす」分(スマホの上書き mb['cv.underCards']・既定 CV_UNDER_DEF_MB＝40px・⚠️仮置き)だけ、導入事例の最後のカードの裏へ潜らせる。
+       上の端はほぼ透明なので、カードの下の端(会社名の辺り)にうっすら掛かるか掛からないか。導入事例はスマホでも上に重ねる(CSS html.mb #cases の z-index) */
+    const _underM = Math.max(0, (params.mb && params.mb['cv.underCards'] != null) ? params.mb['cv.underCards'] : CV_UNDER_DEF_MB);
+    cvRisePx = Math.min(_deep, _gap) + _underM;
+    const _span = cvRisePx + _deep;
+    sec.style.setProperty('--cv-rise', cvRisePx + 'px');
+    sec.style.setProperty('--cv-fade0', '0px');
+    sec.style.setProperty('--cv-fade1', _span + 'px');
+    if (_cvCanvasEl && typeof cvEdgeMask === 'function') cvEdgeMask(_cvCanvasEl, _span);
   } else {
     const _deepRaw = Math.max(0, (params.cv && params.cv.blend != null) ? params.cv.blend : CV_BLEND_DEF);
     const _deep = Math.min(_deepRaw, Math.round(base * 0.95));   /* 本体の高さを超えない=下端は必ず満色になる */
@@ -1488,6 +1543,7 @@ function cvSyncStretch() {
   const sec = document.getElementById('conversion'); if (!sec) return 1;
   const before = cvNatH, base = cvNaturalH(sec);
   if (base !== before) cvApplyFade(sec);
+  else if (document.documentElement.classList.contains('mb') && cvMbGapNow(sec) !== cvMbGapUsed) cvApplyFade(sec);   /* 【2026-09-30】スマホの空きが変わった(読み込み後に並びが決まった等) */
   const now = sec.getBoundingClientRect().height;
   return (base > 20 && now > 20) ? Math.min(3, Math.max(0.5, now / base)) : 1;
 }

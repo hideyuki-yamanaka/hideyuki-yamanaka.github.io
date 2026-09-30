@@ -434,11 +434,25 @@ function applyLogoTune() {
   const T = params.logoTune || {};
   document.querySelectorAll('.mq-set').forEach(set => { Array.from(set.querySelectorAll('img')).forEach((img, i) => { const k = LOGO_KEYS[i]; const t = (k && T[k]) || {}; img.style.setProperty('--dy', (t.dy || 0) + 'px'); img.style.marginLeft = (t.mx || 0) + 'px'; img.style.marginRight = (t.mx || 0) + 'px'; }); });
 }
+/* 【2026-09-30 ヒデさん依頼】スマホの実績の数字(2×2)のまとまりの幅(px)。狭いほど左右の列が真ん中へ寄る。CSS は html.mb の時だけ使う */
+function applyStatsMb() { try { const v = params.sections && params.sections.results && params.sections.results.statsWMb; document.documentElement.style.setProperty('--r2s-w-mb', (v > 0 ? v : 288) + 'px'); } catch (e) {} }
+applyStatsMb();
 function applyDrawerTune() {
   const d = Object.assign({ padT: 0, padB: 0, padL: 128, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
   r.setProperty('--drw-gap', d.gap + 'px'); r.setProperty('--drw-fs', d.fs + 'px'); r.setProperty('--drw-num-fs', d.numFs + 'px');
   r.setProperty('--hdr-nav-blur', (d.navBlur != null ? d.navBlur : 8) + 'px');
+  /* 【2026-09-30 ヒデさん依頼】メニューの中のお問い合わせボタンの流れる文字: 文字同士の間・左右の溶け込み(px)。
+     実機スマホは params.mb 直読み＋スマホ既定(間 12・溶け込み 13＝PC と同じ見た目の割合「文字の約0.7個分」・⚠️仮置き)、PC は値が無ければ変数を消して今の CSS(0.9文字・5%)のまま */
+  { const _mbD = (params && params.mb) || {}, _isMbD = (typeof isMobile !== 'undefined' && isMobile);
+    const effD = (f, sp) => _isMbD ? (_mbD['drawer.' + f] != null ? _mbD['drawer.' + f] : sp) : d[f];
+    const _g = effD('ctaGap', 12), _f = effD('ctaFade', 13), _pl = effD('ctaPadL', 24), _pr = effD('ctaPadR', 20);   /* 余白: スマホ 左24・右20(2026-09-30 ホバーで矢印がはみ出る→広げた・仮置き) */
+    if (_pl != null) r.setProperty('--dr-cta-pl', _pl + 'px'); else r.removeProperty('--dr-cta-pl');
+    if (_pr != null) r.setProperty('--dr-cta-pr', _pr + 'px'); else r.removeProperty('--dr-cta-pr');
+    const _ag = effD('ctaArrowGap', 12);   /* 文字の窓と矢印の間: スマホ 12px(2026-09-30 0→4px では「あまり変わってない」→ 12px＝文字が溶けてから矢印まで約13px の白い所・仮置き) */
+    if (_ag != null) r.setProperty('--dr-cta-agap', _ag + 'px'); else r.removeProperty('--dr-cta-agap');
+    if (_g != null) r.setProperty('--dr-cta-gap', _g + 'px'); else r.removeProperty('--dr-cta-gap');
+    if (_f != null) r.setProperty('--dr-cta-fade', _f + 'px'); else r.removeProperty('--dr-cta-fade'); }
   /* 【2026-09-18 ヒデさん依頼】ハンバーガーアイコン(2本線)の長さ・太さ・間隔(html.bi-2 の CSS より優先させるため要素に直接) */
   document.querySelectorAll('.hdr-burger, .cta-burg').forEach(b => { b.style.setProperty('--bg-w', (d.barW != null ? d.barW : 20) + 'px'); b.style.setProperty('--bg-h', (d.barH != null ? d.barH : 2) + 'px'); b.style.setProperty('--bg-gap', (d.barGap != null ? d.barGap : 6) + 'px'); });
 }
@@ -741,7 +755,7 @@ function applyCasesPad() {
     document.documentElement.style.setProperty('--cg-pad-y', Math.round(v) + 'px');
   } catch (e) {}
 }
-function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {} try { applyCasesPad(); } catch (e) {}   /* 【2026-09-22】SP上書き後、カードの上下パディングも取り直す */   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {} try { applyCasesPad(); } catch (e) {} try { applyHdrLogo(); } catch (e) {} try { applyDrawerTune(); } catch (e) {}   /* 【2026-09-30】ヘッダーのロゴの高さ・メニューのお問い合わせボタンの流れる文字も(スマホと決まった後に入れ直す) */   /* 【2026-09-22】SP上書き後、カードの上下パディングも取り直す */   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
 applyCasesPad();   /* 【2026-09-22】起動時に --cg-pad-y の既定を入れる(PC/SP共通・PCは未使用) */
 
 function updateKV() {

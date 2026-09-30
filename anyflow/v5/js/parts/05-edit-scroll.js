@@ -1404,8 +1404,11 @@ function updateVision(p) {
   /* ⚠️【2026-08-27】この横ズレは PC(1440座標系)で位置を合わせるためのもの。スマホは 390 の座標系で CSS 側が左右24pxに収めているので効かせない */
   const offX = isMobile ? 0 : 1;
   const P_IN = (c.npPointDur != null ? c.npPointDur : 0.8);   /* 2026-08-31: ポイントの出現時間(パネル) */
-  rvAt(visEls.valP1, easeOutQ(clamp01((C - (c.npP1 != null ? c.npP1 : 0.95)) / P_IN)), B, 12, c.p1X * offX, c.p1Y);
-  rvAt(visEls.valP2, easeOutQ(clamp01((C - (c.npP2 != null ? c.npP2 : 1.35)) / P_IN)), B, 12, c.p2X * offX, c.p2Y);
+  /* 【2026-09-30 ヒデさん「スマホで Point 1・2 の余白をもう少し詰める」で判明】❌ PC 用の上下のずらし(p1Y −6・p2Y +10)がスマホにも効いていて、
+     Point 1・2 の間が 16→32px に広がっていた(決まり 6-8 の漏れ)。→ スマホはスマホの上書き(mb)だけを使い、無ければ 0 */
+  const _mbPY = k => { const mv = params.mb && params.mb['sections.vision.' + k]; return mv != null ? mv : 0; };
+  rvAt(visEls.valP1, easeOutQ(clamp01((C - (c.npP1 != null ? c.npP1 : 0.95)) / P_IN)), B, 12, c.p1X * offX, isMobile ? _mbPY('p1Y') : c.p1Y);
+  rvAt(visEls.valP2, easeOutQ(clamp01((C - (c.npP2 != null ? c.npP2 : 1.35)) / P_IN)), B, 12, c.p2X * offX, isMobile ? _mbPY('p2Y') : c.p2Y);
 }
 
 /* ---------- 実績: 画面に入ったらカウント開始 (時間駆動) ---------- */
@@ -1751,7 +1754,11 @@ function vfCfg() { const v = params.sections.vision; if (!v.dome) v.dome = {}; c
 function vfCfgVal(k) { const v = params.sections.vision; if (_vfPhoneOn() && v.domeMb && v.domeMb[k] != null) return v.domeMb[k]; if (v.dome && v.dome[k] != null) return v.dome[k]; return VF_DEF[k]; }
 function vfSet(k, val) { const v = params.sections.vision; if (!v.dome) v.dome = {}; if (_vfPhoneOn()) { if (!v.domeMb) v.domeMb = {}; v.domeMb[k] = val; } else { v.dome[k] = val; } applyVfFade(); }
 /* 【2026-09-19 ヒデさん依頼】メッセージの下の余白: 図(ドーム)と Point 01/02 を同じ量だけ下へ(PC。既定 50px は仮置き) */
-function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; const emphExtra = (typeof visEmphMode === 'function' && visEmphMode() === 'strong' && !(typeof isMobile !== 'undefined' && isMobile)) ? 100 : 0;   /* 【2026-09-20】強調案は見出しメッセージ↔下コンテンツ(図・ポイント)を100px離す(下も連動して下がる)。PC/タブレットのみ */ sec.style.setProperty('--vis-below', ((v.belowGap != null ? v.belowGap : 50) + emphExtra) + 'px'); }
+function applyVisBelow() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision;
+  /* 【2026-09-30 ヒデさん依頼「スマホで Point 1・2 の余白をもう少し詰める。メッセージの下の中身をもうちょっとだけ上へ」】スマホだけの2つ(PC には効かない CSS 変数) */
+  sec.style.setProperty('--vis-mb-shift', (v.mbShiftY != null ? v.mbShiftY : -16) + 'px');
+  sec.style.setProperty('--vis-mb-pgap', (v.mbPointGap != null ? v.mbPointGap : 24) + 'px');
+ const emphExtra = (typeof visEmphMode === 'function' && visEmphMode() === 'strong' && !(typeof isMobile !== 'undefined' && isMobile)) ? 100 : 0;   /* 【2026-09-20】強調案は見出しメッセージ↔下コンテンツ(図・ポイント)を100px離す(下も連動して下がる)。PC/タブレットのみ */ sec.style.setProperty('--vis-below', ((v.belowGap != null ? v.belowGap : 50) + emphExtra) + 'px'); }
 applyVisBelow();
 /* 【2026-09-19 ヒデさん依頼】ビジョンの図と Point 01/02 の左右の間隔(PCのみ)。+で Point を右へ(間隔を広げる) */
 function applyVisPointsX() { const sec = document.getElementById('vision'); if (!sec) return; const v = params.sections.vision; sec.style.setProperty('--vis-points-x', (v.pointsX != null ? v.pointsX : 0) + 'px'); }
