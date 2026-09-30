@@ -1,0 +1,84 @@
+/* 採用前の検討値。00は取得した現状のまま。図と文章の配置は全案で共通。 */
+html[data-variant="01"] .vf-lab b{color:#60646c!important}
+html[data-variant="01"] .vf-lab span{color:#60646c!important}
+
+html[data-variant="02"] .vf-lab b{color:#505966!important;font-weight:500!important}
+html[data-variant="02"] .vf-lab span{color:#606771!important}
+
+html[data-variant="03"] .vf-lab b{color:#4b6079!important;font-weight:500!important}
+html[data-variant="03"] .vf-lab span{color:#536477!important}
+html[data-variant="03"] .vl-nagu,html[data-variant="03"] .vl-strong{background:none!important;color:#17457a!important;-webkit-text-fill-color:#17457a!important}
+html[data-variant="03"] .vp-tag em{color:#17457a!important}
+html[data-variant="03"] .vp-tag i{background:#17457a!important}
+
+html[data-variant="04"] .vf-lab b{color:#685567!important;font-weight:500!important}
+html[data-variant="04"] .vf-lab span{color:#6a626b!important}
+html[data-variant="04"] .vl-nagu,html[data-variant="04"] .vl-strong{background:none!important;color:#805574!important;-webkit-text-fill-color:#805574!important}
+html[data-variant="04"] .vp-tag em{color:#805574!important}
+html[data-variant="04"] .vp-tag i{background:#805574!important}
+html[data-variant="04"] #vfDome{filter:saturate(.5)}
+
+html[data-variant="05"] .vf-lab b{color:#60646c!important;font-weight:500!important}
+html[data-variant="05"] .vl-nagu,html[data-variant="05"] .vl-strong{background:none!important;color:#202329!important;-webkit-text-fill-color:#202329!important}
+html[data-variant="05"] .vp-tag{color:#60646c!important}
+
+html[data-variant="06"]{--surface:#f4f5f6!important;--grid-line:rgba(172,180,192,.18)!important}
+html[data-variant="06"] .vf-lab b{color:#5b626d!important;font-weight:500!important}
+html[data-variant="06"] .vf-lab span{color:#606771!important}
+
+html[data-variant="07"]{--grid-line:transparent!important}
+html[data-variant="07"] .vf-lab b{color:#5b626d!important;font-weight:500!important}
+html[data-variant="07"] .vf-lab span{color:#606771!important}
+
+html[data-variant="08"] .vf-lab b{color:#505966!important;font-weight:500!important}
+html[data-variant="08"] .vf-lab span{color:#606771!important}
+html[data-variant="08"] .vf-lab::before{content:"";position:absolute;inset:-8px -12px;z-index:-1;background:rgba(248,249,250,.82);border:1px solid rgba(111,121,135,.16);border-radius:8px}
+html[data-variant="08"] .vf-lab{isolation:isolate}
+
+html[data-variant="09"] .vf-lab b{color:#596575!important;font-weight:500!important}
+html[data-variant="09"] .vf-lab span{color:#606771!important}
+html[data-variant="09"] .vf-lab::after{content:"";position:absolute;left:50%;top:calc(100% + 6px);width:1px;height:16px;background:#9aa6b4}
+html[data-variant="09"] .vf-lab::before{content:"";position:absolute;left:calc(50% - 2px);top:calc(100% + 22px);width:4px;height:4px;border-radius:50%;background:#7b8fa8}
+
+html[data-variant="10"]{--grid-line:rgba(172,172,172,.13)!important}
+html[data-variant="10"] .vf-lab b{color:#606773!important;font-weight:500!important}
+html[data-variant="10"] .vf-lab span{color:#606771!important}
+html[data-variant="10"] .val-point p{color:#414853!important}
+html[data-variant="10"] .vp-tag{color:#414853!important}
+html[data-variant="10"] .val-p1 .vp-tag em{color:#b6376d!important}
+html[data-variant="10"] .val-p1 .vp-tag i{background:#b6376d!important}
+html[data-variant="10"] .val-p2 .vp-tag em{color:#0678a0!important}
+html[data-variant="10"] .val-p2 .vp-tag i{background:#0678a0!important}
+html[data-variant="10"] #vfDome{opacity:.85}
+/* 元の0.5px罫線がDPR1で消えるChromiumの丸め対策。面積当たりの濃さを維持。 */
+@media(max-resolution:1dppx){
+ html{--grid-w:1px!important;--grid-line:rgba(172,172,172,.15)!important}
+ html[data-variant="06"]{--grid-line:rgba(172,180,192,.09)!important}
+ html[data-variant="07"]{--grid-line:transparent!important}
+ html[data-variant="10"]{--grid-line:rgba(172,172,172,.065)!important}
+}
+/* 追加案11〜16：メッシュと機能名だけに適用。背景・見出し・Pointは00と共通。 */
+html[data-mesh-study] .vf-lab b{font-weight:500!important;color:#5c6571!important}
+html[data-mesh-study] .vf-lab span{color:#606771!important}
+html[data-variant="12"] .vf-lab b{position:relative;isolation:isolate;color:#526a84!important}
+html[data-variant="12"] .vf-lab b::before{content:"";position:absolute;inset:-4px -12px;border:1px solid #9aa9bb;border-radius:20px;z-index:-1;background:#e7e7e7}
+html[data-variant="12"] .vf-lab span{transform:translateY(6px)}
+html[data-variant="13"] .vf-lab b{color:#4e6682!important}
+html[data-variant="13"] .vf-lab::before{content:"";position:absolute;left:calc(50% - 12px);top:-10px;width:24px;height:2px;background:#8397b1}
+html[data-variant="13"] #vfLab3::before{background:#a58aa8}
+html[data-variant="14"] .vf-lab{isolation:isolate}
+html[data-variant="14"] .vf-lab::before{content:"";position:absolute;inset:-8px -12px;border-radius:4px;background:rgba(255,255,255,.48);z-index:-1}
+html[data-variant="14"] .vf-lab b{color:#556477!important}
+html[data-variant="15"] .vf-lab::before{content:"01";position:absolute;left:-28px;top:5px;color:#4e6682;font-family:var(--font-en);font-size:10px;line-height:16px;width:20px;text-align:center;border-top:1px solid #899cb2}
+html[data-variant="15"] #vfLab2::before{content:"02"}
+html[data-variant="15"] #vfLab3::before{content:"03"}
+html[data-variant="15"] #vfLab4::before{content:"04"}
+html[data-variant="15"] #vfLab5::before{content:"05"}
+html[data-variant="16"] .vf-lab b{color:#4e6682!important}
+html[data-variant="16"] #vfLab3 b{color:#795979!important}
+html[data-variant="16"] .vf-lab b::after{content:"";display:block;position:absolute;left:0;right:0;top:calc(100% + 4px);height:1px;background:#9bacc0}
+html[data-variant="16"] #vfLab3 b::after{background:#b49ab6}
+html[data-variant="17"] .vf-lab b,html[data-variant="19"] .vf-lab b{color:#4e6682!important}
+html[data-variant="18"] .vf-lab{isolation:isolate}
+html[data-variant="18"] .vf-lab b{color:#716078!important}
+html[data-variant="18"] .vf-lab::before{content:"";position:absolute;inset:-8px -12px;border-radius:4px;background:rgba(255,255,255,.4);z-index:-1}

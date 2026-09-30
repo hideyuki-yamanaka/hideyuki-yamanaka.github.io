@@ -1,0 +1,174 @@
+{
+  "variants": [
+    {
+      "key": "00",
+      "nameColor": "rgb(0, 0, 0)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "01",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "02",
+      "nameColor": "rgb(80, 89, 102)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "03",
+      "nameColor": "rgb(75, 96, 121)",
+      "nameWeight": "500",
+      "gradientColor": "rgb(23, 69, 122)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "04",
+      "nameColor": "rgb(104, 85, 103)",
+      "nameWeight": "500",
+      "gradientColor": "rgb(128, 85, 116)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "05",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "500",
+      "gradientColor": "rgb(32, 35, 41)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "06",
+      "nameColor": "rgb(91, 98, 109)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "07",
+      "nameColor": "rgb(91, 98, 109)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "08",
+      "nameColor": "rgb(80, 89, 102)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "09",
+      "nameColor": "rgb(89, 101, 117)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "10",
+      "nameColor": "rgb(96, 103, 115)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "11",
+      "nameColor": "rgb(92, 101, 113)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "12",
+      "nameColor": "rgb(82, 106, 132)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "13",
+      "nameColor": "rgb(78, 102, 130)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "14",
+      "nameColor": "rgb(85, 100, 119)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "15",
+      "nameColor": "rgb(92, 101, 113)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "16",
+      "nameColor": "rgb(78, 102, 130)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "17",
+      "nameColor": "rgb(78, 102, 130)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "18",
+      "nameColor": "rgb(113, 96, 120)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "19",
+      "nameColor": "rgb(78, 102, 130)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    }
+  ],
+  "errors": [],
+  "interaction": {
+    "selected": "16",
+    "baseline": "00",
+    "restored": "16"
+  },
+  "mobile": {
+    "width": 390,
+    "scroll": 390
+  }
+}

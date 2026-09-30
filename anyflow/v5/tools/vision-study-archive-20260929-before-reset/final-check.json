@@ -1,0 +1,66 @@
+{
+  "remote": [
+    {
+      "file": "css/style.css",
+      "status": 200,
+      "sameAsLocal": true
+    },
+    {
+      "file": "js/app.js",
+      "status": 200,
+      "sameAsLocal": true
+    }
+  ],
+  "ui": {
+    "buttons": 11,
+    "cards": 10,
+    "missing": 0
+  },
+  "contrast": [
+    {
+      "color": "#60646c",
+      "background": "#e7e7e7",
+      "ratio": 4.8
+    },
+    {
+      "color": "#505966",
+      "background": "#e7e7e7",
+      "ratio": 5.73
+    },
+    {
+      "color": "#606771",
+      "background": "#e7e7e7",
+      "ratio": 4.62
+    },
+    {
+      "color": "#4b6079",
+      "background": "#e7e7e7",
+      "ratio": 5.23
+    },
+    {
+      "color": "#536477",
+      "background": "#e7e7e7",
+      "ratio": 4.91
+    },
+    {
+      "color": "#685567",
+      "background": "#e7e7e7",
+      "ratio": 5.51
+    },
+    {
+      "color": "#6a626b",
+      "background": "#e7e7e7",
+      "ratio": 4.75
+    },
+    {
+      "color": "#606773",
+      "background": "#e7e7e7",
+      "ratio": 4.61
+    },
+    {
+      "color": "#606771",
+      "background": "#e7e7e7",
+      "ratio": 4.62
+    }
+  ]
+}

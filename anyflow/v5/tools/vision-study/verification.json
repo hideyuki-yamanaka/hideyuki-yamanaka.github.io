@@ -1,0 +1,334 @@
+{
+  "variants": [
+    {
+      "key": "00",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgba(0, 0, 0, 0)",
+      "nameColor": "rgb(0, 0, 0)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "01",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgba(0, 0, 0, 0)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "02",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(231, 231, 231)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "03",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(236, 238, 241)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "04",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(227, 231, 237)",
+      "nameColor": "rgb(83, 100, 119)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "05",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(233, 229, 235)",
+      "nameColor": "rgb(105, 94, 107)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "06",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(234, 232, 229)",
+      "nameColor": "rgb(100, 98, 95)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "07",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(240, 240, 240)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "08",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(236, 238, 241)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "09",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(231, 231, 231)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "10",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(229, 233, 235)",
+      "nameColor": "rgb(83, 100, 119)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "11",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(222, 222, 222)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "12",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(215, 215, 215)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "13",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(219, 224, 229)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "14",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "blur(12px)",
+      "surface": "rgba(132, 151, 177, 0.14)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "15",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "blur(20px)",
+      "surface": "rgba(157, 137, 172, 0.13)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "16",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "blur(24px)",
+      "surface": "rgba(120, 143, 171, 0.18)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "600",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "17",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "none",
+      "surface": "rgb(231, 231, 231)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "18",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "blur(32px)",
+      "surface": "rgba(215, 215, 215, 0.2)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    },
+    {
+      "key": "19",
+      "mesh": {
+        "src": "mesh.png",
+        "opacity": "1",
+        "filter": "none",
+        "mask": "linear-gradient(rgb(0, 0, 0) 179.3px, rgba(0, 0, 0, 0) 593.3px)"
+      },
+      "backdrop": "blur(56px)",
+      "surface": "rgba(215, 215, 215, 0.2)",
+      "nameColor": "rgb(96, 100, 108)",
+      "nameWeight": "500",
+      "gradientColor": "rgba(0, 0, 0, 0)",
+      "missing": [],
+      "deltas": []
+    }
+  ],
+  "errors": [],
+  "interaction": {
+    "selected": "18",
+    "baseline": "00",
+    "restored": "18"
+  },
+  "mobile": {
+    "width": 390,
+    "scroll": 390
+  }
+}

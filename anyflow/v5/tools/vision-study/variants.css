@@ -1,0 +1,48 @@
+/* 2026-09-29 再検討：元のメッシュの線・点・形・色・フェードは全案で同一。
+   ベタ面の対象は「機能名＋メッシュ＋ロゴ」の領域全体。採用前の仮値。 */
+.graphic-surface{display:none;position:absolute;left:76px;top:196px;width:784px;height:576px;pointer-events:none}
+html[data-variant="01"] .vf-lab b,
+html[data-variant="02"] .vf-lab b,
+html[data-variant="03"] .vf-lab b,
+html[data-variant="07"] .vf-lab b,
+html[data-variant="08"] .vf-lab b,
+html[data-variant="09"] .vf-lab b{color:#60646c!important}
+html[data-variant="04"] .vf-lab b,html[data-variant="10"] .vf-lab b{color:#536477!important}
+html[data-variant="05"] .vf-lab b{color:#695e6b!important}
+html[data-variant="06"] .vf-lab b{color:#64625f!important}
+html[data-variant="09"] .vf-lab b,html[data-variant="10"] .vf-lab b{font-weight:500!important}
+html[data-variant="02"] .graphic-surface,html[data-variant="09"] .graphic-surface{display:block;background:#e7e7e7}
+html[data-variant="03"] .graphic-surface,html[data-variant="08"] .graphic-surface{display:block;background:#eceef1}
+html[data-variant="04"] .graphic-surface{display:block;background:#e3e7ed}
+html[data-variant="05"] .graphic-surface{display:block;background:#e9e5eb}
+html[data-variant="06"] .graphic-surface{display:block;background:#eae8e5}
+html[data-variant="07"] .graphic-surface{display:block;background:#f0f0f0}
+html[data-variant="08"] .graphic-surface{border-radius:16px}
+html[data-variant="10"] .graphic-surface{display:block;background:#e5e9eb}
+/* 元の0.5px罫線がDPR1で消える丸め対策。DPR2では元のまま。 */
+@media(max-resolution:1dppx){html{--grid-w:1px!important;--grid-line:rgba(172,172,172,.15)!important}}
+/* 追加11〜16：同系色の濃いベタ面／色を重ねた背景ブラー。 */
+html[data-variant="11"] .vf-lab b,html[data-variant="12"] .vf-lab b,
+html[data-variant="13"] .vf-lab b,html[data-variant="14"] .vf-lab b,
+html[data-variant="15"] .vf-lab b,html[data-variant="16"] .vf-lab b{color:#60646c!important}
+html[data-variant="11"] .graphic-surface{display:block;background:#dedede}
+html[data-variant="12"] .graphic-surface{display:block;background:#d7d7d7}
+html[data-variant="13"] .graphic-surface{display:block;background:#dbe0e5}
+html[data-variant="14"] .graphic-surface{display:block;background:rgba(132,151,177,.14);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-radius:16px}
+html[data-variant="15"] .graphic-surface{display:block;background:rgba(157,137,172,.13);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:16px}
+html[data-variant="16"] .graphic-surface{display:block;background:rgba(120,143,171,.18);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-radius:16px}
+/* 背景面の境界を馴染ませる。メッシュ・文字には適用しない。 */
+html:not([data-edge="hard"]):not([data-edge="blur"]) .graphic-surface{
+ -webkit-mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent),linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);
+ mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent),linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent);
+ -webkit-mask-composite:source-in;mask-composite:intersect;
+}
+html[data-edge="blur"] .graphic-surface{filter:blur(24px)}
+/* 09ベースのブラッシュアップ。左右40px/上下24pxずつ面を拡張。 */
+html[data-variant="17"] .vf-lab b,html[data-variant="18"] .vf-lab b,html[data-variant="19"] .vf-lab b{color:#60646c!important;font-weight:500!important}
+html[data-variant="17"] .graphic-surface,html[data-variant="18"] .graphic-surface,html[data-variant="19"] .graphic-surface{
+ display:block;left:36px;top:172px;width:864px;height:624px;filter:none!important;border-radius:0;
+}
+html[data-variant="17"] .graphic-surface{background:#e7e7e7}
+html[data-variant="18"] .graphic-surface{background:rgba(215,215,215,.2);-webkit-backdrop-filter:blur(32px);backdrop-filter:blur(32px)}
+html[data-variant="19"] .graphic-surface{background:rgba(215,215,215,.2);-webkit-backdrop-filter:blur(56px);backdrop-filter:blur(56px)}

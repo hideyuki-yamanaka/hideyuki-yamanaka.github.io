@@ -1,0 +1,36 @@
+{
+  "states": [
+    {
+      "edge": "fade",
+      "mask": "linear-gradient(to right, rgba(0, 0, 0, 0), rgb(0, 0, 0) 10%, rgb(0, 0, 0) 90%, rgba(0, 0, 0, 0)), linear-gradient(rgba(0, 0, 0, 0), rgb(0, 0, 0) 12%, rgb(0, 0, 0) 88%, rgba(0, 0, 0, 0))",
+      "composite": "intersect, intersect",
+      "filter": "none",
+      "backdrop": "blur(12px)",
+      "meshFilter": "none"
+    },
+    {
+      "edge": "blur",
+      "mask": "none",
+      "composite": "add",
+      "filter": "blur(24px)",
+      "backdrop": "blur(12px)",
+      "meshFilter": "none"
+    },
+    {
+      "edge": "hard",
+      "mask": "none",
+      "composite": "add",
+      "filter": "none",
+      "backdrop": "blur(12px)",
+      "meshFilter": "none"
+    }
+  ],
+  "toggles": [
+    "blur",
+    "hard",
+    "fade"
+  ],
+  "hiddenWhenBaseline": true,
+  "restored": "fade",
+  "errors": []
+}

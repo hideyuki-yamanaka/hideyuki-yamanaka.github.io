@@ -1,0 +1,52 @@
+{
+  "rows": [
+    {
+      "key": "09",
+      "left": "76px",
+      "top": "196px",
+      "width": "784px",
+      "height": "576px",
+      "filter": "none",
+      "backdrop": "none",
+      "gapToPoint": 67.58961486816406,
+      "mesh": "mesh.png"
+    },
+    {
+      "key": "17",
+      "left": "36px",
+      "top": "172px",
+      "width": "864px",
+      "height": "624px",
+      "filter": "none",
+      "backdrop": "none",
+      "gapToPoint": 31.54180908203125,
+      "mesh": "mesh.png"
+    },
+    {
+      "key": "18",
+      "left": "36px",
+      "top": "172px",
+      "width": "864px",
+      "height": "624px",
+      "filter": "none",
+      "backdrop": "blur(32px)",
+      "gapToPoint": 31.54180908203125,
+      "mesh": "mesh.png"
+    },
+    {
+      "key": "19",
+      "left": "36px",
+      "top": "172px",
+      "width": "864px",
+      "height": "624px",
+      "filter": "none",
+      "backdrop": "blur(56px)",
+      "gapToPoint": 31.54180908203125,
+      "mesh": "mesh.png"
+    }
+  ],
+  "switches": {
+    "blurControlHidden": true,
+    "edge": "fade"
+  }
+}

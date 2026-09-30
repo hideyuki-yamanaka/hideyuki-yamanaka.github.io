@@ -1,0 +1,15 @@
+import {chromium} from '../../../../design-gallery/node_modules/playwright/index.mjs';
+import fs from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+const out=new URL('./',import.meta.url);await fs.mkdir(new URL('previews/',out),{recursive:true});
+const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1512,height:830},deviceScaleFactor:1});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`)});
+const expected=JSON.parse(await fs.readFile(new URL('source-measurements.json',out),'utf8'));
+const report=[];
+for(let i=0;i<=19;i++){const key=String(i).padStart(2,'0');await page.goto(`http://localhost:8778/tools/vision-study/scene.html?v=${key}`,{waitUntil:'networkidle'});await page.evaluate(()=>document.fonts.ready);
+const state=await page.evaluate(ids=>({rects:Object.fromEntries(ids.map(id=>[id,document.getElementById(id).getBoundingClientRect().toJSON()])),nameColor:getComputedStyle(document.getElementById('vfL1')).color,nameWeight:getComputedStyle(document.getElementById('vfL1')).fontWeight,gradientColor:getComputedStyle(document.querySelector('.vl-strong')).webkitTextFillColor,missing:[...document.images].filter(x=>!x.complete||!x.naturalWidth).map(x=>x.src),text:document.getElementById('vision').innerText}),Object.keys(expected.rects));
+const deltas=Object.entries(state.rects).flatMap(([id,r])=>['x','y','width','height'].filter(p=>Math.abs(r[p]-expected.rects[id][p])>.15).map(p=>`${id}.${p}: ${expected.rects[id][p]} -> ${r[p]}`));
+report.push({key,...state,rects:undefined,text:undefined,deltas});await page.screenshot({path:fileURLToPath(new URL(`previews/${key}.png`,out))});}
+await page.goto('http://localhost:8778/tools/vision-study/',{waitUntil:'networkidle'});await page.locator('#variants button[data-key="16"]').click();await page.waitForTimeout(100);const selected=await page.frameLocator('#scene').locator('html').getAttribute('data-variant');await page.locator('#baseline').click();await page.waitForTimeout(100);const baseline=await page.frameLocator('#scene').locator('html').getAttribute('data-variant');await page.locator('#baseline').click();await page.waitForTimeout(100);const restored=await page.frameLocator('#scene').locator('html').getAttribute('data-variant');await page.screenshot({path:fileURLToPath(new URL('gallery.png',out))});
+await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);const mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
+const result={variants:report,errors,interaction:{selected,baseline,restored},mobile};console.log(JSON.stringify(result,null,2));await fs.writeFile(new URL('verification.json',out),JSON.stringify(result,null,2));await browser.close();
