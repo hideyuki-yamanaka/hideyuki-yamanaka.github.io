@@ -918,7 +918,10 @@
   .vf-wrap .vf-logo-plate { position: absolute; display: none; pointer-events: none; border-radius: var(--radius-lg); background: var(--glass-40); border: 1px solid var(--glass-60);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 14px 30px rgba(16,24,40,.10); }
   .vf-wrap .vf-logo-plate.is-on { display: block; }
-  .vf-wrap .vf-lab { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; white-space: nowrap; line-height: var(--lh-tight); color: var(--ink); }
+  /* 【2026-09-30 ヒデさん決定「2番で実装」】図の機能名(コネクタ・SDK など)を黒(--ink)→補足と同じ灰色 --ink-muted(#545961)に。
+     3案(ほんのり #34373C／補足と同じ灰色／しっかり #71767E)を調整パネルで見比べて 2 に決定→見比べのボタンは消した(決まり 6-7)。
+     図の文字(機能名＋補足)は1色。ページ全体の「文字の黒」(--ink)とは切り離した */
+  .vf-wrap .vf-lab { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; white-space: nowrap; line-height: var(--lh-tight); color: var(--ink-muted); }
   .vf-wrap .vf-lab b { font-weight: 500; font-size: var(--fs-base); }   /* カンプ: Noto Medium 16px */
   .vf-wrap .vf-lab span { font-weight: 400; font-size: 8px; color: var(--ink-muted); }   /* カンプ: Noto Regular 8px #545961 */
   /* 右カラム: カンプでは Point02 の右端がちょうど余白120px。そこを基準に右アンカーする */

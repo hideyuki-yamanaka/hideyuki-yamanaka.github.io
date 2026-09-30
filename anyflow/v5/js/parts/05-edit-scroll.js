@@ -2570,7 +2570,7 @@ function dmRefs(root) {
 }
 
 /* R を渡すとそのモックを動かす。省略時は本物（#devMock）を動かす */
-function devMockContent(mode, t, screen, R) {
+function devMockContent(mode, t, screen, R, opt) {
   const E = R ? R.els : dmEls;
   const LINES = R ? R.lines : dmLineEls;
   const LOAD = R ? R.load : dmLoadRoot;
@@ -2593,17 +2593,23 @@ function devMockContent(mode, t, screen, R) {
     return;
   }
   const T = t % tm.loop;
+  /* 【2026-09-30 ヒデさん依頼「開発者体験1のモックは、最初の入力と AI の返事のスピードをもうちょっと早めたい」】
+     opt(①だけ): typeK＝入力の速さ・replyK＝返事の速さ(倍率)・loadAfterReply＝返事が終わったら前と同じ間(0.4秒)で読み込みを出す。
+     コードが出る時刻(burstAt)は変えない＝返事が早く終わった分だけ読み込みの表示が長くなる。opt が無い所(②など)は前のまま */
+  const tk = (opt && opt.typeK > 0) ? opt.typeK : 1, rk = (opt && opt.replyK > 0) ? opt.replyK : 1;
+  let chatEnd = null;
 
   if (tm.chat) {
     /* 【2026-08-15】空の状態 → 入力欄にタイピング → 送信ボタンを押す
        → 打った文字がそのまま履歴に入る（アイコンなし）
        → AIが普通のテキストで返す → そのあと左のコードが流れる */
     /* 2026-08-15: もっとスピーディーにとの指定で全体を詰めた */
-    const typeFrom = 0.25, typeTo = typeFrom + DM_TEXT.length * 0.046;
-    const sendAt = typeTo + 0.22;          // 送信ボタンを押す
-    const postAt = sendAt + 0.16;          // 履歴に反映
-    const thinkTo = postAt + 0.75;         // 考え中
-    const replyTo = thinkTo + DM_REPLY.length * 0.028;
+    const typeFrom = 0.25, typeTo = typeFrom + DM_TEXT.length * 0.046 / tk;
+    const sendAt = typeTo + 0.22 / tk;     // 送信ボタンを押す(入力の速さで一緒に詰める)
+    const postAt = sendAt + 0.16 / tk;     // 履歴に反映
+    const thinkTo = postAt + 0.75 / rk;    // 考え中(返事の速さで一緒に詰める)
+    const replyTo = thinkTo + DM_REPLY.length * 0.028 / rk;
+    chatEnd = replyTo;
 
     const sent = T >= sendAt;
     const n = sent ? 0 : Math.floor(clamp01((T - typeFrom) / (typeTo - typeFrom)) * DM_TEXT.length);
@@ -2615,7 +2621,7 @@ function devMockContent(mode, t, screen, R) {
     E.userMsg.style.opacity = clamp01((T - postAt) / 0.3).toFixed(3);
     E.userText.textContent = T >= postAt ? DM_TEXT : '';
 
-    const thinkOn = T > postAt + 0.35 && T < thinkTo;
+    const thinkOn = T > postAt + 0.35 / rk && T < thinkTo;
     E.think.style.display = thinkOn ? 'flex' : 'none';
     E.think.querySelectorAll('.dm-think-b i').forEach((d, i) => {
       d.style.opacity = (0.3 + 0.7 * (0.5 + 0.5 * Math.sin(T * 7 - i * 1.1))).toFixed(2);
@@ -2633,13 +2639,14 @@ function devMockContent(mode, t, screen, R) {
   }
 
   /* ① ローディング: スケルトンに光が走る */
-  const loadIn = clamp01((T - tm.load) / 0.5);
+  const loadAt = (opt && opt.loadAfterReply && chatEnd != null) ? Math.min(tm.load, chatEnd + 0.4) : tm.load;
+  const loadIn = clamp01((T - loadAt) / 0.5);
   const burstAt = tm.load + tm.loadDur + tm.holdT;
   const loadOut = clamp01((T - (burstAt - 0.35)) / 0.3);
   LOAD.style.opacity = (loadIn * (1 - loadOut)).toFixed(3);
   SKS.forEach((b, i) => {
     /* ゆっくり光が横切る (0.55周/秒) */
-    const ph = (((T - tm.load) * 0.55 - i * 0.1) % 1 + 1) % 1;
+    const ph = (((T - loadAt) * 0.55 - i * 0.1) % 1 + 1) % 1;
     b.style.backgroundPositionX = (170 - ph * 240).toFixed(1) + '%';
   });
 
@@ -2750,6 +2757,10 @@ function updateDev2Stack() {
    V1.0 と同じく、ブロックが画面に入っている間は devMockContent を t%loop で回し続ける。
    dev1 = 複製パネル(dev1Refs) / dev2 = 本体 dmPanel(API/editor) ＋ CLI/SDK ゴースト。 */
 const devMockT0 = { dev1: null, dev2: null };
+/* ①のモックの中の早回しの倍率＝(元の「コードが出るまで」6.0秒) ÷ (つまみの秒数) */
+/* ①の入力・返事の速さ(倍率・既定 ×1.5＝2026-09-30 仮置き) */
+function devDev1Speed(k) { const v = params.sections && params.sections.dev && params.sections.dev[k]; return (v > 0) ? v : 1.5; }
+function devDev1Tempo() { const tm = DM_TIMING.editor, base = tm.load + tm.loadDur + tm.holdT; const v = params.sections && params.sections.dev && params.sections.dev.dev1CodeAt; return base / ((v > 0) ? v : 4.0); }
 function driveEditorLoop(refs, visible, key) {
   const panel = refs ? refs.panel : devEls.panel;
   const lines = refs ? refs.lines : (typeof dmLineEls !== 'undefined' ? dmLineEls : []);
@@ -2757,7 +2768,11 @@ function driveEditorLoop(refs, visible, key) {
   if (visible) {
     if (devMockT0[key] == null) devMockT0[key] = elapsed;
     if (panel) panel.classList.remove('is-blank');
-    devMockContent('anim', elapsed - devMockT0[key], 'editor', refs);
+    /* 【2026-09-30 ヒデさん依頼「開発体験01のモック内のアニメーションをもう少しだけ早く出したい」】①だけ、モックの中の流れ全体を早回しする。
+       早さ＝「コードが一気に出るまで」の秒数(sections.dev.dev1CodeAt・既定 4.0＝2026-09-30 ヒデさん「4秒にしてみて」／前は 6.0)。入力→返事→読み込み→コードの順と間合いの比率はそのまま。②は今のまま */
+    const tempo = key === 'dev1' ? devDev1Tempo() : 1;
+    const opt = key === 'dev1' ? { typeK: devDev1Speed('dev1TypeK'), replyK: devDev1Speed('dev1ReplyK'), loadAfterReply: true } : null;
+    devMockContent('anim', (elapsed - devMockT0[key]) * tempo, 'editor', refs, opt);
   } else {
     devMockT0[key] = null;
     devMockContent('empty', 0, 'editor', refs);
