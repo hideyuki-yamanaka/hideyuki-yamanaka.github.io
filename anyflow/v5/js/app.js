@@ -2198,6 +2198,17 @@ try {
     localStorage.setItem('anyflow-font-rows-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-01 ヒデさん「スマホビューの時、米印の文章は、もう少し数字の実績と米印の上下のギャップを空けて」】スマホの既定 12→20。
+   スマホの値をつまみで入れていたブラウザは、その値に1回だけ +8。印 anyflow-note-gap-mb-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-note-gap-mb-20261001')) {
+    const fix = o => { const mb = o && o.mb; if (mb && mb['sections.results.noteGap'] != null && isFinite(+mb['sections.results.noteGap'])) { mb['sections.results.noteGap'] = +mb['sections.results.noteGap'] + 8; return true; } return false; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-note-gap-mb-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
@@ -9123,7 +9134,8 @@ function applyResNote() {
       note.style.setProperty('--res-note-ml', ((rs.left - rt.left) / k).toFixed(1) + 'px'); note.style.setProperty('--res-note-w', ((rn1.right - rs.left) / k).toFixed(1) + 'px'); } }
     const eff = (f, def) => mob ? (mb['sections.results.' + f] != null ? mb['sections.results.' + f] : def) : (r[f] != null ? r[f] : def);
     /* 文字の大きさは文字の行(文字の台帳 resNote)だけで変える(決まり 6-17)。既定は CSS の 8px。旧 noteFs(単独のつまみ)は 2026-10-01 に引っ越して外した */
-    sec.style.setProperty('--res-note-gap', eff('noteGap', 12) + 'px');
+    /* 【2026-10-01 ヒデさん「スマホビューの時、米印の文章は、もう少し数字の実績と米印の上下のギャップを空けてあげる」】スマホの既定 12→20(PC は 12 のまま) */
+    sec.style.setProperty('--res-note-gap', eff('noteGap', mob ? 20 : 12) + 'px');
   } catch (e) {}
 }
 applyResNote();
@@ -11163,7 +11175,7 @@ const TEXT_SPEC = [
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
   { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
-  { key: 'footNav',   sel: '.cv-foot-nav a', name: 'フッターのナビ', pg: 'フッター', pl: 'ナビ',                         sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのナビ（1段目・2段目）', pg: 'フッター', pl: 'ナビ（1段目・2段目）', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
   { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所', pg: 'フッター', pl: '住所',                         sec: 'cv',  text: 1 },
   { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト', pg: 'フッター', pl: 'コピーライト',                           sec: 'cv',  text: 1 },
   // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---
@@ -13563,7 +13575,7 @@ function buildPanel() {
      文字の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 数字 › 注記（※）」の文字の行で変える(文字の台帳 TEXT_SPEC の resNote・決まり 6-17) */
   sub(catRes, '注記（※）', false, { grp: 'basic' });
   rows.push(slider('数値との間', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
-    '数値(または見出しと数値)の下から注記までの間。PC・スマホ 12px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 12 }));
+    '数値の下から注記までの間。PC 12px・スマホ 20px(2026-10-01 ヒデさん「スマホビューの時、もう少し数字の実績と米印の上下のギャップを空けて」で 12→20・⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 20 }));
 
   /* 【2026-09-29 完全削除】「全部出たあと（PC）」の見せ方の案(当時の作り・A〜E)を消した＝出きったらすぐ次へ(なし)だけ。見出しとつまみも消した */
 

@@ -1112,6 +1112,17 @@ try {
     localStorage.setItem('anyflow-font-rows-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-01 ヒデさん「スマホビューの時、米印の文章は、もう少し数字の実績と米印の上下のギャップを空けて」】スマホの既定 12→20。
+   スマホの値をつまみで入れていたブラウザは、その値に1回だけ +8。印 anyflow-note-gap-mb-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-note-gap-mb-20261001')) {
+    const fix = o => { const mb = o && o.mb; if (mb && mb['sections.results.noteGap'] != null && isFinite(+mb['sections.results.noteGap'])) { mb['sections.results.noteGap'] = +mb['sections.results.noteGap'] + 8; return true; } return false; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-note-gap-mb-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {

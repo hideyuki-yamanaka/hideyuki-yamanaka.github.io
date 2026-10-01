@@ -464,7 +464,8 @@ function applyResNote() {
       note.style.setProperty('--res-note-ml', ((rs.left - rt.left) / k).toFixed(1) + 'px'); note.style.setProperty('--res-note-w', ((rn1.right - rs.left) / k).toFixed(1) + 'px'); } }
     const eff = (f, def) => mob ? (mb['sections.results.' + f] != null ? mb['sections.results.' + f] : def) : (r[f] != null ? r[f] : def);
     /* 文字の大きさは文字の行(文字の台帳 resNote)だけで変える(決まり 6-17)。既定は CSS の 8px。旧 noteFs(単独のつまみ)は 2026-10-01 に引っ越して外した */
-    sec.style.setProperty('--res-note-gap', eff('noteGap', 12) + 'px');
+    /* 【2026-10-01 ヒデさん「スマホビューの時、米印の文章は、もう少し数字の実績と米印の上下のギャップを空けてあげる」】スマホの既定 12→20(PC は 12 のまま) */
+    sec.style.setProperty('--res-note-gap', eff('noteGap', mob ? 20 : 12) + 'px');
   } catch (e) {}
 }
 applyResNote();
@@ -2504,7 +2505,7 @@ const TEXT_SPEC = [
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
   { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
-  { key: 'footNav',   sel: '.cv-foot-nav a', name: 'フッターのナビ', pg: 'フッター', pl: 'ナビ',                         sec: 'cv',  text: 0, multi: 1, move: 0 },
+  { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのナビ（1段目・2段目）', pg: 'フッター', pl: 'ナビ（1段目・2段目）', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
   { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所', pg: 'フッター', pl: '住所',                         sec: 'cv',  text: 1 },
   { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト', pg: 'フッター', pl: 'コピーライト',                           sec: 'cv',  text: 1 },
   // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---

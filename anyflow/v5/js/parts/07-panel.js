@@ -1546,7 +1546,7 @@ function buildPanel() {
      文字の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 数字 › 注記（※）」の文字の行で変える(文字の台帳 TEXT_SPEC の resNote・決まり 6-17) */
   sub(catRes, '注記（※）', false, { grp: 'basic' });
   rows.push(slider('数値との間', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
-    '数値(または見出しと数値)の下から注記までの間。PC・スマホ 12px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 12 }));
+    '数値の下から注記までの間。PC 12px・スマホ 20px(2026-10-01 ヒデさん「スマホビューの時、もう少し数字の実績と米印の上下のギャップを空けて」で 12→20・⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 20 }));
 
   /* 【2026-09-29 完全削除】「全部出たあと（PC）」の見せ方の案(当時の作り・A〜E)を消した＝出きったらすぐ次へ(なし)だけ。見出しとつまみも消した */
 
