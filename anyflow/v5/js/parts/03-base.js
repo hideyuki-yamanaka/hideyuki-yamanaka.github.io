@@ -1059,6 +1059,27 @@ try {
   }
 } catch (e) {}
 applyHdrLogo();
+/* 【2026-10-01 ヒデさん「フォームの問い合わせのフォームのボックスは不透明度50%ぐらいに」】フォームのカードの不透明度 10%→50%。
+   焼き込み(02-shipped)も 50%。もう開いたことのあるブラウザの保存値も1回だけ 50% に(スマホの上書きがあればそれも)。印 anyflow-cvf-bga-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-cvf-bga-20261001')) {
+    const fix = o => { if (!o) return false; let ch = false; if (o.cvfGlass && o.cvfGlass.bgA !== 0.5) { o.cvfGlass.bgA = 0.5; ch = true; } if (o.mb && o.mb['cvfGlass.bgA'] != null && o.mb['cvfGlass.bgA'] !== 0.5) { o.mb['cvfGlass.bgA'] = 0.5; ch = true; } return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-cvf-bga-20261001', '1');
+  }
+} catch (e) {}
+/* 【2026-10-01 ヒデさん「文字のリンクのボタンでそれを修正する感じで」】事例一覧へのボタンを案3(文字のリンク)へ。見比べで別の案を選んだまま保存されていたら1回だけ案3に。印 anyflow-case-more-3-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-case-more-3-20261001')) {
+    const fix = o => { const c = o && o.sections && o.sections.cases; if (c && c.moreVar != null && String(c.moreVar) !== '3') { c.moreVar = '3'; return true; } return false; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-case-more-3-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
@@ -1488,6 +1509,33 @@ let cvRisePx = 0;                 /* 【2026-09-15】canvas を上へはみ出�
 /* 【2026-09-30】スマホ: 導入事例の最後のカードの下〜お問い合わせの上端の空き(px)。置き場所(offset)で測る＝動きの途中のずれを含まない */
 let cvMbGapUsed = null;
 function cvMbGapNow(sec) { const gr = document.getElementById('caseGrid'); if (!sec || !gr) return 0; const top = el => { let y = 0; for (let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; }; return Math.max(0, Math.round(top(sec) - (top(gr) + gr.offsetHeight))); }
+/* 【2026-10-01 ヒデさん「グラデーションではなく、グレージュの方をもうちょっと引き伸ばしたい。そこにボタンを置く」】
+   PC: お問い合わせの位置(--cv-gap＝導入事例の下の空き)を「事例一覧へのボタンの下＋間(caseMoreCvGap)＋グラデの伸び(cvRisePx)」で決める。
+   ＝グラデの上の端(ほぼ透明な所)がボタンの「間」px 下に来る。グラデの形(伸び・深さ)は変えず、お問い合わせごと下げる。
+   ボタンの位置は画面の高さで変わる(導入事例は画面1枚の高さ)ので、読み込み後・幅や高さが変わった時・毎コマ(cvSyncStretch)に測り直す */
+let cvPcGapUsed = null;
+function cvPcGapNeed() {
+  const cs = document.getElementById('cases'), b = document.querySelector('#caseMore .case-more-btn');
+  if (!cs || !b || b.offsetParent === null || typeof caseMoreCvGap !== 'function') return null;
+  const r = b.getBoundingClientRect(); if (!(r.height > 0)) return null;
+  return Math.round(r.bottom - cs.getBoundingClientRect().bottom + caseMoreCvGap() + cvRisePx);
+}
+function cvPcGapSync() {
+  if (document.documentElement.classList.contains('mb')) return;
+  const n = cvPcGapNeed(); if (n == null || n === cvPcGapUsed) return;
+  cvPcGapUsed = n; document.documentElement.style.setProperty('--cv-gap', n + 'px');
+}
+/* 【2026-10-01】スマホ: 導入事例の下の余白(ボタンの下〜お問い合わせの上端)＝グラデの伸び(溶け込みの深さ＋上へ伸ばす)＋ボタンの下のグレージュ(caseMoreCvGap)。
+   空きが深さより広くなるので伸びは「深さ＋上へ伸ばす」で一定＝グラデの上の端がボタンの「間」px 下に来る(fit の fixH が使う) */
+function cvMbCasesPad() {
+  const sec = document.getElementById('conversion');
+  const base = (sec && (cvNaturalH(sec) || sec.getBoundingClientRect().height)) || 609;
+  const deepRaw = (params.mb && params.mb['cv.blend'] != null) ? params.mb['cv.blend'] : CV_BLEND_DEF_MB;
+  const deep = Math.min(Math.max(0, deepRaw), Math.round(base * 0.95));
+  const under = Math.max(0, (params.mb && params.mb['cv.underCards'] != null) ? params.mb['cv.underCards'] : CV_UNDER_DEF_MB);
+  const gap = (typeof caseMoreCvGap === 'function') ? caseMoreCvGap() : 40;
+  return Math.max(16, Math.round(deep + under + gap));
+}
 function cvApplyFade(sec) {
   const base = cvNaturalH(sec) || sec.getBoundingClientRect().height || 609;
   const f0 = (params.cv && params.cv.fade0 != null) ? params.cv.fade0 : 0;
@@ -1544,6 +1592,7 @@ function cvSyncStretch() {
   const before = cvNatH, base = cvNaturalH(sec);
   if (base !== before) cvApplyFade(sec);
   else if (document.documentElement.classList.contains('mb') && cvMbGapNow(sec) !== cvMbGapUsed) cvApplyFade(sec);   /* 【2026-09-30】スマホの空きが変わった(読み込み後に並びが決まった等) */
+  cvPcGapSync();   /* 【2026-10-01】PC: ボタンの位置やグラデの伸びが変わったら、お問い合わせの位置を合わせ直す(変わらなければ何もしない) */
   const now = sec.getBoundingClientRect().height;
   return (base > 20 && now > 20) ? Math.min(3, Math.max(0.5, now / base)) : 1;
 }
@@ -1579,9 +1628,13 @@ function applyCvStyle(fromSwitch) {
   sec.style.setProperty('--cvf-w', Math.round(params.formWidth != null ? params.formWidth : 660) + 'px');   /* 【V5.0】フォームの横幅 */
   const _mb = document.documentElement.classList.contains('mb');
   /* ⚠️ 間隔は #cases(別のセクション)に効かせるので、変数はルート(html)に置く。#conversion に置くと届かない */
+  cvApplyFade(sec);   /* 【2026-10-01】先にグラデの伸び(cvRisePx)を決める。下の間隔はそれを使う(伸びは間隔に左右されない＝導入事例の中の空きで決まる) */
   { let _g = _mb ? 0 : (((params.cv && params.cv.gapTop) || 0) + _edgeComp);   /* 【2026-09-16】切れ目の高さ分だけ間隔も広げる(headTop 側で相殺し総高さ一定) */
+    const _need = _mb ? null : cvPcGapNeed();
+    /* 【2026-10-01】事例一覧へのボタンがある時(いつも)は、ボタンの下のグレージュの間で決める(上の gapTop は使わない・つまみも外した) */
+    if (_need != null) _g = _need;
     /* 詰める(マイナス)は「導入事例の下に空いている分」までに制限する。これ以上詰めるとカードが切れるため */
-    if (_g < 0) {
+    else if (_g < 0) {
       const _cs = document.getElementById('cases'), _gr = document.getElementById('caseGrid');
       if (_cs && _gr) {
         /* 【2026-10-01】事例一覧へのボタンがあれば、その下端までを「中身」として数える(お問い合わせがボタンに重ならない) */
@@ -1590,8 +1643,9 @@ function applyCvStyle(fromSwitch) {
         _g = Math.max(_g, -_slack);
       }
     }
+    cvPcGapUsed = _need != null ? _need : null;
     document.documentElement.style.setProperty('--cv-gap', Math.round(_g) + 'px');   /* 導入事例との間隔(SP は従来どおり効かせない) */ }
-  cvApplyFade(sec);   /* 溶け込みの境界(「伸ばす前の高さ」基準の px。伸ばしても薄い帯は広がらない) */
+  /* 溶け込みの境界(「伸ばす前の高さ」基準の px。伸ばしても薄い帯は広がらない)は上で先に入れた(2026-10-01) */
   /* 案11: 黒ボタンをフッター帯(©の左)へ移す。他の案では本文の下へ戻す */
   const btn = sec.querySelector('.cv-btn'), footR = sec.querySelector('.cv-foot-r'), content = sec.querySelector('.cv-content');
   if (btn && footR && content) { if (st.btnInFoot) { if (btn.parentElement !== footR) footR.insertBefore(btn, footR.firstChild); } else if (btn.parentElement !== content) content.appendChild(btn); }

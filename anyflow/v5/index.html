@@ -474,11 +474,13 @@
         </a>
       </div>
       <!-- 【2026-10-01 チームの依頼】4枚のカードの下の中央に、事例一覧(anyflow.jp/case)へのボタン。見た目は3案(cm-1 黒いボタン／cm-2 枠線のボタン／cm-3 文字のリンク)。
-           調整パネル「導入事例 › バリエーション › 事例一覧へのボタン」で切り替え。文言は「詳しく見る」(2026-10-01 ヒデさん)・見た目は⚠️見比べ中 -->
-      <div class="case-more cm-1" id="caseMore">
-        <a class="case-more-btn" href="https://anyflow.jp/case" target="_blank" rel="noopener">
-          <span class="cm-label">詳しく見る</span>   <!-- 2026-10-01 ヒデさん「導入事例のボタンは詳しく見る」(仮置きの「導入事例をもっと見る」から) -->
-          <span class="cm-arrow" aria-hidden="true"><svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg></span>
+           調整パネル「導入事例 › バリエーション › 事例一覧へのボタン」で切り替え。文言は「詳しく見る」(2026-10-01 ヒデさん)。
+           既定は案3(2026-10-01 ヒデさん「文字のリンクのボタンで、下線は取って、ヘッダーのテキストリンクのホバーのアニメーションに合わせる。矢印は細く・棒を長く」) -->
+      <div class="case-more cm-3" id="caseMore">
+        <a class="case-more-btn" href="https://anyflow.jp/case" target="_blank" rel="noopener" aria-label="導入事例を詳しく見る">
+          <span class="cm-label"><span>詳しく見る</span><span aria-hidden="true">詳しく見る</span></span>   <!-- 2026-10-01 ヒデさん「導入事例のボタンは詳しく見る」。2つ目はホバーで下から入れ替わる複製(案3だけ・ヘッダーの文字リンクと同じ動き) -->
+          <span class="cm-arrow" aria-hidden="true"><svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg></span>   <!-- 案1・2 の矢印 -->
+          <span class="cm-arrow-line" aria-hidden="true"><svg fill="none"><path stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter"/></svg></span>   <!-- 案3 の細い矢印(形は JS の applyCaseMore が作る) -->
         </a>
       </div>
     </div>

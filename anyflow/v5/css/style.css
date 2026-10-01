@@ -1907,10 +1907,20 @@
   /* 案2 枠線のボタン(ホバーで黒く塗る) */
   .case-more.cm-2 .case-more-btn { background: transparent; color: var(--ink-strong); border-color: var(--ink-strong); }
   .case-more.cm-2 .case-more-btn:hover { background: var(--surface-cta); color: var(--ink-on-dark); }
-  /* 案3 文字のリンク(下線・ホバーで下線が消えて矢印が動く) */
-  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: 0; gap: var(--space-8); background: none; color: var(--ink-strong); }
-  .case-more.cm-3 .case-more-btn .cm-label { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
-  .case-more.cm-3 .case-more-btn:hover .cm-label { text-decoration-color: transparent; }
+  /* 案3 文字のリンク(既定)。【2026-10-01 ヒデさん「下線は取って、ヘッダーのテキストリンクのホバーのアニメーションに合わせる。矢印は線を細く・棒を長く」】
+     下線なし。ホバーでヘッダーの文字リンクと同じ「文字が上へ入れ替わる」(.nav-links の roll と同じ時間・緩急)・矢印は右へ3px(ヘッダーのボタンと同じ)。
+     矢印は専用の細い矢印(.cm-arrow-line・形は JS の applyCaseMore が作る)。文字の大きさ・文字と矢印の間・矢印の線の太さ/長さ/矢じりは調整パネル(PC とスマホで別の値) */
+  .case-more-btn .cm-label > span:nth-child(2), .case-more-btn .cm-arrow-line { display: none; }   /* 案1・2 では使わない */
+  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: 0; gap: var(--cm3-gap, 8px); background: none; color: var(--ink-strong); font-size: var(--cm3-fs, var(--fs-body)); }
+  .case-more.cm-3 .case-more-btn .cm-label { position: relative; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: top; }
+  .case-more.cm-3 .case-more-btn .cm-label > span { display: block; transition: transform var(--t-ui) var(--e-out); }
+  .case-more.cm-3 .case-more-btn .cm-label > span:nth-child(2) { position: absolute; left: 0; top: 100%; }
+  .case-more.cm-3 .case-more-btn:hover .cm-label > span { transform: translateY(-100%); }
+  .case-more.cm-3 .case-more-btn .cm-arrow { display: none; }
+  .case-more.cm-3 .case-more-btn .cm-arrow-line { display: block; flex: 0 0 auto; line-height: 0; }
+  .case-more.cm-3 .case-more-btn .cm-arrow-line svg { display: block; overflow: visible; transition: translate var(--t-ui); }
+  .case-more.cm-3 .case-more-btn .cm-arrow-line svg path { stroke-width: var(--cm3-arrow-w, 1px); vector-effect: non-scaling-stroke; }   /* 線幅は実寸 px(4-7 の例外・線幅は自由) */
+  .case-more.cm-3 .case-more-btn:hover .cm-arrow-line svg { translate: 3px 0; }
   /* 罫線 = カンプ var(--line-grid)。JSで scaleX / scaleY を 0→1 にして「左/上から引く」 */
   .cg-hline {
     position: absolute;

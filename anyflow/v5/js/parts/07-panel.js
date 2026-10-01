@@ -1737,16 +1737,32 @@ function buildPanel() {
      お問い合わせとの間隔(PC)。値の住み家は今まで通り params.cv.gapTop(コンバージョンのタブから引っ越し。入口は1つだけ・6-2)。
      グラデの形は変わらない(伸ばす量は 03-base の CV_RISE_GAP_REF で固定)。スマホは効かないのでスマホモード中は隠す */
   /* 【2026-10-01 チームの依頼】4枚のカードの下の中央に、事例一覧(anyflow.jp/case)へのボタン。見た目は案(バリエーション)・カードとの間は基本。PC とスマホで別の値 */
+  /* 【2026-10-01 ヒデさん「文字のリンクのボタンで、下線は取って、ヘッダーのテキストリンクのホバーのアニメーションに合わせる。矢印は線を細く・棒を長く。調整パネルで」】
+     案3(文字のリンク)を直して既定に。案3 の文字・矢印のつまみは案3を選んだ時だけ出す(6-14)。値は案3だけの物(PC＝sections.cases.cm3・スマホ＝mb['sections.cases.cm3.*'])。
+     性質で振り分け(6-13): 間・長さ・矢じり＝基本／文字サイズ＝フォント／線の太さ＝エフェクト */
   sub(catCase, '事例一覧へのボタン', true, { fixed: true, grp: 'variation' });
   varRowX('caseMore', CASE_MORE_VARIANTS, () => caseMoreKey(), k => { sv().cases.moreVar = String(k); applyCaseMore(); }, { after: () => { try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} } });
+  const _cm3On = () => caseMoreKey() === '3';
+  const _cm3 = () => (sv().cases.cm3 || (sv().cases.cm3 = {}));
+  const _cm3Row = (label, key, min, max, step, fmt, tip) => { const r = slider(label, min, max, step, () => (_cm3()[key] != null ? _cm3()[key] : CM3_DEF[key]), v => { _cm3()[key] = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} markDirty(); }, fmt, tip,
+    { fixedMax: true, mbKey: 'sections.cases.cm3.' + key, mbDefault: CM3_DEF[key] }); rows.push(r); showWhen(r, _cm3On); return r; };
   sub(catCase, '事例一覧へのボタン', false, { grp: 'basic' });
   rows.push(slider('カードとの間', 8, 80, 4, () => (sv().cases.moreGap != null ? sv().cases.moreGap : 32), v => { sv().cases.moreGap = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} }, v => Math.round(v) + 'px',
     '4枚のカードの下から、事例一覧へのボタンまでの間。PC・スマホ 32px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreGap', mbDefault: 32 }));
-  sub(catCase, 'お問い合わせとの間（PC）', null, { grp: 'basic' });
+  _cm3Row('文字と矢印の間', 'gap', 0, 32, 4, v => Math.round(v) + 'px', '「詳しく見る」と矢印の間。PC・スマホ 8px(⚠️仮置き)。');
+  _cm3Row('矢印の長さ', 'arrowLen', 8, 64, 4, v => Math.round(v) + 'px', '矢印の左端から先端までの長さ(くの字ではない棒の部分が伸び縮みします)。2026-10-01 ヒデさん「棒の部分をもう少し伸ばす」で 約14→24px(⚠️仮置き)。');
+  _cm3Row('矢じりの大きさ', 'arrowHead', 2, 12, 2, v => Math.round(v) + 'px', '先端のくの字の大きさ(先端から開いた端までの横の長さ。高さはこの2倍)。今までの矢印と同じくらいの 4px(⚠️仮置き)。');
+  sub(catCase, '事例一覧へのボタン', false, { grp: 'font' });
+  _cm3Row('文字サイズ', 'fs', 12, 20, 2, v => Math.round(v) + 'px', '「詳しく見る」の文字の大きさ。PC・スマホ 14px(今までと同じ)。');
+  sub(catCase, '事例一覧へのボタン', false, { grp: 'fxtex' });
+  _cm3Row('矢印の線の太さ', 'arrowW', 0.5, 3, 0.5, v => (+v).toFixed(1) + 'px', '矢印の線の太さ(画面の実寸)。2026-10-01 ヒデさん「1ピクセル減らして細く」で 2→1px。');
+  /* 【2026-10-01 ヒデさん「導入事例からお問い合わせの距離をもうちょっと空けたい。グラデーションではなく、グレージュの方を引き伸ばしたい。そこにボタンを置く」】
+     ボタンの下〜お問い合わせのグラデの上の端(ほぼ透明な所)までの間。グラデの形は変えず、お問い合わせごと上下する。PC とスマホで別の値。
+     ❌ 前の「間隔」(params.cv.gapTop・PC だけ・既定 −60)は、ボタンの位置で決める今の作りでは効かないので外した(値は残してある) */
+  sub(catCase, 'お問い合わせとの間', null, { grp: 'basic' });
   { const _cvp = () => (params.cv || (params.cv = {}));   /* cvv はこの後(コンバージョン)で作るので、ここでは直接読む */
-    const _r = slider('間隔', -120, 300, 4, () => (_cvp().gapTop || 0), v => { _cvp().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
-      'カードの下からお問い合わせ(グラデの色の面)までの間。マイナスで詰めると、お問い合わせの薄いグラデがカードの下にうっすら掛かります(グラデの形は変わりません)。カードが切れない所で自動で止まります。既定 −60px。', { signed: true, grp: 'basic' });
-    _r.classList.add('pc-only-row'); rows.push(_r);
+    rows.push(slider('ボタンからグラデまで', -80, 240, 4, () => (sv().cases.moreCvGap != null ? sv().cases.moreCvGap : CASE_MORE_CV_GAP_DEF), v => { sv().cases.moreCvGap = v; try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} markDirty(); }, v => Math.round(v) + 'px',
+      '「詳しく見る」の下から、お問い合わせのグラデの上の端(ほぼ透明な所)までの間。ここはグレージュの地のまま空きます。広げるとお問い合わせごと下がり、グラデの形は変わりません。PC・スマホ 40px(⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreCvGap', mbDefault: CASE_MORE_CV_GAP_DEF }));
     /* 【2026-09-28 夜 ヒデさん依頼「導入事例との距離をもっと上下詰めたい」】お問い合わせの見出し(Contact)の上の余白。値はお問い合わせの params.cv.headTop(入口はここ1つ)。
        スマホは CSS の固定値(上40px)なので PC/タブレットだけ＝スマホモードでは隠す */
     const _r2 = slider('見出しまでの余白', 0, 240, 4, () => (_cvp().headTop != null ? _cvp().headTop : CV_HEAD_TOP_DEF), v => { _cvp().headTop = v; applyCvStyle(); fit(); markDirty(); }, v => Math.round(v) + 'px',
@@ -1800,7 +1816,7 @@ function buildPanel() {
      透け方のつまみをここ(エフェクト)に集めて、カード/入力欄で分けた(6-13: 不透明度・ぼかしはエフェクト)。
      カードの不透明度(旧「色の透過率」)と入力欄の不透明度(旧「白さ」)は 基本 › フォーム（カード）から引っ越し(値の住み家は同じ・入口は1つ)。入力欄の背景ぼかしは新規 */
   subgroup('カード', () => {
-    rows.push(slider('不透明度', 0, 1, 0.02, () => (_cg().bgA != null ? _cg().bgA : 0.5), v => { _cg().bgA = v; applyCvfGlass(); markDirty(); }, v => Math.round(v * 100) + '%', 'フォームのカード(箱)の色の濃さ。下げるほど後ろのグラデが透けます。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
+    rows.push(slider('不透明度', 0, 1, 0.02, () => (_cg().bgA != null ? _cg().bgA : 0.5), v => { _cg().bgA = v; applyCvfGlass(); markDirty(); }, v => Math.round(v * 100) + '%', 'フォームのカード(箱)の色の濃さ。下げるほど後ろのグラデが透けます。2026-10-01 ヒデさん「不透明度50%ぐらいに」で 10→50%。', { mbKey: 'cvfGlass.bgA', fixedMax: true }));
     rows.push(slider('背景ぼかし', 0, 40, 1, () => (_cg().blur != null ? _cg().blur : 20), v => { _cg().blur = v; applyCvfGlass(); markDirty(); }, v => Math.round(v) + 'px', 'カードの後ろに透けて見えるグラデのぼかし量(Figma の背景ぼかし)。', { mbKey: 'cvfGlass.blur', fixedMax: true }));
     rows.push(slider('彩度', 1, 2.2, 0.05, () => (_cg().sat != null ? _cg().sat : 1.5), v => { _cg().sat = v; applyCvfGlass(); markDirty(); }, v => v.toFixed(2), 'カードの後ろに透けて見える色の鮮やかさ。上げると背景の色が残ります。', { mbKey: 'cvfGlass.sat', fixedMax: true }));
   });

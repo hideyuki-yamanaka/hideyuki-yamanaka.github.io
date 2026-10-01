@@ -475,9 +475,26 @@ try { document.fonts.ready.then(() => applyResNote()); } catch (e) {}   /* 書�
 const CASE_MORE_VARIANTS = [
   { key: '1', name: '黒いボタン', fixed: true, tip: 'ヘッダー・フォームの黒いボタンと同じ地と文字。ホバーでシアン。' },
   { key: '2', name: '枠線のボタン', fixed: true, tip: '黒い枠線だけ。ホバーで黒く塗る。' },
-  { key: '3', name: '文字のリンク', fixed: true, tip: '下線付きの文字と矢印だけ。いちばん控えめ。' },
+  { key: '3', name: '文字のリンク', fixed: true, tip: '下線なしの文字と細い矢印。ホバーでヘッダーの文字リンクと同じく文字が上へ入れ替わり、矢印が右へ動く(既定・2026-10-01 ヒデさん)。' },
 ];
-function caseMoreKey() { const c = (params.sections && params.sections.cases) || {}; const v = String(c.moreVar || '1'); return (CASE_MORE_VARIANTS.some(x => x.key === v) && !variantRemovedKey('caseMore', v)) ? v : '1'; }
+/* 【2026-10-01 ヒデさん「基本はシンプルな線のバージョン。文字のリンクのボタンでそれを修正する感じで」】既定は案3(前は案1) */
+function caseMoreKey() { const c = (params.sections && params.sections.cases) || {}; const v = String(c.moreVar || '3'); if (CASE_MORE_VARIANTS.some(x => x.key === v) && !variantRemovedKey('caseMore', v)) return v; const alive = CASE_MORE_VARIANTS.find(x => !variantRemovedKey('caseMore', x.key)); return alive ? alive.key : '3'; }
+/* 案3(文字のリンク)の文字と細い矢印。値は案3だけの物: PC＝params.sections.cases.cm3 / スマホ＝スマホの上書き mb['sections.cases.cm3.*'](無ければスマホの既定＝下の CM3_DEF)。⚠️仮置き
+   【2026-10-01 ヒデさん「矢印の線幅は1ピクセル減らして細く、くの字じゃない棒の部分をもう少し伸ばす。調整パネルで」】線 2→1px・長さ 約14→24px(矢じりは今の大きさ 約5→4px・4-7) */
+const CM3_DEF = { fs: 14, gap: 8, arrowW: 1, arrowLen: 24, arrowHead: 4 };
+function caseMoreCm3(k) {
+  const c = ((params.sections && params.sections.cases) || {}).cm3 || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
+  const v = mob ? mb['sections.cases.cm3.' + k] : c[k];
+  return (v != null && isFinite(+v)) ? +v : CM3_DEF[k];
+}
+/* 【2026-10-01 ヒデさん「導入事例からお問い合わせの距離をもうちょっと空けたい。グラデーションではなく、グレージュの方を引き伸ばしたい。そこにボタンを置く」】
+   ボタンの下〜お問い合わせのグラデの上の端(ほぼ透明な所)までの間 px。グラデの形は変えず、お問い合わせごと下げる(PC は 03-base の cvPcGapNeed・スマホは fit の導入事例の高さ)。PC とスマホで別の値・⚠️仮置き */
+const CASE_MORE_CV_GAP_DEF = 40;
+function caseMoreCvGap() {
+  const c = (params.sections && params.sections.cases) || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
+  const v = mob ? mb['sections.cases.moreCvGap'] : c.moreCvGap;
+  return (v != null && isFinite(+v)) ? +v : CASE_MORE_CV_GAP_DEF;
+}
 function applyCaseMore() {
   try {
     const el = document.getElementById('caseMore'); if (!el) return;
@@ -485,6 +502,17 @@ function applyCaseMore() {
     const c = params.sections.cases || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
     const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : 32) : (c.moreGap != null ? c.moreGap : 32);
     el.style.setProperty('--case-more-gap', gap + 'px');
+    /* 案3: 文字の大きさ・文字と矢印の間・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸 */
+    el.style.setProperty('--cm3-fs', caseMoreCm3('fs') + 'px');
+    el.style.setProperty('--cm3-gap', caseMoreCm3('gap') + 'px');
+    const svg = el.querySelector('.cm-arrow-line svg'), path = svg && svg.querySelector('path');
+    if (svg && path) {
+      const w = Math.max(0.25, caseMoreCm3('arrowW')), L = Math.max(4, caseMoreCm3('arrowLen')), h = Math.max(1, Math.min(L, caseMoreCm3('arrowHead'))), H = 2 * h, f = n => +n.toFixed(2);
+      svg.setAttribute('width', L); svg.setAttribute('height', H); svg.setAttribute('viewBox', '0 0 ' + L + ' ' + H);
+      /* 棒: 左端(線の太さの半分＝見た目の左端が 0)〜先端の1px手前 / 矢じり: 先端(L, h)へ 45° の2本 */
+      path.setAttribute('d', 'M' + f(w / 2) + ' ' + h + ' H' + f(L - 1) + ' M' + f(L - h) + ' 0 L' + L + ' ' + h + ' L' + f(L - h) + ' ' + H);
+      el.style.setProperty('--cm3-arrow-w', w + 'px');
+    }
   } catch (e) {}
 }
 applyCaseMore();
@@ -1931,9 +1959,10 @@ function fit() {
     };
     fixH('vision', '#valP1, #valP2', 16);   /* 【2026-09-16 ヒデさん依頼】ビジョン末尾の余白=実績「事業の推進力を」の上。85→16(=--space-16。スペーシングガイドライン準拠)。ビジョン上部は意図的なので不変 */
     if (resFxActive() === 'default') fixH('results', '#resVals, .r2v:last-child', 56);   /* 【2026-09-14】案の時は案の CSS/JS が高さを決める */
-    fixH('cases', '.cg-cell, #caseMore', 64);   /* 【2026-10-01】事例一覧へのボタンの下まで測る(ボタンがお問い合わせに重ならない) */
+    fixH('cases', '.cg-cell, #caseMore', (typeof cvMbCasesPad === 'function') ? cvMbCasesPad() : 64);   /* 【2026-10-01】事例一覧へのボタンの下まで測る。下の余白＝グラデの伸び＋ボタンの下のグレージュ(ヒデさん「グレージュの方を引き伸ばしたい」) */
     try { initSpResultLines(); } catch (e) {}   /* 【2026-09-22】SP: 実績の罫線3本を入場アニメ(左→右トリム・ディレイ)にする */
   });
+  else requestAnimationFrame(() => { try { cvPcGapSync(); } catch (e) {} });   /* 【2026-10-01】PC: 並びが決まった後に、お問い合わせの位置(ボタンの下のグレージュの間)を合わせ直す */
 }
 fitReady = true;
 /* 【2026-09-22 ヒデさん依頼】SP のみ: 実績の罫線(res2-hr-top / res2-vline / res2-hr の3本)を
