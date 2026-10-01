@@ -2177,6 +2177,27 @@ try {
     localStorage.setItem('anyflow-case-more-gap-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-01 ヒデさん「フォントに関わる物は、今あるフォントのスタイルのパネルに統一」(決まり 6-17)】
+   単独の「文字サイズ」つまみ(注記 sections.results.noteFs・詳しく見る sections.cases.cm3.fs)に入れていた値を、文字の行の置き場
+   (PC＝params.edits[key].fs / スマホ＝params.editsMb[key].fs)へ1回だけ引っ越す(既定のままなら引っ越さない)。印 anyflow-font-rows-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-font-rows-20261001')) {
+    const fix = o => {
+      if (!o) return false; let ch = false;
+      const mv = (src, del, key, mob, def) => { if (src == null || !isFinite(+src)) return; del(); ch = true; if (+src === def) return; const st = mob ? (o.editsMb || (o.editsMb = {})) : (o.edits || (o.edits = {})); const e = st[key] || (st[key] = {}); if (e.fs == null) e.fs = +src; };
+      const r = o.sections && o.sections.results, c = o.sections && o.sections.cases && o.sections.cases.cm3, mb = o.mb || {};
+      if (r) mv(r.noteFs, () => { delete r.noteFs; }, 'resNote', false, 8);
+      mv(mb['sections.results.noteFs'], () => { delete mb['sections.results.noteFs']; }, 'resNote', true, 8);
+      if (c) mv(c.fs, () => { delete c.fs; }, 'caseMoreLab', false, 14);
+      mv(mb['sections.cases.cm3.fs'], () => { delete mb['sections.cases.cm3.fs']; }, 'caseMoreLab', true, 14);
+      return ch;
+    };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-font-rows-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
@@ -9101,7 +9122,7 @@ function applyResNote() {
       const rs = stats.getBoundingClientRect(), rt = top.getBoundingClientRect(), rn1 = no1.getBoundingClientRect();
       note.style.setProperty('--res-note-ml', ((rs.left - rt.left) / k).toFixed(1) + 'px'); note.style.setProperty('--res-note-w', ((rn1.right - rs.left) / k).toFixed(1) + 'px'); } }
     const eff = (f, def) => mob ? (mb['sections.results.' + f] != null ? mb['sections.results.' + f] : def) : (r[f] != null ? r[f] : def);
-    sec.style.setProperty('--res-note-fs', eff('noteFs', 8) + 'px');
+    /* 文字の大きさは文字の行(文字の台帳 resNote)だけで変える(決まり 6-17)。既定は CSS の 8px。旧 noteFs(単独のつまみ)は 2026-10-01 に引っ越して外した */
     sec.style.setProperty('--res-note-gap', eff('noteGap', 12) + 'px');
   } catch (e) {}
 }
@@ -9121,7 +9142,7 @@ function caseMoreKey() { const c = (params.sections && params.sections.cases) ||
    【2026-10-01 ヒデさん「矢印の線幅は1ピクセル減らして細く、くの字じゃない棒の部分をもう少し伸ばす。調整パネルで」】線 2→1px・長さ 約14→24px(矢じりは今の大きさ 約5→4px・4-7) */
 /* 【2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅と中のパディング、矢印とテキストのギャップは調整できるように」】枠線 1px・内側の余白 上下12/左右24・角丸6(お問い合わせボタンと同じ)。
    文字と矢印の間は、枠のあるボタン(案1・2)と同じ 16px に(枠なしの時は 8px)。⚠️仮置き */
-const CM3_DEF = { fs: 14, gap: 16, arrowW: 1, arrowLen: 24, arrowHead: 4, bw: 1, padY: 12, padX: 24, radius: 6 };
+const CM3_DEF = { gap: 16, arrowW: 1, arrowLen: 24, arrowHead: 4, bw: 1, padY: 12, padX: 24, radius: 6 };   /* 文字の大きさ(旧 fs)は文字の行へ(決まり 6-17) */
 function caseMoreCm3(k) {
   const c = ((params.sections && params.sections.cases) || {}).cm3 || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
   const v = mob ? mb['sections.cases.cm3.' + k] : c[k];
@@ -9144,8 +9165,7 @@ function applyCaseMore() {
     /* 【2026-10-01 ヒデさん「詳しく見るのボタンをもう少しだけコンテンツから離して」】カードとの間の既定 32→48(PC・スマホとも・CASE_MORE_GAP_DEF) */
     const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : CASE_MORE_GAP_DEF) : (c.moreGap != null ? c.moreGap : CASE_MORE_GAP_DEF);
     el.style.setProperty('--case-more-gap', gap + 'px');
-    /* 案3: 文字の大きさ・文字と矢印の間・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸 */
-    el.style.setProperty('--cm3-fs', caseMoreCm3('fs') + 'px');
+    /* 案3: 文字と矢印の間・枠線・内側の余白・角丸・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸。文字は文字の行(caseMoreLab) */
     el.style.setProperty('--cm3-gap', caseMoreCm3('gap') + 'px');
     el.style.setProperty('--cm3-bw', caseMoreCm3('bw') + 'px');    /* 枠線の太さ(0＝枠なし) */
     el.style.setProperty('--cm3-py', caseMoreCm3('padY') + 'px');  /* 内側の余白(上下) */
@@ -11110,6 +11130,7 @@ const TEXT_SPEC = [
   { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）', pg: '推進力の見出し', pl: '2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
   { key: 'statsLab',  sel: '.res2-stats .r2s b',    name: '数字のラベル（導入企業 など）', pg: '数字', pl: 'ラベル（導入企業 など）',    sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'statsVal',  sel: '.res2-stats .r2s span', name: '数字（100+ など）', pg: '数字', pl: '値（100+ など）',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'resNote',   sel: '#resNote',   name: '数字の注記（※ iPaaS サービス No.1 の根拠）', pg: '数字', pl: '注記（※）',          sec: 'res', text: 0, move: 0 },   /* 【2026-10-01】チームの依頼の注記。文字は文字の行だけで変える(決まり 6-17・既定は CSS の 8px) */
   { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
@@ -11129,6 +11150,7 @@ const TEXT_SPEC = [
   { key: 'cgQuote',   sel: '.cg-quote',   name: 'カードの一言', pg: 'カード', pl: '一言',                              sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'cgTag',     sel: '.cg-tag',     name: 'カードの業種タグ', pg: 'カード', pl: '業種タグ',                          sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'cgCompany', sel: '.cg-company', name: 'カードの会社名', pg: 'カード', pl: '会社名',                            sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'caseMoreLab', sel: '#caseMore .cm-label', name: '事例一覧へのボタンの文字（詳しく見る）', pg: '事例一覧へのボタン', pl: '詳しく見る', sec: 'case', text: 0, move: 0 },   /* 【2026-10-01 ヒデさん「フォントパネルの詳しく見るの中で、ウェイトやサイズが選べる形に」】決まり 6-17・既定は CSS の 14px */
   { key: 'caseGrid',  sel: '#caseGrid',   name: '事例カード4枚（位置だけ）',                 sec: 'case', text: 0, font: 0, rel: 1 },
   // --- お問い合わせ ---
   { key: 'cvEyebrow', sel: '.cv-eyebrow', name: 'Contact',                                  sec: 'cv',  text: 1 },
@@ -13535,11 +13557,10 @@ function buildPanel() {
   sub(catRes, '数値の実績（スマホ）', false, { grp: 'basic' });
   rows.push(slider('並びの幅', 256, 342, 4, () => (sv().results.statsWMb > 0 ? sv().results.statsWMb : 288), v => { sv().results.statsWMb = v; applyStatsMb(); }, v => Math.round(v) + 'px',
     'スマホだけ。導入企業・連携実績・連携アプリ数・iPaaS サービスの 2×2 のまとまりの幅。狭いほど左右の列が真ん中へ寄って、中央の間が詰まります。前は 342px(画面いっぱい)→ 288px(2026-09-30・仮置き)。256px より狭いと「20,000+」がはみ出します。', { fixedMax: true }));
-  /* 【2026-10-01 チームの依頼】iPaaS サービス No.1 の根拠の注記(※)。置き場所は案(バリエーション)・文字サイズはフォント・数値との間は基本(決まり 6-13)。PC とスマホで別の値(6-8) */
+  /* 【2026-10-01 チームの依頼】iPaaS サービス No.1 の根拠の注記(※)。数値との間は基本(決まり 6-13)。PC とスマホで別の値(6-8)。文字は文字の行(6-17) */
   /* 【2026-10-01 ヒデさん決定「No.1 の右揃えで」】注記の置き場所の見比べボタン(3案)は消した＝数値の下・右そろえに固定(決まり 6-7) */
-  sub(catRes, '注記（※）', false, { grp: 'font' });
-  rows.push(slider('文字サイズ', 6, 16, 2, () => (sv().results.noteFs != null ? sv().results.noteFs : 8), v => { sv().results.noteFs = v; applyResNote(); }, v => Math.round(v) + 'px',
-    'iPaaS サービス No.1 の根拠の注記の文字サイズ。PC・スマホとも 8px(2026-10-01 ヒデさん「もっと小さくていい」10→8。PC は実績のまとまりが 0.9倍に縮むので見た目は約7px)。小さくしすぎると読めず、根拠を示したことにならないので注意。', { fixedMax: true, mbKey: 'sections.results.noteFs', mbDefault: 8 }));
+  /* ❌ 2026-10-01 に「注記（※）› 文字サイズ」のつまみを単独で作っていた(params.sections.results.noteFs)→ 同じ日に外した。
+     文字の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 数字 › 注記（※）」の文字の行で変える(文字の台帳 TEXT_SPEC の resNote・決まり 6-17) */
   sub(catRes, '注記（※）', false, { grp: 'basic' });
   rows.push(slider('数値との間', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
     '数値(または見出しと数値)の下から注記までの間。PC・スマホ 12px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 12 }));
@@ -13750,8 +13771,8 @@ function buildPanel() {
   _cm3Row('角丸', 'radius', 0, 24, 2, v => Math.round(v) + 'px', '枠の角の丸み。PC・スマホ 6px(お問い合わせボタンと同じ・⚠️仮置き)。');
   _cm3Row('矢印の長さ', 'arrowLen', 8, 64, 4, v => Math.round(v) + 'px', '矢印の左端から先端までの長さ(くの字ではない棒の部分が伸び縮みします)。2026-10-01 ヒデさん「棒の部分をもう少し伸ばす」で 約14→24px(⚠️仮置き)。');
   _cm3Row('矢じりの大きさ', 'arrowHead', 2, 12, 2, v => Math.round(v) + 'px', '先端のくの字の大きさ(先端から開いた端までの横の長さ。高さはこの2倍)。今までの矢印と同じくらいの 4px(⚠️仮置き)。');
-  sub(catCase, '事例一覧へのボタン', false, { grp: 'font' });
-  _cm3Row('文字サイズ', 'fs', 12, 20, 2, v => Math.round(v) + 'px', '「詳しく見る」の文字の大きさ。PC・スマホ 14px(今までと同じ)。');
+  /* ❌ 2026-10-01 に「フォント › 事例一覧へのボタン › 文字サイズ」のつまみを単独で作っていた(sections.cases.cm3.fs)→ 同じ日に外した(ヒデさん「新たにルールにないインジケーターを作るのではなく、今あるフォントのスタイルのパネルに統一」)。
+     「詳しく見る」の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 事例一覧へのボタン › 詳しく見る」の文字の行で変える(文字の台帳 TEXT_SPEC の caseMoreLab・決まり 6-17) */
   sub(catCase, '事例一覧へのボタン', false, { grp: 'fxtex' });
   _cm3Row('枠線の太さ', 'bw', 0, 3, 0.5, v => (+v).toFixed(1) + 'px', '「詳しく見る」を囲む枠線の太さ。0 で枠なし(文字のリンク)。PC・スマホ 1px(2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅は調整できるように」)。');
   _cm3Row('矢印の線の太さ', 'arrowW', 0.5, 3, 0.5, v => (+v).toFixed(1) + 'px', '矢印の線の太さ(画面の実寸)。2026-10-01 ヒデさん「1ピクセル減らして細く」で 2→1px。');

@@ -1540,11 +1540,10 @@ function buildPanel() {
   sub(catRes, '数値の実績（スマホ）', false, { grp: 'basic' });
   rows.push(slider('並びの幅', 256, 342, 4, () => (sv().results.statsWMb > 0 ? sv().results.statsWMb : 288), v => { sv().results.statsWMb = v; applyStatsMb(); }, v => Math.round(v) + 'px',
     'スマホだけ。導入企業・連携実績・連携アプリ数・iPaaS サービスの 2×2 のまとまりの幅。狭いほど左右の列が真ん中へ寄って、中央の間が詰まります。前は 342px(画面いっぱい)→ 288px(2026-09-30・仮置き)。256px より狭いと「20,000+」がはみ出します。', { fixedMax: true }));
-  /* 【2026-10-01 チームの依頼】iPaaS サービス No.1 の根拠の注記(※)。置き場所は案(バリエーション)・文字サイズはフォント・数値との間は基本(決まり 6-13)。PC とスマホで別の値(6-8) */
+  /* 【2026-10-01 チームの依頼】iPaaS サービス No.1 の根拠の注記(※)。数値との間は基本(決まり 6-13)。PC とスマホで別の値(6-8)。文字は文字の行(6-17) */
   /* 【2026-10-01 ヒデさん決定「No.1 の右揃えで」】注記の置き場所の見比べボタン(3案)は消した＝数値の下・右そろえに固定(決まり 6-7) */
-  sub(catRes, '注記（※）', false, { grp: 'font' });
-  rows.push(slider('文字サイズ', 6, 16, 2, () => (sv().results.noteFs != null ? sv().results.noteFs : 8), v => { sv().results.noteFs = v; applyResNote(); }, v => Math.round(v) + 'px',
-    'iPaaS サービス No.1 の根拠の注記の文字サイズ。PC・スマホとも 8px(2026-10-01 ヒデさん「もっと小さくていい」10→8。PC は実績のまとまりが 0.9倍に縮むので見た目は約7px)。小さくしすぎると読めず、根拠を示したことにならないので注意。', { fixedMax: true, mbKey: 'sections.results.noteFs', mbDefault: 8 }));
+  /* ❌ 2026-10-01 に「注記（※）› 文字サイズ」のつまみを単独で作っていた(params.sections.results.noteFs)→ 同じ日に外した。
+     文字の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 数字 › 注記（※）」の文字の行で変える(文字の台帳 TEXT_SPEC の resNote・決まり 6-17) */
   sub(catRes, '注記（※）', false, { grp: 'basic' });
   rows.push(slider('数値との間', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
     '数値(または見出しと数値)の下から注記までの間。PC・スマホ 12px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 12 }));
@@ -1755,8 +1754,8 @@ function buildPanel() {
   _cm3Row('角丸', 'radius', 0, 24, 2, v => Math.round(v) + 'px', '枠の角の丸み。PC・スマホ 6px(お問い合わせボタンと同じ・⚠️仮置き)。');
   _cm3Row('矢印の長さ', 'arrowLen', 8, 64, 4, v => Math.round(v) + 'px', '矢印の左端から先端までの長さ(くの字ではない棒の部分が伸び縮みします)。2026-10-01 ヒデさん「棒の部分をもう少し伸ばす」で 約14→24px(⚠️仮置き)。');
   _cm3Row('矢じりの大きさ', 'arrowHead', 2, 12, 2, v => Math.round(v) + 'px', '先端のくの字の大きさ(先端から開いた端までの横の長さ。高さはこの2倍)。今までの矢印と同じくらいの 4px(⚠️仮置き)。');
-  sub(catCase, '事例一覧へのボタン', false, { grp: 'font' });
-  _cm3Row('文字サイズ', 'fs', 12, 20, 2, v => Math.round(v) + 'px', '「詳しく見る」の文字の大きさ。PC・スマホ 14px(今までと同じ)。');
+  /* ❌ 2026-10-01 に「フォント › 事例一覧へのボタン › 文字サイズ」のつまみを単独で作っていた(sections.cases.cm3.fs)→ 同じ日に外した(ヒデさん「新たにルールにないインジケーターを作るのではなく、今あるフォントのスタイルのパネルに統一」)。
+     「詳しく見る」の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 事例一覧へのボタン › 詳しく見る」の文字の行で変える(文字の台帳 TEXT_SPEC の caseMoreLab・決まり 6-17) */
   sub(catCase, '事例一覧へのボタン', false, { grp: 'fxtex' });
   _cm3Row('枠線の太さ', 'bw', 0, 3, 0.5, v => (+v).toFixed(1) + 'px', '「詳しく見る」を囲む枠線の太さ。0 で枠なし(文字のリンク)。PC・スマホ 1px(2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅は調整できるように」)。');
   _cm3Row('矢印の線の太さ', 'arrowW', 0.5, 3, 0.5, v => (+v).toFixed(1) + 'px', '矢印の線の太さ(画面の実寸)。2026-10-01 ヒデさん「1ピクセル減らして細く」で 2→1px。');

@@ -463,7 +463,7 @@ function applyResNote() {
       const rs = stats.getBoundingClientRect(), rt = top.getBoundingClientRect(), rn1 = no1.getBoundingClientRect();
       note.style.setProperty('--res-note-ml', ((rs.left - rt.left) / k).toFixed(1) + 'px'); note.style.setProperty('--res-note-w', ((rn1.right - rs.left) / k).toFixed(1) + 'px'); } }
     const eff = (f, def) => mob ? (mb['sections.results.' + f] != null ? mb['sections.results.' + f] : def) : (r[f] != null ? r[f] : def);
-    sec.style.setProperty('--res-note-fs', eff('noteFs', 8) + 'px');
+    /* 文字の大きさは文字の行(文字の台帳 resNote)だけで変える(決まり 6-17)。既定は CSS の 8px。旧 noteFs(単独のつまみ)は 2026-10-01 に引っ越して外した */
     sec.style.setProperty('--res-note-gap', eff('noteGap', 12) + 'px');
   } catch (e) {}
 }
@@ -483,7 +483,7 @@ function caseMoreKey() { const c = (params.sections && params.sections.cases) ||
    【2026-10-01 ヒデさん「矢印の線幅は1ピクセル減らして細く、くの字じゃない棒の部分をもう少し伸ばす。調整パネルで」】線 2→1px・長さ 約14→24px(矢じりは今の大きさ 約5→4px・4-7) */
 /* 【2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅と中のパディング、矢印とテキストのギャップは調整できるように」】枠線 1px・内側の余白 上下12/左右24・角丸6(お問い合わせボタンと同じ)。
    文字と矢印の間は、枠のあるボタン(案1・2)と同じ 16px に(枠なしの時は 8px)。⚠️仮置き */
-const CM3_DEF = { fs: 14, gap: 16, arrowW: 1, arrowLen: 24, arrowHead: 4, bw: 1, padY: 12, padX: 24, radius: 6 };
+const CM3_DEF = { gap: 16, arrowW: 1, arrowLen: 24, arrowHead: 4, bw: 1, padY: 12, padX: 24, radius: 6 };   /* 文字の大きさ(旧 fs)は文字の行へ(決まり 6-17) */
 function caseMoreCm3(k) {
   const c = ((params.sections && params.sections.cases) || {}).cm3 || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
   const v = mob ? mb['sections.cases.cm3.' + k] : c[k];
@@ -506,8 +506,7 @@ function applyCaseMore() {
     /* 【2026-10-01 ヒデさん「詳しく見るのボタンをもう少しだけコンテンツから離して」】カードとの間の既定 32→48(PC・スマホとも・CASE_MORE_GAP_DEF) */
     const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : CASE_MORE_GAP_DEF) : (c.moreGap != null ? c.moreGap : CASE_MORE_GAP_DEF);
     el.style.setProperty('--case-more-gap', gap + 'px');
-    /* 案3: 文字の大きさ・文字と矢印の間・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸 */
-    el.style.setProperty('--cm3-fs', caseMoreCm3('fs') + 'px');
+    /* 案3: 文字と矢印の間・枠線・内側の余白・角丸・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸。文字は文字の行(caseMoreLab) */
     el.style.setProperty('--cm3-gap', caseMoreCm3('gap') + 'px');
     el.style.setProperty('--cm3-bw', caseMoreCm3('bw') + 'px');    /* 枠線の太さ(0＝枠なし) */
     el.style.setProperty('--cm3-py', caseMoreCm3('padY') + 'px');  /* 内側の余白(上下) */
@@ -2472,6 +2471,7 @@ const TEXT_SPEC = [
   { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）', pg: '推進力の見出し', pl: '2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
   { key: 'statsLab',  sel: '.res2-stats .r2s b',    name: '数字のラベル（導入企業 など）', pg: '数字', pl: 'ラベル（導入企業 など）',    sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'statsVal',  sel: '.res2-stats .r2s span', name: '数字（100+ など）', pg: '数字', pl: '値（100+ など）',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'resNote',   sel: '#resNote',   name: '数字の注記（※ iPaaS サービス No.1 の根拠）', pg: '数字', pl: '注記（※）',          sec: 'res', text: 0, move: 0 },   /* 【2026-10-01】チームの依頼の注記。文字は文字の行だけで変える(決まり 6-17・既定は CSS の 8px) */
   { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
@@ -2491,6 +2491,7 @@ const TEXT_SPEC = [
   { key: 'cgQuote',   sel: '.cg-quote',   name: 'カードの一言', pg: 'カード', pl: '一言',                              sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'cgTag',     sel: '.cg-tag',     name: 'カードの業種タグ', pg: 'カード', pl: '業種タグ',                          sec: 'case', text: 0, multi: 1, move: 0 },
   { key: 'cgCompany', sel: '.cg-company', name: 'カードの会社名', pg: 'カード', pl: '会社名',                            sec: 'case', text: 0, multi: 1, move: 0 },
+  { key: 'caseMoreLab', sel: '#caseMore .cm-label', name: '事例一覧へのボタンの文字（詳しく見る）', pg: '事例一覧へのボタン', pl: '詳しく見る', sec: 'case', text: 0, move: 0 },   /* 【2026-10-01 ヒデさん「フォントパネルの詳しく見るの中で、ウェイトやサイズが選べる形に」】決まり 6-17・既定は CSS の 14px */
   { key: 'caseGrid',  sel: '#caseGrid',   name: '事例カード4枚（位置だけ）',                 sec: 'case', text: 0, font: 0, rel: 1 },
   // --- お問い合わせ ---
   { key: 'cvEyebrow', sel: '.cv-eyebrow', name: 'Contact',                                  sec: 'cv',  text: 1 },

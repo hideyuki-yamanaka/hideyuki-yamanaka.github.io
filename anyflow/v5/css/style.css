@@ -1144,7 +1144,7 @@
   /* 【2026-10-01 チームの依頼】実績「iPaaS サービス No.1」の根拠の注記(※)。置き場所は ヒデさん「No.1 の右揃えで」で決定＝数値の下・右そろえ(見比べの3案は消した)。
      文字サイズ(既定 8px)と数値との間はつまみ(PC とスマホで別の値)。色は数値と同じ黒を薄めて(暗い場面でも数値と同じように変わる) */
   .res2-stats .r2s b .r2s-mark { font-size: .6em; vertical-align: super; line-height: 0; margin-left: 2px; }
-  .res2-note { margin: 0; font-family: var(--font-jp); font-weight: 300; font-size: var(--res-note-fs, 8px); line-height: 1.6; letter-spacing: 0; color: var(--ink-strong); opacity: .64; text-wrap: balance; }   /* 折り返した時に2行目が「年度版 ]」だけにならないよう、行の長さをそろえる */
+  .res2-note { margin: 0; font-family: var(--font-jp); font-weight: 300; font-size: 8px;   /* 2026-10-01 決定 8px。変える時は文字の行(フォント › 文字 › 数字 › 注記（※）)で(決まり 6-17) */  line-height: 1.6; letter-spacing: 0; color: var(--ink-strong); opacity: .64; text-wrap: balance; }   /* 折り返した時に2行目が「年度版 ]」だけにならないよう、行の長さをそろえる */
   .res2-note { text-align: right; }
   /* 置き方: 注記は「見出しと数値のまとまり(.res2-top)」の下の行に置き、数値のまとまりと同じ幅(--res-stats-w・JS が測る)にしぼって、その真下に右端をそろえる。
      ❌ 最初は案1・2 を数値のまとまりの中に入れたが、5つ目の並びとして数値の間(28px)が1つ余分に数えられ、PC で4つの数値が 25px 左へずれた(2026-10-01 測って直した) */
@@ -1913,7 +1913,7 @@
   .case-more-btn .cm-label > span:nth-child(2), .case-more-btn .cm-arrow-line { display: none; }   /* 案1・2 では使わない */
   /* 【2026-10-01 ヒデさん「詳しく見るのボタンは、アウトラインのストローク、枠線がある形に。線幅と中のパディング、矢印とテキストのギャップは調整できるように」】
      枠線(黒・既定 1px)＋内側の余白(上下12・左右24)＋角丸(お問い合わせボタンと同じ 6px)。幅は中身に合わせる(Hug)。値は調整パネル(PC とスマホで別の値)・⚠️仮置き */
-  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: var(--cm3-py, 12px) var(--cm3-px, 24px); gap: var(--cm3-gap, 16px); background: none; color: var(--ink-strong); font-size: var(--cm3-fs, var(--fs-body));
+  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: var(--cm3-py, 12px) var(--cm3-px, 24px); gap: var(--cm3-gap, 16px); background: none; color: var(--ink-strong);
     border: var(--cm3-bw, 1px) solid var(--ink-strong); border-radius: var(--cm3-r, var(--radius-btn)); }
   .case-more.cm-3 .case-more-btn .cm-label { position: relative; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: top; }
   .case-more.cm-3 .case-more-btn .cm-label > span { display: block; transition: transform var(--t-ui) var(--e-out); }

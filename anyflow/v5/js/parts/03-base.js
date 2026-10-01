@@ -1091,6 +1091,27 @@ try {
     localStorage.setItem('anyflow-case-more-gap-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-01 ヒデさん「フォントに関わる物は、今あるフォントのスタイルのパネルに統一」(決まり 6-17)】
+   単独の「文字サイズ」つまみ(注記 sections.results.noteFs・詳しく見る sections.cases.cm3.fs)に入れていた値を、文字の行の置き場
+   (PC＝params.edits[key].fs / スマホ＝params.editsMb[key].fs)へ1回だけ引っ越す(既定のままなら引っ越さない)。印 anyflow-font-rows-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-font-rows-20261001')) {
+    const fix = o => {
+      if (!o) return false; let ch = false;
+      const mv = (src, del, key, mob, def) => { if (src == null || !isFinite(+src)) return; del(); ch = true; if (+src === def) return; const st = mob ? (o.editsMb || (o.editsMb = {})) : (o.edits || (o.edits = {})); const e = st[key] || (st[key] = {}); if (e.fs == null) e.fs = +src; };
+      const r = o.sections && o.sections.results, c = o.sections && o.sections.cases && o.sections.cases.cm3, mb = o.mb || {};
+      if (r) mv(r.noteFs, () => { delete r.noteFs; }, 'resNote', false, 8);
+      mv(mb['sections.results.noteFs'], () => { delete mb['sections.results.noteFs']; }, 'resNote', true, 8);
+      if (c) mv(c.fs, () => { delete c.fs; }, 'caseMoreLab', false, 14);
+      mv(mb['sections.cases.cm3.fs'], () => { delete mb['sections.cases.cm3.fs']; }, 'caseMoreLab', true, 14);
+      return ch;
+    };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-font-rows-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
