@@ -1978,6 +1978,10 @@ function buildPanel() {
   }
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
+  /* 【2026-10-01 ヒデさん「フッターのデザインをちょっと組み直したパターン、3バリエーションぐらい」「コピーライトは中央で一番下の段が望ましい」】フッターの案(⚠️見比べ中) */
+  sub(catCv, 'フッター', false, { grp: 'variation' });
+  varRowX('cvFoot', CV_FOOT_VARIANTS, () => cvFootKey(), k => { params.cvFoot = String(k); applyCvFoot(); }, { after: () => { try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} } });
+
   sub(catCv, '文字（太さ・行間・字間）', null, { fixed: true });
   note('お問い合わせとフッターの文字ごとに 太さ・行間・字間(Contact・見出し・本文・フォームの項目名/入力欄・送信ボタン・フッター)。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['cv']);
@@ -2179,7 +2183,7 @@ function __previewReapply() {
     C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
     C(function () { applyInk(); });   /* 2026-09-28 文字の黒 */
     C(function () { applyHdrLogo(); });   /* 2026-09-30 ヘッダーのロゴの高さ */
-    C(function () { applyResNote(); }); C(function () { applyCaseMore(); });   /* 2026-10-01 実績の注記・事例一覧へのボタン */
+    C(function () { applyResNote(); }); C(function () { applyCaseMore(); }); C(function () { applyCvFoot(); });   /* 2026-10-01 実績の注記・事例一覧へのボタン・フッターの案 */
     C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
     C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
     C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
@@ -2946,6 +2950,7 @@ document.getElementById('panelBody').addEventListener('click', () => {
       call(function () { if (typeof applyHdrLogo === 'function') applyHdrLogo(); });   /* 【2026-09-30】ヘッダーのロゴの高さもライブ反映 */
       call(function () { if (typeof applyResNote === 'function') applyResNote(); });   /* 【2026-10-01】実績の注記(※) */
       call(function () { if (typeof applyCaseMore === 'function') applyCaseMore(); });   /* 【2026-10-01】事例一覧へのボタン */
+      call(function () { if (typeof applyCvFoot === 'function') applyCvFoot(); });   /* 【2026-10-01】フッターの案 */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
       call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
       call(function () { if (typeof applySway === 'function') applySway(); });

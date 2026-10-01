@@ -524,6 +524,17 @@ function applyCaseMore() {
   } catch (e) {}
 }
 applyCaseMore();
+/* ===== 【2026-10-01 ヒデさん「フッターのデザインをちょっと組み直したパターン、3バリエーションぐらい」「コピーライトは中央で一番下の段が望ましい」】フッターの案 =====
+   CSS の .ft-0〜3 を切り替えるだけ(部品は同じ・並べ方だけ)。既定は案1(© を中央の一番下にした案)。⚠️見比べ中 */
+const CV_FOOT_VARIANTS = [
+  { key: '0', name: '今の形', fixed: true, tip: 'ナビ2段＋右下に住所と ©(2026-10-01 夕方の形)。© は右下。' },
+  { key: '1', name: '左右に分ける', fixed: true, tip: '上の段の左にページの案内・右に Anyflow のページ。罫線の下に住所と ©(中央・一番下)。' },
+  { key: '2', name: '見出し付きの3列', fixed: true, tip: 'Menu / Anyflow / Address の3列(リンクは縦並び)。罫線の下に ©(中央・一番下)。' },
+  { key: '3', name: '中央そろえ', fixed: true, tip: 'ページの案内・Anyflow のページ・住所・© を全部中央に。© は一番下。' },
+];
+function cvFootKey() { const v = String(params.cvFoot != null ? params.cvFoot : '1'); if (CV_FOOT_VARIANTS.some(x => x.key === v) && !variantRemovedKey('cvFoot', v)) return v; const a = CV_FOOT_VARIANTS.find(x => !variantRemovedKey('cvFoot', x.key)); return a ? a.key : '1'; }
+function applyCvFoot() { try { const f = document.querySelector('#conversion .cv-foot'); if (!f) return; const k = cvFootKey(); CV_FOOT_VARIANTS.forEach(x => f.classList.toggle('ft-' + x.key, x.key === k)); } catch (e) {} }
+applyCvFoot();
 function applyDrawerTune() {
   const d = Object.assign({ padT: 0, padB: 0, padL: 128, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
@@ -2505,6 +2516,7 @@ const TEXT_SPEC = [
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
   { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
+  { key: 'footHead',  sel: '.cv-foot-h',     name: 'フッターの列の見出し（Menu / Anyflow / Address・案2）', pg: 'フッター', pl: '列の見出し（案2）', sec: 'cv', text: 0, multi: 1, move: 0, when: () => (typeof cvFootKey === 'function' && cvFootKey() === '2') },   /* 【2026-10-01】案2 だけで出る文字なので、行も案2の時だけ出す(決まり 6-14・6-17) */
   { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのナビ（1段目・2段目）', pg: 'フッター', pl: 'ナビ（1段目・2段目）', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
   { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所', pg: 'フッター', pl: '住所',                         sec: 'cv',  text: 1 },
   { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト', pg: 'フッター', pl: 'コピーライト',                           sec: 'cv',  text: 1 },
@@ -3289,11 +3301,13 @@ st.textContent = '.txt-row{align-items:flex-start}'
 function textRowsFor(secs) {
   /* 【2026-09-27 ヒデさん依頼】pg(小見出し)が同じ行が続いたら subgroup にまとめる＝項目名で同じ言葉をくり返さない */
   const list = TEXT_SPEC.filter(sp => secs.includes(sp.sec) && sp.font !== 0);
+  /* 【2026-10-01】案によって出る文字(when)は、その案の時だけ行を出す(決まり 6-14)。行を rows に入れて、案を切り替えた時に出し入れし直す */
+  const one = sp => { const r = textRow(sp); if (sp.when && r) { showWhen(r, sp.when); if (rows) rows.push(r); } return r; };
   for (let i = 0; i < list.length;) {
     const g = list[i].pg;
-    if (!g) { textRow(list[i]); i++; continue; }
+    if (!g) { one(list[i]); i++; continue; }
     const run = []; while (i < list.length && list[i].pg === g) run.push(list[i++]);
-    subgroup(g, () => run.forEach(textRow));
+    subgroup(g, () => run.forEach(one));
   }
 }
 
