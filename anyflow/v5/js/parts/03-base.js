@@ -1080,6 +1080,17 @@ try {
     localStorage.setItem('anyflow-case-more-3-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-01 ヒデさん「詳しく見るのボタンをもう少しだけコンテンツから離して」】カードとの間は既定 32→48。
+   つまみで自分の値を入れていたブラウザは、その値に1回だけ +16(PC・スマホの上書きとも)。印 anyflow-case-more-gap-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-case-more-gap-20261001')) {
+    const fix = o => { let ch = false; const c = o && o.sections && o.sections.cases; if (c && c.moreGap != null && isFinite(+c.moreGap)) { c.moreGap = +c.moreGap + 16; ch = true; } if (o && o.mb && o.mb['sections.cases.moreGap'] != null && isFinite(+o.mb['sections.cases.moreGap'])) { o.mb['sections.cases.moreGap'] = +o.mb['sections.cases.moreGap'] + 16; ch = true; } return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-case-more-gap-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {

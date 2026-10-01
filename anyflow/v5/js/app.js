@@ -2166,6 +2166,17 @@ try {
     localStorage.setItem('anyflow-case-more-3-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-01 ヒデさん「詳しく見るのボタンをもう少しだけコンテンツから離して」】カードとの間は既定 32→48。
+   つまみで自分の値を入れていたブラウザは、その値に1回だけ +16(PC・スマホの上書きとも)。印 anyflow-case-more-gap-20261001 */
+try {
+  if (!localStorage.getItem('anyflow-case-more-gap-20261001')) {
+    const fix = o => { let ch = false; const c = o && o.sections && o.sections.cases; if (c && c.moreGap != null && isFinite(+c.moreGap)) { c.moreGap = +c.moreGap + 16; ch = true; } if (o && o.mb && o.mb['sections.cases.moreGap'] != null && isFinite(+o.mb['sections.cases.moreGap'])) { o.mb['sections.cases.moreGap'] = +o.mb['sections.cases.moreGap'] + 16; ch = true; } return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-case-more-gap-20261001', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
@@ -7267,7 +7278,8 @@ function resInvertEls() {
     ...SECS.results.querySelectorAll('.r2s b'),   // 数字ラベル(導入企業/連携実績/稼働率)
     ...SECS.results.querySelectorAll('.r2s span'),// 数字そのもの
     ...SECS.results.querySelectorAll('.r2v-h'),   // 価値の見出し
-    ...SECS.results.querySelectorAll('.r2v-p')];  // 価値の本文
+    ...SECS.results.querySelectorAll('.r2v-p'),   // 価値の本文
+    document.getElementById('resNote')];          // 【2026-10-01 ヒデさん「米印の文章がちゃんと自動的に反転するように。開発者体験に入る時とか、タイミングも揃えて」】iPaaS の注記(※)も同じ暗さ・同じ式で白へ(薄さ 64% は CSS のまま)
 }
 /* 【2026-09-08 ヒデさん指定】色付きタグ(for SaaS=ピンク / for AI=濃い青)も暗転で白へフェードさせる。
    濃い青は黒地で読めなくなるため。各ブランド色→白へ k(暗さ)で補間。どの暗転カーブ・どのピクト案でも同じ。 */
@@ -9101,13 +9113,15 @@ try { document.fonts.ready.then(() => applyResNote()); } catch (e) {}   /* 書�
 const CASE_MORE_VARIANTS = [
   { key: '1', name: '黒いボタン', fixed: true, tip: 'ヘッダー・フォームの黒いボタンと同じ地と文字。ホバーでシアン。' },
   { key: '2', name: '枠線のボタン', fixed: true, tip: '黒い枠線だけ。ホバーで黒く塗る。' },
-  { key: '3', name: '文字のリンク', fixed: true, tip: '下線なしの文字と細い矢印。ホバーでヘッダーの文字リンクと同じく文字が上へ入れ替わり、矢印が右へ動く(既定・2026-10-01 ヒデさん)。' },
+  { key: '3', name: '枠線と細い矢印', fixed: true, tip: '細い枠線の中に、下線なしの文字と細い矢印。ホバーでヘッダーの文字リンクと同じく文字が上へ入れ替わり、矢印が右へ動く(既定・2026-10-01 ヒデさん。最初は「文字のリンク」で、同じ日に枠線を付けた)。' },
 ];
 /* 【2026-10-01 ヒデさん「基本はシンプルな線のバージョン。文字のリンクのボタンでそれを修正する感じで」】既定は案3(前は案1) */
 function caseMoreKey() { const c = (params.sections && params.sections.cases) || {}; const v = String(c.moreVar || '3'); if (CASE_MORE_VARIANTS.some(x => x.key === v) && !variantRemovedKey('caseMore', v)) return v; const alive = CASE_MORE_VARIANTS.find(x => !variantRemovedKey('caseMore', x.key)); return alive ? alive.key : '3'; }
 /* 案3(文字のリンク)の文字と細い矢印。値は案3だけの物: PC＝params.sections.cases.cm3 / スマホ＝スマホの上書き mb['sections.cases.cm3.*'](無ければスマホの既定＝下の CM3_DEF)。⚠️仮置き
    【2026-10-01 ヒデさん「矢印の線幅は1ピクセル減らして細く、くの字じゃない棒の部分をもう少し伸ばす。調整パネルで」】線 2→1px・長さ 約14→24px(矢じりは今の大きさ 約5→4px・4-7) */
-const CM3_DEF = { fs: 14, gap: 8, arrowW: 1, arrowLen: 24, arrowHead: 4 };
+/* 【2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅と中のパディング、矢印とテキストのギャップは調整できるように」】枠線 1px・内側の余白 上下12/左右24・角丸6(お問い合わせボタンと同じ)。
+   文字と矢印の間は、枠のあるボタン(案1・2)と同じ 16px に(枠なしの時は 8px)。⚠️仮置き */
+const CM3_DEF = { fs: 14, gap: 16, arrowW: 1, arrowLen: 24, arrowHead: 4, bw: 1, padY: 12, padX: 24, radius: 6 };
 function caseMoreCm3(k) {
   const c = ((params.sections && params.sections.cases) || {}).cm3 || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
   const v = mob ? mb['sections.cases.cm3.' + k] : c[k];
@@ -9116,6 +9130,7 @@ function caseMoreCm3(k) {
 /* 【2026-10-01 ヒデさん「導入事例からお問い合わせの距離をもうちょっと空けたい。グラデーションではなく、グレージュの方を引き伸ばしたい。そこにボタンを置く」】
    ボタンの下〜お問い合わせのグラデの上の端(ほぼ透明な所)までの間 px。グラデの形は変えず、お問い合わせごと下げる(PC は 03-base の cvPcGapNeed・スマホは fit の導入事例の高さ)。PC とスマホで別の値・⚠️仮置き */
 const CASE_MORE_CV_GAP_DEF = 40;
+const CASE_MORE_GAP_DEF = 48;   /* 4枚のカードの下〜ボタンの上の間 px。2026-10-01 ヒデさん「もう少しだけコンテンツから離して」で 32→48(PC・スマホ・⚠️仮置き) */
 function caseMoreCvGap() {
   const c = (params.sections && params.sections.cases) || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
   const v = mob ? mb['sections.cases.moreCvGap'] : c.moreCvGap;
@@ -9126,11 +9141,16 @@ function applyCaseMore() {
     const el = document.getElementById('caseMore'); if (!el) return;
     const k = caseMoreKey(); ['1', '2', '3'].forEach(x => el.classList.toggle('cm-' + x, x === k));
     const c = params.sections.cases || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
-    const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : 32) : (c.moreGap != null ? c.moreGap : 32);
+    /* 【2026-10-01 ヒデさん「詳しく見るのボタンをもう少しだけコンテンツから離して」】カードとの間の既定 32→48(PC・スマホとも・CASE_MORE_GAP_DEF) */
+    const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : CASE_MORE_GAP_DEF) : (c.moreGap != null ? c.moreGap : CASE_MORE_GAP_DEF);
     el.style.setProperty('--case-more-gap', gap + 'px');
     /* 案3: 文字の大きさ・文字と矢印の間・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸 */
     el.style.setProperty('--cm3-fs', caseMoreCm3('fs') + 'px');
     el.style.setProperty('--cm3-gap', caseMoreCm3('gap') + 'px');
+    el.style.setProperty('--cm3-bw', caseMoreCm3('bw') + 'px');    /* 枠線の太さ(0＝枠なし) */
+    el.style.setProperty('--cm3-py', caseMoreCm3('padY') + 'px');  /* 内側の余白(上下) */
+    el.style.setProperty('--cm3-px', caseMoreCm3('padX') + 'px');  /* 内側の余白(左右) */
+    el.style.setProperty('--cm3-r', caseMoreCm3('radius') + 'px'); /* 角丸 */
     const svg = el.querySelector('.cm-arrow-line svg'), path = svg && svg.querySelector('path');
     if (svg && path) {
       const w = Math.max(0.25, caseMoreCm3('arrowW')), L = Math.max(4, caseMoreCm3('arrowLen')), h = Math.max(1, Math.min(L, caseMoreCm3('arrowHead'))), H = 2 * h, f = n => +n.toFixed(2);
@@ -13722,14 +13742,18 @@ function buildPanel() {
   const _cm3Row = (label, key, min, max, step, fmt, tip) => { const r = slider(label, min, max, step, () => (_cm3()[key] != null ? _cm3()[key] : CM3_DEF[key]), v => { _cm3()[key] = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} markDirty(); }, fmt, tip,
     { fixedMax: true, mbKey: 'sections.cases.cm3.' + key, mbDefault: CM3_DEF[key] }); rows.push(r); showWhen(r, _cm3On); return r; };
   sub(catCase, '事例一覧へのボタン', false, { grp: 'basic' });
-  rows.push(slider('カードとの間', 8, 80, 4, () => (sv().cases.moreGap != null ? sv().cases.moreGap : 32), v => { sv().cases.moreGap = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} }, v => Math.round(v) + 'px',
-    '4枚のカードの下から、事例一覧へのボタンまでの間。PC・スマホ 32px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreGap', mbDefault: 32 }));
-  _cm3Row('文字と矢印の間', 'gap', 0, 32, 4, v => Math.round(v) + 'px', '「詳しく見る」と矢印の間。PC・スマホ 8px(⚠️仮置き)。');
+  rows.push(slider('カードとの間', 8, 96, 4, () => (sv().cases.moreGap != null ? sv().cases.moreGap : CASE_MORE_GAP_DEF), v => { sv().cases.moreGap = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} }, v => Math.round(v) + 'px',
+    '4枚のカードの下から、事例一覧へのボタンまでの間。PC・スマホ 48px(2026-10-01 ヒデさん「もう少しだけコンテンツから離して」で 32→48・⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreGap', mbDefault: CASE_MORE_GAP_DEF }));
+  _cm3Row('内側の余白（上下）', 'padY', 0, 32, 2, v => Math.round(v) + 'px', '枠線の内側の、文字の上と下の余白。PC・スマホ 12px(2026-10-01 ヒデさん「中のパディングは調整できるように」・⚠️仮置き)。');
+  _cm3Row('内側の余白（左右）', 'padX', 0, 64, 4, v => Math.round(v) + 'px', '枠線の内側の、文字の左と矢印の右の余白。PC・スマホ 24px(⚠️仮置き)。');
+  _cm3Row('文字と矢印の間', 'gap', 0, 40, 4, v => Math.round(v) + 'px', '「詳しく見る」と矢印の間。PC・スマホ 16px(枠のあるボタンの案1・2と同じ・⚠️仮置き)。');
+  _cm3Row('角丸', 'radius', 0, 24, 2, v => Math.round(v) + 'px', '枠の角の丸み。PC・スマホ 6px(お問い合わせボタンと同じ・⚠️仮置き)。');
   _cm3Row('矢印の長さ', 'arrowLen', 8, 64, 4, v => Math.round(v) + 'px', '矢印の左端から先端までの長さ(くの字ではない棒の部分が伸び縮みします)。2026-10-01 ヒデさん「棒の部分をもう少し伸ばす」で 約14→24px(⚠️仮置き)。');
   _cm3Row('矢じりの大きさ', 'arrowHead', 2, 12, 2, v => Math.round(v) + 'px', '先端のくの字の大きさ(先端から開いた端までの横の長さ。高さはこの2倍)。今までの矢印と同じくらいの 4px(⚠️仮置き)。');
   sub(catCase, '事例一覧へのボタン', false, { grp: 'font' });
   _cm3Row('文字サイズ', 'fs', 12, 20, 2, v => Math.round(v) + 'px', '「詳しく見る」の文字の大きさ。PC・スマホ 14px(今までと同じ)。');
   sub(catCase, '事例一覧へのボタン', false, { grp: 'fxtex' });
+  _cm3Row('枠線の太さ', 'bw', 0, 3, 0.5, v => (+v).toFixed(1) + 'px', '「詳しく見る」を囲む枠線の太さ。0 で枠なし(文字のリンク)。PC・スマホ 1px(2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅は調整できるように」)。');
   _cm3Row('矢印の線の太さ', 'arrowW', 0.5, 3, 0.5, v => (+v).toFixed(1) + 'px', '矢印の線の太さ(画面の実寸)。2026-10-01 ヒデさん「1ピクセル減らして細く」で 2→1px。');
   /* 【2026-10-01 ヒデさん「導入事例からお問い合わせの距離をもうちょっと空けたい。グラデーションではなく、グレージュの方を引き伸ばしたい。そこにボタンを置く」】
      ボタンの下〜お問い合わせのグラデの上の端(ほぼ透明な所)までの間。グラデの形は変えず、お問い合わせごと上下する。PC とスマホで別の値。

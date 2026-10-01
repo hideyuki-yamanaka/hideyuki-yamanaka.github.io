@@ -475,13 +475,15 @@ try { document.fonts.ready.then(() => applyResNote()); } catch (e) {}   /* 書�
 const CASE_MORE_VARIANTS = [
   { key: '1', name: '黒いボタン', fixed: true, tip: 'ヘッダー・フォームの黒いボタンと同じ地と文字。ホバーでシアン。' },
   { key: '2', name: '枠線のボタン', fixed: true, tip: '黒い枠線だけ。ホバーで黒く塗る。' },
-  { key: '3', name: '文字のリンク', fixed: true, tip: '下線なしの文字と細い矢印。ホバーでヘッダーの文字リンクと同じく文字が上へ入れ替わり、矢印が右へ動く(既定・2026-10-01 ヒデさん)。' },
+  { key: '3', name: '枠線と細い矢印', fixed: true, tip: '細い枠線の中に、下線なしの文字と細い矢印。ホバーでヘッダーの文字リンクと同じく文字が上へ入れ替わり、矢印が右へ動く(既定・2026-10-01 ヒデさん。最初は「文字のリンク」で、同じ日に枠線を付けた)。' },
 ];
 /* 【2026-10-01 ヒデさん「基本はシンプルな線のバージョン。文字のリンクのボタンでそれを修正する感じで」】既定は案3(前は案1) */
 function caseMoreKey() { const c = (params.sections && params.sections.cases) || {}; const v = String(c.moreVar || '3'); if (CASE_MORE_VARIANTS.some(x => x.key === v) && !variantRemovedKey('caseMore', v)) return v; const alive = CASE_MORE_VARIANTS.find(x => !variantRemovedKey('caseMore', x.key)); return alive ? alive.key : '3'; }
 /* 案3(文字のリンク)の文字と細い矢印。値は案3だけの物: PC＝params.sections.cases.cm3 / スマホ＝スマホの上書き mb['sections.cases.cm3.*'](無ければスマホの既定＝下の CM3_DEF)。⚠️仮置き
    【2026-10-01 ヒデさん「矢印の線幅は1ピクセル減らして細く、くの字じゃない棒の部分をもう少し伸ばす。調整パネルで」】線 2→1px・長さ 約14→24px(矢じりは今の大きさ 約5→4px・4-7) */
-const CM3_DEF = { fs: 14, gap: 8, arrowW: 1, arrowLen: 24, arrowHead: 4 };
+/* 【2026-10-01 ヒデさん「アウトラインのストローク、枠線がある形に。線幅と中のパディング、矢印とテキストのギャップは調整できるように」】枠線 1px・内側の余白 上下12/左右24・角丸6(お問い合わせボタンと同じ)。
+   文字と矢印の間は、枠のあるボタン(案1・2)と同じ 16px に(枠なしの時は 8px)。⚠️仮置き */
+const CM3_DEF = { fs: 14, gap: 16, arrowW: 1, arrowLen: 24, arrowHead: 4, bw: 1, padY: 12, padX: 24, radius: 6 };
 function caseMoreCm3(k) {
   const c = ((params.sections && params.sections.cases) || {}).cm3 || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
   const v = mob ? mb['sections.cases.cm3.' + k] : c[k];
@@ -490,6 +492,7 @@ function caseMoreCm3(k) {
 /* 【2026-10-01 ヒデさん「導入事例からお問い合わせの距離をもうちょっと空けたい。グラデーションではなく、グレージュの方を引き伸ばしたい。そこにボタンを置く」】
    ボタンの下〜お問い合わせのグラデの上の端(ほぼ透明な所)までの間 px。グラデの形は変えず、お問い合わせごと下げる(PC は 03-base の cvPcGapNeed・スマホは fit の導入事例の高さ)。PC とスマホで別の値・⚠️仮置き */
 const CASE_MORE_CV_GAP_DEF = 40;
+const CASE_MORE_GAP_DEF = 48;   /* 4枚のカードの下〜ボタンの上の間 px。2026-10-01 ヒデさん「もう少しだけコンテンツから離して」で 32→48(PC・スマホ・⚠️仮置き) */
 function caseMoreCvGap() {
   const c = (params.sections && params.sections.cases) || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
   const v = mob ? mb['sections.cases.moreCvGap'] : c.moreCvGap;
@@ -500,11 +503,16 @@ function applyCaseMore() {
     const el = document.getElementById('caseMore'); if (!el) return;
     const k = caseMoreKey(); ['1', '2', '3'].forEach(x => el.classList.toggle('cm-' + x, x === k));
     const c = params.sections.cases || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
-    const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : 32) : (c.moreGap != null ? c.moreGap : 32);
+    /* 【2026-10-01 ヒデさん「詳しく見るのボタンをもう少しだけコンテンツから離して」】カードとの間の既定 32→48(PC・スマホとも・CASE_MORE_GAP_DEF) */
+    const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : CASE_MORE_GAP_DEF) : (c.moreGap != null ? c.moreGap : CASE_MORE_GAP_DEF);
     el.style.setProperty('--case-more-gap', gap + 'px');
     /* 案3: 文字の大きさ・文字と矢印の間・細い矢印(線の太さ・長さ・矢じり)。矢印は px の座標で作る＝線の太さも長さも画面の実寸 */
     el.style.setProperty('--cm3-fs', caseMoreCm3('fs') + 'px');
     el.style.setProperty('--cm3-gap', caseMoreCm3('gap') + 'px');
+    el.style.setProperty('--cm3-bw', caseMoreCm3('bw') + 'px');    /* 枠線の太さ(0＝枠なし) */
+    el.style.setProperty('--cm3-py', caseMoreCm3('padY') + 'px');  /* 内側の余白(上下) */
+    el.style.setProperty('--cm3-px', caseMoreCm3('padX') + 'px');  /* 内側の余白(左右) */
+    el.style.setProperty('--cm3-r', caseMoreCm3('radius') + 'px'); /* 角丸 */
     const svg = el.querySelector('.cm-arrow-line svg'), path = svg && svg.querySelector('path');
     if (svg && path) {
       const w = Math.max(0.25, caseMoreCm3('arrowW')), L = Math.max(4, caseMoreCm3('arrowLen')), h = Math.max(1, Math.min(L, caseMoreCm3('arrowHead'))), H = 2 * h, f = n => +n.toFixed(2);

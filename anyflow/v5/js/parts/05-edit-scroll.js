@@ -1437,7 +1437,8 @@ function resInvertEls() {
     ...SECS.results.querySelectorAll('.r2s b'),   // 数字ラベル(導入企業/連携実績/稼働率)
     ...SECS.results.querySelectorAll('.r2s span'),// 数字そのもの
     ...SECS.results.querySelectorAll('.r2v-h'),   // 価値の見出し
-    ...SECS.results.querySelectorAll('.r2v-p')];  // 価値の本文
+    ...SECS.results.querySelectorAll('.r2v-p'),   // 価値の本文
+    document.getElementById('resNote')];          // 【2026-10-01 ヒデさん「米印の文章がちゃんと自動的に反転するように。開発者体験に入る時とか、タイミングも揃えて」】iPaaS の注記(※)も同じ暗さ・同じ式で白へ(薄さ 64% は CSS のまま)
 }
 /* 【2026-09-08 ヒデさん指定】色付きタグ(for SaaS=ピンク / for AI=濃い青)も暗転で白へフェードさせる。
    濃い青は黒地で読めなくなるため。各ブランド色→白へ k(暗さ)で補間。どの暗転カーブ・どのピクト案でも同じ。 */

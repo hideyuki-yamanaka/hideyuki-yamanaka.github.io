@@ -1892,7 +1892,7 @@
   html:not(.mb) .case-grid { left: var(--bleed-x, 0px); width: var(--bleed-w, 100%); }
   /* 【2026-10-01 チームの依頼】4枚のカードの下の中央に、事例一覧(anyflow.jp/case)へのボタン。見た目は3案(調整パネル「導入事例 › バリエーション › 事例一覧へのボタン」)・⚠️仮置き
      PC は舞台(1440 の座標)の中で カードの下端(202+588=790)＋間(--case-more-gap)。スマホはカードの下に続けて置く(下の @media) */
-  .case-more { position: absolute; left: 0; right: 0; top: calc(790px + var(--case-more-gap, 32px)); display: flex; justify-content: center; }
+  .case-more { position: absolute; left: 0; right: 0; top: calc(790px + var(--case-more-gap, 48px)); display: flex; justify-content: center; }   /* 【2026-10-01 ヒデさん「もう少しだけコンテンツから離して」】既定 32→48 */
   .case-more-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-16); box-sizing: border-box; min-width: 240px; height: 44px;
     padding: var(--space-10) var(--space-16) var(--space-10) var(--space-20); border: 1px solid transparent; border-radius: var(--radius-btn);
     font-family: var(--font-jp); font-weight: 300; font-size: var(--fs-body); letter-spacing: .06em; text-decoration: none; white-space: nowrap;
@@ -1911,7 +1911,10 @@
      下線なし。ホバーでヘッダーの文字リンクと同じ「文字が上へ入れ替わる」(.nav-links の roll と同じ時間・緩急)・矢印は右へ3px(ヘッダーのボタンと同じ)。
      矢印は専用の細い矢印(.cm-arrow-line・形は JS の applyCaseMore が作る)。文字の大きさ・文字と矢印の間・矢印の線の太さ/長さ/矢じりは調整パネル(PC とスマホで別の値) */
   .case-more-btn .cm-label > span:nth-child(2), .case-more-btn .cm-arrow-line { display: none; }   /* 案1・2 では使わない */
-  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: 0; gap: var(--cm3-gap, 8px); background: none; color: var(--ink-strong); font-size: var(--cm3-fs, var(--fs-body)); }
+  /* 【2026-10-01 ヒデさん「詳しく見るのボタンは、アウトラインのストローク、枠線がある形に。線幅と中のパディング、矢印とテキストのギャップは調整できるように」】
+     枠線(黒・既定 1px)＋内側の余白(上下12・左右24)＋角丸(お問い合わせボタンと同じ 6px)。幅は中身に合わせる(Hug)。値は調整パネル(PC とスマホで別の値)・⚠️仮置き */
+  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: var(--cm3-py, 12px) var(--cm3-px, 24px); gap: var(--cm3-gap, 16px); background: none; color: var(--ink-strong); font-size: var(--cm3-fs, var(--fs-body));
+    border: var(--cm3-bw, 1px) solid var(--ink-strong); border-radius: var(--cm3-r, var(--radius-btn)); }
   .case-more.cm-3 .case-more-btn .cm-label { position: relative; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: top; }
   .case-more.cm-3 .case-more-btn .cm-label > span { display: block; transition: transform var(--t-ui) var(--e-out); }
   .case-more.cm-3 .case-more-btn .cm-label > span:nth-child(2) { position: absolute; left: 0; top: 100%; }
@@ -2556,7 +2559,7 @@
     .case-grid { border-top: 1px solid var(--line-grid); }
     html.mb #cases.cl-1 .case-grid { border-top: none; }   /* 【2026-09-16 ヒデさん依頼】罫線なしのスマホでは上の線を出さない */
     html.mb #cases.cl-1 .cg-cell { border-bottom: none; }   /* 同・カード下の線も出さない */
-    html.mb .case-more { position: static; margin-top: var(--case-more-gap, 32px); }   /* 【2026-10-01】スマホ: カードの下に続けて置く(セクションの高さはボタンまで測る＝fit の fixH) */
+    html.mb .case-more { position: static; margin-top: var(--case-more-gap, 48px); }   /* 【2026-10-01】スマホ: カードの下に続けて置く(セクションの高さはボタンまで測る＝fit の fixH) */
     .cg-img { flex: none; width: 100%; height: 228px; border-radius: 0; overflow: hidden; }   /* カンプSP: サムネに角丸なし(2026-09-09 ヒデさん指定) */
     .cg-img img { width: 100%; height: 100%; object-fit: cover; }
     .cg-body { gap: 12px; }                                                   /* 【2026-09-22 ヒデさん依頼】一言→タグ/社名の余白を詰める(実効24→14。旧 var(--space-16)=16は下の data-ds=high 24px に負けて死んでいた) */
