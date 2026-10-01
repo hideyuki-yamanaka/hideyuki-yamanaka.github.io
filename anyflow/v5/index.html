@@ -254,8 +254,10 @@
           <div class="r2s"><b>導入企業</b><span id="cntMain">100+</span></div>
           <div class="r2s"><b>連携実績</b><span id="cntSub1">20,000+</span></div>
           <div class="r2s"><b>連携アプリ数</b><span id="cntSub2">200+</span></div>
-          <div class="r2s"><b>iPaaSサービス</b><span id="cntSub3">No.1</span></div>   <!-- 【2026-09-20 ヒデさん依頼】4つ目。「No.」は固定・「1」だけ 1〜9 でスロット回転(Figma 17950:34275) -->
+          <div class="r2s"><b>iPaaSサービス<sup class="r2s-mark">※</sup></b><span id="cntSub3">No.1</span></div>   <!-- 【2026-09-20 ヒデさん依頼】4つ目。「No.」は固定・「1」だけ 1〜9 でスロット回転(Figma 17950:34275) -->
         </div>
+        <!-- 【2026-10-01 チームの依頼】iPaaS サービス No.1 の根拠の注記(文言はチームの指定のまま)。ヒデさん決定: 数値の下・右そろえ(No.1 の右端)・文字 8px(つまみで PC とスマホ別に変えられる) -->
+        <p class="res2-note" id="resNote">※IT・Web向けSaaS開発連携型ツールとしてシェア率No.1 [ デロイト トーマツ ミック経済研究所 SaaS管理・運用・開発市場(SaaS for SaaS)の実態と展望 2024年度版 ]</p>
       </div>
       <!-- 【2026-09-20 ヒデさん依頼】for SaaS/AI の上にも、下段と同じ横線を引く -->
       <div class="res2-hr-top" id="resHrTop"></div>
@@ -471,6 +473,14 @@
           </div>
         </a>
       </div>
+      <!-- 【2026-10-01 チームの依頼】4枚のカードの下の中央に、事例一覧(anyflow.jp/case)へのボタン。見た目は3案(cm-1 黒いボタン／cm-2 枠線のボタン／cm-3 文字のリンク)。
+           調整パネル「導入事例 › バリエーション › 事例一覧へのボタン」で切り替え。文言は「詳しく見る」(2026-10-01 ヒデさん)・見た目は⚠️見比べ中 -->
+      <div class="case-more cm-1" id="caseMore">
+        <a class="case-more-btn" href="https://anyflow.jp/case" target="_blank" rel="noopener">
+          <span class="cm-label">詳しく見る</span>   <!-- 2026-10-01 ヒデさん「導入事例のボタンは詳しく見る」(仮置きの「導入事例をもっと見る」から) -->
+          <span class="cm-arrow" aria-hidden="true"><svg viewBox="0 0 20 16" fill="none"><path d="M1 8 H18 M13 2 L19 8 L13 14" stroke="currentColor" stroke-width="1" stroke-linecap="square" stroke-linejoin="miter"/></svg></span>
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -543,6 +553,9 @@
   <div class="cv-foot">
     <div class="cv-foot-l">
       <nav class="cv-foot-nav"><a href="#vision">ビジョン</a><a href="#results">提供できること</a><a href="#dev">使用イメージ</a><a href="#cases">導入事例</a><a href="#conversion">お問い合わせ</a></nav>
+      <!-- 【2026-10-01 チームの依頼】フッターに足りない項目(anyflow.jp の各ページ)を2段目に。1段目(ページの中の案内)はそのまま。
+           「導入事例」は1段目(ページの中)と名前が重なるので、外へ行く方を「導入事例一覧」にした(⚠️仮置き・チームの表記は「導入事例」) -->
+      <nav class="cv-foot-sub" aria-label="Anyflow のページ"><a href="https://anyflow.jp/case" target="_blank" rel="noopener">導入事例一覧</a><a href="https://anyflow.jp/connectors" target="_blank" rel="noopener">コネクタ一覧</a><a href="https://anyflow.jp/about" target="_blank" rel="noopener">会社概要</a><a href="https://anyflow.jp/terms" target="_blank" rel="noopener">利用規約</a><a href="https://anyflow.jp/privacy" target="_blank" rel="noopener">プライバシーポリシー</a><a href="https://anyflow.jp/security-policy" target="_blank" rel="noopener">情報セキュリティ方針</a></nav>
       <div class="cv-foot-addr">〒105-0001　東京都港区虎ノ門1-3-1 東京虎ノ門グローバルスクエア6階</div>
     </div>
     <div class="cv-foot-r"><div class="cv-foot-copy">© Anyflow Inc.</div></div><!-- 案11 はここに黒ボタンが入る -->

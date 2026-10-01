@@ -1529,16 +1529,25 @@ function buildPanel() {
   sub(catRes, '大きさ・線', true, { fixed: true, grp: 'basic' });
   rows.push(slider('大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
   rows.push(slider('線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
-  /* 【2026-09-30 ヒデさん依頼「スマホのコンテンツ間の左右のギャップが空きすぎているので詰めて(導入企業と連携実績・連携アプリ数と iPaaS サービス)」】スマホだけ(PC には効かない) */
-  sub(catRes, '数値の実績（スマホ）', false, { grp: 'basic' });
-  rows.push(slider('並びの幅', 256, 342, 4, () => (sv().results.statsWMb > 0 ? sv().results.statsWMb : 288), v => { sv().results.statsWMb = v; applyStatsMb(); }, v => Math.round(v) + 'px',
-    'スマホだけ。導入企業・連携実績・連携アプリ数・iPaaS サービスの 2×2 のまとまりの幅。狭いほど左右の列が真ん中へ寄って、中央の間が詰まります。前は 342px(画面いっぱい)→ 288px(2026-09-30・仮置き)。256px より狭いと「20,000+」がはみ出します。', { fixedMax: true }));
   sub(catRes, '動き', true, { fixed: true, grp: 'anim' });
   optRow('pictoSpeed', '速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
     () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
     v => { sv().results.pictoSpeed = +v; markDirty(); drawValueIcons(); });
 
   panelVarsec('fx', '演出');   /* 【2026-09-21】以降(つなぎ・文字)は「演出」セクションへ戻す */
+  /* 【2026-10-01】数値の実績(スマホ)と注記(※)は「演出」セクションへ(数値は演出の側。❌ 2026-09-30 に「ピクトグラム」セクションの中へ入れてしまっていた) */
+  /* 【2026-09-30 ヒデさん依頼「スマホのコンテンツ間の左右のギャップが空きすぎているので詰めて(導入企業と連携実績・連携アプリ数と iPaaS サービス)」】スマホだけ(PC には効かない) */
+  sub(catRes, '数値の実績（スマホ）', false, { grp: 'basic' });
+  rows.push(slider('並びの幅', 256, 342, 4, () => (sv().results.statsWMb > 0 ? sv().results.statsWMb : 288), v => { sv().results.statsWMb = v; applyStatsMb(); }, v => Math.round(v) + 'px',
+    'スマホだけ。導入企業・連携実績・連携アプリ数・iPaaS サービスの 2×2 のまとまりの幅。狭いほど左右の列が真ん中へ寄って、中央の間が詰まります。前は 342px(画面いっぱい)→ 288px(2026-09-30・仮置き)。256px より狭いと「20,000+」がはみ出します。', { fixedMax: true }));
+  /* 【2026-10-01 チームの依頼】iPaaS サービス No.1 の根拠の注記(※)。置き場所は案(バリエーション)・文字サイズはフォント・数値との間は基本(決まり 6-13)。PC とスマホで別の値(6-8) */
+  /* 【2026-10-01 ヒデさん決定「No.1 の右揃えで」】注記の置き場所の見比べボタン(3案)は消した＝数値の下・右そろえに固定(決まり 6-7) */
+  sub(catRes, '注記（※）', false, { grp: 'font' });
+  rows.push(slider('文字サイズ', 6, 16, 2, () => (sv().results.noteFs != null ? sv().results.noteFs : 8), v => { sv().results.noteFs = v; applyResNote(); }, v => Math.round(v) + 'px',
+    'iPaaS サービス No.1 の根拠の注記の文字サイズ。PC・スマホとも 8px(2026-10-01 ヒデさん「もっと小さくていい」10→8。PC は実績のまとまりが 0.9倍に縮むので見た目は約7px)。小さくしすぎると読めず、根拠を示したことにならないので注意。', { fixedMax: true, mbKey: 'sections.results.noteFs', mbDefault: 8 }));
+  sub(catRes, '注記（※）', false, { grp: 'basic' });
+  rows.push(slider('数値との間', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
+    '数値(または見出しと数値)の下から注記までの間。PC・スマホ 12px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 12 }));
 
   /* 【2026-09-29 完全削除】「全部出たあと（PC）」の見せ方の案(当時の作り・A〜E)を消した＝出きったらすぐ次へ(なし)だけ。見出しとつまみも消した */
 
@@ -1727,6 +1736,12 @@ function buildPanel() {
   /* 【2026-09-28 ヒデさん依頼「導入事例の下の余白を削って短く。この値も導入事例のタブで調整したい」】
      お問い合わせとの間隔(PC)。値の住み家は今まで通り params.cv.gapTop(コンバージョンのタブから引っ越し。入口は1つだけ・6-2)。
      グラデの形は変わらない(伸ばす量は 03-base の CV_RISE_GAP_REF で固定)。スマホは効かないのでスマホモード中は隠す */
+  /* 【2026-10-01 チームの依頼】4枚のカードの下の中央に、事例一覧(anyflow.jp/case)へのボタン。見た目は案(バリエーション)・カードとの間は基本。PC とスマホで別の値 */
+  sub(catCase, '事例一覧へのボタン', true, { fixed: true, grp: 'variation' });
+  varRowX('caseMore', CASE_MORE_VARIANTS, () => caseMoreKey(), k => { sv().cases.moreVar = String(k); applyCaseMore(); }, { after: () => { try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} } });
+  sub(catCase, '事例一覧へのボタン', false, { grp: 'basic' });
+  rows.push(slider('カードとの間', 8, 80, 4, () => (sv().cases.moreGap != null ? sv().cases.moreGap : 32), v => { sv().cases.moreGap = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} }, v => Math.round(v) + 'px',
+    '4枚のカードの下から、事例一覧へのボタンまでの間。PC・スマホ 32px(2026-10-01・仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreGap', mbDefault: 32 }));
   sub(catCase, 'お問い合わせとの間（PC）', null, { grp: 'basic' });
   { const _cvp = () => (params.cv || (params.cv = {}));   /* cvv はこの後(コンバージョン)で作るので、ここでは直接読む */
     const _r = slider('間隔', -120, 300, 4, () => (_cvp().gapTop || 0), v => { _cvp().gapTop = v; applyCvStyle(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
@@ -2145,6 +2160,7 @@ function __previewReapply() {
     C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
     C(function () { applyInk(); });   /* 2026-09-28 文字の黒 */
     C(function () { applyHdrLogo(); });   /* 2026-09-30 ヘッダーのロゴの高さ */
+    C(function () { applyResNote(); }); C(function () { applyCaseMore(); });   /* 2026-10-01 実績の注記・事例一覧へのボタン */
     C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
     C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
     C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
@@ -2909,6 +2925,8 @@ document.getElementById('panelBody').addEventListener('click', () => {
       call(function () { if (typeof applyKvCopy === 'function') applyKvCopy(); });
       call(function () { if (typeof applyVisEmph === 'function') applyVisEmph(); });   /* 【2026-09-20】ビジョンのバリエーションもライブ反映 */
       call(function () { if (typeof applyHdrLogo === 'function') applyHdrLogo(); });   /* 【2026-09-30】ヘッダーのロゴの高さもライブ反映 */
+      call(function () { if (typeof applyResNote === 'function') applyResNote(); });   /* 【2026-10-01】実績の注記(※) */
+      call(function () { if (typeof applyCaseMore === 'function') applyCaseMore(); });   /* 【2026-10-01】事例一覧へのボタン */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
       call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
       call(function () { if (typeof applySway === 'function') applySway(); });

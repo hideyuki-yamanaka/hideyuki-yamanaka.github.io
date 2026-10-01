@@ -1141,6 +1141,20 @@
   /* 【2026-09-01 ヒデさん指定】数値はカンプの SF Pro Ultralight = weight【100】(最軽量)。
      以前 Ultralight を 200 と誤変換していた(SF系: Ultralight=100/Thin=200。Noto系の Thin=100 と呼称がズレる) */
   .res2-stats .r2s span { font-family: var(--font-en); font-weight: 100; font-size: 60px; line-height: 1; color: var(--ink-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }   /* 【2026-09-20】4項目化: 70→60px(Figma 17950:34275 準拠) */
+  /* 【2026-10-01 チームの依頼】実績「iPaaS サービス No.1」の根拠の注記(※)。置き場所は ヒデさん「No.1 の右揃えで」で決定＝数値の下・右そろえ(見比べの3案は消した)。
+     文字サイズ(既定 8px)と数値との間はつまみ(PC とスマホで別の値)。色は数値と同じ黒を薄めて(暗い場面でも数値と同じように変わる) */
+  .res2-stats .r2s b .r2s-mark { font-size: .6em; vertical-align: super; line-height: 0; margin-left: 2px; }
+  .res2-note { margin: 0; font-family: var(--font-jp); font-weight: 300; font-size: var(--res-note-fs, 8px); line-height: 1.6; letter-spacing: 0; color: var(--ink-strong); opacity: .64; text-wrap: balance; }   /* 折り返した時に2行目が「年度版 ]」だけにならないよう、行の長さをそろえる */
+  .res2-note { text-align: right; }
+  /* 置き方: 注記は「見出しと数値のまとまり(.res2-top)」の下の行に置き、数値のまとまりと同じ幅(--res-stats-w・JS が測る)にしぼって、その真下に右端をそろえる。
+     ❌ 最初は案1・2 を数値のまとまりの中に入れたが、5つ目の並びとして数値の間(28px)が1つ余分に数えられ、PC で4つの数値が 25px 左へずれた(2026-10-01 測って直した) */
+  .res2-top > .res2-note { width: 100%; box-sizing: border-box; contain: inline-size; }
+  .res2-top > .res2-note { max-width: var(--res-stats-w, 100%); }
+  html:not(.mb) #results.rfx-24 .res2-top:has(> .res2-note) { flex-wrap: wrap; row-gap: var(--res-note-gap, 12px); }   /* PC: 見出し｜数値 の下に、注記の行 */
+  html:not(.mb) #results.rfx-24 .res2-top > .res2-note { flex: 0 0 100%; }
+  html:not(.mb) #results.rfx-24 .res2-top > .res2-note { margin-left: auto; }   /* 数値のまとまりは右端＝注記も右端に寄せた同じ幅 */
+  html.mb #results.rfx-24 .res2-top > .res2-note { margin-top: calc(var(--res-note-gap, 12px) - var(--space-20)); }   /* スマホの見出しと数値は縦並び・間 20px */
+  html.mb #results.rfx-24 .res2-top > .res2-note { align-self: flex-start; margin-left: var(--res-note-ml, 0px); width: var(--res-note-w, 100%); max-width: none; }   /* スマホ: 左端は数値のまとまりの左端、右端は No.1 の右端(JS が測る)・右そろえ */
   /* 区切り線(横・全幅) */
   .res2-hr { width: 100%; height: 1px; background: var(--line-grid); }   /* 2026-09-09: 導入事例のグリッド線と同じ濃さに(--line #D1D5DC→--line-grid #ACACAC・ヒデさん指定) */   /* 4-7例外（線の太さ） */
   .res2-hr-top { display: none; }   /* 【2026-09-20】for SaaS の上の横線。既定は出さず、案24/25 でだけ出す */
@@ -1876,6 +1890,27 @@
   }
   /* 【2026-09-15 ヒデさん指摘】罫線が画面の端まで届かない → グリッドだけステージの外へ広げて画面幅いっぱいに */
   html:not(.mb) .case-grid { left: var(--bleed-x, 0px); width: var(--bleed-w, 100%); }
+  /* 【2026-10-01 チームの依頼】4枚のカードの下の中央に、事例一覧(anyflow.jp/case)へのボタン。見た目は3案(調整パネル「導入事例 › バリエーション › 事例一覧へのボタン」)・⚠️仮置き
+     PC は舞台(1440 の座標)の中で カードの下端(202+588=790)＋間(--case-more-gap)。スマホはカードの下に続けて置く(下の @media) */
+  .case-more { position: absolute; left: 0; right: 0; top: calc(790px + var(--case-more-gap, 32px)); display: flex; justify-content: center; }
+  .case-more-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-16); box-sizing: border-box; min-width: 240px; height: 44px;
+    padding: var(--space-10) var(--space-16) var(--space-10) var(--space-20); border: 1px solid transparent; border-radius: var(--radius-btn);
+    font-family: var(--font-jp); font-weight: 300; font-size: var(--fs-body); letter-spacing: .06em; text-decoration: none; white-space: nowrap;
+    transition: background-color var(--t-ui), color var(--t-ui), border-color var(--t-ui); }
+  .case-more-btn .cm-arrow { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; }
+  .case-more-btn .cm-arrow svg { width: 16px; height: 16px; display: block; overflow: visible; transition: translate var(--t-ui); }
+  .case-more-btn .cm-arrow svg path { stroke-width: var(--cta-arrow-w, 2px); vector-effect: non-scaling-stroke; }
+  .case-more-btn:hover .cm-arrow svg { translate: 3px 0; }
+  /* 案1 黒いボタン(ヘッダー・フォームの黒いボタンと同じ地と文字・ホバーでシアン) */
+  .case-more.cm-1 .case-more-btn { background: var(--surface-cta); color: var(--ink-on-dark); }
+  .case-more.cm-1 .case-more-btn:hover { background: var(--brand-cyan); }
+  /* 案2 枠線のボタン(ホバーで黒く塗る) */
+  .case-more.cm-2 .case-more-btn { background: transparent; color: var(--ink-strong); border-color: var(--ink-strong); }
+  .case-more.cm-2 .case-more-btn:hover { background: var(--surface-cta); color: var(--ink-on-dark); }
+  /* 案3 文字のリンク(下線・ホバーで下線が消えて矢印が動く) */
+  .case-more.cm-3 .case-more-btn { min-width: 0; height: auto; padding: 0; gap: var(--space-8); background: none; color: var(--ink-strong); }
+  .case-more.cm-3 .case-more-btn .cm-label { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+  .case-more.cm-3 .case-more-btn:hover .cm-label { text-decoration-color: transparent; }
   /* 罫線 = カンプ var(--line-grid)。JSで scaleX / scaleY を 0→1 にして「左/上から引く」 */
   .cg-hline {
     position: absolute;
@@ -2086,6 +2121,10 @@
   .cv-foot-nav { display: flex; flex-wrap: wrap; gap: var(--space-28); }
   .cv-foot-nav a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); opacity: .72; transition: opacity var(--t-tap); }
   .cv-foot-nav a:hover { opacity: 1; }
+  /* 【2026-10-01 チームの依頼】フッターの2段目(anyflow.jp の各ページ)。1段目(ページの中の案内 14px)より一段控えめに、住所と同じ 12px */
+  .cv-foot-sub { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-20); margin-top: var(--space-12); }
+  .cv-foot-sub a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; transition: opacity var(--t-tap); }
+  .cv-foot-sub a:hover { opacity: 1; }
   .cv-foot-addr { font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; margin-top: var(--space-16); }
   .cv-foot-copy { font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); opacity: 0.5; white-space: nowrap; }
   #footer.ft-hidden { display: none; }
@@ -2507,6 +2546,7 @@
     .case-grid { border-top: 1px solid var(--line-grid); }
     html.mb #cases.cl-1 .case-grid { border-top: none; }   /* 【2026-09-16 ヒデさん依頼】罫線なしのスマホでは上の線を出さない */
     html.mb #cases.cl-1 .cg-cell { border-bottom: none; }   /* 同・カード下の線も出さない */
+    html.mb .case-more { position: static; margin-top: var(--case-more-gap, 32px); }   /* 【2026-10-01】スマホ: カードの下に続けて置く(セクションの高さはボタンまで測る＝fit の fixH) */
     .cg-img { flex: none; width: 100%; height: 228px; border-radius: 0; overflow: hidden; }   /* カンプSP: サムネに角丸なし(2026-09-09 ヒデさん指定) */
     .cg-img img { width: 100%; height: 100%; object-fit: cover; }
     .cg-body { gap: 12px; }                                                   /* 【2026-09-22 ヒデさん依頼】一言→タグ/社名の余白を詰める(実効24→14。旧 var(--space-16)=16は下の data-ds=high 24px に負けて死んでいた) */

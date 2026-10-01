@@ -323,6 +323,16 @@ function updateCases(pRaw) {
     const bl = (1 - k) * c.inBlur;
     el.style.filter = bl > 0.05 ? `blur(${bl.toFixed(2)}px)` : '';
   });
+  /* 【2026-10-01】事例一覧へのボタン: 5枚目のつもりで、4枚目のあと stag 秒で同じブラーから出る(自分が画面に入った時点が起点) */
+  const more = document.getElementById('caseMore');
+  if (more) {
+    const tm = npBlockT('caseMore', more), stm = npClocks.caseMore;
+    const lateM = (ent0 != null && stm && stm.t0 != null) ? Math.max(0, stm.t0 - ent0) : 0;
+    const kM = tm < 0 ? 0 : easeOutQ(clamp01((tm - Math.max(0, 4 * stag - lateM)) / Math.max(0.05, c.cardDur)));
+    more.style.opacity = kM.toFixed(3);
+    const blM = (1 - kM) * c.inBlur;
+    more.style.filter = blM > 0.05 ? `blur(${blM.toFixed(2)}px)` : '';
+  }
 }
 
 /* 各セクションの「自動再生の開始時刻」をまとめて初期化する。
@@ -437,6 +447,47 @@ function applyLogoTune() {
 /* 【2026-09-30 ヒデさん依頼】スマホの実績の数字(2×2)のまとまりの幅(px)。狭いほど左右の列が真ん中へ寄る。CSS は html.mb の時だけ使う */
 function applyStatsMb() { try { const v = params.sections && params.sections.results && params.sections.results.statsWMb; document.documentElement.style.setProperty('--r2s-w-mb', (v > 0 ? v : 288) + 'px'); } catch (e) {} }
 applyStatsMb();
+/* ===== 【2026-10-01 チームの依頼】実績「iPaaS サービス No.1」の根拠の注記(※) =====
+   置き場所は 2026-10-01 ヒデさん「No.1 の右揃えで」で決定＝数値の下・右そろえ(数値のまとまりと同じ幅にしぼって、右端を No.1 にそろえる)。
+   3案(右そろえ／左そろえ／横いっぱい)の見比べのボタンは消した(決まり 6-7)。文字サイズ(既定 8px＝ヒデさん「もっと小さくていい」10→8)と数値との間は PC とスマホで別の値 */
+function applyResNote() {
+  try {
+    const sec = document.getElementById('results'), note = document.getElementById('resNote'), stats = document.getElementById('resStats'); if (!sec || !note || !stats) return;
+    const top = stats.parentElement;
+    if (note.parentElement !== top || note.previousElementSibling !== stats) stats.after(note);
+    note.style.setProperty('--res-stats-w', stats.offsetWidth + 'px');   /* 数値のまとまりの幅(縮みの前の幅＝CSS の px と同じ) */
+    const r = params.sections.results || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
+    /* スマホ: 数値は2×2の箱の中で中央そろえ＝No.1 の右端は まとまりの右端より内側。注記の右端を No.1 の右端にそろえる(左端は数値のまとまりの左端)。
+       画面の px を、舞台の縮み(k)で割って CSS の px に直す。PC は数値のまとまりの右端＝No.1 の右端なので不要 */
+    if (mob) { const no1 = document.getElementById('cntSub3'); if (no1) { let k = 1; try { const m = new DOMMatrixReadOnly(getComputedStyle(sec.querySelector('.pin-stage')).transform); if (m.a > 0) k = m.a; } catch (e) {}
+      const rs = stats.getBoundingClientRect(), rt = top.getBoundingClientRect(), rn1 = no1.getBoundingClientRect();
+      note.style.setProperty('--res-note-ml', ((rs.left - rt.left) / k).toFixed(1) + 'px'); note.style.setProperty('--res-note-w', ((rn1.right - rs.left) / k).toFixed(1) + 'px'); } }
+    const eff = (f, def) => mob ? (mb['sections.results.' + f] != null ? mb['sections.results.' + f] : def) : (r[f] != null ? r[f] : def);
+    sec.style.setProperty('--res-note-fs', eff('noteFs', 8) + 'px');
+    sec.style.setProperty('--res-note-gap', eff('noteGap', 12) + 'px');
+  } catch (e) {}
+}
+applyResNote();
+addEventListener('resize', () => applyResNote());   /* 幅が変わると数値のまとまりの幅も変わる */
+try { document.fonts.ready.then(() => applyResNote()); } catch (e) {}   /* 書体が読み込まれると数値の幅が変わる */
+/* ===== 【2026-10-01 チームの依頼】導入事例の4枚の下の中央に、事例一覧(anyflow.jp/case)へのボタン =====
+   見た目の案(1 黒いボタン／2 枠線のボタン／3 文字のリンク)・カードとの間(PC とスマホで別の値)。⚠️仮置き */
+const CASE_MORE_VARIANTS = [
+  { key: '1', name: '黒いボタン', fixed: true, tip: 'ヘッダー・フォームの黒いボタンと同じ地と文字。ホバーでシアン。' },
+  { key: '2', name: '枠線のボタン', fixed: true, tip: '黒い枠線だけ。ホバーで黒く塗る。' },
+  { key: '3', name: '文字のリンク', fixed: true, tip: '下線付きの文字と矢印だけ。いちばん控えめ。' },
+];
+function caseMoreKey() { const c = (params.sections && params.sections.cases) || {}; const v = String(c.moreVar || '1'); return (CASE_MORE_VARIANTS.some(x => x.key === v) && !variantRemovedKey('caseMore', v)) ? v : '1'; }
+function applyCaseMore() {
+  try {
+    const el = document.getElementById('caseMore'); if (!el) return;
+    const k = caseMoreKey(); ['1', '2', '3'].forEach(x => el.classList.toggle('cm-' + x, x === k));
+    const c = params.sections.cases || {}, mb = (params && params.mb) || {}, mob = (typeof isMobile !== 'undefined' && isMobile);
+    const gap = mob ? (mb['sections.cases.moreGap'] != null ? mb['sections.cases.moreGap'] : 32) : (c.moreGap != null ? c.moreGap : 32);
+    el.style.setProperty('--case-more-gap', gap + 'px');
+  } catch (e) {}
+}
+applyCaseMore();
 function applyDrawerTune() {
   const d = Object.assign({ padT: 0, padB: 0, padL: 128, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
@@ -755,7 +806,7 @@ function applyCasesPad() {
     document.documentElement.style.setProperty('--cg-pad-y', Math.round(v) + 'px');
   } catch (e) {}
 }
-function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {} try { applyCasesPad(); } catch (e) {} try { applyHdrLogo(); } catch (e) {} try { applyDrawerTune(); } catch (e) {}   /* 【2026-09-30】ヘッダーのロゴの高さ・メニューのお問い合わせボタンの流れる文字も(スマホと決まった後に入れ直す) */   /* 【2026-09-22】SP上書き後、カードの上下パディングも取り直す */   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
+function applyMbToParams() { if (!(typeof isMobile !== 'undefined' && isMobile)) return; if (!params || !params.mb) return; for (const p in params.mb) { try { mbDeepSet(params, p, params.mb[p]); } catch (e) {} } try { applyVpSize(); } catch (e) {} try { applyKvCopy(); } catch (e) {} try { applyPictoDisp(); } catch (e) {} try { applyCasesPad(); } catch (e) {} try { applyHdrLogo(); } catch (e) {} try { applyDrawerTune(); } catch (e) {} try { applyResNote(); } catch (e) {} try { applyCaseMore(); } catch (e) {}   /* 【2026-09-30】ヘッダーのロゴの高さ・メニューのお問い合わせボタンの流れる文字も(スマホと決まった後に入れ直す) */   /* 【2026-09-22】SP上書き後、カードの上下パディングも取り直す */   /* 【2026-09-21】SP上書きを流した後、ピクト表示サイズも取り直す */   /* 【2026-09-20 #3】SP上書きを流し込んだ後、ビジョン/KVの文字サイズ変数を取り直す(ライブ同期でも即反映) */ }
 applyCasesPad();   /* 【2026-09-22】起動時に --cg-pad-y の既定を入れる(PC/SP共通・PCは未使用) */
 
 function updateKV() {
@@ -1880,7 +1931,7 @@ function fit() {
     };
     fixH('vision', '#valP1, #valP2', 16);   /* 【2026-09-16 ヒデさん依頼】ビジョン末尾の余白=実績「事業の推進力を」の上。85→16(=--space-16。スペーシングガイドライン準拠)。ビジョン上部は意図的なので不変 */
     if (resFxActive() === 'default') fixH('results', '#resVals, .r2v:last-child', 56);   /* 【2026-09-14】案の時は案の CSS/JS が高さを決める */
-    fixH('cases', '.cg-cell', 64);
+    fixH('cases', '.cg-cell, #caseMore', 64);   /* 【2026-10-01】事例一覧へのボタンの下まで測る(ボタンがお問い合わせに重ならない) */
     try { initSpResultLines(); } catch (e) {}   /* 【2026-09-22】SP: 実績の罫線3本を入場アニメ(左→右トリム・ディレイ)にする */
   });
 }

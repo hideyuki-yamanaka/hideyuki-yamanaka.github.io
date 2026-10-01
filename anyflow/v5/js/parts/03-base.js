@@ -1584,7 +1584,9 @@ function applyCvStyle(fromSwitch) {
     if (_g < 0) {
       const _cs = document.getElementById('cases'), _gr = document.getElementById('caseGrid');
       if (_cs && _gr) {
-        const _slack = Math.max(0, Math.round(_cs.getBoundingClientRect().bottom - _gr.getBoundingClientRect().bottom - 8));
+        /* 【2026-10-01】事例一覧へのボタンがあれば、その下端までを「中身」として数える(お問い合わせがボタンに重ならない) */
+        const _mo = document.getElementById('caseMore'), _moB = (_mo && _mo.offsetParent !== null) ? _mo.getBoundingClientRect().bottom : 0;
+        const _slack = Math.max(0, Math.round(_cs.getBoundingClientRect().bottom - Math.max(_gr.getBoundingClientRect().bottom, _moB) - 8));
         _g = Math.max(_g, -_slack);
       }
     }
