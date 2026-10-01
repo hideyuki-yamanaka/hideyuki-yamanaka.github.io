@@ -9194,17 +9194,7 @@ function applyCaseMore() {
   } catch (e) {}
 }
 applyCaseMore();
-/* ===== 【2026-10-01 ヒデさん「フッターのデザインをちょっと組み直したパターン、3バリエーションぐらい」「コピーライトは中央で一番下の段が望ましい」】フッターの案 =====
-   CSS の .ft-0〜3 を切り替えるだけ(部品は同じ・並べ方だけ)。既定は案1(© を中央の一番下にした案)。⚠️見比べ中 */
-const CV_FOOT_VARIANTS = [
-  { key: '0', name: '今の形', fixed: true, tip: 'ナビ2段＋右下に住所と ©(2026-10-01 夕方の形)。© は右下。' },
-  { key: '1', name: '左右に分ける', fixed: true, tip: '上の段の左にページの案内・右に Anyflow のページ。罫線の下に住所と ©(中央・一番下)。' },
-  { key: '2', name: '見出し付きの3列', fixed: true, tip: 'Menu / Anyflow / Address の3列(リンクは縦並び)。罫線の下に ©(中央・一番下)。' },
-  { key: '3', name: '中央そろえ', fixed: true, tip: 'ページの案内・Anyflow のページ・住所・© を全部中央に。© は一番下。' },
-];
-function cvFootKey() { const v = String(params.cvFoot != null ? params.cvFoot : '1'); if (CV_FOOT_VARIANTS.some(x => x.key === v) && !variantRemovedKey('cvFoot', v)) return v; const a = CV_FOOT_VARIANTS.find(x => !variantRemovedKey('cvFoot', x.key)); return a ? a.key : '1'; }
-function applyCvFoot() { try { const f = document.querySelector('#conversion .cv-foot'); if (!f) return; const k = cvFootKey(); CV_FOOT_VARIANTS.forEach(x => f.classList.toggle('ft-' + x.key, x.key === k)); } catch (e) {} }
-applyCvFoot();
+/* ❌ 2026-10-01 夕方のフッターの見比べ(今の形・案1〜3・CV_FOOT_VARIANTS/applyCvFoot)は、形が決まったので外した(css の #cvFoot が決まった形) */
 function applyDrawerTune() {
   const d = Object.assign({ padT: 0, padB: 0, padL: 128, padR: 0, gap: 24, fs: 56, numFs: 14 }, params.drawer || {}); const r = document.documentElement.style;
   r.setProperty('--drw-pt', d.padT + 'px'); r.setProperty('--drw-pb', d.padB + 'px'); r.setProperty('--drw-pl', d.padL + 'px'); r.setProperty('--drw-pr', d.padR + 'px');
@@ -11186,9 +11176,8 @@ const TEXT_SPEC = [
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
   { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
-  { key: 'footHead',  sel: '.cv-foot-h',     name: 'フッターの列の見出し（Menu / Anyflow / Address・案2）', pg: 'フッター', pl: '列の見出し（案2）', sec: 'cv', text: 0, multi: 1, move: 0, when: () => (typeof cvFootKey === 'function' && cvFootKey() === '2') },   /* 【2026-10-01】案2 だけで出る文字なので、行も案2の時だけ出す(決まり 6-14・6-17) */
-  { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのナビ（1段目・2段目）', pg: 'フッター', pl: 'ナビ（1段目・2段目）', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
-  { key: 'footAddr',  sel: '.cv-foot-addr',  name: 'フッターの住所', pg: 'フッター', pl: '住所',                         sec: 'cv',  text: 1 },
+  { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのリンク（ページの案内・Anyflow のページ）', pg: 'フッター', pl: 'リンク（ページの案内・Anyflow のページ）', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
+  /* ❌ フッターの住所(footAddr)は 2026-10-01 夕方 ヒデさん「フッターは住所をなくし」で消した */
   { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト', pg: 'フッター', pl: 'コピーライト',                           sec: 'cv',  text: 1 },
   // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---
   { key: 'drwNav',    sel: '.hdr-drawer-nav a:not(.hdr-drawer-cta)', name: 'メニューの項目（ビジョン など）', pl: '項目（ビジョン など）', sec: 'menu', text: 0, multi: 1, move: 0 },
@@ -14021,9 +14010,7 @@ function buildPanel() {
   }
   /* 【2026-09-19 ヒデさん依頼】「グラデの案（動き・色）と流れ」の欄は削除(使わないため)。お問い合わせ背景グラデの動き・色は現在の params.cv のまま固定。 */
 
-  /* 【2026-10-01 ヒデさん「フッターのデザインをちょっと組み直したパターン、3バリエーションぐらい」「コピーライトは中央で一番下の段が望ましい」】フッターの案(⚠️見比べ中) */
-  sub(catCv, 'フッター', false, { grp: 'variation' });
-  varRowX('cvFoot', CV_FOOT_VARIANTS, () => cvFootKey(), k => { params.cvFoot = String(k); applyCvFoot(); }, { after: () => { try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} } });
+  /* ❌ 2026-10-01 夕方のフッターの見比べのボタン(今の形・案1〜3)は、形が決まったので外した(ヒデさん「上段はリンク集、下段は Anyflow のコピーライト。線がない・住所もない」・決まり 6-7) */
 
   sub(catCv, '文字（太さ・行間・字間）', null, { fixed: true });
   note('お問い合わせとフッターの文字ごとに 太さ・行間・字間(Contact・見出し・本文・フォームの項目名/入力欄・送信ボタン・フッター)。空欄＝今のCSSの値(カッコ内)。');
@@ -14226,7 +14213,7 @@ function __previewReapply() {
     C(function () { applyMbToParams(); });   /* SP専用値は案の再適用の後(順序重要) */
     C(function () { applyInk(); });   /* 2026-09-28 文字の黒 */
     C(function () { applyHdrLogo(); });   /* 2026-09-30 ヘッダーのロゴの高さ */
-    C(function () { applyResNote(); }); C(function () { applyCaseMore(); }); C(function () { applyCvFoot(); });   /* 2026-10-01 実績の注記・事例一覧へのボタン・フッターの案 */
+    C(function () { applyResNote(); }); C(function () { applyCaseMore(); });   /* 2026-10-01 実績の注記・事例一覧へのボタン */
     C(function () { applyKvCopy(); }); C(function () { applyVpSize(); }); C(function () { applyVisEmph(); });
     C(function () { textTools.applyAll(); }); C(function () { applyVfFade(); }); C(function () { applyGrid(); });
     C(function () { applyDevTune(); }); C(function () { applyCvfGlass(); }); C(function () { applyCvStyle(); });
@@ -14993,7 +14980,6 @@ document.getElementById('panelBody').addEventListener('click', () => {
       call(function () { if (typeof applyHdrLogo === 'function') applyHdrLogo(); });   /* 【2026-09-30】ヘッダーのロゴの高さもライブ反映 */
       call(function () { if (typeof applyResNote === 'function') applyResNote(); });   /* 【2026-10-01】実績の注記(※) */
       call(function () { if (typeof applyCaseMore === 'function') applyCaseMore(); });   /* 【2026-10-01】事例一覧へのボタン */
-      call(function () { if (typeof applyCvFoot === 'function') applyCvFoot(); });   /* 【2026-10-01】フッターの案 */
       call(function () { if (typeof textTools !== 'undefined' && textTools.applyAll) textTools.applyAll(); });
       call(function () { if (typeof applyVfFade === 'function') applyVfFade(); });
       call(function () { if (typeof applySway === 'function') applySway(); });

@@ -552,18 +552,16 @@
     </div>
   </div>
   <!-- 【2026-09-15 ヒデさん指定】フッター一体型の案(1・2・3・4・8・10)で使う、ロゴなしのフッター(ナビ・住所・©)。既定は非表示で、通常フッターを隠して入れ替える -->
-  <!-- 【2026-10-01 ヒデさん「フッターのデザインをちょっと組み直したパターン、3バリエーションぐらい」「コピーライトは中央で一番下の段が望ましい」】
-       フッターの案は .ft-0〜3(調整パネル「お問い合わせ › バリエーション › フッター」)。部品(ナビ・2段目・住所・©)は同じで、並べ方だけ変える。
-       .cv-foot-grp＝見出し付きの列(案2だけ列になる・ほかの案では包みを外す)。.cv-foot-h＝列の見出し(案2だけ出す) -->
-  <div class="cv-foot ft-1" id="cvFoot">
+  <!-- 【2026-10-01 夕方 ヒデさん「フッターは住所をなくし、単純に上段はリンク集、下段は Anyflow のコピーライト。左右に分けるのレイアウトに似た感じで、線がない・住所もないバージョン」】
+       上の段＝リンク集(左＝ページの案内・右＝anyflow.jp のページ)・下の段＝©(中央・一番下)。住所は消した。見比べた4つの形(今の形・案1〜3)は外して、この形に固定 -->
+  <div class="cv-foot" id="cvFoot">
     <div class="cv-foot-l">
-      <div class="cv-foot-grp cv-foot-g1"><p class="cv-foot-h">Menu</p><nav class="cv-foot-nav"><a href="#vision">ビジョン</a><a href="#results">提供できること</a><a href="#dev">使用イメージ</a><a href="https://anyflow.jp/case" target="_blank" rel="noopener">導入事例</a><a href="#conversion">お問い合わせ</a></nav></div>
-      <!-- 【2026-10-01 チームの依頼】フッターに足りない項目(anyflow.jp の各ページ)を2段目に。
-           「導入事例」は2段目に置かず、1段目の「導入事例」の行き先を一覧(anyflow.jp/case)にした(2026-10-01 ヒデさん「導入事例一覧から削除して、導入事例を一覧に飛ばす」) -->
-      <div class="cv-foot-grp cv-foot-g2"><p class="cv-foot-h">Anyflow</p><nav class="cv-foot-sub" aria-label="Anyflow のページ"><a href="https://anyflow.jp/connectors" target="_blank" rel="noopener">コネクタ一覧</a><a href="https://anyflow.jp/about" target="_blank" rel="noopener">会社概要</a><a href="https://anyflow.jp/terms" target="_blank" rel="noopener">利用規約</a><a href="https://anyflow.jp/privacy" target="_blank" rel="noopener">プライバシーポリシー</a><a href="https://anyflow.jp/security-policy" target="_blank" rel="noopener">情報セキュリティ方針</a></nav></div>
+      <nav class="cv-foot-nav"><a href="#vision">ビジョン</a><a href="#results">提供できること</a><a href="#dev">使用イメージ</a><a href="https://anyflow.jp/case" target="_blank" rel="noopener">導入事例</a><a href="#conversion">お問い合わせ</a></nav>
+      <!-- 【2026-10-01 チームの依頼】フッターに足りない項目(anyflow.jp の各ページ)。「導入事例」はここに置かず、左の「導入事例」の行き先を一覧(anyflow.jp/case)にした
+           (2026-10-01 ヒデさん「導入事例一覧から削除して、導入事例を一覧に飛ばす」) -->
+      <nav class="cv-foot-sub" aria-label="Anyflow のページ"><a href="https://anyflow.jp/connectors" target="_blank" rel="noopener">コネクタ一覧</a><a href="https://anyflow.jp/about" target="_blank" rel="noopener">会社概要</a><a href="https://anyflow.jp/terms" target="_blank" rel="noopener">利用規約</a><a href="https://anyflow.jp/privacy" target="_blank" rel="noopener">プライバシーポリシー</a><a href="https://anyflow.jp/security-policy" target="_blank" rel="noopener">情報セキュリティ方針</a></nav>
     </div>
-    <!-- 【2026-10-01 ヒデさん「フッターの住所は、コピーライト(© Anyflow Inc.)の上に」】住所は © の上のまとまりへ -->
-    <div class="cv-foot-r"><div class="cv-foot-legal"><div class="cv-foot-grp cv-foot-g3"><p class="cv-foot-h">Address</p><div class="cv-foot-addr">〒105-0001　東京都港区虎ノ門1-3-1 東京虎ノ門グローバルスクエア6階</div></div><div class="cv-foot-copy">© Anyflow Inc.</div></div></div><!-- 案11 はここ(住所と©の左)に黒ボタンが入る -->
+    <div class="cv-foot-r"><div class="cv-foot-copy">© Anyflow Inc.</div></div><!-- 案11 はここに黒ボタンが入る -->
   </div>
 </section>
 

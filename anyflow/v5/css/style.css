@@ -2138,43 +2138,18 @@
   .cv-foot-sub { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-20); margin-top: var(--space-12); }
   .cv-foot-sub a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-loose); opacity: .72; transition: opacity var(--t-tap); }   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて」】12→14px(1段目と同じ --fs-body) */
   .cv-foot-sub a:hover { opacity: 1; }
-  .cv-foot-addr { font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; }   /* 2026-10-01 左の列から © の上へ移したので、上の余白(16px)は外した */
-  /* 【2026-10-01 ヒデさん「フッターの住所は、コピーライトの上に」】住所と © を右下の1つのまとまりに。PC は右そろえ・住所→© 8px(⚠️仮置き) */
-  .cv-foot-legal { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-8); text-align: right; }
-  /* ===== 【2026-10-01 ヒデさん「フッターのデザインをちょっと組み直したパターン、3バリエーションぐらい」「コピーライト Anyflow は中央で一番下の段が望ましい」】フッターの案 =====
-     調整パネル「お問い合わせ › バリエーション › フッター」。どの案も同じ部品(ナビ・2段目・住所・©)を並べ替えるだけ。⚠️仮置き
-     ft-0 今の形(ナビ2段＋右下に住所と©) / ft-1 左右に分ける / ft-2 見出し付きの3列 / ft-3 中央そろえ。1〜3 は © を一番下の段の中央に置く。
-     並べ替えは grid。包み(.cv-foot-l / -r / -legal / -grp)は display:contents で外す。罫線は ::after(文字の色の 14%＝フッターの上の罫・--line-soft と同じ濃さ。白い文字の時も自動で白い線) */
-  .cv-foot-grp { display: contents; }
-  .cv-foot-h { display: none; margin: 0; }
-  #conversion.cv-fi .cv-foot:is(.ft-1, .ft-2, .ft-3) { display: grid; gap: 0; align-items: start; }
-  #conversion.cv-fi .cv-foot:is(.ft-1, .ft-2, .ft-3) :is(.cv-foot-l, .cv-foot-r, .cv-foot-legal) { display: contents; }
-  #conversion.cv-fi .cv-foot:is(.ft-1, .ft-2, .ft-3) .cv-foot-copy { grid-area: copy; justify-self: center; margin-top: var(--space-8); }
-  #conversion.cv-fi .cv-foot:is(.ft-1, .ft-2)::after { content: ''; grid-area: line; height: 1px; background: currentColor; opacity: .14; margin: var(--space-24) 0; }
-  /* 案1 左右に分ける: 上の段 左＝ページの案内・右＝Anyflow のページ ／ 罫線 ／ 住所(中央) ／ ©(中央) */
-  #conversion.cv-fi .cv-foot.ft-1 { grid-template-columns: auto auto; justify-content: space-between; column-gap: var(--space-40); grid-template-areas: "nav sub" "line line" "addr addr" "copy copy"; }
-  #conversion.cv-fi .cv-foot.ft-1 .cv-foot-nav { grid-area: nav; }
-  #conversion.cv-fi .cv-foot.ft-1 .cv-foot-sub { grid-area: sub; margin-top: 0; justify-content: flex-end; }
-  #conversion.cv-fi .cv-foot.ft-1 .cv-foot-addr { grid-area: addr; justify-self: center; text-align: center; }
-  /* 案2 見出し付きの3列: Menu ／ Anyflow ／ Address。リンクは縦に並べる。罫線の下に ©(中央) */
-  #conversion.cv-fi .cv-foot.ft-2 { grid-template-columns: auto auto 1fr; justify-content: stretch; column-gap: var(--space-80);   /* 最後の列を 1fr＝格子を横いっぱいに(罫線と © の中央が、フッターの幅の中央になる) */ grid-template-areas: "g1 g2 g3" "line line line" "copy copy copy"; }
-  #conversion.cv-fi .cv-foot.ft-2 .cv-foot-grp { display: flex; flex-direction: column; gap: var(--space-12); }
-  #conversion.cv-fi .cv-foot.ft-2 .cv-foot-g1 { grid-area: g1; }
-  #conversion.cv-fi .cv-foot.ft-2 .cv-foot-g2 { grid-area: g2; }
-  #conversion.cv-fi .cv-foot.ft-2 .cv-foot-g3 { grid-area: g3; text-align: left; }   /* 住所と © の箱(.cv-foot-legal)の右そろえが中まで効くので、列は左そろえに戻す */
-  #conversion.cv-fi .cv-foot.ft-2 .cv-foot-h { display: block; font-family: var(--font-en); font-size: var(--fs-caption); font-weight: 500; letter-spacing: .04em; line-height: var(--lh-loose); opacity: .5; }
-  #conversion.cv-fi .cv-foot.ft-2 :is(.cv-foot-nav, .cv-foot-sub) { flex-direction: column; gap: var(--space-8); margin-top: 0; }
-  /* 案3 中央そろえ: ページの案内 ／ Anyflow のページ ／ 住所 ／ © を全部中央に */
-  #conversion.cv-fi .cv-foot.ft-3 { grid-template-columns: 1fr; justify-items: center; text-align: center; grid-template-areas: "nav" "sub" "addr" "copy"; }
-  #conversion.cv-fi .cv-foot.ft-3 .cv-foot-nav { grid-area: nav; justify-content: center; }
-  #conversion.cv-fi .cv-foot.ft-3 .cv-foot-sub { grid-area: sub; justify-content: center; margin-top: var(--space-12); }
-  #conversion.cv-fi .cv-foot.ft-3 .cv-foot-addr { grid-area: addr; margin-top: var(--space-24); }
-  #conversion.cv-fi .cv-foot.ft-3 :is(.cv-foot-addr, .cv-foot-copy) { text-align: center; }   /* スマホで住所が2行になっても中央(箱の右そろえを上書き) */
-  /* スマホ: 1列に積む(案2 は Menu と Anyflow を横に2列・住所はその下) */
-  html.mb #conversion.cv-fi .cv-foot.ft-1 { grid-template-columns: 1fr; grid-template-areas: "nav" "sub" "line" "addr" "copy"; }
-  html.mb #conversion.cv-fi .cv-foot.ft-1 .cv-foot-sub { justify-content: flex-start; margin-top: var(--space-16); }
-  html.mb #conversion.cv-fi .cv-foot.ft-2 { grid-template-columns: auto auto; column-gap: var(--space-40); grid-template-areas: "g1 g2" "g3 g3" "line line" "copy copy"; }
-  html.mb #conversion.cv-fi .cv-foot.ft-2 .cv-foot-g3 { margin-top: var(--space-32); }
+  /* 【2026-10-01 夕方 ヒデさん「フッターは住所をなくし、単純に上段はリンク集、下段は Anyflow のコピーライト。左右に分けるのレイアウトに似た感じで、線がない・住所もない」】
+     上の段＝リンク集(左＝ページの案内・右＝anyflow.jp のページ)／下の段＝©(中央・一番下)。住所・中の罫線はなし。リンク集→© 32px(⚠️仮置き)。
+     並べ方は grid(包み .cv-foot-l / -r は display:contents で外す)。#cvFoot で、もとの横並び(flex)の指定より強くしている。
+     ❌ 2026-10-01 夕方に作った見比べの4つの形(今の形・案1 左右に分ける・案2 見出し付きの3列・案3 中央そろえ)と、住所を © の上へ移した形は、この形に決まったので外した */
+  #conversion.cv-fi #cvFoot { display: grid; gap: 0; align-items: start; grid-template-columns: auto auto; justify-content: space-between; column-gap: var(--space-40); grid-template-areas: "nav sub" "copy copy"; }
+  #conversion.cv-fi #cvFoot :is(.cv-foot-l, .cv-foot-r) { display: contents; }
+  #conversion.cv-fi #cvFoot .cv-foot-nav { grid-area: nav; }
+  #conversion.cv-fi #cvFoot .cv-foot-sub { grid-area: sub; margin-top: 0; justify-content: flex-end; }
+  #conversion.cv-fi #cvFoot .cv-foot-copy { grid-area: copy; justify-self: center; margin-top: var(--space-32); }
+  /* スマホ: リンク集を縦に積む(ページの案内 → anyflow.jp のページ 16px) → ©(中央) */
+  html.mb #conversion.cv-fi #cvFoot { grid-template-columns: 1fr; grid-template-areas: "nav" "sub" "copy"; }
+  html.mb #conversion.cv-fi #cvFoot .cv-foot-sub { justify-content: flex-start; margin-top: var(--space-16); }
   .cv-foot-copy { font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); opacity: 0.5; white-space: nowrap; }
   #footer.ft-hidden { display: none; }
   /* 【2026-09-15 ヒデさん指定】縦幅(パネル「コンバージョン」): 枠の案は高さそのもの、一体型は最小の高さ(内容より大きい時だけ効く) */
@@ -2639,8 +2614,7 @@
 
     /* --- お問い合わせのデザイン案(cvs-N)のスマホ: 一体型は縦積み、横並びの案は1カラムに --- */
     #conversion.cv-fi .cv-content { margin: var(--space-72) var(--space-24) var(--space-56); width: auto; }
-    #conversion.cv-fi .cv-foot { flex-direction: column; align-items: flex-start; gap: var(--space-16); padding: var(--space-24) var(--space-24) var(--space-32); }   /* 2026-10-01 住所を © の上(右のまとまり)へ移したので 20→16＝ナビ→住所は今までと同じ 16px */
-    .cv-foot-legal { align-items: flex-start; text-align: left; gap: var(--space-20); }   /* 2026-10-01 スマホは左そろえ・住所→© は今までと同じ 20px(見た目は変えない) */
+    #conversion.cv-fi .cv-foot { flex-direction: column; align-items: flex-start; gap: var(--space-20); padding: var(--space-24) var(--space-24) var(--space-32); }   /* 並べ方は上の #cvFoot(grid)が決める */
     #conversion.cvs-10 .cv-content { margin: var(--space-40) var(--space-24) var(--space-28); }   /* 【2026-09-19】見出し上の余白 120→48。【2026-09-21 ヒデさん依頼】導入事例↔お問い合わせ↔フッターが離れすぎ→上48→40・下56→28に詰める */
 
     /* --- 調整パネルは画面いっぱいに --- */
