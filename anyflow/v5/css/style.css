@@ -2138,7 +2138,9 @@
   .cv-foot-sub { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-20); margin-top: var(--space-12); }
   .cv-foot-sub a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-loose); opacity: .72; transition: opacity var(--t-tap); }   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて」】12→14px(1段目と同じ --fs-body) */
   .cv-foot-sub a:hover { opacity: 1; }
-  .cv-foot-addr { font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; margin-top: var(--space-16); }
+  .cv-foot-addr { font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; }   /* 2026-10-01 左の列から © の上へ移したので、上の余白(16px)は外した */
+  /* 【2026-10-01 ヒデさん「フッターの住所は、コピーライトの上に」】住所と © を右下の1つのまとまりに。PC は右そろえ・住所→© 8px(⚠️仮置き) */
+  .cv-foot-legal { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-8); text-align: right; }
   .cv-foot-copy { font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); opacity: 0.5; white-space: nowrap; }
   #footer.ft-hidden { display: none; }
   /* 【2026-09-15 ヒデさん指定】縦幅(パネル「コンバージョン」): 枠の案は高さそのもの、一体型は最小の高さ(内容より大きい時だけ効く) */
@@ -2603,7 +2605,8 @@
 
     /* --- お問い合わせのデザイン案(cvs-N)のスマホ: 一体型は縦積み、横並びの案は1カラムに --- */
     #conversion.cv-fi .cv-content { margin: var(--space-72) var(--space-24) var(--space-56); width: auto; }
-    #conversion.cv-fi .cv-foot { flex-direction: column; align-items: flex-start; gap: var(--space-20); padding: var(--space-24) var(--space-24) var(--space-32); }
+    #conversion.cv-fi .cv-foot { flex-direction: column; align-items: flex-start; gap: var(--space-16); padding: var(--space-24) var(--space-24) var(--space-32); }   /* 2026-10-01 住所を © の上(右のまとまり)へ移したので 20→16＝ナビ→住所は今までと同じ 16px */
+    .cv-foot-legal { align-items: flex-start; text-align: left; gap: var(--space-20); }   /* 2026-10-01 スマホは左そろえ・住所→© は今までと同じ 20px(見た目は変えない) */
     #conversion.cvs-10 .cv-content { margin: var(--space-40) var(--space-24) var(--space-28); }   /* 【2026-09-19】見出し上の余白 120→48。【2026-09-21 ヒデさん依頼】導入事例↔お問い合わせ↔フッターが離れすぎ→上48→40・下56→28に詰める */
 
     /* --- 調整パネルは画面いっぱいに --- */
