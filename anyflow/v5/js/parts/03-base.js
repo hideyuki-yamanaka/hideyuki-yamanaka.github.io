@@ -1123,6 +1123,17 @@ try {
     localStorage.setItem('anyflow-note-gap-mb-20261001', '1');
   }
 } catch (e) {}
+/* 【2026-10-02 ヒデさん「判断待ちはおすすめの方法で」】スマホの見出し「導入事例」「お問い合わせ」30→32px(4と8の倍数・Figma の書き出しと同じ)。
+   スマホの値が 30 のままのブラウザは1回だけ 32 に(別の値を入れていたら触らない)。PC の値(params.edits)は触らない。印 anyflow-sp-title-32-20261002 */
+try {
+  if (!localStorage.getItem('anyflow-sp-title-32-20261002')) {
+    const fix = o => { const em = o && o.editsMb; let ch = false; if (em) for (const k of ['caseTitle', 'cvHead']) if (em[k] && +em[k].fs === 30) { em[k].fs = 32; ch = true; } return ch; };
+    fix(params);
+    const _raw = localStorage.getItem(STORAGE_KEY);
+    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
+    localStorage.setItem('anyflow-sp-title-32-20261002', '1');
+  }
+} catch (e) {}
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {
