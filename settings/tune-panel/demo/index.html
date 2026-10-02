@@ -172,7 +172,8 @@ function apply() {
 /* 自動検査が「画面が変わったか」を読むための目印（画面の見た目には関係ない） */
 window.__demoSig = () => [document.documentElement.getAttribute('style'), document.body.className, JSON.stringify(document.body.dataset),
   JSON.stringify($('kv').dataset), JSON.stringify($('res').dataset), $('siteHead').hidden, $('logos').hidden, $('siteFoot').hidden,
-  $('logo').textContent, $('copy').textContent].join('|');
+  $('logo').textContent, $('copy').textContent,
+  [...document.querySelectorAll('#copy, .kv-copy p, .card .num, .card .lab')].map(e => e.getAttribute('style') || '').join(',')].join('|');   /* 文字の行が当てた指定（v2.3.0） */
 window.__replays = 0;
 function replay() {
   window.__replays++;
@@ -212,8 +213,8 @@ const panel = TunePanel.create({
         { name: '丸ゴシック', value: 'round', desc: '見出しだけ丸ゴシックにする。' }
       ], hint: '見出し（キービジュアルと実績）の書体。' },
       { sub: '本文', grp: 'font' },
-      { slider: '文字サイズ', path: 'site.bodySize', min: 10, max: 20, step: 0.5, fmt: 'px', hint: '本文の文字の大きさ。' },
-      { slider: '行間', path: 'site.bodyLh', min: 1.2, max: 2.2, step: 0.05, fmt: 'n2', hint: '本文の行の高さ（倍）。上げると行と行が離れる。' },
+      /* 文字の大きさ・太さ・行間・字間は「文字の行」で（単独の「文字サイズ」つまみは作らない・ルール集 ★6-17・v2.3.0） */
+      { font: '説明文', sel: '.kv-copy p', id: 'body', hint: 'キービジュアルの説明文の文字。空欄＝CSS のまま（自動）。' },
       { sub: 'ページ', grp: 'basic' },
       { slider: 'パディング', path: 'site.pad', min: 16, max: 112, step: 2, fmt: 'px', hint: 'ページの左右の余白。' },
       { sub: '表示する部品', grp: 'other' },
@@ -229,8 +230,8 @@ const panel = TunePanel.create({
       /* 見出しより前の案ピル＝このタブの主役の案。タブの中のつまみは、既定で全部「案ごと」になる */
       { pills: 'キービジュアルの案', path: 'kv.variant', options: [
         { name: 'ノーマル', value: 'normal', desc: 'カンプどおり。コピー56px・グラフィック320px。' },
-        { name: '強調', value: 'strong', desc: '大きいコピーと光るグラフィック。', values: { 'kv.copySize': 72, 'kv.copyWeight': 700, 'kv.gfxSize': 400, 'kv.glow': 60 } },
-        { name: 'ミニマル', value: 'minimal', desc: '小さめのコピーを真ん中に、淡いグラフィック。', values: { 'kv.copySize': 44, 'kv.align': 'center', 'kv.gfxSize': 240, 'kv.gfxOpacity': 50 } }
+        { name: '強調', value: 'strong', desc: '大きいコピーと光るグラフィック。', values: { '__font.copy.fs': 72, '__font.copy.fw': 700, 'kv.gfxSize': 400, 'kv.glow': 60 } },
+        { name: 'ミニマル', value: 'minimal', desc: '小さめのコピーを真ん中に、淡いグラフィック。', values: { '__font.copy.fs': 44, 'kv.align': 'center', 'kv.gfxSize': 240, 'kv.gfxOpacity': 50 } }
       ]},
       /* 並べ替えの見本：アニメーション → 基本 → エフェクト → フォント の順に書いている */
       { sub: '出現' },
@@ -249,9 +250,7 @@ const panel = TunePanel.create({
       { slider: '光の強さ', path: 'kv.glow', min: 0, max: 100, step: 1, unit: '%', hint: '強調案だけの光のにじみ。' },
       { slider: '輪の太さ', path: 'kv.ring', min: 0, max: 8, step: 0.5, fmt: 'px', hint: '強調案だけの白い輪の太さ。' },
       { sub: 'コピー' },
-      { slider: '文字サイズ', path: 'kv.copySize', min: 24, max: 96, step: 1, fmt: 'px', hint: 'メインコピーの大きさ。スマホはこの0.6倍。' },
-      { slider: '太さ', path: 'kv.copyWeight', min: 100, max: 900, step: 100, fmt: 'int', hint: 'メインコピーのフォントウェイト。' },
-      { slider: '行間', path: 'kv.copyLh', min: 1, max: 2, step: 0.05, fmt: 'n2', hint: 'メインコピーの行の高さ（倍）。' },
+      { font: 'メインコピー', sel: '#copy', id: 'copy', hint: 'メインコピーの文字。案ごとに別（強調は 72px・700 から）。空欄＝CSS のまま（スマホは CSS で 0.6倍）。' },
       { sub: 'グラフィックの大きさと位置' },
       { slider: '大きさ', path: 'kv.gfxSize', min: 120, max: 520, step: 4, fmt: 'px', hint: 'グラフィックの直径。' },
       { slider: '位置 X', path: 'kv.gfxX', min: -200, max: 200, step: 2, fmt: 'px', signed: true, hint: 'グラフィックを左右にずらす。0＝いまの位置。' },
@@ -276,8 +275,9 @@ const panel = TunePanel.create({
         { slider: '濃さ', path: 'res.border.opacity', min: 0, max: 100, step: 1, unit: '%', clamp: true, hint: 'カードの枠線の濃さ。' }
       ]},
       { slider: '影の強さ', path: 'res.shadow', min: 0, max: 100, step: 1, unit: '%', hint: 'カードの影（まとまりの外の項目）。' },
-      { sub: '数字', grp: 'font' },
-      { slider: '文字サイズ', path: 'res.numSize', min: 20, max: 72, step: 1, fmt: 'px', hint: '実績の数字の大きさ。' },
+      { sub: 'カード', grp: 'font' },
+      { font: '数字', sel: '.card .num', id: 'num', hint: '実績の数字の文字。' },
+      { font: 'ラベル', sel: '.card .lab', id: 'lab', hint: '数字の下のラベルの文字。' },
       /* 主役の案が1タブに2つ → 案ごとに大見出しを立て、その中に 基本〜アニメーション を入れ子で置く */
       { varsec: '演出', items: [
         { pills: '演出の案', path: 'res.fx', options: [

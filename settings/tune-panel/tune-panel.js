@@ -1,5 +1,5 @@
 /*!
- * tune-panel.js v2.2.0 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段）
+ * tune-panel.js v2.3.0 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段／2026-10-02 文字の行）
  * 1ファイル / 依存なし / CSSも自分で流し込む。
  *
  *   <script src="tune-panel.js"></script>
@@ -19,7 +19,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '2.2.0';
+  var VERSION = '2.3.0';
 
   /* ============================================================
      0. 小道具
@@ -68,6 +68,23 @@
       return def.map(function (d, i) { return mergeSaved(d, saved[i]); });
     }
     return typeof saved === typeof def ? saved : clone(def);
+  }
+
+  /* 【v2.3.0】文字の行の値は params.__font[名前] = { fs, fw, lh, ls }（初期値に無い置き場）。
+     mergeSaved は初期値に無いキーを捨てるので、保存値・読み込んだ設定からはここだけ別に取り込む */
+  var FONT_KEY = '__font';
+  function takeFonts(target, saved, defaults) {
+    var src = saved && isObj(saved[FONT_KEY]) ? saved[FONT_KEY] : null;
+    if (!src) { target[FONT_KEY] = clone(defaults && isObj(defaults[FONT_KEY]) ? defaults[FONT_KEY] : {}) || {}; return; }
+    var out = {};
+    Object.keys(src).forEach(function (id) {
+      var v = src[id];
+      if (!isObj(v)) return;
+      var o = {};
+      ['fs', 'fw', 'lh', 'ls'].forEach(function (k) { if (typeof v[k] === 'number' && isFinite(v[k])) o[k] = v[k]; });
+      out[id] = o;
+    });
+    target[FONT_KEY] = out;
   }
 
   /* params の「箱」は差し替えず中身だけ書き換える（利用側が持っている参照を生かすため） */
@@ -330,6 +347,14 @@
     /* プルダウン・文字・色 */
     '.tp-row select,.tp-row input[type=text]{flex:1;min-width:0;padding:4px 6px;border:0;border-radius:4px;font-family:inherit;font-size:10px;font-weight:300;background-color:#f0f0f0;color:#444;}',   /* 入力欄は枠線なし＋灰色の地(2026-09-29 ヒデさん) */
     '.tp-row select:focus,.tp-row input[type=text]:focus,.tp-row input.tp-hex:focus,.tp-row textarea:focus{outline:2px solid rgba(14,187,255,.6);outline-offset:0;}',
+    /* 文字の行（v2.3.0・ルール集 ★6-16・6-17）: 1行に size・weight・lh・ls。小さな名前 10px/300/#888、欄は枠線なし＋灰色、名前と欄は 4px・組どうしは 8px */
+    '.tp-row.tp-font{flex-wrap:nowrap;}',
+    '.tp-font .tp-fset{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}',
+    '.tp-font .tp-fpair{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;}',
+    '.tp-font .tp-fl{font-size:10px;font-weight:300;color:#888;white-space:nowrap;}',
+    '.tp-row.tp-font input.tp-fn{flex:0 0 36px;width:36px;min-width:0;padding:2px 4px;border:0;border-radius:4px;box-sizing:border-box;font-family:inherit;font-size:10px;font-weight:300;text-align:right;background:#f0f0f0;color:#444;}',
+    '.tp-row.tp-font select.tp-fw{flex:0 0 64px;width:64px;min-width:0;padding:2px 2px;}',
+    '.tp-row.tp-font input.tp-fn:focus{outline:2px solid rgba(14,187,255,.6);outline-offset:0;}',
     /* 数字の欄の上下の小さな矢印(▲▼)は消す。見えていない時も約15px取り、数字が「1.4」のように切れていた(2026-09-29 AnyFlow 実測) */
     '.tp input[type=number]{-moz-appearance:textfield;appearance:textfield;}',
     '.tp input[type=number]::-webkit-inner-spin-button,.tp input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}',
@@ -523,7 +548,7 @@
     return null;
   }
   function labelOfItem(it) {
-    return it.slider || it.seg || it.toggle || it.select || it.color || it.text || it.chips || it.pills || '';
+    return it.slider || it.seg || it.toggle || it.select || it.color || it.text || it.chips || it.pills || it.font || '';
   }
 
   /* ============================================================
@@ -775,6 +800,7 @@
     }
     var st = this._readStore(), had = false;
     if (st.params) { assignDeep(this.params, mergeSaved(this.defaults, st.params)); had = true; }
+    takeFonts(this.params, st.params, this.defaults);
     this._mb = st.mb || {};
     this._takeVars(st.vs);
     return had;
@@ -1167,7 +1193,7 @@
     if (it.button !== undefined) return { t: 'button', item: it };
     var type = it.slider !== undefined ? 'slider' : it.seg !== undefined ? 'seg' : it.pills !== undefined ? 'pills'
       : it.toggle !== undefined ? 'toggle' : it.chips !== undefined ? 'chips' : it.select !== undefined ? 'select'
-      : it.color !== undefined ? 'color' : it.text !== undefined ? 'text' : null;
+      : it.color !== undefined ? 'color' : it.text !== undefined ? 'text' : it.font !== undefined ? 'font' : null;
     return type ? { t: 'row', type: type, item: it } : null;
   };
 
@@ -1178,7 +1204,7 @@
     if (g) return g;
     var labels = [], real = false, pills = false;
     var walk = function (k) {
-      if (k.t === 'row') { real = true; if (k.type === 'pills') pills = true; labels.push(labelOfItem(k.item)); if (k.type === 'chips') (k.item.items || []).forEach(function (c) { labels.push(c && c.name); }); }
+      if (k.t === 'row') { real = true; if (k.type === 'pills') pills = true; labels.push(k.type === 'font' ? '文字' : labelOfItem(k.item)); if (k.type === 'chips') (k.item.items || []).forEach(function (c) { labels.push(c && c.name); }); }   /* 文字の行はフォントへ */
       else if (k.t === 'button' || k.t === 'custom') real = true;
       if (k.t === 'deep' || k.t === 'subg') labels.push(k.title);
       (k.kids || []).forEach(walk);
@@ -1328,7 +1354,7 @@
     if (head && ctx.accs.some(function (a) { return !a.isPill; })) head.appendChild(this._groupBtn(ctx, n.title));
   };
 
-  var KIND = { slider: 'v', color: 'v', text: 'v', seg: 's', toggle: 's', chips: 's', select: 's', pills: 'p' };
+  var KIND = { slider: 'v', color: 'v', text: 'v', font: 'v', seg: 's', toggle: 's', chips: 's', select: 's', pills: 'p' };
 
   Panel.prototype._renderNode = function (k, into, parentV, ctx) {
     var self = this, v;
@@ -1510,6 +1536,7 @@
     else if (type === 'select') r = this._select(item, ctx);
     else if (type === 'color') r = this._color(item, ctx);
     else if (type === 'text') r = this._text(item, ctx);
+    else if (type === 'font') r = this._font(item, ctx);
     if (!r) return null;
     r.item = item;
     r.mark = function () { r.line.classList.toggle('tp-mb', r.accs.some(function (a) { return a.hasMB(); })); };
@@ -1773,6 +1800,144 @@
     inp.addEventListener('change', function () { self._changed({ item: item, path: item.path, value: inp.value, immediate: true, row: row }); });
     line.append(lab, inp, this._rstBtn(function () { return row; }));
     return row;
+  };
+
+  /* ---------- 文字の行（v2.3.0・ルール集 ★6-17「文字のつまみは新しく作らず、文字の行に登録する」）----------
+     1行に size（px）・weight・lh（文字の大きさの何倍）・ls（文字の大きさに対する %）を並べる。AnyFlow V5 の文字の行と同じ形。
+       { font:'詳しく見る', sel:'.more .label', id:'more' }
+       sel … 当てる要素（CSS セレクタ）。書けば部品がその要素へ直接当てる（書かなければ params.__font[id] を自分で読む）
+       id  … 値の置き場の名前（params.__font[id] = { fs, fw, lh, ls }）。無ければ sel か名前から作る
+     空欄（値が無い）＝CSS のまま（自動）。PC/スマホは別（文字の大きさだけはスマホが PC を引き継がない。太さ・行間・字間は引き継ぐ）・案ごとも別
+     size は ↑↓ でデザインの数値の決まりの大きさ（10px 以下は 2 刻み・4 の倍数・14 と 18）に1段ずつ動き、打ち込んだ値もそこへ止まる */
+  var FONT_SIZES = (function () { var a = [2, 4, 6, 8, 10, 12, 14, 16, 18]; for (var x = 20; x <= 400; x += 4) a.push(x); return a; })();
+  function stepFont(v, dir) {
+    v = +v || 0;
+    var i;
+    if (dir > 0) { for (i = 0; i < FONT_SIZES.length; i++) if (FONT_SIZES[i] > v + 1e-9) return FONT_SIZES[i]; return FONT_SIZES[FONT_SIZES.length - 1]; }
+    for (i = FONT_SIZES.length - 1; i >= 0; i--) if (FONT_SIZES[i] < v - 1e-9) return FONT_SIZES[i];
+    return FONT_SIZES[0];
+  }
+  function fontIdOf(item) {
+    var s = item.id != null ? String(item.id) : item.sel != null ? String(item.sel) : String(item.font);
+    return s.replace(/[.\s]+/g, '_').replace(/^_+|_+$/g, '') || 'text';
+  }
+  var numOrNull = function (v) { return typeof v === 'number' && isFinite(v) ? v : null; };
+  /* いま見えている文字の様子を読む（スマホモード中はスマホ枠の中のページから） */
+  Panel.prototype._fontTarget = function (sel) {
+    if (!sel) return null;
+    try {
+      if (this._spView() && !this._isPhone && TP.frame && TP.frame.box.classList.contains('on')) {
+        var d = TP.frame.ifr.contentDocument, w = TP.frame.ifr.contentWindow, e2 = d && d.querySelector(sel);
+        return e2 ? { el: e2, cs: w.getComputedStyle(e2), doc: d } : null;
+      }
+      var e = document.querySelector(sel);
+      return e ? { el: e, cs: getComputedStyle(e), doc: document } : null;
+    } catch (er) { return null; }
+  };
+  /* 行間が normal（おまかせ）の時も、実際の1行の高さを測って倍で出す（空欄から ↑ で 0.8 に飛ぶのを防ぐ） */
+  function lhRatioOf(t) {
+    var cs = t.cs, fs = parseFloat(cs.fontSize) || 16, lh = cs.lineHeight;
+    if (lh && lh !== 'normal') { var n = parseFloat(lh); return /px$/.test(lh) ? n / fs : n; }
+    try {
+      var s = t.doc.createElement('span');
+      s.textContent = 'あA';
+      s.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;line-height:normal;';
+      s.style.fontFamily = cs.fontFamily; s.style.fontSize = cs.fontSize; s.style.fontWeight = cs.fontWeight;
+      t.doc.body.appendChild(s);
+      var h = s.getBoundingClientRect().height;
+      s.parentNode.removeChild(s);
+      return h / fs;
+    } catch (e) { return 1.5; }
+  }
+  Panel.prototype._font = function (item, ctx) {
+    var self = this, id = fontIdOf(item), base = FONT_KEY + '.' + id;
+    var mk = function (k, extra) {
+      var o = { path: base + '.' + k, name: String(item.font) + ' ' + k, hint: item.hint, shared: item.shared, variant: item.variant, sp: item.sp };
+      if (extra) for (var x in extra) o[x] = extra[x];
+      return self._mkAcc(o, 'font', ctx);
+    };
+    var aFs = mk('fs', { spDefault: null }), aFw = mk('fw'), aLh = mk('lh'), aLs = mk('ls');
+    var line = el('div', 'tp-row tp-font');
+    var lab = this._lab(item.font, item);
+    if (!item.hint) lab.title = String(item.font) + (item.sel ? '（' + item.sel + '）' : '');
+    var set = el('div', 'tp-fset');
+    var row = { line: line, accs: [aFs, aFw, aLh, aLs], kind: 'font', sel: item.sel || null, id: id };
+    var pair = function (name, ctl, title) {
+      var w = el('span', 'tp-fpair'), l = el('span', 'tp-fl');
+      l.textContent = name; w.title = title;
+      w.append(l, ctl); set.appendChild(w);
+    };
+    var num = function (step, title) {
+      var i = el('input', 'tp-fn');
+      i.type = 'number'; i.step = step; i.title = title;
+      i.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      return i;
+    };
+    var fs = num('1', '文字の大きさ（px）。空欄＝CSS のまま（自動）。↑↓ でデザインの数値の決まりの大きさに1段ずつ');
+    var fw = el('select', 'tp-fw');
+    fw.title = '太さ（ウェイト）。自動＝CSS のまま';
+    var o0 = el('option'); o0.value = ''; o0.textContent = '自動'; fw.appendChild(o0);
+    [100, 200, 300, 400, 500, 600, 700, 800, 900].forEach(function (w) { var o = el('option'); o.value = String(w); o.textContent = String(w); fw.appendChild(o); });
+    var lh = num('0.05', '行間（文字の大きさの何倍か）。空欄＝CSS のまま（自動）');
+    var ls = num('0.5', '字間（文字の大きさに対する %）。空欄＝CSS のまま（自動）');
+    pair('size', fs, '文字の大きさ（px）'); pair('weight', fw, '太さ（ウェイト）'); pair('lh', lh, '行間（倍）'); pair('ls', ls, '字間（%・文字の大きさに対する割合）');
+    var put = function (a, v, immediate) {
+      var empty = v === '' || v == null || (typeof v === 'number' && !isFinite(v));
+      if (empty) { if (a.sp && self._spView()) a.clearMB(); else a.writePC(undefined); }
+      else a.write(v);
+      self._applyFonts();
+      row.sync();
+      self._changed({ item: item, path: a.path, value: empty ? null : v, immediate: immediate, row: row });
+    };
+    var parse = function (inp, dec) { var t = String(inp.value).trim(); if (t === '') return ''; var n = parseFloat(t); return isFinite(n) ? +n.toFixed(dec) : ''; };
+    fs.addEventListener('change', function () { var v = parse(fs, 1); put(aFs, v === '' ? '' : snapGrid(Math.round(v), 'fontSize'), true); });
+    fs.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      e.preventDefault();
+      var cur = parseFloat(fs.value);
+      if (!isFinite(cur)) { var t = self._fontTarget(row.sel); cur = t ? parseFloat(t.cs.fontSize) : 16; }
+      var nv = stepFont(cur, e.key === 'ArrowUp' ? 1 : -1);
+      fs.value = nv;
+      put(aFs, nv, false);
+    });
+    fw.addEventListener('change', function () { put(aFw, fw.value === '' ? '' : +fw.value, true); });
+    lh.addEventListener('input', function () { put(aLh, parse(lh, 2), false); });
+    lh.addEventListener('change', function () { put(aLh, parse(lh, 2), true); });
+    ls.addEventListener('input', function () { put(aLs, parse(ls, 1), false); });
+    ls.addEventListener('change', function () { put(aLs, parse(ls, 1), true); });
+    /* 要素へ当てる（params の値＝スマホ実機ではスマホで効く値が入っている） */
+    row.applyFont = function () {
+      if (!row.sel) return;
+      var v = getPath(self.params, base) || {}, els;
+      try { els = document.querySelectorAll(row.sel); } catch (e) { return; }
+      var f = numOrNull(v.fs), w = numOrNull(v.fw), h = numOrNull(v.lh), sp = numOrNull(v.ls);
+      for (var i = 0; i < els.length; i++) {
+        var st = els[i].style;
+        st.fontSize = f != null ? f + 'px' : '';
+        st.fontWeight = w != null ? String(w) : '';
+        st.lineHeight = h != null ? String(h) : '';
+        st.letterSpacing = sp != null ? (sp / 100) + 'em' : '';
+      }
+    };
+    row.sync = function () {
+      var t = self._fontTarget(row.sel), cs = t && t.cs;
+      var px = cs ? parseFloat(cs.fontSize) : null;
+      var vFs = numOrNull(aFs.view()), vFw = numOrNull(aFw.view()), vLh = numOrNull(aLh.view()), vLs = numOrNull(aLs.view());
+      if (document.activeElement !== fs) fs.value = vFs != null ? vFs : (px != null ? Math.round(px * 10) / 10 : '');
+      fw.value = vFw != null ? String(vFw) : '';
+      o0.textContent = cs ? '自動(' + cs.fontWeight + ')' : '自動';
+      if (document.activeElement !== lh) lh.value = vLh != null ? vLh : (t ? Math.round(lhRatioOf(t) * 100) / 100 : '');
+      if (document.activeElement !== ls) {
+        var cur = cs ? (cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing) / (px || 16) * 100) : null;
+        ls.value = vLs != null ? vLs : (cur != null && isFinite(cur) ? Math.round(cur * 10) / 10 : '');
+      }
+      row.mark();
+    };
+    line.append(lab, set, this._rstBtn(function () { return row; }));
+    return row;
+  };
+  Panel.prototype._applyFonts = function () {
+    this._rows.forEach(function (r) { if (r.applyFont) { try { r.applyFont(); } catch (e) {} } });
   };
 
   /* ---------- 案ピル（水色）。⋯ メニュー／見えている順の番号／★の段／消した案を戻す ---------- */
@@ -2183,6 +2348,7 @@
     info = info || {};
     if (!this._ready) return;
     this._vpCache = null;
+    this._applyFonts();   /* 文字の行の値を、その要素へ当てる（v2.3.0） */
     this._captureAll();   /* 触った値＝いま選んでいる案の値（案の控えをその場で更新） */
     this._applyVisibility();
     if (this._canWrite()) {
@@ -2231,12 +2397,13 @@
   /* スマホモード中（とスマホ実機）は「スマホの上書きを外す」だけ。PC の値は触らない */
   Panel.prototype._resetAcc = function (a) {
     if (a.sp && this._spView()) a.clearMB();
-    else { var v = this._startOf(a); if (v !== undefined) a.writePC(v); }
+    else { var v = this._startOf(a); if (v !== undefined || a.kind === 'font') a.writePC(v); }   /* 文字の行は「値なし＝CSS のまま」へも戻す */
   };
   Panel.prototype._resetRow = function (row) {
     var self = this;
     if (!row) return;
     row.accs.forEach(function (a) { self._resetAcc(a); });
+    this._applyFonts();   /* 文字の行は、当て直してから今の見た目を読む */
     row.sync();
     this._changed({ item: row.item, path: row.item && row.item.path, reset: true, immediate: true, row: row });
   };
@@ -2249,6 +2416,7 @@
     b.addEventListener('click', function (e) {
       e.stopPropagation();
       ctx.accs.forEach(function (a) { if (!a.isPill) self._resetAcc(a); });
+      self._applyFonts();
       ctx.rows.forEach(function (r) { r.sync(); });
       self._changed({ reset: true, group: label, immediate: true });
       b.classList.add('done');
@@ -2341,6 +2509,7 @@
     var st = this._readStore();
     if (st.params) assignDeep(this.params, mergeSaved(this.defaults, st.params));
     else assignDeep(this.params, clone(this.defaults));
+    takeFonts(this.params, st.params, this.defaults);
     this._mb = st.mb || {};
     this._takeVars(st.vs);
     this._pcBase = null;
@@ -2647,6 +2816,7 @@
       var self = this;
       this._accs.forEach(function (a) { if (!a.hasMB() && a.spDef() === undefined) a._put(self._pcBase, clone(a._get(self.params))); });
     }
+    this._applyFonts();
     this._rows.forEach(function (r) { try { r.sync(); } catch (e) {} });
     if (this._ready) { this._vpCache = null; this._applyVisibility(); }
     return this;
@@ -2700,6 +2870,7 @@
   /* 全部を初期値に戻す（画面のボタンは置かない。必要な時だけコードから呼ぶ） */
   Panel.prototype.reset = function () {
     assignDeep(this.params, clone(this.defaults));
+    this.params[FONT_KEY] = clone(isObj(this.defaults[FONT_KEY]) ? this.defaults[FONT_KEY] : {}) || {};
     this._mb = {};
     this._vs.ov = {};
     this._startup(false);
@@ -2723,6 +2894,7 @@
     if (obj && isObj(obj.__params)) obj = obj.__params;
     else if (obj && typeof obj.__params === 'string') { try { obj = JSON.parse(obj.__params); } catch (e) {} }
     assignDeep(this.params, mergeSaved(this.defaults, obj));
+    if (obj && isObj(obj[FONT_KEY])) takeFonts(this.params, obj, this.defaults);
     if (this._isPhone) { this._pcBase = clone(this.params); this._accs.forEach(function (a) { a.live(); }); }
     this.sync();
     this._fillPills();

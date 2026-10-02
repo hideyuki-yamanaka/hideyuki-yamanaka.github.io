@@ -13588,7 +13588,7 @@ function buildPanel() {
   /* ❌ 2026-10-01 に「注記（※）› 文字サイズ」のつまみを単独で作っていた(params.sections.results.noteFs)→ 同じ日に外した。
      文字の大きさ・太さ・行間・字間は「フォント › 文字（太さ・行間・字間）› 数字 › 注記（※）」の文字の行で変える(文字の台帳 TEXT_SPEC の resNote・決まり 6-17) */
   sub(catRes, '注記（※）', false, { grp: 'basic' });
-  rows.push(slider('数値との間', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
+  rows.push(slider('数値とのギャップ', 0, 40, 4, () => (sv().results.noteGap != null ? sv().results.noteGap : 12), v => { sv().results.noteGap = v; applyResNote(); }, v => Math.round(v) + 'px',
     '数値の下から注記までの間。PC 12px・スマホ 20px(2026-10-01 ヒデさん「スマホビューの時、もう少し数字の実績と米印の上下のギャップを空けて」で 12→20・⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.results.noteGap', mbDefault: 20 }));
 
   /* 【2026-09-29 完全削除】「全部出たあと（PC）」の見せ方の案(当時の作り・A〜E)を消した＝出きったらすぐ次へ(なし)だけ。見出しとつまみも消した */
@@ -13788,12 +13788,13 @@ function buildPanel() {
   const _cm3 = () => (sv().cases.cm3 || (sv().cases.cm3 = {}));
   const _cm3Row = (label, key, min, max, step, fmt, tip) => { const r = slider(label, min, max, step, () => (_cm3()[key] != null ? _cm3()[key] : CM3_DEF[key]), v => { _cm3()[key] = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} markDirty(); }, fmt, tip,
     { fixedMax: true, mbKey: 'sections.cases.cm3.' + key, mbDefault: CM3_DEF[key] }); rows.push(r); showWhen(r, _cm3On); return r; };
+  /* 【2026-10-02 ヒデさん「余白の呼び方はおすすめの方法で」】余白のつまみの名前は共通の決まり(ギャップ／パディング・「間」は使わない)に。今回足した物を直し、古い物は次に触る時に直す */
   sub(catCase, '事例一覧へのボタン', false, { grp: 'basic' });
-  rows.push(slider('カードとの間', 8, 96, 4, () => (sv().cases.moreGap != null ? sv().cases.moreGap : CASE_MORE_GAP_DEF), v => { sv().cases.moreGap = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} }, v => Math.round(v) + 'px',
+  rows.push(slider('カードとのギャップ', 8, 96, 4, () => (sv().cases.moreGap != null ? sv().cases.moreGap : CASE_MORE_GAP_DEF), v => { sv().cases.moreGap = v; applyCaseMore(); try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} }, v => Math.round(v) + 'px',
     '4枚のカードの下から、事例一覧へのボタンまでの間。PC・スマホ 48px(2026-10-01 ヒデさん「もう少しだけコンテンツから離して」で 32→48・⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreGap', mbDefault: CASE_MORE_GAP_DEF }));
-  _cm3Row('内側の余白（上下）', 'padY', 0, 32, 2, v => Math.round(v) + 'px', '枠線の内側の、文字の上と下の余白。PC・スマホ 12px(2026-10-01 ヒデさん「中のパディングは調整できるように」・⚠️仮置き)。');
-  _cm3Row('内側の余白（左右）', 'padX', 0, 64, 4, v => Math.round(v) + 'px', '枠線の内側の、文字の左と矢印の右の余白。PC・スマホ 24px(⚠️仮置き)。');
-  _cm3Row('文字と矢印の間', 'gap', 0, 40, 4, v => Math.round(v) + 'px', '「詳しく見る」と矢印の間。PC・スマホ 16px(枠のあるボタンの案1・2と同じ・⚠️仮置き)。');
+  _cm3Row('パディング（上下）', 'padY', 0, 32, 2, v => Math.round(v) + 'px', '枠線の内側の、文字の上と下の余白。PC・スマホ 12px(2026-10-01 ヒデさん「中のパディングは調整できるように」・⚠️仮置き)。');
+  _cm3Row('パディング（左右）', 'padX', 0, 64, 4, v => Math.round(v) + 'px', '枠線の内側の、文字の左と矢印の右の余白。PC・スマホ 24px(⚠️仮置き)。');
+  _cm3Row('文字↔矢印のギャップ', 'gap', 0, 40, 4, v => Math.round(v) + 'px', '「詳しく見る」と矢印の間。PC・スマホ 16px(枠のあるボタンの案1・2と同じ・⚠️仮置き)。');
   _cm3Row('角丸', 'radius', 0, 24, 2, v => Math.round(v) + 'px', '枠の角の丸み。PC・スマホ 6px(お問い合わせボタンと同じ・⚠️仮置き)。');
   _cm3Row('矢印の長さ', 'arrowLen', 8, 64, 4, v => Math.round(v) + 'px', '矢印の左端から先端までの長さ(くの字ではない棒の部分が伸び縮みします)。2026-10-01 ヒデさん「棒の部分をもう少し伸ばす」で 約14→24px(⚠️仮置き)。');
   _cm3Row('矢じりの大きさ', 'arrowHead', 2, 12, 2, v => Math.round(v) + 'px', '先端のくの字の大きさ(先端から開いた端までの横の長さ。高さはこの2倍)。今までの矢印と同じくらいの 4px(⚠️仮置き)。');
@@ -13805,13 +13806,13 @@ function buildPanel() {
   /* 【2026-10-01 ヒデさん「導入事例からお問い合わせの距離をもうちょっと空けたい。グラデーションではなく、グレージュの方を引き伸ばしたい。そこにボタンを置く」】
      ボタンの下〜お問い合わせのグラデの上の端(ほぼ透明な所)までの間。グラデの形は変えず、お問い合わせごと上下する。PC とスマホで別の値。
      ❌ 前の「間隔」(params.cv.gapTop・PC だけ・既定 −60)は、ボタンの位置で決める今の作りでは効かないので外した(値は残してある) */
-  sub(catCase, 'お問い合わせとの間', null, { grp: 'basic' });
+  sub(catCase, 'お問い合わせとのギャップ', null, { grp: 'basic' });
   { const _cvp = () => (params.cv || (params.cv = {}));   /* cvv はこの後(コンバージョン)で作るので、ここでは直接読む */
-    rows.push(slider('ボタンからグラデまで', -80, 240, 4, () => (sv().cases.moreCvGap != null ? sv().cases.moreCvGap : CASE_MORE_CV_GAP_DEF), v => { sv().cases.moreCvGap = v; try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} markDirty(); }, v => Math.round(v) + 'px',
+    rows.push(slider('ボタン↔グラデ', -80, 240, 4, () => (sv().cases.moreCvGap != null ? sv().cases.moreCvGap : CASE_MORE_CV_GAP_DEF), v => { sv().cases.moreCvGap = v; try { fit(); } catch (e) {} try { applyCvStyle(); } catch (e) {} markDirty(); }, v => Math.round(v) + 'px',
       '「詳しく見る」の下から、お問い合わせのグラデの上の端(ほぼ透明な所)までの間。ここはグレージュの地のまま空きます。広げるとお問い合わせごと下がり、グラデの形は変わりません。PC・スマホ 40px(⚠️仮置き)。', { fixedMax: true, mbKey: 'sections.cases.moreCvGap', mbDefault: CASE_MORE_CV_GAP_DEF }));
     /* 【2026-09-28 夜 ヒデさん依頼「導入事例との距離をもっと上下詰めたい」】お問い合わせの見出し(Contact)の上の余白。値はお問い合わせの params.cv.headTop(入口はここ1つ)。
        スマホは CSS の固定値(上40px)なので PC/タブレットだけ＝スマホモードでは隠す */
-    const _r2 = slider('見出しまでの余白', 0, 240, 4, () => (_cvp().headTop != null ? _cvp().headTop : CV_HEAD_TOP_DEF), v => { _cvp().headTop = v; applyCvStyle(); fit(); markDirty(); }, v => Math.round(v) + 'px',
+    const _r2 = slider('見出しの上のパディング', 0, 240, 4, () => (_cvp().headTop != null ? _cvp().headTop : CV_HEAD_TOP_DEF), v => { _cvp().headTop = v; applyCvStyle(); fit(); markDirty(); }, v => Math.round(v) + 'px',
       'お問い合わせの色の面の上端から、見出し(Contact)までの余白。減らすほど導入事例と見出しが近づきます。既定 80px。', { grp: 'basic' });
     _r2.classList.add('pc-only-row'); rows.push(_r2); }
 
@@ -13824,7 +13825,7 @@ function buildPanel() {
   note('導入事例の文字ごとに 太さ・行間・字間(見出し・Use Case・カードの一言/タグ/会社名)。空欄＝今のCSSの値(カッコ内)。');
   textRowsFor(['case']);
 
-  const catCv = category('コンバージョン（お問い合わせの流れる背景）', false);
+  const catCv = category('お問い合わせ（流れる背景とフォーム・フッター）', false);   /* 【2026-10-02 ヒデさん「タブ名はページの見出しと同じ感じに」】旧タブ名「コンバージョン」 */
   catNote(catCv, 'カンプのラジアルグラデを、惑星と同じ発想で流れさせ、Bayerディザで粒立たせています。');
   panelVarsec('cv', 'お問い合わせ（案）');   /* 【2026-09-21 ヒデさん依頼】主役案をセクションに→配下に4カテゴリ */
   const cvv = () => (params.cv || (params.cv = {}));
@@ -14159,6 +14160,8 @@ function buildPanel() {
   { const cats = [...body.querySelectorAll(':scope > .cat')];
     const titles = cats.map(c => ((c.querySelector('.cat-head > span') || {}).textContent || '').trim());
     let cur = null; try { cur = localStorage.getItem(PANEL_TAB_KEY); } catch (e) {}
+    /* 【2026-10-02】タブ名を「コンバージョン」→「お問い合わせ」に改名。前に選んでいたタブをそのまま引き継ぐ */
+    if (cur && cur.indexOf('コンバージョン（') === 0) cur = 'お問い合わせ' + cur.slice('コンバージョン'.length);
     if (!titles.includes(cur)) { const iOpen = cats.findIndex(c => !c.classList.contains('closed')); cur = titles[iOpen >= 0 ? iOpen : 0] || ''; }
     const showTab = t => {
       cats.forEach((c, i) => { const onT = titles[i] === t; c.classList.toggle('tab-on', onT); if (onT) { c.classList.remove('closed'); catOpen[titles[i]] = true; } });

@@ -59,7 +59,7 @@ rows.push(['② どのタブも先頭に区切り線が無い', topLines.length 
 const mid = await p.evaluate(() => { const v = [...document.querySelectorAll('.tools .vs-section')].find(x => /ピクトグラム/.test((x.querySelector('.cat-section-head') || {}).textContent || '')); return v ? getComputedStyle(v).borderTopWidth : '-'; });
 rows.push(['③ 案の見出しと見出しの間の線は残る（実績の「ピクトグラム」の上）', mid === '1px', `上線 ${mid}`]);
 /* ④ カテゴリのカードを押すと畳めるか(2026-09-29 夜: 余白の直しの並べ方が「畳んだ時は隠す」を上書きして、印は付くのに中身が隠れなかった) */
-const acc = await p.evaluate(async () => { const tb = [...document.querySelectorAll('.tools .pan-tabs > *')].find(x => x.textContent.trim() === 'コンバージョン'); if (tb) tb.click(); await new Promise(r => setTimeout(r, 150));
+const acc = await p.evaluate(async () => { const tb = [...document.querySelectorAll('.tools .pan-tabs > *')].find(x => x.textContent.trim() === 'お問い合わせ'); if (tb) tb.click(); await new Promise(r => setTimeout(r, 150));
   const c = document.querySelector('.tools .cat.tab-on .cat-section:not(.cs-variation)'); const bd = c.querySelector(':scope > .cat-section-body'); const shown = () => getComputedStyle(bd).display !== 'none';
   const s0 = shown(); c.querySelector('.cs-chev, .cat-section-head').click(); await new Promise(r => setTimeout(r, 150)); const s1 = shown(); c.querySelector('.cat-section-head').click(); await new Promise(r => setTimeout(r, 150)); const s2 = shown();
   return { s0, s1, s2 }; });

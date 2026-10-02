@@ -245,6 +245,8 @@ try {
         await page.evaluate(([k]) => { const i = document.querySelector(`.tp-item[data-key="${k}"] input[type=color]`); i.value = i.value === '#ff3366' ? '#33aa66' : '#ff3366'; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); }, [key]);
       } else if (kind === 'text') {
         await page.evaluate(([k]) => { const i = document.querySelector(`.tp-item[data-key="${k}"] input[type=text]`); i.value = i.value + '（テスト）'; i.dispatchEvent(new Event('input', { bubbles: true })); }, [key]);
+      } else if (kind === 'font') {   /* 文字の行：size を1段上げる（v2.3.0） */
+        await page.evaluate(([k]) => { const i = document.querySelector(`.tp-item[data-key="${k}"] input.tp-fn`); i.value = (parseFloat(i.value) || 16) + 4; i.dispatchEvent(new Event('change', { bubbles: true })); }, [key]);
       } else ok = false;
       await page.waitForTimeout(40);
       const after = await sig(page), v1 = await val(page, key);
@@ -286,17 +288,17 @@ try {
     await typeValue(page, 'kv.copyX', 88);
     const a1 = await val(page, 'kv.copyX');
     await pickVariant(page, 'kv.variant', 'strong');
-    const b1 = await val(page, 'kv.copyX'), bSize = await val(page, 'kv.copySize');
+    const b1 = await val(page, 'kv.copyX'), bSize = await val(page, 'kv.gfxSize');
     await typeValue(page, 'kv.copyX', -40);
     await pickVariant(page, 'kv.variant', 'normal');
-    const a2 = await val(page, 'kv.copyX'), aSize = await val(page, 'kv.copySize');
+    const a2 = await val(page, 'kv.copyX'), aSize = await val(page, 'kv.gfxSize');
     await pickVariant(page, 'kv.variant', 'strong');
     const b2 = await val(page, 'kv.copyX');
     await pickVariant(page, 'kv.variant', 'minimal');
     const c1 = await val(page, 'kv.copyX'), cAlign = await val(page, 'kv.align');
     const shared0 = await val(page, 'kv.copy');
-    rec('案Aで動かした値が案Bに出ない（案ごとに独立）', a1 === 88 && b1 === 0 && a2 === 88 && b2 === -40 && c1 === 0 && bSize === 72 && aSize === 56 && cAlign === 'center',
-      `ノーマルで位置X=88 → 強調に切替 ${b1}（強調の文字サイズ ${bSize}＝案の最初の値）→ 強調で-40 → ノーマルへ ${a2}（文字サイズ ${aSize}）→ 強調へ ${b2} → ミニマル ${c1}（揃え ${cAlign}）`);
+    rec('案Aで動かした値が案Bに出ない（案ごとに独立）', a1 === 88 && b1 === 0 && a2 === 88 && b2 === -40 && c1 === 0 && bSize === 400 && aSize === 320 && cAlign === 'center',
+      `ノーマルで位置X=88 → 強調に切替 ${b1}（強調のグラフィックの大きさ ${bSize}＝案の最初の値）→ 強調で-40 → ノーマルへ ${a2}（大きさ ${aSize}）→ 強調へ ${b2} → ミニマル ${c1}（揃え ${cAlign}）`);
     /* shared:true は全案共通 */
     await page.evaluate(() => { const i = document.querySelector('.tp-item[data-key="kv.copy"] input'); i.value = '共通の文言'; i.dispatchEvent(new Event('input', { bubbles: true })); });
     await pickVariant(page, 'kv.variant', 'normal');
@@ -356,19 +358,19 @@ try {
     await showPanel(page);
     await tab(page, 'キービジュアル');
     const rng = async k => page.evaluate(([kk]) => { const i = document.querySelector(`.tp-item[data-key="${kk}"] input[type=range]`); return { min: +i.min, max: +i.max, v: +i.value }; }, [k]);
-    const s0 = await rng('kv.copySize');
-    await setSlider(page, 'kv.copySize', s0.max);
-    const s1 = await rng('kv.copySize');
+    const s0 = await rng('kv.gfxSize');
+    await setSlider(page, 'kv.gfxSize', s0.max);
+    const s1 = await rng('kv.gfxSize');
     const centered = Math.abs((s1.v - s1.min) / (s1.max - s1.min) - 0.5) < 0.2;
     const x0 = await rng('kv.copyX');
-    rec('スライダーは「いまの値が真ん中」の範囲で始まり、端で離すと取り直す', s0.min < 56 && s0.max > 56 && Math.abs((56 - s0.min) / (s0.max - s0.min) - 0.5) < 0.05 && s1.max > s0.max && centered && x0.min === -200 && x0.max === 200,
-      `文字サイズ（既定56）: 範囲 ${s0.min}〜${s0.max} → 右端 ${s0.max} で離す → ${s1.min}〜${s1.max}（値 ${s1.v} は ${(((s1.v - s1.min) / (s1.max - s1.min)) * 100).toFixed(0)}% の位置）／位置X（signed・0）: ${x0.min}〜${x0.max}`);
-    await page.evaluate(() => { TunePanel.instances[0].params.kv.copySize = 300; TunePanel.instances[0].sync(); });
-    const s2 = await rng('kv.copySize');
+    rec('スライダーは「いまの値が真ん中」の範囲で始まり、端で離すと取り直す', s0.min < 320 && s0.max > 320 && Math.abs((320 - s0.min) / (s0.max - s0.min) - 0.5) < 0.05 && s1.max > s0.max && centered && x0.min === -200 && x0.max === 200,
+      `グラフィックの大きさ（既定320）: 範囲 ${s0.min}〜${s0.max} → 右端 ${s0.max} で離す → ${s1.min}〜${s1.max}（値 ${s1.v} は ${(((s1.v - s1.min) / (s1.max - s1.min)) * 100).toFixed(0)}% の位置）／位置X（signed・0）: ${x0.min}〜${x0.max}`);
+    await page.evaluate(() => { TunePanel.instances[0].params.kv.gfxSize = 2000; TunePanel.instances[0].sync(); });
+    const s2 = await rng('kv.gfxSize');
     await pickVariant(page, 'kv.variant', 'strong');
     await page.evaluate(() => { TunePanel.instances[0].params.kv.gfxBlur = 70; TunePanel.instances[0].sync(); });
     const b2 = await rng('kv.gfxBlur');
-    rec('外から値が変わって範囲外でも追いつく', s2.max >= 300 && s2.v === 300 && b2.max >= 70 && b2.v === 70, `文字サイズを外から300に → 範囲 ${s2.min}〜${s2.max}・つまみ ${s2.v}／ブラーを70に → ${b2.min}〜${b2.max}・つまみ ${b2.v}`);
+    rec('外から値が変わって範囲外でも追いつく', s2.max >= 2000 && s2.v === 2000 && b2.max >= 70 && b2.v === 70, `大きさを外から2000に → 範囲 ${s2.min}〜${s2.max}・つまみ ${s2.v}／ブラーを70に → ${b2.min}〜${b2.max}・つまみ ${b2.v}`);
     const op = await rng('kv.gfxOpacity');
     rec('clamp:true の項目は書いた範囲のまま（不透明度 0〜100%）', op.min === 0 && op.max === 100, `不透明度の範囲 ${op.min}〜${op.max}`);
     await context.close();
@@ -398,31 +400,31 @@ try {
     /* ドラッグの途中では書かない */
     await showPanel(page);
     await tab(page, '全体');
-    const box = await page.locator('.tp-item[data-key="site.bodySize"] input[type=range]').boundingBox();
+    const box = await page.locator('.tp-item[data-key="site.pad"] input[type=range]').boundingBox();
     const y = box.y + box.height / 2;
     await page.mouse.move(box.x + box.width / 2, y);
     await page.mouse.down();
     for (let i = 0; i < 12; i++) { await page.mouse.move(box.x + box.width / 2 + 4 + i * 3, y); await page.waitForTimeout(100); }
     await page.waitForTimeout(1000);   /* 押したまま 1 秒止める */
-    const midDrag = (await saved(page)).site.bodySize, nowVal = await pc(page, 'site.bodySize');
+    const midDrag = (await saved(page)).site.pad, nowVal = await pc(page, 'site.pad');
     await page.mouse.up();
     await page.waitForTimeout(1100);
-    const afterUp = (await saved(page)).site.bodySize;
-    rec('ドラッグの途中では保存しない（離してから保存）', midDrag === 15 && nowVal !== 15 && afterUp === nowVal, `押したまま1秒止めた時の保存値 ${midDrag}（画面の値 ${nowVal}）→ 離して1.1秒後 ${afterUp}`);
+    const afterUp = (await saved(page)).site.pad;
+    rec('ドラッグの途中では保存しない（離してから保存）', midDrag === 88 && nowVal !== 88 && afterUp === nowVal, `押したまま1秒止めた時の保存値 ${midDrag}（画面の値 ${nowVal}）→ 離して1.1秒後 ${afterUp}`);
 
     /* 保存値を先に入れてからリロード2回（案ごとの項目も） */
     const { context: c2, page: p2 } = await newPage();
     await open(p2);
     await p2.evaluate(() => {
       const s = JSON.parse(JSON.stringify(TunePanel.instances[0].defaults));
-      s.site.pad = 77; s.kv.copyX = 33; s.kv.variant = 'strong'; s.kv.copySize = 81;
+      s.site.pad = 77; s.kv.copyX = 33; s.kv.variant = 'strong'; s.kv.gfxSize = 81;
       localStorage.clear();
       localStorage.setItem('tp:tp-demo:v1', JSON.stringify(s));
     });
     await p2.reload(); await p2.waitForTimeout(150);
-    const q1 = [await pc(p2, 'site.pad'), await pc(p2, 'kv.copyX'), await pc(p2, 'kv.variant'), await pc(p2, 'kv.copySize')];
+    const q1 = [await pc(p2, 'site.pad'), await pc(p2, 'kv.copyX'), await pc(p2, 'kv.variant'), await pc(p2, 'kv.gfxSize')];
     await p2.reload(); await p2.waitForTimeout(150);
-    const q2 = [await pc(p2, 'site.pad'), await pc(p2, 'kv.copyX'), await pc(p2, 'kv.variant'), await pc(p2, 'kv.copySize')];
+    const q2 = [await pc(p2, 'site.pad'), await pc(p2, 'kv.copyX'), await pc(p2, 'kv.variant'), await pc(p2, 'kv.gfxSize')];
     const stored = await saved(p2);
     rec('保存値を先に入れてからリロード2回しても値が残る', q1.join() === '77,33,strong,81' && q2.join() === '77,33,strong,81' && stored.site.pad === 77,
       `入れた値 パディング77・位置X33・案=強調・文字サイズ81 → 1回目 ${q1.join('/')} → 2回目 ${q2.join('/')}`);
@@ -459,37 +461,37 @@ try {
     await open(page);
     await showPanel(page);
     await tab(page, 'キービジュアル');
-    await typeValue(page, 'kv.copySize', 60);
+    await typeValue(page, 'kv.gfxSize', 60);
     await page.click('.tp-phone-btn');
     await page.waitForTimeout(200);
     const phoneOn = await page.evaluate(() => ({ html: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), banner: getComputedStyle(document.querySelector('.tp-banner')).display, btn: document.querySelector('.tp-phone-btn').textContent, frame: !!document.querySelector('.tp-pp.on'), head: getComputedStyle(document.querySelector('.tp-head')).backgroundImage.slice(0, 15), save: document.querySelector('.tp-btns button.primary').textContent }));
-    const inherit = await val(page, 'kv.copySize');
-    const mark0 = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.copySize"] .tp-row').classList.contains('tp-mb'));
-    await typeValue(page, 'kv.copySize', 28);
-    const spV = await val(page, 'kv.copySize'), pcV = await pc(page, 'kv.copySize');
-    const mark = await page.evaluate(() => { const r = document.querySelector('.tp-item[data-key="kv.copySize"] .tp-row'), l = r.querySelector('label'); return { on: r.classList.contains('tp-mb'), color: getComputedStyle(l).color, dot: getComputedStyle(l, '::before').content, bg: getComputedStyle(r).backgroundColor, bl: getComputedStyle(r).borderLeftWidth }; });
+    const inherit = await val(page, 'kv.gfxSize');
+    const mark0 = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.gfxSize"] .tp-row').classList.contains('tp-mb'));
+    await typeValue(page, 'kv.gfxSize', 28);
+    const spV = await val(page, 'kv.gfxSize'), pcV = await pc(page, 'kv.gfxSize');
+    const mark = await page.evaluate(() => { const r = document.querySelector('.tp-item[data-key="kv.gfxSize"] .tp-row'), l = r.querySelector('label'); return { on: r.classList.contains('tp-mb'), color: getComputedStyle(l).color, dot: getComputedStyle(l, '::before').content, bg: getComputedStyle(r).backgroundColor, bl: getComputedStyle(r).borderLeftWidth }; });
     /* 同じ値でも触った瞬間に印が付く */
-    const lh0 = await val(page, 'kv.copyLh');
-    await setSlider(page, 'kv.copyLh', lh0);
-    const markSame = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.copyLh"] .tp-row').classList.contains('tp-mb'));
+    const lh0 = await val(page, 'kv.dur');
+    await setSlider(page, 'kv.dur', lh0);
+    const markSame = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.dur"] .tp-row').classList.contains('tp-mb'));
     rec('スマホモード（見出しの1押し・帯・青っぽい見出し・スマホ枠）', phoneOn.html && phoneOn.panel && phoneOn.banner === 'flex' && phoneOn.btn === '📱 スマホモード中' && phoneOn.frame && /gradient/.test(phoneOn.head) && phoneOn.save.startsWith('スマホのデフォルトに設定'),
       `html.phone-mode=${phoneOn.html}・帯=${phoneOn.banner}・ボタン「${phoneOn.btn}」・見出しの地=${phoneOn.head}…・390×844の枠=${phoneOn.frame ? 'あり' : 'なし'}・保存ボタン「${phoneOn.save}」`);
     rec('スマホで上書きした行に青い印（青い文字＋●・左の帯や背景なし・同じ値でも付く）', !mark0 && mark.on && mark.color === 'rgb(11, 75, 214)' && /●/.test(mark.dot) && mark.bg === 'rgba(0, 0, 0, 0)' && mark.bl === '0px' && markSame,
       `触る前=${mark0 ? '印あり' : '印なし'}（PCの値 ${inherit} を引き継ぎ）→ 30 に変更で印=${mark.on}・文字色 ${mark.color}・印 ${mark.dot}・背景 ${mark.bg}・左の線 ${mark.bl}／同じ値で触った行間=${markSame ? '印が付いた' : '付かない'}`);
     await page.click('.tp-phone-btn');   /* スマホモードを抜ける */
     await page.waitForTimeout(150);
-    const backPC = await val(page, 'kv.copySize');
-    await typeValue(page, 'kv.copySize', 64);
+    const backPC = await val(page, 'kv.gfxSize');
+    await typeValue(page, 'kv.gfxSize', 64);
     await page.click('.tp-phone-btn');
     await page.waitForTimeout(150);
-    const spKept = await val(page, 'kv.copySize');
+    const spKept = await val(page, 'kv.gfxSize');
     rec('PCで動かした値がスマホで上書きした項目に出ない・スマホの値がPCに出ない', spV === 28 && pcV === 60 && backPC === 60 && spKept === 28,
       `スマホモードで30 → PCの値は ${pcV} のまま → PCに戻ると ${backPC} → PCで64に変更 → スマホモードでは ${spKept}`);
     /* スマホモードの ↺ は上書きだけ外す */
-    await page.click('.tp-item[data-key="kv.copySize"] .tp-rst');
-    const afterRst = await val(page, 'kv.copySize'), pcAfter = await pc(page, 'kv.copySize');
-    const mbHas = await page.evaluate(() => Object.prototype.hasOwnProperty.call(TunePanel.instances[0]._mb, 'kv.copySize'));
-    const markOff = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.copySize"] .tp-row').classList.contains('tp-mb'));
+    await page.click('.tp-item[data-key="kv.gfxSize"] .tp-rst');
+    const afterRst = await val(page, 'kv.gfxSize'), pcAfter = await pc(page, 'kv.gfxSize');
+    const mbHas = await page.evaluate(() => Object.prototype.hasOwnProperty.call(TunePanel.instances[0]._mb, 'kv.gfxSize'));
+    const markOff = await page.evaluate(() => document.querySelector('.tp-item[data-key="kv.gfxSize"] .tp-row').classList.contains('tp-mb'));
     rec('スマホモードの ↺ はスマホの上書きだけ外す（PCの値は触らない）', afterRst === 64 && pcAfter === 64 && !mbHas && !markOff, `↺ の後: 表示 ${afterRst}（PCの値を引き継ぐ）・PCの値 ${pcAfter}・スマホの上書き ${mbHas ? '残った' : '外れた'}・印 ${markOff ? 'あり' : 'なし'}`);
     /* PC専用・スマホ専用のつまみ */
     const vis = async k => page.evaluate(([kk]) => { const e = document.querySelector(`.tp-item[data-key="${kk}"]`); return !!(e && e.offsetParent); }, [k]);
@@ -501,14 +503,14 @@ try {
     /* 案 × スマホの掛け合わせ：強調のスマホだけ行間を変える */
     await page.click('.tp-phone-btn'); await page.waitForTimeout(120);
     await pickVariant(page, 'kv.variant', 'strong');
-    await typeValue(page, 'kv.copyLh', 1.8);
+    await typeValue(page, 'kv.dur', 1.8);
     await pickVariant(page, 'kv.variant', 'normal');
-    const nSp = await val(page, 'kv.copyLh');
+    const nSp = await val(page, 'kv.dur');
     await pickVariant(page, 'kv.variant', 'strong');
-    const sSp = await val(page, 'kv.copyLh');
+    const sSp = await val(page, 'kv.dur');
     await page.click('.tp-phone-btn'); await page.waitForTimeout(120);
-    const sPc = await val(page, 'kv.copyLh');
-    rec('案 × スマホの掛け合わせも独立（強調のスマホだけ行間 1.8）', sSp === 1.8 && nSp !== 1.8 && sPc !== 1.8, `強調のスマホ ${sSp}・ノーマルのスマホ ${nSp}・強調のPC ${sPc}`);
+    const sPc = await val(page, 'kv.dur');
+    rec('案 × スマホの掛け合わせも独立（強調のスマホだけアニメーション時間 1.8）', sSp === 1.8 && nSp !== 1.8 && sPc !== 1.8, `強調のスマホ ${sSp}・ノーマルのスマホ ${nSp}・強調のPC ${sPc}`);
     await pickVariant(page, 'kv.variant', 'normal');
     await page.click('.tp-phone-btn'); await page.waitForTimeout(600);
     await typeValue(page, 'kv.copyX', 24);      /* スマホだけの値を2つ入れて、青い印が写るようにする */
@@ -534,6 +536,7 @@ try {
       else if (kind === 'chips') await page.click(`.tp-item[data-kind="chips"] .tp-chip[data-key="${key}"]`);
       else if (kind === 'color') await page.evaluate(([k]) => { const i = document.querySelector(`.tp-item[data-key="${k}"] input[type=color]`); i.value = i.value === '#ff3366' ? '#33aa66' : '#ff3366'; i.dispatchEvent(new Event('input', { bubbles: true })); }, [key]);
       else if (kind === 'text') await page.evaluate(([k]) => { const i = document.querySelector(`.tp-item[data-key="${k}"] input[type=text]`); i.value = i.value + '（スマホ）'; i.dispatchEvent(new Event('input', { bubbles: true })); }, [key]);
+      else if (kind === 'font') await page.evaluate(([k]) => { const i = document.querySelector(`.tp-item[data-key="${k}"] input.tp-fn`); i.value = (parseFloat(i.value) || 16) + 4; i.dispatchEvent(new Event('change', { bubbles: true })); }, [key]);
       let changed = false;
       for (let i = 0; i < 30 && !changed; i++) { await page.waitForTimeout(60); changed = (await fsig()) !== before; }
       const pcAfter = await page.evaluate(([k]) => JSON.stringify(TunePanel.utils.getPath(TunePanel.instances[0].params, k)), [key]);
@@ -573,13 +576,13 @@ try {
     await typeValue(page, 'kv.copyX', 70);
     await pillMenu(page, 'kv.variant', 'strong', '⤓ いまの設定で上書き');
     await pickVariant(page, 'kv.variant', 'strong');
-    const ov1 = [await val(page, 'kv.copyX'), await val(page, 'kv.copySize')];
+    const ov1 = [await val(page, 'kv.copyX'), await val(page, 'kv.gfxSize')];
     const menuHas = async () => { const pill = page.locator('.tp-item[data-key="kv.variant"] .tp-pill[data-value="strong"]').first(); await pill.hover(); await pill.locator('.tp-pill-x').click(); await page.waitForSelector('.tp-pmenu'); const t = await page.evaluate(() => [...document.querySelectorAll('.tp-pmenu button')].map(b => b.textContent)); await page.keyboard.press('Escape'); await page.mouse.click(700, 880); return t; };
     const m1 = await menuHas();
     await pillMenu(page, 'kv.variant', 'strong', '↺ 上書きを解除');
-    const ov2 = [await val(page, 'kv.copyX'), await val(page, 'kv.copySize')];
+    const ov2 = [await val(page, 'kv.copyX'), await val(page, 'kv.gfxSize')];
     const m2 = await menuHas();
-    rec('⤓ いまの設定で上書き → ↺ 上書きを解除（コードの最初の値へ）', ov1[0] === 70 && ov1[1] === 56 && m1.some(t => t.startsWith('↺ 上書きを解除')) && ov2[0] === 0 && ov2[1] === 72 && !m2.some(t => t.startsWith('↺ 上書きを解除')),
+    rec('⤓ いまの設定で上書き → ↺ 上書きを解除（コードの最初の値へ）', ov1[0] === 70 && ov1[1] === 320 && m1.some(t => t.startsWith('↺ 上書きを解除')) && ov2[0] === 0 && ov2[1] === 400 && !m2.some(t => t.startsWith('↺ 上書きを解除')),
       `ノーマルで位置X=70 → 強調を⤓上書き → 強調を選ぶと 位置X ${ov1[0]}・文字サイズ ${ov1[1]} → 解除で ${ov2[0]}・${ov2[1]}（強調の最初の値）／メニュー: ${m1.join(' ')}`);
 
     /* 削除 → 戻す */
@@ -662,9 +665,9 @@ try {
     await showPanel(page);
     await tab(page, 'キービジュアル');
     await pickVariant(page, 'kv.variant', 'strong');
-    await typeValue(page, 'kv.copySize', 80);
+    await typeValue(page, 'kv.gfxSize', 80);
     await page.click('.tp-phone-btn'); await page.waitForTimeout(120);
-    await typeValue(page, 'kv.copySize', 36);
+    await typeValue(page, 'kv.gfxSize', 36);
     await typeValue(page, 'kv.spTop', 40);
     await page.click('.tp-btns button.primary');
     await page.waitForTimeout(200);
@@ -676,7 +679,7 @@ try {
     const before = await (async () => { await sp.goto('about:blank'); return null; })();
     await open(sp);
     const ls0 = await lsDump(sp), ss0 = await sp.evaluate(() => JSON.stringify(sessionStorage));
-    const applied = await sp.evaluate(() => ({ size: TunePanel.instances[0].params.kv.copySize, v: TunePanel.instances[0].params.kv.variant, spTop: TunePanel.instances[0].params.kv.spTop, css: getComputedStyle(document.querySelector('.kv-copy h1')).fontSize }));
+    const applied = await sp.evaluate(() => ({ size: TunePanel.instances[0].params.kv.gfxSize, v: TunePanel.instances[0].params.kv.variant, spTop: TunePanel.instances[0].params.kv.spTop, css: getComputedStyle(document.querySelector('.kv-copy h1')).fontSize }));
     rec('スマホ実機は起動時に「案の値 → スマホ用の値」の順で当てる', applied.v === 'strong' && applied.size === 36 && applied.spTop === 40, `案=${applied.v}・文字サイズ ${applied.size}（PCの強調は80・スマホの上書き33）・ギャップ（スマホ）${applied.spTop}・画面の見出し ${applied.css}`);
     const hot = await sp.evaluate(() => { const r = document.querySelector('.tp-hot').getBoundingClientRect(); return r.width + '×' + r.height; });
     await showPanel(sp);
@@ -763,7 +766,7 @@ try {
     await page.waitForTimeout(600);
     const st = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), pop: !!document.querySelector('.pm-pop.show'), qr: (document.querySelector('.pm-pop .qr') || {}).src || '', url: (document.querySelector('.pm-pop .url') || {}).textContent, client: !!window.__phoneModeOn, dupBanner: getComputedStyle(document.querySelector('.pm-banner')).display, keys: JSON.stringify(window.PHONE_MODE_CONFIG.storageKeys) }));
     const n0 = pushes.length;
-    await typeValue(page, 'kv.copySize', 40);
+    await typeValue(page, 'kv.gfxSize', 40);
     await page.waitForTimeout(600);
     const last = pushes.length ? JSON.parse(pushes[pushes.length - 1]) : null;
     const mb = last && last.store && last.store['tp:tp-demo:v1:mb'] ? JSON.parse(last.store['tp:tp-demo:v1:mb']) : {};
@@ -775,8 +778,8 @@ try {
     await page.click('#pmStop');
     await page.waitForTimeout(200);
     const off = await page.evaluate(() => ({ on: document.documentElement.classList.contains('phone-mode'), panel: TunePanel.instances[0].el.classList.contains('tp-phone'), frame: !!document.querySelector('.tp-pp.on') }));
-    rec('phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる', st.on && st.panel && st.pop && /\/qr/.test(st.qr) && st.client && st.dupBanner === 'none' && pushes.length > n0 && mb['kv.copySize'] === 40 && second.on && !second.pop && !off.on && !off.panel && !off.frame,
-      `ボタン1押し → スマホモード=${st.on}・QRの窓=${st.pop ? '出た' : '出ない'}（${st.url}）・二重の帯=${st.dupBanner}／スマホモードで文字サイズ41 → 中継へ送信 ${pushes.length - n0} 回・送った中身のスマホ値 ${mb['kv.copySize']}／2回目の押下 → QRだけ閉じた=${!second.pop}（モード継続=${second.on}）／「スマホモード終了」→ ${off.on ? '続く' : '終わった'}・枠 ${off.frame ? '残る' : '消えた'}／送る保存キー ${st.keys}`);
+    rec('phone-mode.client.js があれば見出しのボタンから QR と実機への反映につながる', st.on && st.panel && st.pop && /\/qr/.test(st.qr) && st.client && st.dupBanner === 'none' && pushes.length > n0 && mb['kv.gfxSize'] === 40 && second.on && !second.pop && !off.on && !off.panel && !off.frame,
+      `ボタン1押し → スマホモード=${st.on}・QRの窓=${st.pop ? '出た' : '出ない'}（${st.url}）・二重の帯=${st.dupBanner}／スマホモードで文字サイズ41 → 中継へ送信 ${pushes.length - n0} 回・送った中身のスマホ値 ${mb['kv.gfxSize']}／2回目の押下 → QRだけ閉じた=${!second.pop}（モード継続=${second.on}）／「スマホモード終了」→ ${off.on ? '続く' : '終わった'}・枠 ${off.frame ? '残る' : '消えた'}／送る保存キー ${st.keys}`);
     await context.close();
     relay.close();
   }
@@ -787,7 +790,7 @@ try {
     await open(page);
     await page.evaluate(() => {
       localStorage.setItem('tp:tp-demo:v1', '{壊れたJSON');
-      localStorage.setItem('tp:tp-demo:v1:mb', JSON.stringify({ 'kv.copySize': 'あ', 'nai.key': 5, 'kv.align': 'right', 'site.pad': 30 }));
+      localStorage.setItem('tp:tp-demo:v1:mb', JSON.stringify({ 'kv.gfxSize': 'あ', 'nai.key': 5, 'kv.align': 'right', 'site.pad': 30 }));
       localStorage.setItem('tp:tp-demo:variants', JSON.stringify({ hidden: { 'kv.variant': ['nai', 'minimal'], 'nai.pill': ['x'] }, fav: 'x', ov: { 'kv.variant': { strong: { copyX: 9 } } } }));
       localStorage.setItem('tp:tp-demo:v0', '{"old":1}');
     });
@@ -883,10 +886,12 @@ try {
       const cats = ['全体', 'キービジュアル（いちばん上）', 'ビジョン', '実績', '開発者体験', '導入事例', 'お問い合わせ', 'メニュー'].map((t, i) => ({ cat: t, items: [{ sub: '見出し' + i }, { slider: '値', path: 'a.x', min: 0, max: 20, step: 1 }, { sub: '説明だけ' }, { note: 'この見出しには戻す値が無い' }, { button: '押す', onClick: () => {} }] }));
       const p = TunePanel.create({ params: prm, storageKey: 'tp-many', secret: false, phone: false, onEdit: on => edits.push(on), position: { left: 700, top: 40 }, size: { w: 300, h: 400 }, schema: cats });
       await new Promise(res => setTimeout(res, 50));
+      await document.fonts.ready;   /* タブの書体（Noto Sans JP）が読み終わってから押す（途中だとタブの幅が変わり、0.7秒後の判定が揺れる・2026-10-02） */
       const bar = p._tabBar, tabs = [...bar.querySelectorAll('.tp-tab')];
       const oneRow = new Set(tabs.map(t => Math.round(t.getBoundingClientRect().top))).size === 1;
       const over = bar.scrollWidth > bar.clientWidth;
       tabs[6].click();
+      await document.fonts.ready;   /* 選んだタブの太字（700）の書体を読み終わるまで待つ（読み終わると幅が変わり、端まで送り直す） */
       await new Promise(res => setTimeout(res, 700));
       const centered = Math.abs((tabs[6].getBoundingClientRect().left + tabs[6].getBoundingClientRect().width / 2) - (bar.getBoundingClientRect().left + bar.clientWidth / 2)) < 30 || bar.scrollLeft >= bar.scrollWidth - bar.clientWidth - 1;
       const label = tabs[1].textContent;
@@ -1024,12 +1029,12 @@ try {
     const r = {
       gap14: await setv('実績', 'res.cardGap', 14), pad10: await setv('実績', 'res.cardPad', 10), pad6: await setv('実績', 'res.cardPad', 6),
       rad5: await setv('実績', 'res.radius', 5), bw05: await setv('実績', 'res.border.width', 0.5),
-      fs15: await setv('キービジュアル', 'kv.copySize', 15), fs14: await setv('キービジュアル', 'kv.copySize', 14), x14: await setv('キービジュアル', 'kv.copyX', 14),
+      x14: await setv('キービジュアル', 'kv.copyX', 14),
       gw: await setv('全体', 'site.gridWidth', 1.5),
     };
     rec('つまみはデザインの数値の決まり（4-7）に止まる：余白・サイズ・角丸・文字サイズは4の倍数（10px以下は2刻み・文字は14と18も可）。位置・線幅は止めない',
-      r.gap14 === 16 && r.pad10 === 10 && r.pad6 === 6 && r.rad5 === 6 && r.bw05 === 0.5 && r.fs15 === 16 && r.fs14 === 14 && r.x14 === 14 && (r.gw === 1.5 || r.gw === 'なし'),
-      `ギャップ 14→${r.gap14}・パディング 10→${r.pad10}・6→${r.pad6}・角丸 5→${r.rad5}・枠線の太さ 0.5→${r.bw05}・方眼の線の太さ 1.5→${r.gw}・文字サイズ 15→${r.fs15}・14→${r.fs14}・位置X 14→${r.x14}`);
+      r.gap14 === 16 && r.pad10 === 10 && r.pad6 === 6 && r.rad5 === 6 && r.bw05 === 0.5 && r.x14 === 14 && (r.gw === 1.5 || r.gw === 'なし'),
+      `ギャップ 14→${r.gap14}・パディング 10→${r.pad10}・6→${r.pad6}・角丸 5→${r.rad5}・枠線の太さ 0.5→${r.bw05}・方眼の線の太さ 1.5→${r.gw}・位置X 14→${r.x14}`);
     /* 名前から種類を見分ける（2026-09-28：「本文サイズ」「bodySize」が大きさ扱いになり、14・18 が寄ってしまっていた） */
     const kinds = await page.evaluate(() => {
       const k = (slider, path) => TunePanel.utils.gridKindOf({ slider, path, unit: 'px' });
@@ -1043,6 +1048,75 @@ try {
       kinds.body === 'fontSize' && kinds.bodySize === 'fontSize' && kinds.head === 'fontSize' && kinds.label === 'fontSize' && kinds.headGap === 'spacing' &&
       kinds.bodyW === 'size' && kinds.icon === 'size' && kinds.titleR === 'radius' && kinds.font === 'fontSize' && kinds.snap14 === 14 && kinds.snap18 === 18,
       Object.entries(kinds).map(([a, b]) => a + '=' + b).join('・'));
+    await context.close();
+  }
+
+  /* ============ 10. 文字の行（v2.3.0・ルール集 ★6-17：文字のつまみは新しく作らず、文字の行に登録する） ============ */
+  {
+    const { context, page } = await newPage();
+    await open(page);
+    await showPanel(page);
+    await tab(page, 'キービジュアル');
+    const S = k => `.tp-pane.on .tp-item[data-key="__font.${k}.fs"]`;
+    const look = await page.evaluate(([s]) => {
+      const w = document.querySelector(s); if (!w) return null;
+      const r = w.querySelector('.tp-row'), kids = [...r.children], t0 = kids[0].getBoundingClientRect().top;
+      const ins = [...r.querySelectorAll('input.tp-fn, select.tp-fw')];
+      return { names: [...r.querySelectorAll('.tp-fl')].map(x => x.textContent).join(','), n: ins.length, kind: w.dataset.kind,
+        oneLine: kids.every(k => Math.abs(k.getBoundingClientRect().top - t0) < 14), over: r.scrollWidth > r.clientWidth + 1,
+        fits: ins.every(i => i.scrollWidth <= i.clientWidth + 1), auto: r.querySelector('select.tp-fw').options[0].textContent,
+        panelW: Math.round(document.querySelector('.tp').getBoundingClientRect().width), cat: (w.closest('.tp-cs') && w.closest('.tp-cs').dataset.grp) || '' };
+    }, [S('copy')]);
+    rec('文字の行：1行に size・weight・lh・ls（太さは「自動(…)」・パネル450pxで1行・欄の見切れなし・フォントのカードに入る）',
+      look && look.names === 'size,weight,lh,ls' && look.n === 4 && look.oneLine && !look.over && look.fits && /^自動\(\d+\)$/.test(look.auto) && look.kind === 'font',
+      look ? `名前 ${look.names}・欄 ${look.n}・1行=${look.oneLine}・はみ出し=${look.over}・見切れなし=${look.fits}・太さ「${look.auto}」・パネル幅 ${look.panelW}px・カテゴリ ${look.cat || '?'}` : '行が無い');
+    const typeFs = async (k, v) => page.evaluate(([s, x]) => { const i = document.querySelector(s + ' input.tp-fn'); i.focus(); i.value = x; i.dispatchEvent(new Event('change', { bubbles: true })); i.blur(); }, [S(k), v]);
+    const copy = () => page.evaluate(() => { const c = getComputedStyle(document.getElementById('copy')); return { v: JSON.parse(JSON.stringify(TunePanel.instances[0].params.__font.copy || {})), fs: c.fontSize, fw: c.fontWeight, lh: c.lineHeight, ls: c.letterSpacing, inline: document.getElementById('copy').getAttribute('style') || '' }; });
+    await typeFs('copy', 15);
+    const f15 = await copy();
+    await typeFs('copy', 14);
+    const f14 = await copy();
+    await page.focus(S('copy') + ' input.tp-fn'); await page.keyboard.press('ArrowUp'); await page.waitForTimeout(60);
+    const up = await copy();
+    await page.selectOption(S('copy') + ' select.tp-fw', '700');
+    await page.evaluate(([s]) => { const ins = document.querySelectorAll(s + ' input.tp-fn'); const lh = ins[1], ls = ins[2]; lh.value = 1.6; lh.dispatchEvent(new Event('change', { bubbles: true })); ls.value = 5; ls.dispatchEvent(new Event('change', { bubbles: true })); }, [S('copy')]);
+    const all = await copy();
+    await page.click(S('copy') + ' .tp-rst'); await page.waitForTimeout(60);
+    const rst = await copy();
+    rec('文字の行：size はデザインの数値の決まりに止まる（15→16・14→14・↑で次の段）・要素へ直接当たる・↺ で CSS のまま（自動）に戻る',
+      f15.v.fs === 16 && f15.fs === '16px' && f14.v.fs === 14 && up.v.fs === 16 && all.fw === '700' && all.lh === (16 * 1.6) + 'px' && all.ls === (16 * 0.05) + 'px' && rst.inline === '' && Object.keys(rst.v).length === 0,
+      `15→${f15.v.fs}（画面 ${f15.fs}）・14→${f14.v.fs}・↑→${up.v.fs}・太さ ${all.fw}・行間 ${all.lh}・字間 ${all.ls}・↺ の後 指定「${rst.inline}」値 ${JSON.stringify(rst.v)}`);
+    /* 案ごとの独立：強調は 72（案の最初の値）から。ノーマルで変えた値は強調に出ない */
+    await typeFs('copy', 40);
+    await pickVariant(page, 'kv.variant', 'strong');
+    const s1 = await copy();
+    await typeFs('copy', 80);
+    await pickVariant(page, 'kv.variant', 'normal');
+    const n1 = await copy();
+    await pickVariant(page, 'kv.variant', 'strong');
+    const s2 = await copy();
+    await pickVariant(page, 'kv.variant', 'normal');
+    rec('文字の行も案ごとに独立（強調は案の最初の値 72px・700 から／ノーマルと強調の値が混ざらない）',
+      s1.v.fs === 72 && s1.v.fw === 700 && s1.fs === '72px' && n1.v.fs === 40 && n1.fs === '40px' && s2.v.fs === 80,
+      `ノーマル 40 → 強調へ ${s1.v.fs}px・${s1.v.fw}（画面 ${s1.fs}）→ 強調で 80 → ノーマルへ ${n1.v.fs}（画面 ${n1.fs}）→ 強調へ ${s2.v.fs}`);
+    /* PC/スマホの独立：大きさはスマホが PC を引き継がない（空欄＝CSS のまま）・太さは引き継ぐ・青い印 */
+    await page.selectOption(S('copy') + ' select.tp-fw', '600');
+    await page.click('.tp-phone-btn'); await page.waitForTimeout(250);
+    const sp0 = await page.evaluate(() => ({ fs: TunePanel.instances[0].value('__font.copy.fs'), fw: TunePanel.instances[0].value('__font.copy.fw') }));
+    const mark0 = await page.evaluate(([s]) => document.querySelector(s + ' .tp-row').classList.contains('tp-mb'), [S('copy')]);
+    await typeFs('copy', 24);
+    const sp1 = await page.evaluate(([s]) => ({ fs: TunePanel.instances[0].value('__font.copy.fs'), pc: TunePanel.instances[0].params.__font.copy.fs, mark: document.querySelector(s + ' .tp-row').classList.contains('tp-mb'), page: getComputedStyle(document.getElementById('copy')).fontSize }), [S('copy')]);
+    await page.click('.tp-phone-btn'); await page.waitForTimeout(150);
+    const back = await copy();
+    rec('文字の行もスマホと PC で独立（大きさはスマホが PC を引き継がない・太さは引き継ぐ・スマホで変えた行に青い印・PC の画面は変わらない）',
+      sp0.fs == null && sp0.fw === 600 && !mark0 && sp1.fs === 24 && sp1.pc === 40 && sp1.mark && sp1.page === '40px' && back.v.fs === 40,
+      `スマホモードに入った時 大きさ ${sp0.fs}（＝CSS のまま）・太さ ${sp0.fw}（PC を引き継ぎ）・印 ${mark0} → スマホで 24 → スマホ ${sp1.fs}・PC ${sp1.pc}・印 ${sp1.mark}・PC の画面 ${sp1.page} → PC に戻ると ${back.v.fs}`);
+    /* 保存して読み直しても残る（初期値に無い置き場 __font でも捨てない） */
+    await page.waitForTimeout(1000);
+    await page.reload(); await page.waitForTimeout(200);
+    const kept = await page.evaluate(() => ({ v: JSON.parse(JSON.stringify(TunePanel.instances[0].params.__font.copy || {})), fs: getComputedStyle(document.getElementById('copy')).fontSize, mb: TunePanel.instances[0]._mb['__font.copy.fs'] }));
+    rec('文字の行の値は自動で保存され、読み直しても残る（PC 40px・600／スマホの上書き 24px）', kept.v.fs === 40 && kept.v.fw === 600 && kept.fs === '40px' && kept.mb === 24,
+      `読み直した後 PC ${JSON.stringify(kept.v)}（画面 ${kept.fs}）・スマホの上書き ${kept.mb}`);
     await context.close();
   }
 } catch (e) {
