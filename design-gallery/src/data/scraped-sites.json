@@ -1,5 +1,33 @@
 [
   {
+    "id": "7001bbeedf3a",
+    "title": "エヌ･エス･エル",
+    "url": "https://www.nsl-jp.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/nsl_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-04T16:34:23.537Z"
+  },
+  {
+    "id": "07a62b6a8812",
+    "title": "Hello Beauty & Mag.",
+    "url": "https://mag.hello-beauty-wellness.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/hellobeautyandmag_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-04T16:34:23.537Z"
+  },
+  {
     "id": "72b33a0e8d47",
     "title": "人生に、選択肢という自由を。ヴェゼル株式会社",
     "url": "https://vessel-for.jp/",
@@ -9816,22 +9844,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:56:01.746Z"
-  },
-  {
-    "id": "de0689b329e9",
-    "title": "nobinobi 2025",
-    "url": "https://nobinobi-fes.com/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/nobinobifes_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2025-07",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": true,
-    "lastCheckedAt": "2026-10-02T07:55:58.233Z"
   },
   {
     "id": "533705507952",
@@ -23858,6 +23870,20 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "fa74c3a0f1c9",
+    "title": "Zirka",
+    "url": "https://www.zrk.technology/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/23-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "company"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-04T16:34:23.537Z"
+  },
+  {
     "id": "46968c7c8f4a",
     "title": "投資がはじめての方へ｜マネックス証券",
     "url": "https://info.monex.co.jp/introduction/",
@@ -24843,22 +24869,6 @@
     "firstSeen": "2026-05-22T04:04:49.765Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:25.596Z"
-  },
-  {
-    "id": "d9a9f85bb212",
-    "title": "株式会社22世紀アート",
-    "url": "https://22art.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/06/image-28.webp",
-    "source": "muuuuu",
-    "category": [
-      "publication"
-    ],
-    "taste": [],
-    "date": "2026-06",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:27.142Z"
   },
   {
     "id": "42f6d3835f0c",
@@ -51681,6 +51691,26 @@
     "firstSeen": "2026-06-13T04:08:32.368Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:28.327Z"
+  },
+  {
+    "id": "f390caf4c200",
+    "title": "株式会社22世紀アート 企業サイト",
+    "url": "https://22art.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/hd6il37vyu5o-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "出版･印刷",
+      "アート･芸術"
+    ],
+    "taste": [
+      "モチーフ 線"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:27.142Z"
   },
   {
     "id": "cb0b58ca3668",
