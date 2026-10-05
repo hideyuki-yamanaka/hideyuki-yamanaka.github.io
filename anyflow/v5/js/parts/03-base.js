@@ -1134,17 +1134,7 @@ try {
     localStorage.setItem('anyflow-sp-title-32-20261002', '1');
   }
 } catch (e) {}
-/* 【2026-10-05 ヒデさん「フッターのリンクがつながっている箇所をフォントサイズ下げて」】フッターのリンクの既定を 14→12px にした(CSS)。
-   前の既定の 14 が保存に残っているブラウザは1回だけ外して、新しい既定(12)を見せる(別の値を入れていたら触らない)。PC・スマホとも。印 anyflow-foot-link-12-20261005 */
-try {
-  if (!localStorage.getItem('anyflow-foot-link-12-20261005')) {
-    const fix = o => { let ch = false; if (o) for (const g of ['edits', 'editsMb']) { const e = o[g] && o[g].footNav; if (e && +e.fs === 14) { delete e.fs; ch = true; } } return ch; };
-    fix(params);
-    const _raw = localStorage.getItem(STORAGE_KEY);
-    if (_raw) { const _o = JSON.parse(_raw); if (fix(_o)) localStorage.setItem(STORAGE_KEY, JSON.stringify(_o)); }
-    localStorage.setItem('anyflow-foot-link-12-20261005', '1');
-  }
-} catch (e) {}
+/* ❌ 2026-10-05 にフッターのリンクの既定を 14→12px にした時の「保存に残った 14 を1回だけ外す」切り替え(印 anyflow-foot-link-12-20261005)は、同じ日に既定を 14px に戻したので外した */
 /* 【2026-09-30】スマホの「溶け込みの深さ」を、保存値にスマホの上書きが無い時だけ1回入れる(自分で変えた値は触らない)。印 anyflow-cv-mb-blend-20260930 */
 try {
   if (!localStorage.getItem('anyflow-cv-mb-blend-20260930')) {

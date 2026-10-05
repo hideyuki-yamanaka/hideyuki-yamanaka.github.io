@@ -2132,11 +2132,11 @@
   .cv-foot { display: none; }
   .cv-foot-l { display: flex; flex-direction: column; }
   .cv-foot-nav { display: flex; flex-wrap: wrap; gap: var(--space-28); }
-  .cv-foot-nav a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-caption); opacity: .72; transition: opacity var(--t-tap); }   /* 【2026-10-05 ヒデさん「フッターのリンクがつながっている箇所をフォントサイズ下げて」】14→12px(PC・スマホとも・2段目も同じ) */
+  .cv-foot-nav a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); opacity: .72; transition: opacity var(--t-tap); }   /* 【2026-10-05 ヒデさん】「フォントサイズ下げて」で 14→12px →「もうちょっとだけ上げましょう」で 14px に(13px は4と8の決まりで使えないので1つ上)。PC・スマホとも・2段目も同じ */
   .cv-foot-nav a:hover { opacity: 1; }
   /* 【2026-10-01 チームの依頼】フッターの2段目(anyflow.jp の各ページ)。1段目(ページの中の案内 14px)より一段控えめに、住所と同じ 12px */
   .cv-foot-sub { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-20); margin-top: var(--space-12); }
-  .cv-foot-sub a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-caption); line-height: var(--lh-loose); opacity: .72; transition: opacity var(--t-tap); }   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて」】1段目と同じ大きさ。【2026-10-05】1段目と一緒に 14→12px */
+  .cv-foot-sub a { color: inherit; text-decoration: none; font-weight: 300; font-size: var(--fs-body); line-height: var(--lh-loose); opacity: .72; transition: opacity var(--t-tap); }   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて」】1段目と同じ大きさ(--fs-body 14px)。【2026-10-05】1段目と一緒に 14→12→14px */
   .cv-foot-sub a:hover { opacity: 1; }
   /* 【2026-10-01 夕方 ヒデさん「フッターは住所をなくし、単純に上段はリンク集、下段は Anyflow のコピーライト。左右に分けるのレイアウトに似た感じで、線がない・住所もない」】
      上の段＝リンク集／下の段＝©(中央・一番下)。住所・中の罫線はなし。リンク集→© 32px(⚠️仮置き)。#cvFoot で、もとの横並び(flex)の指定より強くしている。
@@ -2145,13 +2145,13 @@
   /* 【2026-10-01 夕方 ヒデさん「左右に分けなくて大丈夫です」】リンク集は左右に分けず、10個を1つの流れにして中央そろえ(下の © と同じ中央・⚠️仮置き)。
      ページの案内と anyflow.jp のページの横の間は 28px にそろえた(同じ流れの中で 28/20 と混ざると崩れて見えるため・⚠️仮置き)。高さの違う文字は文字の下の線でそろえる */
   #conversion.cv-fi #cvFoot { display: grid; gap: 0; grid-template-columns: 1fr; justify-items: center; grid-template-areas: "links" "copy"; }
-  /* 【2026-10-05 ヒデさん「それに伴って、左右間のギャップも詰めていい」】文字を 12px にしたのに合わせて、リンク同士の左右の間 28→20px(⚠️仮置き)。上下の間(PC 8・スマホ 16)はそのまま */
+  /* 【2026-10-05 ヒデさん「それに伴って、左右間のギャップも詰めていい」】リンク同士の左右の間 28→20px(⚠️仮置き。文字を 14px に戻した後もこのまま)。上下の間(PC 8・スマホ 16)はそのまま */
   #conversion.cv-fi #cvFoot .cv-foot-l { grid-area: links; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: var(--space-8) var(--space-20); }
   #conversion.cv-fi #cvFoot .cv-foot-l > nav { display: contents; }   /* 2つのナビの包みを外して、リンク10個を同じ流れに並べる */
   #conversion.cv-fi #cvFoot .cv-foot-sub a { line-height: inherit; }   /* 行の高さもページの案内(normal)とそろえる＝スマホで折り返した行の間が均等になる(前は anyflow.jp のページだけ 1.7 で行の間がばらついた) */
   #conversion.cv-fi #cvFoot .cv-foot-r { display: contents; }
-  /* 【2026-10-05 ヒデさん「下のコピーライトの上下のギャップも削っていい」「フッターリンクのブロックとコピーライトのブロックの上下の余白ってこと」】リンク集→© のギャップ 32→24px(PC・スマホ・⚠️仮置き。スマホのリンクの行と行の間 16px より広く残して、© が別のまとまりに見えるように)。© の下(ページの下の端まで)は変えない */
-  #conversion.cv-fi #cvFoot .cv-foot-copy { grid-area: copy; justify-self: center; margin-top: var(--space-24); }
+  /* 【2026-10-05 ヒデさん「下のコピーライトの上下のギャップも削っていい」「フッターリンクのブロックとコピーライトのブロックの上下の余白ってこと」】リンク集→© のギャップ 32→24px →「コピーライトと上下の幅をちょっと削って」で 20px(PC・スマホ・⚠️仮置き。スマホのリンクの行と行の間 16px より広く残して、© が別のまとまりに見えるように)。© の下(ページの下の端まで)は変えない */
+  #conversion.cv-fi #cvFoot .cv-foot-copy { grid-area: copy; justify-self: center; margin-top: var(--space-20); }
   /* スマホ: 折り返した行と行の間は 16px(今までのナビと同じ) */
   html.mb #conversion.cv-fi #cvFoot .cv-foot-l { row-gap: var(--space-16); }
   .cv-foot-copy { font-family: var(--font-en); font-weight: 300; font-size: var(--fs-body); opacity: 0.5; white-space: nowrap; }
