@@ -60,16 +60,10 @@
     },
     {
       "name": "houmon-local-real",
-      "runtimeExecutable": "env",
+      "runtimeExecutable": "sh",
       "runtimeArgs": [
-        "NEXT_PUBLIC_SUPABASE_URL=",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY=",
-        "npm",
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "3098"
+        "-c",
+        "node --env-file=.env.local scripts/pull-dev-snapshot.mjs; NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_ANON_KEY= npm run dev -- --port 3098"
       ],
       "port": 3098,
       "cwd": "houmon-app"
