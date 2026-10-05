@@ -1,5 +1,37 @@
 [
   {
+    "id": "fe081897429e",
+    "title": "Goodpatch | デザインの力を証明する",
+    "url": "https://goodpatch.com/ja",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/goodpatch02_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-09-12T03:49:19.410Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:18.711Z"
+  },
+  {
+    "id": "14f1fc8d9041",
+    "title": "Charge, Chaos. | Goodpatch 15th Anniversary",
+    "url": "https://goodpatch.com/15th",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/goodpatch15th_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-09-26T15:54:26.178Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T08:01:38.970Z"
+  },
+  {
     "id": "7001bbeedf3a",
     "title": "エヌ･エス･エル",
     "url": "https://www.nsl-jp.com/",
@@ -19685,21 +19717,6 @@
     "lastCheckedAt": "2026-10-02T07:57:31.119Z"
   },
   {
-    "id": "0305b65e53b8",
-    "title": "投資部門-理念 | Yamauchi No.10 Family Office",
-    "url": "https://y-n10.com/investment/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/yn10investment_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2024-07",
-    "starred": false,
-    "firstSeen": "2026-06-07T04:20:55.700Z",
-    "lastCheckedAt": "2026-10-02T07:57:29.788Z"
-  },
-  {
     "id": "890458d9e863",
     "title": "(公式)カワスイ アクア＆アニマルスクール | 日本初の水族館で学ぶ専門スクール",
     "url": "https://school.kawa-sui.com/",
@@ -23870,6 +23887,20 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "a6be11487cc0",
+    "title": "CoMinVi",
+    "url": "https://www.cominvi.com.mx/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/31-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "company"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-05T20:31:01.747Z"
+  },
+  {
     "id": "fa74c3a0f1c9",
     "title": "Zirka",
     "url": "https://www.zrk.technology/",
@@ -24137,22 +24168,6 @@
     "firstSeen": "2026-09-13T03:56:05.781Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:19.472Z"
-  },
-  {
-    "id": "791c005cf9bd",
-    "title": "Goodpatch",
-    "url": "https://goodpatch.com/ja",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/11-768x576.png",
-    "source": "muuuuu",
-    "category": [
-      "white"
-    ],
-    "taste": [],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-09-12T03:49:19.410Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:18.711Z"
   },
   {
     "id": "1a771a8b9766",
@@ -24853,22 +24868,6 @@
     "firstSeen": "2026-07-04T03:32:25.345Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:25.051Z"
-  },
-  {
-    "id": "e62a9fe91f51",
-    "title": "株式会社ShareDan",
-    "url": "https://www.sharedan.co.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/06/image-29.webp",
-    "source": "muuuuu",
-    "category": [
-      "technology"
-    ],
-    "taste": [],
-    "date": "2026-06",
-    "starred": false,
-    "firstSeen": "2026-05-22T04:04:49.765Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:25.596Z"
   },
   {
     "id": "42f6d3835f0c",
@@ -26820,6 +26819,22 @@
     "firstSeen": "2026-05-22T04:04:49.765Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:50.443Z"
+  },
+  {
+    "id": "9f593584b32c",
+    "title": "株式会社ShareDan",
+    "url": "https://www.sharedan.co.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260521_02-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "デザイン事務所・制作会社"
+    ],
+    "taste": [],
+    "date": "2026-05",
+    "starred": false,
+    "firstSeen": "2026-05-22T04:04:49.765Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:25.596Z"
   },
   {
     "id": "f4f81619a867",
@@ -29107,20 +29122,20 @@
     "lastCheckedAt": "2026-10-02T07:59:22.730Z"
   },
   {
-    "id": "7529cc97ccf1",
-    "title": "株式会社 類設計室 | 採用サイト",
-    "url": "https://rui.ne.jp/recruiting/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/20251223_02-498x328.jpg",
+    "id": "e58f6055b113",
+    "title": "Guillaume Colombel",
+    "url": "https://guillaumecolombel.fr/",
+    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/wd20261005_01-498x328.jpg",
     "source": "webdesignclip",
     "category": [
-      "採用サイト・転職・求人"
+      "ポートフォリオ"
     ],
     "taste": [],
-    "date": "2025-12",
+    "date": "2026-10",
     "starred": false,
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:59:22.510Z"
+    "lastCheckedAt": "2026-10-02T08:00:05.678Z"
   },
   {
     "id": "445486afb6a4",
@@ -34016,22 +34031,6 @@
     "lastCheckedAt": "2026-10-02T08:00:06.447Z"
   },
   {
-    "id": "e58f6055b113",
-    "title": "Guillaume Colombel",
-    "url": "https://guillaumecolombel.fr/",
-    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/20241030_01-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "デザイン事務所・制作会社"
-    ],
-    "taste": [],
-    "date": "2024-10",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:00:05.678Z"
-  },
-  {
     "id": "32ae4cb92ec6",
     "title": "The Line Studio",
     "url": "https://thelinestudio.com/",
@@ -35635,22 +35634,6 @@
     "firstSeen": "2026-06-07T04:20:55.700Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:00:27.960Z"
-  },
-  {
-    "id": "9a57c5f1db3e",
-    "title": "The Bang",
-    "url": "https://www.thebang.com/",
-    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/20240328_01-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "デザイン事務所・制作会社"
-    ],
-    "taste": [],
-    "date": "2024-03",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:00:26.820Z"
   },
   {
     "id": "37eb4eda743d",
@@ -42035,27 +42018,6 @@
     "firstSeen": "2026-10-02T04:09:00.184Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:01:43.313Z"
-  },
-  {
-    "id": "df764d10f369",
-    "title": "Charge, Chaos. | Goodpatch 15th Anniversary",
-    "url": "https://goodpatch.com/15th",
-    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2026/09/261001-1-640x480.jpg",
-    "source": "81web",
-    "category": [
-      "キャンペーン",
-      "特設サイト",
-      "企画",
-      "制作",
-      "開発"
-    ],
-    "taste": [],
-    "agency": "FunTech",
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-09-26T15:54:26.178Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:01:38.970Z"
   },
   {
     "id": "a2747086a1ff",
@@ -48625,6 +48587,74 @@
     "firstSeen": "2026-10-03T03:53:39.570Z"
   },
   {
+    "id": "b4c46f67a5da",
+    "title": "Patmos｜Wahr, Gut, Schön",
+    "url": "https://patmos.studio/ja/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/biglk04ehxjr-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "デザイン･制作･開発会社"
+    ],
+    "taste": [
+      "スクロールエフェクト",
+      "グリッドデザイン"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-05T20:31:01.747Z"
+  },
+  {
+    "id": "f2bbfa977b00",
+    "title": "株式会社エムステージグループ",
+    "url": "https://mstage-group.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/8bsulvjp4c3y-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "学校･教育･医療･福祉"
+    ],
+    "taste": [
+      "パララックス"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-05T20:31:01.747Z"
+  },
+  {
+    "id": "8f0bb031fdfe",
+    "title": "Studio Seitaro Yamazaki",
+    "url": "https://seitaroyamazaki.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/n1vdp3bcloue-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ポートフォリオ･アーティストサイト"
+    ],
+    "taste": [
+      "動画･映像"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-05T20:31:01.747Z"
+  },
+  {
+    "id": "f764438c33c2",
+    "title": "30th Anniversary | BUMP OF CHICKEN",
+    "url": "https://bumpofchicken-30th.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ixd7o2nkrpav-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "特設サイト",
+      "バンド･音楽･レーベル"
+    ],
+    "taste": [
+      "ゲーミフィケーション",
+      "3Dアニメーション･3Dモデル"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-05T20:31:01.747Z"
+  },
+  {
     "id": "035357469821",
     "title": "井藤漢方製薬株式会社",
     "url": "https://www.itohkampo.co.jp/",
@@ -53329,81 +53359,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:47.781Z"
-  },
-  {
-    "id": "9a3d0864ee7e",
-    "title": "株式会社インプルーブ",
-    "url": "https://www.improve-photo-movie.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/3hjvc59kxwls-1400x1050.webp",
-    "source": "s5style",
-    "category": [
-      "映像･写真プロダクション",
-      "ウェディング"
-    ],
-    "taste": [],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:48.791Z"
-  },
-  {
-    "id": "acd6fb30ccec",
-    "title": "田村公認会計士事務所",
-    "url": "https://stamura-cpa.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/sy0oi42lhb5p-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "その他"
-    ],
-    "taste": [
-      "UI フラット"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:48.904Z"
-  },
-  {
-    "id": "28ddaa58b2b5",
-    "title": "大阪八尾の産廃なら東海環境株式会社",
-    "url": "https://tkg-sanpai.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/pst2f1bvaw0l-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "ランディングページ",
-      "建築･建設･不動産･家"
-    ],
-    "taste": [
-      "アイコン･ピクトグラム",
-      "スクロールエフェクト",
-      "モチーフ 円•曲線"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:48.808Z"
-  },
-  {
-    "id": "e78a88956ee7",
-    "title": "Sham Sham",
-    "url": "https://shamsham.by/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/4liq2wgha1uy-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "ECサイト",
-      "ファッション",
-      "ファッション レディース"
-    ],
-    "taste": [],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:49.709Z"
   },
   {
     "id": "61dbd2acd28e",
