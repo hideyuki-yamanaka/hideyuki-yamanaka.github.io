@@ -1,5 +1,33 @@
 [
   {
+    "id": "e9deae6bfab0",
+    "title": "We-Being Project | KOKUYO",
+    "url": "https://we-being.net/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/webeing_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-06T18:03:33.408Z"
+  },
+  {
+    "id": "b3bad394df93",
+    "title": "OPEN RISE",
+    "url": "https://open-rise.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/openrise_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-06T18:03:33.408Z"
+  },
+  {
     "id": "fe081897429e",
     "title": "Goodpatch | デザインの力を証明する",
     "url": "https://goodpatch.com/ja",
@@ -48603,6 +48631,26 @@
     "firstSeen": "2026-10-03T03:53:39.570Z"
   },
   {
+    "id": "31bbc9d2697f",
+    "title": "3Create Inc. | 株式会社スリークリエイト",
+    "url": "https://3create.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ow719cxmbsuv-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "デザイン･制作･開発会社",
+      "広告代理店",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [
+      "3Dアニメーション･3Dモデル",
+      "スクロールエフェクト",
+      "パララックス"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-06T18:03:33.408Z"
+  },
+  {
     "id": "b4c46f67a5da",
     "title": "Patmos｜Wahr, Gut, Schön",
     "url": "https://patmos.studio/ja/",
@@ -53356,25 +53404,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:50.602Z"
-  },
-  {
-    "id": "09990b028a4f",
-    "title": "株式会社エンカラーズ",
-    "url": "https://encolors.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/13w0cldvnf65-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "その他"
-    ],
-    "taste": [
-      "UI フラット"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:47.781Z"
   },
   {
     "id": "61dbd2acd28e",
