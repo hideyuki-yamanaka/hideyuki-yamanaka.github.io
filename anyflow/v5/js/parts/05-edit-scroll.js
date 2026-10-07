@@ -1697,9 +1697,11 @@ function resFxBuildBig() {
   const E = resFxEls();
   resFxSt.big = E.r2v.map((r2v, i) => {
     const d = document.createElement('div');
-    d.className = 'r2v-big' + (i ? ' r2v-big-ai' : '');
+    /* 【2026-10-07】SaaS か AI かは並び順(何番目か)ではなく、中の図のクラスで決める(左右を入れ替えても色が入れ替わらないように) */
+    const isAi = !!(E.fig[i] && E.fig[i].classList.contains('r2v-fig-ai'));
+    d.className = 'r2v-big' + (isAi ? ' r2v-big-ai' : '');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字は「for SaaS」＋下の行に小さめの「Product」(サイズは --r2v-prod-size) */
-    const w = document.createElement('span'); w.className = 'r2v-big-w'; w.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (i ? 'for AI' : 'for SaaS');
+    const w = document.createElement('span'); w.className = 'r2v-big-w'; w.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (isAi ? 'for AI' : 'for SaaS');
     const pr = document.createElement('span'); pr.className = 'r2v-big-prod'; pr.textContent = 'Product';
     d.append(w, pr);
     d.setAttribute('aria-hidden', 'true');

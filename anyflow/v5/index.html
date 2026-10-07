@@ -267,6 +267,22 @@
       <div class="res2-vals" id="resVals">
         <!-- 【2026-09-13 比較検証】.r2v-track は既定 display:contents(=見た目不変)。案5で横に動く走路になる -->
         <div class="r2v-track" id="resTrack">
+        <!-- 【2026-10-07 ヒデさん「for SaaS と for AI を左右入れ替え。順番を逆に。バグや不具合が起こりづらい形で」】左(スマホは上)＝for AI・右(スマホは下)＝for SaaS。
+             2つのまとまりを丸ごと入れ替えた(中の図・文字・クラス・id はそのまま)。位置で決まる動き(1つ目＝左)はそのまま効き、
+             「SaaS か AI か」で決まる物(色・図・パネルのつまみ)は中のクラス(r2v-tag-saas/-ai・r2v-fig-saas/-ai)と id(valSaas/valAi)で決める -->
+        <div class="r2v">
+          <div class="r2v-text">
+            <div class="r2v-tagh">
+              <div class="r2v-tag r2v-tag-ai">for AI<span class="r2v-prod"> Product</span></div>
+              <div class="r2v-h"><span class="r2v-hl"><span class="r2v-hli">コンテキスト取得</span></span><br><span class="r2v-hl"><span class="r2v-hli">から実行まで</span></span></div>
+            </div>
+            <!-- 【2026-08-31 ヒデさん指定】本文差し替え -->
+            <p class="r2v-p">AIの業務に必要な膨大なコンテキストを1つのツールで取得。さらに業務実行のためのアクションツールも豊富に提供。</p><!-- 2026-09-09 ヒデさん指定: 本文は PC/SP とも改行なし -->
+
+          </div>
+          <div class="r2v-fig r2v-fig-ai" data-tag="for AI"><div class="r2v-graphic" id="valAi"></div></div>
+        </div>
+        <div class="res2-vline"></div>
         <div class="r2v">
           <div class="r2v-text">
             <div class="r2v-tagh">
@@ -279,19 +295,6 @@
           </div>
           <!-- 【2026-09-14 比較検証】.r2v-fig は既定 display:contents(=見た目不変)。案5/6 で図の配置・拡大縮小、案1 でブラー出現に使う -->
           <div class="r2v-fig r2v-fig-saas" data-tag="for SaaS"><div class="r2v-graphic" id="valSaas"></div></div>
-        </div>
-        <div class="res2-vline"></div>
-        <div class="r2v">
-          <div class="r2v-text">
-            <div class="r2v-tagh">
-              <div class="r2v-tag r2v-tag-ai">for AI<span class="r2v-prod"> Product</span></div>
-              <div class="r2v-h"><span class="r2v-hl"><span class="r2v-hli">コンテキスト取得</span></span><br><span class="r2v-hl"><span class="r2v-hli">から実行まで</span></span></div>
-            </div>
-            <!-- 【2026-08-31 ヒデさん指定】本文差し替え -->
-            <p class="r2v-p">AIの業務に必要な膨大なコンテキストを1つのツールで取得。さらに業務実行のためのアクションツールも豊富に提供。</p><!-- 2026-09-09 ヒデさん指定: 本文は PC/SP とも改行なし -->
-
-          </div>
-          <div class="r2v-fig r2v-fig-ai" data-tag="for AI"><div class="r2v-graphic" id="valAi"></div></div>
         </div>
         </div><!-- /.r2v-track -->
       </div>

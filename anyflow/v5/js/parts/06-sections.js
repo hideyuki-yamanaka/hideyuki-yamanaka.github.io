@@ -2463,11 +2463,11 @@ const TEXT_SPEC = [
   { key: 'p2h',       sel: '#valP2 h3',      name: 'Point 02 見出し', pg: 'Point 02', pl: '見出し',                    sec: 'vis', text: 1 },
   { key: 'p2p',       sel: '#valP2 p',       name: 'Point 02 本文', pg: 'Point 02', pl: '本文',                      sec: 'vis', text: 1 },
   // --- 実績 ---
-  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for SaaS / for AI（小ラベル）', pg: 'for SaaS / for AI', pl: '小ラベル',              sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for SaaS / for AI（小ラベル）の Product', pg: 'for SaaS / for AI', pl: '小ラベルの Product', sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for SaaS / for AI（大きい英字）', pg: 'for SaaS / for AI', pl: '大きい英字',            sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for SaaS / for AI（大）の Product', pg: 'for SaaS / for AI', pl: '大きい英字の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
-  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（リアルタイムに〜／コンテキスト取得〜）', pg: '2つの価値', pl: '見出し（リアルタイムに〜／コンテキスト取得〜）', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for AI / for SaaS（小ラベル）', pg: 'for AI / for SaaS', pl: '小ラベル',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for AI / for SaaS（小ラベル）の Product', pg: 'for AI / for SaaS', pl: '小ラベルの Product', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for AI / for SaaS（大きい英字）', pg: 'for AI / for SaaS', pl: '大きい英字',            sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for AI / for SaaS（大）の Product', pg: 'for AI / for SaaS', pl: '大きい英字の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
+  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（コンテキスト取得〜／リアルタイムに〜）', pg: '2つの価値', pl: '見出し（コンテキスト取得〜／リアルタイムに〜）', sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'r2vP',      sel: '.r2v-p',     name: '価値の本文', pg: '2つの価値', pl: '本文',                                 sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'resHl1',    sel: '#resHl1',    name: '推進力の見出し 1行目（事業の推進力を、）', pg: '推進力の見出し', pl: '1行目（事業の推進力を、）',    sec: 'res', text: 1 },
   { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）', pg: '推進力の見出し', pl: '2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
@@ -2477,8 +2477,8 @@ const TEXT_SPEC = [
   { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
-  { key: 'figSaas',   sel: '#valSaas',   name: 'for SaaS の図（位置だけ）',                  sec: 'res', text: 0, font: 0, rel: 1 },
   { key: 'figAi',     sel: '#valAi',     name: 'for AI の図（位置だけ）',                    sec: 'res', text: 0, font: 0, rel: 1 },
+  { key: 'figSaas',   sel: '#valSaas',   name: 'for SaaS の図（位置だけ）',                  sec: 'res', text: 0, font: 0, rel: 1 },
   // --- 開発者体験 ---
   { key: 'dcLabel',   sel: '.dc-label',  name: 'Strength 01 / 02',                          sec: 'dev', text: 0, multi: 1 },
   { key: 'dcOne',     sel: '.dc-one',    name: '見出し（自動生成で〜／開発環境〜）', pg: '見出し', pl: 'テキスト（自動生成で〜／開発環境〜）',          sec: 'dev', text: 0, multi: 1 },

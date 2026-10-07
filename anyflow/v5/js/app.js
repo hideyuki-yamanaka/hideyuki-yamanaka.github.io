@@ -7582,9 +7582,11 @@ function resFxBuildBig() {
   const E = resFxEls();
   resFxSt.big = E.r2v.map((r2v, i) => {
     const d = document.createElement('div');
-    d.className = 'r2v-big' + (i ? ' r2v-big-ai' : '');
+    /* 【2026-10-07】SaaS か AI かは並び順(何番目か)ではなく、中の図のクラスで決める(左右を入れ替えても色が入れ替わらないように) */
+    const isAi = !!(E.fig[i] && E.fig[i].classList.contains('r2v-fig-ai'));
+    d.className = 'r2v-big' + (isAi ? ' r2v-big-ai' : '');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字は「for SaaS」＋下の行に小さめの「Product」(サイズは --r2v-prod-size) */
-    const w = document.createElement('span'); w.className = 'r2v-big-w'; w.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (i ? 'for AI' : 'for SaaS');
+    const w = document.createElement('span'); w.className = 'r2v-big-w'; w.textContent = (E.fig[i] && E.fig[i].dataset.tag) || (isAi ? 'for AI' : 'for SaaS');
     const pr = document.createElement('span'); pr.className = 'r2v-big-prod'; pr.textContent = 'Product';
     d.append(w, pr);
     d.setAttribute('aria-hidden', 'true');
@@ -11145,11 +11147,11 @@ const TEXT_SPEC = [
   { key: 'p2h',       sel: '#valP2 h3',      name: 'Point 02 見出し', pg: 'Point 02', pl: '見出し',                    sec: 'vis', text: 1 },
   { key: 'p2p',       sel: '#valP2 p',       name: 'Point 02 本文', pg: 'Point 02', pl: '本文',                      sec: 'vis', text: 1 },
   // --- 実績 ---
-  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for SaaS / for AI（小ラベル）', pg: 'for SaaS / for AI', pl: '小ラベル',              sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for SaaS / for AI（小ラベル）の Product', pg: 'for SaaS / for AI', pl: '小ラベルの Product', sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for SaaS / for AI（大きい英字）', pg: 'for SaaS / for AI', pl: '大きい英字',            sec: 'res', text: 0, multi: 1, move: 0 },
-  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for SaaS / for AI（大）の Product', pg: 'for SaaS / for AI', pl: '大きい英字の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
-  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（リアルタイムに〜／コンテキスト取得〜）', pg: '2つの価値', pl: '見出し（リアルタイムに〜／コンテキスト取得〜）', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTag',    sel: '.r2v-tag',   name: 'for AI / for SaaS（小ラベル）', pg: 'for AI / for SaaS', pl: '小ラベル',              sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vTagProd', sel: '.r2v-tag .r2v-prod', name: 'for AI / for SaaS（小ラベル）の Product', pg: 'for AI / for SaaS', pl: '小ラベルの Product', sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBig',    sel: '.r2v-big',   name: 'for AI / for SaaS（大きい英字）', pg: 'for AI / for SaaS', pl: '大きい英字',            sec: 'res', text: 0, multi: 1, move: 0 },
+  { key: 'r2vBigProd', sel: '.r2v-big-prod', name: 'for AI / for SaaS（大）の Product', pg: 'for AI / for SaaS', pl: '大きい英字の Product',       sec: 'res', text: 0, multi: 1, move: 0 },   /* 【2026-09-18】新規の文字は必ずここに登録(太さ/行間/字間がプルダウンで選べる) */
+  { key: 'r2vH',      sel: '.r2v-h',     name: '価値の見出し（コンテキスト取得〜／リアルタイムに〜）', pg: '2つの価値', pl: '見出し（コンテキスト取得〜／リアルタイムに〜）', sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'r2vP',      sel: '.r2v-p',     name: '価値の本文', pg: '2つの価値', pl: '本文',                                 sec: 'res', text: 0, multi: 1, move: 0 },
   { key: 'resHl1',    sel: '#resHl1',    name: '推進力の見出し 1行目（事業の推進力を、）', pg: '推進力の見出し', pl: '1行目（事業の推進力を、）',    sec: 'res', text: 1 },
   { key: 'resHl2',    sel: '#resHl2',    name: '推進力の見出し 2行目（Anyflowが支えます）', pg: '推進力の見出し', pl: '2行目（Anyflowが支えます）',  sec: 'res', text: 0 },
@@ -11159,8 +11161,8 @@ const TEXT_SPEC = [
   { key: 'resStats',  sel: '#resStats',  name: '数字のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   { key: 'resVals',   sel: '#resVals',   name: '価値のかたまり（位置だけ）',                 sec: 'res', text: 0, font: 0 },
   /* 【2026-09-17 ヒデさん報告「編集でグラフィックが選べない/動かない」】図・モック・カード・フォームも位置移動の対象に(font:0=面のどこでもドラッグ) */
-  { key: 'figSaas',   sel: '#valSaas',   name: 'for SaaS の図（位置だけ）',                  sec: 'res', text: 0, font: 0, rel: 1 },
   { key: 'figAi',     sel: '#valAi',     name: 'for AI の図（位置だけ）',                    sec: 'res', text: 0, font: 0, rel: 1 },
+  { key: 'figSaas',   sel: '#valSaas',   name: 'for SaaS の図（位置だけ）',                  sec: 'res', text: 0, font: 0, rel: 1 },
   // --- 開発者体験 ---
   { key: 'dcLabel',   sel: '.dc-label',  name: 'Strength 01 / 02',                          sec: 'dev', text: 0, multi: 1 },
   { key: 'dcOne',     sel: '.dc-one',    name: '見出し（自動生成で〜／開発環境〜）', pg: '見出し', pl: 'テキスト（自動生成で〜／開発環境〜）',          sec: 'dev', text: 0, multi: 1 },
@@ -13219,7 +13221,7 @@ function buildPanel() {
   /* 【2026-09-20 大改修】基本(余白)＋ぼかし(エフェクト)＋表示時間(アニメ)に分割。図→グラフィック、距離→ギャップ表記。 */
   sub(catVis, '余白（ギャップ）', false);
   rows.push(slider('グラフィック↔実績', 0, 600, 10, () => (params.visResPull != null ? params.visResPull : 200), v => { params.visResPull = v; applyVisResPull(); markDirty(); try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, v => '−' + Math.round(v) + 'px',
-    'ビジョンのグラフィックが過ぎてから実績(for SaaS / for AI)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。ビジョンの案ごとに別の値(2026-09-28〜: デフォルト 300px・強調 200px・仮置き)。', { mbKey: 'visResPull' }));
+    'ビジョンのグラフィックが過ぎてから実績(for AI / for SaaS)が出るまでの空白を詰めます(実績を上へ引き上げる)。PCのみ。ビジョンの案ごとに別の値(2026-09-28〜: デフォルト 300px・強調 200px・仮置き)。', { mbKey: 'visResPull' }));
   rows.push(slider('見出し↔グラフィック・ポイント（上下）', 0, 160, 2, () => (sv().vision.belowGap != null ? sv().vision.belowGap : 50), v => { sv().vision.belowGap = v; applyVisBelow(); }, v => '+' + Math.round(v) + 'px',
     'メッセージの下の余白。グラフィック(ドーム)と Point 01/02 が同じ量だけ下がります(PCのみ)。既定 50px 仮置き。', { mbKey: 'sections.vision.belowGap', fixedMax: true }));
   rows.push(slider('グラフィック↔ポイント（左右）', -200, 200, 4, () => (sv().vision.pointsX != null ? sv().vision.pointsX : 0), v => { sv().vision.pointsX = v; applyVisPointsX(); }, v => (v > 0 ? '+' : '') + Math.round(v) + 'px',
@@ -13442,17 +13444,17 @@ function buildPanel() {
     const pcOnly = (r) => { try { r.classList.add('pc-only-row'); } catch (e) {} return r; };
     const s24 = (label, key, min, max, step, fmt, tip) => rows.push(pcOnly(slider(label, min, max, step, () => (f24()[key] != null ? f24()[key] : F24[key]), v => { f24()[key] = v; markDirty(); }, fmt, tip, { mbKey: 'sections.results.fx24.' + key })));
     /* 【2026-09-26 ヒデさん依頼】『ピクトの主役の大きさ』(heroScale)つまみは削除。いまの案24-4 はピクトをズームしない作り(ほぼ最終サイズ1.08倍固定)で、効かなかったため */
-    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for SaaS / for AI」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
+    s24('文字が上へ動く距離', 'labelUp', 80, 300, 5, v => v + 'px', '「for AI / for SaaS」が中央から上へ動く距離(絵コンテは約190px)。※PCのスクロール登場演出専用。');
     /* 【2026-09-18 ヒデさん依頼】登場の大きい文字の下に付く「Product」のサイズ(終点のタグでは1行続きで同じサイズ) */
     rows.push(pcOnly(slider('大きい文字の下の「Product」のサイズ', 16, 70, 1, () => (f24().prodSize != null ? f24().prodSize : 40), v => { f24().prodSize = v; applyResProd(); markDirty(); }, v => Math.round(v) + 'px',
-      '「for SaaS / for AI」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定40px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
+      '「for AI / for SaaS」(70px)の下に付く Product の文字サイズ。添付画像の比率(約55%)で既定40px。太さは「文字」で。※PCの登場演出専用。', { mbKey: 'sections.results.fx24.prodSize', fixedMax: true })));
     subgroup('区切り線', () => {
     rows.push(pcOnly(slider('上の余白', 0, 260, 4, () => (sv().results.hrGap != null ? sv().results.hrGap : 100), v => { sv().results.hrGap = v; applyResHrGap(); }, v => Math.round(v) + 'px',
       '「2つの価値」のブロックと、その下の区切り線＋「事業の推進力を、Anyflowが支えます。」との間隔。広げると線から下がまとめて下がります(全体は中央寄せなので上の余白は少し詰まります)。※PCのみ(スマホは下の「区切り線 › まわりの余白（スマホ）」で)。', { mbKey: 'sections.results.hrGap', fixedMax: true })));
     rows.push(pcOnly(slider('下の余白', 0, 200, 4, () => (sv().results.hrGap2 != null ? sv().results.hrGap2 : 0), v => { sv().results.hrGap2 = v; applyResHrGap(); }, v => Math.round(v) + 'px',
       '区切り線と「事業の推進力を、Anyflowが支えます。」＋数値との間隔。0 でいままで(上段の padding 28px ぶんだけ空いています)。※PCのみ。', { mbKey: 'sections.results.hrGap2', fixedMax: true })));
     /* 【2026-09-21 ヒデさん依頼】スマホ用に効く「区切り線まわりの余白」。SP は縦積みなので、各ブロック↔線の間隔をまとめて調整(既定16px＝現状) */
-    const _spGap = slider('まわりの余白（スマホ）', 8, 40, 1, () => (sv().results.spGap != null ? sv().results.spGap : 16), v => { sv().results.spGap = v; applyResSpGap(); markDirty(); }, v => Math.round(v) + 'px', 'スマホの実績で、for SaaS / for AI / 数値の各ブロックと区切り線との上下の間隔をまとめて調整します。既定16px。', { fixedMax: true });
+    const _spGap = slider('まわりの余白（スマホ）', 8, 40, 1, () => (sv().results.spGap != null ? sv().results.spGap : 16), v => { sv().results.spGap = v; applyResSpGap(); markDirty(); }, v => Math.round(v) + 'px', 'スマホの実績で、for AI / for SaaS / 数値の各ブロックと区切り線との上下の間隔をまとめて調整します。既定16px。', { fixedMax: true });
     try { _spGap.classList.add('sp-only-row'); } catch (e) {} rows.push(_spGap);
     });
     rfxDyn(_g24, ['24-4']);
@@ -13470,15 +13472,15 @@ function buildPanel() {
   rows.push(slider('強さ', 0, 40, 1, () => sv().results.imgBlur, v => sv().results.imgBlur = v, v => v + 'px',
     '大きいほど、写真がぼんやりした状態から現れます。', { mbKey: 'sections.results.imgBlur' }));
 
-  /* 【2026-09-19 ヒデさん依頼】for SaaS / for AI の大きな文字は、画面の下に見えている間はぼけていて、上がってくるにつれてはっきり */
-  sub(catRes, '入場のぼかし（for SaaS / for AI が下から上がる間）');
+  /* 【2026-09-19 ヒデさん依頼】for AI / for SaaS の大きな文字は、画面の下に見えている間はぼけていて、上がってくるにつれてはっきり */
+  sub(catRes, '入場のぼかし（for AI / for SaaS が下から上がる間）');
   note('セクションが画面下から入ってくる進み具合(0%=下端に顔を出す / 50%=大きな文字が画面の下端に出る / 100%=所定の位置)に連動。所定の位置に着いたら効きません。');
   { const _eb = slider('強さ（24-4・強め）', 0, 60, 1, () => (sv().results.entryBlur44 != null ? sv().results.entryBlur44 : 26), v => sv().results.entryBlur44 = v, v => Math.round(v) + 'px', '演出の案が 24-4 の時の、入ってきた直後のぼけ(強め)。0でぼかし無し。', { mbKey: 'sections.results.entryBlur44' }); rows.push(_eb); rfxDyn(_eb, ['24-4']); }   /* 【2026-09-28・決まり 6-14】その演出の案の時だけ出す */
   { const _eb = slider('強さ（24-5）', 0, 60, 1, () => (sv().results.entryBlur != null ? sv().results.entryBlur : 16), v => sv().results.entryBlur = v, v => Math.round(v) + 'px', '演出の案が 24-5(と 24/24-2/24-3)の時の、入ってきた直後のぼけ。0でぼかし無し。', { mbKey: 'sections.results.entryBlur' }); rows.push(_eb); rfxDyn(_eb, ['24-5']); syncRfxDyn(); }   /* 24-5 は消した案＝今は出ない。登録したらすぐ出し入れを合わせる */
   rows.push(slider('はっきりし始める', 0, 1, 0.05, () => (sv().results.entryFrom != null ? sv().results.entryFrom : 0.4), v => sv().results.entryFrom = v, v => Math.round(v * 100) + '%', 'ここまでは最大のぼけのまま。「出だしの高さ」と同じ%＝文字が画面の下端に出た時。', { mbKey: 'sections.results.entryFrom', fixedMax: true }));
   rows.push(slider('はっきりしきる', 0.05, 1, 0.05, () => (sv().results.entryTo != null ? sv().results.entryTo : 0.95), v => sv().results.entryTo = v, v => Math.round(v * 100) + '%', 'ここで完全にくっきり。100%=所定の位置に着いた時。', { mbKey: 'sections.results.entryTo', fixedMax: true }));
   rows.push(slider('出だしの薄さ', 0, 1, 0.05, () => (sv().results.entryOp != null ? sv().results.entryOp : 1), v => sv().results.entryOp = v, v => Math.round(v * 100) + '%', '入ってきた直後の不透明度。100%=薄くしない(ぼかしだけ)。', { mbKey: 'sections.results.entryOp', fixedMax: true }));
-  rows.push(slider('出だしの高さ', 0.2, 0.6, 0.02, () => (sv().results.bigStartY != null ? sv().results.bigStartY : 0.4), v => sv().results.bigStartY = v, v => Math.round(v * 100) + '%', '着地前の for SaaS / for AI の中心を、画面の上から何%の位置に置くか。50%=ど真ん中(旧)。小さいほど上＝ビジョンとの空白が詰まる。着地の位置(タグ)は変わりません。', { mbKey: 'sections.results.bigStartY', fixedMax: true }));
+  rows.push(slider('出だしの高さ', 0.2, 0.6, 0.02, () => (sv().results.bigStartY != null ? sv().results.bigStartY : 0.4), v => sv().results.bigStartY = v, v => Math.round(v * 100) + '%', '着地前の for AI / for SaaS の中心を、画面の上から何%の位置に置くか。50%=ど真ん中(旧)。小さいほど上＝ビジョンとの空白が詰まる。着地の位置(タグ)は変わりません。', { mbKey: 'sections.results.bigStartY', fixedMax: true }));
 
   sub(catRes, '出てくる順番とタイミング');
   note('「事業の推進力を、」(見出し1行目) → タイピング「Anyflow」→「が支えます。」 → その他(区切り線・3数値・2つの価値)。それぞれの間隔を分けて調整できます。');
@@ -13562,17 +13564,18 @@ function buildPanel() {
     /* 【2026-08-28 ヒデさん指定】どちらの案か分かるよう、見出しを付けて分ける。
        ⚠️ もとは note() で書いていたが、補足文は既定で隠しているので見えていなかった */
     const picRoot = mount;
-    sub(picRoot, 'for SaaS', true, { fixed: true });
-    varRowX('valSaas', SAAS, () => params.patterns.valSaas || 'S9', v => { params.patterns.valSaas = v; }, { snap: VAR_SNAP.picto });
+    /* 【2026-10-07】ページの左右を入れ替えた(左＝for AI・右＝for SaaS)ので、パネルも左から右の順(AI → SaaS)に(決まり 6-5) */
     sub(picRoot, 'for AI', true, { fixed: true });
     varRowX('valAi', AI, () => params.patterns.valAi || 'A21', v => { params.patterns.valAi = v; }, { snap: VAR_SNAP.picto });
+    sub(picRoot, 'for SaaS', true, { fixed: true });
+    varRowX('valSaas', SAAS, () => params.patterns.valSaas || 'S9', v => { params.patterns.valSaas = v; }, { snap: VAR_SNAP.picto });
   }
   liveEdit = false;
 
   /* 【2026-09-21 ヒデさん依頼・構造整理】ピクトの見た目つまみを「ピクトグラム」セクションの中へ(基本＝大きさ/線幅、アニメーション＝速さ) */
   sub(catRes, '大きさ・線', true, { fixed: true, grp: 'basic' });
-  rows.push(slider('大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
-  rows.push(slider('線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for SaaS / for AI のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
+  rows.push(slider('大きさ', 0.5, 2, 0.05, () => (sv().results.pictoDisp != null ? sv().results.pictoDisp : 1), v => { sv().results.pictoDisp = v; applyPictoDisp(); markDirty(); }, v => '×' + v.toFixed(2), 'for AI / for SaaS のピクトグラムの表示サイズ。1=現状。スマホモード中の変更はスマホだけに反映(PC/SP独立)。', { mbKey: 'sections.results.pictoDisp', fixedMax: true }));
+  rows.push(slider('線の太さ', 0.3, 3, 0.05, () => (sv().results.pictoW != null ? sv().results.pictoW : 1), v => { sv().results.pictoW = v; valStrokeMul = v; markDirty(); drawValueIcons(); }, v => '×' + v.toFixed(2), 'for AI / for SaaS のピクトグラム(線画)の線の太さ。1=基準1px。スマホは既定0.6(細め)。', { mbKey: 'sections.results.pictoW', mbDefault: 0.6, fixedMax: true }));
   sub(catRes, '動き', true, { fixed: true, grp: 'anim' });
   optRow('pictoSpeed', '速さ', [['ゆっくり', '0.7'], ['標準', '1'], ['速め', '1.4'], ['かなり速い', '1.9']],
     () => String(sv().results.pictoSpeed != null ? sv().results.pictoSpeed : 1),
