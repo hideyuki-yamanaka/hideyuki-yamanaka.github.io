@@ -17,6 +17,8 @@
   ・つまみは共通の調整パネルの部品(tune-panel.js v2.3.0 の写し)。名前と範囲はサイトのビジョンタブと同じ
   ・【2026-10-07 ヒデさん「後ろのグリッド線とかグレーの背景も書き出しになっちゃってるから、メッシュ部分だけにしましょう。メッシュとロゴ」】
     書き出すのは網とロゴだけ(背景は透明)。画面の見本の地(市松・サイトの灰色・白)は見るためだけで、書き出しには入らない
+  ・【同日「ロゴ周辺のメッシュの線をちょっと薄くするような仕様を。パラメータで調整できるように」「グラデーションで自然に変わっている感じがいい」】
+    ロゴのまわりの網を、楕円のグラデーションでなだらかに薄くする(中心がいちばん薄く、外へ向かって元の濃さへ)。既定「する」・薄さ 70%・横 1.9倍・縦 5倍・縁のやわらかさ 85%(⚠️仮置き。50% は並べてもほとんど分からなかった)
   ・【同日「PNG 書き出しなど、形式が選べるように」】形式は PNG・WebP・SVG(どれも透明のまま書き出せる物。JPG は透明にできず背景が入るので外した)
 -->
 <style>
@@ -60,7 +62,7 @@
   const SITE_KEY = 'anyflow-embed-anim-v81';   /* サイト(localhost:8778)が調整パネルの値を保存している場所。同じアドレスなので読める */
 
   const DEFAULTS = {
-    mesh: Object.assign({}, VF_DEF, SHIPPED_DOME, { fadeOn: 0 }),   /* fadeOn=下のフェード(この道具だけの値・既定「しない」) */
+    mesh: Object.assign({}, VF_DEF, SHIPPED_DOME, { fadeOn: 0, lfOn: 1, lfAmt: 0.7, lfW: 1.9, lfH: 5, lfSoft: 0.85 }),   /* fadeOn=下のフェード(既定「しない」) / lf*=ロゴのまわりの網を薄く(する・薄さ・横と縦の広さ＝ロゴの何倍・縁のやわらかさ)。どれもこの道具だけの値・⚠️仮置き */
     view: { play: 1, backdrop: 'checker' },   /* backdrop=画面の見本の地(書き出しには入らない) */
     out: { format: 'png', quality: 0.92, scale: 2, crop: 'fit', pad: 40 }   /* 書き出すのは網とロゴだけ(背景は透明) */
   };
@@ -202,8 +204,13 @@
     const logoOn = !(c.logoOn === 0 || c.logoOn === false);
     const bgOn = logoOn && ((c.bgBlur || 0) > 0.05 || (c.bgAlpha || 0) > 0.005);
     const bw = lw * (c.bgW != null ? c.bgW : 1.6), bh = lh * (c.bgH != null ? c.bgH : 2.8);
-    return { fadeOn: !!c.fadeOn, fa: fy(c.fadeA), fb: fy(Math.max(c.fadeA + 0.02, c.fadeB)), logoOn, lw, lh, lcx, lcy, bgOn, bw, bh };
+    const lfOn = logoOn && !!c.lfOn && (c.lfAmt || 0) > 0.001;
+    return { fadeOn: !!c.fadeOn, fa: fy(c.fadeA), fb: fy(Math.max(c.fadeA + 0.02, c.fadeB)), logoOn, lw, lh, lcx, lcy, bgOn, bw, bh,
+      lfOn, lfRx: lw / 2 * (c.lfW != null ? c.lfW : 1.9), lfRy: lh / 2 * (c.lfH != null ? c.lfH : 5), lfAmt: Math.max(0, Math.min(1, c.lfAmt || 0)), lfCore: 1 - Math.max(0, Math.min(1, c.lfSoft != null ? c.lfSoft : 0.85)) };
   }
+
+  /* ロゴのまわりを薄くする量の段: 中心〜core はいちばん薄く、core〜縁(1) はなめらかに(smoothstep)0 へ。画像も SVG もこの段を使う */
+  function lfStops(L) { const out = [[0, L.lfAmt]]; const n = 10; for (let i = 0; i <= n; i++) { const t = i / n, e = t * t * (3 - 2 * t); out.push([L.lfCore + (1 - L.lfCore) * t, L.lfAmt * (1 - e)]); } return out; }
 
   /* ===== 書き出す範囲(回っても大きさが変わらないよう、球の外形で決める) ===== */
   function cropOf(c, pr, L) {
@@ -234,6 +241,13 @@
     lg.setTransform(1, 0, 0, 1, 0, 0); lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, W, H);
     lg.setTransform(...T); drawMesh(lg, c, pr);
     if (L.fadeOn) { lg.globalCompositeOperation = 'destination-in'; const gr = lg.createLinearGradient(0, L.fa, 0, L.fb); gr.addColorStop(0, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)'); lg.fillStyle = gr; lg.fillRect(cr.x, cr.y, cr.w, cr.h); lg.globalCompositeOperation = 'source-over'; }
+    if (L.lfOn) {   /* ロゴのまわりの網を薄く: 楕円のグラデーションで、中心ほど濃さを下げる */
+      lg.globalCompositeOperation = 'destination-out';
+      lg.setTransform(s * L.lfRx, 0, 0, s * L.lfRy, (L.lcx - cr.x) * s, (L.lcy - cr.y) * s);
+      const rg = lg.createRadialGradient(0, 0, 0, 0, 0, 1); lfStops(L).forEach(([o, a]) => rg.addColorStop(Math.max(0, Math.min(1, o)), 'rgba(0,0,0,' + a.toFixed(4) + ')'));
+      lg.fillStyle = rg; lg.beginPath(); lg.arc(0, 0, 1, 0, Math.PI * 2); lg.fill();
+      lg.globalCompositeOperation = 'source-over';
+    }
     g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(layerCv, 0, 0);
     /* ロゴの後ろの楕円: 後ろの網をぼかし、地色(#E7E7E7)で薄める。縁はサイトの CSS と同じ radial のやわらかい縁(楕円の外は切る) */
     if (L.bgOn) {
@@ -295,6 +309,11 @@
     for (const [x1, y1, x2, y2, col, a, w] of m.L) mesh += '<line x1="' + f(x1) + '" y1="' + f(y1) + '" x2="' + f(x2) + '" y2="' + f(y2) + '" stroke="rgb(' + col + ')" stroke-opacity="' + o(a) + '" stroke-width="' + f(w) + '"/>';
     for (const [x, y, r, col, a] of m.D) mesh += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(r) + '" fill="rgb(' + col + ')" fill-opacity="' + o(a) + '"/>';
     mesh += '</g>';
+    if (L.lfOn) {   /* ロゴのまわりの網を薄く(白＝そのまま・中心ほど黒を重ねて薄く) */
+      defs.push('<radialGradient id="lfG" cx="0.5" cy="0.5" r="0.5">' + lfStops(L).map(([of, a]) => '<stop offset="' + o(Math.max(0, Math.min(1, of))) + '" stop-color="#000" stop-opacity="' + a.toFixed(4) + '"/>').join('') + '</radialGradient>');
+      defs.push('<mask id="lfM" maskUnits="userSpaceOnUse" x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '"><rect x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '" fill="#fff"/><ellipse cx="' + f(L.lcx) + '" cy="' + f(L.lcy) + '" rx="' + f(L.lfRx) + '" ry="' + f(L.lfRy) + '" fill="url(#lfG)"/></mask>');
+      mesh = '<g mask="url(#lfM)">' + mesh + '</g>';
+    }
     if (L.fadeOn) {   /* 下のフェード: 上は残し、始まり→終わりで消える */
       defs.push('<linearGradient id="fadeG" gradientUnits="userSpaceOnUse" x1="0" y1="' + f(L.fa) + '" x2="0" y2="' + f(L.fb) + '"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>');
       defs.push('<mask id="fadeM" maskUnits="userSpaceOnUse" x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '"><rect x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '" fill="url(#fadeG)"/></mask>');
@@ -364,7 +383,7 @@
     footer: [
       { label: '画像を書き出す', primary: true, onClick: () => exportImage(), title: '網とロゴだけを、選んだ形式(PNG・WebP・SVG)で保存します。背景は透明です' },
       { label: 'サイトの今の値を読み込む', onClick: () => loadSite(), title: 'このパソコンで開いているサイト(localhost:8778)の調整パネルの値を読み込みます' },
-      { label: '本番の値に戻す', onClick: () => { panel.reset(); meshCache = null; toast('本番の値に戻しました（下のフェードは「しない」）'); }, title: '全部のつまみを本番の値に戻します' }
+      { label: '本番の値に戻す', onClick: () => { panel.reset(); meshCache = null; toast('本番の値に戻しました（下のフェード「しない」・ロゴのまわりの網を薄く「する」は、この道具の既定のまま）'); }, title: '全部のつまみを本番の値に戻します' }
     ],
     schema: [
       { cat: 'メッシュ', items: [
@@ -422,6 +441,13 @@
         ]},
         { sub: 'ロゴ', grp: 'fxtex', when: logoOn, items: [
           { slider: '透明度', path: 'mesh.logoOpacity', min: 0.2, max: 1, step: 0.02, fmt: pct, clamp: true, hint: '薄くすると後ろのメッシュが透けて馴染む。' },
+          { seg: 'まわりの網を薄く', path: 'mesh.lfOn', options: [['しない', 0], ['する', 1]], hint: 'ロゴのまわりの網の線と点を、楕円のグラデーションでなだらかに薄くします(ロゴが読みやすくなる)。' },
+          { subgroup: 'まわりの網を薄く', when: p => !!p.mesh.lfOn, items: [
+            { slider: '薄さ', path: 'mesh.lfAmt', min: 0, max: 1, step: 0.05, fmt: pct, clamp: true, hint: 'ロゴのすぐ後ろの網をどれだけ薄くするか。0%＝そのまま／100%＝消える。外へ向かってなだらかに元の濃さへ戻ります。' },
+            { slider: '横の広さ', path: 'mesh.lfW', min: 0.6, max: 4, step: 0.05, fmt: v => '×' + v.toFixed(2), hint: '薄くする楕円の横幅(ロゴの横幅の何倍か)。' },
+            { slider: '縦の広さ', path: 'mesh.lfH', min: 0.6, max: 12, step: 0.1, fmt: v => '×' + v.toFixed(1), hint: '薄くする楕円の高さ(ロゴの高さの何倍か)。' },
+            { slider: '縁のやわらかさ', path: 'mesh.lfSoft', min: 0, max: 1, step: 0.05, fmt: pct, clamp: true, hint: '中心から縁までのうち、どれだけをグラデーションにするか。100%＝中心からずっとなだらか／0%＝くっきりした楕円。' }
+          ]},
           { subgroup: 'ロゴの後ろのぼかし', items: [
             { slider: 'ブラー', path: 'mesh.bgBlur', min: 0, max: 40, step: 1, fmt: v => v === 0 ? 'なし' : Math.round(v) + 'px', hint: 'ロゴの後ろの楕円の中の網をぼかす。0でなし。' },
             { slider: '濃さ', path: 'mesh.bgAlpha', min: 0, max: 1, step: 0.05, fmt: v => v === 0 ? 'なし' : pct(v), clamp: true, hint: '楕円の中を地色(#E7E7E7)で薄める濃さ。0でなし。' },
