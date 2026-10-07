@@ -15,13 +15,19 @@
   ・描き方はサイトの写し(js/parts/05-edit-scroll.js の vfBuild・vfDraw、04-kv-motion.js の sphereFiboHull・meshSubdivide)。
     ⚠️ サイトの描き方を変えたら、ここも同じに直す(写しなので自動ではそろわない)
   ・つまみは共通の調整パネルの部品(tune-panel.js v2.3.0 の写し)。名前と範囲はサイトのビジョンタブと同じ
+  ・【2026-10-07 ヒデさん「後ろのグリッド線とかグレーの背景も書き出しになっちゃってるから、メッシュ部分だけにしましょう。メッシュとロゴ」】
+    書き出すのは網とロゴだけ(背景は透明)。画面の見本の地(市松・サイトの灰色・白)は見るためだけで、書き出しには入らない
+  ・【同日「PNG 書き出しなど、形式が選べるように」】形式は PNG・WebP・SVG(どれも透明のまま書き出せる物。JPG は透明にできず背景が入るので外した)
 -->
 <style>
   :root { --surface: #E7E7E7; --desk: #D6D6D6; --ink: #444; --ink-soft: #777; }
   html, body { margin: 0; height: 100%; background: var(--desk); color: var(--ink); font-family: 'Noto Sans JP', sans-serif; overflow: hidden; }
   .stage { position: fixed; top: 0; bottom: 0; left: 0; right: 482px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; box-sizing: border-box; }
   .frame { line-height: 0; box-shadow: 0 1px 2px rgba(0, 0, 0, .10), 0 8px 24px rgba(0, 0, 0, .08); }
-  .frame.clear { background-color: #fff; background-image: conic-gradient(#e2e2e2 25%, transparent 0 50%, #e2e2e2 0 75%, transparent 0); background-size: 16px 16px; }
+  /* 画面の見本の地(書き出しには入らない) */
+  .frame.bd-checker { background-color: #fff; background-image: conic-gradient(#e2e2e2 25%, transparent 0 50%, #e2e2e2 0 75%, transparent 0); background-size: 16px 16px; }
+  .frame.bd-site { background: var(--surface); }
+  .frame.bd-white { background: #fff; }
   #view { display: block; }
   .meta { font-size: 12px; line-height: 1.6; color: var(--ink-soft); text-align: center; }
   .toast { position: fixed; left: calc((100% - 482px) / 2); bottom: 24px; transform: translateX(-50%); padding: 8px 16px; border-radius: 8px; background: rgba(17, 17, 17, .88); color: #fff; font-size: 12px; line-height: 1.6; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
@@ -55,9 +61,8 @@
 
   const DEFAULTS = {
     mesh: Object.assign({}, VF_DEF, SHIPPED_DOME, { fadeOn: 0 }),   /* fadeOn=下のフェード(この道具だけの値・既定「しない」) */
-    view: { play: 1 },
-    bg: { mode: 'grid', color: '#E7E7E7', gridColor: '#ACACAC', gridOp: 0.3, gridW: 0.5, cell: 44 },   /* サイトの地色と方眼(本番: マス44・線0.5・濃さ0.3) */
-    out: { scale: 2, crop: 'fit', pad: 40 }
+    view: { play: 1, backdrop: 'checker' },   /* backdrop=画面の見本の地(書き出しには入らない) */
+    out: { format: 'png', quality: 0.92, scale: 2, crop: 'fit', pad: 40 }   /* 書き出すのは網とロゴだけ(背景は透明) */
   };
   const params = structuredClone(DEFAULTS);
 
@@ -162,23 +167,30 @@
   const PINK = '255,93,151', CYAN = '14,187,255', NAVY = '14,68,151', PALE = '157,176,201';
   const VF_LV_LINE = [0.2, 0.4, 0.6, 1.0], VF_LV_NODE = [0.2, 0.4, 0.7, 1.0];
   function rgb(hex) { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')); const v = parseInt(m ? m[1] : 'a6a6a6', 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255].join(','); }
-  function drawMesh(g, c, pr) {
-    const { mesh, P } = pr;
-    g.lineCap = 'round';
+  /* 線・点・光を「位置・色・濃さ・太さ」の一覧にする(画像も SVG もこの一覧から描く＝同じ見た目) */
+  function meshPrims(c, pr) {
+    const { mesh, P } = pr; const L = [], D = [];
     const lc = rgb(c.lineColor || '#A6A6A6'), lw = (c.lineWidth != null ? c.lineWidth : 1), quant = (c.levels == null ? 1 : c.levels) > 0.5;
     const bin = (k) => Math.min(3, Math.floor(k * 4));
-    const df = c.depthFade || 0;
+    const df = c.depthFade || 0, cl = v => Math.max(0, Math.min(1, v));
     for (const [i, j] of mesh.edges) { const A = P[i], B = P[j]; const k = (A[2] + B[2]) / 2;
       const al = quant ? c.lineAlpha * VF_LV_LINE[bin(k)] : c.lineAlpha * (0.42 + 0.58 * k);
-      g.strokeStyle = 'rgba(' + lc + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.lineWidth = (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k)); g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
+      L.push([A[0], A[1], B[0], B[1], lc, cl(al * (1 - df * (1 - k))), (quant ? (k > 0.5 ? lw : lw * 0.7) : lw * (0.7 + 0.3 * k)) * (1 - 0.5 * df * (1 - k))]); }
     const hideSub = c.subDots === 0 && mesh.sub;
     for (let i = 0; i < P.length; i++) { if (hideSub && mesh.sub[i]) continue; const [x, y, k] = P[i]; let col, al, rad;
       if ((c.nodeMode || 'alt') === 'alt') { col = (i % 2) ? PINK : CYAN; if (quant) { al = VF_LV_NODE[bin(k)]; rad = c.dot * (0.55 + 0.45 * k); } else { const dep = 0.72 + 0.5 * k; al = 0.5 + 0.5 * dep; rad = c.dot * dep; } }
       else { const h = ((i + 1) * 2654435761 % 4294967296) / 4294967296; col = h < 0.12 ? PINK : h < 0.24 ? CYAN : h < 0.28 ? NAVY : PALE; al = (col === PALE) ? (0.3 + 0.45 * k) : (0.45 + 0.55 * k); rad = c.dot * (0.55 + 0.45 * k); }
-      g.fillStyle = 'rgba(' + col + ',' + (al * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, rad * (1 - 0.35 * df * (1 - k)), 0, Math.PI * 2); g.fill(); }
+      D.push([x, y, rad * (1 - 0.35 * df * (1 - k)), col, cl(al * (1 - df * (1 - k)))]); }
     for (const q of pk.list) { const A = P[q.a], B = P[q.b]; if (!A || !B) continue; const x = A[0] + (B[0] - A[0]) * q.k, y = A[1] + (B[1] - A[1]) * q.k, k = A[2] + (B[2] - A[2]) * q.k; const fade = Math.sin(q.k * Math.PI);
-      g.fillStyle = 'rgba(' + ((q.a % 2) ? PINK : CYAN) + ',' + ((0.35 + 0.5 * k) * (1 - df * (1 - k))).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * (0.9 + 0.6 * k) * (0.6 + 0.4 * fade), 0, Math.PI * 2); g.fill();
-      g.fillStyle = 'rgba(255,255,255,' + (0.5 * fade).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, c.dot * 0.45, 0, Math.PI * 2); g.fill(); }
+      D.push([x, y, c.dot * (0.9 + 0.6 * k) * (0.6 + 0.4 * fade), (q.a % 2) ? PINK : CYAN, cl((0.35 + 0.5 * k) * (1 - df * (1 - k)))]);
+      D.push([x, y, c.dot * 0.45, '255,255,255', cl(0.5 * fade)]); }
+    return { L, D };
+  }
+  function drawMesh(g, c, pr) {
+    const m = meshPrims(c, pr);
+    g.lineCap = 'round';
+    for (const [x1, y1, x2, y2, col, a, w] of m.L) { g.strokeStyle = 'rgba(' + col + ',' + a.toFixed(3) + ')'; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+    for (const [x, y, r, col, a] of m.D) { g.fillStyle = 'rgba(' + col + ',' + a.toFixed(3) + ')'; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
   }
 
   /* ===== ロゴ・下のフェード・ロゴの後ろの楕円の位置(サイトの applyVfFade と同じ式) ===== */
@@ -204,35 +216,26 @@
     return { x: Math.floor(x0), y: Math.floor(y0), w: Math.ceil(x1) - Math.floor(x0), h: Math.ceil(y1) - Math.floor(y0) };
   }
 
-  /* ===== 1枚に重ねる(背景・方眼 → 網(下のフェード) → ロゴの後ろの楕円 → ロゴ)。サイトの重なり順と同じ ===== */
+  /* ===== 1枚に重ねる(網(下のフェード) → ロゴの後ろの楕円 → ロゴ)。サイトの重なり順と同じ。背景は描かない(透明) ===== */
   const logoImg = new Image(); let logoReady = false;
   logoImg.onload = () => { logoReady = true; }; logoImg.src = '../../assets/header-logo.svg';
+  let logoSvgText = '';
+  fetch('../../assets/header-logo.svg').then(r => r.ok ? r.text() : '').then(t => { logoSvgText = t || ''; }).catch(() => {});
   const mk = () => document.createElement('canvas');
   const layerCv = mk(), backCv = mk(), maskCv = mk();
   function fit(cv, w, h) { if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } }
-  function drawGrid(g, cr, s, pr) {
-    const b = params.bg, cell = Math.max(4, b.cell || 44), lw = Math.max(0.25, b.gridW || 0.5) * s;
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = Math.max(0, Math.min(1, b.gridOp)); g.fillStyle = b.gridColor || '#ACACAC';
-    const W = cr.w * s, H = cr.h * s;
-    const sx = pr.cx - Math.floor((pr.cx - cr.x) / cell) * cell, sy = pr.cy - Math.floor((pr.cy - cr.y) / cell) * cell;   /* 縦・横の線が球の中心を通るように */
-    for (let x = sx; x <= cr.x + cr.w + 0.01; x += cell) g.fillRect(Math.round((x - cr.x) * s - lw / 2), 0, lw, H);
-    for (let y = sy; y <= cr.y + cr.h + 0.01; y += cell) g.fillRect(0, Math.round((y - cr.y) * s - lw / 2), W, lw);
-    g.restore();
-  }
   function compose(cv, s, cr, c, pr, L) {
     const W = Math.max(1, Math.round(cr.w * s)), H = Math.max(1, Math.round(cr.h * s));
     fit(cv, W, H);
     const g = cv.getContext('2d'); const T = [s, 0, 0, s, -cr.x * s, -cr.y * s];
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
-    const mode = params.bg.mode;
-    if (mode !== 'none') { g.fillStyle = params.bg.color || '#E7E7E7'; g.fillRect(0, 0, W, H); if (mode === 'grid') drawGrid(g, cr, s, pr); }
     /* 網: 別の紙に描いて、下のフェード(上は残し、始まり→終わりで消える)をかけてから重ねる */
     fit(layerCv, W, H); const lg = layerCv.getContext('2d');
     lg.setTransform(1, 0, 0, 1, 0, 0); lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, W, H);
     lg.setTransform(...T); drawMesh(lg, c, pr);
     if (L.fadeOn) { lg.globalCompositeOperation = 'destination-in'; const gr = lg.createLinearGradient(0, L.fa, 0, L.fb); gr.addColorStop(0, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)'); lg.fillStyle = gr; lg.fillRect(cr.x, cr.y, cr.w, cr.h); lg.globalCompositeOperation = 'source-over'; }
     g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(layerCv, 0, 0);
-    /* ロゴの後ろの楕円: 後ろ(背景＋網)をぼかし、地色で薄める。縁はサイトの CSS と同じ radial のやわらかい縁(楕円の外は切る) */
+    /* ロゴの後ろの楕円: 後ろの網をぼかし、地色(#E7E7E7)で薄める。縁はサイトの CSS と同じ radial のやわらかい縁(楕円の外は切る) */
     if (L.bgOn) {
       fit(maskCv, W, H); const mg = maskCv.getContext('2d');
       mg.setTransform(1, 0, 0, 1, 0, 0); mg.clearRect(0, 0, W, H);
@@ -266,34 +269,71 @@
     const ds = Math.min(availW / cr.w, availH / cr.h, 1.5), dpr = window.devicePixelRatio || 1;
     compose(view, ds * dpr, cr, c, pr, L);
     view.style.width = Math.round(cr.w * ds) + 'px'; view.style.height = Math.round(cr.h * ds) + 'px';
-    frame.classList.toggle('clear', params.bg.mode === 'none');
-    const key = cr.w + 'x' + cr.h + '@' + params.out.scale + (playing ? 'p' : 's');
-    if (key !== lastCrop) { lastCrop = key; const S = params.out.scale || 2;
-      meta.textContent = '書き出すと ' + Math.round(cr.w * S) + ' × ' + Math.round(cr.h * S) + ' px（' + S + '倍）' + (playing ? '・動きを「止める」にすると、その瞬間の絵で書き出せます' : '・いま止まっています'); }
+    const bd = params.view.backdrop || 'checker'; ['checker', 'site', 'white'].forEach(k => frame.classList.toggle('bd-' + k, bd === k));
+    const fmt = params.out.format || 'png', key = cr.w + 'x' + cr.h + '@' + params.out.scale + fmt + (playing ? 'p' : 's');
+    if (key !== lastCrop) { lastCrop = key; const S = fmt === 'svg' ? 1 : (params.out.scale || 2);
+      meta.textContent = '書き出すのは網とロゴだけ（背景は透明）・' + Math.round(cr.w * S) + ' × ' + Math.round(cr.h * S) + ' px（' + FORMAT_NAME[fmt] + (fmt === 'svg' ? '・線と点は図形のまま' : '・' + S + '倍') + '）' + (playing ? '・動きを「止める」にすると、その瞬間の絵で書き出せます' : '・いま止まっています'); }
     requestAnimationFrame(frameLoop);
   }
 
   /* ===== 書き出し ===== */
   const toastEl = document.getElementById('toast'); let toastT = 0;
   function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('on'), 2600); }
+  const FORMAT_NAME = { png: 'PNG', webp: 'WebP', svg: 'SVG' };
+  function current() { const c = params.mesh, pr = project(c, tSec), L = layout(c); return { c, pr, L, cr: cropOf(c, pr, L) }; }
+  /* PNG・WebP: 網とロゴを透明の紙に描く */
   function renderPNG(scale) {
-    const c = params.mesh, S = scale || params.out.scale || 2;
-    const pr = project(c, tSec), L = layout(c), cr = cropOf(c, pr, L);
+    const S = scale || params.out.scale || 2, { c, pr, L, cr } = current();
     const out = mk(); const sz = compose(out, S, cr, c, pr, L);
     return { canvas: out, W: sz.W, H: sz.H };
   }
-  function exportPNG() {
-    if (!logoReady && params.mesh.logoOn !== 0) { toast('ロゴの読み込み中です。少し待ってからもう一度押してください'); return; }
-    const r = renderPNG();
+  /* SVG: 線と点を図形のまま(Figma で1本ずつ直せる)。ロゴも元の SVG のまま入れる。背景は入れない */
+  function buildSVG() {
+    const { c, pr, L, cr } = current(), m = meshPrims(c, pr), f = v => +v.toFixed(2), o = v => +v.toFixed(3);
+    const defs = [];
+    let mesh = '<g id="mesh" stroke-linecap="round">';
+    for (const [x1, y1, x2, y2, col, a, w] of m.L) mesh += '<line x1="' + f(x1) + '" y1="' + f(y1) + '" x2="' + f(x2) + '" y2="' + f(y2) + '" stroke="rgb(' + col + ')" stroke-opacity="' + o(a) + '" stroke-width="' + f(w) + '"/>';
+    for (const [x, y, r, col, a] of m.D) mesh += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r="' + f(r) + '" fill="rgb(' + col + ')" fill-opacity="' + o(a) + '"/>';
+    mesh += '</g>';
+    if (L.fadeOn) {   /* 下のフェード: 上は残し、始まり→終わりで消える */
+      defs.push('<linearGradient id="fadeG" gradientUnits="userSpaceOnUse" x1="0" y1="' + f(L.fa) + '" x2="0" y2="' + f(L.fb) + '"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>');
+      defs.push('<mask id="fadeM" maskUnits="userSpaceOnUse" x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '"><rect x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '" fill="url(#fadeG)"/></mask>');
+      mesh = '<g id="meshLayer" mask="url(#fadeM)">' + mesh + '</g>';
+    } else mesh = '<g id="meshLayer">' + mesh + '</g>';
+    let back = '';
+    if (L.bgOn) {   /* ロゴの後ろの楕円(後ろの網をぼかして地色で薄める・縁はやわらかく) */
+      defs.push('<filter id="ebBlur" filterUnits="userSpaceOnUse" x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '"><feGaussianBlur stdDeviation="' + f(c.bgBlur || 0) + '"/></filter>');
+      defs.push('<radialGradient id="ebG" cx="0.5" cy="0.5" r="0.7071"><stop offset="0" stop-color="#fff"/><stop offset="0.35" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>');
+      defs.push('<mask id="ebM" maskUnits="userSpaceOnUse" x="' + cr.x + '" y="' + cr.y + '" width="' + cr.w + '" height="' + cr.h + '"><ellipse cx="' + f(L.lcx) + '" cy="' + f(L.lcy) + '" rx="' + f(L.bw / 2) + '" ry="' + f(L.bh / 2) + '" fill="url(#ebG)"/></mask>');
+      back = '<g mask="url(#ebM)">' + ((c.bgBlur || 0) > 0.05 ? '<use href="#meshLayer" filter="url(#ebBlur)"/>' : '') + '<ellipse cx="' + f(L.lcx) + '" cy="' + f(L.lcy) + '" rx="' + f(L.bw / 2) + '" ry="' + f(L.bh / 2) + '" fill="rgb(231,231,231)" fill-opacity="' + o(Math.max(0, Math.min(1, c.bgAlpha || 0))) + '"/></g>';
+    }
+    let logo = '';
+    if (L.logoOn && logoSvgText) {
+      const doc = new DOMParser().parseFromString(logoSvgText, 'image/svg+xml'), el = doc.documentElement;
+      el.removeAttribute('style'); el.setAttribute('x', f(L.lcx - L.lw / 2)); el.setAttribute('y', f(L.lcy - L.lh / 2)); el.setAttribute('width', f(L.lw)); el.setAttribute('height', f(L.lh)); el.setAttribute('preserveAspectRatio', 'none');
+      const op = Math.max(0, Math.min(1, c.logoOpacity != null ? c.logoOpacity : 1));
+      logo = '<g id="logo"' + (op < 1 ? ' opacity="' + o(op) + '"' : '') + '>' + new XMLSerializer().serializeToString(el).replace(/^<\?xml[^>]*>/, '') + '</g>';
+    }
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + cr.w + '" height="' + cr.h + '" viewBox="' + cr.x + ' ' + cr.y + ' ' + cr.w + ' ' + cr.h + '">' + (defs.length ? '<defs>' + defs.join('') + '</defs>' : '') + mesh + back + logo + '</svg>';
+    return { svg, W: cr.w, H: cr.h };
+  }
+  function saveBlob(blob, ext, W, H) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    const d = new Date(), p2 = n => String(n).padStart(2, '0');
+    a.download = 'anyflow-vision-mesh_' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + '-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()) + '_' + W + 'x' + H + '.' + ext;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  function exportImage() {
     if (location.protocol === 'file:') { toast('ファイルを直接開くと書き出せません。http://localhost:8778/tools/vision-mesh-generator/ で開いてください'); return; }
+    const fmt = params.out.format || 'png';
+    if (params.mesh.logoOn !== 0 && (fmt === 'svg' ? !logoSvgText : !logoReady)) { toast('ロゴの読み込み中です。少し待ってからもう一度押してください'); return; }
+    if (fmt === 'svg') { const r = buildSVG(); saveBlob(new Blob([r.svg], { type: 'image/svg+xml' }), 'svg', r.W, r.H); toast('SVG を書き出しました（' + r.W + ' × ' + r.H + '・線と点は図形のまま）'); return; }
+    const r = renderPNG(), type = fmt === 'webp' ? 'image/webp' : 'image/png';
     try { r.canvas.toBlob(b => {
       if (!b) { toast('書き出しに失敗しました'); return; }
-      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-      const d = new Date(), p2 = n => String(n).padStart(2, '0');
-      a.download = 'anyflow-vision-mesh_' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + '-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()) + '_' + r.W + 'x' + r.H + '.png';
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast('PNG を書き出しました（' + r.W + ' × ' + r.H + ' px）');
-    }, 'image/png'); } catch (e) { toast('書き出せませんでした（' + (e && e.name || 'エラー') + '）。http://localhost:8778/tools/vision-mesh-generator/ で開き直してください'); }
+      if (b.type !== type) { toast('このブラウザは ' + FORMAT_NAME[fmt] + ' で書き出せません（Chrome で開いてください）'); return; }
+      saveBlob(b, fmt, r.W, r.H); toast(FORMAT_NAME[fmt] + ' を書き出しました（' + r.W + ' × ' + r.H + ' px・背景は透明）');
+    }, type, fmt === 'webp' ? Math.max(0.3, Math.min(1, params.out.quality || 0.92)) : undefined); } catch (e) { toast('書き出せませんでした（' + (e && e.name || 'エラー') + '）。http://localhost:8778/tools/vision-mesh-generator/ で開き直してください'); }
   }
   /* サイト(このパソコンの localhost:8778)の調整パネルに保存されている網の値を読む。無ければ本番の値 */
   function loadSite() {
@@ -322,7 +362,7 @@
     size: { w: 450, h: Math.max(520, (window.innerHeight || 900) - 32) },
     footerDefaults: false,
     footer: [
-      { label: 'PNG を書き出す', primary: true, onClick: () => exportPNG(), title: 'いま見えている範囲を PNG で保存します' },
+      { label: '画像を書き出す', primary: true, onClick: () => exportImage(), title: '網とロゴだけを、選んだ形式(PNG・WebP・SVG)で保存します。背景は透明です' },
       { label: 'サイトの今の値を読み込む', onClick: () => loadSite(), title: 'このパソコンで開いているサイト(localhost:8778)の調整パネルの値を読み込みます' },
       { label: '本番の値に戻す', onClick: () => { panel.reset(); meshCache = null; toast('本番の値に戻しました（下のフェードは「しない」）'); }, title: '全部のつまみを本番の値に戻します' }
     ],
@@ -390,29 +430,24 @@
           ]}
         ]}
       ]},
-      { cat: '背景と書き出し', items: [
-        { sub: '背景', grp: 'fxtex', items: [
-          { seg: '背景', path: 'bg.mode', options: [['方眼', 'grid'], ['地色', 'flat'], ['透明', 'none']], hint: '方眼＝サイトと同じ地色＋方眼／地色＝地色だけ／透明＝背景なし(PNG の透明)。' },
-          { color: '地色', path: 'bg.color', when: p => p.bg.mode !== 'none', hint: '背景の色。サイトは #E7E7E7。' },
-          { subgroup: '方眼', when: p => p.bg.mode === 'grid', items: [
-            { color: '方眼の色', path: 'bg.gridColor', hint: '方眼の線の色。サイトは #ACACAC。' },
-            { slider: '方眼の濃さ', path: 'bg.gridOp', min: 0, max: 1, step: 0.05, fmt: pct, clamp: true, hint: '方眼の線の濃さ。サイトは 30%。' },
-            { slider: '方眼の太さ', path: 'bg.gridW', min: 0.25, max: 2, step: 0.25, fmt: v => v.toFixed(2) + 'px', hint: '方眼の線の太さ。サイトは 0.5px。' },
-            { slider: '方眼のマス', path: 'bg.cell', min: 8, max: 120, step: 4, fmt: v => Math.round(v) + 'px', hint: '1マスの大きさ。サイトは 44px。縦横の線が球の中心を通ります。' }
-          ]}
-        ]},
+      { cat: '書き出し', items: [
         { sub: '書き出し', grp: 'other', items: [
-          { seg: '倍率', path: 'out.scale', options: [['1倍', 1], ['2倍', 2], ['3倍', 3]], hint: '書き出す画像の細かさ。2倍＝Retina の画面と同じくっきりさ(Figma に貼るなら 2倍)。' },
+          { seg: '形式', path: 'out.format', options: [['PNG', 'png'], ['WebP', 'webp'], ['SVG', 'svg']], hint: 'どれも網とロゴだけ・背景は透明。PNG＝Figma やスライドに貼るならこれ／WebP＝ウェブ用に軽い(Figma では表示されないので注意)／SVG＝線と点が図形のまま(Figma で1本ずつ直せる)。' },
+          { slider: '画質', path: 'out.quality', min: 0.5, max: 1, step: 0.01, fmt: pct, clamp: true, when: p => p.out.format === 'webp', hint: 'WebP の画質。下げるほどファイルが軽く、少し粗くなる。' },
+          { seg: '倍率', path: 'out.scale', options: [['1倍', 1], ['2倍', 2], ['3倍', 3]], when: p => p.out.format !== 'svg', hint: '書き出す画像の細かさ。2倍＝Retina の画面と同じくっきりさ(Figma に貼るなら 2倍)。SVG は図形なので倍率はありません。' },
           { seg: '範囲', path: 'out.crop', options: [['図のまわり', 'fit'], ['正方形', 'square']], hint: '図のまわり＝網とロゴがちょうど入る範囲／正方形＝その外側に余白を足した正方形。' },
-          { slider: '余白', path: 'out.pad', min: 0, max: 200, step: 4, fmt: v => Math.round(v) + 'px', hint: '図のまわりに足す余白(書き出しの 1倍の大きさで)。' },
-          { button: 'PNG を書き出す', primary: true, onClick: () => exportPNG() }
+          { slider: '余白', path: 'out.pad', min: 0, max: 200, step: 4, fmt: v => Math.round(v) + 'px', hint: '図のまわりに足す透明の余白(1倍の大きさで)。' },
+          { button: '画像を書き出す', primary: true, onClick: () => exportImage() }
+        ]},
+        { sub: '見本', grp: 'other', items: [
+          { seg: '見本の地', path: 'view.backdrop', options: [['市松（透明）', 'checker'], ['サイトの灰色', 'site'], ['白', 'white']], hint: '画面の見本の下に敷く地だけを変えます。書き出しには入りません(背景はいつも透明)。サイトの灰色＝#E7E7E7。' }
         ]}
       ]}
     ]
   });
 
   if (location.protocol === 'file:') meta.textContent = '⚠️ ファイルを直接開いています。書き出すには http://localhost:8778/tools/vision-mesh-generator/ で開いてください';
-  window.__visionMeshGen = { params, renderPNG, loadSite, setTime: v => { tSec = v; }, pk };   /* 確かめ用 */
+  window.__visionMeshGen = { params, renderPNG, buildSVG, exportImage, loadSite, setTime: v => { tSec = v; }, pk };   /* 確かめ用 */
   requestAnimationFrame(frameLoop);
 })();
 </script>
