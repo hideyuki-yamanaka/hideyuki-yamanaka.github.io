@@ -2506,7 +2506,7 @@ const TEXT_SPEC = [
   { key: 'cvInner',   sel: '.cv-inner',   name: 'お問い合わせ全体（位置だけ）',              sec: 'cv',  text: 0, font: 0 },
   { key: 'cvForm',    sel: '.cv-form',    name: 'お問い合わせフォーム（位置だけ）',          sec: 'cv',  text: 0, font: 0, rel: 1 },
   // --- フッター(お問い合わせタブに出す) ---
-  { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのリンク（ページの案内・Anyflow のページ）', pg: 'フッター', pl: 'リンク（ページの案内・Anyflow のページ）', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
+  { key: 'footNav',   sel: '.cv-foot-nav a, .cv-foot-sub a', name: 'フッターのリンク', pg: 'フッター', pl: 'リンク', sec: 'cv',  text: 0, multi: 1, move: 0 },   /* 【2026-10-01 ヒデさん「フォントサイズは揃えて。新しく追加したものも、既存のものも」】2段目(anyflow.jp へのリンク)も同じ行で */
   /* ❌ フッターの住所(footAddr)は 2026-10-01 夕方 ヒデさん「フッターは住所をなくし」で消した */
   { key: 'footCopy',  sel: '.cv-foot-copy',  name: 'コピーライト', pg: 'フッター', pl: 'コピーライト',                           sec: 'cv',  text: 1 },
   // --- ハンバーガーメニュー(🍔タブに出す) 2026-09-18 ---
