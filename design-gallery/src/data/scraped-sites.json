@@ -1,5 +1,49 @@
 [
   {
+    "id": "403828bf333f",
+    "title": "ブランディングデザイン事務所 tanukie",
+    "url": "https://tanukie.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/tanukie02_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-06-17T04:30:59.443Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:54:52.795Z"
+  },
+  {
+    "id": "1885b93aa715",
+    "title": "nome [静岡茶ブランド]",
+    "url": "https://isnome.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/nome_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
+  },
+  {
+    "id": "28081777521d",
+    "title": "MENARD BEAUTY LAND | スキンケアのメナード化粧品",
+    "url": "https://www.menard.co.jp/howtocare/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/menardhowtocare_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
+  },
+  {
     "id": "e9deae6bfab0",
     "title": "We-Being Project | KOKUYO",
     "url": "https://we-being.net/",
@@ -2899,22 +2943,6 @@
     "firstSeen": "2026-05-13T03:46:20.971Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:54:49.251Z"
-  },
-  {
-    "id": "403828bf333f",
-    "title": "tanukie",
-    "url": "https://tanukie.jp/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/tanukiellc_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2026-06",
-    "starred": false,
-    "firstSeen": "2026-06-17T04:30:59.443Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:54:52.795Z"
   },
   {
     "id": "7023f02f23a7",
@@ -23915,6 +23943,20 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "f9bd60f79090",
+    "title": "LANDIC 採用サイト",
+    "url": "https://www.landic.com/recruit/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/1-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "building"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
+  },
+  {
     "id": "362b845db77d",
     "title": "Tanica",
     "url": "https://tanica.jp/",
@@ -24882,20 +24924,18 @@
     "lastCheckedAt": "2026-10-02T07:58:25.582Z"
   },
   {
-    "id": "ff7dc75ea5f6",
-    "title": "おしえて！アミタさん",
-    "url": "https://www.amita-oshiete.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/01.webp",
-    "source": "muuuuu",
+    "id": "e8f7352ec2f4",
+    "title": "Arata（アラタ）",
+    "url": "https://morethan-kobe.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261008_02-498x328.jpg",
+    "source": "webdesignclip",
     "category": [
-      "eco"
+      "地域情報"
     ],
     "taste": [],
-    "date": "2026-07",
+    "date": "2026-10",
     "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:26.381Z"
+    "firstSeen": "2026-10-08T18:33:46.217Z"
   },
   {
     "id": "4382facb41b3",
@@ -26611,6 +26651,22 @@
     "lastCheckedAt": "2026-10-02T07:58:47.226Z"
   },
   {
+    "id": "bcb213899e6c",
+    "title": "おしえて！アミタさん",
+    "url": "https://www.amita-oshiete.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260605_02-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "情報・WEBサービス"
+    ],
+    "taste": [],
+    "date": "2026-06",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:26.381Z"
+  },
+  {
     "id": "713aa531dd87",
     "title": "西田精麦株式会社 | 採用サイト",
     "url": "https://westa.co.jp/recruit/",
@@ -27837,9 +27893,9 @@
     "lastCheckedAt": "2026-10-02T07:59:03.321Z"
   },
   {
-    "id": "091b45d9a495",
-    "title": "医療法人社団鼓動会",
-    "url": "https://www.kodoukai.or.jp/",
+    "id": "8c463b548ed4",
+    "title": "医療法人社団つかだファミリークリニック",
+    "url": "https://www.tsukafamigroup.or.jp/",
     "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260318_01-498x328.jpg",
     "source": "webdesignclip",
     "category": [
@@ -27848,9 +27904,7 @@
     "taste": [],
     "date": "2026-03",
     "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:59:05.711Z"
+    "firstSeen": "2026-10-08T18:33:46.217Z"
   },
   {
     "id": "ff322ccaef97",
@@ -44930,6 +44984,24 @@
     "firstSeen": "2026-10-03T03:53:39.570Z"
   },
   {
+    "id": "b0edb3f92006",
+    "title": "ティッカートーク｜SNS時代の個人投資家向けメディア",
+    "url": "https://tickertalk.co.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/08/250819-2-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "Webメディア",
+      "金融",
+      "証券",
+      "保険",
+      "法律"
+    ],
+    "taste": [],
+    "date": "2025-08",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
+  },
+  {
     "id": "9edabf261411",
     "title": "MBS RECRUIT | MBS 毎日放送",
     "url": "https://www.mbs.jp/recruit/",
@@ -48658,6 +48730,61 @@
     "date": "2024-01",
     "starred": false,
     "firstSeen": "2026-10-03T03:53:39.570Z"
+  },
+  {
+    "id": "394e492b7629",
+    "title": "AIプラットフォーム構築支援",
+    "url": "https://kijitra.com/business/ai-platform/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/s0qf3vcpk7ou-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ランディングページ",
+      "デザイン･制作･開発会社",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [
+      "モチーフ 線"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
+  },
+  {
+    "id": "c18c8f24096f",
+    "title": "NUI — Vibe Coding Designer VTuber",
+    "url": "https://quiet-orbit-7f3a.pages.dev/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/bj3r7oqgyhk0-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ポートフォリオ･アーティストサイト",
+      "ゲーム•Eスポーツ"
+    ],
+    "taste": [
+      "イラスト",
+      "パララックス",
+      "モチーフ 線"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
+  },
+  {
+    "id": "1e52d48e3c38",
+    "title": "ピコン｜30分限定の一期一会な音声SNS",
+    "url": "https://pikon.chat/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ylouriajhtc2-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ランディングページ",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [
+      "イラスト",
+      "モチーフ 円•曲線"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-08T18:33:46.217Z"
   },
   {
     "id": "f59fd35c70c3",
@@ -53341,42 +53468,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:48.079Z"
-  },
-  {
-    "id": "d7d2fc117c56",
-    "title": "株式会社ソルフェージュ",
-    "url": "https://solfe-ge.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/8xpwmdsiyh72-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "デザイン･制作･開発会社"
-    ],
-    "taste": [
-      "UI スキュアモーフィック",
-      "スクロールエフェクト"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:48.648Z"
-  },
-  {
-    "id": "1a6e90a0ce1e",
-    "title": "有限会社井上測量事務所｜愛媛県西予市の測量・設計・施工管理",
-    "url": "https://inoue-surveying.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/cpoi9fx45jyu-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "その他"
-    ],
-    "taste": [
-      "モチーフ 線"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z"
   },
   {
     "id": "61dbd2acd28e",
