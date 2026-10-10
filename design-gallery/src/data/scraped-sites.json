@@ -23927,6 +23927,22 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "1416dbb24b5c",
+    "title": "スタイレム株式会社",
+    "url": "https://stylem.co.jp/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/04-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "fashionall"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-02T04:09:00.184Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T08:01:43.313Z"
+  },
+  {
     "id": "cdfa9036cc49",
     "title": "株式会社Rosso",
     "url": "https://rosso-tokyo.co.jp/",
@@ -24888,38 +24904,6 @@
     "firstSeen": "2026-06-07T04:20:55.700Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:26.411Z"
-  },
-  {
-    "id": "caadb29b304c",
-    "title": "YO KAN KA",
-    "url": "https://yokanka.com/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/04.webp",
-    "source": "muuuuu",
-    "category": [
-      "food"
-    ],
-    "taste": [],
-    "date": "2026-07",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:25.440Z"
-  },
-  {
-    "id": "3ce1cf2219f1",
-    "title": "スタイレム株式会社",
-    "url": "https://stylem.co.jp/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261009_02-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "企業サイト・事務所・ビジネス"
-    ],
-    "taste": [],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-10-02T04:09:00.184Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:01:43.313Z"
   },
   {
     "id": "e8f7352ec2f4",
@@ -26583,6 +26567,22 @@
     "firstSeen": "2026-06-13T04:08:32.368Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:47.708Z"
+  },
+  {
+    "id": "3422c04829b7",
+    "title": "YO KAN KA（ヨウカンカ）",
+    "url": "https://yokanka.com/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260611_01-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "食品・飲料"
+    ],
+    "taste": [],
+    "date": "2026-06",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:25.440Z"
   },
   {
     "id": "39ddf0561a77",
@@ -48711,6 +48711,50 @@
     "firstSeen": "2026-10-03T03:53:39.570Z"
   },
   {
+    "id": "043062b97369",
+    "title": "ATELIERNORTH",
+    "url": "https://ateliernorth.vercel.app/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/5wl0u2j3ve7q-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "BtoCコーポレートサイト",
+      "建築･建設･不動産･家"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-10T17:06:30.720Z"
+  },
+  {
+    "id": "7110b17bf572",
+    "title": "AI推進室｜Claude Code・AI活用メディア",
+    "url": "https://ai-suishin.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/k8uyomj4deb5-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-10T17:06:30.720Z"
+  },
+  {
+    "id": "ffc942ef83b0",
+    "title": "株式会社GORO",
+    "url": "https://studio-goro.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/0cebz61r5id7-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-10T17:06:30.720Z"
+  },
+  {
     "id": "9e2e38741b19",
     "title": "Wedding invitation | 2025.10.12",
     "url": "https://wedding20251012-ny.studio.site/",
@@ -53332,68 +53376,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:46.884Z"
-  },
-  {
-    "id": "a9c66f094092",
-    "title": "タグチグループ 採用サイト",
-    "url": "https://www.taguchi.co.jp/recruit/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/2t38604zfgn9-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "採用･仕事･アルバイトサイト",
-      "軽工•重工•製造"
-    ],
-    "taste": [
-      "イラスト"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:45.783Z"
-  },
-  {
-    "id": "8b430f7c81e3",
-    "title": "Creon（クレオン）",
-    "url": "https://www.creon-dw.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/y7i4vtj5rkz0-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "デザイン･制作･開発会社",
-      "IT･コンピューター･テクノロジー"
-    ],
-    "taste": [
-      "タイポグラフィー･文字",
-      "UI フラット",
-      "ロゴデザイン"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:47.183Z"
-  },
-  {
-    "id": "3dcd8c8527fa",
-    "title": "株式会社 庄内クリエート工業",
-    "url": "https://www.s-create.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/fjognumzi04c-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "軽工•重工•製造"
-    ],
-    "taste": [
-      "タイポグラフィー･文字",
-      "動画･映像",
-      "UI フラット"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:47.554Z"
   },
   {
     "id": "61dbd2acd28e",
