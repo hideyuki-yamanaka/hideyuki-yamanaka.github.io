@@ -1,5 +1,63 @@
 [
   {
+    "id": "c6708d542d80",
+    "title": "スタイレム株式会社",
+    "url": "https://stylem.co.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/stylem_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-02T04:09:00.184Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T08:01:43.313Z"
+  },
+  {
+    "id": "bea884f9bd76",
+    "title": "新卒採用情報 | KDDI Biz Edge株式会社",
+    "url": "https://recruit.kddi-bizedge.com/newgrads/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/kddibizedgenewgrads_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-12T21:02:59.898Z"
+  },
+  {
+    "id": "135f7a7f1df9",
+    "title": "山龢【公式】",
+    "url": "https://atami-sanga.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/sanga_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-12T21:02:59.898Z"
+  },
+  {
+    "id": "01d498f95d87",
+    "title": "ふくしま LiNK NAVi | 企業がふくしまと出会うためのナビゲーション",
+    "url": "https://linknavi.fukushima.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/fukushimalinknavi_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-12T21:02:59.898Z"
+  },
+  {
     "id": "403828bf333f",
     "title": "ブランディングデザイン事務所 tanukie",
     "url": "https://tanukie.jp/",
@@ -22739,22 +22797,6 @@
     "lastCheckedAt": "2026-10-02T07:58:03.047Z"
   },
   {
-    "id": "279b7b647d2b",
-    "title": "株式会社SmartHR 採用サイト",
-    "url": "https://recruit.smarthr.co.jp/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/SmartHRrecruit_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2024-03",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:02.741Z"
-  },
-  {
     "id": "c926dc86dd5b",
     "title": "味覚ゴールデンチャンス | のんある酒場 レモンサワー ノンアルコール",
     "url": "https://sauna-ikitai.com/special/mikaku/",
@@ -23927,6 +23969,20 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "b5ad055b0ff9",
+    "title": "株式会社UP Forward",
+    "url": "https://upforward.co.jp/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/02-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "white"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-12T21:02:59.898Z"
+  },
+  {
     "id": "c67f10054bdc",
     "title": "ウォンテッドリー株式会社",
     "url": "https://wantedlyinc.com/",
@@ -23939,22 +23995,6 @@
     "date": "2026-10",
     "starred": false,
     "firstSeen": "2026-10-11T17:27:50.381Z"
-  },
-  {
-    "id": "1416dbb24b5c",
-    "title": "スタイレム株式会社",
-    "url": "https://stylem.co.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/04-768x576.png",
-    "source": "muuuuu",
-    "category": [
-      "fashionall"
-    ],
-    "taste": [],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-10-02T04:09:00.184Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:01:43.313Z"
   },
   {
     "id": "cdfa9036cc49",
@@ -23999,6 +24039,22 @@
     "firstSeen": "2026-09-17T03:30:09.399Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:28.789Z"
+  },
+  {
+    "id": "15d91757c548",
+    "title": "株式会社SmartHR 採用サイト",
+    "url": "https://recruit.smarthr.co.jp/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/27-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "technology"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:02.741Z"
   },
   {
     "id": "a6be11487cc0",
@@ -24886,22 +24942,6 @@
     "firstSeen": "2026-07-04T03:32:25.345Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:25.156Z"
-  },
-  {
-    "id": "57024fb8957e",
-    "title": "Cipher Digital",
-    "url": "https://cipherdigital.com/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/05.webp",
-    "source": "muuuuu",
-    "category": [
-      "technology"
-    ],
-    "taste": [],
-    "date": "2026-07",
-    "starred": false,
-    "firstSeen": "2026-07-09T03:41:20.349Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:24.676Z"
   },
   {
     "id": "e8f7352ec2f4",
@@ -29132,22 +29172,6 @@
     "firstSeen": "2026-09-24T16:38:23.302Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:59:24.393Z"
-  },
-  {
-    "id": "2e46344b2a35",
-    "title": "文藝春秋 RECRUIT SITE｜好奇心はちからだ。",
-    "url": "https://recruit.bunshun.co.jp/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260105_03-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "採用サイト・転職・求人"
-    ],
-    "taste": [],
-    "date": "2026-01",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:59:21.856Z"
   },
   {
     "id": "af3d4c276bf2",
