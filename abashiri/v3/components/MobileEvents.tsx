@@ -23,7 +23,7 @@ import { motion } from "framer-motion";
 import { ITEMS, type EventItem } from "./eventParts";
 import { EVENT_LAYOUT_EVENT, EVENT_LAYOUT_PATTERNS } from "./EventSection";
 import { MobileStack, type DeckApi } from "./EventVariants4";
-import { EvNav, useEvNav } from "./EventNav";
+import { EvNav } from "./EventNav";
 import { Carousel3D } from "./Carousels";
 import { CARDS, useCardRatio } from "./EventVariants5";
 import { navigateTo } from "./PageTransition";
@@ -174,12 +174,9 @@ function StackScene({ kind, gate }: { kind: "shuffle" | "peel"; gate: EventsGate
   /* いちばん上のカード。案31（カードを切る）は体験①が上（2026-10-14）・案32 は④が上のまま */
   const [top, setTop] = useState(kind === "shuffle" ? 0 : ITEMS.length - 1);
   /* 案31 の送りボタン（2026-10-14 ヒデさん「左右のボタンは文字のカルーセルスライドショーに被るのでやめたい」）。
-     束の左右に置くと後ろを流れる文字の帯と同じ高さになるので、束の下に置く。形は調整パネルの「送りボタン」5案。
-     案3 だけはボタンを置かず、写真を左右にスワイプ／束の左右のすき間をタップで送る */
-  const nav = useEvNav();
+     束の左右に置くと後ろを流れる文字の帯と同じ高さになるので、束の下に丸いボタンを2つ置く
+     （同日 5案を見比べて「案4 丸いボタンを下に」に決定・ほかの案は消した）。束を回すのは MobileStack の api から */
   const api = useRef<DeckApi | null>(null);
-  const swipe = useRef<{ x: number; y: number } | null>(null);
-  const swipeNav = kind === "shuffle" && nav === 3;
   /* 束の半分の幅（カードの大きさのつまみにも付いてくる） */
   const half = `${210 * scale}px * var(--ev-shuf-card, 1)`;
   return (
@@ -191,34 +188,7 @@ function StackScene({ kind, gate }: { kind: "shuffle" | "peel"; gate: EventsGate
           オモロい、
         </p>
       )}
-      <div
-        className="relative w-full"
-        style={{ height: boxH }}
-        /* 案3：横へのスワイプで送る（右へ払う＝いちばん上の1枚が右へ出ていく向き＝次へ）。
-           上下のスワイプは MobileTop の場面の切り替えのまま（向きで見分ける。横が40px未満なら何もしない） */
-        onTouchStart={
-          swipeNav
-            ? (e) => {
-                const t = e.touches[0];
-                swipe.current = { x: t.clientX, y: t.clientY };
-              }
-            : undefined
-        }
-        onTouchEnd={
-          swipeNav
-            ? (e) => {
-                const s = swipe.current;
-                swipe.current = null;
-                const t = e.changedTouches[0];
-                if (!s || !t) return;
-                const dx = t.clientX - s.x;
-                const dy = t.clientY - s.y;
-                if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return;
-                api.current?.step(dx > 0 ? 1 : -1);
-              }
-            : undefined
-        }
-      >
+      <div className="relative w-full" style={{ height: boxH }}>
         {kind === "shuffle" && (
           /* 後ろを流れる文字。画面の端から端まで（左右の余白の外まで）流す。
              大きさ・速さは PC と同じつまみ（--ev-mq-size の6割／--ev-mq-dur） */
@@ -240,34 +210,11 @@ function StackScene({ kind, gate }: { kind: "shuffle" | "peel"; gate: EventsGate
           </div>
         )}
         <MobileStack kind={kind} gate={gate} scale={scale} onTop={setTop} api={api} />
-        {/* 案3：束の左右のすき間をタップしても送る／戻す（見た目は何も無い） */}
-        {swipeNav &&
-          (["left", "right"] as const).map((side) => (
-            <button
-              key={side}
-              type="button"
-              aria-label={side === "left" ? "前の体験へ" : "次の体験へ"}
-              onClick={() => api.current?.step(side === "left" ? -1 : 1)}
-              className="absolute inset-y-0 z-40"
-              style={
-                side === "left"
-                  ? { left: 0, width: `calc(50% - ${half} - 8px)` }
-                  : { right: 0, width: `calc(50% - ${half} - 8px)` }
-              }
-            />
-          ))}
       </div>
-      {/* 送りボタン（案1・2・4・5）。束の下の真ん中・束の幅の箱の中に並べる */}
-      {kind === "shuffle" && nav !== 3 && (
+      {/* 送りボタン：丸いボタン2つを、束の下の真ん中に並べる */}
+      {kind === "shuffle" && (
         <div className="flex justify-center self-center" style={{ width: `calc(${half} * 2)` }}>
-          <EvNav
-            nav={nav}
-            sp
-            top={top}
-            count={ITEMS.length}
-            onStep={(d) => api.current?.step(d)}
-            onJump={(i) => api.current?.jump(i)}
-          />
+          <EvNav sp onStep={(d) => api.current?.step(d)} />
         </div>
       )}
       {kind === "peel" && (

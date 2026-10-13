@@ -45,7 +45,6 @@ import {
   PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
-import { EV_NAVS, EV_NAV_DEFAULT } from "./EventNav";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
 import {
@@ -190,7 +189,7 @@ type Params = {
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
   /** shufDur/shufPow：案31（カードを切る）の秒数とメリハリ */
   /** mqSize/mqDur：案31 の後ろを流れる文字の大きさ(px)・1周の秒数。shufCard：カードの大きさ(%) */
-  events: { pattern: number; tailPad: number; cardRatio: number; flow: number; shufDur: number; shufPow: number; mqSize: number; mqDur: number; shufCard: number; nav: number };
+  events: { pattern: number; tailPad: number; cardRatio: number; flow: number; shufDur: number; shufPow: number; mqSize: number; mqDur: number; shufCard: number };
   /** ページ遷移の演出 1〜5 */
   /** dur/blur/peak は案7（じんわり溶ける）だけの長さ(ms)・ぼかし(px)・白の濃さ(%) */
   pageTrans: { pattern: number; dur: number; blur: number; peak: number };
@@ -269,7 +268,7 @@ export default function TopTunePanel({
               コンテンツを中央に寄せて。上下に余白ができる感じ」→ カンプの 140px から詰める。
               🟡仮置き 80px（詰める量はカンプに無いので、調整パネル「グルメの余白」で決める） */
       gourmet: { speed: 40, pauseOnHover: false /* 2026-10-14 ヒデさん「ホバーしてもカルーセルの移動は止まらないように」 */, gap: 80 },
-      events: { pattern: 31 /* 2026-10-14 ヒデさん「案2をデフォルトに」（パネルの表示は案2・値は31） */, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */, shufDur: 1.0, shufPow: 3 /* 2026-09-26 案31 カードを切る：ヒデさん「ゆったりすぎ・シャッと、でも急じゃなく」→ 1.0秒・メリハリ3（🟡仮置き） */, mqSize: 80, mqDur: 34, shufCard: 100 /* 同日 ヒデさん「後ろのテキストのサイズ・速度、カードのサイズも変えられるように」。既定はカンプ値(80px)・これまでの速さ(34秒)・等倍 */, nav: EV_NAV_DEFAULT /* 2026-10-14 案2 の送りボタンの形（EventNav.tsx の5案）。ヒデさん「左右のボタンは流れる文字に被るのでやめたい・5案」→ 同日「案4が良さそうですね。これで実装してデプロイ」＝既定は案4 丸いボタンを下に */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 31 /* 2026-10-14 ヒデさん「案2をデフォルトに」（パネルの表示は案2・値は31） */, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */, shufDur: 1.0, shufPow: 3 /* 2026-09-26 案31 カードを切る：ヒデさん「ゆったりすぎ・シャッと、でも急じゃなく」→ 1.0秒・メリハリ3（🟡仮置き） */, mqSize: 80, mqDur: 34, shufCard: 100 /* 同日 ヒデさん「後ろのテキストのサイズ・速度、カードのサイズも変えられるように」。既定はカンプ値(80px)・これまでの速さ(34秒)・等倍 */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       /* ページ遷移の演出。2026-09-26 ヒデさん「全部統一・ほんの気持ちだけじんわり溶ける印象に」
          → 案7「じんわり溶ける」を既定に（それまでは案6「ディゾルブ」）。
          ⚠️ 値の住み家：ここ／PageTransition の PT_DEFAULT／tune-defaults.json */
@@ -347,8 +346,6 @@ export default function TopTunePanel({
       root.style.setProperty("--ev-mq-size", `${params.events.mqSize ?? 80}px`);
       root.style.setProperty("--ev-mq-dur", `${params.events.mqDur ?? 34}s`);
       root.style.setProperty("--ev-shuf-card", String((params.events.shufCard ?? 100) / 100));
-      /* 案2 の送りボタンの形（1〜5）。EventNav.tsx の useEvNav が読む */
-      root.style.setProperty("--ev-nav", String(params.events.nav ?? EV_NAV_DEFAULT));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
@@ -1434,9 +1431,10 @@ export default function TopTunePanel({
                 pills: "案",
                 path: "events.pattern",
                 immediate: true,
-                /* ⚠️ 同じ見出しの中に「送りボタン」の案ピルを足したので、体験の案そのものは「どの案にも属さない」と明示する。
-                   書かないと、部品が「見出しの中のもう1つの案ピル（送りボタン）が持ち主」と受け取り、送りボタンの案を
-                   入れ替えるたびに体験の案を元（案2）へ戻していた（2026-10-14 実測：案3 を押しても案2 のまま） */
+                /* 体験の案そのものは「どの案にも属さない」と明示しておく（取り違え防止）。
+                   2026-10-14、同じ見出しに「送りボタン」の案ピルを置いた時、部品が「見出しの中のもう1つの案ピルが持ち主」と
+                   受け取り、体験の案が切り替わらなくなった（FIXLOG）。送りボタンの行は案4 に決めて外したが、また案ピルを
+                   足した時に同じことが起きないよう残す */
                 shared: true,
                 /* 案によって出す項目が変わるので、選んだら組み直す */
                 autoNum: "案",
@@ -1444,24 +1442,6 @@ export default function TopTunePanel({
                   name: p.name,
                   value: Number(v),
                   desc: p.note,
-                })),
-              },
-              /* 【2026-10-14 ヒデさん指示】「左右のボタンは文字のカルーセルスライドショーに被るのでやめたい。
-                   5バリエーションぐらいカルーセルの左右ボタンのアイデアを。丸くボタンになってない形でも・位置を変えても」
-                 → 送りボタンの形を5案から選ぶ（EventNav.tsx）。どれも流れる文字の帯から離れた束の下（案3 はボタン無し）。
-                   案の見比べなのでバリエーションのカテゴリ（6-13・6-18）。案2 を選んだ時だけ出す（6-14） */
-              { sub: "案2 カードを切る：送りボタン", deep: true, when: (p: Params) => p.events.pattern === 31 },
-              {
-                pills: "送りボタン",
-                path: "events.nav",
-                variant: "events.pattern",
-                immediate: true,
-                autoNum: "案",
-                when: (p: Params) => p.events.pattern === 31,
-                options: Object.entries(EV_NAVS).map(([v, n]) => ({
-                  name: n.name,
-                  value: Number(v),
-                  desc: n.note,
                 })),
               },
               { sub: "体験セクション（グルメの下）", grp: "basic" },

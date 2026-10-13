@@ -129,8 +129,7 @@
     "shufPow": 3,
     "mqSize": 80,
     "mqDur": 34,
-    "shufCard": 100,
-    "nav": 4
+    "shufCard": 100
   },
   "pageTrans": {
     "pattern": 7,

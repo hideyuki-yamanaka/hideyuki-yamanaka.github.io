@@ -36,11 +36,10 @@ import {
   motion,
   motionValue,
   useAnimationFrame,
-  useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { CursorBall, EvNav, useEvNav } from "./EventNav";
+import { EvNav } from "./EventNav";
 import {
   ITEMS,
   PinStage,
@@ -54,7 +53,7 @@ export const EVENT_KV_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ（いちばん上が体験①、その下に②③④）、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。写真の束の下の送りボタンで入れ替える（スクロールでは入れ替わらない・2026-10-14）。ボタンの形は下の「送りボタン」の5案から選ぶ。送る＝いちばん上の1枚が右へシャッと出て、束のいちばん下へ潜り込む（トランプを切るように）。戻す＝いちばん下の1枚が右へ引き出されて上へ乗る（行きの逆回し）。端は無く、何回でも回せる。速さとメリハリは下のつまみで。カードにカーソルを乗せると影が乗って情報が出る" },
+  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ（いちばん上が体験①、その下に②③④）、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。写真の束の下の丸いボタン2つで入れ替える（スクロールでは入れ替わらない・2026-10-14）。右のボタン＝いちばん上の1枚が右へシャッと出て、束のいちばん下へ潜り込む（トランプを切るように）。左のボタン＝いちばん下の1枚が右へ引き出されて上へ乗る（行きの逆回し）。端は無く、何回でも回せる。速さとメリハリは下のつまみで。カードにカーソルを乗せると影が乗って情報が出る" },
   32: { name: "案32 左右に文字", note: "【ラフ再現】動きは案31と同じ。文字組みだけ違い、左に「意外と／オモロい、」右に「網走」を置いて、その間に写真の束がある" },
   33: { name: "案33 コピーから飛び出す", note: "【ラフ再現】中央に「意外とオモロい、網走。」。スクロールすると、その裏に隠れていた写真が大きくなりながら四方へ飛び出して散る" },
 };
@@ -299,8 +298,8 @@ function Frame({
        ふつうの箱で、スクロールはそのまま上下へ流れる（下へ行かせない見張りも無い）
      ・写真の束の左右に丸いボタン（場所えらびと同じ部品 CarouselArrow・白い地用の色）
        → 【同日 ヒデさん】「左右のボタンは文字のカルーセルスライドショーに被るのでやめたい」
-         束の左右・上下の真ん中＝後ろを流れる文字の帯と同じ高さだった。送りボタンは束の下へ移し、
-         形は5案（EventNav.tsx・調整パネルの「送りボタン」）から選べるようにした
+         束の左右・上下の真ん中＝後ろを流れる文字の帯と同じ高さだった。送りボタンは束の下へ移した。
+         形は5案を調整パネルで見比べて、同日「案4（丸いボタンを下に）」に決定。ほかの案は消した（EventNav.tsx）
        次へ：いちばん上の1枚が右へ出て、束のいちばん下へ潜る（2026-09-26 の動きのまま）
        前へ：いちばん下の1枚が右へ引き出されて、上へ乗る（行きの逆回し）
      ・重ね順は 体験①（ITEMS[0]）がいちばん上、その下に②③④
@@ -383,34 +382,25 @@ function LoopCard({
 /** 束を回す仕組み（PC とスマホで同じ）。
     pos＝切った回数（小数＝切っている途中）。押した先（target）へ一定の速さで進める。
     続けて押した時も、今いる所から次の行き先へそのまま進む（途中で止まらない）。
-    top＝いちばん上に来る体験（行き先で数える＝押した瞬間に番号が変わる） */
-export type DeckApi = { step: (dir: 1 | -1) => void; jump: (i: number) => void };
+    top＝いちばん上に来る体験（行き先で数える＝押した瞬間に変わる。スマホの説明の文に使う） */
+export type DeckApi = { step: (dir: 1 | -1) => void };
 function useLoopDeck() {
   const pos = useMemo(() => motionValue(0), []);
   const target = useRef(0);
   const [top, setTop] = useState(0);
-  const api = useMemo<DeckApi>(() => {
-    const N = ITEMS.length;
-    const run = () => {
-      const dist = Math.abs(target.current - pos.get());
-      animate(pos, target.current, { duration: readShuf().dur * dist, ease: "linear" });
-      setTop(((target.current % N) + N) % N);
-    };
-    return {
+  const api = useMemo<DeckApi>(
+    () => ({
       /** 1枚送る（1）／戻す（-1） */
       step: (dir) => {
+        const N = ITEMS.length;
         target.current += dir;
-        run();
+        const dist = Math.abs(target.current - pos.get());
+        animate(pos, target.current, { duration: readShuf().dur * dist, ease: "linear" });
+        setTop(((target.current % N) + N) % N);
       },
-      /** その体験がいちばん上に来るまで、近い向きへ続けて切る（送りボタン 案2 番号のタブ） */
-      jump: (i) => {
-        const f = (((i - target.current) % N) + N) % N;
-        if (!f) return;
-        target.current += f <= N / 2 ? f : f - N;
-        run();
-      },
-    };
-  }, [pos]);
+    }),
+    [pos]
+  );
   return { pos, top, ...api };
 }
 
@@ -424,50 +414,17 @@ const STACK_BOTTOM =
       return s.cy + (CARD_W / 2) * Math.abs(Math.sin(r)) + (CARD_H / 2) * Math.cos(r);
     })
   ) - STACK_CY;
-/** 送りボタン 案3：カーソルが矢印になる所は、束の縁からこれだけ外（px）。束の上では今までどおりホバーで情報が出る（🟡仮置き） */
-const ZONE_GAP = 32;
-/** 束の中心が、画面の真ん中から右へ何pxずれているか（カンプの束は 1512 枠の中心より少し右） */
-const STACK_DX = STACK_CX - FRAME_W / 2;
 
 function MarqueeStack() {
-  const { pos, top, step, jump } = useLoopDeck();
+  const { pos, step } = useLoopDeck();
   const pow = useShufPow();
-  /* 送りボタンの形（調整パネル「送りボタン」の1〜5） */
-  const nav = useEvNav();
-  const rootRef = useRef<HTMLDivElement>(null);
-  /* 案3：カーソルの位置（場面の箱の左上から）。少しだけ遅れてなめらかに付いてくる */
-  const [zone, setZone] = useState<null | "left" | "right">(null);
-  const [ballDir, setBallDir] = useState<"left" | "right">("right");
-  const mx = useMemo(() => motionValue(0), []);
-  const my = useMemo(() => motionValue(0), []);
-  const bx = useSpring(mx, { stiffness: 700, damping: 45, mass: 0.5 });
-  const by = useSpring(my, { stiffness: 700, damping: 45, mass: 0.5 });
-  const track = (side: "left" | "right") => (e: React.MouseEvent) => {
-    const r = rootRef.current?.getBoundingClientRect();
-    if (!r) return;
-    const x = e.clientX - r.left;
-    const y = e.clientY - r.top;
-    mx.set(x);
-    my.set(y);
-    if (zone !== side) {
-      /* 入った瞬間は、その場所へ飛ばす（左上から飛んでこないように） */
-      bx.jump(x);
-      by.jump(y);
-      setZone(side);
-      setBallDir(side);
-    }
-  };
   /* カードの大きさ（--ev-shuf-card）を変えても、ボタンは束の下に同じすき間で付いてくる。
      大きくしすぎてボタンが画面の下へはみ出す時は、フレームの下から64pxの所で止める */
   const navTop = `min(calc(${STACK_CY.toFixed(1)}px + ${STACK_BOTTOM.toFixed(1)}px * var(--ev-shuf-card, 1) + ${NAV_GAP}px), ${FRAME_H - 64}px)`;
-  /* 案3 のカーソルが効く所（束の左の余白・右の余白）。場面の箱の幅いっぱいで数える */
-  const half = `${CARD_W / 2}px * var(--ev-shuf-card, 1)`;
-  const zoneL = { left: 0, width: `calc(50% + ${STACK_DX.toFixed(1)}px - ${half} - ${ZONE_GAP}px)` };
-  const zoneR = { left: `calc(50% + ${STACK_DX.toFixed(1)}px + ${half} + ${ZONE_GAP}px)`, right: 0 };
   return (
     /* ⚠️ -mt-[180px]：体験セクションの上パディングを打ち消して、場面をちょうど画面いっぱい（1512×982）に
        （前は PinStage がやっていた。貼りつけはしないので、高さは1画面ぶんだけ） */
-    <div ref={rootRef} className="relative -mt-[180px] h-[982px] w-full overflow-hidden bg-white" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
+    <div className="relative -mt-[180px] h-[982px] w-full overflow-hidden bg-white" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
       <Frame
         full={
           /* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係）。
@@ -514,44 +471,14 @@ function MarqueeStack() {
             <LoopCard key={it.title} it={it} i={i} pos={pos} pow={pow} />
           ))}
         </div>
-        {/* 送りボタン（案1・2・4・5）。束の下の真ん中・束の幅の箱の中に並べる。カードより手前 */}
-        {nav !== 3 && (
-          <div
-            className="absolute z-50 flex -translate-x-1/2 justify-center"
-            style={{ left: STACK_CX, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))` }}
-          >
-            <EvNav nav={nav} top={top} count={ITEMS.length} onStep={step} onJump={jump} />
-          </div>
-        )}
+        {/* 送りボタン：丸いボタン2つを、束の下の真ん中に並べる。カードより手前 */}
+        <div
+          className="absolute z-50 flex -translate-x-1/2 justify-center"
+          style={{ left: STACK_CX, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))` }}
+        >
+          <EvNav onStep={step} />
+        </div>
       </Frame>
-      {/* 送りボタン 案3：束の左右の余白にカーソルを乗せると丸い矢印のカーソルになり、押すと送る／戻す */}
-      {nav === 3 && (
-        <>
-          {(["left", "right"] as const).map((side) => (
-            <button
-              key={side}
-              type="button"
-              aria-label={side === "left" ? "前の体験へ" : "次の体験へ"}
-              onClick={() => step(side === "left" ? -1 : 1)}
-              onMouseEnter={track(side)}
-              onMouseMove={track(side)}
-              onMouseLeave={() => setZone(null)}
-              className="absolute inset-y-0 z-40 cursor-none"
-              style={side === "left" ? zoneL : zoneR}
-            />
-          ))}
-          <motion.div className="pointer-events-none absolute left-0 top-0 z-[60]" style={{ x: bx, y: by }}>
-            <motion.div
-              style={{ x: "-50%", y: "-50%" }}
-              initial={false}
-              animate={zone ? { scale: 1, opacity: 1 } : { scale: 0.4, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <CursorBall dir={ballDir} />
-            </motion.div>
-          </motion.div>
-        </>
-      )}
     </div>
   );
 }
@@ -722,11 +649,11 @@ export function MobileStack({
   }, [kind, deck.top]);
   useEffect(() => {
     if (!api || kind !== "shuffle") return;
-    api.current = { step: deck.step, jump: deck.jump };
+    api.current = { step: deck.step };
     return () => {
       api.current = null;
     };
-  }, [api, kind, deck.step, deck.jump]);
+  }, [api, kind, deck.step]);
   /* ⚠️ gate は effect の中で渡す。描画中に書くと、案を切り替えた時に
      消える側の後片付けが新しい方の gate を消してしまう */
   useEffect(() => {
