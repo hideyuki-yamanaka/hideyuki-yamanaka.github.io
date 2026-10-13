@@ -23969,6 +23969,20 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "b1ae19c0b53a",
+    "title": "いざ、十方へ。",
+    "url": "https://misotone.m-hand.co.jp/lp/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/07-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "brown"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-13T19:00:40.961Z"
+  },
+  {
     "id": "b5ad055b0ff9",
     "title": "株式会社UP Forward",
     "url": "https://upforward.co.jp/",
@@ -24928,20 +24942,18 @@
     "lastCheckedAt": "2026-10-02T07:58:24.748Z"
   },
   {
-    "id": "009d2b6a0470",
-    "title": "Rollbahn 25th Anniversary",
-    "url": "https://rollbahn.jp/25th/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/07.webp",
-    "source": "muuuuu",
+    "id": "7251db5896d2",
+    "title": "LIGHT THE WAY 10th Anniversary Website | LIGHT THE WAY Inc.",
+    "url": "https://light-the-way.jp/10th-anniversary/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261013_02-498x328.jpg",
+    "source": "webdesignclip",
     "category": [
-      "interior"
+      "デザイン事務所・制作会社"
     ],
     "taste": [],
-    "date": "2026-07",
+    "date": "2026-10",
     "starred": false,
-    "firstSeen": "2026-07-04T03:32:25.345Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:25.156Z"
+    "firstSeen": "2026-10-13T19:00:40.961Z"
   },
   {
     "id": "8e9b4d89827e",
@@ -29186,6 +29198,20 @@
     "firstSeen": "2026-09-24T16:38:23.302Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:59:24.393Z"
+  },
+  {
+    "id": "9ecddb8ff33d",
+    "title": "岱嵐創建",
+    "url": "https://dylan.com.tw/",
+    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/wd20261013_01-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "建築・住宅・不動産"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-13T19:00:40.961Z"
   },
   {
     "id": "af3d4c276bf2",
@@ -35652,22 +35678,6 @@
     "date": "2024-04",
     "starred": false,
     "firstSeen": "2026-06-07T04:20:55.700Z"
-  },
-  {
-    "id": "4919275b8020",
-    "title": "SavoirFaire©",
-    "url": "https://www.savoirfaire.nyc/",
-    "thumbnailUrl": "https://world.webdesignclip.com/wp-content/uploads/20240403_01-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "デザイン事務所・制作会社"
-    ],
-    "taste": [],
-    "date": "2024-04",
-    "starred": false,
-    "firstSeen": "2026-06-07T04:20:55.700Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:00:28.273Z"
   },
   {
     "id": "7e5b217f8805",
@@ -51410,6 +51420,27 @@
     "firstSeen": "2026-07-04T03:32:25.345Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:21.697Z"
+  },
+  {
+    "id": "d10e1ced3de8",
+    "title": "Rollbahn 25th Anniversary",
+    "url": "https://rollbahn.jp/25th/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/tovukgfm4j3i-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "特設サイト",
+      "インテリア･家具･雑貨"
+    ],
+    "taste": [
+      "動画･映像",
+      "スクロールエフェクト",
+      "グリッドデザイン"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-07-04T03:32:25.345Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:25.156Z"
   },
   {
     "id": "351104bd847f",
