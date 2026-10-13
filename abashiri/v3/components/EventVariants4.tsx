@@ -32,12 +32,15 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  animate,
   motion,
   motionValue,
   useAnimationFrame,
+  useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
+import { CursorBall, EvNav, useEvNav } from "./EventNav";
 import {
   ITEMS,
   PinStage,
@@ -51,7 +54,7 @@ export const EVENT_KV_PATTERNS: Record<
   number,
   { name: string; note: string }
 > = {
-  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。1回スクロールするごとに、いちばん上の1枚が右へシャッと出て、束のいちばん下へ潜り込む（トランプを切るように）。残りは1段ずつ繰り上がり、4枚ぜんぶが一番上に来たら下へ進める。上へ戻すと、下の1枚が右へ引き出されて上へ乗る（行きと同じ感触）。速さとメリハリは下のつまみで。中央のカードにカーソルを乗せると影が乗って情報が出る" },
+  31: { name: "案31 流れる文字と重ね写真", note: "【ラフ再現】白い面に写真が重なって置かれ（いちばん上が体験①、その下に②③④）、その後ろを「意外とオモロい、網走。」が右から左へ流れ続ける。写真の束の下の送りボタンで入れ替える（スクロールでは入れ替わらない・2026-10-14）。ボタンの形は下の「送りボタン」の5案から選ぶ。送る＝いちばん上の1枚が右へシャッと出て、束のいちばん下へ潜り込む（トランプを切るように）。戻す＝いちばん下の1枚が右へ引き出されて上へ乗る（行きの逆回し）。端は無く、何回でも回せる。速さとメリハリは下のつまみで。カードにカーソルを乗せると影が乗って情報が出る" },
   32: { name: "案32 左右に文字", note: "【ラフ再現】動きは案31と同じ。文字組みだけ違い、左に「意外と／オモロい、」右に「網走」を置いて、その間に写真の束がある" },
   33: { name: "案33 コピーから飛び出す", note: "【ラフ再現】中央に「意外とオモロい、網走。」。スクロールすると、その裏に隠れていた写真が大きくなりながら四方へ飛び出して散る" },
 };
@@ -178,73 +181,11 @@ function slotAt(r: number) {
     rot: a.rot + (b.rot - a.rot) * f,
   };
 }
-function ShuffleCard({
-  it,
-  i,
-  ts,
-  pow,
-}: {
-  it: EventItem;
-  i: number;
-  /** 全カードの進み（何段目かの計算に、他のカードが潜った量も要る） */
-  ts: MotionValue<number>[];
-  /** メリハリ（easePow の強さ） */
-  pow: number;
-}) {
-  const N = ts.length;
-  /* 何段目か（0＝いちばん下）。
-     他のカードが1枚潜るたびに1段上がり、自分が潜る時はいちばん下へ（N 段ぶん下げる） */
-  const rankOf = (vals: number[]) => {
-    let r = i;
-    for (let j = 0; j < N; j++) r += sunk(vals[j], pow);
-    return r - N * sunk(vals[i], pow);
-  };
-  /* 右へ出ている量（0→1→0）。①で右へ出て、②で戻りながら潜る。どちらも対称カーブ */
-  const away = (tv: number) =>
-    tv <= SHUF_SPLIT ? easePow(tv / SHUF_SPLIT, pow) : 1 - sunk(tv, pow);
-  const x = useTransform(ts, (v: number[]) => {
-    const s = slotAt(rankOf(v));
-    return s.cx - STACK[i].cx + away(v[i]) * SHUF_OUT;
-  });
-  const y = useTransform(ts, (v: number[]) => {
-    const s = slotAt(rankOf(v));
-    return s.cy - STACK[i].cy + away(v[i]) * SHUF_DRIFT;
-  });
-  const rot = useTransform(ts, (v: number[]) => {
-    const s = slotAt(rankOf(v));
-    return s.rot + away(v[i]) * SHUF_SPIN;
-  });
-  /* 重なり順：潜り始めた瞬間に、まだ潜っていないカードすべての下へ。
-     潜ったカードどうしは「あとで潜ったものほど下」＝番号が小さいほど下 */
-  const z = useTransform(ts[i], (tv) => (tv > SHUF_SPLIT ? i + 1 : i + 1 + N * 2));
-  return (
-    <motion.div
-      className="group absolute"
-      style={{
-        left: STACK[i].cx - CARD_W / 2,
-        top: STACK[i].cy - CARD_H / 2,
-        width: CARD_W,
-        height: CARD_H,
-        x,
-        y,
-        rotate: rot,
-        zIndex: z,
-      }}
-    >
-      <div className="relative size-full overflow-hidden bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_60px_rgba(0,0,0,.28)]">
-        <img
-          src={it.img}
-          alt={it.title}
-          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-        />
-        <HoverInfo it={it} />
-      </div>
-    </motion.div>
-  );
-}
+/* 2026-10-14：前の ShuffleCard（「1回スクロール＝1枚」で、配列の後ろ＝④がいちばん上）は、
+   左右のボタンで回す LoopCard（下の案31 の所・体験①がいちばん上）に置き換えて削除した */
 
 /* ═══════════ 案32：重なった写真が1枚ずつ右へめくれる ═══════════
-   （2026-09-26 まで案31 も同じ動きだった。案31 は上の ShuffleCard に変更）
+   （2026-09-26 まで案31 も同じ動きだった。案31 は 2026-10-14 から LoopCard＝左右のボタンで切る）
    いちばん上（配列の最後）から順に、右へ回りながら抜けていく。
    最後の1枚は残す＝束が空にならない */
 function StackCard({
@@ -349,89 +290,269 @@ function Frame({
   );
 }
 
-/* ═══════════ 案31 流れる文字と重ね写真 ═══════════ */
-function MarqueeStack() {
-  /* 抜けている枚数（上向きの関所用。下から戻る時に1枚ずつ重ね直す） */
-  const out = useRef(0);
-  /* ⚠️ ピン留めが要る。セクションの高さ（1画面ぶん）だけだと、
-     セクションが見えた時点で進捗が 0.96 まで進んでいて
-     【剥がれ終わった状態からしか見えない】（2026-09-17 実測）。
-     貼りつけて“ため”を置くことで、束 → 1枚ずつ剥がれる、が見えるようになる */
-  /* 4枚めくり終わるまで下へ行かせない見張り（PinStage の hold）。
-     場面の側が毎フレーム「今どこまで流れたか」を書き込む */
-  const hold = useRef(0);
-  /* 2026-09-26：1回スクロール＝1枚になり、場面の中のスクロール量は見た目に
-     関係しなくなった。貼りつく長さは短くして、行き帰りの“空スクロール”を減らす */
+/* ═══════════ 案31 流れる文字と重ね写真（左右のボタンで切る）═══════════
+   【2026-10-14 ヒデさん指示】
+     「スクロールが気持ちいい体験になっていないので、スクロールではなくて、縦長写真の左右に
+       カルーセルっぽくボタンを置いて自由に動かせるように。スクロールでの入れ替わりはなくす。
+       カルーセルで任意で入れ替える形に」「体験の1番が一番上で、2、3、4と重なっている形に」
+   → ・貼りつき（PinStage）と「1回スクロール＝1枚」（useStepCards）はやめた。場面は1画面ぶんの
+       ふつうの箱で、スクロールはそのまま上下へ流れる（下へ行かせない見張りも無い）
+     ・写真の束の左右に丸いボタン（場所えらびと同じ部品 CarouselArrow・白い地用の色）
+       → 【同日 ヒデさん】「左右のボタンは文字のカルーセルスライドショーに被るのでやめたい」
+         束の左右・上下の真ん中＝後ろを流れる文字の帯と同じ高さだった。送りボタンは束の下へ移し、
+         形は5案（EventNav.tsx・調整パネルの「送りボタン」）から選べるようにした
+       次へ：いちばん上の1枚が右へ出て、束のいちばん下へ潜る（2026-09-26 の動きのまま）
+       前へ：いちばん下の1枚が右へ引き出されて、上へ乗る（行きの逆回し）
+     ・重ね順は 体験①（ITEMS[0]）がいちばん上、その下に②③④
+     ・端は無く、ぐるぐる回る（🟡仮置き：最後の④のあとも①へ続けて切れる）
+   動きの作り：pos＝「何回切ったか」（小数＝切っている途中。前へで減る）。1つの値で全カードを動かす。
+     各カードの「上から何番目か」は (自分の番号 − 切った回数) を4で割った余り。切っている途中の1枚だけ
+     ①右へ出る → ②裏へ回っていちばん下へ（ShuffleCard と同じカーブ・同じ秒数とメリハリのつまみ） */
+function LoopCard({
+  it,
+  i,
+  pos,
+  pow,
+}: {
+  it: EventItem;
+  i: number;
+  /** 切った回数（小数＝途中） */
+  pos: MotionValue<number>;
+  pow: number;
+}) {
+  const N = ITEMS.length;
+  /* いまの段（0＝いちばん下〜N-1＝いちばん上）・右へ出ている量・束の裏にいるか */
+  const at = (p: number) => {
+    const k = Math.floor(p);
+    const u = p - k;
+    const d = (((i - k) % N) + N) % N; /* k 回切った時の上からの順番（0＝いちばん上） */
+    if (d === 0) {
+      /* 切られて下へ潜る1枚（前へ戻す時は、下から上へ戻ってくる1枚） */
+      const s = sunk(u, pow);
+      const away = u <= SHUF_SPLIT ? easePow(u / SHUF_SPLIT, pow) : 1 - s;
+      return { r: (N - 1) * (1 - s), away, under: u > SHUF_SPLIT };
+    }
+    /* ほかのカードは、上の1枚が潜るのに合わせて1段ずつ繰り上がる */
+    return { r: N - 1 - d + sunk(u, pow), away: 0, under: false, d };
+  };
+  const x = useTransform(pos, (v: number) => {
+    const a = at(v);
+    return slotAt(a.r).cx - STACK_CX + a.away * SHUF_OUT;
+  });
+  const y = useTransform(pos, (v: number) => {
+    const a = at(v);
+    return slotAt(a.r).cy - STACK_CY + a.away * SHUF_DRIFT;
+  });
+  const rot = useTransform(pos, (v: number) => {
+    const a = at(v);
+    return slotAt(a.r).rot + a.away * SHUF_SPIN;
+  });
+  /* 重なり順：右へ出ている間はいちばん手前、裏へ回ったらいちばん奥。
+     ほかは上の順番どおり（上ほど手前） */
+  const z = useTransform(pos, (v: number) => {
+    const a = at(v);
+    if ("d" in a && a.d !== undefined) return N - a.d;
+    return a.under ? 0 : N * 2;
+  });
   return (
-    <PinStage length={STEP_STAGE_LEN} hold={hold} out={out}>
-      {(q, pinned) => <MarqueeScene q={q} pinned={pinned} hold={hold} out={out} />}
-    </PinStage>
+    <motion.div
+      className="group absolute"
+      style={{
+        left: STACK_CX - CARD_W / 2,
+        top: STACK_CY - CARD_H / 2,
+        width: CARD_W,
+        height: CARD_H,
+        x,
+        y,
+        rotate: rot,
+        zIndex: z,
+      }}
+    >
+      <div className="relative size-full overflow-hidden bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_60px_rgba(0,0,0,.28)]">
+        <img
+          src={it.img}
+          alt={it.title}
+          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+        />
+        <HoverInfo it={it} />
+      </div>
+    </motion.div>
   );
 }
-function MarqueeScene({
-  q,
-  pinned,
-  hold,
-  out,
-}: {
-  q: MotionValue<number>;
-  pinned: React.RefObject<boolean>;
-  hold: React.RefObject<number>;
-  out: React.RefObject<number>;
-}) {
-  /* 1回スクロール＝1枚。案31 は「カードを切る」動きで、秒数は調整パネルから
-     （行きも帰りも同じ秒数・一定の時計。形は ShuffleCard のカーブで作る） */
-  const { ts } = useStepCards(q, pinned, hold, out, () => ({ duration: readShuf().dur }));
+
+/** 束を回す仕組み（PC とスマホで同じ）。
+    pos＝切った回数（小数＝切っている途中）。押した先（target）へ一定の速さで進める。
+    続けて押した時も、今いる所から次の行き先へそのまま進む（途中で止まらない）。
+    top＝いちばん上に来る体験（行き先で数える＝押した瞬間に番号が変わる） */
+export type DeckApi = { step: (dir: 1 | -1) => void; jump: (i: number) => void };
+function useLoopDeck() {
+  const pos = useMemo(() => motionValue(0), []);
+  const target = useRef(0);
+  const [top, setTop] = useState(0);
+  const api = useMemo<DeckApi>(() => {
+    const N = ITEMS.length;
+    const run = () => {
+      const dist = Math.abs(target.current - pos.get());
+      animate(pos, target.current, { duration: readShuf().dur * dist, ease: "linear" });
+      setTop(((target.current % N) + N) % N);
+    };
+    return {
+      /** 1枚送る（1）／戻す（-1） */
+      step: (dir) => {
+        target.current += dir;
+        run();
+      },
+      /** その体験がいちばん上に来るまで、近い向きへ続けて切る（送りボタン 案2 番号のタブ） */
+      jump: (i) => {
+        const f = (((i - target.current) % N) + N) % N;
+        if (!f) return;
+        target.current += f <= N / 2 ? f : f - N;
+        run();
+      },
+    };
+  }, [pos]);
+  return { pos, top, ...api };
+}
+
+/** 送りボタンと束のすき間(px)。束のいちばん下の角から、ボタンの上の縁まで（🟡仮置き） */
+const NAV_GAP = 32;
+/** 束のいちばん下の角が、束の中心から何px下か（カードの回転を含む・カードの大きさ100%の時＝約326px） */
+const STACK_BOTTOM =
+  Math.max(
+    ...STACK.map((s) => {
+      const r = (s.rot * Math.PI) / 180;
+      return s.cy + (CARD_W / 2) * Math.abs(Math.sin(r)) + (CARD_H / 2) * Math.cos(r);
+    })
+  ) - STACK_CY;
+/** 送りボタン 案3：カーソルが矢印になる所は、束の縁からこれだけ外（px）。束の上では今までどおりホバーで情報が出る（🟡仮置き） */
+const ZONE_GAP = 32;
+/** 束の中心が、画面の真ん中から右へ何pxずれているか（カンプの束は 1512 枠の中心より少し右） */
+const STACK_DX = STACK_CX - FRAME_W / 2;
+
+function MarqueeStack() {
+  const { pos, top, step, jump } = useLoopDeck();
   const pow = useShufPow();
+  /* 送りボタンの形（調整パネル「送りボタン」の1〜5） */
+  const nav = useEvNav();
+  const rootRef = useRef<HTMLDivElement>(null);
+  /* 案3：カーソルの位置（場面の箱の左上から）。少しだけ遅れてなめらかに付いてくる */
+  const [zone, setZone] = useState<null | "left" | "right">(null);
+  const [ballDir, setBallDir] = useState<"left" | "right">("right");
+  const mx = useMemo(() => motionValue(0), []);
+  const my = useMemo(() => motionValue(0), []);
+  const bx = useSpring(mx, { stiffness: 700, damping: 45, mass: 0.5 });
+  const by = useSpring(my, { stiffness: 700, damping: 45, mass: 0.5 });
+  const track = (side: "left" | "right") => (e: React.MouseEvent) => {
+    const r = rootRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    mx.set(x);
+    my.set(y);
+    if (zone !== side) {
+      /* 入った瞬間は、その場所へ飛ばす（左上から飛んでこないように） */
+      bx.jump(x);
+      by.jump(y);
+      setZone(side);
+      setBallDir(side);
+    }
+  };
+  /* カードの大きさ（--ev-shuf-card）を変えても、ボタンは束の下に同じすき間で付いてくる。
+     大きくしすぎてボタンが画面の下へはみ出す時は、フレームの下から64pxの所で止める */
+  const navTop = `min(calc(${STACK_CY.toFixed(1)}px + ${STACK_BOTTOM.toFixed(1)}px * var(--ev-shuf-card, 1) + ${NAV_GAP}px), ${FRAME_H - 64}px)`;
+  /* 案3 のカーソルが効く所（束の左の余白・右の余白）。場面の箱の幅いっぱいで数える */
+  const half = `${CARD_W / 2}px * var(--ev-shuf-card, 1)`;
+  const zoneL = { left: 0, width: `calc(50% + ${STACK_DX.toFixed(1)}px - ${half} - ${ZONE_GAP}px)` };
+  const zoneR = { left: `calc(50% + ${STACK_DX.toFixed(1)}px + ${half} + ${ZONE_GAP}px)`, right: 0 };
   return (
-    <Frame
-      full={
-        /* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係）。
-           【2026-09-17 ヒデさん指示】「セクション自体がちょん切れてる感じ。
-             横幅いっぱいに文字が伸びる感じに」→ カンプの1512枠の外に出して、
-             画面の横幅いっぱいに流す */
-        /* 【2026-09-26 ヒデさん指示】「この案を選んだら、後ろのテキストのサイズ感や
-             速度感、カードのサイズ感を変えられるように」→ 大きさ・1周の秒数は CSS 変数
-             （--ev-mq-size / --ev-mq-dur。調整パネルの「案2 カードを切る」）。
-           ⚠️ 大きさを変えても文字の【中心の高さ】はカンプの位置（上から 31+398+40＝469px）に保つ */
+    /* ⚠️ -mt-[180px]：体験セクションの上パディングを打ち消して、場面をちょうど画面いっぱい（1512×982）に
+       （前は PinStage がやっていた。貼りつけはしないので、高さは1画面ぶんだけ） */
+    <div ref={rootRef} className="relative -mt-[180px] h-[982px] w-full overflow-hidden bg-white" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
+      <Frame
+        full={
+          /* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係）。
+             【2026-09-17 ヒデさん指示】「セクション自体がちょん切れてる感じ。
+               横幅いっぱいに文字が伸びる感じに」→ カンプの1512枠の外に出して、
+               画面の横幅いっぱいに流す */
+          /* 【2026-09-26 ヒデさん指示】「この案を選んだら、後ろのテキストのサイズ感や
+               速度感、カードのサイズ感を変えられるように」→ 大きさ・1周の秒数は CSS 変数
+               （--ev-mq-size / --ev-mq-dur。調整パネルの「案2 カードを切る」）。
+             ⚠️ 大きさを変えても文字の【中心の高さ】はカンプの位置（上から 31+398+40＝469px）に保つ */
+          <div
+            className="pointer-events-none absolute inset-x-0 overflow-hidden"
+            style={{
+              top: `calc(${(CANVAS_H - FRAME_H) / 2 + 398 + 40}px - var(--ev-mq-size, 80px) / 2)`,
+              height: "var(--ev-mq-size, 80px)",
+            }}
+          >
+            <div
+              className="tp-marquee flex whitespace-nowrap"
+              style={{ animationDuration: "var(--ev-mq-dur, 34s)" }}
+            >
+              {[0, 1].map((k) => (
+                <span
+                  key={k}
+                  className="shrink-0 pr-[0.4em] font-thin leading-none text-black/80"
+                  style={{ fontSize: "var(--ev-mq-size, 80px)" }}
+                >
+                  意外とオモロい、網走。意外とオモロい、網走。意外とオモロい、網走。
+                </span>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        {/* カードの大きさは束の中心を基準に束ごと拡大縮小（--ev-shuf-card。右へ出る距離も比例） */}
         <div
-          className="pointer-events-none absolute inset-x-0 overflow-hidden"
+          className="absolute inset-0"
           style={{
-            top: `calc(${(CANVAS_H - FRAME_H) / 2 + 398 + 40}px - var(--ev-mq-size, 80px) / 2)`,
-            height: "var(--ev-mq-size, 80px)",
+            transform: "scale(var(--ev-shuf-card, 1))",
+            transformOrigin: `${STACK_CX}px ${STACK_CY}px`,
           }}
         >
-          <div
-            className="tp-marquee flex whitespace-nowrap"
-            style={{ animationDuration: "var(--ev-mq-dur, 34s)" }}
-          >
-            {[0, 1].map((k) => (
-              <span
-                key={k}
-                className="shrink-0 pr-[0.4em] font-thin leading-none text-black/80"
-                style={{ fontSize: "var(--ev-mq-size, 80px)" }}
-              >
-                意外とオモロい、網走。意外とオモロい、網走。意外とオモロい、網走。
-              </span>
-            ))}
-          </div>
+          {ITEMS.map((it, i) => (
+            <LoopCard key={it.title} it={it} i={i} pos={pos} pow={pow} />
+          ))}
         </div>
-      }
-    >
-      {/* 【2026-09-26】案31 はトランプを切る動き（上の1枚が束の下へ潜る）。
-          カードの大きさは束の中心を基準に束ごと拡大縮小（--ev-shuf-card。右へ出る距離も比例） */}
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: "scale(var(--ev-shuf-card, 1))",
-          transformOrigin: `${STACK_CX}px ${STACK_CY}px`,
-        }}
-      >
-        {ITEMS.map((it, i) => (
-          <ShuffleCard key={it.title} it={it} i={i} ts={ts} pow={pow} />
-        ))}
-      </div>
-    </Frame>
+        {/* 送りボタン（案1・2・4・5）。束の下の真ん中・束の幅の箱の中に並べる。カードより手前 */}
+        {nav !== 3 && (
+          <div
+            className="absolute z-50 flex -translate-x-1/2 justify-center"
+            style={{ left: STACK_CX, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))` }}
+          >
+            <EvNav nav={nav} top={top} count={ITEMS.length} onStep={step} onJump={jump} />
+          </div>
+        )}
+      </Frame>
+      {/* 送りボタン 案3：束の左右の余白にカーソルを乗せると丸い矢印のカーソルになり、押すと送る／戻す */}
+      {nav === 3 && (
+        <>
+          {(["left", "right"] as const).map((side) => (
+            <button
+              key={side}
+              type="button"
+              aria-label={side === "left" ? "前の体験へ" : "次の体験へ"}
+              onClick={() => step(side === "left" ? -1 : 1)}
+              onMouseEnter={track(side)}
+              onMouseMove={track(side)}
+              onMouseLeave={() => setZone(null)}
+              className="absolute inset-y-0 z-40 cursor-none"
+              style={side === "left" ? zoneL : zoneR}
+            />
+          ))}
+          <motion.div className="pointer-events-none absolute left-0 top-0 z-[60]" style={{ x: bx, y: by }}>
+            <motion.div
+              style={{ x: "-50%", y: "-50%" }}
+              initial={false}
+              animate={zone ? { scale: 1, opacity: 1 } : { scale: 0.4, opacity: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <CursorBall dir={ballDir} />
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -559,6 +680,7 @@ export function MobileStack({
   gate,
   scale,
   onTop,
+  api,
 }: {
   /** shuffle＝案31 カードを切る ／ peel＝案32 右へめくれる */
   kind: "shuffle" | "peel";
@@ -567,6 +689,8 @@ export function MobileStack({
   scale: number;
   /** いちばん上に来たカードの番号（ITEMS の添字）を知らせる */
   onTop?: (i: number) => void;
+  /** 案31：送りボタン（束の外＝MobileEvents 側に置く）から束を回すための入口 */
+  api?: React.RefObject<DeckApi | null>;
 }) {
   const q = useMemo(() => motionValue(1), []);
   const pinned = useRef(true);
@@ -586,9 +710,27 @@ export function MobileStack({
   const n = useRef(0);
   const onTopRef = useRef(onTop);
   onTopRef.current = onTop;
+  /* 案31：PC と同じ LoopCard で、体験①がいちばん上・その下に②③④（2026-10-14 ヒデさん「体験の1番が一番上で、
+     2、3、4と重なっている形に」）。入れ替えも PC と同じ送りボタン（同日 ヒデさん「スマホもボタンに」）。
+     ボタンは束の下（MobileEvents の StackScene）に置き、api から回す（束の左右に置くと、後ろを流れる文字に
+     重なったため・同日）。上下のスワイプではカードを切らず、いつも場面の切り替えだけ（gate は渡さない）。
+     端は無く、ぐるぐる回る（🟡） */
+  const deck = useLoopDeck();
+  const loopPos = deck.pos;
+  useEffect(() => {
+    if (kind === "shuffle") onTopRef.current?.(deck.top);
+  }, [kind, deck.top]);
+  useEffect(() => {
+    if (!api || kind !== "shuffle") return;
+    api.current = { step: deck.step, jump: deck.jump };
+    return () => {
+      api.current = null;
+    };
+  }, [api, kind, deck.step, deck.jump]);
   /* ⚠️ gate は effect の中で渡す。描画中に書くと、案を切り替えた時に
      消える側の後片付けが新しい方の gate を消してしまう */
   useEffect(() => {
+    if (kind === "shuffle") return; /* 案31 はボタンで入れ替える。スワイプは場面の切り替えへそのまま流す */
     const fn = (dir: 1 | -1) => {
       const moved = inner.current?.(dir) ?? false;
       if (moved) {
@@ -624,7 +766,7 @@ export function MobileStack({
         >
           {ITEMS.map((it, i) =>
             kind === "shuffle" ? (
-              <ShuffleCard key={it.title} it={it} i={i} ts={ts} pow={pow} />
+              <LoopCard key={it.title} it={it} i={i} pos={loopPos} pow={pow} />
             ) : (
               <StackCard key={it.title} it={it} i={i} t={ts[i]} nudge={nudges[i]} flow={flow} />
             )

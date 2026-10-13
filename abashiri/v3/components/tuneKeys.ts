@@ -4,4 +4,4 @@
  * ⚠️ 版（VERSION）を上げると古い保存値が捨てられる。TopTunePanel と必ず同じ値を使うこと
  *    （ここを直せば両方に効く）。 */
 export const TOP_TUNE_KEY = "abashiri-top-tune";
-export const TOP_TUNE_VERSION = 41;
+export const TOP_TUNE_VERSION = 42; /* 2026-10-14 体験の既定を案2・グルメはホバーで止めないに。古い保存値を破棄 */

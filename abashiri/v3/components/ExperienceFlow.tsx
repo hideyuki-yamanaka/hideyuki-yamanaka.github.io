@@ -23,6 +23,7 @@ import {
   useTransform,
   type Variants,
 } from "framer-motion";
+import CarouselArrow from "./CarouselArrow";
 import GlobalNav from "./GlobalNav";
 import { devSilent } from "./devSound";
 import { findEnter, type EnterPattern } from "./enterPatterns";
@@ -227,21 +228,9 @@ const STEP = CARD_W + CARD_GAP; /* カード1枚ぶんの送り幅 = 964 */
 /* ホバーで触れると分かる程度に。カンプに拡大状態が無いので控えめに */
 const HOVER_SCALE = 1.01;
 
-function Chevron({ dir }: { dir: "left" | "right" }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="size-[24px]" aria-hidden>
-      <path
-        d={dir === "left" ? "M15 5L8 12l7 7" : "M9 5l7 7-7 7"}
-        stroke="white"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/* 白ベース＋背面ブラーのスライダーボタン。サイトのすりガラス調に合わせる */
+/* 白ベース＋背面ブラーのスライダーボタン。サイトのすりガラス調に合わせる。
+   2026-10-14：トップの体験セクション（案2）でも同じボタンを使うため、共通の部品（CarouselArrow）にまとめた。
+   形・色はここで使っていたまま（tone="onDark"） */
 function SliderButton({
   dir,
   onClick,
@@ -250,12 +239,14 @@ function SliderButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <CarouselArrow
+      dir={dir}
       onClick={onClick}
-      aria-label={dir === "left" ? "前の場所へ" : "次の場所へ"}
+      label={dir === "left" ? "前の場所へ" : "次の場所へ"}
+      tone="onDark"
       /* 中央カードの左右の端に乗せる（半幅452 の 62px 内側 ＝ カードのフチから28px）。
          画面幅に依らないよう、器の中央からの相対位置で置く */
+      className="absolute top-1/2 z-20"
       style={{
         left: "50%",
         transform:
@@ -263,11 +254,7 @@ function SliderButton({
             ? "translate(calc(-50% - 390px), -50%)"
             : "translate(calc(-50% + 390px), -50%)",
       }}
-      /* v1.2: 地・枠をボタン共通仕様（white/10 + 白40%リング）に統一 */
-      className="absolute top-1/2 z-20 flex size-[68px] cursor-pointer items-center justify-center rounded-full bg-white/10 ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/25"
-    >
-      <Chevron dir={dir} />
-    </button>
+    />
   );
 }
 

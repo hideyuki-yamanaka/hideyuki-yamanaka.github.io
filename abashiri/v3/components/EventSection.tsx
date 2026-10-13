@@ -140,7 +140,7 @@ function Pattern({ pat, p }: { pat: number; p: MotionValue<number> }) {
 }
 
 export default function EventSection() {
-  const [pat, setPat] = useState(1); /* 案10は完全削除したので案1を既定に（2026-09-16） */
+  const [pat, setPat] = useState(31); /* 2026-10-14 ヒデさん「案2をデフォルトに」（値は31）。読み込み前にも案2を出す（前は案1） */
   const [tail, setTail] = useState(DEFAULT_EVENT_TAIL);
   useEffect(() => {
     fetch("/tune-defaults.json", { cache: "no-store" })
