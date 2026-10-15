@@ -23969,6 +23969,20 @@
     "lastCheckedAt": "2026-10-02T07:58:17.636Z"
   },
   {
+    "id": "d4e39af8e197",
+    "title": "Wedding Invitation",
+    "url": "https://wedding.s-tmro.com/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/s_t_wedding_thumbnail-768x576.png",
+    "source": "muuuuu",
+    "category": [
+      "wedding"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-15T16:26:47.638Z"
+  },
+  {
     "id": "4c783a7d799e",
     "title": "株式会社サン防災",
     "url": "https://sunbousai.jp/",
@@ -24940,22 +24954,6 @@
     "firstSeen": "2026-05-19T04:00:31.253Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:25.114Z"
-  },
-  {
-    "id": "118c2998522a",
-    "title": "フラッグシップ株式会社",
-    "url": "https://flagship.inc/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/09.webp",
-    "source": "muuuuu",
-    "category": [
-      "technology"
-    ],
-    "taste": [],
-    "date": "2026-07",
-    "starred": false,
-    "firstSeen": "2026-07-12T03:18:46.073Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:24.748Z"
   },
   {
     "id": "f16de5df7979",
@@ -35662,6 +35660,22 @@
     "lastCheckedAt": "2026-10-02T08:00:26.035Z"
   },
   {
+    "id": "8240aab09168",
+    "title": "ベルサイユのばら限定ラベル｜ワンカップ大関",
+    "url": "https://www.ozeki.co.jp/onecup_verbara/",
+    "thumbnailUrl": "https://lp.webdesignclip.com/wp-content/uploads/lp20261015_01-500x817.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "食品・飲料・飲食"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-09-30T17:43:56.783Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T08:02:57.286Z"
+  },
+  {
     "id": "fcf347a61371",
     "title": "モナキ×ルルルン｜限定コラボキャンペーンVol.2",
     "url": "https://lululun.com/shop/pages/lululun_monaki2609",
@@ -38928,22 +38942,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:00:56.590Z"
-  },
-  {
-    "id": "203dc8a73f97",
-    "title": "ポッカレモン100プレミアム　有機レモン | ポッカサッポロ",
-    "url": "https://www.pokkasapporo-fb.jp/lemon100/plyuki/",
-    "thumbnailUrl": "https://lp.webdesignclip.com/wp-content/uploads/20251107_01-500x817.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "食品・飲料・飲食"
-    ],
-    "taste": [],
-    "date": "2025-11",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:00:56.760Z"
   },
   {
     "id": "8719a750f6fe",
@@ -42312,6 +42310,25 @@
     "date": "2026-09",
     "starred": false,
     "firstSeen": "2026-08-31T04:43:27.183Z"
+  },
+  {
+    "id": "6026f4c5041f",
+    "title": "フラッグシップ株式会社｜Shopify Platinumパートナー｜ECサイト構築・制作｜越境ECアプリ・プラグイン開発",
+    "url": "https://flagship.inc/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2026/09/260904-1-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "コーポレートサイト",
+      "企画",
+      "制作",
+      "開発"
+    ],
+    "taste": [],
+    "date": "2026-09",
+    "starred": false,
+    "firstSeen": "2026-07-12T03:18:46.073Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:24.748Z"
   },
   {
     "id": "50910b0b1b49",
@@ -48799,6 +48816,57 @@
     "firstSeen": "2026-10-15T03:16:26.613Z"
   },
   {
+    "id": "9dba7a946abe",
+    "title": "eラーニングのプロシーズ",
+    "url": "https://www.pro-seeds.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/3wahtgx4fbpv-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-15T16:26:47.638Z"
+  },
+  {
+    "id": "f681762b910b",
+    "title": "株式会社サイバーエージェント DXコンサルティング本部",
+    "url": "https://cyberagent-dxconsulting.jp/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/qmsyb81no6tw-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-15T16:26:47.638Z"
+  },
+  {
+    "id": "88836ed7dbae",
+    "title": "FLOWER CREATION ROOM",
+    "url": "https://flowercreationroom.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/vo5q8mljr94b-1400x1050.webp",
+    "source": "s5style",
+    "category": [
+      "BtoCコーポレートサイト",
+      "BtoBコーポレートサイト",
+      "ウェディング",
+      "花･木･葉･植物"
+    ],
+    "taste": [
+      "タイポグラフィー･文字",
+      "写真･フォトディレクション",
+      "スクロールエフェクト"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-15T16:26:47.638Z"
+  },
+  {
     "id": "f3144d36df38",
     "title": "きものレンタル たおや堂",
     "url": "https://www.taoyado.jp/",
@@ -49258,32 +49326,6 @@
     "firstSeen": "2026-10-02T04:09:00.184Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:02:56.636Z"
-  },
-  {
-    "id": "9c7debe1c820",
-    "title": "「ベルサイユのばら×ワンカップ®大関」特設サイト",
-    "url": "https://www.ozeki.co.jp/onecup_verbara/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/mhu7rnea85zi-1400x1050.webp",
-    "source": "s5style",
-    "category": [
-      "ECサイト",
-      "モバイルサイト",
-      "特設サイト",
-      "ランディングページ",
-      "プロダクトサイト"
-    ],
-    "taste": [
-      "タイポグラフィー･文字",
-      "イラスト",
-      "写真･フォトディレクション",
-      "ロゴデザイン",
-      "スクロールエフェクト"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-09-30T17:43:56.783Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:02:57.286Z"
   },
   {
     "id": "ff0502d16d4a",
@@ -53489,48 +53531,6 @@
     "firstSeen": "2026-06-06T15:26:28.565Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:44.078Z"
-  },
-  {
-    "id": "2a2b466bec0b",
-    "title": "共栄木材",
-    "url": "https://www.kyoei-lumber.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/kum2asoh1t7g-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoCコーポレートサイト",
-      "建築･建設･不動産･家"
-    ],
-    "taste": [
-      "写真･フォトディレクション",
-      "動画･映像",
-      "グリッドデザイン"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:43.871Z"
-  },
-  {
-    "id": "b511a6af52ef",
-    "title": "社会福祉法人 ひかり苑",
-    "url": "https://www.hikari-en.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/m93irp6tn1fj-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoCコーポレートサイト",
-      "学校･教育･医療･福祉"
-    ],
-    "taste": [
-      "アイコン･ピクトグラム",
-      "タイポグラフィー･文字",
-      "写真･フォトディレクション"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-06-06T15:26:28.565Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:44.965Z"
   },
   {
     "id": "61dbd2acd28e",
