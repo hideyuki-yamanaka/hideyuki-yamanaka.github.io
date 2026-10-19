@@ -1,5 +1,33 @@
 [
   {
+    "id": "a873dce4d84d",
+    "title": "SHIJIMA ATAMI | 都会の喧騒から離れたホテル",
+    "url": "https://shijima-atami.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/shijimaatami_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-19T03:20:11.847Z"
+  },
+  {
+    "id": "32b921394d16",
+    "title": "採用情報 | 株式会社kubell（旧 Chatwork株式会社）",
+    "url": "https://career.kubell.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/kubellcareer_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-14T16:36:33.864Z"
+  },
+  {
     "id": "b249b82a69cc",
     "title": "UNION TEC | 人類に意義ある空間を",
     "url": "https://www.union-tec.jp/",
@@ -11540,38 +11568,6 @@
     "firstSeen": "2026-06-13T04:08:32.368Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:56:11.285Z"
-  },
-  {
-    "id": "d6381668a32a",
-    "title": "SANU 2nd Home Co-Owners | 自然がもうひとつの家になる。",
-    "url": "https://www.sa-nu.com/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/sanu_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2025-05",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:56:10.469Z"
-  },
-  {
-    "id": "20e2c14d28a5",
-    "title": "【公式】シーサイドイタリアン カンティーナ | 逗子のイタリアン",
-    "url": "https://www.cantina-zushi.com/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/cantina_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2025-05",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:56:12.042Z"
   },
   {
     "id": "95ac504351af",
@@ -29775,6 +29771,25 @@
     "lastCheckedAt": "2026-10-02T08:01:40.700Z"
   },
   {
+    "id": "246e694dd020",
+    "title": "株式会社ベスティはスポーツを中心にあら ゆるコンテンツ、イベントを制作するプロ ダクションです。",
+    "url": "https://bestie-sports.co.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2026/10/261019-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "コーポレートサイト",
+      "TV",
+      "映画",
+      "芸能"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-08-15T01:34:54.923Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T08:03:17.107Z"
+  },
+  {
     "id": "d5780097b836",
     "title": "Featured Projects 2026 ｜ものが生まれる、その「間」",
     "url": "https://2026.featuredprojects.jp/",
@@ -30859,22 +30874,6 @@
       "企画",
       "制作",
       "開発"
-    ],
-    "taste": [],
-    "date": "2026-05",
-    "starred": false,
-    "firstSeen": "2026-10-14T16:36:33.864Z"
-  },
-  {
-    "id": "efff7e59ff28",
-    "title": "採用情報 | 株式会社kubell（旧 Chatwork株式会社）",
-    "url": "https://career.kubell.com/",
-    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2026/05/260518-1-640x480.jpg",
-    "source": "81web",
-    "category": [
-      "採用サイト",
-      "Webサービス",
-      "アプリ"
     ],
     "taste": [],
     "date": "2026-05",
@@ -33445,6 +33444,45 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:56:12.100Z"
+  },
+  {
+    "id": "3ef92520faa0",
+    "title": "【公式】シーサイドイタリアン カンティーナ｜逗子のイタリアン",
+    "url": "https://www.cantina-zushi.com/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/08/250804-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "飲料",
+      "食品"
+    ],
+    "taste": [],
+    "date": "2025-08",
+    "starred": false,
+    "firstSeen": "2026-04-19T11:40:43.578Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:56:12.042Z"
+  },
+  {
+    "id": "c5f742bc4ac2",
+    "title": "SANU 2nd Home Co-Owners | 自然がもうひとつの家になる。",
+    "url": "https://www.sa-nu.com/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/07/250725-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "暮らし",
+      "建築",
+      "不動産"
+    ],
+    "taste": [],
+    "date": "2025-08",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:56:10.469Z"
   },
   {
     "id": "45d9936237be",
@@ -44712,28 +44750,6 @@
     "firstSeen": "2026-08-15T01:34:54.923Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:15.397Z"
-  },
-  {
-    "id": "9f1e2a8634a5",
-    "title": "株式会社ベスティ",
-    "url": "https://bestie-sports.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/len7tdp5gc6o-1400x1050.webp",
-    "source": "s5style",
-    "category": [
-      "BtoCコーポレートサイト",
-      "BtoBコーポレートサイト",
-      "スポーツ･アウトドア"
-    ],
-    "taste": [
-      "動画･映像",
-      "スクロールエフェクト",
-      "UI フラット"
-    ],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-08-15T01:34:54.923Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:17.107Z"
   },
   {
     "id": "cca738d7094c",
