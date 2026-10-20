@@ -1,5 +1,5 @@
 /*!
- * tune-panel.js v2.3.1 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段／2026-10-02 文字の行）
+ * tune-panel.js v2.3.2 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段／2026-10-02 文字の行）
  * 1ファイル / 依存なし / CSSも自分で流し込む。
  *
  *   <script src="tune-panel.js"></script>
@@ -19,7 +19,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '2.3.0';
+  var VERSION = '2.3.2';
 
   /* ============================================================
      0. 小道具
@@ -661,11 +661,17 @@
     var k = String(v);
     return this.opts().filter(function (o) { return String(o.value) === k; })[0] || null;
   };
-  /* コードに書いた「その案の最初の値」（options[].values → 無ければ defaults） */
+  /* コードに書いた「その案の最初の値」（options[].values → 無ければ defaults）。
+     ただし、ページを開いた時に選ばれていた案だけは、ページが渡した params の値（焼き込み込み・ブラウザの保存を重ねる前）を最初の値にする。
+     values より params を正にしないと、初めて来た人（保存の無い人）には焼き込みが効かない（v2.3.2・2026-10-20 網走V3 で発覚） */
   Ctl.prototype.baseOf = function (v) {
     var o = this.opt(v), vals = o && o.values, out = {};
+    var pre = this.p._pre, pin = !!pre && String(this.acc._get(pre)) === String(v);
     this.scope.forEach(function (a) {
-      var x = vals ? lookup(vals, a.path) : undefined;
+      var x = pin ? a._get(pre) : undefined;
+      /* 廃止した選択肢は使わない（_validate と同じ） */
+      if (x !== undefined && a.enumOpts && a.enumOpts.length && !a.enumOpts.some(function (e) { return String(e.value) === String(x); })) x = undefined;
+      if (x === undefined && vals) x = lookup(vals, a.path);
       out[a.key] = x !== undefined ? clone(x) : a.def();
     });
     return out;
@@ -735,6 +741,7 @@
 
     injectCSS();
     this._buildShell();
+    this._pre = clone(this.params);   /* ページが渡した値（焼き込み込み）。ブラウザの保存を重ねる前に控える（baseOf・v2.3.2） */
     var had = this._loadStored();
     this._loadUI();
     this._render();
@@ -800,7 +807,8 @@
     }
     var st = this._readStore(), had = false;
     if (st.params) { assignDeep(this.params, mergeSaved(this.defaults, st.params)); had = true; }
-    takeFonts(this.params, st.params, this.defaults);
+    /* 保存が無い時は、ページが渡した文字の行の値（焼き込み）をそのまま使う。初期値の文字の行で上書きしない（v2.3.2） */
+    takeFonts(this.params, st.params || this._pre, this.defaults);
     this._mb = st.mb || {};
     this._takeVars(st.vs);
     return had;
@@ -2485,7 +2493,8 @@
   };
   Panel.prototype._startup = function (had) {
     var ctls = this._ctls.slice().sort(function (a, b) { return a.depth - b.depth; });
-    /* 保存値がある時は、それがいま選んでいる案の値そのもの（控えより保存値を正にする） */
+    /* 保存値がある時は、それがいま選んでいる案の値そのもの（控えより保存値を正にする）。
+       保存値が無い時の「最初の値」は、開いた時に選ばれていた案なら params の値そのもの（＝焼き込みが残る。baseOf・v2.3.2） */
     if (!had) ctls.forEach(function (c) { if (!c.owns) return; var v = c.sel(); c.apply(c.st().ov[String(v)] || null, v); });
     if (this._isPhone) {
       this._pcBase = clone(this.params);

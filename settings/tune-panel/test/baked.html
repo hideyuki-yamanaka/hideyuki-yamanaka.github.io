@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>焼き込みの検査</title>
+<!--
+  自動検査（check.mjs の 18.）で使う小さなページ。ページの見た目は検査で測るためだけの物。
+  ページが「焼き込み」（tune-defaults.json など）を params に重ねてからパネルを作る形を、3通り試せる。
+    ?bake=all    … 初期値（defaults）と params の両方に重ねる（網走V3 の TopTunePanel と同じ形）
+    ?bake=params … params にだけ重ねる（初期値はコードの値のまま）
+    ?bake=none   … 焼き込み無し（コードの既定だけ）
+  コードの既定は、選ばれている案（強調・なめらか）の「案の最初の値」と同じ値にしてある（見本 demo と同じ書き方）。
+-->
+<style>
+  body { margin: 0; font-family: sans-serif; background: #fff; color: #111; }
+  #kv { box-sizing: border-box; padding: 16px; }
+  #copy { margin: 0; }
+  #gfx { height: 40px; background: #3b6cff; }
+  #foot { height: 40px; background: #222; }
+</style>
+</head>
+<body>
+<div id="kv"><p id="copy">網走の流氷</p><div id="gfx"></div></div>
+<div id="foot"></div>
+<script src="../tune-panel.js"></script>
+<script>
+const DEFAULTS = {
+  kv: { variant: 'strong', width: 72, glow: 60, align: 'left', gfx: { size: 400, opacity: 100 } },
+  foot: { look: 'soft', fade: 72, overlap: 400 },
+  __font: { copy: { fs: 72 } }
+};
+/* 焼き込み（パネルの「設定書き出し」を Claude が焼き込んだ物のつもり）。選ばれている案は同じで、値だけ違う */
+const BAKED = {
+  kv: { variant: 'strong', width: 88, glow: 30, align: 'center', gfx: { size: 480, opacity: 80 } },
+  foot: { look: 'soft', fade: 130, overlap: 872 },
+  __font: { copy: { fs: 96, fw: 700 } }
+};
+const mode = new URLSearchParams(location.search).get('bake') || 'all';
+const params = structuredClone(DEFAULTS);
+if (mode === 'all') { Object.assign(DEFAULTS, structuredClone(BAKED)); Object.assign(params, structuredClone(BAKED)); }
+if (mode === 'params') Object.assign(params, structuredClone(BAKED));
+window.__baked = { mode, DEFAULTS: structuredClone(DEFAULTS), BAKED };
+
+/* 画面へ当てる（文字の行は部品が #copy へ直接当てる） */
+function render() {
+  const k = params.kv, f = params.foot, kv = document.getElementById('kv'), gfx = document.getElementById('gfx'), foot = document.getElementById('foot');
+  kv.style.width = k.width * 8 + 'px';
+  kv.style.textAlign = k.align;
+  kv.dataset.variant = k.variant;
+  kv.style.setProperty('--glow', String(k.glow));
+  gfx.style.width = k.gfx.size + 'px';
+  gfx.style.opacity = String(k.gfx.opacity / 100);
+  foot.dataset.look = f.look;
+  foot.style.setProperty('--fade', String(f.fade));
+  foot.style.marginTop = -f.overlap + 'px';
+}
+/* 検査が「画面の値」を読む所（画面に当たっている指定から逆に読む） */
+window.__screen = () => {
+  const kv = document.getElementById('kv'), gfx = document.getElementById('gfx'), foot = document.getElementById('foot'), copy = getComputedStyle(document.getElementById('copy'));
+  return {
+    'kv.variant': kv.dataset.variant,
+    'kv.width': parseFloat(getComputedStyle(kv).width) / 8,
+    'kv.glow': +kv.style.getPropertyValue('--glow'),
+    'kv.align': getComputedStyle(kv).textAlign,
+    'kv.gfx.size': parseFloat(getComputedStyle(gfx).width),
+    'kv.gfx.opacity': Math.round(+getComputedStyle(gfx).opacity * 100),
+    '__font.copy.fs': parseFloat(copy.fontSize),
+    '__font.copy.fw': +copy.fontWeight,
+    'foot.look': foot.dataset.look,
+    'foot.fade': +foot.style.getPropertyValue('--fade'),
+    'foot.overlap': -parseFloat(getComputedStyle(foot).marginTop)
+  };
+};
+
+const panel = TunePanel.create({
+  title: '調整パネル',
+  storageKey: 'tp-baked-' + mode,
+  version: 1,
+  params, defaults: DEFAULTS,
+  schema: [
+    { cat: 'キービジュアル', items: [
+      { pills: 'キービジュアルの案', path: 'kv.variant', options: [
+        { name: 'ノーマル', value: 'normal', values: { 'kv.width': 56, 'kv.glow': 0, 'kv.gfx.size': 320, '__font.copy.fs': 56 } },
+        { name: '強調', value: 'strong', values: { 'kv.width': 72, 'kv.glow': 60, 'kv.gfx.size': 400, '__font.copy.fs': 72 } },
+        { name: 'ミニマル', value: 'minimal', values: { 'kv.width': 44, 'kv.align': 'center', 'kv.gfx.size': 240, '__font.copy.fs': 44 } }
+      ]},
+      { sub: 'コピーの箱' },
+      { slider: '幅', path: 'kv.width', min: 0, max: 160, step: 4, fmt: 'px' },
+      { seg: '揃え', path: 'kv.align', options: [['左', 'left'], ['中央', 'center']] },
+      { font: 'コピー', sel: '#copy', id: 'copy' },
+      { sub: 'グラフィック' },
+      { slider: '大きさ', path: 'kv.gfx.size', min: 0, max: 800, step: 4, fmt: 'px' },
+      { slider: '不透明度', path: 'kv.gfx.opacity', min: 0, max: 100, step: 1, unit: '%', clamp: true },
+      { slider: '光の強さ', path: 'kv.glow', min: 0, max: 100, step: 1, unit: '%', clamp: true }
+    ]},
+    { cat: 'フッター', items: [
+      /* 見出しの中の案ピル＝名前つきの「選ぶ」行（網走V3 のフッターの透け方と同じ形） */
+      { sub: 'フッターの透け方', grp: 'fxtex' },
+      { pills: '透け方', path: 'foot.look', options: [
+        { name: 'なめらか', value: 'soft', values: { 'foot.fade': 72, 'foot.overlap': 400 } },
+        { name: 'くっきり', value: 'hard', values: { 'foot.fade': 20, 'foot.overlap': 0 } }
+      ]},
+      { slider: 'フェードの長さ', path: 'foot.fade', min: 0, max: 200, step: 2, unit: '%' },
+      { slider: '重なり', path: 'foot.overlap', min: 0, max: 1200, step: 8, fmt: 'px' }
+    ]}
+  ],
+  onChange: render
+});
+render();
+</script>
+</body>
+</html>

@@ -1119,6 +1119,81 @@ try {
       `読み直した後 PC ${JSON.stringify(kept.v)}（画面 ${kept.fs}）・スマホの上書き ${kept.mb}`);
     await context.close();
   }
+
+  /* ============ 18. 焼き込み：まっさらなブラウザ（初めて来た人）でも、焼き込みの値＝画面の値（v2.3.2・2026-10-20 網走V3 で発覚） ============
+     検査用ページ test/baked.html：ページが焼き込みを params に重ねてからパネルを作る。選ばれている案（強調・なめらか）には「案の最初の値」がある。
+     直す前は、保存の無い人だけ、案の values に書いたキーが案の最初の値へ戻っていた（焼き込みがデプロイしても届かない） */
+  {
+    const BURL = `http://localhost:${PORT}/test/baked.html`;
+    const flat = (o, pre = '', out = {}) => { for (const [k, v] of Object.entries(o)) { const p = pre ? pre + '.' + k : k; if (v && typeof v === 'object') flat(v, p, out); else out[p] = v; } return out; };
+    const getP = (o, p) => p.split('.').reduce((x, k) => (x == null ? undefined : x[k]), o);
+    const screen = page => page.evaluate(() => window.__screen());
+    async function openBaked(mode) {
+      const { context, page } = await newPage();
+      await page.goto(BURL + '?bake=' + mode);
+      await page.waitForFunction(() => window.TunePanel && TunePanel.instances.length > 0);
+      await page.waitForTimeout(120);
+      return { context, page };
+    }
+    /* 焼き込み（または焼き込み無しならコードの既定）の全部の値を、パネルの値と画面の値の両方で照らし合わせる */
+    async function compareAll(page) {
+      const r = await page.evaluate(() => {
+        const p = TunePanel.instances[0];
+        return { want: window.__baked.mode === 'none' ? window.__baked.DEFAULTS : window.__baked.BAKED, scr: window.__screen(), params: JSON.parse(JSON.stringify(p.params)),
+          custom: p._ctls.filter(c => c.custom(c.sel())).map(c => c.id), stored: Object.keys(localStorage).filter(k => /^tp:tp-baked-[a-z]+:v1$/.test(k)).length };
+      });
+      const want = flat(r.want), keys = Object.keys(want);
+      const bad = keys.filter(k => r.scr[k] !== want[k] || getP(r.params, k) !== want[k]).map(k => `${k} 焼き込み ${want[k]}→パネル ${getP(r.params, k)}・画面 ${r.scr[k]}`);
+      return { n: keys.length, bad, custom: r.custom, stored: r.stored };
+    }
+    for (const [mode, label] of [['all', '初期値と params の両方に重ねる・網走V3 の形'], ['params', 'params にだけ重ねる']]) {
+      const { context, page } = await openBaked(mode);
+      const r = await compareAll(page);
+      rec(`焼き込み（${label}）：まっさらなブラウザで、焼き込みの全部の値＝パネルの値＝画面の値（選ばれている案の最初の値に戻らない・文字の行も）`,
+        r.stored === 0 && r.n === 11 && r.bad.length === 0,
+        `保存 ${r.stored} 件のブラウザで ${r.n} 値を測って、違う物 ${r.bad.length}${r.bad.length ? '（' + r.bad.join(' / ') + '）' : ''}`);
+      await context.close();
+    }
+    {
+      const { context, page } = await openBaked('none');
+      const r = await compareAll(page);
+      rec('焼き込み無し（コードの既定だけ）：まっさらなブラウザで、コードの値＝画面の値（直す前と同じ）', r.n === 10 && r.bad.length === 0,
+        `${r.n} 値を測って、違う物 ${r.bad.length}${r.bad.length ? '（' + r.bad.join(' / ') + '）' : ''}`);
+      await context.close();
+    }
+    {
+      const { context, page } = await openBaked('all');
+      const c0 = await compareAll(page);
+      await showPanel(page);
+      /* 行の ↺：開いた時の値＝焼き込みへ戻る */
+      await setSlider(page, 'kv.gfx.size', 600);
+      const moved = (await screen(page))['kv.gfx.size'];
+      await page.click('.tp-item[data-key="kv.gfx.size"] .tp-rst'); await page.waitForTimeout(60);
+      const rst = (await screen(page))['kv.gfx.size'];
+      /* 案の ⋯ →「上書きを解除」：戻る先も焼き込み（コードの 400 ではない） */
+      await setSlider(page, 'kv.gfx.size', 600);
+      const custom1 = await page.evaluate(() => TunePanel.instances[0]._ctls[0].custom('strong'));
+      await pillMenu(page, 'kv.variant', 'strong', '↺ 上書きを解除');
+      const cleared = (await screen(page))['kv.gfx.size'];
+      /* ほかの案は今までどおり「案の最初の値」・戻ってくると焼き込み */
+      await pickVariant(page, 'kv.variant', 'normal');
+      const normal = await screen(page);
+      await pickVariant(page, 'kv.variant', 'strong');
+      const back = await compareAll(page);
+      rec('焼き込みの案に「上書き済み」の印が付かない・行の ↺ と「上書きを解除」で戻る先も焼き込みの値・ほかの案は案の最初の値のまま',
+        c0.custom.length === 0 && moved === 600 && rst === 480 && custom1 && cleared === 480 && normal['kv.gfx.size'] === 320 && normal['__font.copy.fs'] === 56 && back.bad.length === 0,
+        `印の付いた案 ${c0.custom.length} 個 → 600 に動かして ↺ で ${rst}px／600 にして（上書き済み ${custom1}）上書きを解除で ${cleared}px（焼き込み 480・案の最初の値 400）→ ノーマルへ ${normal['kv.gfx.size']}px・文字 ${normal['__font.copy.fs']}px → 強調へ戻ると違う物 ${back.bad.length}`);
+      /* 保存のあるブラウザ：保存の値が焼き込みより優先（コードの初期値 ＜ 焼き込み ＜ ブラウザの保存） */
+      await setSlider(page, 'kv.gfx.size', 520);
+      await page.evaluate(() => TunePanel.instances[0].save());
+      await page.reload(); await page.waitForTimeout(200);
+      const after = await screen(page);
+      rec('保存のあるブラウザでは保存の値が勝つ（コードの初期値 ＜ 焼き込み ＜ ブラウザの保存）・ほかの値は焼き込みのまま',
+        after['kv.gfx.size'] === 520 && after['kv.width'] === 88 && after['foot.overlap'] === 872 && after['__font.copy.fs'] === 96,
+        `読み直した後 グラフィック ${after['kv.gfx.size']}px（保存）・幅 ${after['kv.width']}・重なり ${after['foot.overlap']}px・文字 ${after['__font.copy.fs']}px（焼き込み）`);
+      await context.close();
+    }
+  }
 } catch (e) {
   console.error(e);
   rec('検査の実行', false, '途中で止まった: ' + (e && e.message ? e.message.split('\n')[0] : e));
