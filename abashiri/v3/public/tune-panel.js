@@ -1,4 +1,4 @@
-/* ⚠️ 自動で写した物。直接直さない（直しても次に写した時に消える）。原本: settings/tune-panel/tune-panel.js ／ 写す道具: abashiri/v3/scripts/sync-tune-panel.mjs（npm run dev・build の前に自動で走る） */
+/* ⚠️ 自動で写した物。直接直さない（直しても次に写した時に消える）。原本: settings/tune-panel/tune-panel.js ／ 写す道具と一覧: settings/tune-panel/sync-copies.mjs（abashiri/v3 の npm run dev・build の前に自動で走る） */
 /*!
  * tune-panel.js v2.3.2 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段／2026-10-02 文字の行）
  * 1ファイル / 依存なし / CSSも自分で流し込む。
