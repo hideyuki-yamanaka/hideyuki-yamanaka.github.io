@@ -159,6 +159,44 @@ function Logo({ light = false }: { light?: boolean }) {
   );
 }
 
+/* ── 白→写真の「透け方」（調整パネル › フッター › 透け方。2026-10-20）────────────
+   【ヒデさん】「案3に近い形で。ただグラデーションは自然に、もう少し滑らかに。それもバリエーションが欲しい。
+     徐々に透過をする具合」→ 白の濃さの変わり方（曲線）を5通り。
+   α(t)＝白の濃さ（t＝グラデの頭 0 → 終わり 1）。24段で刻むので、つなぎ目の折れ（帯の筋）が出にくい。
+   2〜5 は「始まりと終わりの傾きが0」の曲線（smootherstep）＝白からも写真からも、なめらかにつながる */
+export const FADE_CURVES: Record<number, { name: string; note: string }> = {
+  1: { name: "前半から早めに薄く", note: "これまでの形（2026-09-26）。頭から早めに薄くなり、終わりはごく薄く消える" },
+  2: { name: "なめらか（S字）", note: "ゆっくり薄くなり始め、真ん中でいちばん速く、終わりはなめらかに消える。白からも写真からも、つなぎ目が見えにくい" },
+  3: { name: "霧のように長い尾", note: "すっと薄くなったあと、うっすらした白が長く残って消える（霧がかかったような）" },
+  4: { name: "白が残ってから溶ける", note: "白をしばらく保ち、後半でなめらかに写真へ溶ける" },
+  5: { name: "空色を経由して溶ける", note: "なめらか（S字）と同じ曲線で、途中の色を白から淡い空色（Brand_SkyBottom）へ寄せる。白を青に重ねた時の白っぽい濁りが出にくい" },
+};
+/** 始まりと終わりの傾きが0のなめらかな曲線（0→1） */
+const smoother = (u: number) => {
+  const c = Math.max(0, Math.min(1, u));
+  return c * c * c * (c * (c * 6 - 15) + 10);
+};
+/** 透け方の番号と「白のままの割合（%）」から、PC のグラデを作る */
+function fadeGradient(curve: number, solid: number): string {
+  if (!FADE_CURVES[curve] || curve === 1) {
+    return `linear-gradient(to bottom, #ffffff 0%, #ffffff ${solid}%, rgba(255,255,255,0.9) ${solid + (100 - solid) * 0.1}%, rgba(255,255,255,0.74) ${solid + (100 - solid) * 0.24}%, rgba(255,255,255,0.55) ${solid + (100 - solid) * 0.38}%, rgba(255,255,255,0.37) ${solid + (100 - solid) * 0.53}%, rgba(255,255,255,0.22) ${solid + (100 - solid) * 0.68}%, rgba(255,255,255,0.1) ${solid + (100 - solid) * 0.82}%, rgba(255,255,255,0.03) ${solid + (100 - solid) * 0.92}%, rgba(255,255,255,0) 100%)`;
+  }
+  /* 淡い空色＝Brand_SkyBottom（#b5d7ff）。5 の時だけ途中の色をここへ寄せる */
+  const SKY = [0xb5, 0xd7, 0xff];
+  const N = 24;
+  const stops = ["#ffffff 0%", `#ffffff ${solid}%`];
+  for (let i = 1; i <= N; i++) {
+    const t = i / N;
+    const a =
+      curve === 3 ? 1 - smoother(Math.pow(t, 0.55)) /* 真ん中（白50%）が頭から3割の所 */
+      : curve === 4 ? 1 - smoother(Math.pow(t, 1.9)) /* 真ん中が頭から7割の所 */
+      : 1 - smoother(t);
+    const col = curve === 5 ? SKY.map((s) => Math.round(255 + (s - 255) * t)) : [255, 255, 255];
+    stops.push(`rgba(${col.join(",")},${a.toFixed(3)}) ${(solid + (100 - solid) * t).toFixed(2)}%`);
+  }
+  return `linear-gradient(to bottom, ${stops.join(", ")})`;
+}
+
 /** 案6〜8 の土台。
     後ろに居る写真（画面に止まる）／その手前の白いグラデーション／
     写真の上に載るフッターの中身、の3枚を重ねる。
@@ -177,21 +215,27 @@ function PhotoStage({
   zoom = false,
   align = "center",
   pad = "normal",
+  overlap = false,
 }: {
   children: React.ReactNode;
   zoom?: boolean;
+  /** 上のセクションへ重ねているか（案3 で、中身が重なった所に隠れないよう上を空ける） */
+  overlap?: boolean;
   align?: "center" | "end";
   /** wide=左右の余白を広く（メガフッターが窮屈だったため。2026-09-16） */
   pad?: "normal" | "wide";
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  /** 案2「幕が上がる」で、写真と中身を画面に貼りつけておく層 */
+  const pinRef = useRef<HTMLDivElement>(null);
   /** 1画面ぶんの高さ（スクロールしている箱の内寸・CSS px） */
   const [vh, setVh] = useState(0);
   /** 写真がどれくらい顔を出したか 0〜1 */
   const [t, setT] = useState(0);
   /** 調整パネルから変えられる値（CSS変数）。
-      高さとグラデはレイアウトに関わるので、変わった時だけ描き直す */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 80, solid: 6 });
+      高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
+      pattern＝体験セクションからフッターまでの見せ方（FOOTER_FLOWS の番号・2026-10-20） */
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 48, solid: 0, pattern: 4, padTop: 64, curve: 2, overlap: 240 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -224,16 +268,51 @@ function PhotoStage({
           const x = parseFloat(cs.getPropertyValue(n));
           return isFinite(x) && x > 0 ? x : d;
         };
+        /* ⚠️ 白のままの割合は 0 もあり得るので、0 を既定に戻さない読み方にする */
+        const num0 = (n: string, d: number) => {
+          const x = parseFloat(cs.getPropertyValue(n));
+          return isFinite(x) && x >= 0 ? x : d;
+        };
         const nc = {
           stageH: num("--ft-stage-h", 120),
           fadeH: num("--ft-fade-h", 80),
-          solid: num("--ft-fade-solid", 6),
+          solid: num0("--ft-fade-solid", 6),
+          pattern: Math.round(num("--ft-pattern", 1)),
+          padTop: num0("--ft-pad-top", 64),
+          curve: Math.round(num("--ft-fade-curve", 2)),
+          overlap: num0("--ft-overlap", 0),
         };
         setCfg((o) =>
-          o.stageH === nc.stageH && o.fadeH === nc.fadeH && o.solid === nc.solid
+          o.stageH === nc.stageH &&
+          o.fadeH === nc.fadeH &&
+          o.solid === nc.solid &&
+          o.pattern === nc.pattern &&
+          o.padTop === nc.padTop &&
+          o.curve === nc.curve &&
+          o.overlap === nc.overlap
             ? o
             : nc
         );
+        /* 案2「幕が上がる」：写真と中身の層を、画面に止まって見えるように逆向きへずらす。
+           このフッターの上端が画面のどこにあるか（縮小前の px）＝ 見えている枠の上端。
+           層をその分だけ上へずらすと、層は画面に貼りついたまま、上の白いセクションが
+           はけるにつれて下から現れる（＝幕が上がる）。React を通さず直接書く（毎フレームのため） */
+        const pin = pinRef.current;
+        if (pin) {
+          const r = el.getBoundingClientRect();
+          const sr = sc.getBoundingClientRect();
+          /* getBoundingClientRect は縮小後の px なので、自分の高さの比で縮小前へ戻す */
+          const k = el.offsetHeight > 0 ? r.height / el.offsetHeight : 1;
+          const topPx = (r.top - sr.top) / (k || 1);
+          /* 層の上端を画面の上端（0）に置く＝ -topPx。ただし層が枠の下からはみ出さない所まで。
+             「長さ」を100%より長くした時（枠が1画面より高い）も、幕が上がりきったあとは
+             層が画面に止まったまま残りが流れ、最後に枠の下端とそろう（2026-10-20 実測：
+             前の書き方では最後にフッターの下へ白い帯が196px 出ていた） */
+          const maxY = Math.max(0, el.offsetHeight - H);
+          const y = Math.max(-H, Math.min(maxY, -topPx));
+          /* ⚠️ translate3d にしない（3D にすると別の層として描かれ、縮小・拡大の中で文字がにじむ元になる） */
+          pin.style.transform = `translateY(${y}px)`;
+        }
       }
       id = requestAnimationFrame(tick);
     };
@@ -262,6 +341,53 @@ function PhotoStage({
   const stageH = cfg.stageH / 100;
   const fadeH = cfg.fadeH / 100;
   const solid = cfg.solid;
+  /* PC の白→写真のグラデ。solid％までは真っ白、そこから先は「透け方」（FADE_CURVES）の曲線で薄くなる。
+     現行・案1・案3 は帯の頭に、案2 は幕の縁に使う（同じ曲線を1か所で持つ） */
+  const pcFade = fadeGradient(cfg.curve, solid);
+  const padCls = pad === "wide" ? "px-6 @min-[640px]:px-[var(--ft-pad-x)]" : "px-6 @min-[640px]:px-[120px]";
+  const alignCls = align === "end" ? "justify-end pb-[56px] @min-[640px]:pb-[var(--ft-pad-bottom)]" : "justify-center";
+
+  /* ═══ 体験セクション → フッターの見せ方（PC だけ。スマホ・タブレットの縦積みは今のまま）═══
+     【2026-10-20 ヒデさん】「体験セクションからフッターにかけて、余計なスクロールが多い。3案ほど」
+     実測：体験が画面いっぱい → ページの終わりまで 1.28画面。そのうち 71% は白い余白と「白→写真」だけで、
+     終わりの画面も上6割は空の写真だけだった。→ 現行（下の return）のほかに3案：
+       案1 短くする（pattern 2）… 作りは現行のまま。調整パネルの案の最初の値で、余白0・白のまま0・グラデ40%・長さ100%
+       案2 幕が上がる（pattern 3）… 写真と中身を画面に貼りつけ、上の白いセクションがはけると下から現れる
+       案3 ふつうのフッター（pattern 4）… 写真の帯を中身の高さだけにし、頭に短いグラデ */
+  if (!isNarrow && cfg.pattern === 3) {
+    return (
+      <div ref={ref} className="relative w-full overflow-hidden" style={{ height: H * stageH }}>
+        {/* 写真と中身の層（1画面ぶん）。毎フレーム、画面に止まって見えるよう逆向きにずらす（上の tick） */}
+        <div ref={pinRef} className="absolute inset-x-0 top-0" style={{ height: H }}>
+          <img src="/img/bg-hero.jpg" alt="" className="size-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+          <div className={`absolute inset-0 flex flex-col ${padCls} ${alignCls}`}>{children}</div>
+        </div>
+        {/* 幕の縁（上の白いセクションの下端）だけ短く白をぼかす。層ではなく枠に付けるので、幕と一緒に上がっていく */}
+        <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: H * fadeH + 3, background: pcFade }} />
+      </div>
+    );
+  }
+  if (!isNarrow && cfg.pattern === 4) {
+    const fadePx = H * fadeH;
+    /* 上のセクションへ重ねた分は、中身がそこに隠れないよう上を空ける（グラデの長さと重ねる長さの大きい方＋上のパディング） */
+    const ov = overlap ? cfg.overlap : 0;
+    return (
+      <div ref={ref} className="relative w-full overflow-hidden">
+        {/* 写真は帯いっぱい（止めない）。帯が横長になるので、水平線と海が残るよう下を基準に切り抜く🟡 */}
+        <img src="/img/bg-hero.jpg" alt="" className="absolute inset-0 size-full object-cover object-bottom" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: fadePx + 3, background: pcFade }} />
+        {/* 高さは中身なり：上＝グラデの長さ＋上のパディング／下＝下のパディング */}
+        <div
+          className={`relative z-10 flex flex-col ${padCls}`}
+          style={{ paddingTop: Math.max(fadePx, ov) + cfg.padTop, paddingBottom: "var(--ft-pad-bottom)" }}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -313,7 +439,8 @@ function PhotoStage({
             /* 【2026-09-26 ヒデさん指摘】PC「フッター付近のグラデ、最後の方の白みが長い」
                → 旧カーブは前半4割ほど白が 0.86 以上のまま残っていた。
                  前半から早めに薄くなるカーブ（ease-out）に変更。長さ（--ft-fade-h）は変えない */
-            : `linear-gradient(to bottom, #ffffff 0%, #ffffff ${solid}%, rgba(255,255,255,0.9) ${solid + (100 - solid) * 0.1}%, rgba(255,255,255,0.74) ${solid + (100 - solid) * 0.24}%, rgba(255,255,255,0.55) ${solid + (100 - solid) * 0.38}%, rgba(255,255,255,0.37) ${solid + (100 - solid) * 0.53}%, rgba(255,255,255,0.22) ${solid + (100 - solid) * 0.68}%, rgba(255,255,255,0.1) ${solid + (100 - solid) * 0.82}%, rgba(255,255,255,0.03) ${solid + (100 - solid) * 0.92}%, rgba(255,255,255,0) 100%)`,
+            : pcFade,
+
         }}
       />
 
@@ -333,19 +460,7 @@ function PhotoStage({
           isNarrow
             ? "relative z-10 px-6 pb-[56px] pt-[200px] @min-[640px]:px-[64px]"  /* 作字がグラデに埋もれないよう上を空ける（グラデ240pxに合わせて 128→200）。タブレット幅は左右を広めに */
             : "absolute inset-x-0 bottom-0"
-        } ${
-          isNarrow
-            ? ""
-            : pad === "wide"
-              ? "px-6 @min-[640px]:px-[var(--ft-pad-x)]"
-              : "px-6 @min-[640px]:px-[120px]"
-        } ${
-          isNarrow
-            ? ""
-            : align === "end"
-              ? "justify-end pb-[56px] @min-[640px]:pb-[var(--ft-pad-bottom)]"
-              : "justify-center"
-        }`}
+        } ${isNarrow ? "" : padCls} ${isNarrow ? "" : alignCls}`}
         style={{ height: isNarrow ? undefined : H }}
       >
         {children}
@@ -429,9 +544,9 @@ function SiteMapGrid({ light = false }: { light?: boolean }) {
    組み方は「組みA ゆったり2カラム」で確定（2026-09-16 ヒデさん指示で他の2案は削除）。
    左に大きい作字ロゴ、右にサイトマップ。余白・間隔・作字の大きさは
    CSS 変数（--ft-*）＝調整パネルのつまみで動かせる */
-function Body() {
+function Body({ overlap = false }: { overlap?: boolean }) {
   return (
-    <PhotoStage align="end" pad="wide">
+    <PhotoStage align="end" pad="wide" overlap={overlap}>
       {/* 横並び（左に作字・右にサイトマップ）はフッターの幅が 1200px 以上の時だけ（1024px だとサイトマップの列が66pxまで細くなった）。
           それより狭い時は作字を中央・その下にサイトマップ（2026-09-26 タブレット対応） */}
       <div className="flex w-full flex-col gap-14 @min-[1200px]:flex-row @min-[1200px]:items-center @min-[1200px]:justify-between @min-[1200px]:gap-[var(--ft-col-gap)]">
@@ -452,7 +567,13 @@ function Body() {
   );
 }
 
-export default function SiteFooter() {
+export default function SiteFooter({
+  overlap = false,
+}: {
+  /** 上のセクションの下へ潜り込ませる（トップの体験セクションの下だけ・案3「ふつうのフッター」の時に効く。2026-10-20）。
+      詳しいページは前のセクションの作りが違うので重ねない */
+  overlap?: boolean;
+} = {}) {
   /* デザインはひとつに確定（2026-09-16）。案の切り替えは無いので状態も持たない。
      余白・間隔・作字の大きさは CSS 変数（--ft-*）で、調整パネルから直接変わる */
   return (
@@ -471,8 +592,10 @@ export default function SiteFooter() {
          写真はこの白の上に載るので、白地でも見た目は変わらない */
       /* @container：中の組みを「画面の幅」ではなく「フッター自身の幅」で切り替える（2026-09-26） */
       className="@container relative z-10 -mt-[2px] w-full bg-white"
+      /* 重ねる時は、重ねる長さだけ上へずらし、上のセクション（z-10）の後ろに回る（--ft-z は案3 の時 0・ほかは 10） */
+      style={overlap ? { marginTop: "calc(-2px - var(--ft-overlap, 0px))", zIndex: "var(--ft-z, 10)" as unknown as number } : undefined}
     >
-      <Body />
+      <Body overlap={overlap} />
     </footer>
   );
 }

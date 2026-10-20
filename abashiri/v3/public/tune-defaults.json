@@ -148,9 +148,13 @@
     "logoH": 260,
     "mapOffsetY": 0,
     "stageH": 120,
-    "fadeH": 80,
-    "fadeSolid": 6,
-    "evPadBottom": 80
+    "fadeH": 48,
+    "fadeSolid": 0,
+    "evPadBottom": 96,
+    "pattern": 4,
+    "padTop": 64,
+    "fadeCurve": 2,
+    "overlap": 240
   },
   "expIntro": {
     "startDelay": 0.8,

@@ -48,6 +48,7 @@ import { EV_FLOWS } from "./eventParts";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
 import {
+  FADE_CURVES,
 } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
@@ -208,6 +209,14 @@ type Params = {
     fadeH: number;
     fadeSolid: number;
     evPadBottom: number;
+    /** 体験セクション → フッターの見せ方（1＝現行／2＝短くする／3＝幕が上がる／4＝ふつうのフッター・2026-10-20） */
+    pattern: number;
+    /** 案「ふつうのフッター」の上のパディング（グラデの下〜中身の上端・px） */
+    padTop: number;
+    /** 白→写真の透け方（SiteFooter の FADE_CURVES の番号・2026-10-20） */
+    fadeCurve: number;
+    /** 案「ふつうのフッター」：上のセクション（トップの体験）の下へ写真を重ねる長さ（px・セクションの下端から上へ） */
+    overlap: number;
   };
   expIntro: IntroPace;
   expPick: { pattern: number };
@@ -286,9 +295,15 @@ export default function TopTunePanel({
         logoH: 260,
         mapOffsetY: 0,
         stageH: 120,
-        fadeH: 80,
-        fadeSolid: 6,
-        evPadBottom: 80,
+        /* 2026-10-20 ヒデさん「案3に近い形で。グラデは自然に、もう少し滑らかに」→ 既定は案3「ふつうのフッター」。
+           ここの値＝案3 の値（現行の値は、パネルの案ピルの「今のまま」の values に持たせた） */
+        fadeH: 48, /* 🟡 16→24→48（同日「グラデが急。徐々に」→ 体験の下から長く溶かす） */
+        fadeSolid: 0,
+        evPadBottom: 96, /* 🟡 同日「体験セクションの下に少しパディングを設けて、グラデーションの助走エリアを」 */
+        pattern: 4,
+        padTop: 64, /* 🟡仮置き：案「ふつうのフッター」の、グラデの下から中身までの写真の見え幅 */
+        fadeCurve: 2, /* 🟡 透け方「なめらか（S字）」 */
+        overlap: 240, /* 🟡 同日「体験セクションの下の方から徐々に透過率が変わっていく感じ」→ 写真を体験の下へ240px重ねる（パディング96px＋カードの下144px） */
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
@@ -335,6 +350,13 @@ export default function TopTunePanel({
       root.style.setProperty("--ft-logo-scale", String(f.logoH / 379));
       root.style.setProperty("--ft-map-offset-y", `${f.mapOffsetY}px`);
       root.style.setProperty("--ft-stage-h", String(f.stageH));
+      /* 体験 → フッターの見せ方（SiteFooter の PhotoStage が毎フレーム読む）と、案「ふつうのフッター」の上のパディング */
+      root.style.setProperty("--ft-pattern", String(f.pattern ?? 1));
+      root.style.setProperty("--ft-pad-top", `${f.padTop ?? 64}px`);
+      root.style.setProperty("--ft-fade-curve", String(f.fadeCurve ?? 2));
+      /* 重ねる長さと、フッターを上のセクションの後ろに回すかは、案3 の時だけ（ほかの案は 0・前のまま） */
+      root.style.setProperty("--ft-overlap", `${f.pattern === 4 ? f.overlap ?? 240 : 0}px`);
+      root.style.setProperty("--ft-z", f.pattern === 4 ? "0" : "10");
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
       root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
@@ -421,6 +443,19 @@ export default function TopTunePanel({
           const saved = JSON.parse(raw);
           if (saved && (!saved.pageTrans || saved.pageTrans.dur === undefined)) {
             saved.pageTrans = { pattern: 7, dur: PT_DEFAULT.dur, blur: PT_DEFAULT.blur, peak: PT_DEFAULT.peak };
+            localStorage.setItem(k, JSON.stringify(saved));
+          }
+          /* 【2026-10-20 一回限りの移し替え】フッターの既定を案3「ふつうのフッター」＋透け方「なめらか」にした。
+             前の保存値（グラデ80%・体験の下の余白80px など）が残っていると、案3 なのにグラデが画面の8割ある
+             おかしな形で見えてしまう。版を上げると他のつまみまで全部消えるので、流れの値だけ置き換える
+             （左右の余白・間隔・作字の大きさなど、ほかのフッターの保存値はそのまま）。
+             見分け方：透け方（fadeCurve）を持っていない保存値＝この変更より前のもの */
+          if (saved && saved.footer && saved.footer.fadeCurve === undefined) {
+            Object.assign(saved.footer, { pattern: 4, evPadBottom: 96, fadeH: 48, fadeSolid: 0, fadeCurve: 2, overlap: 240 });
+            localStorage.setItem(k, JSON.stringify(saved));
+          } else if (saved && saved.footer && saved.footer.overlap === undefined && saved.footer.pattern === 4) {
+            /* 同日 2回目：案3 の既定に「重ねる・助走」を足した。案3 のままの保存値だけ、流れの値を新しい既定へ */
+            Object.assign(saved.footer, { evPadBottom: 96, fadeH: 48, overlap: 240 });
             localStorage.setItem(k, JSON.stringify(saved));
           }
         }
@@ -627,6 +662,48 @@ export default function TopTunePanel({
                 fmt: "%",
                 hint: "線の太さの倍率（100%が今まで）。上げるほど太く濃く見え、下げるほど細く繊細になります。",
               },
+              /* 【2026-10-20 ヒデさん】「体験セクションからフッターにかけて、余計なスクロールが多い。3案ほど」
+                 →「3案作って調整パネルへ」。現行のほかに3案（SiteFooter の PhotoStage）。
+                 案の見比べなのでバリエーション（6-13・6-18）。フッターのつまみは全部 variant:'footer.pattern'＝案ごとの値（6-8）。
+                 ⚠️ この見出しには案ピルを1つだけ置く（2つ置くと持ち主を取り違える・FIXLOG 2026-10-14） */
+              { sub: "フッター（全ページ共通）", grp: "variation" },
+              {
+                note: "体験セクション（各ページの最後のセクション）からフッターまでの見せ方。PC だけに効きます（スマホは今のまま）。",
+              },
+              {
+                pills: "案",
+                path: "footer.pattern",
+                immediate: true,
+                autoNum: "案",
+                options: [
+                  {
+                    name: "今のまま",
+                    value: 1,
+                    fixed: true,
+                    desc: "白から写真へゆっくり入れ替わる（グラデは画面の0.8・フッターは画面の1.2）。体験が画面いっぱいの所からページの終わりまで1.28画面",
+                    /* 既定が案3 になったので、これまでの値はここに持たせる（2026-10-20） */
+                    values: { "footer.evPadBottom": 80, "footer.stageH": 120, "footer.fadeH": 80, "footer.fadeSolid": 6, "footer.fadeCurve": 1 },
+                  },
+                  {
+                    name: "短くする",
+                    value: 2,
+                    desc: "作りは今のまま、長さだけ詰める。体験の下の余白0・真っ白のまま0・グラデ0.4画面・長さ1画面。ページの終わりまで約1.0画面",
+                    values: { "footer.evPadBottom": 0, "footer.fadeSolid": 0, "footer.fadeH": 40, "footer.stageH": 100, "footer.fadeCurve": 1 },
+                  },
+                  {
+                    name: "幕が上がる",
+                    value: 3,
+                    desc: "写真と文字を画面に貼りつけて下に敷いておき、体験セクションの白い面が上へはけると現れる。長いグラデは無く、幕の縁に短いぼかしだけ。文字は下から先に見え始める",
+                    values: { "footer.evPadBottom": 0, "footer.fadeSolid": 0, "footer.fadeH": 8, "footer.stageH": 100, "footer.fadeCurve": 1 },
+                  },
+                  {
+                    name: "ふつうのフッター",
+                    value: 4,
+                    desc: "【既定・2026-10-20 ヒデさん「案3に近い形で」】写真の帯を中身（作字＋サイトマップ）の高さだけにして、頭に短いグラデ。ページの終わりまで約0.7画面。白→写真の透け方は下の「透け方」で選ぶ",
+                    values: { "footer.evPadBottom": 96, "footer.fadeSolid": 0, "footer.fadeH": 48, "footer.fadeCurve": 2, "footer.overlap": 240 },
+                  },
+                ],
+              },
               { sub: "フッター（全ページ共通）", grp: "basic" },
               {
                 note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここでは「組み（左右の余白とカラムの幅）」と「親子の階層の見せ方」を選べます。トップと各詳細ページの一番下で確認できます。",
@@ -637,6 +714,7 @@ export default function TopTunePanel({
               {
                 slider: "作字ロゴのサイズ",
                 path: "footer.logoH",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 80,
                 max: 420,
                 step: 5,
@@ -645,8 +723,20 @@ export default function TopTunePanel({
               },
               { sub: "パディング", deep: true },
               {
+                slider: "上",
+                path: "footer.padTop",
+                variant: "footer.pattern",
+                min: 0,
+                max: 240,
+                step: 4,
+                fmt: "px",
+                when: (p: Params) => p.footer.pattern === 4,
+                hint: "案「ふつうのフッター」だけ。頭のグラデの下から、作字・サイトマップの上端までの間（写真が見える幅）",
+              },
+              {
                 slider: "左右",
                 path: "footer.padX",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 24,
                 max: 280,
                 step: 4,
@@ -656,6 +746,7 @@ export default function TopTunePanel({
               {
                 slider: "下",
                 path: "footer.padBottom",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 24,
                 max: 240,
                 step: 4,
@@ -666,6 +757,7 @@ export default function TopTunePanel({
               {
                 slider: "カラム",
                 path: "footer.colGap",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 24,
                 max: 360,
                 step: 4,
@@ -675,6 +767,7 @@ export default function TopTunePanel({
               {
                 slider: "列",
                 path: "footer.mapGapX",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 8,
                 max: 160,
                 step: 2,
@@ -684,6 +777,7 @@ export default function TopTunePanel({
               {
                 slider: "行",
                 path: "footer.mapGapY",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 8,
                 max: 160,
                 step: 2,
@@ -693,6 +787,7 @@ export default function TopTunePanel({
               {
                 slider: "見出し↔項目",
                 path: "footer.headGap",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 0,
                 max: 64,
                 step: 2,
@@ -702,6 +797,7 @@ export default function TopTunePanel({
               {
                 slider: "項目どうし",
                 path: "footer.itemGap",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 0,
                 max: 40,
                 step: 1,
@@ -713,27 +809,43 @@ export default function TopTunePanel({
                 note: "体験セクションからフッターまでが長いと感じる時はここで詰めます。",
               },
               {
-                slider: "体験セクション下のマージン",
+                /* 名前は 6-18（余白はパディング）に合わせて「マージン」から直した（2026-10-20・中身は下のパディング） */
+                slider: "体験セクション下のパディング",
                 path: "footer.evPadBottom",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 0,
                 max: 320,
                 step: 4,
                 fmt: "px",
-                hint: "最後のセクションの下端と、フッターが始まる所の間",
+                hint: "最後のセクションの下に足す白い余白。案「ふつうのフッター」では、グラデがゆっくり始まる助走の所になる",
+              },
+              {
+                slider: "上のセクションに重ねる長さ",
+                path: "footer.overlap",
+                variant: "footer.pattern",
+                min: 0,
+                max: 480,
+                step: 4,
+                fmt: "px",
+                when: (p: Params) => p.footer.pattern === 4,
+                hint: "案「ふつうのフッター」だけ・トップのみ。フッターの写真を、上の体験セクションの下へどれだけ潜り込ませるか（セクションの下端から上へ）。グラデはここから始まるので、長いほど体験の下の方からゆっくり透け始める。カードとボタンは写真より手前のまま",
               },
               {
                 slider: "長さ",
                 path: "footer.stageH",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 100,
                 max: 240,
                 step: 5,
                 fmt: "%",
-                hint: "画面の高さの何%ぶんスクロールしてフッターを見せるか。小さいほど早く終わる（既定155%）",
+                when: (p: Params) => p.footer.pattern !== 4,
+                hint: "画面の高さの何%ぶんスクロールしてフッターを見せるか。小さいほど早く終わる（今のまま 120%・案「短くする」「幕が上がる」100%）。案「幕が上がる」では、幕が上がりきるまでの長さ",
               },
               { sub: "サイトマップ（右カラム）", deep: true },
               {
                 slider: "位置 Y",
                 path: "footer.mapOffsetY",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: -240,
                 max: 240,
                 step: 4,
@@ -744,17 +856,35 @@ export default function TopTunePanel({
               { sub: "フッター（全ページ共通）", grp: "fxtex" },
               { sub: "最後のセクションからの流れ", deep: true },
               {
+                /* 【2026-10-20 ヒデさん】「グラデーションは自然に、もう少し滑らかに。それもバリエーションが欲しい。
+                   徐々に透過をする具合」→ 白の濃さの変わり方を5通り（SiteFooter の FADE_CURVES）。
+                   グラデの見た目の選択なのでエフェクト＆テクスチャの中（6-18「見出しの中なら、その中身の性質」）。
+                   フッターの案ごとに選べる（variant）。この見出しのほかの項目はみな variant 付きなので、持ち主の取り違えは無い */
+                pills: "透け方",
+                path: "footer.fadeCurve",
+                variant: "footer.pattern",
+                immediate: true,
+                autoNum: "案",
+                options: Object.entries(FADE_CURVES).map(([v, c]) => ({
+                  name: c.name,
+                  value: Number(v),
+                  desc: c.note,
+                })),
+              },
+              {
                 slider: "グラデの長さ",
                 path: "footer.fadeH",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 30,
                 max: 150,
                 step: 5,
                 fmt: "%",
-                hint: "白から写真へ移り変わる帯の長さ。短いほどキリッと、長いほどゆっくり溶ける",
+                hint: "白から写真へ移り変わる帯の長さ（画面の高さの%）。短いほどキリッと、長いほどゆっくり溶ける。案「幕が上がる」では幕の縁のぼかしの長さ",
               },
               {
                 slider: "白のままの割合",
                 path: "footer.fadeSolid",
+                variant: "footer.pattern", /* 2026-10-20 体験→フッターの案ごとの値 */
                 min: 0,
                 max: 60,
                 step: 2,

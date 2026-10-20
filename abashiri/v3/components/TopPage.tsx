@@ -8,7 +8,6 @@ import {
   motion,
   useScroll,
   useTransform,
-  useMotionTemplate,
   useMotionValueEvent,
   type Variants,
 } from "framer-motion";
@@ -450,7 +449,10 @@ export default function TopPage({
     useExit ? E.yTo * exitT(v) : pw(v, 0.5, kp.y[0], (kp.y[0] + kp.y[1]) / 2, kp.y[1])
   );
   const buttonY = useTransform(scrollY, [0, kvRange], [0, kp.buttonParallax ?? 0]);
-  const heroFilter = useMotionTemplate`blur(${heroBlur}px)`;
+  /* 【2026-10-20 画質】ぼかしが 0 の時はフィルターそのものを付けない（"none"）。
+     blur(0px) でもフィルターが付いていると、作字が別の層に描かれて、実機の GPU では文字がわずかににじむ元になる
+     （このファイルの「網走市観光サイト」の所に同じ注意がある・2026-08-22 と同じ考え方） */
+  const heroFilter = useTransform(heroBlur, (v: number) => (v > 0.01 ? `blur(${v}px)` : "none"));
   const heroPointer = useTransform(heroOpacity, (v) => (v < 0.06 ? "none" : "auto"));
 
   /* 背景写真：作字が消えていく流れに続いてブラーがかかっていく（spotTransition の ②）。
@@ -488,7 +490,8 @@ export default function TopPage({
     setNavDark(dark);
     document.documentElement.dataset.headerDark = dark ? "1" : "0";
   });
-  const bgFilter = useMotionTemplate`blur(${bgBlur}px)`;
+  /* 背景写真も同じ：ぼかしが 0 の時は "none"（写真が別の層に描かれて荒れて見えるのを防ぐ・2026-10-20） */
+  const bgFilter = useTransform(bgBlur, (v: number) => (v > 0.01 ? `blur(${v}px)` : "none"));
   const bgZoom = kp.bgZoom ?? [1, 1];
   /* ブラー時に端が透けないよう、ズームに少し上乗せ（+0.08まで） */
   const bgScale = useTransform(
@@ -954,7 +957,8 @@ export default function TopPage({
                     scale: ip.heroScale,
                   }
             }
-            animate={{ opacity: 1, filter: "blur(0px)", y: 0, scale: 1 }}
+            /* 出終わったらフィルターを外す（transitionEnd）。blur(0px) を残さない（2026-10-20 画質） */
+            animate={{ opacity: 1, filter: "blur(0px)", y: 0, scale: 1, transitionEnd: { filter: "none" } }}
             transition={{ duration: ip.heroDur, ease: ip.ease, delay: ip.heroDelay }}
           >
             <motion.div
@@ -1098,7 +1102,7 @@ export default function TopPage({
 
         {/* 全ページ共通フッター。⚠️ このページは window ではなくこの箱がスクロールするので、
             レイアウトではなくスクローラーの中に置く必要がある */}
-        <SiteFooter />
+        <SiteFooter overlap />
 
         {/* v1.1 の プロモ／旧グルメ／体験・イベント は撤去済み。
             旧部品（Card / CardRow 等）はこのファイル上部に残っている。

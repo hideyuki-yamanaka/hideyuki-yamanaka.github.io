@@ -260,6 +260,12 @@ const STEP_STAGE_LEN = 2;
        これをやらないと 180+920+80=1180px になり、1画面に収まらない
        （2026-09-17 実測：カードが画面の下に切れて見えた） */
 const CANVAS_H = 982;
+/** 白い地。下の方だけ透明にして、後ろに潜り込ませたフッターの写真（グラデの頭）が透けて見えるようにする。
+    【2026-10-20 ヒデさん】「グラデーションが急。体験セクションの下の方から徐々に透過率が変わっていく感じ」
+    透明にする長さ＝フッターを重ねる長さ（--ft-overlap）から、セクションの下のパディング（--ev-pad-bottom）を引いた分。
+    フッターが案3 以外の時は --ft-overlap が 0 なので、今までどおり全部白 */
+export const EV_SEE_THROUGH = "max(0px, calc(var(--ft-overlap, 0px) - var(--ev-pad-bottom, 0px)))";
+const EV_CANVAS_BG = `linear-gradient(to bottom, #ffffff calc(100% - ${EV_SEE_THROUGH}), transparent calc(100% - ${EV_SEE_THROUGH}))`;
 function Frame({
   children,
   /** カンプの 1512 幅ではなく、画面の横幅いっぱいに置きたいもの
@@ -272,7 +278,7 @@ function Frame({
   return (
     /* ⚠️ 上の余白の打ち消しと画面いっぱいの高さは PinStage 側でやっている。
        ここで二重に -mt を掛けないこと */
-    <div className="relative size-full overflow-hidden bg-white">
+    <div className="relative size-full overflow-hidden" style={{ background: EV_CANVAS_BG }}>
       {full}
       <div
         className="absolute left-1/2 top-1/2"
@@ -424,7 +430,7 @@ function MarqueeStack() {
   return (
     /* ⚠️ -mt-[180px]：体験セクションの上パディングを打ち消して、場面をちょうど画面いっぱい（1512×982）に
        （前は PinStage がやっていた。貼りつけはしないので、高さは1画面ぶんだけ） */
-    <div className="relative -mt-[180px] h-[982px] w-full overflow-hidden bg-white" /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
+    <div className="relative -mt-[180px] h-[982px] w-full overflow-hidden" style={{ background: EV_CANVAS_BG }} /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
       <Frame
         full={
           /* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係）。

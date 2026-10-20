@@ -188,7 +188,9 @@ export default function EventSection() {
         （2026-09-16 ヒデさん指摘。赤背景テストで「背景の透け」ではないことは確認済み） */}
     <section
       id="events"
-      className="relative z-10 -mt-[2px] w-full overflow-x-clip bg-white pt-[88px] pb-[88px] sm:pt-[180px] sm:pb-[var(--ev-pad-bottom)]"
+      className="relative z-10 -mt-[2px] w-full overflow-x-clip pt-[88px] pb-[88px] sm:pt-[180px] sm:pb-[var(--ev-pad-bottom)]"
+      /* 白い地。下の --ft-overlap の分だけ透明（後ろのフッターの写真が透ける・2026-10-20）。案3 以外は 0＝全部白 */
+      style={{ background: "linear-gradient(to bottom, #ffffff calc(100% - var(--ft-overlap, 0px)), transparent calc(100% - var(--ft-overlap, 0px)))" }}
     >
       {ready ? (
         <Scrolled pat={pat} container={scRef} />
