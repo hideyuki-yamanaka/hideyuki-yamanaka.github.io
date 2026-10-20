@@ -52,8 +52,7 @@
     "patchRed": false
   },
   "sound": {
-    "volume": 66,
-    "icon": 6
+    "volume": 66
   },
   "bird": {
     "opacity": 65,
@@ -154,7 +153,12 @@
     "evPadBottom": 96,
     "padTop": 64,
     "fadeCurve": 2,
-    "overlap": 872
+    "overlap": 872,
+    "tone": 0,
+    "bright": 100,
+    "shade": 35,
+    "shadeH": 50,
+    "light": 0
   },
   "expIntro": {
     "startDelay": 0.8,

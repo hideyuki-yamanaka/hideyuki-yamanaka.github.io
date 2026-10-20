@@ -47,8 +47,7 @@ import {
 import { EV_FLOWS } from "./eventParts";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
-import { FADE_CURVES, FADE_VALUES } from "./SiteFooter";
-import { BGM_ICON_DEFAULT, BGM_ICON_VARIANTS } from "./BgmIcons";
+import { FADE_CURVES, FADE_VALUES, PHOTO_TONES } from "./SiteFooter";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -176,8 +175,7 @@ type Params = {
   anim: { boPattern: number; illustEnter: number; tamaranee: number; bouncePattern: number; bounceStrength: number; illustDelay: number };
   intro: { delay: number; hold: number };
   preview: { faceOn: boolean; patchRed: boolean };
-  /** icon＝左上の音のスイッチのアイコンの案（0＝今のまま／1〜5＝BgmIcons.tsx のモック・2026-10-20） */
-  sound: { volume: number; icon: number };
+  sound: { volume: number };
   bird: { opacity: number; color: string; stroke: number };
   face: FaceConfig;
   sparkle: { period: number };
@@ -215,6 +213,13 @@ type Params = {
     fadeCurve: number;
     /** 上のセクション（トップの体験）の下へ写真を重ねる長さ（px・セクションの下端から上へ） */
     overlap: number;
+    /** 写真の明るさの案 0〜3（SiteFooter の PHOTO_TONES・2026-10-20）／写真の明るさ%／下からの影の濃さ%／光を重ねる強さ% */
+    tone: number;
+    bright: number;
+    shade: number;
+    /** 影が下から写真のどこまでかかるか（%） */
+    shadeH: number;
+    light: number;
   };
   expIntro: IntroPace;
   expPick: { pattern: number };
@@ -260,8 +265,7 @@ export default function TopTunePanel({
       intro: { delay: 350, hold: 3000 },
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
-      /* icon：2026-10-20 ヒデさんの見本から作った案6「音の波」を既定に🟡（今のまま・案1〜5 もパネルで選べる） */
-      sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100), icon: BGM_ICON_DEFAULT },
+      sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100) },
       /* カモメ共通の不透明度(%)。全ページのカモメに効く */
       bird: { opacity: 100, color: "#ffffff", stroke: 100 },
       face: { ...DEFAULT_FACE },
@@ -303,6 +307,12 @@ export default function TopTunePanel({
         padTop: 64, /* 🟡仮置き：グラデの下から中身までの写真の見え幅 */
         fadeCurve: 1, /* 🟡 パターン1「長く、なめらかに」 */
         overlap: 400, /* 🟡 240→400：写真を体験の下へ400px重ねる＝グラデの始まりがカードの下あたり（流れる文字より下） */
+        /* 写真の明るさ（2026-10-20 ヒデさん「後ろの写真がすごく暗く見える。3案」）。既定は今のまま（見比べ中） */
+        tone: 0,
+        bright: 100,
+        shade: 35,
+        shadeH: 50,
+        light: 0,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
       expPick: { pattern: 1 },
@@ -355,6 +365,12 @@ export default function TopTunePanel({
       /* 写真を上のセクションの下へ重ねる長さ。フッターは上のセクションの後ろ（カードとボタンが手前） */
       root.style.setProperty("--ft-overlap", `${f.overlap ?? 400}px`);
       root.style.setProperty("--ft-z", "0");
+      /* 写真の明るさの案（SiteFooter の PhotoStage が毎フレーム読む） */
+      root.style.setProperty("--ft-tone", String(f.tone ?? 0));
+      root.style.setProperty("--ft-photo-bright", String(f.bright ?? 100));
+      root.style.setProperty("--ft-shade", String(f.shade ?? 35));
+      root.style.setProperty("--ft-shade-h", String(f.shadeH ?? 50));
+      root.style.setProperty("--ft-light", String(f.light ?? 0));
       root.style.setProperty("--ft-fade-h", String(f.fadeH));
       root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
       root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
@@ -370,8 +386,6 @@ export default function TopTunePanel({
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
       root.style.setProperty("--sec-head", `${params.secHead}px`);
-      /* 音のスイッチのアイコンの案（SoundUi が <html data-bgm-icon> を見張って描き替える） */
-      root.dataset.bgmIcon = String(params.sound.icon ?? 0);
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -425,6 +439,34 @@ export default function TopTunePanel({
         return out;
       }
       return typeof saved === typeof def ? saved : def;
+    };
+
+    /* 【2026-10-20 直した】焼き込み（tune-defaults.json）の値が、初めて来た人（ブラウザに保存の無い人）に効いていなかった。
+       共通の調整パネルは、ブラウザに保存が無い時、選ばれている案のつまみを「案の最初の値」（options[].values）で
+       上書きする作り。そのため ヒデさんが保存した フッターのグラデの長さ 130%・重ねる長さ 872px が、
+       初めて来た人には 案の最初の値 72%・400px に戻っていた（＝デプロイしても見る人に届かない）。
+       → パネルを作る前に、「いま選ばれている案」の最初の値だけを、焼き込みを重ねた今の値にそろえる。
+         ほかの案の最初の値はそのまま（案を切り替えた時は今までどおり） */
+    const pinSelectedVariantBase = <T,>(schema: T): T => {
+      const get = (path: string) =>
+        path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), params);
+      type Opt = { value: unknown; values?: Record<string, unknown> };
+      type Item = { pills?: string; path?: string; options?: Opt[] };
+      for (const cat of schema as unknown as { items?: Item[] }[]) {
+        for (const it of cat.items || []) {
+          if (!it.pills || !it.path || !Array.isArray(it.options)) continue;
+          const sel = get(it.path);
+          const opt = it.options.find((o) => String(o.value) === String(sel));
+          if (!opt || !opt.values) continue;
+          const fixed: Record<string, unknown> = {};
+          for (const k of Object.keys(opt.values)) {
+            const v = get(k);
+            fixed[k] = v !== undefined ? v : opt.values[k];
+          }
+          opt.values = fixed;
+        }
+      }
+      return schema;
     };
 
     const build = async () => {
@@ -542,30 +584,15 @@ export default function TopTunePanel({
         position: { right: 20, bottom: 20 },
         params,
         defaults: DEFAULTS,
-        schema: [
+        /* ⚠️ 選ばれている案の最初の値を焼き込みの値にそろえる（pinSelectedVariantBase・2026-10-20） */
+        schema: pinSelectedVariantBase([
           {
             cat: "サイト共通",
             open: false,
             items: [
               /* 【2026-09-26】ハンバーガーメニューの3案は「案1 空に浮かぶ作字」に確定したので、
                  ここにあった切り替えは外した（MobileHeader.tsx に固定） */
-              /* 【2026-10-20 ヒデさん】「左上のオンオフのアイコン、作り込みが簡素なので、もう少しリッチに。5パターン。
-                 ベタ塗りの案も・濃い青と薄い青のような多色の案も」→「モックとして入れてみて」。
-                 アイコンの見比べなのでバリエーション（6-13・6-18）。この見出しには案ピルを1つだけ置く */
-              { sub: "環境音（BGM）", grp: "variation" },
-              {
-                note: "左上の ON／OFF スイッチの中のアイコン。どのページでも同じ案で出ます。",
-              },
-              {
-                pills: "アイコン",
-                path: "sound.icon",
-                immediate: true,
-                autoNum: "案",
-                options: [
-                  { name: "今のまま", value: 0, fixed: true, desc: "白い丸に細い線のスピーカー（16px）" },
-                  ...Object.entries(BGM_ICON_VARIANTS).map(([v, c]) => ({ name: c.name, value: Number(v), desc: c.note })),
-                ],
-              },
+              /* 左上の音のスイッチのアイコンは 2026-10-20 に「音の波」に決定（5案の切り替えは外した・BgmIcons.tsx） */
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
@@ -697,6 +724,26 @@ export default function TopTunePanel({
                   value: Number(v),
                   desc: c.note,
                   values: FADE_VALUES[Number(v)],
+                })),
+              },
+              /* 【2026-10-20 ヒデさん】「フッターの後ろの写真がすごく暗く見える。3案ぐらい」。
+                 ⚠️ グラデの案ピルと同じ見出しに置くと持ち主を取り違えるので、見出しを分ける（FIXLOG 2026-10-14）。
+                 つまみは全部 variant:'footer.tone'＝案ごとの値（6-8） */
+              { sub: "フッターの写真（全ページ共通）", grp: "variation" },
+              {
+                note: "フッターの後ろの写真の明るさ。PC・スマホとも同じに効きます。",
+              },
+              {
+                pills: "明るさ",
+                path: "footer.tone",
+                immediate: true,
+                autoNum: "案",
+                options: Object.entries(PHOTO_TONES).map(([v, c]) => ({
+                  name: c.name,
+                  value: Number(v),
+                  desc: c.note,
+                  values: c.values,
+                  ...(Number(v) === 0 ? { fixed: true } : {}),
                 })),
               },
               { sub: "フッター（全ページ共通）", grp: "basic" },
@@ -847,6 +894,49 @@ export default function TopTunePanel({
                 fmt: "%",
                 hint: "白から写真へ移り変わる帯の長さ（画面の高さの%）。短いほどキリッと、長いほどゆっくり溶ける",
               },
+              { sub: "写真", deep: true },
+              {
+                slider: "明るさ",
+                path: "footer.bright",
+                variant: "footer.tone",
+                min: 80,
+                max: 160,
+                step: 2,
+                fmt: "%",
+                hint: "後ろの写真の明るさ（100% がそのまま）",
+              },
+              {
+                slider: "影の濃さ",
+                path: "footer.shade",
+                variant: "footer.tone",
+                min: 0,
+                max: 60,
+                step: 2,
+                fmt: "%",
+                hint: "文字を読みやすくするための、下からの影の濃さ。これが写真を暗く見せている元。0% で影なし。案「影を海の青に」では青い影",
+              },
+              {
+                slider: "影の高さ",
+                path: "footer.shadeH",
+                variant: "footer.tone",
+                min: 10,
+                max: 100,
+                step: 2,
+                fmt: "%",
+                hint: "影が下から写真のどこまでかかるか（50% で写真の半分まで）。低くすると、空の暗さが取れて文字の下だけ沈む",
+              },
+              {
+                slider: "光の強さ",
+                path: "footer.light",
+                variant: "footer.tone",
+                min: 0,
+                max: 80,
+                step: 2,
+                fmt: "%",
+                when: (p: Params) => p.footer.tone === 3,
+                hint: "案「光を重ねる」だけ。写真の上に重ねる空の色の光の強さ",
+              },
+              { sub: "グラデ", deep: true },
               {
                 slider: "白のままの割合",
                 path: "footer.fadeSolid",
@@ -1922,7 +2012,7 @@ export default function TopTunePanel({
               },
             ],
           },
-        ],
+        ]),
         onChange: (info?: { path?: string }) => {
           applyVars();
           applyVolume();

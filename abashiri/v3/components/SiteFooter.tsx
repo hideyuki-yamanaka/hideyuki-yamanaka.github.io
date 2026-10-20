@@ -175,6 +175,47 @@ export const FADE_CURVES: Record<number, { name: string; note: string }> = {
   4: { name: "ぼかしながら現れる", note: "白が薄くなるのに合わせて、写真も強いぼかしからだんだんくっきりしていく（霧が晴れるように）" },
   5: { name: "霞が残る", note: "前半で白を半分ほどまで薄くしたあと、うっすらした霞を長く残してから消える。遠くの空気のような奥行き" },
 };
+/* ── フッターの写真の明るさ 3案（調整パネル › サイト共通 › バリエーション › フッターの写真。2026-10-20）──
+   【ヒデさん】「フッターの後ろの写真がすごく暗く見える。3案ぐらい。その中の一つは写真のブライトネスを変えるとか」。
+   暗く見える元は2つ：①写真の下半分に重ねた黒い影（35%・文字を読みやすくするため） ②写真そのものの明るさ。
+   bright＝写真の明るさ(%)／shade＝下からの影の濃さ(%)／shadeH＝影が下から写真のどこまでかかるか(%)／light＝光を重ねる強さ(%)
+   【同日 ヒデさん】「写真が暗い印象になっているところを調整できるところもインジケーターとして調整パネルに」→ 影の濃さ・高さ・明るさ・光の強さ */
+export const PHOTO_TONES: Record<number, { name: string; note: string; values: Record<string, number> }> = {
+  0: { name: "今のまま", note: "写真そのまま＋下半分に黒い影35%", values: { "footer.bright": 100, "footer.shade": 35, "footer.shadeH": 50, "footer.light": 0 } },
+  1: { name: "写真を明るく", note: "写真の明るさを 120% に上げ、黒い影を 35→20% に薄くする。いちばん素直", values: { "footer.bright": 120, "footer.shade": 20, "footer.shadeH": 50, "footer.light": 0 } },
+  2: { name: "影を海の青に", note: "下の影を黒ではなく深い海の青（Shadow_Base #005fb3）にする。暗くならずに青が深まり、文字も読める。写真も少し明るく（108%）", values: { "footer.bright": 108, "footer.shade": 40, "footer.shadeH": 50, "footer.light": 0 } },
+  3: { name: "光を重ねる", note: "写真の上に、空の色の光（上 Brand_SkyBottom → 下 Brand_SkyTop）をスクリーンで重ねて、全体を明るく爽やかに。黒い影はごく薄く（12%）", values: { "footer.bright": 100, "footer.shade": 12, "footer.shadeH": 50, "footer.light": 35 } },
+};
+/** 写真の上に重ねる「影」と「光」。PC・スマホ・タブレットの写真で共通 */
+function PhotoTone({ tone, shade, shadeH = 50, light }: { tone: number; shade: number; shadeH?: number; light: number }) {
+  const sh = Math.max(0, shade) / 100;
+  /* 影：下から上へ、写真の shadeH%（既定は半分）で消える（前の bg-gradient-to-t from-black/35 via-transparent と同じ形）。
+     案2 は黒ではなく Shadow_Base（#005fb3） */
+  const c = tone === 2 ? "0,95,179" : "0,0,0";
+  const L = Math.max(0, light) / 100;
+  return (
+    <>
+      {sh > 0 && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: `linear-gradient(to top, rgba(${c},${sh}) 0%, rgba(${c},0) ${Math.max(1, shadeH)}%)` }}
+        />
+      )}
+      {tone === 3 && L > 0 && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `linear-gradient(to bottom, rgba(181,215,255,${L}) 0%, rgba(53,195,234,${(L * 0.6).toFixed(3)}) 100%)`,
+            mixBlendMode: "screen",
+          }}
+        />
+      )}
+    </>
+  );
+}
+/** 写真の明るさ（100% の時はフィルターを付けない＝絵に焼かれてにじむのを避ける・FIXLOG 2026-10-20） */
+const photoFilter = (bright: number) => (bright !== 100 ? `brightness(${bright / 100})` : undefined);
+
 /** パターンごとの最初の値（調整パネルのグラデのピルで切り替えた時に入る値・🟡仮置き）。
     グラデの長さ＝画面の高さの%／重ねる長さ＝体験の下へ潜らせる px／助走＝体験セクション下のパディング px。
     重ねる長さを 240→400 に増やした分、グラデの頭が上へ伸びるので、1・3・4 はグラデを 64% にして
@@ -253,7 +294,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 0, bright: 100, shade: 35, shadeH: 50, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -298,6 +339,12 @@ function PhotoStage({
           padTop: num0("--ft-pad-top", 64),
           curve: Math.round(num("--ft-fade-curve", 1)),
           overlap: num0("--ft-overlap", 0),
+          /* 写真の明るさの案（PHOTO_TONES・2026-10-20） */
+          tone: Math.round(num0("--ft-tone", 0)),
+          bright: num("--ft-photo-bright", 100),
+          shade: num0("--ft-shade", 35),
+          shadeH: num("--ft-shade-h", 50),
+          light: num0("--ft-light", 0),
         };
         setCfg((o) =>
           o.stageH === nc.stageH &&
@@ -305,7 +352,12 @@ function PhotoStage({
           o.solid === nc.solid &&
           o.padTop === nc.padTop &&
           o.curve === nc.curve &&
-          o.overlap === nc.overlap
+          o.overlap === nc.overlap &&
+          o.tone === nc.tone &&
+          o.bright === nc.bright &&
+          o.shade === nc.shade &&
+          o.shadeH === nc.shadeH &&
+          o.light === nc.light
             ? o
             : nc
         );
@@ -359,17 +411,28 @@ function PhotoStage({
     return (
       <div ref={ref} className="relative w-full overflow-hidden">
         {/* 写真は帯いっぱい（止めない）。帯が横長になるので、水平線と海が残るよう下を基準に切り抜く🟡 */}
-        <img src="/img/bg-hero.jpg" alt="" className="absolute inset-0 size-full object-cover object-bottom" />
+        <img
+          src="/img/bg-hero.jpg"
+          alt=""
+          className="absolute inset-0 size-full object-cover object-bottom"
+          style={{ filter: photoFilter(cfg.bright) }}
+        />
         {cfg.curve === 4 && (
           <img
             src="/img/bg-hero.jpg"
             alt=""
             aria-hidden
             className="pointer-events-none absolute inset-0 size-full object-cover object-bottom"
-            style={{ filter: "blur(24px)", transform: "scale(1.08)", WebkitMaskImage: blurMask, maskImage: blurMask }}
+            style={{
+              filter: `blur(24px)${cfg.bright !== 100 ? ` brightness(${cfg.bright / 100})` : ""}`,
+              transform: "scale(1.08)",
+              WebkitMaskImage: blurMask,
+              maskImage: blurMask,
+            }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+        {/* 影と光（写真の明るさの案）。前は下半分に黒い影35%で固定（bg-gradient-to-t from-black/35） */}
+        <PhotoTone tone={cfg.tone} shade={cfg.shade} shadeH={cfg.shadeH} light={cfg.light} />
         <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: fadePx + 3, background: pcFade }} />
         {/* 高さは中身なり：上＝グラデの長さ＋上のパディング／下＝下のパディング */}
         <div
@@ -401,10 +464,10 @@ function PhotoStage({
           alt=""
           className="size-full object-cover"
           /* 案8：顔を出しながら少し引く。動かすのは transform だけ */
-          style={zoom ? { transform: `scale(${1.12 - 0.12 * t})` } : undefined}
+          style={{ transform: zoom ? `scale(${1.12 - 0.12 * t})` : undefined, filter: photoFilter(cfg.bright) }}
         />
-        {/* 文字が読めるよう、下側だけわずかに沈ませる */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+        {/* 文字が読めるよう、下側だけわずかに沈ませる（写真の明るさの案で、影の濃さ・色と光が変わる・2026-10-20） */}
+        <PhotoTone tone={cfg.tone} shade={cfg.shade} shadeH={cfg.shadeH} light={cfg.light} />
       </div>
 
       {/* ② 手前の白。箱ではなく「だんだん透明になる面」。

@@ -164,6 +164,11 @@
   --ft-overlap: 400px;    /* 同 フッターの写真を体験セクションの下へ重ねる長さ（グラデはここから始まる）🟡 */
   --ft-z: 0;              /* 同 フッターを上のセクションの後ろへ回す（体験のカードとボタンが手前） */
   --ft-pad-top: 64px;     /* 同 フッターの上のパディング（グラデの下〜中身）🟡 */
+  --ft-tone: 0;           /* 同 写真の明るさの案（SiteFooter の PHOTO_TONES。0=今のまま） */
+  --ft-photo-bright: 100; /* 同 写真の明るさ（%） */
+  --ft-shade: 35;         /* 同 下からの影の濃さ（%） */
+  --ft-shade-h: 50;       /* 同 影が下から写真のどこまでかかるか（%） */
+  --ft-light: 0;          /* 同 光を重ねる強さ（%・案3 だけ） */
   /* 重ね写真の案で、写真が右へ流れていく速さ。1秒あたり全体の何割進むか。
      スクロールの強さ・長さに関わらず、いつもこの速さで流れる（2026-09-17 ヒデさん指示） */
   --ev-shuf-dur: 1; /* 2026-09-26 体験セクション案31（カードを切る）の秒数。調整パネル「カードを切る速さ」 */
@@ -278,62 +283,11 @@ html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive {
 html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive:hover {
   color: rgba(30, 30, 30, 0.8);
 }
-html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive.bgm-seg-on img {
-  /* 【2026-09-21 ヒデさん指示】
-       「オンがディスエイブルの時の見た目を変えてほしい。白背景の時の。
-         丸は白色で、なおかつ中のピクトグラムは青に」
-     もとの絵（icon-bgm-on-dim.svg）は【白い丸＋青い線】なのに、
-     全体に opacity .2 をかけて薄くしていたため、白背景では丸も線も消えていた。
-     → 白背景のときだけ、薄がけを外した専用の絵に差し替える。
-        丸＝白（不透明）／ピクト＝#0070C9。
-     ⚠️ 選んでいる側（塗られた丸）は前のままでよい、との指定なので触らない。 */
-  content: url("/img/icon-bgm-on-dim-light.svg");
-  filter: none;
-  opacity: 1;
-}
-/* 【2026-10-20 ついでに直した】上の差し替えが OFF 側にも効いていて、白い場面で ON を選んでいる時、
-   選んでいない OFF のアイコンが「音が出ている」絵（ON の絵）に化けていた。
-   → 差し替えを ON 側だけにし、OFF 側は同じ考え方の専用の絵（白い丸＋青い斜線のスピーカー）にする */
-html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive.bgm-seg-off img {
-  content: url("/img/icon-bgm-off-light.svg");
-  filter: none;
-  opacity: 1;
-}
-
-/* ===== 音のスイッチのアイコン 5案のモック（2026-10-20・BgmIcons.tsx） =====
-   選んでいない側は薄く（空の上 40%🟡）。白い場面では上の 2026-09-21 の決まりと同じく薄がけしない */
-.bgm-switch .bgm-seg-inactive .bgm-ico:not(.bgm-ico-cc) {
-  opacity: 0.4;
-  transition: opacity 0.3s;
-}
-.bgm-switch .bgm-seg-inactive:hover .bgm-ico:not(.bgm-ico-cc) {
-  opacity: 0.7;
-}
-/* 案6 音の波は横の文字の色で描く（currentColor）。白い場面では文字と一緒に濃い灰色へ変わる（上の data-header-dark の色）。
-   色の移り変わりも文字と同じ速さに */
-.bgm-switch .bgm-ico-cc {
+/* 音のスイッチのアイコン「音の波」（2026-10-20 決定・BgmIcons.tsx）は横の文字の色で描く（currentColor）。
+   白い場面では上の .bgm-seg-inactive の色（Text_Default の50%）で文字と一緒に濃い灰色へ変わる。
+   前の絵（白い丸＋青い線のスピーカー）の時の「白い場面だけ専用の絵へ差し替え」（2026-09-21）は、絵ごと消したので外した */
+.bgm-switch .bgm-ico {
   transition: color 0.3s;
-}
-html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive .bgm-ico {
-  opacity: 1;
-}
-/* 案1：鳴っている間だけ、音の波2本がゆっくり明滅する（内→外の順）🟡 */
-.bgm-ico-waves .bgm-w1,
-.bgm-ico-waves .bgm-w2 {
-  animation: bgm-wave 1.6s ease-in-out infinite;
-}
-.bgm-ico-waves .bgm-w2 {
-  animation-delay: 0.3s;
-}
-@keyframes bgm-wave {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bgm-ico-waves .bgm-w1,
-  .bgm-ico-waves .bgm-w2 {
-    animation: none;
-  }
 }
 
 

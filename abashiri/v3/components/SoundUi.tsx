@@ -21,8 +21,7 @@ import {
   clampVolume,
 } from "./bgmConfig";
 import { bgmGainAt } from "./bgmGain";
-import { BgmIcon, BGM_ICON_DEFAULT, BGM_ICON_VARIANTS } from "./BgmIcons";
-import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
+import { BgmWaveIcon } from "./BgmIcons";
 
 /** 白モック内のボタン置き場（TopPage / ExperienceFlow が用意する） */
 const SLOT_ID = "abashiri-sound-slot";
@@ -106,31 +105,6 @@ export default function SoundUi({
       setBtnTune(mergeSoundBtn((e as CustomEvent).detail));
     window.addEventListener(SOUND_BTN_TUNE_EVENT, onTune);
     return () => window.removeEventListener(SOUND_BTN_TUNE_EVENT, onTune);
-  }, []);
-
-  /* アイコンの案（2026-10-20 モック・0＝今のまま）。トップの調整パネルが <html data-bgm-icon> に書く。
-     パネルの無いページ（詳しいページ）でも同じ案で見えるよう、最初はパネルの保存値も読む */
-  const [iconVar, setIconVar] = useState(BGM_ICON_DEFAULT);
-  useEffect(() => {
-    const read = () => {
-      const v = Number(document.documentElement.dataset.bgmIcon);
-      if (Number.isFinite(v) && document.documentElement.dataset.bgmIcon !== undefined) return v;
-      try {
-        const saved = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}`) || "null");
-        const v = saved?.sound?.icon;
-        return typeof v === "number" ? v : BGM_ICON_DEFAULT;
-      } catch {
-        return BGM_ICON_DEFAULT;
-      }
-    };
-    const sync = () => {
-      const v = read();
-      setIconVar(BGM_ICON_VARIANTS[v] ? v : 0);
-    };
-    sync();
-    const obs = new MutationObserver(sync);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-bgm-icon"] });
-    return () => obs.disconnect();
   }, []);
 
   /* ボタンはモック内左上の置き場に出す。無いページでは画面左下に出す */
@@ -329,14 +303,8 @@ export default function SoundUi({
           白モック内の置き場があればそこ（左上・ヘッダーと上下中央ぞろえ）、無いページでは画面左下 */}
       {!showDialog &&
         (() => {
-          const seg = (
-            on: boolean,
-            label: string,
-            iconActive: string,
-            iconInactive: string
-          ) => {
+          const seg = (on: boolean, label: string) => {
             const active = on === audible;
-            const icon = active ? iconActive : iconInactive;
             return (
               <button
                 key={label}
@@ -358,7 +326,7 @@ export default function SoundUi({
                   }
                 }}
                 aria-pressed={active}
-                className={`font-num flex h-7 w-[88px] cursor-pointer items-center justify-center ${iconVar === 6 ? "gap-2" : "gap-1"} rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
+                className={`font-num flex h-7 w-[88px] cursor-pointer items-center justify-center gap-2 rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
                   on ? "bgm-seg-on" : "bgm-seg-off"
                 } ${
                   active
@@ -366,23 +334,9 @@ export default function SoundUi({
                     : "bgm-seg-inactive text-white/50 hover:text-white/80"
                 }`}
               >
-                {/* 案6 音の波（ヒデさんの見本）は、見本どおりアイコンと文字の間を広めに（4→8px🟡） */}
-                {iconVar > 0 ? (
-                  /* アイコン5案のモック（BgmIcons.tsx）。鳴っている時の ON だけ波が動く案がある */
-                  <BgmIcon variant={iconVar} kind={on ? "on" : "off"} playing={on && active} />
-                ) : (
-                  <>
-                    {/* ⚠️ 白背景では中のピクトを青にする（globals.css の
-                       html[data-header-dark] 側で mask を使って塗り替える）。
-                       そのために「どの絵か」を CSS 変数で渡しておく */}
-                    <img
-                      src={icon}
-                      alt=""
-                      className="size-[16px]"
-                      style={{ ["--bgm-icon" as string]: `url(${icon})` } as React.CSSProperties}
-                    />
-                  </>
-                )}
+                {/* アイコンは「音の波」（BgmIcons.tsx・2026-10-20 決定）。色は文字と同じ（currentColor）。
+                   見本どおり、アイコンと文字の間は 8px🟡（前の絵の時は 4px） */}
+                <BgmWaveIcon kind={on ? "on" : "off"} />
                 {label}
               </button>
             );
@@ -393,13 +347,12 @@ export default function SoundUi({
               className={`${slot ? "relative" : "fixed bottom-4 left-4 z-50"}`}
             >
               <div className="bgm-switch flex items-center justify-center rounded-full bg-white/40 p-[2px] backdrop-blur-65 transition-colors duration-500 ease-standard">
-                {/* アイコンは状態ごとに別アセット（カンプ 15492:21886=ON時 / 15492:22168=OFF時） */}
-                {seg(true, "ON", "/img/icon-bgm-on.svg", "/img/icon-bgm-on-dim.svg")}
-                {seg(false, "OFF", "/img/icon-bgm-off-active.svg", "/img/icon-bgm-off.svg")}
+                {seg(true, "ON")}
+                {seg(false, "OFF")}
               </div>
 
               {/* 音量インジケーター：ONが鳴っている状態でもう一度ONを押すと出る。
-                  スイッチと同じ白ガラスのピルに、スピーカー小アイコン＋スライダー＋% */}
+                  スイッチと同じ白ガラスのピルに、音の波の小アイコン＋スライダー＋%（アイコンは 2026-10-20 に音の波へ） */}
               <div
                 className={`bgm-switch absolute left-0 top-[calc(100%+8px)] flex w-[180px] items-center gap-2 rounded-full bg-white/40 py-[6px] pl-3 pr-4 backdrop-blur-65 transition-all duration-300 ease-standard ${
                   showVol
@@ -407,7 +360,9 @@ export default function SoundUi({
                     : "pointer-events-none -translate-y-1 opacity-0"
                 }`}
               >
-                <img src="/img/icon-bgm-on.svg" alt="" className="size-[16px] shrink-0" />
+                <span className="text-white">
+                  <BgmWaveIcon kind="on" className="size-[16px]" />
+                </span>
                 <input
                   type="range"
                   min={0}
