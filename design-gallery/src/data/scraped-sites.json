@@ -1,5 +1,53 @@
 [
   {
+    "id": "5cdc2e842602",
+    "title": "株式会社サン防災",
+    "url": "https://sunbousai.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/sunbousai_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-08-31T04:43:27.183Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:29.333Z"
+  },
+  {
+    "id": "019303562428",
+    "title": "Will Style Inc.",
+    "url": "https://willstyle.co.jp/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/willstyle02_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-05-13T03:46:20.971Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:54:53.630Z"
+  },
+  {
+    "id": "836ef8e6e679",
+    "title": "八王子糖尿病内科クリニック",
+    "url": "https://hachioji-dm.com/",
+    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/hachiojidiabetesclinic_t-400x350.jpg",
+    "source": "sankou",
+    "category": [
+      "uncategorized"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-09-14T04:04:27.082Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T08:03:02.660Z"
+  },
+  {
     "id": "a873dce4d84d",
     "title": "SHIJIMA ATAMI | 都会の喧騒から離れたホテル",
     "url": "https://shijima-atami.com/",
@@ -11451,52 +11499,18 @@
     "firstSeen": "2026-10-20T03:28:42.378Z"
   },
   {
-    "id": "cc225a175c9f",
-    "title": "【公式】APARTMENT HOTEL MIMARU",
-    "url": "https://mimaruhotels.com/ja/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/mimaruhotels_t-400x350.jpg",
-    "source": "sankou",
+    "id": "be083b6f91f8",
+    "title": "Ondo Collective",
+    "url": "https://ondocollective.jp/",
+    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/1-1-768x576.png",
+    "source": "muuuuu",
     "category": [
-      "uncategorized"
+      "green"
     ],
     "taste": [],
-    "date": "2025-05",
+    "date": "2026-10",
     "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:56:13.143Z"
-  },
-  {
-    "id": "e561418aa3bc",
-    "title": "ADO MIZUMORI × studio CLIP",
-    "url": "https://www.dot-st.com/studioclip/cp/sc2025adomizumori/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/studioclipadomizumori_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2025-05",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:56:11.285Z"
-  },
-  {
-    "id": "d6381668a32a",
-    "title": "SANU 2nd Home Co-Owners | 自然がもうひとつの家になる。",
-    "url": "https://www.sa-nu.com/",
-    "thumbnailUrl": "https://sankoudesign.com/wp-content/uploads/sanu_t-400x350.jpg",
-    "source": "sankou",
-    "category": [
-      "uncategorized"
-    ],
-    "taste": [],
-    "date": "2025-05",
-    "starred": false,
-    "firstSeen": "2026-06-13T04:08:32.368Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:56:10.469Z"
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "95ac504351af",
@@ -11539,22 +11553,6 @@
     "date": "2026-10",
     "starred": false,
     "firstSeen": "2026-10-15T16:26:47.638Z"
-  },
-  {
-    "id": "4c783a7d799e",
-    "title": "株式会社サン防災",
-    "url": "https://sunbousai.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/10/1008-768x576.png",
-    "source": "muuuuu",
-    "category": [
-      "building"
-    ],
-    "taste": [],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-08-31T04:43:27.183Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:29.333Z"
   },
   {
     "id": "b1ae19c0b53a",
@@ -11796,22 +11794,6 @@
     "firstSeen": "2026-09-24T16:38:23.302Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:58:18.167Z"
-  },
-  {
-    "id": "bcd625e20464",
-    "title": "Will Style Inc.",
-    "url": "https://willstyle.co.jp/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/09/20-1-768x576.png",
-    "source": "muuuuu",
-    "category": [
-      "technology"
-    ],
-    "taste": [],
-    "date": "2026-09",
-    "starred": false,
-    "firstSeen": "2026-05-13T03:46:20.971Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:54:53.630Z"
   },
   {
     "id": "0f918135ebd5",
@@ -12450,20 +12432,18 @@
     "lastCheckedAt": "2026-10-02T07:58:24.091Z"
   },
   {
-    "id": "3e66222e980b",
-    "title": "核點 Nudot Studio",
-    "url": "https://nudot.com.tw/",
-    "thumbnailUrl": "https://muuuuu.org/wp-content/uploads/2026/07/17-768x576.webp",
-    "source": "muuuuu",
+    "id": "0ce55349ac17",
+    "title": "ロガーズオートキャンプ那須高原",
+    "url": "https://loggers-nasu.com/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261020_02-498x328.jpg",
+    "source": "webdesignclip",
     "category": [
-      "black"
+      "レジャー・アウトドア"
     ],
     "taste": [],
-    "date": "2026-07",
+    "date": "2026-10",
     "starred": false,
-    "firstSeen": "2026-06-27T03:49:58.378Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:58:25.573Z"
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "c153f431e05b",
@@ -12562,22 +12542,6 @@
     "date": "2026-10",
     "starred": false,
     "firstSeen": "2026-10-08T04:34:59.676Z"
-  },
-  {
-    "id": "0512c258f3ac",
-    "title": "八王子糖尿病内科クリニック",
-    "url": "https://hachioji-dm.com/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261007_02-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "病院・医療・薬品"
-    ],
-    "taste": [],
-    "date": "2026-10",
-    "starred": false,
-    "firstSeen": "2026-09-14T04:04:27.082Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:03:02.660Z"
   },
   {
     "id": "195a43b33ce5",
@@ -16652,22 +16616,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:59:20.721Z"
-  },
-  {
-    "id": "473922197a6d",
-    "title": "名古屋デザイン＆テクノロジー専門学校",
-    "url": "https://www.nca.ac.jp/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260113_03-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "学校・教育"
-    ],
-    "taste": [],
-    "date": "2026-01",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T07:59:21.240Z"
   },
   {
     "id": "7cf668ecbd9f",
@@ -23176,6 +23124,20 @@
     "lastCheckedAt": "2026-10-02T08:00:24.417Z"
   },
   {
+    "id": "0155a7a3d5fa",
+    "title": "Tines",
+    "url": "https://www.tines.com/",
+    "thumbnailUrl": "https://lp.webdesignclip.com/wp-content/uploads/lp20261020_01-500x817.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "アプリ・ソフトウェア"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
+  },
+  {
     "id": "64ae538e0577",
     "title": "Kohmi EXPO 2026",
     "url": "https://kohmiexpo.com/",
@@ -24251,6 +24213,20 @@
     "firstSeen": "2026-07-03T03:41:15.077Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:00:35.586Z"
+  },
+  {
+    "id": "e5a5c64ce714",
+    "title": "デリカミニ スペシャルサイト｜MITSUBISHI MOTORS JAPAN",
+    "url": "https://www.mitsubishi-motors.co.jp/lineup/delica_mini/special/",
+    "thumbnailUrl": "https://lp.webdesignclip.com/wp-content/uploads/lp20260701_01-500x817.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "自動車・バイク・自転車"
+    ],
+    "taste": [],
+    "date": "2026-07",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "6568d7008d49",
@@ -26440,22 +26416,6 @@
     "lastCheckedAt": "2026-10-02T08:00:56.844Z"
   },
   {
-    "id": "174cac5f4b65",
-    "title": "アリナミンナイトリカバー | アリナミン",
-    "url": "https://alinamin.jp/lp/alinaminnightrecover.html",
-    "thumbnailUrl": "https://lp.webdesignclip.com/wp-content/uploads/20251112_01-500x817.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "病院・医療・薬品"
-    ],
-    "taste": [],
-    "date": "2025-11",
-    "starred": false,
-    "firstSeen": "2026-04-19T11:40:43.578Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-10-02T08:00:56.832Z"
-  },
-  {
     "id": "8719a750f6fe",
     "title": "有限会社わらしべ",
     "url": "https://taiyaki-warashibe.com/",
@@ -27204,6 +27164,20 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:01:08.285Z"
+  },
+  {
+    "id": "e38b25877c3e",
+    "title": "株式会社UNBALANCE",
+    "url": "https://www.unbalance.co.jp/",
+    "thumbnailUrl": "https://sp.webdesignclip.com/wp-content/uploads/20251029_01-500x817.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "コーポレートサイト・事務所"
+    ],
+    "taste": [],
+    "date": "2025-10",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "ebbb9277709a",
@@ -28259,6 +28233,22 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:01:20.878Z"
+  },
+  {
+    "id": "515f0f4ebf8b",
+    "title": "ADO MIZUMORI × studio CLIP",
+    "url": "https://www.dot-st.com/studioclip/cp/sc2025adomizumori/",
+    "thumbnailUrl": "https://sp.webdesignclip.com/wp-content/uploads/20250609_01-500x817.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "アパレル・ファッション"
+    ],
+    "taste": [],
+    "date": "2025-06",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:56:11.285Z"
   },
   {
     "id": "77b69bde9513",
@@ -31904,6 +31894,25 @@
     "firstSeen": "2026-10-14T16:36:33.864Z"
   },
   {
+    "id": "f91a92c5457c",
+    "title": "名古屋デザイン＆テクノロジー専門学校（名古屋テック）｜IT・ゲーム・イラスト・eスポーツを学ぶ",
+    "url": "https://www.nca.ac.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/12/251219-1-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "学校",
+      "教育機関"
+    ],
+    "taste": [],
+    "date": "2025-12",
+    "starred": false,
+    "firstSeen": "2026-04-19T11:40:43.578Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:59:21.240Z"
+  },
+  {
     "id": "17623ea5187a",
     "title": "いわき靴下ラボ アンド ファクトリー | IWAKI Socks Lab &#038; Factory",
     "url": "https://www.iwaki-socks.jp/",
@@ -32194,6 +32203,25 @@
     "date": "2025-12",
     "starred": false,
     "firstSeen": "2026-10-14T16:36:33.864Z"
+  },
+  {
+    "id": "702f937a888d",
+    "title": "物流DXツール・コンサルならHacobu | MOVO(ムーボ)、Hacobu Strategy",
+    "url": "https://hacobu.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/11/251202-1-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "コーポレートサイト",
+      "機械",
+      "電機",
+      "工業",
+      "流通"
+    ],
+    "taste": [],
+    "agency": "BEES ＆ HONEY",
+    "date": "2025-12",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "a1a331c3e226",
@@ -33359,6 +33387,26 @@
     "lastCheckedAt": "2026-10-02T07:56:12.042Z"
   },
   {
+    "id": "c5f742bc4ac2",
+    "title": "SANU 2nd Home Co-Owners | 自然がもうひとつの家になる。",
+    "url": "https://www.sa-nu.com/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/07/250725-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "暮らし",
+      "建築",
+      "不動産"
+    ],
+    "taste": [],
+    "date": "2025-08",
+    "starred": false,
+    "firstSeen": "2026-06-13T04:08:32.368Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:56:10.469Z"
+  },
+  {
     "id": "45d9936237be",
     "title": "株式会社ARUTEGA｜アルテガ",
     "url": "https://arutega.jp/",
@@ -33515,6 +33563,27 @@
     "date": "2025-06",
     "starred": false,
     "firstSeen": "2026-10-17T03:05:28.362Z"
+  },
+  {
+    "id": "091c2ed68083",
+    "title": "【公式】APARTMENT HOTEL MIMARU",
+    "url": "https://mimaruhotels.com/ja/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/06/250627-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "旅行",
+      "宿泊施設",
+      "交通機関"
+    ],
+    "taste": [],
+    "agency": "MEFILAS",
+    "date": "2025-06",
+    "starred": false,
+    "firstSeen": "2026-04-19T11:40:43.578Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:56:13.143Z"
   },
   {
     "id": "b3de2dde83c9",
@@ -34375,6 +34444,23 @@
     "date": "2025-05",
     "starred": false,
     "firstSeen": "2026-10-17T03:05:28.362Z"
+  },
+  {
+    "id": "8f101076b5c9",
+    "title": "相生ユニビオ 公式オンラインストア",
+    "url": "https://store.unibio.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/05/250513-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ECサイト",
+      "飲料",
+      "食品"
+    ],
+    "taste": [],
+    "agency": "しなやかデザイン",
+    "date": "2025-05",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "809af626389c",
@@ -35486,6 +35572,24 @@
     "firstSeen": "2026-06-13T04:08:32.368Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T07:56:34.435Z"
+  },
+  {
+    "id": "bcccbccbde94",
+    "title": "神戸港クルーズ船ポータルサイト | CRUISE KOBE",
+    "url": "https://cruise-kobe.com/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2025/03/250321-1-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "ブランド",
+      "サービスサイト",
+      "旅行",
+      "宿泊施設",
+      "交通機関"
+    ],
+    "taste": [],
+    "date": "2025-03",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
   },
   {
     "id": "fd21e048d4a8",
@@ -45353,6 +45457,21 @@
     "lastCheckedAt": "2026-10-02T08:03:21.645Z"
   },
   {
+    "id": "c9f38c22ab8d",
+    "title": "ハウステンボス｜採用サイト",
+    "url": "https://www.huistenbosch.co.jp/recruit/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/vu0o3k6xhtej-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "採用･仕事･アルバイトサイト",
+      "レジャー施設･テーマパーク"
+    ],
+    "taste": [],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-10-20T16:29:11.906Z"
+  },
+  {
     "id": "b85080e69d2f",
     "title": "intloop｜中途採用サイト",
     "url": "https://www.intloop.com/recruit/career/",
@@ -45503,6 +45622,27 @@
     "firstSeen": "2026-06-29T04:20:41.410Z",
     "isDead": false,
     "lastCheckedAt": "2026-10-02T08:03:24.151Z"
+  },
+  {
+    "id": "922738261a99",
+    "title": "Nudot Studio",
+    "url": "https://www.nudot.com.tw/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/s61rjeo4v2cb-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "デザイン･制作･開発会社",
+      "アート･芸術"
+    ],
+    "taste": [
+      "パララックス",
+      "グリッドデザイン",
+      "ピクセルアート"
+    ],
+    "date": "2026-10",
+    "starred": false,
+    "firstSeen": "2026-06-27T03:49:58.378Z",
+    "isDead": false,
+    "lastCheckedAt": "2026-10-02T07:58:25.573Z"
   },
   {
     "id": "a626a61e33fa",
