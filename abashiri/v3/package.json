@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/sync-tune-panel.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/sync-tune-panel.mjs",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check:tune-panel": "node scripts/sync-tune-panel.mjs --check"
   },
   "dependencies": {
     "framer-motion": "^13.1.0",

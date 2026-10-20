@@ -3,7 +3,7 @@
 /*
  * トップページに常時出しておく調整パネル（ヒデさん指示 2026-08-18）
  *
- * ・仕様は settings/tune-panel/README.md の共通部品（public/tune-panel.js v2.1.0・2026-09-28 に更新（AnyFlow と見た目も一致））に準拠
+ * ・仕様は settings/tune-panel/README.md の共通部品（public/tune-panel.js。原本 settings/tune-panel/tune-panel.js から scripts/sync-tune-panel.mjs が自動で写す・写しは直接直さない・2026-10-20 から v2.3.2）に準拠
  *   隠しモード（右下の透明な四角で出す）・タブ→カテゴリのカード・値は案ごと×PC/スマホごと・自動保存
  *
  * カテゴリの並びは「ページ ＞ セクション ＞ 細目」の3階層（2026-08-21 ヒデさん指示。
@@ -446,34 +446,6 @@ export default function TopTunePanel({
       return typeof saved === typeof def ? saved : def;
     };
 
-    /* 【2026-10-20 直した】焼き込み（tune-defaults.json）の値が、初めて来た人（ブラウザに保存の無い人）に効いていなかった。
-       共通の調整パネルは、ブラウザに保存が無い時、選ばれている案のつまみを「案の最初の値」（options[].values）で
-       上書きする作り。そのため ヒデさんが保存した フッターのグラデの長さ 130%・重ねる長さ 872px が、
-       初めて来た人には 案の最初の値 72%・400px に戻っていた（＝デプロイしても見る人に届かない）。
-       → パネルを作る前に、「いま選ばれている案」の最初の値だけを、焼き込みを重ねた今の値にそろえる。
-         ほかの案の最初の値はそのまま（案を切り替えた時は今までどおり） */
-    const pinSelectedVariantBase = <T,>(schema: T): T => {
-      const get = (path: string) =>
-        path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), params);
-      type Opt = { value: unknown; values?: Record<string, unknown> };
-      type Item = { pills?: string; path?: string; options?: Opt[] };
-      for (const cat of schema as unknown as { items?: Item[] }[]) {
-        for (const it of cat.items || []) {
-          if (!it.pills || !it.path || !Array.isArray(it.options)) continue;
-          const sel = get(it.path);
-          const opt = it.options.find((o) => String(o.value) === String(sel));
-          if (!opt || !opt.values) continue;
-          const fixed: Record<string, unknown> = {};
-          for (const k of Object.keys(opt.values)) {
-            const v = get(k);
-            fixed[k] = v !== undefined ? v : opt.values[k];
-          }
-          opt.values = fixed;
-        }
-      }
-      return schema;
-    };
-
     const build = async () => {
       const lib = window.TunePanel;
       if (!lib) return;
@@ -589,8 +561,9 @@ export default function TopTunePanel({
         position: { right: 20, bottom: 20 },
         params,
         defaults: DEFAULTS,
-        /* ⚠️ 選ばれている案の最初の値を焼き込みの値にそろえる（pinSelectedVariantBase・2026-10-20） */
-        schema: pinSelectedVariantBase([
+        /* 焼き込み（tune-defaults.json）は、初めて来た人にもそのまま届く（共通の部品 v2.3.2 で直した・2026-10-20。
+           前はページ側の pinSelectedVariantBase で、選ばれている案の最初の値を焼き込みにそろえていた） */
+        schema: [
           {
             cat: "サイト共通",
             open: false,
@@ -2028,7 +2001,7 @@ export default function TopTunePanel({
               },
             ],
           },
-        ]),
+        ],
         onChange: (info?: { path?: string }) => {
           applyVars();
           applyVolume();
