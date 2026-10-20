@@ -1194,6 +1194,18 @@ try {
       await context.close();
     }
   }
+  /* ============ 19. 原本から自動で写すサイトの写しが、原本と同じ（2026-10-20〜 網走V3。写しは手で直さない） ============
+     原本を直したのに写し直していない時に知らせる。直し方は、そのサイトで npm run dev（または node scripts/sync-tune-panel.mjs） */
+  {
+    const { execFileSync } = await import('node:child_process');
+    const SYNCS = [['網走V3', path.resolve(ROOT, '../../abashiri/v3/scripts/sync-tune-panel.mjs')]];
+    for (const [site, tool] of SYNCS) {
+      if (!fs.existsSync(tool)) { rec(`${site} の写しが原本と同じ`, true, '写す道具が無いので調べない'); continue; }
+      let out = '', same = true;
+      try { out = execFileSync('node', [tool, '--check'], { encoding: 'utf8' }); } catch (e) { same = false; out = String(e.stdout || e.message); }
+      rec(`${site} の写し（tune-panel.js・phone-mode.client.js）が原本と同じ`, same, out.trim().split('\n').join(' / '));
+    }
+  }
 } catch (e) {
   console.error(e);
   rec('検査の実行', false, '途中で止まった: ' + (e && e.message ? e.message.split('\n')[0] : e));
