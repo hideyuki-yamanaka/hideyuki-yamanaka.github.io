@@ -15,6 +15,9 @@
  *     案34 3Dカルーセル … 中央に1枚、左右は奥へ回り込む。1回＝1枚送る
  *   1回＝1枚の案は、MobileTop のスワイプが gate を呼ぶ。カードを動かしたら true を返し、
  *   その回は場面を切り替えない。4枚見終わったら（または戻しきったら）false＝場面を切り替える。
+ *   【2026-10-20】スマホのグルメ以降はふつうの縦スクロールになった（flow）。スワイプはスクロールなので
+ *   gate は呼ばれない → 案32・34 も案31 と同じ送りボタン（EvNav）を束の下に出して、そこから gate を呼ぶ。
+ *   案1・案33 の「出てくる動き」は、セクションが画面に入った時（active）に再生する。
  *
  * 🟡仮置き：スマホの寸法・文字の大きさはカンプが無いので、PC の比率とスマホの既存の組みから決めた
  */
@@ -105,10 +108,13 @@ function NowCaption({ it }: { it: EventItem }) {
 export default function MobileEvents({
   active,
   gate,
+  flow = false,
 }: {
   /** この場面がいま表示中か（出てくる動きの再生に使う） */
   active: boolean;
   gate: EventsGate;
+  /** ふつうの縦スクロールの中に置く時（2026-10-20）。スワイプの代わりに送りボタンで送る */
+  flow?: boolean;
 }) {
   const pat = useEventPattern();
   /* 1回＝1枚を持たない案では、スワイプはそのまま場面の切り替えに回す */
@@ -117,13 +123,13 @@ export default function MobileEvents({
   }, [pat, gate]);
   switch (pat) {
     case 31:
-      return <StackScene key="31" kind="shuffle" gate={gate} />;
+      return <StackScene key="31" kind="shuffle" gate={gate} flow={flow} />;
     case 32:
-      return <StackScene key="32" kind="peel" gate={gate} />;
+      return <StackScene key="32" kind="peel" gate={gate} flow={flow} />;
     case 33:
-      return <Burst active={active} />;
+      return <Burst active={active} flow={flow} />;
     case 34:
-      return <Ring key="34" gate={gate} />;
+      return <Ring key="34" gate={gate} flow={flow} />;
     default:
       return <Grow active={active} />;
   }
@@ -165,7 +171,7 @@ function Grow({ active }: { active: boolean }) {
 }
 
 /* ── 案31・32 重ね写真 ────────────────────── */
-function StackScene({ kind, gate }: { kind: "shuffle" | "peel"; gate: EventsGate }) {
+function StackScene({ kind, gate, flow }: { kind: "shuffle" | "peel"; gate: EventsGate; flow?: boolean }) {
   const vp = useViewport();
   /* 束（420×616）を画面に収める倍率。幅は5割・高さは46%まで
      （幅6割だと、案31 の後ろを流れる文字がほとんど隠れた。2026-09-26 実測） */
@@ -220,6 +226,12 @@ function StackScene({ kind, gate }: { kind: "shuffle" | "peel"; gate: EventsGate
       {kind === "peel" && (
         <p className="self-end text-[40px] font-thin leading-none text-black/80 tab:text-[64px]">網走</p>
       )}
+      {/* ふつうのスクロールの中では、スワイプでめくれないので、案31 と同じ送りボタンで1枚ずつめくる */}
+      {kind === "peel" && flow && (
+        <div className="flex justify-center self-center" style={{ width: `calc(${half} * 2)` }}>
+          <EvNav sp onStep={(d) => gate.current?.(d)} />
+        </div>
+      )}
       <NowCaption it={ITEMS[top]} />
     </div>
   );
@@ -234,9 +246,10 @@ const BURST_TO = [
   { left: "3%", top: "17%", width: "42%" },
 ];
 const BURST_FROM = { left: "35%", top: "44%", width: "30%" };
-function Burst({ active }: { active: boolean }) {
+function Burst({ active, flow }: { active: boolean; flow?: boolean }) {
   return (
-    <div className="relative -mx-6 h-full tab:-mx-[80px]">
+    /* ふつうのスクロールの中では高さが決まらないので、前の場面と同じ1画面ぶんの高さを持たせる */
+    <div className={`relative -mx-6 tab:-mx-[80px] ${flow ? "h-[100dvh]" : "h-full"}`}>
       {ITEMS.map((it, i) => (
         <motion.button
           key={it.slug}
@@ -259,7 +272,7 @@ function Burst({ active }: { active: boolean }) {
 }
 
 /* ── 案34 奥行きの3Dカルーセル ──────────────── */
-function Ring({ gate }: { gate: EventsGate }) {
+function Ring({ gate, flow }: { gate: EventsGate; flow?: boolean }) {
   const ratio = useCardRatio();
   const progress = useRef(0);
   const n = useRef(0);
@@ -286,8 +299,14 @@ function Ring({ gate }: { gate: EventsGate }) {
         progress={progress}
         ratio={ratio}
         heading={false}
-        hint="↑ 上へスワイプすると写真が右から左へ切り替わります"
+        hint={flow ? "下のボタンで写真が切り替わります" : "↑ 上へスワイプすると写真が右から左へ切り替わります"}
       />
+      {/* ふつうのスクロールの中では、スワイプで送れないので、案31 と同じ送りボタンで1枚ずつ送る */}
+      {flow && (
+        <div className="flex justify-center">
+          <EvNav sp onStep={(d) => gate.current?.(d)} />
+        </div>
+      )}
       <div className="px-6 tab:px-[80px]">
         <NowCaption it={ITEMS[top]} />
       </div>

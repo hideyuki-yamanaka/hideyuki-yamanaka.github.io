@@ -10,6 +10,9 @@
  *   ページは「固定ビューのスライド」。上下スワイプ（またはホイール）で、
  *   画面はそのままに、いまの場面がブラーで消え → 次の場面がブラーから現れる
  *   （その場でブラーのクロスフェード。スクロールで流れていくのではない）。
+ *   【2026-10-20 ヒデさん】「グルメ以降のセクション、フェードインフェードアウトではなく、普通に上下スクロールで」
+ *   → グルメ・体験・フッターは1つの場面（FLOW_SCENE）にまとめ、その中をふつうに縦スクロールする。
+ *     KV〜スポットはこれまでどおり1枚ずつのブラーの切り替え。流れの一番上で下へスワイプすると、スポット④へ戻る。
  * コピー・写真はデスクトップ実装と同じ実データ。
  */
 import InlineSvg from "./InlineSvg";
@@ -17,7 +20,7 @@ import { navigateTo } from "./PageTransition";
 import MobileEvents from "./MobileEvents";
 import SiteFooter from "./SiteFooter";
 import MobileHeader, { MOBILE_GOTO_KEY } from "./MobileHeader";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 
 const MSG_TITLE = "網走は何もない。";
@@ -74,16 +77,16 @@ const GOURMET = [
 ];
 
 /* 体験セクションは 2026-09-26 に MobileEvents へ（PC の案1〜5 をスマホでも出し分ける） */
-const EVENTS_SCENE = 7;
-const FOOTER_SCENE = 8;
-/** フッターのサイトマップ見出し・別ページからの「セクションへ」の行き先 → 場面の番号 */
+/** グルメ・体験・フッターをまとめた、ふつうに縦スクロールする場面（2026-10-20） */
+const FLOW_SCENE = 6;
+/** メニュー・別ページから来る番号（6 グルメ／7 体験／8 フッター。前の場面の番号のまま）→ 流れの中のどこへ */
+const FLOW_ANCHOR: Record<number, "gourmet" | "events" | "footer"> = { 6: "gourmet", 7: "events", 8: "footer" };
+/** フッターのサイトマップ見出し・別ページからの「セクションへ」の行き先 → 番号 */
 const KEY_TO_SCENE: Record<string, number> = { spotAt: 2, gourmetAt: 6, eventsAt: 7 };
-/** 体験の場面でカードを1枚動かしたあと、次のスワイプを受けるまでの間(ms) */
-const CARD_LOCK = 550;
 
-/* KV / メッセージ / スポット×4 / グルメ / 体験 / フッター
+/* KV / メッセージ / スポット×4 / グルメ〜体験〜フッター（ふつうのスクロール）
    （2026-09-16 ヒデさん指示で体験とフッターを追加。PCと同じ中身をスマホでも見せる） */
-const SCENE_COUNT = 9;
+const SCENE_COUNT = 7;
 
 /** キービジュアルの作字ブロック（PC カンプ 415×379）をスマホで何倍にするか。
     PC との位置関係を壊さないよう、ブロックごと拡大縮小する。
@@ -102,19 +105,38 @@ export default function MobileTop() {
   const [active, setActive] = useState(0);
   const activeRef = useRef(0);
   activeRef.current = active;
-  /* 体験セクションの「1回＝1枚」の受け口（MobileEvents の案が入れる） */
+  /* 体験セクションの「1枚送る」の受け口（MobileEvents の案32・34 が入れ、送りボタンから呼ぶ） */
   const eventsGate = useRef<((dir: 1 | -1) => boolean) | null>(null);
-  /* フッターの場面は中をスクロールできる。上までスクロールし終わっている時だけ
+  /* グルメ〜フッターの場面は中をふつうにスクロールする。上までスクロールし終わっている時だけ
      「下へスワイプ＝前の場面へ」にする（途中で戻されると読めないため） */
-  const footerRef = useRef<HTMLDivElement>(null);
-  const footerTopAtTouch = useRef(true);
-  const footerTopSince = useRef(0);
+  const flowRef = useRef<HTMLDivElement>(null);
+  const flowTopAtTouch = useRef(true);
+  const flowTopSince = useRef(0);
+  /* 流れの中の行き先（グルメ・体験・フッターの頭） */
+  const anchorEls = useRef<Record<string, HTMLElement | null>>({});
+  /** 流れの場面へ入る時に、どこを開くか（メニューから来た時だけ入る） */
+  const pendingAnchor = useRef<"gourmet" | "events" | "footer" | null>(null);
+  /* 体験セクションが画面に入ったか（案1・案33 の「出てくる動き」の合図。場面式の時の active の代わり） */
+  const [eventsInView, setEventsInView] = useState(false);
   const lockRef = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
 
   preload("/img/bg-hero.jpg", { as: "image", fetchPriority: "high" });
 
+  /** 流れの中の行き先の位置（スクロールの箱の中での上端） */
+  const anchorTop = (a: "gourmet" | "events" | "footer") => {
+    if (a === "gourmet") return 0;
+    const el = anchorEls.current[a];
+    return el ? el.offsetTop : 0;
+  };
   const goTo = useCallback((n: number) => {
+    const anchor = n >= FLOW_SCENE ? FLOW_ANCHOR[Math.min(n, 8)] : null;
+    /* もう流れの場面にいる時は、その中をなめらかにスクロールして行き先へ */
+    if (anchor && activeRef.current === FLOW_SCENE) {
+      flowRef.current?.scrollTo({ top: anchorTop(anchor), behavior: "smooth" });
+      return;
+    }
+    pendingAnchor.current = anchor;
     setActive((prev) => {
       const t = Math.max(0, Math.min(SCENE_COUNT - 1, n));
       if (t === prev || lockRef.current) return prev;
@@ -127,16 +149,9 @@ export default function MobileTop() {
   }, []);
   const step = useCallback(
     (dir: number) => {
-      /* 体験の場面では、先にカードを動かすか聞く。動かしたらこの回は場面を切り替えない
-         （4枚見終わった／戻しきった時は false が返って、ふつうに場面が切り替わる） */
+      /* 体験はふつうのスクロールの中に入ったので、スワイプでカードを送る仕組み（gate）はここでは呼ばない
+         （2026-10-20。案32・34 は束の下の送りボタンで送る） */
       if (lockRef.current) return;
-      if (activeRef.current === EVENTS_SCENE && eventsGate.current?.(dir > 0 ? 1 : -1)) {
-        lockRef.current = true;
-        window.setTimeout(() => {
-          lockRef.current = false;
-        }, CARD_LOCK);
-        return;
-      }
       setActive((prev) => {
         if (lockRef.current) return prev;
         const t = Math.max(0, Math.min(SCENE_COUNT - 1, prev + dir));
@@ -156,10 +171,10 @@ export default function MobileTop() {
   const onWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; // 横は無視（グルメの横送り用）
     if (Math.abs(e.deltaY) < 8) return;
-    if (activeRef.current === FOOTER_SCENE) {
-      /* フッターの中はふつうにスクロール。上端に0.35秒以上いる時だけ前の場面へ */
-      const atTop = (footerRef.current?.scrollTop ?? 0) <= 1;
-      const settled = atTop && footerTopSince.current && performance.now() - footerTopSince.current > 350;
+    if (activeRef.current === FLOW_SCENE) {
+      /* グルメ〜フッターの中はふつうにスクロール。上端に0.35秒以上いる時だけ前の場面へ */
+      const atTop = (flowRef.current?.scrollTop ?? 0) <= 1;
+      const settled = atTop && flowTopSince.current && performance.now() - flowTopSince.current > 350;
       if (e.deltaY > 0 || !settled) return;
     }
     step(e.deltaY > 0 ? 1 : -1);
@@ -168,7 +183,7 @@ export default function MobileTop() {
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
     touch.current = { x: t.clientX, y: t.clientY };
-    footerTopAtTouch.current = (footerRef.current?.scrollTop ?? 0) <= 1;
+    flowTopAtTouch.current = (flowRef.current?.scrollTop ?? 0) <= 1;
   };
   const onTouchEnd = (e: React.TouchEvent) => {
     const s = touch.current;
@@ -178,9 +193,9 @@ export default function MobileTop() {
     const dy = t.clientY - s.y;
     touch.current = null;
     if (Math.abs(dy) < 40 || Math.abs(dy) <= Math.abs(dx)) return; // 縦スワイプのみ
-    /* フッターの中：上へのスワイプはスクロールだけ。下へのスワイプは、
+    /* グルメ〜フッターの中：上へのスワイプはスクロールだけ。下へのスワイプは、
        スワイプを始めた時に上端にいた時だけ前の場面へ */
-    if (activeRef.current === FOOTER_SCENE && (dy < 0 || !footerTopAtTouch.current)) return;
+    if (activeRef.current === FLOW_SCENE && (dy < 0 || !flowTopAtTouch.current)) return;
     step(dy < 0 ? 1 : -1); // 上へスワイプ＝次へ
   };
 
@@ -193,7 +208,11 @@ export default function MobileTop() {
       n = sessionStorage.getItem(MOBILE_GOTO_KEY);
       if (n) sessionStorage.removeItem(MOBILE_GOTO_KEY);
     } catch {}
-    if (n) setActive(Math.max(0, Math.min(SCENE_COUNT - 1, Number(n) || 0)));
+    if (n) {
+      const num = Number(n) || 0;
+      if (num >= FLOW_SCENE) pendingAnchor.current = FLOW_ANCHOR[Math.min(num, 8)];
+      setActive(Math.max(0, Math.min(SCENE_COUNT - 1, num)));
+    }
     /* 共通フッター（SiteFooter）の見出しは PC 用の行き先（spotAt など）を預ける。
        スマホのトップでも読んで、該当する場面を開く（2026-09-26 フッター差し替えで追加） */
     let k: string | null = null;
@@ -201,7 +220,11 @@ export default function MobileTop() {
       k = sessionStorage.getItem("abashiri-goto");
       if (k) sessionStorage.removeItem("abashiri-goto");
     } catch {}
-    if (k && KEY_TO_SCENE[k] != null) setActive(KEY_TO_SCENE[k]);
+    if (k && KEY_TO_SCENE[k] != null) {
+      const num = KEY_TO_SCENE[k];
+      if (num >= FLOW_SCENE) pendingAnchor.current = FLOW_ANCHOR[num];
+      setActive(Math.min(SCENE_COUNT - 1, num));
+    }
     /* すでにトップにいる時は、フッターの見出しがイベントで知らせてくる */
     const onKey = (e: Event) => {
       const key = (e as CustomEvent<{ key: string }>).detail?.key;
@@ -212,25 +235,45 @@ export default function MobileTop() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* フッターの場面に入ったら上から見せる。上端にいる時間も数え直す */
-  useEffect(() => {
-    if (active !== FOOTER_SCENE) return;
-    const el = footerRef.current;
+  /* グルメ〜フッターの場面に入ったら、上から（メニューから来た時はその行き先から）見せる。
+     ⚠️ 描く前に位置を決める（useLayoutEffect）。フェードで出てくる途中に位置が飛ばないように */
+  useLayoutEffect(() => {
+    if (active !== FLOW_SCENE) return;
+    const el = flowRef.current;
     if (!el) return;
-    el.scrollTop = 0;
-    footerTopSince.current = performance.now();
+    el.scrollTop = pendingAnchor.current ? anchorTop(pendingAnchor.current) : 0;
+    pendingAnchor.current = null;
+    flowTopSince.current = el.scrollTop <= 1 ? performance.now() : 0;
+  }, [active]);
+  /* 上端にいる時間を数える（上端で少し止まってから下へスワイプした時だけ、前の場面へ戻すため） */
+  useEffect(() => {
+    if (active !== FLOW_SCENE) return;
+    const el = flowRef.current;
+    if (!el) return;
     const on = () => {
       if (el.scrollTop <= 1) {
-        if (!footerTopSince.current) footerTopSince.current = performance.now();
-      } else footerTopSince.current = 0;
+        if (!flowTopSince.current) flowTopSince.current = performance.now();
+      } else flowTopSince.current = 0;
     };
     el.addEventListener("scroll", on, { passive: true });
     return () => el.removeEventListener("scroll", on);
   }, [active]);
+  /* 体験セクションが4割ほど見えたら「入った」とする（離れたら戻す＝もう一度入ると出てくる動きをくり返す） */
+  useEffect(() => {
+    const el = anchorEls.current.events;
+    const root = flowRef.current;
+    if (!el || !root) return;
+    const io = new IntersectionObserver(
+      ([en]) => setEventsInView(en.isIntersecting && activeRef.current === FLOW_SCENE),
+      { root, threshold: 0.4 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [active]);
 
   /* その場でブラーのクロスフェード（動かさない） */
   /* グルメ（白背景）のときはヘッダーを黒に切り替える */
-  const headerDark = active === 6 || active === 7 || active === 8;
+  const headerDark = active === FLOW_SCENE;
   useEffect(() => {
     document.documentElement.dataset.headerDark = headerDark ? "1" : "";
     return () => {
@@ -394,70 +437,78 @@ export default function MobileTop() {
         </section>
       ))}
 
-      {/* ── 6: 素朴なグルメ ───────────────── */}
-      <section
-        className="absolute inset-0 flex flex-col justify-center bg-white px-6 tab:px-[80px]"
-        style={scene(6)}
-      >
-        <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-36">
-          なーんにもない、道東の土地、網走。
-          <br />
-          そこの味が沁みちゃうんです。
-        </h2>
-        {/* 自動スライドショー（連続スクロール＝gourmet-marquee を再利用）。
-            シームレスにループさせるためカードを2周ぶん並べる */}
-        <div className="-mx-6 mt-8 overflow-hidden tab:-mx-[80px] tab:mt-12">
-          <div
-            className="gourmet-marquee flex w-max gap-3 pl-6 tab:gap-5 tab:pl-[80px]"
-            style={{ ["--gourmet-speed" as string]: "28s" }}
-          >
-            {[...GOURMET, ...GOURMET].map((card, idx) => (
-              /* タップで詳細ページへ（2026-09-20 ヒデさん指示でグルメにも詳細を新設）。
-                 流れている最中でも押せるよう、カードごと押せる形にしてある */
+      {/* ── 6: グルメ → 体験 → フッター（ふつうの縦スクロール・2026-10-20）───────
+          【ヒデさん】「グルメ以降のセクション、フェードインフェードアウトではなく、普通に上下スクロールで」。
+          それまでは グルメ／体験／フッター がそれぞれ1枚の場面で、ブラーで切り替わっていた。
+          この場面の中だけ縦にスクロールする（スクロールの箱は必須・overscroll-contain で外へ伝えない） */}
+      <section className="absolute inset-0 bg-white" style={scene(FLOW_SCENE)}>
+        <div ref={flowRef} className="no-scrollbar h-full overflow-y-auto overscroll-contain">
+          <div className="relative">
+            {/* 素朴なグルメ。上はヘッダーの分を空ける🟡 */}
+            <section
+              ref={(el) => {
+                anchorEls.current.gourmet = el;
+              }}
+              className="flex flex-col bg-white px-6 pb-16 pt-[120px] tab:px-[80px] tab:pb-[120px] tab:pt-[160px]"
+            >
+            <h2 className="text-body-20 font-thin leading-[1.7] text-ink tab:text-title-36">
+              なーんにもない、道東の土地、網走。
+              <br />
+              そこの味が沁みちゃうんです。
+            </h2>
+            {/* 自動スライドショー（連続スクロール＝gourmet-marquee を再利用）。
+                シームレスにループさせるためカードを2周ぶん並べる */}
+            <div className="-mx-6 mt-8 overflow-hidden tab:-mx-[80px] tab:mt-12">
               <div
-                key={idx}
-                onClick={() => navigateTo(`/gourmet/${card.slug}`)}
-                className="relative w-[228px] shrink-0 cursor-pointer overflow-hidden tab:w-[328px]"
+                className="gourmet-marquee flex w-max gap-3 pl-6 tab:gap-5 tab:pl-[80px]"
+                style={{ ["--gourmet-speed" as string]: "28s" }}
               >
-                <img
-                  src={card.img}
-                  alt={card.title}
-                  className="h-[300px] w-full object-cover tab:h-[428px]"
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
-                  <p className="text-body-12 font-extralight tab:text-body-14">
-                    素朴なグルメ {card.no}
-                  </p>
-                  <p className="mt-0.5 text-body-16 font-light leading-snug tab:text-body-20">
-                    {card.title}
-                  </p>
-                </div>
+                {[...GOURMET, ...GOURMET].map((card, idx) => (
+                  /* タップで詳細ページへ（2026-09-20 ヒデさん指示でグルメにも詳細を新設）。
+                     流れている最中でも押せるよう、カードごと押せる形にしてある */
+                  <div
+                    key={idx}
+                    onClick={() => navigateTo(`/gourmet/${card.slug}`)}
+                    className="relative w-[228px] shrink-0 cursor-pointer overflow-hidden tab:w-[328px]"
+                  >
+                    <img
+                      src={card.img}
+                      alt={card.title}
+                      className="h-[300px] w-full object-cover tab:h-[428px]"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
+                      <p className="text-body-12 font-extralight tab:text-body-14">
+                        素朴なグルメ {card.no}
+                      </p>
+                      <p className="mt-0.5 text-body-16 font-light leading-snug tab:text-body-20">
+                        {card.title}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
+            </section>
 
-      {/* ── 7: 体験セクション ───────────────── */}
-      {/* 【2026-09-26】PC の案1〜5 をスマホでも出し分ける（MobileEvents）。
-          ⚠️ overflow-hidden：案2 で右へ出たカードや案4 の飛び出す写真を、この場面の中で切る */}
-      <section
-        className="absolute inset-0 flex flex-col justify-center overflow-hidden bg-white px-6 tab:px-[80px]"
-        style={scene(EVENTS_SCENE)}
-      >
-        <MobileEvents active={active === EVENTS_SCENE} gate={eventsGate} />
-      </section>
+            {/* 体験セクション。【2026-09-26】PC の案1〜5 をスマホでも出し分ける（MobileEvents）。
+                ⚠️ overflow-hidden：案31 の後ろを流れる文字・案33 の飛び出す写真を、この中で切る */}
+            <section
+              ref={(el) => {
+                anchorEls.current.events = el;
+              }}
+              className="flex flex-col overflow-hidden bg-white px-6 py-16 tab:px-[80px] tab:py-[120px]"
+            >
+              <MobileEvents active={active === FLOW_SCENE && eventsInView} gate={eventsGate} flow />
+            </section>
 
-      {/* ── 8: フッター ───────────────────── */}
-      {/* 【2026-09-26 ヒデさん指示】「スマホビューでフッターがまだ最新化されていない」
-          → それまでの簡易版（作字＋メニュー＋SNS）をやめ、PC・詳細ページと同じ
-            共通フッター（SiteFooter：写真＋作字＋サイトマップ）にした。
-          1画面より長いので、この場面の中だけ縦にスクロールできる（スクロールの箱は必須） */}
-      <section className="absolute inset-0 bg-white" style={scene(FOOTER_SCENE)}>
-        <div ref={footerRef} className="no-scrollbar h-full overflow-y-auto overscroll-contain">
-          {/* 1画面より短い時（タブレット）は下に寄せる。上は白なので、フッターの白グラデとつながる */}
-          <div className="flex min-h-full flex-col justify-end">
-            <SiteFooter />
+            {/* フッター。【2026-09-26】PC・詳細ページと同じ共通フッター（SiteFooter：写真＋作字＋サイトマップ） */}
+            <div
+              ref={(el) => {
+                anchorEls.current.footer = el;
+              }}
+            >
+              <SiteFooter />
+            </div>
           </div>
         </div>
       </section>

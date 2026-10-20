@@ -48,7 +48,7 @@ import { EV_FLOWS } from "./eventParts";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
 import { FADE_CURVES, FADE_VALUES } from "./SiteFooter";
-import { BGM_ICON_VARIANTS } from "./BgmIcons";
+import { BGM_ICON_DEFAULT, BGM_ICON_VARIANTS } from "./BgmIcons";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -260,7 +260,8 @@ export default function TopTunePanel({
       intro: { delay: 350, hold: 3000 },
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
-      sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100), icon: 0 },
+      /* icon：2026-10-20 ヒデさんの見本から作った案6「音の波」を既定に🟡（今のまま・案1〜5 もパネルで選べる） */
+      sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100), icon: BGM_ICON_DEFAULT },
       /* カモメ共通の不透明度(%)。全ページのカモメに効く */
       bird: { opacity: 100, color: "#ffffff", stroke: 100 },
       face: { ...DEFAULT_FACE },

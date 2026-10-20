@@ -302,12 +302,17 @@ html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive.bgm-seg-off img {
 
 /* ===== 音のスイッチのアイコン 5案のモック（2026-10-20・BgmIcons.tsx） =====
    選んでいない側は薄く（空の上 40%🟡）。白い場面では上の 2026-09-21 の決まりと同じく薄がけしない */
-.bgm-switch .bgm-seg-inactive .bgm-ico {
+.bgm-switch .bgm-seg-inactive .bgm-ico:not(.bgm-ico-cc) {
   opacity: 0.4;
   transition: opacity 0.3s;
 }
-.bgm-switch .bgm-seg-inactive:hover .bgm-ico {
+.bgm-switch .bgm-seg-inactive:hover .bgm-ico:not(.bgm-ico-cc) {
   opacity: 0.7;
+}
+/* 案6 音の波は横の文字の色で描く（currentColor）。白い場面では文字と一緒に濃い灰色へ変わる（上の data-header-dark の色）。
+   色の移り変わりも文字と同じ速さに */
+.bgm-switch .bgm-ico-cc {
+  transition: color 0.3s;
 }
 html[data-header-dark="1"] .bgm-switch .bgm-seg-inactive .bgm-ico {
   opacity: 1;

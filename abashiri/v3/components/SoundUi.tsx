@@ -21,7 +21,7 @@ import {
   clampVolume,
 } from "./bgmConfig";
 import { bgmGainAt } from "./bgmGain";
-import { BgmIcon, BGM_ICON_VARIANTS } from "./BgmIcons";
+import { BgmIcon, BGM_ICON_DEFAULT, BGM_ICON_VARIANTS } from "./BgmIcons";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 
 /** 白モック内のボタン置き場（TopPage / ExperienceFlow が用意する） */
@@ -110,16 +110,17 @@ export default function SoundUi({
 
   /* アイコンの案（2026-10-20 モック・0＝今のまま）。トップの調整パネルが <html data-bgm-icon> に書く。
      パネルの無いページ（詳しいページ）でも同じ案で見えるよう、最初はパネルの保存値も読む */
-  const [iconVar, setIconVar] = useState(0);
+  const [iconVar, setIconVar] = useState(BGM_ICON_DEFAULT);
   useEffect(() => {
     const read = () => {
       const v = Number(document.documentElement.dataset.bgmIcon);
       if (Number.isFinite(v) && document.documentElement.dataset.bgmIcon !== undefined) return v;
       try {
         const saved = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}`) || "null");
-        return Number(saved?.sound?.icon) || 0;
+        const v = saved?.sound?.icon;
+        return typeof v === "number" ? v : BGM_ICON_DEFAULT;
       } catch {
-        return 0;
+        return BGM_ICON_DEFAULT;
       }
     };
     const sync = () => {
@@ -357,7 +358,7 @@ export default function SoundUi({
                   }
                 }}
                 aria-pressed={active}
-                className={`font-num flex h-7 w-[88px] cursor-pointer items-center justify-center gap-1 rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
+                className={`font-num flex h-7 w-[88px] cursor-pointer items-center justify-center ${iconVar === 6 ? "gap-2" : "gap-1"} rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
                   on ? "bgm-seg-on" : "bgm-seg-off"
                 } ${
                   active
@@ -365,6 +366,7 @@ export default function SoundUi({
                     : "bgm-seg-inactive text-white/50 hover:text-white/80"
                 }`}
               >
+                {/* 案6 音の波（ヒデさんの見本）は、見本どおりアイコンと文字の間を広めに（4→8px🟡） */}
                 {iconVar > 0 ? (
                   /* アイコン5案のモック（BgmIcons.tsx）。鳴っている時の ON だけ波が動く案がある */
                   <BgmIcon variant={iconVar} kind={on ? "on" : "off"} playing={on && active} />

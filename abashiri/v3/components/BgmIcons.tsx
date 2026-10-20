@@ -19,7 +19,23 @@ export const BGM_ICON_VARIANTS: Record<number, { name: string; note: string }> =
   3: { name: "ベタ塗り（濃い青×薄い青）", note: "丸を薄い青（Brand_SkyBottom）で塗り、スピーカーと波を濃い青（Brand_Primary）で。2色だけのやわらかい形" },
   4: { name: "ベタ塗り（空のグラデの丸）", note: "丸を空の色のグラデ（Brand_SkyTop→Brand_Primary）で塗り、白いスピーカー。外側の波だけ薄い青。縁に白い輪" },
   5: { name: "ガラス玉（立体・3色）", note: "白から薄い青へのふくらんだ丸＋上のつや。スピーカーは影の青と濃い青の2段、波は濃い青と空の青。いちばん作り込んだ形" },
+  6: { name: "音の波（バー）", note: "【ヒデさんの見本から・2026-10-20】丸の背景なし。角の丸い縦の棒5本（短・中・長・中・短）の音の波。OFF は斜線を引き、斜線の周りは棒を切り欠く。色は横の ON／OFF の文字と同じ（空の上は白・白い場面は濃い灰色・選んでいる側は青い地に白）" },
 };
+/** 既定の案（調整パネルの既定と、パネルの無いページで保存値が無い時に使う）。🟡 2026-10-20 ヒデさんの見本の「音の波」 */
+export const BGM_ICON_DEFAULT = 6;
+/** 横の文字の色（currentColor）で描く案。選んでいない側の薄さは文字の色が受け持つので、絵の薄がけはしない */
+export const BGM_ICON_TEXT_COLOR = new Set([6]);
+
+/* 案6 音の波：24×24 の中に、幅3.2・間1.8の棒を5本（見本の比率：短 6／中 12／長 20）。
+   OFF の斜線は見本の角度（左上→右下）で、太さ 2.4・周りを 1.2 ずつ切り欠く */
+const BARS = [
+  { x: 0.4, h: 6 },
+  { x: 5.4, h: 12 },
+  { x: 10.4, h: 20 },
+  { x: 15.4, h: 12 },
+  { x: 20.4, h: 6 },
+];
+const SLASH = { x1: 2.4, y1: 3.4, x2: 20.4, y2: 20.4 };
 
 /* スピーカーの形（全案共通・24×24） */
 const SPEAKER = "M5.5 10.3c0-.44.36-.8.8-.8h2.2l3.37-2.7c.52-.42 1.3-.05 1.3.62v9.16c0 .67-.78 1.04-1.3.62L8.5 14.5H6.3a.8.8 0 0 1-.8-.8v-3.4Z";
@@ -108,6 +124,29 @@ export function BgmIcon({ variant, kind, playing }: { variant: number; kind: "on
         )}
       </>
     );
+  } else if (variant === 6) {
+    const bars = (
+      <>
+        {BARS.map((b) => (
+          <rect key={b.x} x={b.x} y={12 - b.h / 2} width="3.2" height={b.h} rx="1.6" fill="currentColor" />
+        ))}
+      </>
+    );
+    body = on ? (
+      bars
+    ) : (
+      <>
+        <defs>
+          {/* 斜線の周りだけ棒を消す（すき間 1.2 ずつ） */}
+          <mask id={`m${uid}`} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+            <rect width="24" height="24" fill="#fff" />
+            <line {...SLASH} stroke="#000" strokeWidth="4.8" strokeLinecap="round" />
+          </mask>
+        </defs>
+        <g mask={`url(#m${uid})`}>{bars}</g>
+        <line {...SLASH} stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      </>
+    );
   } else if (variant === 5) {
     body = (
       <>
@@ -136,7 +175,7 @@ export function BgmIcon({ variant, kind, playing }: { variant: number; kind: "on
     );
   }
   return (
-    <svg viewBox="0 0 24 24" className="bgm-ico size-[20px] shrink-0" aria-hidden>
+    <svg viewBox="0 0 24 24" className={`bgm-ico size-[20px] shrink-0 ${BGM_ICON_TEXT_COLOR.has(variant) ? "bgm-ico-cc" : ""}`} aria-hidden>
       {body}
     </svg>
   );
