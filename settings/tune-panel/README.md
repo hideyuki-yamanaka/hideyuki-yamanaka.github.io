@@ -805,7 +805,7 @@ autoCenter の既定と使い方（冒頭「自動で真ん中」・引き継ぎ
   - 写しの先頭に「⚠️ 自動で写した物。直接直さない」の1行が付く
 - 写すきっかけ
   1. 網走の `npm run dev`・`npm run build` の前（package.json の `predev`・`prebuild` → `abashiri/v3/scripts/sync-tune-panel.mjs` → この道具を `--site abashiri/v3` で呼ぶ）
-  2. 原本を Claude Code で書き換えた直後（仕掛け：`.claude/settings.json` の PostToolUse・Write|Edit|MultiEdit に `node "$CLAUDE_PROJECT_DIR/settings/tune-panel/sync-copies.mjs" --hook 2>/dev/null || true` を足す）。網走のサーバーが動きっぱなしでも、写しがその場で新しくなる（public/ のファイルなので、ページを読み直せば新しい写しが届く）。⚠️ 2026-10-20 時点では、設定への書き足しはヒデさんの OK 待ち（道具の側は出来ていて、同じ入力で試して動くのを確かめた）
+  2. 原本を Claude Code で書き換えた直後（仕掛け：`.claude/settings.json` の PostToolUse・Write|Edit|MultiEdit に `node "$CLAUDE_PROJECT_DIR/settings/tune-panel/sync-copies.mjs" --hook 2>/dev/null || true` を足す）。網走のサーバーが動きっぱなしでも、写しがその場で新しくなる（public/ のファイルなので、ページを読み直せば新しい写しが届く）。2026-10-20 ヒデさんの OK（「足す（おすすめ）」）で設定に書き足し済み。同じ入力で流して、写しが原本と同じになるのを確かめた
 - 原本が見つからない時（Vercel では網走のフォルダだけが送られる）は、失敗させずに何もしない（その時ある写しをそのまま使う）。⚠️ だからデプロイの前に、手元で写しが新しいことを確かめる（網走で `npm run check:tune-panel`）
 - 写しが原本と違うかは、網走の `npm run check:tune-panel` と、この部品の自動検査（`test/check.mjs` の 19.・`COPIES` の全部のサイト）で調べる（原本を直して写し直していないと ❌ になる）
 - 網走V3 の写しは v2.2.1 → v2.3.2 に。網走の写しにだけある直しは無かった（v2.2.0＋v2.3.1 の▲の直しで、どちらも原本に入っている）。網走のページ側の先回りの直し（`pinSelectedVariantBase`）は、部品が直ったので外した

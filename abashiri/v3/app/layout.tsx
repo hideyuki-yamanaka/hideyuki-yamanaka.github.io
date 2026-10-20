@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP, Inter } from "next/font/google";
 import SoundUi from "@/components/SoundUi";
+import PhotoSetSwitch from "@/components/PhotoSetSwitch";
 import PageTransition from "@/components/PageTransition";
 import LivePhone from "@/components/LivePhone";
 import "./globals.css";
@@ -53,6 +54,8 @@ export default function RootLayout({
         <SoundUi askConsent />
         {/* ページ遷移の幕（ブラー5案）。レイアウト常駐で全ページに効く */}
         <PageTransition />
+        {/* 写真の「新しい／前の」切り替え（調整パネル › サイト共通 › 写真・2026-10-20）。全ページに効く */}
+        <PhotoSetSwitch />
         {/* スマホモード（実機ライブ同期）の受け手。開発時だけ動く（本番では何もしない） */}
         <LivePhone />
       </body>

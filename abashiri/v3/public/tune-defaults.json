@@ -54,6 +54,9 @@
   "sound": {
     "volume": 66
   },
+  "photos": {
+    "set": 1
+  },
   "bird": {
     "opacity": 65,
     "color": "#ffffff",

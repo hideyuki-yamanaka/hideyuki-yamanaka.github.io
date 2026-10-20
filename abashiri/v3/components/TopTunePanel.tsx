@@ -48,6 +48,7 @@ import { EV_FLOWS } from "./eventParts";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
 import { FADE_CURVES, FADE_VALUES, PHOTO_TONES } from "./SiteFooter";
+import { PHOTO_SET_DEFAULT } from "./PhotoSetSwitch";
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -176,6 +177,8 @@ type Params = {
   intro: { delay: number; hold: number };
   preview: { faceOn: boolean; patchRed: boolean };
   sound: { volume: number };
+  /** 写真の組 1＝新しい（調整済み・既定）／0＝前の写真（PhotoSetSwitch・2026-10-20） */
+  photos: { set: number };
   bird: { opacity: number; color: string; stroke: number };
   face: FaceConfig;
   sparkle: { period: number };
@@ -268,6 +271,7 @@ export default function TopTunePanel({
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
       sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100) },
+      photos: { set: PHOTO_SET_DEFAULT },
       /* カモメ共通の不透明度(%)。全ページのカモメに効く */
       bird: { opacity: 100, color: "#ffffff", stroke: 100 },
       face: { ...DEFAULT_FACE },
@@ -391,6 +395,8 @@ export default function TopTunePanel({
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
       root.style.setProperty("--sec-head", `${params.secHead}px`);
+      /* 写真の組（PhotoSetSwitch が <html data-photo-set> を見張って差し替える） */
+      root.dataset.photoSet = (params.photos?.set ?? PHOTO_SET_DEFAULT) === 0 ? "prev" : "new";
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -571,6 +577,22 @@ export default function TopTunePanel({
               /* 【2026-09-26】ハンバーガーメニューの3案は「案1 空に浮かぶ作字」に確定したので、
                  ここにあった切り替えは外した（MobileHeader.tsx に固定） */
               /* 左上の音のスイッチのアイコンは 2026-10-20 に「音の波」に決定（5案の切り替えは外した・BgmIcons.tsx） */
+              /* 【2026-10-20 ヒデさん】「調整した画像に差し替えてデフォルトに。調整パネル上では前の画像にも戻れるように」。
+                 写真の組の見比べなのでバリエーション（6-13・6-18） */
+              { sub: "写真（全ページ共通）", grp: "variation" },
+              {
+                note: "キービジュアル・フッター・能取岬・サンゴ草・流氷・ひまわりの写真（トップ・詳しいページ・体験ページ）。",
+              },
+              {
+                pills: "写真",
+                path: "photos.set",
+                immediate: true,
+                autoNum: false,
+                options: [
+                  { name: "新しい写真", value: 1, desc: "【既定・2026-10-20】ヒデさんが明るさ・色を調整した写真" },
+                  { name: "前の写真", value: 0, desc: "調整する前の写真（-prev のファイル）" },
+                ],
+              },
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
