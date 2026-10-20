@@ -308,6 +308,7 @@ export default function MobileTop() {
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
+
         <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/15 to-transparent" />
 
         <div className="relative z-10 flex flex-1 flex-col">

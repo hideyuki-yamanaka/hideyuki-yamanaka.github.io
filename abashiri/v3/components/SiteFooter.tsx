@@ -183,7 +183,7 @@ export const FADE_CURVES: Record<number, { name: string; note: string }> = {
    【同日 ヒデさん】パネルで 明るさ120%・影0%・影の高さ40% にして「これで変えてほしい。彩度の調整も」→ 案1 をその値にして既定に。sat＝彩度(%) */
 export const PHOTO_TONES: Record<number, { name: string; note: string; values: Record<string, number> }> = {
   0: { name: "前の暗いまま", note: "写真そのまま＋下半分に黒い影35%（2026-10-20 までの形）", values: { "footer.bright": 100, "footer.sat": 100, "footer.shade": 35, "footer.shadeH": 50, "footer.light": 0 } },
-  1: { name: "写真を明るく", note: "【既定・2026-10-20 ヒデさんの調整】写真の明るさ 120%・黒い影なし（0%）", values: { "footer.bright": 120, "footer.sat": 100, "footer.shade": 0, "footer.shadeH": 40, "footer.light": 0 } },
+  1: { name: "写真を明るく", note: "【既定】黒い影なし（0%）・写真の明るさ 100%（加工なし）。2026-10-21 写真そのものの色を元の写真に合わせたので、明るさのフィルターは外した（前は 120%）", values: { "footer.bright": 100, "footer.sat": 100, "footer.shade": 0, "footer.shadeH": 40, "footer.light": 0 } },
   2: { name: "影を海の青に", note: "下の影を黒ではなく深い海の青（Shadow_Base #005fb3）にする。暗くならずに青が深まり、文字も読める。写真も少し明るく（108%）", values: { "footer.bright": 108, "footer.sat": 100, "footer.shade": 40, "footer.shadeH": 50, "footer.light": 0 } },
   3: { name: "光を重ねる", note: "写真の上に、空の色の光（上 Brand_SkyBottom → 下 Brand_SkyTop）をスクリーンで重ねて、全体を明るく爽やかに。黒い影はごく薄く（12%）", values: { "footer.bright": 100, "footer.sat": 100, "footer.shade": 12, "footer.shadeH": 50, "footer.light": 35 } },
 };
@@ -297,7 +297,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 120, sat: 100, shade: 0, shadeH: 40, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
