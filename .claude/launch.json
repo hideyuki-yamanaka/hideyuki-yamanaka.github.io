@@ -195,6 +195,15 @@
       "port": 8779
     },
     {
+      "name": "abashiri-v3-phone-sync",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd '/Users/hideyuki/Developer/Claude Code/settings/tune-panel/phone-mode' && (test -d node_modules || npm install) && PAGE_PORT=3095 SYNC_PORT=8780 exec node server.mjs"
+      ],
+      "port": 8780
+    },
+    {
       "name": "abashiri-v3",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

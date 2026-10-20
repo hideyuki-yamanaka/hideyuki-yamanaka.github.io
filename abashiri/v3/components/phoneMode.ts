@@ -36,6 +36,9 @@ export function attachPhoneMode(panel: PhonePanel | null) {
   (window as unknown as { PHONE_MODE_CONFIG: unknown }).PHONE_MODE_CONFIG = {
     ...base,
     storageKeys: [...(base.storageKeys || []), PATH_KEY],
+    /* 中継が止まっている時の「起動をお願いする文」。共通の既定文は番号なし（8779・8778＝AnyFlow の番号）で、
+       そのまま起動すると網走にはつながらない（2026-10-20 実際に起きた）→ 網走の番号を入れた文にする */
+    startPrompt: `網走 V3 のスマホモード（実機ライブ同期）の中継サーバが起動していないようです。起動してください。\n\ncd settings/tune-panel/phone-mode && (test -d node_modules || npm install) && PAGE_PORT=3095 SYNC_PORT=${PHONE_SYNC_PORT} node server.mjs`,
   };
   /* ページを移るたびにパネルが作り直されるので、前のページの QR の窓と帯を片付けてから読み直す
      （クライアントは読み込んだ時に1回だけ動く作り） */
