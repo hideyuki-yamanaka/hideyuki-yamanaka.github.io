@@ -7,6 +7,8 @@
  *    作字（471x390のSVG） (-28, 13.1)                 ← SVGの余白ぶん左上へずらす
  *  ブロックごと拡大縮小するので、位置関係は崩れない。
  *  tone: light = 写真や青の上（白い吹き出し＋白文字）／ blue = 白地の上（反転版） */
+import InlineSvg from "./InlineSvg";
+
 const W = 415;
 const H = 379;
 
@@ -26,15 +28,16 @@ export default function SiteLogo({
         className="absolute left-0 top-0"
         style={{ width: W, height: H, transformOrigin: "top left", transform: `scale(${s})` }}
       >
-        <img
+        {/* 2026-10-20 画質：img → 図形のまま描く（InlineSvg。縮めて表示してもにじまない） */}
+        <InlineSvg
           src={tone === "light" ? "/img/text-kanko-site.svg" : "/img/text-kanko-site-blue.svg"}
-          alt="網走市観光サイト"
+          label="網走市観光サイト"
           className="absolute"
           style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }} /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
         />
-        <img
+        <InlineSvg
           src={tone === "light" ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
-          alt="な〜んにもない たまらない"
+          label="な〜んにもない たまらない"
           className="absolute max-w-none"
           style={{ left: -28, top: 13.1, width: 471, height: 390 }} /* 4-7例外（作字の画像の実寸 471×390） */
         />

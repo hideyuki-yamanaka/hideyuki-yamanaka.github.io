@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import InlineSvg from "./InlineSvg";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -474,9 +475,16 @@ export default function Stage({
         style={{
           width: fit?.stageW ?? 1512,
           height: 982, /* 4-7例外（PCのキャンバス 1512×982 の高さ） */
-          top: fit?.top ?? 0,
-          transform: `scale(${fit?.scale ?? 1})`,
-          transformOrigin: "top left",
+          /* 【2026-10-20 画質】紙を画面に合わせる縮め方を transform: scale → zoom に変えた。
+             ヒデさん「網走市観光サイトや作字がボケている」。本物の Chrome（GPU）で測ると、transform で縮めた
+             紙の中の文字・図形は、いったん絵に焼いてから縮められるので、倍率が半端な画面（1440×900 など
+             ほとんどの PC）でボケていた（縁の強さ 観光サイト 156・作字 159 → zoom で 204・229＝倍率1と同じ）。
+             zoom は最後の大きさで描き直すのでくっきりする。
+             ・zoom は自分の top にも掛かるので、見た目の上の位置が変わらないよう倍率で割る
+             ・contain: paint … transform の時と同じく、この箱を中の固定物（fixed）の基準と重なり順の区切りにする */
+          top: fit ? fit.top / fit.scale : 0,
+          zoom: fit?.scale ?? 1,
+          contain: "paint",
           opacity: fit ? 1 : 0,
         }}
       >
@@ -646,9 +654,10 @@ export default function Stage({
               </div>
               {/* v1.1: 「たまらねー」はホバーした時だけ、ひょこっと出る。
                  出方は tamaraneePatterns.ts の5案から選べる（/mock/tamaranee で比較） */}
-              <img
+              {/* 2026-10-20 画質：img → 図形のまま描く（InlineSvg） */}
+              <InlineSvg
                 src="/img/text-tamaranee.svg"
-                alt="たまらねー"
+                label="たまらねー"
                 className="absolute will-change-transform"
                 style={{
                   left: "var(--illust-tamaranee-x)",
@@ -682,10 +691,11 @@ export default function Stage({
                   採用は案4「息を吐くように抜ける」。1回目だけ3秒で出し、以降は5秒おき。
                   ⚠️ 位置（left/top/w）はカンプ採寸なので触らない。動きだけを案で差し替える */}
               {boPhase !== 0 && (
-                <motion.img
+                /* 2026-10-20 画質：img → 図形のまま描く（動きは外側の motion.span が持つ） */
+                <motion.span
                   key={boPhase === 1 ? "bo-enter" : "bo-cycle"}
-                  src="/img/text-bo.svg"
-                  alt="ぼーっ"
+                  role="img"
+                  aria-label="ぼーっ"
                   /* ⚠️ 仮置き: 文字は白（カンプのまま）なので、流氷のような明るい映像の上では
                      ほぼ見えない。人物と同じ Shadow_Illust を掛けて最低限浮かせている。
                      見せ方（影／すりガラスの地／文字色）はヒデさん確認待ち */
@@ -700,7 +710,8 @@ export default function Stage({
                     ? {
                         /* 登場：スポットの文字と同じブラー出現 */
                         initial: { opacity: 0, filter: "blur(16px)", y: 14 },
-                        animate: { opacity: 1, filter: "blur(0px)", y: 0 },
+                        /* 出終わったらフィルターを外す（blur(0px) を残さない・2026-10-20 画質） */
+                        animate: { opacity: 1, filter: "blur(0px)", y: 0, transitionEnd: { filter: "none" } },
                         transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
                       }
                     : {
@@ -714,7 +725,9 @@ export default function Stage({
                           repeat: Infinity,
                         },
                       })}
-                />
+                >
+                  <InlineSvg src="/img/text-bo.svg" fit="width" className="w-full" />
+                </motion.span>
               )}
             </>
           )}

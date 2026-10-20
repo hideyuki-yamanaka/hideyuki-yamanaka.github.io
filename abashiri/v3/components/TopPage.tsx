@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import InlineSvg from "./InlineSvg";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { preload } from "react-dom";
 import Link from "next/link";
@@ -982,9 +983,11 @@ export default function TopPage({
                      （SVGを作り直すと blurSeq のグループ構造に依存した演出が壊れるため、
                       SVGはそのままで置き方だけ合わせる） */}
               <div className="relative h-[379px] w-[415px]" /* 4-7例外（作字ブロックの実寸 415×379。倍率の計算の基準） */>
-              <img
+              {/* 【2026-10-20 画質】img → 図形のまま描く（InlineSvg）。ヒデさん「網走市観光サイトもボケている」。
+                  半端な位置・大きさの img は焼いた絵をずらして貼るのでにじむ（実測 縁の強さ 178→196） */}
+              <InlineSvg
                 src="/img/text-kanko-site.svg"
-                alt="網走市観光サイト"
+                label="網走市観光サイト"
                 /* 吹き出しと【同時に・同じ見え方で】出す。
                    ⚠️ 2026-09-20 ヒデさん指摘「網走市観光サイトの文字が先に出てきちゃってる」。
                       原因は出だしのブラーの強さ違い。吹き出し（HeroBlurSeq）は
@@ -1031,9 +1034,9 @@ export default function TopPage({
                   onScheduled={handleScheduled}
                 />
               ) : (
-                <img
+                <InlineSvg
                   src="/img/hero-message.svg"
-                  alt="な〜んにもない たまらない"
+                  label="な〜んにもない たまらない"
                   className="h-[390px] w-[471px]" /* 4-7例外（作字の画像の実寸 471×390） */
                 />
               )}

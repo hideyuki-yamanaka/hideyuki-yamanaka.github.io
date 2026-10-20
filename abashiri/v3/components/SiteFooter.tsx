@@ -16,6 +16,7 @@
  *   ・SNSのリンク先URL（公式アカウントが確定したら差し替え）
  *   ・問い合わせ先は網走市観光協会の公開情報（0152-44-5849）を使用
  */
+import InlineSvg from "./InlineSvg";
 import { navigateTo } from "./PageTransition";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -142,15 +143,16 @@ function Logo({ light = false }: { light?: boolean }) {
           transform: "scale(var(--ft-logo-scale, 0.686))",
         }}
       >
-        <img
+        {/* 2026-10-20 画質：img → 図形のまま描く（InlineSvg。縮めて表示してもにじまない） */}
+        <InlineSvg
           src="/img/text-kanko-site.svg"
-          alt="網走市観光サイト"
+          label="網走市観光サイト"
           className="absolute"
           style={{ left: 215.7, top: 8.3, width: 188.2, height: 36.3 }} /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
         />
-        <img
+        <InlineSvg
           src={light ? "/img/hero-message.svg" : "/img/hero-message-blue.svg"}
-          alt="な〜んにもない たまらない"
+          label="な〜んにもない たまらない"
           className="absolute max-w-none"
           style={{ left: -28, top: 13.1, width: 471, height: 390 }} /* 4-7例外（作字の画像の実寸 471×390） */
         />

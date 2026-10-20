@@ -12,6 +12,7 @@
  *   （その場でブラーのクロスフェード。スクロールで流れていくのではない）。
  * コピー・写真はデスクトップ実装と同じ実データ。
  */
+import InlineSvg from "./InlineSvg";
 import { navigateTo } from "./PageTransition";
 import MobileEvents from "./MobileEvents";
 import SiteFooter from "./SiteFooter";
@@ -296,15 +297,16 @@ export default function MobileTop() {
                    位置関係が PC とずれる。PC と同じく入れ子の div に逃がして、
                    幅と高さを明示する（2026-09-16 ヒデさん指摘） */}
                 <div className="absolute left-[-28px] top-[13.1px]">
-                  <img
+                  {/* 2026-10-20 画質：img → 図形のまま描く（InlineSvg。縮めて表示してもにじまない） */}
+                  <InlineSvg
                     src="/img/hero-message.svg"
-                    alt="な〜んにもない、たまらない。"
+                    label="な〜んにもない、たまらない。"
                     className="h-[390px] w-[471px] max-w-none" /* 4-7例外（作字の画像の実寸 471×390） */
                   />
                 </div>
-                <img
+                <InlineSvg
                   src="/img/text-kanko-site.svg"
-                  alt="網走市観光サイト"
+                  label="網走市観光サイト"
                   className="absolute left-[215.7px] top-[8.3px] h-[36.3px] w-[188.2px]" /* 4-7例外（「網走市観光サイト」の画像の実寸 188.2×36.3） */
                 />
               </div>
