@@ -1,5 +1,5 @@
 /*!
- * tune-panel.js v2.2.0 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段）
+ * tune-panel.js v2.2.1 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段）
  * 1ファイル / 依存なし / CSSも自分で流し込む。
  *
  *   <script src="tune-panel.js"></script>
@@ -933,8 +933,9 @@
 
     /* 見出しの帯、または中身の何も無い所をつかんで移動（つまみやボタンの上では動かない）。
        動かさずに見出しを押しただけなら開閉する */
+    /* .tp-chev（右の▲）も除く：▲は自分のクリックで開閉するので、ここでも開閉すると二重になって何も変わらなかった（2026-10-20 ヒデさん「右側のアイコンを押しても機能しない」） */
     var isControl = function (t) {
-      return !!(t && t.closest && t.closest('input,button,select,textarea,a,.tp-val,.tp-z,.tp-tabs,.tp-pill,.tp-pill-x,.tp-seg,.tp-chips,.tp-rst,.tp-gbtn,.tp-custom'));
+      return !!(t && t.closest && t.closest('input,button,select,textarea,a,.tp-val,.tp-z,.tp-tabs,.tp-pill,.tp-pill-x,.tp-seg,.tp-chips,.tp-rst,.tp-gbtn,.tp-custom,.tp-chev'));
     };
     var d = null;
     var onDown = function (e) {

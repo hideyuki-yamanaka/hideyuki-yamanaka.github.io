@@ -21,6 +21,8 @@ import {
   clampVolume,
 } from "./bgmConfig";
 import { bgmGainAt } from "./bgmGain";
+import { BgmIcon, BGM_ICON_VARIANTS } from "./BgmIcons";
+import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 
 /** 白モック内のボタン置き場（TopPage / ExperienceFlow が用意する） */
 const SLOT_ID = "abashiri-sound-slot";
@@ -104,6 +106,30 @@ export default function SoundUi({
       setBtnTune(mergeSoundBtn((e as CustomEvent).detail));
     window.addEventListener(SOUND_BTN_TUNE_EVENT, onTune);
     return () => window.removeEventListener(SOUND_BTN_TUNE_EVENT, onTune);
+  }, []);
+
+  /* アイコンの案（2026-10-20 モック・0＝今のまま）。トップの調整パネルが <html data-bgm-icon> に書く。
+     パネルの無いページ（詳しいページ）でも同じ案で見えるよう、最初はパネルの保存値も読む */
+  const [iconVar, setIconVar] = useState(0);
+  useEffect(() => {
+    const read = () => {
+      const v = Number(document.documentElement.dataset.bgmIcon);
+      if (Number.isFinite(v) && document.documentElement.dataset.bgmIcon !== undefined) return v;
+      try {
+        const saved = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}`) || "null");
+        return Number(saved?.sound?.icon) || 0;
+      } catch {
+        return 0;
+      }
+    };
+    const sync = () => {
+      const v = read();
+      setIconVar(BGM_ICON_VARIANTS[v] ? v : 0);
+    };
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-bgm-icon"] });
+    return () => obs.disconnect();
   }, []);
 
   /* ボタンはモック内左上の置き場に出す。無いページでは画面左下に出す */
@@ -332,20 +358,29 @@ export default function SoundUi({
                 }}
                 aria-pressed={active}
                 className={`font-num flex h-7 w-[88px] cursor-pointer items-center justify-center gap-1 rounded-full px-[10px] text-body-16 font-light leading-[1.2] transition-colors duration-300 ease-standard ${
+                  on ? "bgm-seg-on" : "bgm-seg-off"
+                } ${
                   active
                     ? "bgm-seg-active bg-brand text-white"
                     : "bgm-seg-inactive text-white/50 hover:text-white/80"
                 }`}
               >
-                {/* ⚠️ 白背景では中のピクトを青にする（globals.css の
-                   html[data-header-dark] 側で mask を使って塗り替える）。
-                   そのために「どの絵か」を CSS 変数で渡しておく */}
-                <img
-                  src={icon}
-                  alt=""
-                  className="size-[16px]"
-                  style={{ ["--bgm-icon" as string]: `url(${icon})` } as React.CSSProperties}
-                />
+                {iconVar > 0 ? (
+                  /* アイコン5案のモック（BgmIcons.tsx）。鳴っている時の ON だけ波が動く案がある */
+                  <BgmIcon variant={iconVar} kind={on ? "on" : "off"} playing={on && active} />
+                ) : (
+                  <>
+                    {/* ⚠️ 白背景では中のピクトを青にする（globals.css の
+                       html[data-header-dark] 側で mask を使って塗り替える）。
+                       そのために「どの絵か」を CSS 変数で渡しておく */}
+                    <img
+                      src={icon}
+                      alt=""
+                      className="size-[16px]"
+                      style={{ ["--bgm-icon" as string]: `url(${icon})` } as React.CSSProperties}
+                    />
+                  </>
+                )}
                 {label}
               </button>
             );

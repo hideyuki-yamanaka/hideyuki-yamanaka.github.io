@@ -52,7 +52,8 @@
     "patchRed": false
   },
   "sound": {
-    "volume": 66
+    "volume": 66,
+    "icon": 0
   },
   "bird": {
     "opacity": 65,
@@ -148,13 +149,12 @@
     "logoH": 260,
     "mapOffsetY": 0,
     "stageH": 120,
-    "fadeH": 48,
+    "fadeH": 64,
     "fadeSolid": 0,
     "evPadBottom": 96,
-    "pattern": 4,
     "padTop": 64,
-    "fadeCurve": 2,
-    "overlap": 240
+    "fadeCurve": 1,
+    "overlap": 400
   },
   "expIntro": {
     "startDelay": 0.8,
