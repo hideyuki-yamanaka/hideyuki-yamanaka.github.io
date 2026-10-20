@@ -216,6 +216,8 @@ type Params = {
     /** 写真の明るさの案 0〜3（SiteFooter の PHOTO_TONES・2026-10-20）／写真の明るさ%／下からの影の濃さ%／光を重ねる強さ% */
     tone: number;
     bright: number;
+    /** 写真の彩度（%・100 がそのまま） */
+    sat: number;
     shade: number;
     /** 影が下から写真のどこまでかかるか（%） */
     shadeH: number;
@@ -307,11 +309,13 @@ export default function TopTunePanel({
         padTop: 64, /* 🟡仮置き：グラデの下から中身までの写真の見え幅 */
         fadeCurve: 1, /* 🟡 パターン1「長く、なめらかに」 */
         overlap: 400, /* 🟡 240→400：写真を体験の下へ400px重ねる＝グラデの始まりがカードの下あたり（流れる文字より下） */
-        /* 写真の明るさ（2026-10-20 ヒデさん「後ろの写真がすごく暗く見える。3案」）。既定は今のまま（見比べ中） */
-        tone: 0,
-        bright: 100,
-        shade: 35,
-        shadeH: 50,
+        /* 写真の明るさ（2026-10-20 ヒデさん「後ろの写真がすごく暗く見える。3案」→ 同日 パネルで調整して「これで変えてほしい」）。
+           案1「写真を明るく」：明るさ120%・影なし・影の高さ40%🟡（彩度は同日足したつまみ・100%＝そのまま） */
+        tone: 1,
+        bright: 120,
+        sat: 100,
+        shade: 0,
+        shadeH: 40,
         light: 0,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
@@ -368,6 +372,7 @@ export default function TopTunePanel({
       /* 写真の明るさの案（SiteFooter の PhotoStage が毎フレーム読む） */
       root.style.setProperty("--ft-tone", String(f.tone ?? 0));
       root.style.setProperty("--ft-photo-bright", String(f.bright ?? 100));
+      root.style.setProperty("--ft-sat", String(f.sat ?? 100));
       root.style.setProperty("--ft-shade", String(f.shade ?? 35));
       root.style.setProperty("--ft-shade-h", String(f.shadeH ?? 50));
       root.style.setProperty("--ft-light", String(f.light ?? 0));
@@ -904,6 +909,17 @@ export default function TopTunePanel({
                 step: 2,
                 fmt: "%",
                 hint: "後ろの写真の明るさ（100% がそのまま）",
+              },
+              {
+                /* 【2026-10-20 ヒデさん】「彩度の調整パネルも入れてほしい」（音声入力で「再度」） */
+                slider: "彩度",
+                path: "footer.sat",
+                variant: "footer.tone",
+                min: 0,
+                max: 200,
+                step: 2,
+                fmt: "%",
+                hint: "後ろの写真の色の鮮やかさ（100% がそのまま）。上げると空と海の青が濃く、下げると落ち着いた色に",
               },
               {
                 slider: "影の濃さ",

@@ -179,12 +179,13 @@ export const FADE_CURVES: Record<number, { name: string; note: string }> = {
    【ヒデさん】「フッターの後ろの写真がすごく暗く見える。3案ぐらい。その中の一つは写真のブライトネスを変えるとか」。
    暗く見える元は2つ：①写真の下半分に重ねた黒い影（35%・文字を読みやすくするため） ②写真そのものの明るさ。
    bright＝写真の明るさ(%)／shade＝下からの影の濃さ(%)／shadeH＝影が下から写真のどこまでかかるか(%)／light＝光を重ねる強さ(%)
-   【同日 ヒデさん】「写真が暗い印象になっているところを調整できるところもインジケーターとして調整パネルに」→ 影の濃さ・高さ・明るさ・光の強さ */
+   【同日 ヒデさん】「写真が暗い印象になっているところを調整できるところもインジケーターとして調整パネルに」→ 影の濃さ・高さ・明るさ・光の強さ
+   【同日 ヒデさん】パネルで 明るさ120%・影0%・影の高さ40% にして「これで変えてほしい。彩度の調整も」→ 案1 をその値にして既定に。sat＝彩度(%) */
 export const PHOTO_TONES: Record<number, { name: string; note: string; values: Record<string, number> }> = {
-  0: { name: "今のまま", note: "写真そのまま＋下半分に黒い影35%", values: { "footer.bright": 100, "footer.shade": 35, "footer.shadeH": 50, "footer.light": 0 } },
-  1: { name: "写真を明るく", note: "写真の明るさを 120% に上げ、黒い影を 35→20% に薄くする。いちばん素直", values: { "footer.bright": 120, "footer.shade": 20, "footer.shadeH": 50, "footer.light": 0 } },
-  2: { name: "影を海の青に", note: "下の影を黒ではなく深い海の青（Shadow_Base #005fb3）にする。暗くならずに青が深まり、文字も読める。写真も少し明るく（108%）", values: { "footer.bright": 108, "footer.shade": 40, "footer.shadeH": 50, "footer.light": 0 } },
-  3: { name: "光を重ねる", note: "写真の上に、空の色の光（上 Brand_SkyBottom → 下 Brand_SkyTop）をスクリーンで重ねて、全体を明るく爽やかに。黒い影はごく薄く（12%）", values: { "footer.bright": 100, "footer.shade": 12, "footer.shadeH": 50, "footer.light": 35 } },
+  0: { name: "前の暗いまま", note: "写真そのまま＋下半分に黒い影35%（2026-10-20 までの形）", values: { "footer.bright": 100, "footer.sat": 100, "footer.shade": 35, "footer.shadeH": 50, "footer.light": 0 } },
+  1: { name: "写真を明るく", note: "【既定・2026-10-20 ヒデさんの調整】写真の明るさ 120%・黒い影なし（0%）", values: { "footer.bright": 120, "footer.sat": 100, "footer.shade": 0, "footer.shadeH": 40, "footer.light": 0 } },
+  2: { name: "影を海の青に", note: "下の影を黒ではなく深い海の青（Shadow_Base #005fb3）にする。暗くならずに青が深まり、文字も読める。写真も少し明るく（108%）", values: { "footer.bright": 108, "footer.sat": 100, "footer.shade": 40, "footer.shadeH": 50, "footer.light": 0 } },
+  3: { name: "光を重ねる", note: "写真の上に、空の色の光（上 Brand_SkyBottom → 下 Brand_SkyTop）をスクリーンで重ねて、全体を明るく爽やかに。黒い影はごく薄く（12%）", values: { "footer.bright": 100, "footer.sat": 100, "footer.shade": 12, "footer.shadeH": 50, "footer.light": 35 } },
 };
 /** 写真の上に重ねる「影」と「光」。PC・スマホ・タブレットの写真で共通 */
 function PhotoTone({ tone, shade, shadeH = 50, light }: { tone: number; shade: number; shadeH?: number; light: number }) {
@@ -213,8 +214,10 @@ function PhotoTone({ tone, shade, shadeH = 50, light }: { tone: number; shade: n
     </>
   );
 }
-/** 写真の明るさ（100% の時はフィルターを付けない＝絵に焼かれてにじむのを避ける・FIXLOG 2026-10-20） */
-const photoFilter = (bright: number) => (bright !== 100 ? `brightness(${bright / 100})` : undefined);
+/** 写真の明るさ・彩度（どちらも 100% の時はフィルターを付けない＝絵に焼かれてにじむのを避ける・FIXLOG 2026-10-20） */
+const photoFilterOf = (bright: number, sat: number) =>
+  [bright !== 100 ? `brightness(${bright / 100})` : "", sat !== 100 ? `saturate(${sat / 100})` : ""].filter(Boolean).join(" ");
+const photoFilter = (bright: number, sat = 100) => photoFilterOf(bright, sat) || undefined;
 
 /** パターンごとの最初の値（調整パネルのグラデのピルで切り替えた時に入る値・🟡仮置き）。
     グラデの長さ＝画面の高さの%／重ねる長さ＝体験の下へ潜らせる px／助走＝体験セクション下のパディング px。
@@ -294,7 +297,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 0, bright: 100, shade: 35, shadeH: 50, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 120, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -342,6 +345,7 @@ function PhotoStage({
           /* 写真の明るさの案（PHOTO_TONES・2026-10-20） */
           tone: Math.round(num0("--ft-tone", 0)),
           bright: num("--ft-photo-bright", 100),
+          sat: num0("--ft-sat", 100),
           shade: num0("--ft-shade", 35),
           shadeH: num("--ft-shade-h", 50),
           light: num0("--ft-light", 0),
@@ -355,6 +359,7 @@ function PhotoStage({
           o.overlap === nc.overlap &&
           o.tone === nc.tone &&
           o.bright === nc.bright &&
+          o.sat === nc.sat &&
           o.shade === nc.shade &&
           o.shadeH === nc.shadeH &&
           o.light === nc.light
@@ -415,7 +420,7 @@ function PhotoStage({
           src="/img/bg-hero.jpg"
           alt=""
           className="absolute inset-0 size-full object-cover object-bottom"
-          style={{ filter: photoFilter(cfg.bright) }}
+          style={{ filter: photoFilter(cfg.bright, cfg.sat) }}
         />
         {cfg.curve === 4 && (
           <img
@@ -424,7 +429,7 @@ function PhotoStage({
             aria-hidden
             className="pointer-events-none absolute inset-0 size-full object-cover object-bottom"
             style={{
-              filter: `blur(24px)${cfg.bright !== 100 ? ` brightness(${cfg.bright / 100})` : ""}`,
+              filter: `blur(24px) ${photoFilterOf(cfg.bright, cfg.sat)}`.trim(),
               transform: "scale(1.08)",
               WebkitMaskImage: blurMask,
               maskImage: blurMask,
@@ -464,7 +469,7 @@ function PhotoStage({
           alt=""
           className="size-full object-cover"
           /* 案8：顔を出しながら少し引く。動かすのは transform だけ */
-          style={{ transform: zoom ? `scale(${1.12 - 0.12 * t})` : undefined, filter: photoFilter(cfg.bright) }}
+          style={{ transform: zoom ? `scale(${1.12 - 0.12 * t})` : undefined, filter: photoFilter(cfg.bright, cfg.sat) }}
         />
         {/* 文字が読めるよう、下側だけわずかに沈ませる（写真の明るさの案で、影の濃さ・色と光が変わる・2026-10-20） */}
         <PhotoTone tone={cfg.tone} shade={cfg.shade} shadeH={cfg.shadeH} light={cfg.light} />

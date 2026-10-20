@@ -154,10 +154,11 @@
     "padTop": 64,
     "fadeCurve": 2,
     "overlap": 872,
-    "tone": 0,
-    "bright": 100,
-    "shade": 35,
-    "shadeH": 50,
+    "tone": 1,
+    "bright": 120,
+    "sat": 100,
+    "shade": 0,
+    "shadeH": 40,
     "light": 0
   },
   "expIntro": {
