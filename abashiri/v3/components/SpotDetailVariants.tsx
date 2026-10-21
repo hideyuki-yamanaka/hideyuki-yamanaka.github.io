@@ -199,7 +199,7 @@ export function InfoTable({
           className={`flex gap-4 py-4 [&:not(:last-child)]:border-b sm:gap-6 ${line}`}
         >
           <dt
-            className={`w-[72px] shrink-0 text-body-14 font-light leading-[2] sm:w-[96px] ${label}`}
+            className={`w-[72px] shrink-0 text-body-14 font-light leading-[2] max-tab:leading-[1.8] sm:w-[96px] ${label}`}
           >
             {row.label}
           </dt>
@@ -209,7 +209,7 @@ export function InfoTable({
              スマホ幅を突き破り、ページごと横スクロールしていた
              （2026-09-16 実測：375px で31px はみ出し） */}
           <dd
-            className={`min-w-0 whitespace-pre-line break-words text-body-14 font-extralight leading-[2] tracking-[0.05em] ${value}`}
+            className={`min-w-0 whitespace-pre-line break-words text-body-14 font-extralight leading-[2] tracking-[0.05em] max-tab:leading-[1.8] ${value}`}
           >
             {row.value}
           </dd>
@@ -225,7 +225,7 @@ export function Points({ spot, light }: { spot: SpotDetail; light?: boolean }) {
       {spot.points.map((p) => (
         <li
           key={p}
-          className={`flex gap-3 text-body-14 font-extralight leading-[2] tracking-[0.05em] ${
+          className={`flex gap-3 text-body-14 font-extralight leading-[2] tracking-[0.05em] max-tab:leading-[1.8] ${
             light ? "text-white" : "text-ink"
           }`}
         >

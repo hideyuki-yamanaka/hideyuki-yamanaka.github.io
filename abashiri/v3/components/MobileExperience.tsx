@@ -198,7 +198,7 @@ export default function MobileExperience() {
                 （2026-09-17 タブレット対応。実測: 1024x1366 で本文14pxは小さすぎた） */}
             <p className="text-body-14 font-light tab:text-body-16">網走に来る前に、まずやってみよう</p>
             <p className="mt-2 text-title-36 font-thin tab:mt-3 tab:text-title-56">ぼーっと体験</p>
-            <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9] tab:mt-14 tab:space-y-7 tab:text-body-18 tab:leading-[2]">
+            <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9] max-tab:leading-[1.7] tab:mt-14 tab:space-y-7 tab:text-body-18 tab:leading-[2]">
               <p>網走は何もないけど、それがたまらない。</p>
               <p>
                 忙しなく過ごす、あなたの日常からそっと離れて、

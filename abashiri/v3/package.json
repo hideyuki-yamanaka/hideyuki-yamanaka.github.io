@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/sync-tune-panel.mjs",
+    "predev": "node scripts/sync-tune-panel.mjs && node scripts/start-phone-sync.mjs",
     "dev": "next dev",
     "prebuild": "node scripts/sync-tune-panel.mjs",
     "build": "next build",

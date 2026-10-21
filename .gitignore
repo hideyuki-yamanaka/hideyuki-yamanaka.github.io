@@ -9,6 +9,7 @@ _site/
 
 # anyflow 自動デプロイの実行ログ・完了マーカー(ローカル専用)
 anyflow/.deploy-v2-v3.log
+abashiri/.phone-sync-v3.log
 anyflow/.deploy-v2-v3.done
 
 # Vercel CLI のローカル設定(プロジェクトID等。追跡しない)

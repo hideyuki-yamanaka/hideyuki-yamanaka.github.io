@@ -547,9 +547,11 @@ function MapColumn({
   const head = `${white} text-body-16 font-light leading-[1.6] tracking-[0.1em]`;
   /* 【2026-10-21 ヒデさん】「ぼーっとスポットの下の能取岬とか、各スポットの文字が薄すぎるので、はっきりと見せて」
      → 白75%・太さ200（いちばん細い）→ 白100%・太さ300 に。スマホでは明るい空の上に乗るので、
-       文字のまわりにだけ深い海の青（Shadow_Base #005fb3）をうっすらにじませて形を立たせる🟡（PC・スマホ共通） */
+       文字のまわりにだけ深い海の青（Shadow_Base #005fb3）をうっすらにじませて形を立たせる🟡
+     → 同日 ヒデさん「スマホビューのフッター、スポットだったり子カテゴリ要素にシャドウをかけている気がするので、それはいらない」
+       → スマホ（744px 未満）は影なし。白100%・太さ300 はそのまま。744px 以上（タブレット・PC）は影を残す */
   const item = light
-    ? "font-light text-white [text-shadow:0_0_4px_rgb(0_95_179/0.5),0_0_12px_rgb(0_95_179/0.3)] hover:opacity-80"
+    ? "font-light text-white tab:[text-shadow:0_0_4px_rgb(0_95_179/0.5),0_0_12px_rgb(0_95_179/0.3)] hover:opacity-80"
     : "font-light text-ink/80 hover:text-ink";
   const line = light ? "border-white/30" : "border-ink/15";
 
@@ -577,7 +579,7 @@ function MapColumn({
             {n.href ? (
               <Link
                 href={n.href}
-                className={`block text-body-14 leading-[1.9] transition-[color,opacity] duration-300 ease-standard ${item}`}
+                className={`block text-body-14 leading-[1.9] max-tab:leading-[1.7] transition-[color,opacity] duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </Link>
@@ -585,7 +587,7 @@ function MapColumn({
               <button
                 type="button"
                 onClick={() => n.jump && jumpTo(n.jump)}
-                className={`block cursor-pointer text-left text-body-14 leading-[1.9] transition-[color,opacity] duration-300 ease-standard ${item}`}
+                className={`block cursor-pointer text-left text-body-14 leading-[1.9] max-tab:leading-[1.7] transition-[color,opacity] duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </button>

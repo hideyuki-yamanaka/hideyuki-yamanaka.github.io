@@ -38,7 +38,7 @@ export const DEFAULT_FACE: FaceConfig = {
   mouthX: 47.9,
   mouthY: 79,
   mouthW: 11.2,
-  mouthStroke: 1.5,
+  mouthStroke: 2, /* 2026-10-21 ヒデさんの画面の 2px で固めた（調整パネルから外した。カンプは 1.5px） */
   patchSpread: 120,
 };
 

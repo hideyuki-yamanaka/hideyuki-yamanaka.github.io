@@ -225,6 +225,8 @@ function QuietBlocks({
   };
   const head =
     "text-[length:var(--dt-head)] font-thin leading-[1.6] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]";
+  /* 見出しの文字の行（調整パネル › 詳細ページ › フォント）の当て先の印 */
+  const hd = { "data-dt-head": "" };
   return (
     <>
       {/* 【罫線のルール（2026-09-20 ヒデさん指示）】
@@ -236,7 +238,7 @@ function QuietBlocks({
           → スマホ（768px 未満）だけ、セクションの前を 本文の間 40px＋頭の余白 24px＝64px に（前は 56＋88＝144px）🟡。
             タブレット・PC は md: で今までの値のまま */}
       <motion.section data-sec={from} className="flex flex-col gap-7 pt-6 md:pt-0" {...V}>
-        <h2 className={head}>担当者からのおすすめポイント</h2>
+        <h2 className={head} {...hd}>担当者からのおすすめポイント</h2>
         <Points spot={spot} />
       </motion.section>
       <motion.section
@@ -244,7 +246,7 @@ function QuietBlocks({
         className="flex flex-col gap-7 pt-6 md:pt-[88px]"
         {...V}
       >
-        <h2 className={head}>基本情報</h2>
+        <h2 className={head} {...hd}>基本情報</h2>
         <InfoTable spot={spot} />
       </motion.section>
       <motion.section
@@ -252,7 +254,7 @@ function QuietBlocks({
         className="flex flex-col gap-7 pt-6 md:pt-[88px]"
         {...V}
       >
-        <h2 className={head}>周辺マップ</h2>
+        <h2 className={head} {...hd}>周辺マップ</h2>
         <MapEmbed spot={spot} />
       </motion.section>
     </>
@@ -665,8 +667,9 @@ function TocLayout({
             スマホ（768px 未満）だけ詰めた🟡：目次→本文 60→40px／段落どうし・本文→写真 56→40px／写真どうし 56→8px（写真は1つのまとまりに）／
             セクションどうし 144→64px（QuietBlocks）。タブレット（md）・PC（lg）は今までの値のまま */}
         <div className="mx-auto flex max-w-[1180px] flex-col gap-10 md:gap-[60px] lg:flex-row lg:gap-[112px]">
-          {/* 左カラム：目次。本文を読んでいる間ずっと画面に残る */}
-          <aside className="shrink-0 lg:w-[228px]">
+          {/* 左カラム：目次。本文を読んでいる間ずっと画面に残る。
+              【2026-10-21 ヒデさん】「スマホビューに関しては、目次をなくしてしまって大丈夫です。詳細ページ」→ スマホ（744px 未満）は出さない。タブレット・PC は今までどおり */}
+          <aside className="shrink-0 max-tab:hidden lg:w-[228px]">
             <div className="lg:sticky lg:top-[110px]">
               <p className="mb-7 text-body-14 font-light tracking-[0.2em] text-ink/35">
                 目次
@@ -687,14 +690,29 @@ function TocLayout({
                 whileInView="show"
                 viewport={{ root: ref, once: true, amount: 0.15 }}
               >
-                <h3 className="text-[length:var(--dt-head)] font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
+                <h3
+                  data-dt-head=""
+                  className="text-[length:var(--dt-head)] font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]"
+                >
                   {s.heading}
                 </h3>
                 {/* 【2026-09-26 ヒデさん指示】「段落がコンテンツ幅より手前で折り返す。
                     写真の横幅まで伸ばして大丈夫」→ lg:max-w-[620px] を外し、写真と同じ幅に */}
-                <p className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.0357em] text-ink/90">
-                  {s.text}
-                </p>
+                {/* 【2026-10-21 ヒデさん「同じセクション内で入っている改行がちょっと広すぎる印象なので詰めて。元のサイトから全部踏襲してコンテンツを持ってきてると思う。行間の数値なども調整パネルで変えられるように」】
+                    → 元のサイトの文章は段落の間に空行（改行2つ）があり、空行1行ぶん（行の高さ＝PC 34px／スマホ 31px）空いていた。
+                      空行で段落に分けて、段落の間は「段落のギャップ」（--dt-para・PC 16px／スマホ 12px🟡・調整パネル › 詳細ページ › 基本 › 本文）で決める。
+                      段落の中の1回の改行はそのまま。行間などは調整パネルの文字の行（data-dt-body・data-dt-head）で変えられる */}
+                <div className="flex flex-col" style={{ gap: "var(--dt-para)" }}>
+                  {s.text.split(/\n[ \t\u3000]*\n+/).map((t, j) => (
+                    <p
+                      key={j}
+                      data-dt-body=""
+                      className="whitespace-pre-line text-[length:var(--dt-body)] font-extralight leading-[2.4] tracking-[0.0357em] text-ink/90 max-tab:leading-[2.2]"
+                    >
+                      {t.trim()}
+                    </p>
+                  ))}
+                </div>
               </motion.section>
             ))}
             {/* 写真は1つのまとまりにして、スマホだけ写真どうしを 8px に詰める（タブレット・PC は本文の間と同じ 56／96px のまま） */}

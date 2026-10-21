@@ -352,7 +352,7 @@ export default function TopTunePanel({
         light: 0,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
-      expPick: { pattern: 1 },
+      expPick: { pattern: 3 }, /* 2026-10-21 案3 で固めた（調整パネルから外した） */
       scrollSpd: { kvToMsg: 100 },
       nav: { inMs: 420, outMs: 620 },
       secHead: 36,
@@ -385,7 +385,7 @@ export default function TopTunePanel({
       /* 重ね写真の流れ方（1〜3）。eventParts.tsx の EV_FLOWS の番号 */
       root.style.setProperty("--ev-flow", String(params.events.flow ?? 1));
       /* 案31（カードを切る）の秒数とメリハリ。EventVariants4 の ShuffleCard が読む */
-      root.style.setProperty("--ev-shuf-dur", String(params.events.shufDur ?? 1));
+      /* --ev-shuf-dur（切る速さ）は 2026-10-21 に固めた：globals.css で PC 1.0秒／スマホ 0.6秒。ここからは書かない */
       root.style.setProperty("--ev-shuf-pow", String(params.events.shufPow ?? 3));
       root.style.setProperty("--ev-mq-size", `${params.events.mqSize ?? 80}px`);
       root.style.setProperty("--ev-mq-dur", `${params.events.mqDur ?? 34}s`);
@@ -591,28 +591,7 @@ export default function TopTunePanel({
               {
                 note: "その場で反映されます。",
               },
-              { sub: "ヘッダーのアンカー移動（幕）", grp: "anim" },
-              {
-                note: "ヘッダーの「ぼーっとスポット」「グルメ」「体験」を押した時の移り方。上下にスクロールしている途中は見せず、幕がふわっとかぶって、見えない間に場面が入れ替わります（ホイールや画面を触ると途中でも止まって操作が返ります）。",
-              },
-              {
-                slider: "かぶる時間",
-                path: "nav.inMs",
-                min: 0,
-                max: 1500,
-                step: 20,
-                unit: "ms",
-                immediate: true,
-              },
-              {
-                slider: "引く時間",
-                path: "nav.outMs",
-                min: 0,
-                max: 2000,
-                step: 20,
-                unit: "ms",
-                immediate: true,
-              },
+              /* ヘッダーのアンカー移動（幕）：かぶる 420ms・引く 620ms で固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」・値は下の「固めた値」） */
               /* 【2026-10-21 ヒデさん】「ページ遷移の演出から フッター（全ページ共通）は、今の案をデフォルトにして削除して大丈夫。案・セクションごと」
                  → ページ遷移の演出は 案7「じんわり溶ける」・長さ1000ms・ぼかし3px・白の濃さ88% で固定（PageTransition の PT_DEFAULT・tune-defaults.json）。
                  つまみと案は外した（戻す時は git の記録） */
@@ -892,17 +871,7 @@ export default function TopTunePanel({
                 fmt: "px",
                 hint: "−で上へ。",
               },
-              { sub: "人物イラスト", grp: "fxtex" },
-              { sub: "口", deep: true },
-              {
-                slider: "線の太さ",
-                path: "face.mouthStroke",
-                min: 0.5,
-                max: 4,
-                step: 0.25,
-                fmt: "px",
-                hint: "カンプは 1.5px です。",
-              },
+              /* 人物イラスト › 口 › 線の太さ：2px で固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」） */
               { sub: "人物イラスト", grp: "anim" },
               { sub: "出現", deep: true },
               {
@@ -981,16 +950,7 @@ export default function TopTunePanel({
                 step: 0.1,
                 fmt: "s",
               },
-              { sub: "人物イラスト", grp: "other" },
-              { sub: "確認用", deep: true },
-              {
-                toggle: "眉と口を出しっぱなしにする",
-                path: "preview.faceOn",
-              },
-              {
-                toggle: "パッチを赤くする",
-                path: "preview.patchRed",
-              },
+              /* 人物イラスト › 確認用（眉と口を出しっぱなし・パッチを赤く）：どちらも「しない」で固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」） */
               /* ── 人物イラスト ─────────────────── */
               /* 登場のしかたは案3「ポンッ→プルン」で確定（2026-08-21 ヒデさん指示。
                  案ピルは撤去。パターン本体は illustEnterPatterns.ts） */
@@ -1168,22 +1128,7 @@ export default function TopTunePanel({
                 fmt: "px",
                 hint: "上の文章と下の写真の列の間。中身は画面の上下まん中にそろうので、詰めるほど上下の余白が広がります。カンプは140px。",
               },
-              /* ── グルメ｜カルーセル（2026-08-22 ヒデさん依頼） ── */
-              { sub: "グルメのカルーセル", grp: "anim" },
-              {
-                slider: "1周の時間",
-                path: "gourmet.speed",
-                min: 10,
-                max: 120,
-                step: 5,
-                fmt: "s",
-                hint: "写真の列がひと回りする時間。大きいほどゆっくり。その場で反映されます。",
-              },
-              {
-                toggle: "ホバーで止める",
-                path: "gourmet.pauseOnHover",
-                hint: "ONだと、カードにカーソルを乗せている間は流れが止まり、ホバーの文字をゆっくり読めます。",
-              },
+              /* グルメのカルーセル（1周の時間 40秒・ホバーで止める しない）：固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」） */
               { sub: "体験セクション（グルメの下）", grp: "variation" },
               {
                 note: "「意外とオモロい、網走。」の見せ方10案。どれも白地・余白多め・ミニマルで、トップの他のセクションと同じ書体づかいにしてあります（ホバーで開く仕掛けは廃止）。",
@@ -1205,6 +1150,8 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
+              /* 送りボタンの形は 2026-10-21 に見比べて「案9 青いふちのガラス」に決定し、調整パネルの「送りボタン」の行は消した
+                 （ヒデさん「ボタンは9番でいきましょう。それ以外の案は、調整パネルからも全部削除して大丈夫です」・EventNav.tsx） */
               { sub: "体験セクション（グルメの下）", grp: "basic" },
               {
                 slider: "下のマージン",
@@ -1226,9 +1173,11 @@ export default function TopTunePanel({
                 max: 140,
                 step: 1,
                 unit: "%",
+                /* 【2026-10-21 ヒデさん】「スマホの体験セクションのカードUIを、もう少しだけ気持ち全体を大きく」→ スマホだけ 112%🟡（PC は 100% のまま。スマホモードで触ると別に持てる） */
+                spDefault: 112,
                 immediate: true,
                 when: (p: Params) => p.events.pattern === 31,
-                hint: "重なったカードの大きさ（カンプの420×616pxが100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。",
+                hint: "重なったカードの大きさ（カンプの420×616pxが100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。スマホは上書きが無い間 112%。",
               },
               { sub: "案5 3Dカルーセル：カード", deep: true, when: (p: Params) => p.events.pattern >= 34 },
               {
@@ -1280,44 +1229,8 @@ export default function TopTunePanel({
               /* ── 案31（パネル表示は案2）を選んだ時だけ出るつまみ。画面の奥から手前の順 ──
                  【2026-09-26 ヒデさん指示】「この案を選んだら動的に出てきて、後ろのカルーセル
                    テキストのサイズ感や速度感、カードのサイズ感を変えられるように」 */
-              { sub: "案2 カードを切る：流れる文字", deep: true, when: (p: Params) => p.events.pattern === 31 },
-              {
-                slider: "速さ",
-                path: "events.mqDur",
-                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 8,
-                max: 90,
-                step: 1,
-                unit: "秒",
-                immediate: true,
-                when: (p: Params) => p.events.pattern === 31,
-                hint: "文字の列がひと回りする時間。小さいほど速く流れます。これまでは34秒でした。",
-              },
-              { sub: "案2 カードを切る：カード", deep: true, when: (p: Params) => p.events.pattern === 31 },
-              {
-                slider: "切る速さ",
-                path: "events.shufDur",
-                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0.5,
-                max: 2,
-                step: 0.05,
-                unit: "秒",
-                immediate: true,
-                /* 案31（パネル表示は案2）だけ */
-                when: (p: Params) => p.events.pattern === 31,
-                hint: "ボタンを1回押して、いちばん上のカードが右へ出て束の下へ潜り終わるまでの秒数。前へ戻す時も同じ秒数です。",
-              },
-              {
-                slider: "メリハリ",
-                path: "events.shufPow",
-                variant: "events.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 1.5,
-                max: 5,
-                step: 0.1,
-                immediate: true,
-                when: (p: Params) => p.events.pattern === 31,
-                hint: "大きいほど、動き出しと止まり際はゆっくりで、途中がシャッと速くなります。小さいほど一定の速さに近づきます。",
-              },
+              /* 案2 カードを切る：流れる文字の速さ 34秒・切る速さ PC 1.0秒／スマホ 0.6秒・メリハリ 3：固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」。
+                 切る速さのスマホの値は globals.css の --ev-shuf-dur の 744px 未満で持つ） */
             ],
           },
           {
@@ -1436,23 +1349,7 @@ export default function TopTunePanel({
                 step: 1,
                 fmt: "°",
               },
-              { sub: "場所えらびのカルーセル", grp: "variation" },
-              {
-                pills: "案",
-                path: "expPick.pattern",
-                immediate: true,
-                autoNum: "案",
-                options: [
-                  { name: "案1", value: 1, desc: "一斉にブラー解除。全体が同時にゆっくりピントが合う" },
-                  { name: "案2", value: 2, desc: "中央から順に。真ん中が先に晴れて両隣が続く" },
-                  { name: "案3", value: 3, desc: "左から順に。1枚ずつ順番に晴れていく" },
-                  { name: "案4", value: 4, desc: "見出し→カードの二段階で晴れる" },
-                  { name: "案5", value: 5, desc: "濃いブラー＋ほんの少し縮んで収まる（動きなし）" },
-                ],
-              },
-              {
-                note: "案を押すと、その場で場所えらびの画面から登場を再生し直します。",
-              },
+              /* 場所えらびのカルーセル：案3「左から順に」で固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」） */
               { sub: "動画まわり（遷移と再生画面）", grp: "basic" },
               { sub: "「ぼーっ」の吹き出し", deep: true },
               /* 出方は現状の案で確定（2026-08-21 ヒデさん指示。案ピルは撤去。
@@ -1569,22 +1466,7 @@ export default function TopTunePanel({
                 fmt: "s",
                 hint: "再生開始やマウス操作のあと、再生マークとタイマーが消えるまでの時間。短いほど早く映像だけになります。",
               },
-              { sub: "動画まわり（遷移と再生画面）", grp: "other" },
-              { sub: "動画の音", deep: true },
-              {
-                toggle: "音量をだんだん上げる",
-                path: "videoVol.fadeIn",
-                hint: "ONだと再生時に音量0から静かに立ち上がります。OFFで最初から通常音量。",
-              },
-              {
-                slider: "フェード時間",
-                path: "videoVol.fadeSec",
-                min: 0.5,
-                max: 10,
-                step: 0.5,
-                fmt: "s",
-                hint: "音量が最大になるまでの時間。長いほどゆっくり大きくなります。",
-              },
+              /* 動画の音（音量をだんだん上げる する・フェード時間 3秒）：固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」） */
             ],
           },
         ],
@@ -1661,6 +1543,17 @@ export default function TopTunePanel({
       /* 調整パネルから外して固めた値（2026-10-21）：ブラウザに残った古い保存値で変わらないよう、焼き込み（DEFAULTS）の値に戻す */
       params.msg = structuredClone(DEFAULTS.msg);
       params.scrollSpd = structuredClone(DEFAULTS.scrollSpd);
+      /* 同日 2回目（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」）：画面写真の値で固めた */
+      params.nav = { inMs: 420, outMs: 620 };
+      params.face.mouthStroke = 2;
+      params.preview = { faceOn: false, patchRed: false };
+      params.gourmet.speed = 40;
+      params.gourmet.pauseOnHover = false;
+      params.events.mqDur = 34;
+      params.events.shufPow = 3;
+      params.expPick = { pattern: 3 };
+      params.videoVol.fadeIn = true;
+      params.videoVol.fadeSec = 3;
       /* 保存されていた値を最初の1回だけ反映する */
       applyVars();
       applyVolume();

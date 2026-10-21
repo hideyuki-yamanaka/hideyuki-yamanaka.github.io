@@ -71,6 +71,12 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
   const spot = SPOT_DETAILS[slug] ?? GOURMET_DETAILS[slug];
   const [pattern, setPattern] = useState(1);
   const madeRef = useRef(false);
+  /* 案を切り替えると本文の要素が作り直されるので、文字の行（行間など）を当て直すために部品を持っておく（2026-10-21） */
+  const panelRef = useRef<{ sync?: () => void } | null>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => panelRef.current?.sync?.());
+    return () => cancelAnimationFrame(id);
+  }, [pattern]);
 
   /* 右下の調整パネル（tune-panel.js）。案の切替だけの小さいパネル */
   useEffect(() => {
@@ -95,7 +101,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               部品がスマホの値を流し込むのは 600px 以下の端末だけなので、PC の画面ではスマホの値を
               保存値（スマホの上書き）から読んで --dt-*-sp に入れる（readSp） */
     const SIZE0 = { head: 24, body: 14 }; /* 2026-09-27 本文 15→14・見出し 26→24（4-7。globals.css の --dt-body・--dt-head と同じ値） */
-    const SP_DEFAULT = { fv: 52, fade: 8 };
+    const SP_DEFAULT = { fv: 52, fade: 8, paraGap: 12 };
     const params = {
       /* 【2026-09-24 ヒデさん指示】「ブラーで白くなる案を採用していきたい」
          → 既定を値40（写真そのものがぼけて白くなり、白い本文へ溶ける）に。
@@ -108,12 +114,14 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
         /* 写真から本文への渡り（PC の値）。単位は「画面の高さの何%」 */
         fv: 100,
         fade: 12,
+        /* 本文の段落の間（px）。2026-10-21 ヒデさん「同じセクション内の改行が広すぎるので詰めて」🟡 */
+        paraGap: 16,
       },
     };
     const STORAGE_KEY = "abashiri-spot-detail-tune";
     const VERSION = 18;
     /* PC の画面で「スマホで効く値」を読む：スマホモード中は部品に聞き、それ以外は保存値（スマホの上書き）→ 既定 */
-    const readSp = (path: "detail.fv" | "detail.fade", def: number) => {
+    const readSp = (path: "detail.fv" | "detail.fade" | "detail.paraGap", def: number) => {
       if (document.documentElement.classList.contains("phone-mode")) {
         const v = panel?.value?.(path);
         if (typeof v === "number") return v;
@@ -134,6 +142,8 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       r.style.setProperty("--dt-fade-pc", String(params.detail.fade));
       r.style.setProperty("--dt-fv-sp", String(phone ? params.detail.fv : readSp("detail.fv", SP_DEFAULT.fv)));
       r.style.setProperty("--dt-fade-sp", String(phone ? params.detail.fade : readSp("detail.fade", SP_DEFAULT.fade)));
+      r.style.setProperty("--dt-para-pc", String(params.detail.paraGap));
+      r.style.setProperty("--dt-para-sp", String(phone ? params.detail.paraGap : readSp("detail.paraGap", SP_DEFAULT.paraGap)));
     };
 
     const build = () => {
@@ -218,30 +228,28 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 immediate: true,
                 hint: "写真が白い本文へ移りきるまでのスクロール量（画面の高さの何%）。スマホの上書きが無い間は8%。",
               },
-              { sub: "文字の大きさ", grp: "font" },
+              /* 【2026-10-21 ヒデさん「同じセクション内で入っている改行がちょっと広すぎる印象なので詰めて。元のサイトから全部踏襲してコンテンツを持ってきてると思う。行間の数値なども調整パネルで変えられるように」】
+                 → 段落の間は「段落のギャップ」（余白なので基本・スライダー・ルール 6-18）。
+                   行間は文字の行（フォント・ルール 6-17）。前の「本文」「見出し」の大きさだけのスライダーは文字の行に置き換えた
+                   （同じ文字の大きさの入口を2つにしない・6-2。前に動かした大きさは、ページの作りの大きさ（--dt-body・--dt-head）として残る） */
+              { sub: "本文", grp: "basic" },
               {
-                note: "本文と見出しの大きさ。行間は倍率で持っているので、大きさを変えると行間も一緒に動きます。【案ごと・PC/スマホごとに別々の値を持ちます】（2026-09-27 から部品が自動で分ける）。",
-              },
-              {
-                slider: "本文",
-                path: "detail.bodySize",
-                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
-                min: 12,
-                max: 20,
-                step: 0.5,
-                unit: "px",
-                immediate: true,
-              },
-              {
-                slider: "見出し",
-                path: "detail.headSize",
-                grid: "fontSize", /* 文字サイズ（14・18px も可）。名前だけだと部品が「大きさ」と見分けて4の倍数に寄せるため（2026-09-28） */
-                min: 16,
-                max: 40,
+                slider: "段落のギャップ",
+                path: "detail.paraGap",
+                min: 0,
+                max: 48,
                 step: 1,
                 unit: "px",
+                spDefault: SP_DEFAULT.paraGap,
                 immediate: true,
+                hint: "本文の段落と段落の間（元のサイトの空行の代わり）。スマホの上書きが無い間は 12px。",
               },
+              { sub: "文字（大きさ・太さ・行間・字間）", grp: "font" },
+              {
+                note: "本文と見出しの文字。空欄はページの作りのまま（本文 14px・行間 2.4〔スマホ 2.2〕、見出し 24px）。【案ごと・PC/スマホごとに別々の値を持ちます】",
+              },
+              { font: "本文", sel: "[data-dt-body]", id: "dtBody" },
+              { font: "見出し", sel: "[data-dt-head]", id: "dtHead" },
             ],
           },
         ],
@@ -255,6 +263,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
           setPattern(params.detail.pattern);
         },
       });
+      panelRef.current = panel;
       /* スマホモードの QR・実機への反映（共通の phone-mode・開発中だけ） */
       attachPhoneMode(panel as unknown as Parameters<typeof attachPhoneMode>[0]);
       applyType();

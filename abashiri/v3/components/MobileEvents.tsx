@@ -75,7 +75,7 @@ function useViewport() {
 /** 見出し（スマホの既存の組みと同じ） */
 function Title({ className = "" }: { className?: string }) {
   return (
-    <h2 className={`text-body-20 font-thin leading-[1.7] text-ink tab:text-title-36 ${className}`}>
+    <h2 className={`text-body-20 font-thin leading-[1.7] text-ink max-tab:leading-[1.6] tab:text-title-36 ${className}`}>
       意外とオモロい、網走。
     </h2>
   );
