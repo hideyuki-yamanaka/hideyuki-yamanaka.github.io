@@ -545,7 +545,12 @@ function MapColumn({
 }) {
   const white = light ? "text-white" : "text-ink";
   const head = `${white} text-body-16 font-light leading-[1.6] tracking-[0.1em]`;
-  const item = light ? "text-white/75 hover:text-white" : "text-ink/60 hover:text-ink";
+  /* 【2026-10-21 ヒデさん】「ぼーっとスポットの下の能取岬とか、各スポットの文字が薄すぎるので、はっきりと見せて」
+     → 白75%・太さ200（いちばん細い）→ 白100%・太さ300 に。スマホでは明るい空の上に乗るので、
+       文字のまわりにだけ深い海の青（Shadow_Base #005fb3）をうっすらにじませて形を立たせる🟡（PC・スマホ共通） */
+  const item = light
+    ? "font-light text-white [text-shadow:0_0_4px_rgb(0_95_179/0.5),0_0_12px_rgb(0_95_179/0.3)] hover:opacity-80"
+    : "font-light text-ink/80 hover:text-ink";
   const line = light ? "border-white/30" : "border-ink/15";
 
   const Head = col.href ? (
@@ -572,7 +577,7 @@ function MapColumn({
             {n.href ? (
               <Link
                 href={n.href}
-                className={`block text-body-14 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+                className={`block text-body-14 leading-[1.9] transition-[color,opacity] duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </Link>
@@ -580,7 +585,7 @@ function MapColumn({
               <button
                 type="button"
                 onClick={() => n.jump && jumpTo(n.jump)}
-                className={`block cursor-pointer text-left text-body-14 font-extralight leading-[1.9] transition-colors duration-300 ease-standard ${item}`}
+                className={`block cursor-pointer text-left text-body-14 leading-[1.9] transition-[color,opacity] duration-300 ease-standard ${item}`}
               >
                 {n.label}
               </button>

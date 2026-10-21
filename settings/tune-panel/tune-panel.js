@@ -1,5 +1,5 @@
 /*!
- * tune-panel.js v2.3.2 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段／2026-10-02 文字の行）
+ * tune-panel.js v2.3.3 — 汎用「調整パネル」（AnyFlow V5 準拠・2026-09-27 作り直し／2026-09-29 近接の法則と文字の段／2026-10-02 文字の行）
  * 1ファイル / 依存なし / CSSも自分で流し込む。
  *
  *   <script src="tune-panel.js"></script>
@@ -19,7 +19,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '2.3.2';
+  var VERSION = '2.3.3';
 
   /* ============================================================
      0. 小道具
@@ -284,6 +284,7 @@
     '.tp-cs.card>.tp-cs-head:hover .tp-cs-chev::before{background:#333;}',
     '.tp-cs.closed .tp-cs-chev{transform:rotate(-90deg);}',
     '.tp-cs.closed>.tp-cs-body{display:none;}',
+    '.tp-cs.card.closed{padding-bottom:0;}',   /* 閉じたカードは下の余白も見出しの上と同じ 12px（カードの下の 16px は中身の下に付ける分なので、閉じたら外す。2026-10-21 v2.3.3 ヒデさん「アコーディオンを閉じた時に下のパディングが無駄に残る。上と同じパディングを下に」） */
     /* 案ごとの大見出し（1タブに主役の案が複数ある時） */
     '.tp-vs{margin:0;}',
     '.tp-vs~.tp-vs{border-top:1px solid #e6e6e6;}',   /* 案の大見出し同士はさらに区切り線(間にだけ・6-15) */

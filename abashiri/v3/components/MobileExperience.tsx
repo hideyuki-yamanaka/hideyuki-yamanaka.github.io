@@ -223,16 +223,20 @@ export default function MobileExperience() {
         </section>
       )}
 
-      {/* ── 場所えらび（青グラデ＋横カルーセル） ── */}
+      {/* ── 場所えらび（青グラデ＋横カルーセル） ──
+          【2026-10-21 ヒデさん】「どこでぼーっとするは上揃えではなくて、カルーセルの写真に近づける形に。写真から適度に上下のギャップがある感じ」
+          → 前は見出しが上（80px）に貼りつき、写真の列が残りの高さいっぱいの真ん中にあったので、見出し↔写真が 186px（タブレット 320px）も離れていた。
+            見出し・写真・下の名前とボタンをひとかたまりにして、画面の真ん中に置く（入りきらない時は上から＝safe center）。
+            見出し↔写真・写真↔名前は スマホ 40px／タブレット 56px🟡 */}
       {step === "pick" && (
-        <section className="relative z-10 flex h-full flex-col items-center pb-10 pt-20">
+        <section className="relative z-10 flex h-full flex-col items-center pb-10 pt-20 [justify-content:safe_center]">
           <h2 className="text-center text-title-24 font-thin tab:text-title-44">どこでぼーっとする？</h2>
 
           {/* 横カルーセル（PC版のレスポンシブ。中央のカードが選択） */}
           <div
             ref={carRef}
             onScroll={onCarScroll}
-            className="no-scrollbar mt-8 flex w-full flex-1 snap-x snap-mandatory items-center gap-4 overflow-x-auto overflow-y-hidden"
+            className="no-scrollbar mt-10 flex w-full shrink-0 snap-x snap-mandatory items-center gap-4 overflow-x-auto overflow-y-hidden tab:mt-14"
             style={{
               paddingInline: `calc(50% - ${CARD_W / 2}px)`,
               touchAction: "pan-x", // 左右スワイプのみ（上下の遊びを止める）
@@ -255,7 +259,7 @@ export default function MobileExperience() {
           </div>
 
           {/* ラベル＋ボタン（中央グループ） */}
-          <div className="mt-7 flex flex-col items-center gap-5 px-6">
+          <div className="mt-10 flex flex-col items-center gap-5 px-6 tab:mt-14">
             <div className="flex flex-col items-center">
               <p className="text-body-14 font-extralight tab:text-body-16">ぼーっとスポット {active.no}</p>
               <p className="mt-1 text-title-24 font-thin tab:mt-2 tab:text-title-36">{active.label}</p>

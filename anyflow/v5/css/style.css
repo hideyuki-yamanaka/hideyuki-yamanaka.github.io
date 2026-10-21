@@ -3221,6 +3221,7 @@
   .cat-body.prox .vs-body > .cat-section.cs-nested { margin: 0; }   /* カード同士は 8px(枠線で区切る) */
   .cat-body.prox .cat-section:not(.cs-variation) { padding: 0 12px 16px; }
   .cat-body.prox .cat-section:not(.cs-variation) > .cat-section-head { padding: 12px 2px 12px; }
+  .cat-body.prox .cat-section.closed:not(.cs-variation) { padding-bottom: 0; }   /* 【2026-10-21 ヒデさん「アコーディオンを閉じた時に下のパディングが無駄に残る。上と同じパディングを下に」】閉じたカードは、カードの下の 16px（中身の下に付ける分）を外して、見出しの上下 12px だけにする（決まり 6-16・共通の部品 v2.3.3 と同じ） */
   .cat-body.prox .cat-section-body { display: flex; flex-direction: column; gap: 12px; padding: 0; }
   .cat-body.prox .cat-section.closed > .cat-section-body { display: none; }   /* 【2026-09-29 夜 ヒデさん「アコーディオンを押しても畳めない」】上の display:flex が、畳んだ時の display:none(.cat-section.closed .cat-section-body)を上書きしていた＝今日の余白の直しで起きた。畳んだ時はこちらを優先 */   /* 見出しのまとまり同士(24→16→12px・カテゴリ同士の 32px より狭く) */
   .cat-body.prox .grp, .cat-body.prox .grp.fixed, .cat-body.prox .grp.bare, .cat-body.prox .grp.sub2 { margin: 0; }

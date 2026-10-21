@@ -231,14 +231,17 @@ function QuietBlocks({
             ・見出しの上下には罫線を入れない
               （担当者からのおすすめポイント／基本情報／周辺マップ すべて）
             ・基本情報の表は「行と行の区切り」だけ。表の一番上と一番下の線は入れない
-          → 区切りは罫線ではなく【余白】でつける（pt-10 → pt-[88px]） */}
-      <motion.section data-sec={from} className="flex flex-col gap-7" {...V}>
+          → 区切りは罫線ではなく【余白】でつける（pt-10 → pt-[88px]）
+          【2026-10-21 ヒデさん「スマホで写真が縦に積んだ時の上下のマージン・段落ごとの間・基本情報や周辺マップなどセクションの間を詰めて」】
+          → スマホ（768px 未満）だけ、セクションの前を 本文の間 40px＋頭の余白 24px＝64px に（前は 56＋88＝144px）🟡。
+            タブレット・PC は md: で今までの値のまま */}
+      <motion.section data-sec={from} className="flex flex-col gap-7 pt-6 md:pt-0" {...V}>
         <h2 className={head}>担当者からのおすすめポイント</h2>
         <Points spot={spot} />
       </motion.section>
       <motion.section
         data-sec={from + 1}
-        className="flex flex-col gap-7 pt-[88px]"
+        className="flex flex-col gap-7 pt-6 md:pt-[88px]"
         {...V}
       >
         <h2 className={head}>基本情報</h2>
@@ -246,7 +249,7 @@ function QuietBlocks({
       </motion.section>
       <motion.section
         data-sec={from + 2}
-        className="flex flex-col gap-7 pt-[88px]"
+        className="flex flex-col gap-7 pt-6 md:pt-[88px]"
         {...V}
       >
         <h2 className={head}>周辺マップ</h2>
@@ -658,7 +661,10 @@ function TocLayout({
               : ""
         }`}
       >
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-[60px] lg:flex-row lg:gap-[112px]">
+        {/* 【2026-10-21 ヒデさん「スマホで写真が縦に積んだ時の上下のマージン・段落ごとの間・基本情報や周辺マップなどセクションの間を詰めて」】
+            スマホ（768px 未満）だけ詰めた🟡：目次→本文 60→40px／段落どうし・本文→写真 56→40px／写真どうし 56→8px（写真は1つのまとまりに）／
+            セクションどうし 144→64px（QuietBlocks）。タブレット（md）・PC（lg）は今までの値のまま */}
+        <div className="mx-auto flex max-w-[1180px] flex-col gap-10 md:gap-[60px] lg:flex-row lg:gap-[112px]">
           {/* 左カラム：目次。本文を読んでいる間ずっと画面に残る */}
           <aside className="shrink-0 lg:w-[228px]">
             <div className="lg:sticky lg:top-[110px]">
@@ -670,7 +676,7 @@ function TocLayout({
           </aside>
 
           {/* 右カラム：本文 */}
-          <div className="flex min-w-0 flex-1 flex-col gap-[56px] lg:gap-[96px]">
+          <div className="flex min-w-0 flex-1 flex-col gap-10 md:gap-[56px] lg:gap-[96px]">
             {heads.map((s, i) => (
               <motion.section
                 key={i}
@@ -691,9 +697,12 @@ function TocLayout({
                 </p>
               </motion.section>
             ))}
-            {spot.photos.map((p, i) => (
-              <Photo key={i} src={p} root={ref} className="aspect-[3/2] w-full" />
-            ))}
+            {/* 写真は1つのまとまりにして、スマホだけ写真どうしを 8px に詰める（タブレット・PC は本文の間と同じ 56／96px のまま） */}
+            <div className="flex flex-col gap-2 md:gap-[56px] lg:gap-[96px]">
+              {spot.photos.map((p, i) => (
+                <Photo key={i} src={p} root={ref} className="aspect-[3/2] w-full" />
+              ))}
+            </div>
             <QuietBlocks spot={spot} root={ref} from={heads.length} />
           </div>
         </div>
