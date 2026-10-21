@@ -418,6 +418,7 @@ function PhotoStage({
         {/* 写真は帯いっぱい（止めない）。帯が横長になるので、水平線と海が残るよう下を基準に切り抜く🟡 */}
         <img
           src="/img/bg-hero.jpg"
+          data-kv-photo="" /* 2026-10-21 ヒデさん「フッターはキービジュアルのやつを使って」→ キービジュアルのレタッチ（PhotoRetouch）がフッターにも同じく効く */
           alt=""
           className="absolute inset-0 size-full object-cover object-bottom"
           style={{ filter: photoFilter(cfg.bright, cfg.sat) }}
@@ -425,6 +426,7 @@ function PhotoStage({
         {cfg.curve === 4 && (
           <img
             src="/img/bg-hero.jpg"
+            data-kv-photo=""
             alt=""
             aria-hidden
             className="pointer-events-none absolute inset-0 size-full object-cover object-bottom"
@@ -466,6 +468,7 @@ function PhotoStage({
       >
         <img
           src="/img/bg-hero.jpg"
+          data-kv-photo="" /* 2026-10-21 ヒデさん「フッターはキービジュアルのやつを使って」→ キービジュアルのレタッチ（PhotoRetouch）がフッターにも同じく効く */
           alt=""
           className="size-full object-cover"
           /* 案8：顔を出しながら少し引く。動かすのは transform だけ */

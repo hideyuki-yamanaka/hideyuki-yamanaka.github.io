@@ -57,6 +57,69 @@
   "photos": {
     "set": 1
   },
+  "retouch": {
+    "kv": {
+      "exposure": 0,
+      "contrast": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0,
+      "temp": 0,
+      "tint": 0,
+      "vibrance": 0,
+      "saturation": 0
+    },
+    "notoro": {
+      "exposure": 0,
+      "contrast": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0,
+      "temp": 0,
+      "tint": 0,
+      "vibrance": 0,
+      "saturation": 0
+    },
+    "sango": {
+      "exposure": 0,
+      "contrast": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0,
+      "temp": 0,
+      "tint": 0,
+      "vibrance": 0,
+      "saturation": 0
+    },
+    "ryuhyo": {
+      "exposure": 0,
+      "contrast": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0,
+      "temp": 0,
+      "tint": 0,
+      "vibrance": 0,
+      "saturation": 0
+    },
+    "himawari": {
+      "exposure": 0,
+      "contrast": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0,
+      "temp": 0,
+      "tint": 0,
+      "vibrance": 0,
+      "saturation": 0
+    }
+  },
+  "retouchPick": "notoro",
   "bird": {
     "opacity": 65,
     "color": "#ffffff",
@@ -157,7 +220,7 @@
     "padTop": 64,
     "fadeCurve": 2,
     "overlap": 872,
-    "tone": 1,
+    "tone": 0,
     "bright": 100,
     "sat": 100,
     "shade": 0,

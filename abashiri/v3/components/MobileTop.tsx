@@ -305,6 +305,7 @@ export default function MobileTop() {
       >
         <img
           src="/img/bg-hero.jpg"
+          data-kv-photo="" /* 写真のレタッチ（PhotoRetouch）が中身を差し替える目印（キービジュアルとフッターに付ける） */
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />

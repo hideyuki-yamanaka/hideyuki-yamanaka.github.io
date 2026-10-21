@@ -41,14 +41,37 @@ import {
 } from "./EventVariants5";
 import {
   PT_DEFAULT,
-  PAGE_TRANSITION_EVENT,
-  PAGE_TRANSITION_PATTERNS,
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
-import { FADE_CURVES, FADE_VALUES, PHOTO_TONES } from "./SiteFooter";
 import { PHOTO_SET_DEFAULT } from "./PhotoSetSwitch";
+import { RETOUCH_ALL_DEFAULT, RETOUCH_ITEMS, RETOUCH_TARGETS, type RetouchAll, type RetouchKey } from "./PhotoRetouch";
+
+/* 写真のレタッチの10項目のつまみを作る（2026-10-21 ヒデさん「調整パネルにある写真の調整は、同じ10項目を入れて」・RULES 6-18）。
+   keys が2つ以上の時は、上の「写真」のボタンで選んだ写真のつまみだけを出す（6-14） */
+function retouchItems(keys: RetouchKey[]) {
+  const out: Record<string, unknown>[] = [];
+  for (const group of ["明るさ", "色"] as const) {
+    out.push({ sub: group, deep: true });
+    for (const key of keys) {
+      for (const it of RETOUCH_ITEMS.filter((i) => i.group === group)) {
+        out.push({
+          slider: it.name,
+          path: `retouch.${key}.${it.key}`,
+          min: it.min,
+          max: it.max,
+          step: it.step,
+          ...(it.unit ? { unit: it.unit } : {}),
+          signed: true,
+          hint: it.hint,
+          ...(keys.length > 1 ? { when: (p: { retouchPick?: string }) => p.retouchPick === key } : {}),
+        });
+      }
+    }
+  }
+  return out;
+}
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
@@ -179,6 +202,10 @@ type Params = {
   sound: { volume: number };
   /** 写真の組 1＝新しい（調整済み・既定）／0＝前の写真（PhotoSetSwitch・2026-10-20） */
   photos: { set: number };
+  /** 写真のレタッチ（PhotoRetouch・2026-10-21）。写真ごとに10項目（露光量は EV、ほかは −100〜+100・0＝そのまま） */
+  retouch: RetouchAll;
+  /** ぼーっとスポットのレタッチで、いまつまみを出している写真 */
+  retouchPick: string;
   bird: { opacity: number; color: string; stroke: number };
   face: FaceConfig;
   sparkle: { period: number };
@@ -272,6 +299,8 @@ export default function TopTunePanel({
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
       sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100) },
       photos: { set: PHOTO_SET_DEFAULT },
+      retouch: structuredClone(RETOUCH_ALL_DEFAULT),
+      retouchPick: "notoro",
       /* カモメ共通の不透明度(%)。全ページのカモメに効く */
       bird: { opacity: 100, color: "#ffffff", stroke: 100 },
       face: { ...DEFAULT_FACE },
@@ -351,38 +380,8 @@ export default function TopTunePanel({
       root.style.setProperty("--bird-opacity", String(params.bird.opacity / 100));
       root.style.setProperty("--bird-color", params.bird.color);
       root.style.setProperty("--bird-stroke", String(params.bird.stroke / 100));
-      /* フッターの余白・間隔（2026-09-16 ヒデさん依頼）。
-         React を通さず CSS 変数を直接書き換えるので、つまみを動かすとその場で動く */
-      const f = params.footer;
-      root.style.setProperty("--ft-pad-x", `${f.padX}px`);
-      root.style.setProperty("--ft-pad-bottom", `${f.padBottom}px`);
-      root.style.setProperty("--ft-col-gap", `${f.colGap}px`);
-      root.style.setProperty("--ft-map-gap-x", `${f.mapGapX}px`);
-      root.style.setProperty("--ft-map-gap-y", `${f.mapGapY}px`);
-      root.style.setProperty("--ft-head-gap", `${f.headGap}px`);
-      root.style.setProperty("--ft-item-gap", `${f.itemGap}px`);
-      root.style.setProperty("--ft-logo-h", `${f.logoH}px`);
-      /* 作字ブロックの倍率（KVの 415x379 を何倍にするか）。
-         CSS では長さどうしを割れないので、ここで数にして渡す */
-      root.style.setProperty("--ft-logo-scale", String(f.logoH / 379));
-      root.style.setProperty("--ft-map-offset-y", `${f.mapOffsetY}px`);
-      root.style.setProperty("--ft-stage-h", String(f.stageH));
-      /* フッターの上のパディングとグラデのパターン（SiteFooter の PhotoStage が毎フレーム読む） */
-      root.style.setProperty("--ft-pad-top", `${f.padTop ?? 64}px`);
-      root.style.setProperty("--ft-fade-curve", String(f.fadeCurve ?? 1));
-      /* 写真を上のセクションの下へ重ねる長さ。フッターは上のセクションの後ろ（カードとボタンが手前） */
-      root.style.setProperty("--ft-overlap", `${f.overlap ?? 400}px`);
-      root.style.setProperty("--ft-z", "0");
-      /* 写真の明るさの案（SiteFooter の PhotoStage が毎フレーム読む） */
-      root.style.setProperty("--ft-tone", String(f.tone ?? 0));
-      root.style.setProperty("--ft-photo-bright", String(f.bright ?? 100));
-      root.style.setProperty("--ft-sat", String(f.sat ?? 100));
-      root.style.setProperty("--ft-shade", String(f.shade ?? 35));
-      root.style.setProperty("--ft-shade-h", String(f.shadeH ?? 50));
-      root.style.setProperty("--ft-light", String(f.light ?? 0));
-      root.style.setProperty("--ft-fade-h", String(f.fadeH));
-      root.style.setProperty("--ft-fade-solid", String(f.fadeSolid));
-      root.style.setProperty("--ev-pad-bottom", `${f.evPadBottom}px`);
+      /* フッターの余白・間隔・グラデ・写真は 2026-10-21 に固定した（調整パネルから外した）。値は globals.css の --ft-* だけ。
+         ここで書き込むと、ブラウザに残った古い保存値でフッターが変わってしまうので、もう書かない */
       /* 重ね写真の流れ方（1〜3）。eventParts.tsx の EV_FLOWS の番号 */
       root.style.setProperty("--ev-flow", String(params.events.flow ?? 1));
       /* 案31（カードを切る）の秒数とメリハリ。EventVariants4 の ShuffleCard が読む */
@@ -397,6 +396,8 @@ export default function TopTunePanel({
       root.style.setProperty("--sec-head", `${params.secHead}px`);
       /* 写真の組（PhotoSetSwitch が <html data-photo-set> を見張って差し替える） */
       root.dataset.photoSet = (params.photos?.set ?? PHOTO_SET_DEFAULT) === 0 ? "prev" : "new";
+      /* 写真のレタッチ（PhotoRetouch が <html data-retouch> を見張って写真を作り直す） */
+      root.dataset.retouch = JSON.stringify(params.retouch || RETOUCH_ALL_DEFAULT);
     };
     /* 音量は SoundUi へイベントで直接渡す（鳴っている最中でもその場で変わる） */
     const applyVolume = () =>
@@ -577,22 +578,6 @@ export default function TopTunePanel({
               /* 【2026-09-26】ハンバーガーメニューの3案は「案1 空に浮かぶ作字」に確定したので、
                  ここにあった切り替えは外した（MobileHeader.tsx に固定） */
               /* 左上の音のスイッチのアイコンは 2026-10-20 に「音の波」に決定（5案の切り替えは外した・BgmIcons.tsx） */
-              /* 【2026-10-20 ヒデさん】「調整した画像に差し替えてデフォルトに。調整パネル上では前の画像にも戻れるように」。
-                 写真の組の見比べなのでバリエーション（6-13・6-18） */
-              { sub: "写真（全ページ共通）", grp: "variation" },
-              {
-                note: "キービジュアル・フッター・能取岬・サンゴ草・流氷・ひまわりの写真（トップ・詳しいページ・体験ページ）。",
-              },
-              {
-                pills: "写真",
-                path: "photos.set",
-                immediate: true,
-                autoNum: false,
-                options: [
-                  { name: "新しい写真", value: 1, desc: "【既定・2026-10-20】ヒデさんが明るさ・色を調整した写真" },
-                  { name: "前の写真", value: 0, desc: "調整する前の写真（-prev のファイル）" },
-                ],
-              },
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
@@ -628,56 +613,9 @@ export default function TopTunePanel({
                 unit: "ms",
                 immediate: true,
               },
-              { sub: "ページ遷移の演出", grp: "variation" },
-              {
-                note: "ページを移る時にかぶせる幕。サイト内のどのリンク・ボタンから移っても同じ動きになります（2026-09-26 に統一）。既定は案7「じんわり溶ける」（前のページがうっすら白くぼやけながら溶けて、次のページが白の中から現れる）。行き先が「ぼーっと体験」の時だけ、幕の色がそのページと同じ青になります。選ぶとその場で一度再生して見せます。",
-              },
-              {
-                pills: "案",
-                path: "pageTrans.pattern",
-                immediate: true,
-                autoNum: "案",
-                options: Object.entries(PAGE_TRANSITION_PATTERNS).map(([v, p]) => ({
-                  name: p.name,
-                  value: Number(v),
-                  desc: p.note,
-                })),
-              },
-              { sub: "ページ遷移の演出", grp: "anim" },
-              /* 案7 を選んだ時だけ出す（2026-09-26） */
-              {
-                slider: "切り替えの長さ",
-                path: "pageTrans.dur",
-                variant: "pageTrans.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 400,
-                max: 2400,
-                step: 50,
-                unit: "ms",
-                when: (p: Params) => p.pageTrans.pattern === 7,
-                hint: "溶けて消え始めてから、次のページが現れ終わるまで。溶ける:現れる＝4:6。長いほどじんわり。",
-              },
-              {
-                slider: "ぼかし",
-                path: "pageTrans.blur",
-                variant: "pageTrans.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0,
-                max: 12,
-                step: 1,
-                unit: "px",
-                when: (p: Params) => p.pageTrans.pattern === 7,
-                hint: "溶ける時に後ろのページをどれだけぼかすか。0でぼかし無し（案6に近い）。",
-              },
-              {
-                slider: "白の濃さ",
-                path: "pageTrans.peak",
-                variant: "pageTrans.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 40,
-                max: 100,
-                step: 2,
-                unit: "%",
-                when: (p: Params) => p.pageTrans.pattern === 7,
-                hint: "いちばん溶けた時の白の濃さ。100で真っ白を挟む。下げるほど前後のページが透けて重なる。",
-              },
+              /* 【2026-10-21 ヒデさん】「ページ遷移の演出から フッター（全ページ共通）は、今の案をデフォルトにして削除して大丈夫。案・セクションごと」
+                 → ページ遷移の演出は 案7「じんわり溶ける」・長さ1000ms・ぼかし3px・白の濃さ88% で固定（PageTransition の PT_DEFAULT・tune-defaults.json）。
+                 つまみと案は外した（戻す時は git の記録） */
               { sub: "カモメの見た目（全ページ共通）", grp: "fxtex" },
               {
                 note: "ここは色や濃さなど「見た目」だけ。位置・大きさ・傾きは トップ／体験 の各タブにある「カモメ」で調整します。",
@@ -705,264 +643,53 @@ export default function TopTunePanel({
                 fmt: "%",
                 hint: "線の太さの倍率（100%が今まで）。上げるほど太く濃く見え、下げるほど細く繊細になります。",
               },
-              /* 【2026-10-20 ヒデさん】「体験セクションからフッターにかけて、余計なスクロールが多い」→ 3案を見比べて
-                 「案3をベースに、グラデーションの徐々にかかっていく感じを5パターン。それ以外の案を削除してOK」。
-                 グラデのパターンの見比べなのでバリエーション（6-13・6-18）。フッターのつまみは全部
-                 variant:'footer.fadeCurve'＝パターンごとの値（6-8）。
-                 ⚠️ この見出しには案ピルを1つだけ置く（2つ置くと持ち主を取り違える・FIXLOG 2026-10-14） */
-              { sub: "フッター（全ページ共通）", grp: "variation" },
-              {
-                note: "体験セクション（各ページの最後のセクション）からフッターへの、白→写真のグラデ。PC だけに効きます（スマホは今のまま）。",
-              },
-              {
-                pills: "グラデ",
-                path: "footer.fadeCurve",
-                immediate: true,
-                autoNum: "案",
-                options: Object.entries(FADE_CURVES).map(([v, c]) => ({
-                  name: c.name,
-                  value: Number(v),
-                  desc: c.note,
-                  values: FADE_VALUES[Number(v)],
-                })),
-              },
-              /* 【2026-10-20 ヒデさん】「フッターの後ろの写真がすごく暗く見える。3案ぐらい」。
-                 ⚠️ グラデの案ピルと同じ見出しに置くと持ち主を取り違えるので、見出しを分ける（FIXLOG 2026-10-14）。
-                 つまみは全部 variant:'footer.tone'＝案ごとの値（6-8） */
-              { sub: "フッターの写真（全ページ共通）", grp: "variation" },
-              {
-                note: "フッターの後ろの写真の明るさ。PC・スマホとも同じに効きます。",
-              },
-              {
-                pills: "明るさ",
-                path: "footer.tone",
-                immediate: true,
-                autoNum: "案",
-                options: Object.entries(PHOTO_TONES).map(([v, c]) => ({
-                  name: c.name,
-                  value: Number(v),
-                  desc: c.note,
-                  values: c.values,
-                  ...(Number(v) === 0 ? { fixed: true } : {}),
-                })),
-              },
-              { sub: "フッター（全ページ共通）", grp: "basic" },
-              {
-                note: "フッターのデザインは【写真の上にサイトマップ】で確定しました。ここでは「組み（左右の余白とカラムの幅）」と「親子の階層の見せ方」を選べます。トップと各詳細ページの一番下で確認できます。",
-              },
-              {
-                note: "つまみを動かすとその場で動きます（PC幅のときの値。スマホは詰めた固定値です）。",
-              },
-              {
-                slider: "作字ロゴのサイズ",
-                path: "footer.logoH",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 80,
-                max: 420,
-                step: 5,
-                fmt: "px",
-                hint: "左カラムの作字ロゴの高さ（PC幅のとき）。スマホは148px固定",
-              },
-              { sub: "パディング", deep: true },
-              {
-                slider: "上",
-                path: "footer.padTop",
-                variant: "footer.fadeCurve",
-                min: 0,
-                max: 240,
-                step: 4,
-                fmt: "px",
-                hint: "頭のグラデの下から、作字・サイトマップの上端までの間（写真が見える幅）",
-              },
-              {
-                slider: "左右",
-                path: "footer.padX",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 24,
-                max: 280,
-                step: 4,
-                fmt: "px",
-                hint: "フッター全体の左右の余白。広いほどゆったり",
-              },
-              {
-                slider: "下",
-                path: "footer.padBottom",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 24,
-                max: 240,
-                step: 4,
-                fmt: "px",
-                hint: "フッター全体の下の余白",
-              },
-              { sub: "ギャップ", deep: true },
-              {
-                slider: "カラム",
-                path: "footer.colGap",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 24,
-                max: 360,
-                step: 4,
-                fmt: "px",
-                hint: "作字（左）とサイトマップ（右）の間。組みBでは上下の間隔になります",
-              },
-              {
-                slider: "列",
-                path: "footer.mapGapX",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 8,
-                max: 160,
-                step: 2,
-                fmt: "px",
-                hint: "「ぼーっとスポット」「素朴なグルメ」…の列どうしの間",
-              },
-              {
-                slider: "行",
-                path: "footer.mapGapY",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 8,
-                max: 160,
-                step: 2,
-                fmt: "px",
-                hint: "列が2段になった時（組みC・スマホ）の上下の間",
-              },
-              {
-                slider: "見出し↔項目",
-                path: "footer.headGap",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 0,
-                max: 64,
-                step: 2,
-                fmt: "px",
-                hint: "大カテゴリの見出しと、その下の一覧の間",
-              },
-              {
-                slider: "項目どうし",
-                path: "footer.itemGap",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 0,
-                max: 40,
-                step: 1,
-                fmt: "px",
-                hint: "一覧の行と行の間",
-              },
-              { sub: "最後のセクションからの流れ", deep: true },
-              {
-                note: "体験セクションからフッターまでが長いと感じる時はここで詰めます。",
-              },
-              {
-                /* 名前は 6-18（余白はパディング）に合わせて「マージン」から直した（2026-10-20・中身は下のパディング） */
-                slider: "体験セクション下のパディング",
-                path: "footer.evPadBottom",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 0,
-                max: 320,
-                step: 4,
-                fmt: "px",
-                hint: "最後のセクションの下に足す白い余白。グラデがゆっくり始まる助走の所になる",
-              },
-              {
-                slider: "上のセクションに重ねる長さ",
-                path: "footer.overlap",
-                variant: "footer.fadeCurve",
-                min: 0,
-                max: 560,
-                step: 4,
-                fmt: "px",
-                hint: "トップのみ。フッターの写真を、上の体験セクションの下へどれだけ潜り込ませるか（セクションの下端から上へ）。グラデはここから始まるので、長いほど体験の下の方からゆっくり透け始める。カードとボタンは写真より手前のまま",
-              },
-              { sub: "サイトマップ（右カラム）", deep: true },
-              {
-                slider: "位置 Y",
-                path: "footer.mapOffsetY",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: -240,
-                max: 240,
-                step: 4,
-                fmt: "px",
-                signed: true,
-                hint: "サイトマップだけを上下にずらす（作字との高さを合わせる用）。マイナスで上へ",
-              },
-              { sub: "フッター（全ページ共通）", grp: "fxtex" },
-              { sub: "最後のセクションからの流れ", deep: true },
-              {
-                slider: "グラデの長さ",
-                path: "footer.fadeH",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 30,
-                max: 150,
-                step: 5,
-                fmt: "%",
-                hint: "白から写真へ移り変わる帯の長さ（画面の高さの%）。短いほどキリッと、長いほどゆっくり溶ける",
-              },
-              { sub: "写真", deep: true },
-              {
-                slider: "明るさ",
-                path: "footer.bright",
-                variant: "footer.tone",
-                min: 80,
-                max: 160,
-                step: 2,
-                fmt: "%",
-                hint: "後ろの写真の明るさ（100% がそのまま）",
-              },
-              {
-                /* 【2026-10-20 ヒデさん】「彩度の調整パネルも入れてほしい」（音声入力で「再度」） */
-                slider: "彩度",
-                path: "footer.sat",
-                variant: "footer.tone",
-                min: 0,
-                max: 200,
-                step: 2,
-                fmt: "%",
-                hint: "後ろの写真の色の鮮やかさ（100% がそのまま）。上げると空と海の青が濃く、下げると落ち着いた色に",
-              },
-              {
-                slider: "影の濃さ",
-                path: "footer.shade",
-                variant: "footer.tone",
-                min: 0,
-                max: 60,
-                step: 2,
-                fmt: "%",
-                hint: "文字を読みやすくするための、下からの影の濃さ。これが写真を暗く見せている元。0% で影なし。案「影を海の青に」では青い影",
-              },
-              {
-                slider: "影の高さ",
-                path: "footer.shadeH",
-                variant: "footer.tone",
-                min: 10,
-                max: 100,
-                step: 2,
-                fmt: "%",
-                hint: "影が下から写真のどこまでかかるか（50% で写真の半分まで）。低くすると、空の暗さが取れて文字の下だけ沈む",
-              },
-              {
-                slider: "光の強さ",
-                path: "footer.light",
-                variant: "footer.tone",
-                min: 0,
-                max: 80,
-                step: 2,
-                fmt: "%",
-                when: (p: Params) => p.footer.tone === 3,
-                hint: "案「光を重ねる」だけ。写真の上に重ねる空の色の光の強さ",
-              },
-              { sub: "グラデ", deep: true },
-              {
-                slider: "白のままの割合",
-                path: "footer.fadeSolid",
-                variant: "footer.fadeCurve", /* 2026-10-20 グラデのパターンごとの値 */
-                min: 0,
-                max: 60,
-                step: 2,
-                fmt: "%",
-                hint: "グラデのうち、真っ白のまま保つ割合。小さいほど早く写真が出てくる",
-              },
+              /* 【2026-10-21 ヒデさん】フッター（全ページ共通）とフッターの写真も、今の案を既定にして見出しごと外した
+                 （「フッターの写真も、暗いままをデフォルトにして影の濃さを0に」「削除して大丈夫」）。
+                 値は globals.css の --ft-*（全ページ共通・詳しいページも同じ）に固定：グラデ「白がゆっくり明ける」長さ130%・重ねる長さ872px・
+                 体験の下のパディング96px・上のパディング64px・左右60px・カラム248px・列84px など。写真は「前の暗いまま」で影0＝写真そのまま */
             ],
           },
           {
             cat: "トップページ",
             items: [
+              /* 【2026-10-20 ヒデさん】「調整した画像に差し替えてデフォルトに。調整パネル上では前の画像にも戻れるように」。
+                 写真の組の見比べなのでバリエーション（6-13・6-18）。
+                 2026-10-21 ヒデさん「この写真という項目はサイト共通というよりトップページにあってほしい」→ トップページのタブへ移した（効くのは全ページのまま） */
+              { sub: "写真", grp: "variation" },
+              {
+                note: "キービジュアル・フッター・能取岬・サンゴ草・流氷・ひまわりの写真。トップ・詳しいページ・体験ページのどこでも同じ写真になります。",
+              },
+              {
+                pills: "写真",
+                path: "photos.set",
+                immediate: true,
+                autoNum: false,
+                options: [
+                  { name: "新しい写真", value: 1, desc: "【既定・2026-10-20】ヒデさんが明るさ・色を調整した写真" },
+                  { name: "前の写真", value: 0, desc: "調整する前の写真（-prev のファイル）" },
+                ],
+              },
+              /* 【2026-10-21 ヒデさん】「キービジュアルの写真も、彩度とか露光量とか、一通りのレタッチできる項目を調整できるように、
+                 エフェクト＆テクスチャのパネルにキービジュアルという項目を一番最初につけて」→「調整パネルにある写真の調整は、同じ10項目を入れて」。
+                 写真の色・明るさなのでエフェクト＆テクスチャ（6-13・6-18）。写真そのものを計算し直して差し替える（幕・フィルターは重ねない・PhotoRetouch） */
+              { sub: "キービジュアル", grp: "fxtex" },
+              {
+                note: "キービジュアルの後ろの写真のレタッチ（PC・スマホ）。フッターも同じ写真なので、同じように変わります。全部 0 で写真そのまま。",
+              },
+              ...retouchItems(["kv"]),
+              { sub: "ぼーっとスポット", grp: "fxtex" },
+              {
+                note: "ぼーっとスポットの写真のレタッチ。トップ・詳しいページ・体験ページのどこでも同じ仕上がりになります。全部 0 で写真そのまま。",
+              },
+              {
+                pills: "写真",
+                path: "retouchPick",
+                immediate: true,
+                autoNum: false,
+                values: false, /* どの写真のつまみを出すかを選ぶだけ（案ごとの値は持たない） */
+                options: (["notoro", "sango", "ryuhyo", "himawari"] as const).map((k) => ({ name: RETOUCH_TARGETS[k].name, value: k })),
+              },
+              ...retouchItems(["notoro", "sango", "ryuhyo", "himawari"]),
               { sub: "セクションの大見出し（全セクション共通）", grp: "font" },
               {
                 note: "グルメ「なーんにもない、道東の土地、網走。」と体験「意外とオモロい、網走。」の大きさ。ひとつの値を共有しているので、ここを変えると両方そろって変わります。",
@@ -1348,172 +1075,9 @@ export default function TopTunePanel({
               },
               /* 作字（登場・消え方）のパネル項目は 2026-08-21 ヒデさん指示で撤去。
                  数値は heroEnterConfig.ts / kvExitConfig.ts の既定値で固定 */
-              /* ── メッセージ文言（テキスト編集。2026-08-30 ヒデさん依頼）。
-                 長いのでアコーディオン（タブ内の小見出しは折りたたみ・既定で閉じる） ── */
-              /* ── メッセージ（KV直下・カンプ 15480:22896）。
-                 文言・出方・見た目を1セクションに統合（2026-08-30 ヒデさん指示） ── */
-              { sub: "メッセージ（作字のあと）", grp: "variation" },
-              {
-                note: "作字が消えたあと、ブラーの背景の上に「網走は何もない。」の文章が出ます。スクロールで読み進み、読み終わるとぼーっとスポットへ。",
-              },
-              {
-                pills: "案",
-                path: "msg.pattern",
-                immediate: true,
-                autoNum: "案",
-                options: Object.entries(MSG_PATTERNS).map(([v, p]) => ({
-                  name: p.name,
-                  value: Number(v),
-                  desc: p.note,
-                })),
-              },
-              { sub: "メッセージ（作字のあと）", grp: "font" },
-              { sub: "文言", deep: true },
-              {
-                note: "ここで文章そのものを差し替えられます。本文は「空行で段落を分け、段落内は改行で行を分ける」書き方です。入力するとその場で反映されます。",
-              },
-              { text: "見出し", path: "msg.title", variant: "msg.pattern" },
-              {
-                text: "本文",
-                path: "msg.body",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                multiline: true,
-                rows: 14,
-                hint: "空行を1つ入れると段落が分かれ、改行だけなら同じ段落の次の行になります。",
-              },
-              { sub: "見出し", deep: true },
-              {
-                slider: "フォントウェイト",
-                path: "msg.titleWeight",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 100,
-                max: 500,
-                step: 100,
-                hint: "100=Thin（カンプ）〜500=Medium。",
-              },
-              {
-                slider: "行間",
-                path: "msg.titleLeading",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0.8,
-                max: 1.6,
-                step: 0.1,
-              },
-              { sub: "本文", deep: true },
-              {
-                slider: "フォントウェイト",
-                path: "msg.bodyWeight",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 100,
-                max: 500,
-                step: 100,
-                hint: "300=Light がカンプ。",
-              },
-              {
-                slider: "行間",
-                path: "msg.bodyLeading",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 1.2,
-                max: 3,
-                step: 0.1,
-              },
-              { sub: "メッセージ（作字のあと）", grp: "fxtex" },
-              { sub: "見出し", deep: true },
-              {
-                slider: "不透明度",
-                path: "msg.titleOpacity",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 10,
-                max: 100,
-                step: 1,
-                fmt: "%",
-                hint: "「網走は何もない。」の不透明度。カンプは80%。",
-              },
-              { sub: "本文", deep: true },
-              {
-                slider: "未読テキストの不透明度",
-                path: "msg.minOpacity",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0,
-                max: 60,
-                step: 1,
-                fmt: "%",
-                hint: "案2（浮かび上がり）で、まだ読んでいない文字の不透明度。",
-              },
-              { sub: "メッセージ（作字のあと）", grp: "anim" },
-              { sub: "出現とスクロール", deep: true },
-              {
-                slider: "スクロール速度（KV→メッセージ）",
-                path: "scrollSpd.kvToMsg",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 20,
-                max: 300,
-                step: 10,
-                fmt: "%",
-                hint: "キービジュアルからメッセージまでの区間で、ホイール/スワイプ1回に進む量。100%が標準。下げるほどゆっくり進み（同じ距離に多くのスクロールが必要）、上げると速く進みます。",
-              },
-              {
-                slider: "アニメーション時間の倍率",
-                path: "msg.soft",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 1,
-                max: 6,
-                step: 0.5,
-                hint: "1つの行・段落のアニメーション時間の倍率。大きいほどゆっくりにじみながら出ます。",
-              },
-              { sub: "スクロール量", deep: true },
-              {
-                slider: "表示開始",
-                path: "msg.fadeIn",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0,
-                max: 2000,
-                step: 100,
-                fmt: "px",
-                hint: "作字が消えきってから、メッセージが出はじめるまでのスクロール量。大きいほどゆったり見えます（2026-08-23 上限を600→2000に拡大）。",
-              },
-              {
-                slider: "読み終わりまで",
-                path: "msg.len",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 800,
-                max: 5000,
-                step: 200,
-                fmt: "px",
-                hint: "このぶんスクロールする間に文章を読み進めます。大きいほどゆっくり。",
-              },
-              {
-                slider: "読み終わり後",
-                path: "msg.tail",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0,
-                max: 2000,
-                step: 100,
-                fmt: "px",
-                hint: "最後の段落が出そろってから、次のセクションへ行くまでのスクロール量。小さいと最後の文章をゆっくり読めません。",
-              },
-              { sub: "見出し", deep: true },
-              {
-                slider: "出るまでのスクロール量",
-                path: "msg.titleDelay",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0,
-                max: 1500,
-                step: 100,
-                fmt: "px",
-                hint: "メッセージ画面になってから「網走は何もない。」が出るまでのスクロール量。0だと画面と同時に出ます。大きいほど、ひと呼吸おいてから出ます。",
-              },
-              {
-                slider: "アニメーション時間",
-                path: "msg.titleAppearSec",
-                variant: "msg.pattern", /* 別のカテゴリへ分けても、この案ごとの値のまま（2026-09-28 分類の見直し） */
-                min: 0.5,
-                max: 4,
-                step: 0.5,
-                fmt: "s",
-                hint: "「網走は何もない。」がブラーから現れる時間。長いほどゆったり出ます（本文と同じ出方）。",
-              },
-              /* ── KV → ぼーっとスポット ─────────── */
+              /* 【2026-10-21 ヒデさん】「トップページの調整パネルのメッセージ（作字のあと）は、今のやつをデフォルトにして削除して構いません」
+                 → 案・文言・見出しと本文の太さ／行間／不透明度・出てくる動き（スクロール量・時間）・スクロール速度（KV→メッセージ）を
+                 焼き込みの値で固めて、調整パネルから見出しごと外した（値は tune-defaults.json の msg・scrollSpd と、下の pinFixed） */
               { sub: "ぼーっとスポット", grp: "anim" },
               { sub: "入り", deep: true },
               {
@@ -2045,21 +1609,6 @@ export default function TopTunePanel({
           }
           /* 【2026-09-16】フッターの案は撤去したので、切り替えを知らせる必要が無くなった。
              余白などの数値は CSS 変数（--ft-*）で直接効くので、イベントは不要 */
-          if (info?.path?.startsWith("pageTrans.")) {
-            /* 案を選んだ時は preview:true で、その場で一度幕を見せる。
-               長さ・ぼかし・濃さは値だけ渡す（つまみを動かすたびに再生するとうるさいため） */
-            window.dispatchEvent(
-              new CustomEvent(PAGE_TRANSITION_EVENT, {
-                detail: {
-                  v: params.pageTrans.pattern,
-                  dur: params.pageTrans.dur,
-                  blur: params.pageTrans.blur,
-                  peak: params.pageTrans.peak,
-                  preview: info.path === "pageTrans.pattern",
-                },
-              })
-            );
-          }
         },
         onSave: (p: Params, panelRef: { flash?: (m: string) => void }) => {
           /* ローカルで保存したら、デプロイ用ファイルにも自動で書き込む（自動焼き込み）。
@@ -2109,6 +1658,9 @@ export default function TopTunePanel({
       });
       /* スマホモードの QR・実機への反映（共通の phone-mode・開発中だけ） */
       attachPhoneMode(panel as unknown as Parameters<typeof attachPhoneMode>[0]);
+      /* 調整パネルから外して固めた値（2026-10-21）：ブラウザに残った古い保存値で変わらないよう、焼き込み（DEFAULTS）の値に戻す */
+      params.msg = structuredClone(DEFAULTS.msg);
+      params.scrollSpd = structuredClone(DEFAULTS.scrollSpd);
       /* 保存されていた値を最初の1回だけ反映する */
       applyVars();
       applyVolume();
@@ -2122,16 +1674,6 @@ export default function TopTunePanel({
       );
       window.dispatchEvent(
         new CustomEvent(EVENT_RATIO_EVENT, { detail: { v: params.events.cardRatio } })
-      );
-      window.dispatchEvent(
-        new CustomEvent(PAGE_TRANSITION_EVENT, {
-          detail: {
-            v: params.pageTrans.pattern,
-            dur: params.pageTrans.dur,
-            blur: params.pageTrans.blur,
-            peak: params.pageTrans.peak,
-          },
-        })
       );
 
       /* 画面上の音量インジケーター（SoundUi）で変えたら、パネルの

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_JP, Inter } from "next/font/google";
 import SoundUi from "@/components/SoundUi";
 import PhotoSetSwitch from "@/components/PhotoSetSwitch";
+import PhotoRetouch from "@/components/PhotoRetouch";
 import PageTransition from "@/components/PageTransition";
 import LivePhone from "@/components/LivePhone";
 import "./globals.css";
@@ -56,6 +57,8 @@ export default function RootLayout({
         <PageTransition />
         {/* 写真の「新しい／前の」切り替え（調整パネル › サイト共通 › 写真・2026-10-20）。全ページに効く */}
         <PhotoSetSwitch />
+        {/* 写真のレタッチ（キービジュアル・ぼーっとスポットの写真。調整パネル › トップページ › エフェクト＆テクスチャ・2026-10-21） */}
+        <PhotoRetouch />
         {/* スマホモード（実機ライブ同期）の受け手。開発時だけ動く（本番では何もしない） */}
         <LivePhone />
       </body>

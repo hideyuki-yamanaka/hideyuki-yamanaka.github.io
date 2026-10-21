@@ -934,6 +934,7 @@ export default function TopPage({
               角丸はCSS側だけで付けるので、継ぎ目やズレが出ない */}
           <motion.img
             src="/img/bg-hero.jpg"
+            data-kv-photo="" /* 写真のレタッチ（PhotoRetouch）が中身を差し替える目印（キービジュアルとフッターに付ける） */
             alt=""
             loading="eager"
             fetchPriority="high"
