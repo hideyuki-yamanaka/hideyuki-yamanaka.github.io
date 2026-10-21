@@ -59,15 +59,15 @@
   },
   "retouch": {
     "kv": {
-      "exposure": 0,
+      "exposure": 0.2,
       "contrast": 0,
       "highlights": 0,
       "shadows": 0,
       "whites": 0,
       "blacks": 0,
-      "temp": 0,
+      "temp": -30,
       "tint": 0,
-      "vibrance": 0,
+      "vibrance": 30,
       "saturation": 0
     },
     "notoro": {
@@ -224,7 +224,7 @@
     "bright": 100,
     "sat": 100,
     "shade": 0,
-    "shadeH": 40,
+    "shadeH": 50,
     "light": 0
   },
   "expIntro": {
@@ -265,5 +265,6 @@
     "cycle": 8,
     "show": 2.6,
     "swayFirst": true
-  }
+  },
+  "__font": {}
 }

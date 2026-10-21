@@ -8,8 +8,15 @@
  * 形と大きさは場所えらびのボタン（2026-08 の v1.2 ボタン共通仕様）のまま：
  *   68px の丸・内側に1pxの線・すりガラス（blur65）・シェブロンは 24px・線の太さ 1.6
  * 地の色だけ2通り（2026-10-14 体験セクションに使うため白い地用を足した）
- *   onDark … 青い地や写真の上。地 white/10・線 white/40・矢印 白（場所えらびのまま）
- *   onLight … 白い地の上。地 white/70・線 black/20・矢印 black/80（流れる文字と同じ濃さ）🟡仮置き
+ *   onDark … 青い地や写真の上。地 white/10・線 white/40・矢印 白（場所えらび。キービジュアルの「ぼーっとしてみる」と同じ）
+ *   onLight … 白い地・薄い水色の地の上。地 ブランドの青 80%・線 white/40・矢印 白・すりガラス（blur65）
+ *     【2026-10-21 ヒデさん】「カルーセルのボタンがグレーの惑星みたいな感じではなくて、キービジュアルの
+ *       ぼーっとしてみるのボタンみたいな感じで、なおかつ見にくければ視認性が担保できるようなスタイリングに。スマホも」
+ *     → 形（丸・内側に白40%の1pxの線・すりガラス・白い矢印）は「ぼーっとしてみる」と同じにした。
+ *       ただ白10%の地のままだと、白い地では矢印がほぼ見えない（白に白）ので、地にブランドの青（押せる物の色）を敷いた。
+ *       白い矢印と地の差は 白の地の上で 3.5:1・水色の地の上ではそれ以上（形の見分けに要る 3:1 を超える）
+ *     🟡仮置き：地の青の濃さ 80%（押した時・乗せた時は 100%）
+ *     （前は 地 white/70・線 black/20・矢印 black/80＝灰色の丸）
  * 大きさ：md＝68px（既定）／sm＝48px・矢印 20px（スマホの体験セクション。画面が狭いため・2026-10-14 🟡仮置き）
  * 置き場所（どこに出すか）は使う側が className / style で決める
  */
@@ -39,13 +46,13 @@ export default function CarouselArrow({
       aria-label={label}
       style={style}
       className={`${className} flex ${size === "sm" ? "size-[48px]" : "size-[68px]"} cursor-pointer items-center justify-center rounded-full ring-1 ring-inset backdrop-blur-65 transition-colors duration-300 ease-standard ${
-        onLight ? "bg-white/70 ring-black/20 hover:bg-white" : "bg-white/10 ring-white/40 hover:bg-white/25"
+        onLight ? "bg-brand/80 ring-white/40 hover:bg-brand active:bg-brand" : "bg-white/10 ring-white/40 hover:bg-white/25"
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" className={size === "sm" ? "size-[20px]" : "size-[24px]"} aria-hidden>
         <path
           d={dir === "left" ? "M15 5L8 12l7 7" : "M9 5l7 7-7 7"}
-          stroke={onLight ? "rgba(0,0,0,0.8)" : "white"}
+          stroke="white"
           strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"

@@ -473,10 +473,11 @@ export default function MobileTop() {
                     onClick={() => navigateTo(`/gourmet/${card.slug}`)}
                     className="relative w-[228px] shrink-0 cursor-pointer overflow-hidden tab:w-[328px]"
                   >
+                    {/* 高さ：2026-10-21 ヒデさん「スマホのグルメのカルーセルの縦幅、各カードの縦幅をもう少しコンパクトに」で 300→240px🟡（タブレットは 428px のまま） */}
                     <img
                       src={card.img}
                       alt={card.title}
-                      className="h-[300px] w-full object-cover tab:h-[428px]"
+                      className="h-[240px] w-full object-cover tab:h-[428px]"
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-4 text-white">
                       <p className="text-body-12 font-extralight tab:text-body-14">
