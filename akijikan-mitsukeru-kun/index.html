@@ -2515,7 +2515,7 @@
         if(!groups.has(key))groups.set(key,{date:s.date,times:[]});
         groups.get(key).times.push(`${pad(s.start.getHours())}:${pad(s.start.getMinutes())}-${pad(s.end.getHours())}:${pad(s.end.getMinutes())}`);
       }
-      out.textContent=[...groups.values()].map(g=>`${g.date.getMonth()+1}月${g.date.getDate()}日 ${g.times.join(', ')}`).join('\n');
+      out.textContent=[...groups.values()].map(g=>`${g.date.getMonth()+1}月${g.date.getDate()}日(${dn[g.date.getDay()]}) ${g.times.join(', ')}`).join('\n');
       cnt.textContent=`${slots.length}件`;}
 
     // モバイルでは検出結果までオートスクロール（ファーストビューに表示）
