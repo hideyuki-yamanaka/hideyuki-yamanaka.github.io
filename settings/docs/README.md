@@ -64,6 +64,7 @@
 |---|---|
 | [houmon-app/DESIGN-SYSTEM.md](houmon-app/DESIGN-SYSTEM.md) | デザインシステム（2026-09-27 整理: 色は役割の名前・角丸6段・影5つ・文字10/12/16/20/24・4の倍数ルール・マテリアルアイコン・画面ごとの決まり・運用ルール） |
 | [houmon-app/SHARE-LINKS.md](houmon-app/SHARE-LINKS.md) | 共有リンク（URL だけで訪問ログを見せる・招待との違い・作り） |
+| [houmon-app/SPEC-member-book.md](houmon-app/SPEC-member-book.md) | メンバー情報（メンバータブ）の仕様（2026-10-26〜: 区分 家庭訪問／名簿・情報の4見出し・ホームの＋から AI で振り分け・下のタブ・見本の場所） |
 
 ### anyflow
 | ファイル | 中身 |
