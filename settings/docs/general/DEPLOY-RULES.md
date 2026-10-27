@@ -43,6 +43,17 @@ curl -X PATCH "https://api.vercel.com/v9/projects/<PROJECT_NAME>?teamId=team_QLg
 
 ## 📊 直近24hの消費を数える（token不要、CLI版）
 
+**いちばん楽な方法（2026-10-27〜）**: Vercel の道具の `vercel api` で、全プロジェクトの合計を1回で数える（鍵は道具が自分で更新するので、画面にも出ない）。
+⚠️ `auth.json` の token を直接使う方法は、2026-10-21 に鍵の期限が切れてから 403 で通らない（道具は期限切れを自分で更新するが、ファイルの token は古いまま）。
+
+```bash
+SINCE=$(python3 -c "import time; print(int((time.time()-24*3600)*1000))")
+npx vercel api "/v6/deployments?teamId=team_QLgrOjDs1OkQZB4wukaNHsvG&since=$SINCE&limit=100" 2>/dev/null \
+  | python3 -c "import sys,json,collections; t=sys.stdin.read(); d=json.loads(t[t.find('{'):])['deployments']; print(len(d), dict(collections.Counter(x['name'] for x in d)))"
+```
+
+プロジェクトごとに数える古い方法:
+
 ```bash
 for p in <project-name>...; do
   cnt=$(npx vercel ls "$p" 2>&1 | grep 'Ready' | awk '{print $1}' | grep -cE '^[0-9]+m$|^[0-9]+s$|^([0-9]|1[0-9]|2[0-3])h$')
