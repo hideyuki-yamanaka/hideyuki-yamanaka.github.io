@@ -471,7 +471,8 @@ export function V1Parallax({ spot }: VProps) {
           <FooterBlocks spot={spot} root={ref} />
         </div>
       </div>
-      <SiteFooter />
+      {/* 中身の終わりからフッターまでを詰める（PC のグラデを短く・2026-10-28） */}
+      <SiteFooter shortFade />
     </main>
   );
 }

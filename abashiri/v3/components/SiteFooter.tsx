@@ -280,9 +280,12 @@ function PhotoStage({
   align = "center",
   pad = "normal",
   overlap = false,
+  shortFade = false,
 }: {
   children: React.ReactNode;
   zoom?: boolean;
+  /** PC の白→写真のグラデを短くする（詳しいページ。--ft-fade-h-short・2026-10-28） */
+  shortFade?: boolean;
   /** 上のセクションへ重ねているか（案3 で、中身が重なった所に隠れないよう上を空ける） */
   overlap?: boolean;
   align?: "center" | "end";
@@ -297,7 +300,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeShort: 40, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -338,6 +341,7 @@ function PhotoStage({
         const nc = {
           stageH: num("--ft-stage-h", 120),
           fadeH: num("--ft-fade-h", 80),
+          fadeShort: num("--ft-fade-h-short", 40),
           solid: num0("--ft-fade-solid", 6),
           padTop: num0("--ft-pad-top", 64),
           curve: Math.round(num("--ft-fade-curve", 1)),
@@ -355,6 +359,7 @@ function PhotoStage({
           o.fadeH === nc.fadeH &&
           o.solid === nc.solid &&
           o.padTop === nc.padTop &&
+          o.fadeShort === nc.fadeShort &&
           o.curve === nc.curve &&
           o.overlap === nc.overlap &&
           o.tone === nc.tone &&
@@ -406,7 +411,10 @@ function PhotoStage({
      写真の帯は中身の高さだけ。トップでは写真を上の体験セクションの下へ重ね（--ft-overlap）、
      そこからグラデのパターンで少しずつ白が透けていく */
   if (!isNarrow) {
-    const fadePx = H * fadeH;
+    /* 【2026-10-28 ヒデさん「各スポットの詳細ページのコンテンツが終わってからフッターにたどり着くまでのストロークが長い」】
+       詳しいページは上に重ねないので、画面1.3枚分のグラデ（1277px）が丸ごと見えて、中身の終わり→フッターの文字が 1424px あった。
+       → 詳しいページだけグラデを画面の 40%（--ft-fade-h-short🟡）に。トップ（重ねる）はそのまま */
+    const fadePx = H * (shortFade ? cfg.fadeShort / 100 : fadeH);
     /* パターン4「ぼかしながら現れる」：ぼかした写真を上に重ね、下へ行くほど透明にする（霧が晴れるように）。
        白が薄くなってからぼかしが見えるので、グラデの 60% まではぼかし全開・グラデの終わりを少し過ぎた所（130%）でくっきり。
        ぼかしの縁が透けないよう少し大きく描く（拡大 1.08）。ぼかしは決めた演出なので 0 にはしない */
@@ -615,9 +623,9 @@ function SiteMapGrid({ light = false }: { light?: boolean }) {
    組み方は「組みA ゆったり2カラム」で確定（2026-09-16 ヒデさん指示で他の2案は削除）。
    左に大きい作字ロゴ、右にサイトマップ。余白・間隔・作字の大きさは
    CSS 変数（--ft-*）＝調整パネルのつまみで動かせる */
-function Body({ overlap = false }: { overlap?: boolean }) {
+function Body({ overlap = false, shortFade = false }: { overlap?: boolean; shortFade?: boolean }) {
   return (
-    <PhotoStage align="end" pad="wide" overlap={overlap}>
+    <PhotoStage align="end" pad="wide" overlap={overlap} shortFade={shortFade}>
       {/* 横並び（左に作字・右にサイトマップ）はフッターの幅が 1200px 以上の時だけ（1024px だとサイトマップの列が66pxまで細くなった）。
           それより狭い時は作字を中央・その下にサイトマップ（2026-09-26 タブレット対応） */}
       <div className="flex w-full flex-col gap-14 @min-[1200px]:flex-row @min-[1200px]:items-center @min-[1200px]:justify-between @min-[1200px]:gap-[var(--ft-col-gap)]">
@@ -640,7 +648,10 @@ function Body({ overlap = false }: { overlap?: boolean }) {
 
 export default function SiteFooter({
   overlap = false,
+  shortFade = false,
 }: {
+  /** PC の白→写真のグラデを短くする（詳しいページ。中身の終わりからフッターまでを詰める・2026-10-28） */
+  shortFade?: boolean;
   /** 上のセクションの下へ潜り込ませる（トップの体験セクションの下だけ・PC。2026-10-20）。
       詳しいページは前のセクションの作りが違うので重ねない */
   overlap?: boolean;
@@ -666,7 +677,7 @@ export default function SiteFooter({
       /* 重ねる時は、重ねる長さだけ上へずらし、上のセクション（z-10）の後ろに回る（--ft-z＝0） */
       style={overlap ? { marginTop: "calc(-2px - var(--ft-overlap, 0px))", zIndex: "var(--ft-z, 10)" as unknown as number } : undefined}
     >
-      <Body overlap={overlap} />
+      <Body overlap={overlap} shortFade={shortFade} />
     </footer>
   );
 }

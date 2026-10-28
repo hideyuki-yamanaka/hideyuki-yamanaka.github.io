@@ -78,7 +78,8 @@ function Shell({
       {/* 共通ヘッダー（部品は SpotDetailVariants.tsx の DetailHeader） */}
       <DetailHeader />
       {children}
-      <SiteFooter />
+      {/* 中身の終わりからフッターまでを詰める（PC のグラデを短く・2026-10-28） */}
+      <SiteFooter shortFade />
     </main>
   );
 }
