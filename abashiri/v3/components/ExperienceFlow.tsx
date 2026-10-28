@@ -24,7 +24,6 @@ import {
   type Variants,
 } from "framer-motion";
 import CarouselArrow from "./CarouselArrow";
-import { expGlassStyle } from "./expGlass";
 import { TUNE_RESYNC_EVENT } from "./tuneKeys";
 import GlobalNav from "./GlobalNav";
 import { devSilent } from "./devSound";
@@ -220,9 +219,9 @@ function GlassButton({
       onClick={onClick}
       /* v1.2: トップの「ぼーっとしてみる」とスタイル統一（ヒデさん指示 2026-08-21）。
          白2px枠 → 白40%・1pxの内側リング。地 white/10・blur65 は共通。
-         【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】→ 塗り・線・ブラーは CSS 変数（expGlass.ts・既定は今までと同じ） */
-      className="flex w-[220px] cursor-pointer items-center justify-center rounded-full px-11 py-4 text-body-16 font-medium leading-[1.2] text-white transition-transform hover:scale-105"
-      style={expGlassStyle("pc")}
+         【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】
+         → 同日「ガラスのボタンが入っているところを全部一括で」で、全ページ共通のガラスのボタン（globals.css の .glass-btn）に */
+      className="glass-btn flex w-[220px] cursor-pointer items-center justify-center rounded-full px-11 py-4 text-body-16 font-medium leading-[1.2] text-white transition-transform hover:scale-105"
     >
       {children}
     </button>

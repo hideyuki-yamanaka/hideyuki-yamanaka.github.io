@@ -173,9 +173,13 @@
   /* 重ね写真の案で、写真が右へ流れていく速さ。1秒あたり全体の何割進むか。
      スクロールの強さ・長さに関わらず、いつもこの速さで流れる（2026-09-17 ヒデさん指示） */
   --ev-shuf-dur: 1; /* 2026-09-26 体験セクション案31（カードを切る）の秒数。2026-10-21 に固めた（PC 1.0秒・スマホは下の 744px 未満で 0.6秒） */
-  /* ぼーっと体験ページのガラスのボタン（次へ進む・この場所にする）。2026-10-28 調整パネルで変えられるように（expGlass.ts）。既定は今までの見た目 */
-  --exp-btn-fill-pc: 10; --exp-btn-line-w-pc: 1; --exp-btn-line-a-pc: 40; --exp-btn-blur-pc: 65;
-  --exp-btn-fill-sp: 10; --exp-btn-line-w-sp: 1; --exp-btn-line-a-sp: 45; --exp-btn-blur-sp: 16;
+  /* ガラスのボタン（全ページ共通・下の .glass-btn）。塗りの不透明度%・線の太さpx・線の不透明度%・背景のブラーpx。
+     2026-10-28 調整パネルで変えられるように → 同日ヒデさん「ガラスのボタンが入っているところを全部一括で調整できるように」で全部のガラスのボタンへ。
+     PC もスマホも キービジュアルの「ぼーっとしてみる」と同じ 白10%・線1px 白40%・ブラー65px（スマホの体験ページだけ 線 白45%・ブラー16px だったのを、ほかにそろえた🟡） */
+  --glass-btn-fill-pc: 10; --glass-btn-line-w-pc: 1; --glass-btn-line-a-pc: 40; --glass-btn-blur-pc: 65;
+  --glass-btn-fill-sp: 10; --glass-btn-line-w-sp: 1; --glass-btn-line-a-sp: 40; --glass-btn-blur-sp: 65;
+  --glass-btn-fill: var(--glass-btn-fill-pc); --glass-btn-line-w: var(--glass-btn-line-w-pc);
+  --glass-btn-line-a: var(--glass-btn-line-a-pc); --glass-btn-blur: var(--glass-btn-blur-pc);
   /* ぼーっと体験ページの導入の間（px）。2026-10-28 詰めた🟡・調整パネルで変えられる。PC：見出しと本文・段落・本文とボタン／スマホも同じ順 */
   --exp-intro-head-pc: 56; --exp-intro-para-pc: 24; --exp-intro-btn-pc: 64;
   --exp-intro-head-sp: 32; --exp-intro-para-sp: 16; --exp-intro-btn-sp: 32;
@@ -498,6 +502,30 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
 @media (max-width: 743px) {
   :root {
     --ev-shuf-dur: 0.6;
+  }
+}
+/* ガラスのボタンは、スマホ・タブレットの作り（MobileTop・MobileExperience に切り替わる境目＝useIsMobile と同じ条件）でスマホの値（2026-10-28） */
+@media (max-width: 900px), (max-width: 1280px) and (orientation: portrait) {
+  :root {
+    --glass-btn-fill: var(--glass-btn-fill-sp); --glass-btn-line-w: var(--glass-btn-line-w-sp);
+    --glass-btn-line-a: var(--glass-btn-line-a-sp); --glass-btn-blur: var(--glass-btn-blur-sp);
+  }
+}
+/* ガラスのボタンの見た目（全ページ共通）
+   使っている所：キービジュアルの「ぼーっとしてみる」（PC・スマホ）／ぼーっと体験ページの「次へ進む」「この場所にする」（PC・スマホ）／
+   場所えらびの左右の丸いボタン（CarouselArrow の onDark）／最初の「再生しますか？」の窓（案2）の ON
+   値は上の --glass-btn-*（調整パネル › サイト共通 › エフェクト＆テクスチャ › ガラスのボタン（全ページ共通））。
+   components の層に置くので、使う側の hover: などの指定（utilities の層）がこれより勝つ。
+   .glass-hover を足すと、乗せた時に塗りが 15% 濃くなる（既定で 白10%→25%。前の hover:bg-white/25 と同じ） */
+@layer components {
+  .glass-btn {
+    background-color: rgb(255 255 255 / calc(var(--glass-btn-fill) * 1%));
+    box-shadow: inset 0 0 0 calc(var(--glass-btn-line-w) * 1px) rgb(255 255 255 / calc(var(--glass-btn-line-a) * 1%));
+    -webkit-backdrop-filter: blur(calc(var(--glass-btn-blur) * 1px));
+    backdrop-filter: blur(calc(var(--glass-btn-blur) * 1px));
+  }
+  .glass-btn.glass-hover:hover {
+    background-color: rgb(255 255 255 / calc((var(--glass-btn-fill) + 15) * 1%));
   }
 }
 /* 詳細ページの段落の間は、スマホ（744px 未満）でスマホの値（行間を詰めた境目と同じ・2026-10-21） */

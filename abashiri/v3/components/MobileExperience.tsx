@@ -9,7 +9,6 @@
  * 動画は ryuhyo.mp4 の1本のみ（＝流氷クルーズだけ体験可）。
  */
 import { TUNE_RESYNC_EVENT } from "./tuneKeys";
-import { expGlassStyle } from "./expGlass";
 import { navigateTo } from "./PageTransition";
 import { useEffect, useRef, useState } from "react";
 import BoTips, { DEFAULT_BO_TIPS } from "./BoTips";
@@ -148,10 +147,10 @@ export default function MobileExperience() {
   const ss = String(remaining % 60).padStart(2, "0");
   const controls = (ui || !playing) && !tipsVisible;
 
-  /* ガラスのボタン（次へ進む・この場所にする）。塗り・線・ブラーは CSS 変数（expGlass.ts・既定は 白10%・線 1px 白45%・ブラー 16px のまま）
-     【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】 */
-  const glass = "flex items-center justify-center rounded-full text-white transition-transform active:scale-95";
-  const glassStyle = expGlassStyle("sp");
+  /* ガラスのボタン（次へ進む・この場所にする）。地・枠・ぼかしは全ページ共通のガラスのボタン（globals.css の .glass-btn）
+     【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを」→ 同日「ガラスのボタンが入っているところを全部一括で」】
+     前はここだけ 線 白45%・ブラー16px だったのを、ほかのガラスのボタン（線 白40%・ブラー65px）にそろえた🟡 */
+  const glass = "glass-btn flex items-center justify-center rounded-full text-white transition-transform active:scale-95";
   /* 導入が出るたびに、調整パネルの文字の行（本文の大きさ・行間など）を当て直してもらう（2026-10-28） */
   useEffect(() => {
     if (step !== "intro") return;
@@ -239,7 +238,6 @@ export default function MobileExperience() {
             <button
               type="button"
               onClick={() => setStep("pick")}
-              style={glassStyle}
               className={`${glass} mt-[calc(var(--exp-intro-btn-sp,32)*1px)] h-10 px-8 text-body-14 font-medium leading-none tab:mt-12 tab:h-14 tab:px-12 tab:text-body-18`}
             >
               次へ進む
@@ -293,8 +291,7 @@ export default function MobileExperience() {
               <button
                 type="button"
                 onClick={dive}
-                style={glassStyle}
-              className={`${glass} h-11 w-full max-w-[342px] text-body-14 font-medium leading-none tab:h-14 tab:max-w-[420px] tab:text-body-18`}
+                className={`${glass} h-11 w-full max-w-[342px] text-body-14 font-medium leading-none tab:h-14 tab:max-w-[420px] tab:text-body-18`}
               >
                 この場所にする
               </button>

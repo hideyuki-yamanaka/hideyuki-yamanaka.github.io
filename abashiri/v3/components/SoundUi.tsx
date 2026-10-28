@@ -144,7 +144,8 @@ function ConsentDialog({ kind, onAnswer }: { kind: number; onAnswer: (on: boolea
           <div className="flex items-center gap-4">
             <button
               onClick={() => onAnswer(true)}
-              className="flex h-12 w-[136px] cursor-pointer items-center justify-center gap-2 rounded-full bg-white/10 text-body-16 font-medium leading-none ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/25"
+              /* 地・枠・ぼかしは全ページ共通のガラスのボタン（globals.css の .glass-btn・乗せると塗りが15%濃く。2026-10-28 調整パネルで一括に） */
+              className="glass-btn glass-hover flex h-12 w-[136px] cursor-pointer items-center justify-center gap-2 rounded-full text-body-16 font-medium leading-none transition-colors duration-300 ease-standard"
             >
               <BgmWaveIcon kind="on" />
               ON

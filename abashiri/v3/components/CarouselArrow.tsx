@@ -8,6 +8,7 @@
  * 形は場所えらびのボタン（2026-08 の v1.2 ボタン共通仕様）のまま：丸・内側に1pxの線・すりガラス（blur65）・シェブロンの線の太さ 1.6
  * 地の色は2通り
  *   onDark … 青い地や写真の上。地 white/10・線 white/40・矢印 白（場所えらび。キービジュアルの「ぼーっとしてみる」と同じ）
+ *     2026-10-28 から地・線・ぼかしは全ページ共通のガラスのボタン（globals.css の .glass-btn。調整パネルで一括に変わる）
  *   onLight … 白い地・薄い水色の地の上。地 white/30・線 ブランドの青 25%・矢印 ブランドの青・すりガラス（blur65）
  *     【2026-10-21 ヒデさん】①「グレーの惑星みたいな感じではなく、キービジュアルのぼーっとしてみるのボタンみたいに。見にくければ視認性を」
  *       → いったん ブランドの青 80% の丸に白い矢印にした
@@ -53,8 +54,10 @@ export default function CarouselArrow({
       onClick={onClick}
       aria-label={label}
       style={style}
-      className={`${className} flex ${s.box} cursor-pointer items-center justify-center rounded-full ring-1 ring-inset backdrop-blur-65 transition-colors duration-300 ease-standard ${
-        onLight ? "bg-white/30 text-brand ring-brand/25 hover:bg-white/50" : "bg-white/10 text-white ring-white/40 hover:bg-white/25"
+      className={`${className} flex ${s.box} cursor-pointer items-center justify-center rounded-full transition-colors duration-300 ease-standard ${
+        onLight
+          ? "bg-white/30 text-brand ring-1 ring-inset ring-brand/25 backdrop-blur-65 hover:bg-white/50"
+          : "glass-btn glass-hover text-white"
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" className={s.icon} aria-hidden>

@@ -359,7 +359,8 @@ export default function MobileTop() {
             <button
               type="button"
               onClick={() => navigateTo("/experience")}
-              className="mt-6 flex h-10 items-center justify-center rounded-full bg-white/10 px-6 text-body-14 font-medium leading-none text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform active:scale-95"
+              /* 地・枠・ぼかしは全ページ共通のガラスのボタン（globals.css の .glass-btn。2026-10-28 調整パネルで一括に） */
+              className="glass-btn mt-6 flex h-10 items-center justify-center rounded-full px-6 text-body-14 font-medium leading-none text-white transition-transform active:scale-95"
             >
               ぼーっとしてみる
             </button>

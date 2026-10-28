@@ -255,7 +255,8 @@ type Params = {
     light: number;
   };
   expIntro: IntroPace;
-  /** ぼーっと体験ページのガラスのボタン（次へ進む・この場所にする）：塗りの不透明度%・線の太さpx・線の不透明度%・背景のブラーpx（2026-10-28） */
+  /** ガラスのボタン（全ページ共通・globals.css の .glass-btn）：塗りの不透明度%・線の太さpx・線の不透明度%・背景のブラーpx（2026-10-28）。
+      名前の expBtn は、最初にぼーっと体験ページのボタン用に作った名残（触った値と焼き込みを引き継ぐため、そのままにした） */
   expBtn: { fill: number; lineW: number; lineA: number; blur: number };
   /** ぼーっと体験ページの導入：段落のギャップ・見出しと本文のギャップ・本文とボタンのギャップ（px・2026-10-28） */
   expGap: { para: number; head: number; btn: number };
@@ -357,7 +358,7 @@ export default function TopTunePanel({
         light: 0,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
-      /* ガラスのボタン（expGlass.ts）。既定は今までの見た目（PC：白10%・線1px 白40%・ブラー65px／スマホは spDefault：線 白45%・ブラー16px） */
+      /* ガラスのボタン（全ページ共通・globals.css の .glass-btn）。既定は キービジュアルの「ぼーっとしてみる」と同じ 白10%・線1px 白40%・ブラー65px（スマホも同じ） */
       expBtn: { fill: 10, lineW: 1, lineA: 40, blur: 65 },
       /* 導入の間（PC）。スマホは spDefault（段落 16・見出し 32・ボタン 32）。2026-10-28 詰めた🟡 */
       expGap: { para: 24, head: 56, btn: 64 },
@@ -405,12 +406,12 @@ export default function TopTunePanel({
       root.style.setProperty("--sec-head", `${params.secHead}px`);
       /* 最初の確認の窓の案（0＝現行・1〜3）。SoundUi の useSoundDlg が読む（2026-10-28） */
       root.style.setProperty("--sound-dlg", String(params.sound.dialog ?? SOUND_DLG_DEFAULT));
-      /* ぼーっと体験ページのガラスのボタン（expGlass.ts）。PC とスマホは別の変数（-pc／-sp）。
+      /* ガラスのボタン（全ページ共通・globals.css の .glass-btn）と、ぼーっと体験ページの導入の間。PC とスマホは別の変数（-pc／-sp）。
          スマホの端末（600px 以下）では部品がスマホの値を params に流し込んでいるので、そのまま -sp へ。
          PC の画面では、スマホの値を保存値（スマホの上書き）→ 既定（spDefault）の順に読む（SpotDetailPage の readSp と同じ考え方） */
       {
         const phone = window.matchMedia("(max-width: 600px)").matches;
-        const SP = { fill: 10, lineW: 1, lineA: 45, blur: 16 };
+        const SP = { fill: 10, lineW: 1, lineA: 40, blur: 65 };
         let mb: Record<string, unknown> = {};
         try { mb = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}:mb`) || "{}"); } catch {}
         /* 導入の間（同じ考え方で -pc／-sp） */
@@ -427,8 +428,8 @@ export default function TopTunePanel({
           const pc = params.expBtn?.[k];
           const v = mb[`expBtn.${k}`];
           const sp = phone ? pc : typeof v === "number" ? v : SP[k];
-          if (!phone && typeof pc === "number") root.style.setProperty(`--exp-btn-${name}-pc`, String(pc));
-          if (typeof sp === "number") root.style.setProperty(`--exp-btn-${name}-sp`, String(sp));
+          if (!phone && typeof pc === "number") root.style.setProperty(`--glass-btn-${name}-pc`, String(pc));
+          if (typeof sp === "number") root.style.setProperty(`--glass-btn-${name}-sp`, String(sp));
         }
       }
       root.style.setProperty("--sound-msg-gap", `${params.sound.dlgGap ?? 0}px`);
@@ -710,12 +711,18 @@ export default function TopTunePanel({
               /* 【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】
                  → ガラスのボタン（次へ進む・この場所にする）の塗り・線・ブラー。見た目なのでエフェクト＆テクスチャ（6-13・6-18）。
                    PC とスマホは別の値（スマホの既定は今までの 線 白45%・ブラー16px）。
-                 同日「これ、調整パネルはどこに入れてますか？サイト共通に入れて大丈夫です」→ ぼーっと体験ページのタブから サイト共通 へ移した（値の置き場所 expBtn.* はそのまま） */
-              { sub: "ガラスのボタン（ぼーっと体験の 次へ進む・この場所にする）", grp: "fxtex" },
-              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 10, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。" },
+                 同日「これ、調整パネルはどこに入れてますか？サイト共通に入れて大丈夫です」→ ぼーっと体験ページのタブから サイト共通 へ移した（値の置き場所 expBtn.* はそのまま）。
+                 同日「ガラスのボタンが入っているところを全部一括で調整できるように。サウンドオンオフの最初のモーダルも対応範囲」
+                 → 同じ作り（白10%・白40%の細い縁・後ろを強くぼかす）のボタン全部に効くように（globals.css の .glass-btn）。
+                   スマホの体験ページだけ 線 白45%・ブラー16px だったのを、ほかにそろえて 白40%・65px に🟡 */
+              { sub: "ガラスのボタン（全ページ共通）", grp: "fxtex" },
+              {
+                note: "効く所：キービジュアルの「ぼーっとしてみる」／ぼーっと体験ページの「次へ進む」「この場所にする」・場所えらびの左右の丸いボタン／最初の「再生しますか？」の窓の ON。PC とスマホは別の値です。",
+              },
+              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 10, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。乗せた時は、ここから 15% 濃くなるボタンもあります（丸いボタン・窓の ON）。" },
               { slider: "線の太さ", path: "expBtn.lineW", min: 0, max: 4, step: 0.5, unit: "px", spDefault: 1, immediate: true, hint: "ボタンの内側の白い縁の太さ。" },
-              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 45, immediate: true, hint: "白い縁の濃さ。" },
-              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 80, step: 1, unit: "px", spDefault: 16, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
+              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 40, immediate: true, hint: "白い縁の濃さ。" },
+              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 80, step: 1, unit: "px", spDefault: 65, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
               /* 【2026-10-21 ヒデさん】フッター（全ページ共通）とフッターの写真も、今の案を既定にして見出しごと外した
                  （「フッターの写真も、暗いままをデフォルトにして影の濃さを0に」「削除して大丈夫」）。
                  値は globals.css の --ft-*（全ページ共通・詳しいページも同じ）に固定：グラデ「白がゆっくり明ける」長さ130%・重ねる長さ872px・

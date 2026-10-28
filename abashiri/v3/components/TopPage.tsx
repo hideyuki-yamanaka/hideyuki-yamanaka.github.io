@@ -1067,7 +1067,8 @@ export default function TopPage({
                   <Link
                     href="/experience"
                     /* 押した後の幕は PageTransition が出す（2026-09-26 統一） */
-                    className="flex items-center justify-center rounded-full bg-white/10 px-11 py-4 text-body-16 font-medium leading-[1.2] text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform hover:scale-105"
+                    /* 地・枠・ぼかしは全ページ共通のガラスのボタン（globals.css の .glass-btn・既定は上のカンプ値のまま。2026-10-28 調整パネルで一括に） */
+                    className="glass-btn flex items-center justify-center rounded-full px-11 py-4 text-body-16 font-medium leading-[1.2] text-white transition-transform hover:scale-105"
                   >
                     ぼーっとしてみる
                   </Link>
