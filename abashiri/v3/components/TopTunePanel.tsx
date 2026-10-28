@@ -707,6 +707,15 @@ export default function TopTunePanel({
                 fmt: "%",
                 hint: "線の太さの倍率（100%が今まで）。上げるほど太く濃く見え、下げるほど細く繊細になります。",
               },
+              /* 【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】
+                 → ガラスのボタン（次へ進む・この場所にする）の塗り・線・ブラー。見た目なのでエフェクト＆テクスチャ（6-13・6-18）。
+                   PC とスマホは別の値（スマホの既定は今までの 線 白45%・ブラー16px）。
+                 同日「これ、調整パネルはどこに入れてますか？サイト共通に入れて大丈夫です」→ ぼーっと体験ページのタブから サイト共通 へ移した（値の置き場所 expBtn.* はそのまま） */
+              { sub: "ガラスのボタン（ぼーっと体験の 次へ進む・この場所にする）", grp: "fxtex" },
+              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 10, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。" },
+              { slider: "線の太さ", path: "expBtn.lineW", min: 0, max: 4, step: 0.5, unit: "px", spDefault: 1, immediate: true, hint: "ボタンの内側の白い縁の太さ。" },
+              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 45, immediate: true, hint: "白い縁の濃さ。" },
+              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 80, step: 1, unit: "px", spDefault: 16, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
               /* 【2026-10-21 ヒデさん】フッター（全ページ共通）とフッターの写真も、今の案を既定にして見出しごと外した
                  （「フッターの写真も、暗いままをデフォルトにして影の濃さを0に」「削除して大丈夫」）。
                  値は globals.css の --ft-*（全ページ共通・詳しいページも同じ）に固定：グラデ「白がゆっくり明ける」長さ130%・重ねる長さ872px・
@@ -1321,14 +1330,7 @@ export default function TopTunePanel({
           {
             cat: "ぼーっと体験ページ",
             items: [
-              /* 【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】
-                 → ガラスのボタン（次へ進む・この場所にする）の塗り・線・ブラー。見た目なのでエフェクト＆テクスチャ（6-13・6-18）。
-                   PC とスマホは別の値（スマホの既定は今までの 線 白45%・ブラー16px） */
-              { sub: "ガラスのボタン（次へ進む・この場所にする）", grp: "fxtex" },
-              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 10, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。" },
-              { slider: "線の太さ", path: "expBtn.lineW", min: 0, max: 4, step: 0.5, unit: "px", spDefault: 1, immediate: true, hint: "ボタンの内側の白い縁の太さ。" },
-              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 45, immediate: true, hint: "白い縁の濃さ。" },
-              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 80, step: 1, unit: "px", spDefault: 16, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
+              /* ガラスのボタン（次へ進む・この場所にする）のつまみは サイト共通 へ移した（2026-10-28 ヒデさん「サイト共通に入れて大丈夫です」） */
               /* 【2026-10-28 ヒデさん「ぼーっと体験ページの冒頭の『網走は何もないけど、それがたまらない。』を削除。その代わり（本文の）フォントサイズをアップ。上下のギャップも少し詰める。それらが調整できるようにパネルにも入れておいて」】
                  → 間は基本（ギャップのスライダー）、本文の文字はフォント（文字の行）。見出しは「導入メッセージ（1画面目）」でそろえる（6-13・6-17・6-18） */
               { sub: "導入メッセージ（1画面目）", grp: "basic" },
