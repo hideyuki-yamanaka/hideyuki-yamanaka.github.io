@@ -245,36 +245,6 @@ const fadeAlpha = (curve: number, t: number) => {
   }
   return 0.5 + 0.5 * Math.cos(Math.PI * Math.max(0, Math.min(1, t))); /* 1・3・4：やわらかい S字（cos） */
 };
-/** 詳しいページ用の短いグラデ（2026-10-28 ヒデさん「グラデーションが急に終わった感じ。縦の幅を詰めても、トップページのフッターの上のような滑らかな感じに」）。
-    トップは長いグラデ（画面1.3枚）の前半が体験セクションの裏に隠れ、見えているのは「白が半分を切ってから消えるまで」の後半だけ＝薄いもやがゆっくり晴れる。
-    → 後半（隠れていた所より下）はトップとまったく同じ長さ・同じ濃さの変わり方にし、隠れていた前半（真っ白→半分の白）だけを head px に縮める。
-      縮めた前半は、始まりは傾き0・つなぎ目で変わる速さがトップの後半と同じになる3次式でつなぐ（段も折れ目も作らない）。
-    total＝トップのグラデの長さ(px)／hidden＝トップで隠れている長さ(px)／head＝縮めた前半の長さ(px)。戻り値は [グラデ, 全体の長さpx] */
-function shortFadeGradient(curve: number, total: number, hidden: number, head: number): [string, number] {
-  const c = FADE_CURVES[curve] ? curve : 1;
-  const J = Math.max(0, Math.min(hidden, total - 1));
-  const P = Math.max(1, head);
-  const tail = total - J;
-  const L = P + tail;
-  /* つなぎ目（トップで見え始める所）の白の濃さ A0 と、そこで薄くなる速さ S0（1px あたり） */
-  const A0 = fadeAlpha(c, J / total);
-  const S0 = (A0 - fadeAlpha(c, Math.min(1, (J + 1) / total)));
-  /* 前半：白 1 → A0 を、始まりは傾き0・つなぎ目はトップと同じ速さ S0 になる3次式でつなぐ（段も折れ目も作らない）。
-     2026-10-28 前半を2次式で 16% に縮めたら、始まりが100pxほどで一気に空に変わって段に見えたので作り直した */
-  const k = (S0 * P) / Math.max(1e-6, 1 - A0); /* つなぎ目の傾き（前半の長さを1とした時） */
-  const g = (x: number) => (k - 2) * x * x * x + (3 - k) * x * x;
-  const N = 48;
-  const SKY = [0xb5, 0xd7, 0xff];
-  const stops: string[] = [];
-  for (let i = 0; i <= N; i++) {
-    const pPx = (L * i) / N;
-    const al = pPx <= P ? 1 - (1 - A0) * g(pPx / P) : fadeAlpha(c, Math.min(1, (J + pPx - P) / total));
-    const t = pPx <= P ? (J * pPx) / P / total : Math.min(1, (J + pPx - P) / total);
-    const col = c === 3 ? SKY.map((x) => Math.round(255 + (x - 255) * t)) : [255, 255, 255];
-    stops.push(`rgba(${col.join(",")},${Math.max(0, Math.min(1, al)).toFixed(3)}) ${((100 * i) / N).toFixed(2)}%`);
-  }
-  return [`linear-gradient(to bottom, ${stops.join(", ")})`, L];
-}
 /** パターンの番号と「白のままの割合（%）」から、PC のグラデを作る */
 function fadeGradient(curve: number, solid: number): string {
   const c = FADE_CURVES[curve] ? curve : 1;
@@ -310,14 +280,11 @@ function PhotoStage({
   align = "center",
   pad = "normal",
   overlap = false,
-  shortFade = false,
 }: {
   children: React.ReactNode;
   zoom?: boolean;
-  /** PC の白→写真のグラデを短くする（詳しいページ。--ft-fade-h-short・2026-10-28） */
-  shortFade?: boolean;
-  /** 上のセクションへ重ねているか（案3 で、中身が重なった所に隠れないよう上を空ける） */
-  overlap?: boolean;
+  /** 上のセクションへ重ねているか（案3 で、中身が重なった所に隠れないよう上を空ける）。"wide"＝横並びの PC の時だけ重ねる（詳しいページ） */
+  overlap?: boolean | "wide";
   align?: "center" | "end";
   /** wide=左右の余白を広く（メガフッターが窮屈だったため。2026-09-16） */
   pad?: "normal" | "wide";
@@ -330,7 +297,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeShort: 28, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeNarrow: 85, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -371,7 +338,7 @@ function PhotoStage({
         const nc = {
           stageH: num("--ft-stage-h", 120),
           fadeH: num("--ft-fade-h", 80),
-          fadeShort: num("--ft-fade-h-short", 28),
+          fadeNarrow: num("--ft-fade-h-narrow", 85),
           solid: num0("--ft-fade-solid", 6),
           padTop: num0("--ft-pad-top", 64),
           curve: Math.round(num("--ft-fade-curve", 1)),
@@ -389,7 +356,7 @@ function PhotoStage({
           o.fadeH === nc.fadeH &&
           o.solid === nc.solid &&
           o.padTop === nc.padTop &&
-          o.fadeShort === nc.fadeShort &&
+          o.fadeNarrow === nc.fadeNarrow &&
           o.curve === nc.curve &&
           o.overlap === nc.overlap &&
           o.tone === nc.tone &&
@@ -440,14 +407,26 @@ function PhotoStage({
      短くする・幕が上がる は消した（戻す時は git の記録。2026-10-20 の「フッター3案」のコミット）。
      写真の帯は中身の高さだけ。トップでは写真を上の体験セクションの下へ重ね（--ft-overlap）、
      そこからグラデのパターンで少しずつ白が透けていく */
+  /* 【2026-10-28 ヒデさん「下層ページも同じような構成ならフッターの上の境界線はこの形に。それに従ってスマートフォンも合わせたい」】
+     詳しいページ（overlap="wide"）は、スマホ・タブレットでも本文の裏へ潜り込ませる（--ft-overlap-wide＝360px🟡）。
+     グラデは PC と同じ消え方（白がゆっくり明ける）を 1画面ぶん（--ft-fade-h-narrow＝100%🟡）。中身（作字）はグラデの白が 25% まで薄くなった所から始める（下の narrowTextTop） */
+  const wideOv = overlap === "wide";
+  /* 縦に長いタブレット（1180px など）で長くなりすぎないよう、上限はスマホと同じくらいの 848px🟡 */
+  const narrowFade = wideOv ? Math.min(848, Math.round(H * (cfg.fadeNarrow / 100))) : 180;
+  /* 作字の始まり：グラデの白が 25% まで薄くなった所（見た目はほぼ空）。
+     2026-10-28 ヒデさん「スマホはコンテンツ終わりからフッターまでの距離が長い。グラデの移り変わり具合はこのまま」
+     → 前は「グラデが消えきってから 64px 下」。グラデの形は変えず、作字だけ白が薄くなった所まで上げた（10%→同日「もう少し」で 20%→「もうちょっと詰めてOK」で 25%）🟡 */
+  const narrowTextTop = (() => {
+    if (!wideOv) return 0;
+    for (let i = 0; i <= 200; i++) if (fadeAlpha(cfg.curve, i / 200) <= 0.25) return Math.round((narrowFade * i) / 200);
+    return narrowFade;
+  })();
   if (!isNarrow) {
-    /* 【2026-10-28 ヒデさん「各スポットの詳細ページのコンテンツが終わってからフッターにたどり着くまでのストロークが長い」】
-       詳しいページは上に重ねないので、画面1.3枚分のグラデ（1277px）が丸ごと見えて、中身の終わり→フッターの文字が 1424px あった。
-       → 詳しいページだけグラデを画面の 40%（--ft-fade-h-short🟡）に。トップ（重ねる）はそのまま */
-    /* 同日「グラデが急に終わった感じ。トップのフッターの上のような滑らかさに」→ 40% で全部を押し込むのをやめ、
-       トップで見えている後半はそのまま・隠れていた前半だけを画面の --ft-fade-h-short %（28%🟡）に縮める（shortFadeGradient） */
-    const [shortBg, shortPx] = shortFade ? shortFadeGradient(cfg.curve, H * fadeH, cfg.overlap, H * (cfg.fadeShort / 100)) : ["", 0];
-    const fadePx = shortFade ? shortPx : H * fadeH;
+    /* 【2026-10-28 ヒデさん「各スポットの詳細ページのコンテンツが終わってからフッターにたどり着くまでのストロークが長い」
+         →「グラデが急に終わった感じ」→「トップのような自然な切り替わりに」→「トップは最後のセクションの所から透過が入っている。詳しいページは中身の終わりまで真っ白」】
+       詳しいページも トップと同じ作り（overlap="wide"）：フッターを本文の裏へ --ft-overlap だけ潜り込ませ、本文の白い箱の下の方を透明にする。
+       グラデの長さ・濃さの変わり方はトップとまったく同じ（中身の終わりで白はもう半分くらい→残りがゆっくり晴れる） */
+    const fadePx = H * fadeH;
     /* パターン4「ぼかしながら現れる」：ぼかした写真を上に重ね、下へ行くほど透明にする（霧が晴れるように）。
        白が薄くなってからぼかしが見えるので、グラデの 60% まではぼかし全開・グラデの終わりを少し過ぎた所（130%）でくっきり。
        ぼかしの縁が透けないよう少し大きく描く（拡大 1.08）。ぼかしは決めた演出なので 0 にはしない */
@@ -481,7 +460,7 @@ function PhotoStage({
         )}
         {/* 影と光（写真の明るさの案）。前は下半分に黒い影35%で固定（bg-gradient-to-t from-black/35） */}
         <PhotoTone tone={cfg.tone} shade={cfg.shade} shadeH={cfg.shadeH} light={cfg.light} />
-        <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: fadePx + 3, background: shortFade ? shortBg : pcFade }} />
+        <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: fadePx + 3, background: pcFade }} />
         {/* 高さは中身なり：上＝グラデの長さ＋上のパディング／下＝下のパディング */}
         <div
           className={`relative z-10 flex flex-col ${padCls}`}
@@ -536,10 +515,11 @@ function PhotoStage({
                その分、作字を下げて（pt 128→200）白文字が白に埋もれないようにしてある */
           /* 【同日 ヒデさん追加】「作字の部分に被っているので白みを上に」→ 240→180px。
              作字（網走市観光サイトの上端 ≈ 206px）より上で消えきるようにした */
-          height: (isNarrow ? 180 : H * fadeH) + 3,
+          height: (isNarrow ? narrowFade : H * fadeH) + 3,
           /* 白のまま保つ割合（solid）から先を、少しずつ透明にしていく。
              solid を小さくすると早く写真が出る＝境目がやわらかくなる */
-          background: isNarrow
+          /* 詳しいページ（overlap="wide"）のスマホ・タブレットは PC と同じ消え方（pcFade）を 1画面ぶんの長さで（2026-10-28） */
+          background: isNarrow && !wideOv
             ? "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0.97) 12%, rgba(255,255,255,0.9) 24%, rgba(255,255,255,0.78) 36%, rgba(255,255,255,0.62) 48%, rgba(255,255,255,0.45) 60%, rgba(255,255,255,0.29) 72%, rgba(255,255,255,0.16) 83%, rgba(255,255,255,0.06) 92%, rgba(255,255,255,0) 100%)"
             /* 【2026-09-26 ヒデさん指摘】PC「フッター付近のグラデ、最後の方の白みが長い」
                → 旧カーブは前半4割ほど白が 0.86 以上のまま残っていた。
@@ -566,7 +546,7 @@ function PhotoStage({
             ? "relative z-10 px-6 pb-[56px] pt-[200px] @min-[640px]:px-[64px]"  /* 作字がグラデに埋もれないよう上を空ける（グラデ240pxに合わせて 128→200）。タブレット幅は左右を広めに */
             : "absolute inset-x-0 bottom-0"
         } ${isNarrow ? "" : padCls} ${isNarrow ? "" : alignCls}`}
-        style={{ height: isNarrow ? undefined : H }}
+        style={isNarrow ? (wideOv ? { paddingTop: narrowTextTop } : undefined) : { height: H }}
       >
         {children}
       </div>
@@ -656,9 +636,9 @@ function SiteMapGrid({ light = false }: { light?: boolean }) {
    組み方は「組みA ゆったり2カラム」で確定（2026-09-16 ヒデさん指示で他の2案は削除）。
    左に大きい作字ロゴ、右にサイトマップ。余白・間隔・作字の大きさは
    CSS 変数（--ft-*）＝調整パネルのつまみで動かせる */
-function Body({ overlap = false, shortFade = false }: { overlap?: boolean; shortFade?: boolean }) {
+function Body({ overlap = false }: { overlap?: boolean | "wide" }) {
   return (
-    <PhotoStage align="end" pad="wide" overlap={overlap} shortFade={shortFade}>
+    <PhotoStage align="end" pad="wide" overlap={overlap}>
       {/* 横並び（左に作字・右にサイトマップ）はフッターの幅が 1200px 以上の時だけ（1024px だとサイトマップの列が66pxまで細くなった）。
           それより狭い時は作字を中央・その下にサイトマップ（2026-09-26 タブレット対応） */}
       <div className="flex w-full flex-col gap-14 @min-[1200px]:flex-row @min-[1200px]:items-center @min-[1200px]:justify-between @min-[1200px]:gap-[var(--ft-col-gap)]">
@@ -681,13 +661,10 @@ function Body({ overlap = false, shortFade = false }: { overlap?: boolean; short
 
 export default function SiteFooter({
   overlap = false,
-  shortFade = false,
 }: {
-  /** PC の白→写真のグラデを短くする（詳しいページ。中身の終わりからフッターまでを詰める・2026-10-28） */
-  shortFade?: boolean;
-  /** 上のセクションの下へ潜り込ませる（トップの体験セクションの下だけ・PC。2026-10-20）。
-      詳しいページは前のセクションの作りが違うので重ねない */
-  overlap?: boolean;
+  /** 上のセクションの下へ潜り込ませる（トップの体験セクションの下・PC。2026-10-20）。
+      "wide"＝フッターが横並びになる幅（1200px 以上）の時だけ潜り込ませる（詳しいページ・2026-10-28。重ねる長さは --ft-overlap-wide） */
+  overlap?: boolean | "wide";
 } = {}) {
   /* デザインはひとつに確定（2026-09-16）。案の切り替えは無いので状態も持たない。
      余白・間隔・作字の大きさは CSS 変数（--ft-*）で、調整パネルから直接変わる */
@@ -708,9 +685,16 @@ export default function SiteFooter({
       /* @container：中の組みを「画面の幅」ではなく「フッター自身の幅」で切り替える（2026-09-26） */
       className="@container relative z-10 -mt-[2px] w-full bg-white"
       /* 重ねる時は、重ねる長さだけ上へずらし、上のセクション（z-10）の後ろに回る（--ft-z＝0） */
-      style={overlap ? { marginTop: "calc(-2px - var(--ft-overlap, 0px))", zIndex: "var(--ft-z, 10)" as unknown as number } : undefined}
+      style={
+        overlap
+          ? {
+              marginTop: overlap === "wide" ? "calc(-2px - var(--ft-overlap-wide, 0px))" : "calc(-2px - var(--ft-overlap, 0px))",
+              zIndex: "var(--ft-z, 10)" as unknown as number,
+            }
+          : undefined
+      }
     >
-      <Body overlap={overlap} shortFade={shortFade} />
+      <Body overlap={overlap} />
     </footer>
   );
 }

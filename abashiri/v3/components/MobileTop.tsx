@@ -500,18 +500,22 @@ export default function MobileTop() {
               ref={(el) => {
                 anchorEls.current.events = el;
               }}
-              className="flex flex-col overflow-hidden bg-white px-6 py-16 tab:px-[80px] tab:py-[120px]"
+              className="relative z-10 flex flex-col overflow-hidden px-6 py-16 tab:px-[80px] tab:py-[120px]"
+              /* 白い地は下から --ft-overlap-wide の所まで。その下は透明にして、裏に潜り込ませたフッターのグラデを見せる
+                 （2026-10-28 ヒデさん「いい感じ、これでいきましょう。他のページも同じようなものがあればそうしてください」→ 詳しいページと同じ作り） */
+              style={{ background: "linear-gradient(to bottom, #fff calc(100% - var(--ft-overlap-wide, 0px)), transparent calc(100% - var(--ft-overlap-wide, 0px)))" }}
             >
               <MobileEvents active={active === FLOW_SCENE && eventsInView} gate={eventsGate} flow />
             </section>
 
-            {/* フッター。【2026-09-26】PC・詳細ページと同じ共通フッター（SiteFooter：写真＋作字＋サイトマップ） */}
+            {/* フッター。【2026-09-26】PC・詳細ページと同じ共通フッター（SiteFooter：写真＋作字＋サイトマップ）。
+                2026-10-28 から詳しいページと同じく、体験セクションの裏へ潜り込ませる（overlap="wide"） */}
             <div
               ref={(el) => {
                 anchorEls.current.footer = el;
               }}
             >
-              <SiteFooter />
+              <SiteFooter overlap="wide" />
             </div>
           </div>
         </div>

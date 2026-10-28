@@ -78,8 +78,8 @@ function Shell({
       {/* 共通ヘッダー（部品は SpotDetailVariants.tsx の DetailHeader） */}
       <DetailHeader />
       {children}
-      {/* 中身の終わりからフッターまでを詰める（PC のグラデを短く・2026-10-28） */}
-      <SiteFooter shortFade />
+      {/* フッターは本文の裏へ潜り込ませる（トップと同じ。中身の終わりで白がもう半分になり、自然に空へ晴れる・2026-10-28。PC の横並びの時だけ） */}
+      <SiteFooter overlap="wide" />
     </main>
   );
 }
@@ -650,7 +650,7 @@ function TocLayout({
         <QuietHero spot={spot} h={heroH} />
       )}
       <div
-        className={`px-6 py-[56px] md:px-[56px] md:py-[80px] lg:px-[100px] lg:py-[112px] ${
+        className={`px-6 pt-[56px] pb-8 md:px-[56px] md:py-[80px] lg:px-[100px] lg:py-[112px] ${
           /* 白い面の続き。写真(z-0)より手前に置く */
           /* ⚠️ lg:py-[112px] はメディアクエリのぶん pt-0 より強い。
              lg: を付けないと PC だけ 112px の余白が残る（実測で発覚。2026-09-27 に 110→112） */
@@ -658,12 +658,16 @@ function TocLayout({
             ? /* blur案：写真が消えた地点で本文が現れるので、本文の頭に
                  ヘッダー分の余白を持たせて、見出しがナビと重ならないようにする
                  （2026-09-25 実測で重なりを確認） */
-              "relative z-10 bg-white pt-[92px] lg:pt-[104px]"
+              "relative z-10 pt-[92px] lg:pt-[104px]"
             : pinnedHero
-              ? "relative z-10 -mt-px bg-white pt-0 lg:pt-[32px]"
-              : ""
+              ? "relative z-10 -mt-px pt-0 lg:pt-[32px]"
+              : "relative z-10"
         }`}
+        /* 白い地は、下から --ft-overlap-wide の所まで。そこから下は透明にして、裏に潜り込ませたフッターのグラデを見せる
+           （トップの体験セクションと同じ作り・2026-10-28。スマホ・タブレットは --ft-overlap-wide が 0 なので全部白） */
+        style={{ background: "linear-gradient(to bottom, #fff calc(100% - var(--ft-overlap-wide, 0px)), transparent calc(100% - var(--ft-overlap-wide, 0px)))" }}
       >
+        {/* 【2026-10-28】スマホだけ本文の箱の下の余白 56→32px（ヒデさん「スマホはコンテンツ終わりからフッターまでの距離が長い」🟡）。タブレット・PC は今まで通り */}
         {/* 【2026-10-21 ヒデさん「スマホで写真が縦に積んだ時の上下のマージン・段落ごとの間・基本情報や周辺マップなどセクションの間を詰めて」】
             スマホ（768px 未満）だけ詰めた🟡：目次→本文 60→40px／段落どうし・本文→写真 56→40px／写真どうし 56→8px（写真は1つのまとまりに）／
             セクションどうし 144→64px（QuietBlocks）。タブレット（md）・PC（lg）は今までの値のまま */}

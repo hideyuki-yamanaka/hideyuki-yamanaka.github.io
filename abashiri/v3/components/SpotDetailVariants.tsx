@@ -450,7 +450,11 @@ export function V1Parallax({ spot }: VProps) {
         </div>
       </div>
       {/* 白い面が写真の上にせり上がる（角丸で「紙が乗る」感じ） */}
-      <div className="relative z-10 -mt-[80px] rounded-t-[48px] bg-white">
+      {/* 白い地は下から --ft-overlap-wide の所まで。その下は透明にして、裏に潜り込ませたフッターのグラデを見せる（トップと同じ作り・2026-10-28） */}
+      <div
+        className="relative z-10 -mt-[80px] rounded-t-[48px]"
+        style={{ background: "linear-gradient(to bottom, #fff calc(100% - var(--ft-overlap-wide, 0px)), transparent calc(100% - var(--ft-overlap-wide, 0px)))" }}
+      >
         <div className="mx-auto flex w-[880px] max-w-full flex-col gap-[112px] px-6 py-[120px]">
           <Sections spot={spot} root={ref} />
           {/* 写真は1枚ずつ、少しずれて浮き上がる */}
@@ -471,8 +475,8 @@ export function V1Parallax({ spot }: VProps) {
           <FooterBlocks spot={spot} root={ref} />
         </div>
       </div>
-      {/* 中身の終わりからフッターまでを詰める（PC のグラデを短く・2026-10-28） */}
-      <SiteFooter shortFade />
+      {/* フッターは本文の裏へ潜り込ませる（トップと同じ。中身の終わりで白がもう半分になり、自然に空へ晴れる・2026-10-28。PC の横並びの時だけ） */}
+      <SiteFooter overlap="wide" />
     </main>
   );
 }
