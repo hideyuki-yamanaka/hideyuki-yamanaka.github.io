@@ -176,8 +176,9 @@
   /* ガラスのボタン（全ページ共通・下の .glass-btn）。塗りの不透明度%・線の太さpx・線の不透明度%・背景のブラーpx。
      2026-10-28 調整パネルで変えられるように → 同日ヒデさん「ガラスのボタンが入っているところを全部一括で調整できるように」で全部のガラスのボタンへ。
      PC もスマホも キービジュアルの「ぼーっとしてみる」と同じ 白10%・線1px 白40%・ブラー65px（スマホの体験ページだけ 線 白45%・ブラー16px だったのを、ほかにそろえた🟡） */
-  --glass-btn-fill-pc: 10; --glass-btn-line-w-pc: 1; --glass-btn-line-a-pc: 40; --glass-btn-blur-pc: 65;
-  --glass-btn-fill-sp: 10; --glass-btn-line-w-sp: 1; --glass-btn-line-a-sp: 40; --glass-btn-blur-sp: 65;
+  /* 2026-10-28 ヒデさん「この設定でガラスのボタンを調整」→ 塗り20%・線1px・線の濃さ20%・ブラー198px（スマホも同じ🟡） */
+  --glass-btn-fill-pc: 20; --glass-btn-line-w-pc: 1; --glass-btn-line-a-pc: 20; --glass-btn-blur-pc: 198;
+  --glass-btn-fill-sp: 20; --glass-btn-line-w-sp: 1; --glass-btn-line-a-sp: 20; --glass-btn-blur-sp: 198;
   --glass-btn-fill: var(--glass-btn-fill-pc); --glass-btn-line-w: var(--glass-btn-line-w-pc);
   --glass-btn-line-a: var(--glass-btn-line-a-pc); --glass-btn-blur: var(--glass-btn-blur-pc);
   /* ぼーっと体験ページの導入の間（px）。2026-10-28 詰めた🟡・調整パネルで変えられる。PC：見出しと本文・段落・本文とボタン／スマホも同じ順 */

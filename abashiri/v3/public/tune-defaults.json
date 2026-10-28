@@ -271,10 +271,10 @@
   },
   "__font": {},
   "expBtn": {
-    "fill": 10,
+    "fill": 20,
     "lineW": 1,
-    "lineA": 40,
-    "blur": 65
+    "lineA": 20,
+    "blur": 198
   },
   "expGap": {
     "para": 24,

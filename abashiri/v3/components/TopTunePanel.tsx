@@ -359,7 +359,8 @@ export default function TopTunePanel({
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
       /* ガラスのボタン（全ページ共通・globals.css の .glass-btn）。既定は キービジュアルの「ぼーっとしてみる」と同じ 白10%・線1px 白40%・ブラー65px（スマホも同じ） */
-      expBtn: { fill: 10, lineW: 1, lineA: 40, blur: 65 },
+      /* 2026-10-28 ヒデさん「この設定でガラスのボタンを調整」→ 塗り20%・線1px・線の濃さ20%・ブラー198px（スマホも同じ🟡） */
+      expBtn: { fill: 20, lineW: 1, lineA: 20, blur: 198 },
       /* 導入の間（PC）。スマホは spDefault（段落 16・見出し 32・ボタン 32）。2026-10-28 詰めた🟡 */
       expGap: { para: 24, head: 56, btn: 64 },
       expPick: { pattern: 3 }, /* 2026-10-21 案3 で固めた（調整パネルから外した） */
@@ -411,7 +412,7 @@ export default function TopTunePanel({
          PC の画面では、スマホの値を保存値（スマホの上書き）→ 既定（spDefault）の順に読む（SpotDetailPage の readSp と同じ考え方） */
       {
         const phone = window.matchMedia("(max-width: 600px)").matches;
-        const SP = { fill: 10, lineW: 1, lineA: 40, blur: 65 };
+        const SP = { fill: 20, lineW: 1, lineA: 20, blur: 198 };
         let mb: Record<string, unknown> = {};
         try { mb = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}:mb`) || "{}"); } catch {}
         /* 導入の間（同じ考え方で -pc／-sp） */
@@ -664,6 +665,15 @@ export default function TopTunePanel({
                 when: (p: Params) => p.sound.dialog === 2,
                 hint: "窓の後ろの景色のぼかし。大きいほど強くぼける。",
               },
+              /* 【2026-10-28 ヒデさん「サウンドオフの画面が一時的に調整パネル上で出せると嬉しい。毎回キャッシュクリアして出すのが手間なので」】
+                 → 最初の確認の窓を、その場で出し直す押しボタン（共通の部品の { button }）。確認用なので その他（6-13・6-18）。
+                   どの案を選んでいても出せる。窓の ON／OFF を押すと閉じる（押した方が音の設定として残るのは、ふだんと同じ） */
+              { sub: "最初の確認の窓", grp: "other" },
+              {
+                button: "窓を出す（確認用）",
+                hint: "ページを開いた時に出る「網走の環境音を楽しむことができます。再生しますか？」の窓を、いま選んでいる案でもう一度出します。",
+                onClick: () => window.dispatchEvent(new CustomEvent(SOUND_DLG_PREVIEW_EVENT)),
+              },
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
@@ -719,10 +729,10 @@ export default function TopTunePanel({
               {
                 note: "効く所：キービジュアルの「ぼーっとしてみる」／ぼーっと体験ページの「次へ進む」「この場所にする」・場所えらびの左右の丸いボタン／最初の「再生しますか？」の窓の ON。PC とスマホは別の値です。",
               },
-              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 10, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。乗せた時は、ここから 15% 濃くなるボタンもあります（丸いボタン・窓の ON）。" },
+              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 20, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。乗せた時は、ここから 15% 濃くなるボタンもあります（丸いボタン・窓の ON）。" },
               { slider: "線の太さ", path: "expBtn.lineW", min: 0, max: 4, step: 0.5, unit: "px", spDefault: 1, immediate: true, hint: "ボタンの内側の白い縁の太さ。" },
-              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 40, immediate: true, hint: "白い縁の濃さ。" },
-              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 80, step: 1, unit: "px", spDefault: 65, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
+              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 20, immediate: true, hint: "白い縁の濃さ。" },
+              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 240, step: 1, unit: "px", spDefault: 198, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
               /* 【2026-10-21 ヒデさん】フッター（全ページ共通）とフッターの写真も、今の案を既定にして見出しごと外した
                  （「フッターの写真も、暗いままをデフォルトにして影の濃さを0に」「削除して大丈夫」）。
                  値は globals.css の --ft-*（全ページ共通・詳しいページも同じ）に固定：グラデ「白がゆっくり明ける」長さ130%・重ねる長さ872px・
