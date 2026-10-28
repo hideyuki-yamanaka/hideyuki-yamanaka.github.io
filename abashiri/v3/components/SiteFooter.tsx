@@ -245,6 +245,36 @@ const fadeAlpha = (curve: number, t: number) => {
   }
   return 0.5 + 0.5 * Math.cos(Math.PI * Math.max(0, Math.min(1, t))); /* 1・3・4：やわらかい S字（cos） */
 };
+/** 詳しいページ用の短いグラデ（2026-10-28 ヒデさん「グラデーションが急に終わった感じ。縦の幅を詰めても、トップページのフッターの上のような滑らかな感じに」）。
+    トップは長いグラデ（画面1.3枚）の前半が体験セクションの裏に隠れ、見えているのは「白が半分を切ってから消えるまで」の後半だけ＝薄いもやがゆっくり晴れる。
+    → 後半（隠れていた所より下）はトップとまったく同じ長さ・同じ濃さの変わり方にし、隠れていた前半（真っ白→半分の白）だけを head px に縮める。
+      縮めた前半は、始まりは傾き0・つなぎ目で変わる速さがトップの後半と同じになる3次式でつなぐ（段も折れ目も作らない）。
+    total＝トップのグラデの長さ(px)／hidden＝トップで隠れている長さ(px)／head＝縮めた前半の長さ(px)。戻り値は [グラデ, 全体の長さpx] */
+function shortFadeGradient(curve: number, total: number, hidden: number, head: number): [string, number] {
+  const c = FADE_CURVES[curve] ? curve : 1;
+  const J = Math.max(0, Math.min(hidden, total - 1));
+  const P = Math.max(1, head);
+  const tail = total - J;
+  const L = P + tail;
+  /* つなぎ目（トップで見え始める所）の白の濃さ A0 と、そこで薄くなる速さ S0（1px あたり） */
+  const A0 = fadeAlpha(c, J / total);
+  const S0 = (A0 - fadeAlpha(c, Math.min(1, (J + 1) / total)));
+  /* 前半：白 1 → A0 を、始まりは傾き0・つなぎ目はトップと同じ速さ S0 になる3次式でつなぐ（段も折れ目も作らない）。
+     2026-10-28 前半を2次式で 16% に縮めたら、始まりが100pxほどで一気に空に変わって段に見えたので作り直した */
+  const k = (S0 * P) / Math.max(1e-6, 1 - A0); /* つなぎ目の傾き（前半の長さを1とした時） */
+  const g = (x: number) => (k - 2) * x * x * x + (3 - k) * x * x;
+  const N = 48;
+  const SKY = [0xb5, 0xd7, 0xff];
+  const stops: string[] = [];
+  for (let i = 0; i <= N; i++) {
+    const pPx = (L * i) / N;
+    const al = pPx <= P ? 1 - (1 - A0) * g(pPx / P) : fadeAlpha(c, Math.min(1, (J + pPx - P) / total));
+    const t = pPx <= P ? (J * pPx) / P / total : Math.min(1, (J + pPx - P) / total);
+    const col = c === 3 ? SKY.map((x) => Math.round(255 + (x - 255) * t)) : [255, 255, 255];
+    stops.push(`rgba(${col.join(",")},${Math.max(0, Math.min(1, al)).toFixed(3)}) ${((100 * i) / N).toFixed(2)}%`);
+  }
+  return [`linear-gradient(to bottom, ${stops.join(", ")})`, L];
+}
 /** パターンの番号と「白のままの割合（%）」から、PC のグラデを作る */
 function fadeGradient(curve: number, solid: number): string {
   const c = FADE_CURVES[curve] ? curve : 1;
@@ -300,7 +330,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeShort: 40, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeShort: 28, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -341,7 +371,7 @@ function PhotoStage({
         const nc = {
           stageH: num("--ft-stage-h", 120),
           fadeH: num("--ft-fade-h", 80),
-          fadeShort: num("--ft-fade-h-short", 40),
+          fadeShort: num("--ft-fade-h-short", 28),
           solid: num0("--ft-fade-solid", 6),
           padTop: num0("--ft-pad-top", 64),
           curve: Math.round(num("--ft-fade-curve", 1)),
@@ -414,7 +444,10 @@ function PhotoStage({
     /* 【2026-10-28 ヒデさん「各スポットの詳細ページのコンテンツが終わってからフッターにたどり着くまでのストロークが長い」】
        詳しいページは上に重ねないので、画面1.3枚分のグラデ（1277px）が丸ごと見えて、中身の終わり→フッターの文字が 1424px あった。
        → 詳しいページだけグラデを画面の 40%（--ft-fade-h-short🟡）に。トップ（重ねる）はそのまま */
-    const fadePx = H * (shortFade ? cfg.fadeShort / 100 : fadeH);
+    /* 同日「グラデが急に終わった感じ。トップのフッターの上のような滑らかさに」→ 40% で全部を押し込むのをやめ、
+       トップで見えている後半はそのまま・隠れていた前半だけを画面の --ft-fade-h-short %（28%🟡）に縮める（shortFadeGradient） */
+    const [shortBg, shortPx] = shortFade ? shortFadeGradient(cfg.curve, H * fadeH, cfg.overlap, H * (cfg.fadeShort / 100)) : ["", 0];
+    const fadePx = shortFade ? shortPx : H * fadeH;
     /* パターン4「ぼかしながら現れる」：ぼかした写真を上に重ね、下へ行くほど透明にする（霧が晴れるように）。
        白が薄くなってからぼかしが見えるので、グラデの 60% まではぼかし全開・グラデの終わりを少し過ぎた所（130%）でくっきり。
        ぼかしの縁が透けないよう少し大きく描く（拡大 1.08）。ぼかしは決めた演出なので 0 にはしない */
@@ -448,7 +481,7 @@ function PhotoStage({
         )}
         {/* 影と光（写真の明るさの案）。前は下半分に黒い影35%で固定（bg-gradient-to-t from-black/35） */}
         <PhotoTone tone={cfg.tone} shade={cfg.shade} shadeH={cfg.shadeH} light={cfg.light} />
-        <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: fadePx + 3, background: pcFade }} />
+        <div className="pointer-events-none absolute inset-x-0" style={{ top: -3, height: fadePx + 3, background: shortFade ? shortBg : pcFade }} />
         {/* 高さは中身なり：上＝グラデの長さ＋上のパディング／下＝下のパディング */}
         <div
           className={`relative z-10 flex flex-col ${padCls}`}
