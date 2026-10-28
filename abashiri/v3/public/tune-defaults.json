@@ -269,5 +269,16 @@
     "show": 2.6,
     "swayFirst": true
   },
-  "__font": {}
+  "__font": {},
+  "expBtn": {
+    "fill": 10,
+    "lineW": 1,
+    "lineA": 40,
+    "blur": 65
+  },
+  "expGap": {
+    "para": 24,
+    "head": 56,
+    "btn": 64
+  }
 }

@@ -8,6 +8,8 @@
  *   → 窓枠ダイブイン（選んだカードが画面いっぱいに広がる）→ 動画再生（ぼーっとTips＋後ろ向き人物）。
  * 動画は ryuhyo.mp4 の1本のみ（＝流氷クルーズだけ体験可）。
  */
+import { TUNE_RESYNC_EVENT } from "./tuneKeys";
+import { expGlassStyle } from "./expGlass";
 import { navigateTo } from "./PageTransition";
 import { useEffect, useRef, useState } from "react";
 import BoTips, { DEFAULT_BO_TIPS } from "./BoTips";
@@ -146,8 +148,16 @@ export default function MobileExperience() {
   const ss = String(remaining % 60).padStart(2, "0");
   const controls = (ui || !playing) && !tipsVisible;
 
-  const glass =
-    "flex items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-inset ring-white/45 backdrop-blur-16 transition-transform active:scale-95";
+  /* ガラスのボタン（次へ進む・この場所にする）。塗り・線・ブラーは CSS 変数（expGlass.ts・既定は 白10%・線 1px 白45%・ブラー 16px のまま）
+     【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】 */
+  const glass = "flex items-center justify-center rounded-full text-white transition-transform active:scale-95";
+  const glassStyle = expGlassStyle("sp");
+  /* 導入が出るたびに、調整パネルの文字の行（本文の大きさ・行間など）を当て直してもらう（2026-10-28） */
+  useEffect(() => {
+    if (step !== "intro") return;
+    const id = requestAnimationFrame(() => window.dispatchEvent(new CustomEvent(TUNE_RESYNC_EVENT)));
+    return () => cancelAnimationFrame(id);
+  }, [step]);
 
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-brand text-white">
@@ -198,24 +208,39 @@ export default function MobileExperience() {
                 （2026-09-17 タブレット対応。実測: 1024x1366 で本文14pxは小さすぎた） */}
             <p className="text-body-14 font-light tab:text-body-16">網走に来る前に、まずやってみよう</p>
             <p className="mt-2 text-title-36 font-thin tab:mt-3 tab:text-title-56">ぼーっと体験</p>
-            <div className="mt-10 space-y-5 text-body-14 font-light leading-[1.9] max-tab:leading-[1.7] tab:mt-14 tab:space-y-7 tab:text-body-18 tab:leading-[2]">
-              <p>網走は何もないけど、それがたまらない。</p>
+            {/* 【2026-10-28 ヒデさん「ぼーっと体験ページの冒頭の『網走は何もないけど、それがたまらない。』を削除。その代わり（本文の）フォントサイズをアップ。上下のギャップも少し詰める。それらが調整できるようにパネルにも入れておいて」】
+                → 「網走は何もないけど…」を削除。本文 スマホ 14→16px・タブレット 18→20px（🟡）。
+                  間は スマホ：見出しと本文 40→32px・段落どうし 20→16px・本文とボタン 40→32px（--exp-intro-*-sp・調整パネルから変えられる）／タブレット：56→48px・28→24px・56→48px（🟡）。
+                  16px だと1行目が「そっと離／れて、」のように切れるので、言葉のまとまり（inline-block）の区切りでだけ折り返す */}
+            <div
+              data-exp-intro=""
+              className="mt-[calc(var(--exp-intro-head-sp,32)*1px)] flex flex-col gap-[calc(var(--exp-intro-para-sp,16)*1px)] text-body-16 font-light leading-[1.7] tab:mt-12 tab:gap-6 tab:text-body-20 tab:leading-[2]"
+            >
               <p>
-                忙しなく過ごす、あなたの日常からそっと離れて、
+                <span className="inline-block">忙しなく過ごす、</span>
+                <span className="inline-block">あなたの日常から</span>
+                <span className="inline-block">そっと離れて、</span>
                 <br />
-                何も考えず、「ぼーっとする」こと。
+                <span className="inline-block">何も考えず、</span>
+                <span className="inline-block">「ぼーっとする」こと。</span>
               </p>
               <p>
-                それが最大の癒しであり、くつろぎです。
+                <span className="inline-block">それが最大の癒しであり、</span>
+                <span className="inline-block">くつろぎです。</span>
                 <br />
-                網走では、そんな体験が思う存分できる。
+                <span className="inline-block">網走では、</span>
+                <span className="inline-block">そんな体験が思う存分できる。</span>
               </p>
-              <p>ウェブサイトを通して、その空間を疑似体験しよう。</p>
+              <p>
+                <span className="inline-block">ウェブサイトを通して、</span>
+                <span className="inline-block">その空間を疑似体験しよう。</span>
+              </p>
             </div>
             <button
               type="button"
               onClick={() => setStep("pick")}
-              className={`${glass} mt-10 h-10 px-8 text-body-14 font-medium leading-none tab:mt-14 tab:h-14 tab:px-12 tab:text-body-18`}
+              style={glassStyle}
+              className={`${glass} mt-[calc(var(--exp-intro-btn-sp,32)*1px)] h-10 px-8 text-body-14 font-medium leading-none tab:mt-12 tab:h-14 tab:px-12 tab:text-body-18`}
             >
               次へ進む
             </button>
@@ -268,7 +293,8 @@ export default function MobileExperience() {
               <button
                 type="button"
                 onClick={dive}
-                className={`${glass} h-11 w-full max-w-[342px] text-body-14 font-medium leading-none tab:h-14 tab:max-w-[420px] tab:text-body-18`}
+                style={glassStyle}
+              className={`${glass} h-11 w-full max-w-[342px] text-body-14 font-medium leading-none tab:h-14 tab:max-w-[420px] tab:text-body-18`}
               >
                 この場所にする
               </button>

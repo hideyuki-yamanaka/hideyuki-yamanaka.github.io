@@ -36,6 +36,8 @@ import {
 } from "./soundBtnConfig";
 
 const KEY = "abashiri-bgm";
+/** 波の音が自動で鳴り始める時（ページを開いた時・体験の動画から戻った時）のフェードインの長さ（ms）。2026-10-28 🟡仮置き */
+const BGM_FADE_MS = 3000;
 export const VIDEO_AUDIO_EVENT = "abashiri:video-audio";
 
 /* スピーカーのピクトグラム。OFFの時は斜線が入る */
@@ -278,17 +280,53 @@ export default function SoundUi({
   /* 後半がうるさいトラック対策：曲の進行に合わせて音量を少しずつ絞る。
      最初はしっかり聞こえ、後半（うるさい所）は抑える。ループ先頭で音量は戻るが
      中身も静かな頭に戻るので、体感の大きさは揃う（2026-08-28 ヒデさん指示）。 */
+  /* フェードイン（0→1）。音量に掛ける倍率。
+     【2026-10-28 ヒデさん「ぼーっとする体験のBGMからブラウザバックで戻って岬の波のBGMに移った時に、いきなり波の音が再生される感じでうるさい。ページ遷移時は、徐々に音量が上がっていくフェードインの音声へ」】
+     → 体験の動画から戻った時（動画の音が止まって波の音に戻る時）・ページを開いて自動で鳴り始める時・
+       自動再生がブロックされて最初の操作で鳴り始める時は、いきなり鳴らさず、少しずつ大きくする（BGM_FADE_MS🟡）。
+       自分で ON を押した時は今までどおりすぐ鳴らす（頼まれていないため）。
+     ⚠️ iPhone の Safari は、プログラムから音量を変えられない（いつも最大）ので、フェードは効かない */
+  const fadeRef = useRef(1);
+  const fadeRaf = useRef(0);
   const applyVol = useCallback(() => {
     const a = audioRef.current;
     if (!a) return;
-    /* 実測ラウドネス（bgmGain.ts）を打ち消す。うるさい所ほど下げ、頭はそのまま */
-    a.volume = clampVolume(volRef.current * bgmGainAt(a.currentTime));
+    /* 実測ラウドネス（bgmGain.ts）を打ち消す。うるさい所ほど下げ、頭はそのまま。フェードイン中はその倍率も掛ける */
+    a.volume = clampVolume(volRef.current * bgmGainAt(a.currentTime) * fadeRef.current);
   }, []);
+  const startFade = useCallback(
+    (ms: number) => {
+      cancelAnimationFrame(fadeRaf.current);
+      if (ms <= 0) {
+        fadeRef.current = 1;
+        applyVol();
+        return;
+      }
+      const t0 = performance.now();
+      fadeRef.current = 0;
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - t0) / ms);
+        /* 耳には音量の上がり始めが大きく聞こえるので、最初はゆっくり・後半で追いつく曲線（t²） */
+        fadeRef.current = t * t;
+        applyVol();
+        if (t < 1) fadeRaf.current = requestAnimationFrame(tick);
+      };
+      fadeRaf.current = requestAnimationFrame(tick);
+    },
+    [applyVol]
+  );
+  useEffect(() => () => cancelAnimationFrame(fadeRaf.current), []);
 
-  const play = () => {
+  /** fade：フェードインの長さ（ms）。0 ですぐ最大の音量 */
+  const play = (fade = 0) => {
     const a = audioRef.current;
     if (!a || duckRef.current) return;
     if (devSilent()) return; /* 開発中(localhost)は鳴らさない。?sound で解除 */
+    if (fade > 0) startFade(fade);
+    else {
+      cancelAnimationFrame(fadeRaf.current);
+      fadeRef.current = 1;
+    }
     applyVol();
     a.muted = false;
     a.play().catch(() => {});
@@ -365,9 +403,9 @@ export default function SoundUi({
        （表示は意思基準なので、鳴る前からONと出る） */
     if (saved === "on") {
       saveIntent(true);
-      play();
+      play(BGM_FADE_MS); /* ページを開いて自動で鳴り始める時は、じわっと上げる（2026-10-28） */
       const resume = () => {
-        if (intentRef.current && !duckRef.current && audioRef.current?.paused) play();
+        if (intentRef.current && !duckRef.current && audioRef.current?.paused) play(BGM_FADE_MS);
         window.removeEventListener("pointerdown", resume);
         window.removeEventListener("keydown", resume);
       };
@@ -390,7 +428,7 @@ export default function SoundUi({
       const a = audioRef.current;
       if (!a) return;
       if (active) a.pause();
-      else if (intentRef.current) play();
+      /* 動画（体験）から戻って波の音に戻る時は、いきなり鳴らさず、じわっと上げる（2026-10-28） */ else if (intentRef.current) play(BGM_FADE_MS);
     };
     window.addEventListener(VIDEO_AUDIO_EVENT, handler);
     return () => window.removeEventListener(VIDEO_AUDIO_EVENT, handler);

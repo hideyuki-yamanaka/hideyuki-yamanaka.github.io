@@ -24,6 +24,8 @@ import {
   type Variants,
 } from "framer-motion";
 import CarouselArrow from "./CarouselArrow";
+import { expGlassStyle } from "./expGlass";
+import { TUNE_RESYNC_EVENT } from "./tuneKeys";
 import GlobalNav from "./GlobalNav";
 import { devSilent } from "./devSound";
 import { findEnter, type EnterPattern } from "./enterPatterns";
@@ -131,6 +133,11 @@ function Intro({
       transition: { duration: pace.duration, ease: [0.22, 1, 0.36, 1] },
     },
   };
+  /* 導入は出るたびに作り直されるので、調整パネルの文字の行（本文の大きさ・行間など）を当て直してもらう（2026-10-28） */
+  useEffect(() => {
+    const id = requestAnimationFrame(() => window.dispatchEvent(new CustomEvent(TUNE_RESYNC_EVENT)));
+    return () => cancelAnimationFrame(id);
+  }, []);
   return (
     <motion.div
       key="intro"
@@ -150,20 +157,29 @@ function Intro({
       <motion.div
         /* 上下中央ぞろえ。カンプは top 110px 固定だが、文字量で高さが変わるので
            画面の真ん中に置いたほうが収まりが良い */
-        className="absolute left-1/2 top-1/2 flex w-[380px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[100px] text-center text-white"
+        /* 【2026-10-28 ヒデさん「ぼーっと体験ページの冒頭の『網走は何もないけど、それがたまらない。』を削除。その代わり（本文の）フォントサイズをアップ。上下のギャップも少し詰める。それらが調整できるようにパネルにも入れておいて」】
+           → 本文 16→18px・行の幅 380→440px（18px で1行目が折り返さない幅）・本文とボタンのギャップ 100→64px・見出しと本文 76→56px・段落どうし 32→24px（🟡）。
+             間は CSS 変数（--exp-intro-*-pc）で、調整パネル › ぼーっと体験ページ › 基本 › 導入メッセージ（1画面目）から変えられる。
+             本文の文字は 調整パネル › フォント › 導入メッセージ（1画面目）› 文字の行（data-exp-intro） */
+        className="absolute left-1/2 top-1/2 flex w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center text-white"
+        style={{ gap: "calc(var(--exp-intro-btn-pc, 64) * 1px)" }}
         variants={INTRO_STAGGER}
         initial="hidden"
         animate="show"
       >
-        <div className="flex w-full flex-col items-center gap-[76px]">
+        <div className="flex w-full flex-col items-center" style={{ gap: "calc(var(--exp-intro-head-pc, 56) * 1px)" }}>
           {/* 見出しは最初から出しておく（2026-08-21 ヒデさん指示。
               段落だけが順にブラー出現する） */}
           <div className="flex flex-col items-center leading-[1.6] whitespace-nowrap">
             <p className="text-body-18 font-light">網走に来る前に、まずやってみよう</p>
             <p className="text-title-44 font-thin">ぼーっと体験</p>
           </div>
-          <div className="flex w-full flex-col items-center gap-8 text-body-16 font-light leading-[1.8]">
-            <motion.p variants={INTRO_BLOCK}>網走は何もないけど、それがたまらない。</motion.p>
+          <div
+            data-exp-intro=""
+            className="flex w-full flex-col items-center text-body-18 font-light leading-[1.8]"
+            style={{ gap: "calc(var(--exp-intro-para-pc, 24) * 1px)" }}
+          >
+            {/* 「網走は何もないけど、それがたまらない。」は 2026-10-28 に削除（ヒデさん指示） */}
             <motion.p variants={INTRO_BLOCK}>
               忙しなく過ごす、あなたの日常からそっと離れて、
               <br />
@@ -203,8 +219,10 @@ function GlassButton({
       type="button"
       onClick={onClick}
       /* v1.2: トップの「ぼーっとしてみる」とスタイル統一（ヒデさん指示 2026-08-21）。
-         白2px枠 → 白40%・1pxの内側リング。地 white/10・blur65 は共通 */
-      className="flex w-[220px] cursor-pointer items-center justify-center rounded-full bg-white/10 px-11 py-4 text-body-16 font-medium leading-[1.2] text-white ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-transform hover:scale-105"
+         白2px枠 → 白40%・1pxの内側リング。地 white/10・blur65 は共通。
+         【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】→ 塗り・線・ブラーは CSS 変数（expGlass.ts・既定は今までと同じ） */
+      className="flex w-[220px] cursor-pointer items-center justify-center rounded-full px-11 py-4 text-body-16 font-medium leading-[1.2] text-white transition-transform hover:scale-105"
+      style={expGlassStyle("pc")}
     >
       {children}
     </button>

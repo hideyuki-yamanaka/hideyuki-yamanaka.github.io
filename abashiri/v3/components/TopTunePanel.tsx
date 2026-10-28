@@ -44,7 +44,7 @@ import {
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
 import { SOUND_DLG_DEFAULT, SOUND_DLG_PREVIEW_EVENT, SOUND_DLG_SHOWN_EVENT, SOUND_DLG_VARIANTS } from "./soundDialogConfig";
-import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
+import { TOP_TUNE_KEY, TOP_TUNE_VERSION, TUNE_RESYNC_EVENT } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
 import { PHOTO_SET_DEFAULT } from "./PhotoSetSwitch";
 import { RETOUCH_ALL_DEFAULT, RETOUCH_ITEMS, RETOUCH_TARGETS, type RetouchAll, type RetouchKey } from "./PhotoRetouch";
@@ -255,6 +255,10 @@ type Params = {
     light: number;
   };
   expIntro: IntroPace;
+  /** ぼーっと体験ページのガラスのボタン（次へ進む・この場所にする）：塗りの不透明度%・線の太さpx・線の不透明度%・背景のブラーpx（2026-10-28） */
+  expBtn: { fill: number; lineW: number; lineA: number; blur: number };
+  /** ぼーっと体験ページの導入：段落のギャップ・見出しと本文のギャップ・本文とボタンのギャップ（px・2026-10-28） */
+  expGap: { para: number; head: number; btn: number };
   expPick: { pattern: number };
   loop: { cycle: number; show: number; swayFirst: boolean };
   scrollSpd: { kvToMsg: number };
@@ -353,6 +357,10 @@ export default function TopTunePanel({
         light: 0,
       },
       expIntro: { ...DEFAULT_INTRO_PACE },
+      /* ガラスのボタン（expGlass.ts）。既定は今までの見た目（PC：白10%・線1px 白40%・ブラー65px／スマホは spDefault：線 白45%・ブラー16px） */
+      expBtn: { fill: 10, lineW: 1, lineA: 40, blur: 65 },
+      /* 導入の間（PC）。スマホは spDefault（段落 16・見出し 32・ボタン 32）。2026-10-28 詰めた🟡 */
+      expGap: { para: 24, head: 56, btn: 64 },
       expPick: { pattern: 3 }, /* 2026-10-21 案3 で固めた（調整パネルから外した） */
       scrollSpd: { kvToMsg: 100 },
       nav: { inMs: 420, outMs: 620 },
@@ -397,6 +405,32 @@ export default function TopTunePanel({
       root.style.setProperty("--sec-head", `${params.secHead}px`);
       /* 最初の確認の窓の案（0＝現行・1〜3）。SoundUi の useSoundDlg が読む（2026-10-28） */
       root.style.setProperty("--sound-dlg", String(params.sound.dialog ?? SOUND_DLG_DEFAULT));
+      /* ぼーっと体験ページのガラスのボタン（expGlass.ts）。PC とスマホは別の変数（-pc／-sp）。
+         スマホの端末（600px 以下）では部品がスマホの値を params に流し込んでいるので、そのまま -sp へ。
+         PC の画面では、スマホの値を保存値（スマホの上書き）→ 既定（spDefault）の順に読む（SpotDetailPage の readSp と同じ考え方） */
+      {
+        const phone = window.matchMedia("(max-width: 600px)").matches;
+        const SP = { fill: 10, lineW: 1, lineA: 45, blur: 16 };
+        let mb: Record<string, unknown> = {};
+        try { mb = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}:mb`) || "{}"); } catch {}
+        /* 導入の間（同じ考え方で -pc／-sp） */
+        const SPG = { para: 16, head: 32, btn: 32 };
+        for (const k of ["para", "head", "btn"] as const) {
+          const pc = params.expGap?.[k];
+          const v = mb[`expGap.${k}`];
+          const sp = phone ? pc : typeof v === "number" ? v : SPG[k];
+          if (!phone && typeof pc === "number") root.style.setProperty(`--exp-intro-${k}-pc`, String(pc));
+          if (typeof sp === "number") root.style.setProperty(`--exp-intro-${k}-sp`, String(sp));
+        }
+        for (const k of ["fill", "lineW", "lineA", "blur"] as const) {
+          const name = { fill: "fill", lineW: "line-w", lineA: "line-a", blur: "blur" }[k];
+          const pc = params.expBtn?.[k];
+          const v = mb[`expBtn.${k}`];
+          const sp = phone ? pc : typeof v === "number" ? v : SP[k];
+          if (!phone && typeof pc === "number") root.style.setProperty(`--exp-btn-${name}-pc`, String(pc));
+          if (typeof sp === "number") root.style.setProperty(`--exp-btn-${name}-sp`, String(sp));
+        }
+      }
       root.style.setProperty("--sound-msg-gap", `${params.sound.dlgGap ?? 0}px`);
       root.style.setProperty("--sound-dlg-blur", `${params.sound.dlgBlur ?? 40}px`);
       /* 写真の組（PhotoSetSwitch が <html data-photo-set> を見張って差し替える） */
@@ -1287,6 +1321,22 @@ export default function TopTunePanel({
           {
             cat: "ぼーっと体験ページ",
             items: [
+              /* 【2026-10-28 ヒデさん「このボタン（次へ進む）のスタイリングを細かく変えられるような調整パネルを。線の太さ、背景ブラー、塗りの透過率など」】
+                 → ガラスのボタン（次へ進む・この場所にする）の塗り・線・ブラー。見た目なのでエフェクト＆テクスチャ（6-13・6-18）。
+                   PC とスマホは別の値（スマホの既定は今までの 線 白45%・ブラー16px） */
+              { sub: "ガラスのボタン（次へ進む・この場所にする）", grp: "fxtex" },
+              { slider: "塗りの不透明度", path: "expBtn.fill", min: 0, max: 60, step: 1, unit: "%", clamp: true, spDefault: 10, immediate: true, hint: "ボタンの白い塗りの濃さ。0 で塗りなし（縁とぼかしだけ）。" },
+              { slider: "線の太さ", path: "expBtn.lineW", min: 0, max: 4, step: 0.5, unit: "px", spDefault: 1, immediate: true, hint: "ボタンの内側の白い縁の太さ。" },
+              { slider: "線の不透明度", path: "expBtn.lineA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 45, immediate: true, hint: "白い縁の濃さ。" },
+              { slider: "背景のブラー", path: "expBtn.blur", min: 0, max: 80, step: 1, unit: "px", spDefault: 16, immediate: true, hint: "ボタンの後ろの景色のぼかし。" },
+              /* 【2026-10-28 ヒデさん「ぼーっと体験ページの冒頭の『網走は何もないけど、それがたまらない。』を削除。その代わり（本文の）フォントサイズをアップ。上下のギャップも少し詰める。それらが調整できるようにパネルにも入れておいて」】
+                 → 間は基本（ギャップのスライダー）、本文の文字はフォント（文字の行）。見出しは「導入メッセージ（1画面目）」でそろえる（6-13・6-17・6-18） */
+              { sub: "導入メッセージ（1画面目）", grp: "basic" },
+              { slider: "見出しと本文のギャップ", path: "expGap.head", min: 0, max: 120, step: 1, unit: "px", spDefault: 32, immediate: true, hint: "「ぼーっと体験」の見出しと本文の間。スマホは上書きが無い間 32px。" },
+              { slider: "段落のギャップ", path: "expGap.para", min: 0, max: 64, step: 1, unit: "px", spDefault: 16, immediate: true, hint: "本文の段落と段落の間。スマホは上書きが無い間 16px。" },
+              { slider: "本文とボタンのギャップ", path: "expGap.btn", min: 0, max: 160, step: 1, unit: "px", spDefault: 32, immediate: true, hint: "本文と「次へ進む」の間。スマホは上書きが無い間 32px。" },
+              { sub: "導入メッセージ（1画面目）", grp: "font" },
+              { font: "忙しなく過ごす、…（本文）", sel: "[data-exp-intro]", id: "expIntroBody" },
               { sub: "導入メッセージ（1画面目）", grp: "anim" },
               {
                 note: "見出しとボタンは最初から出ていて、本文の段落4つが順にブラーで出てきます。値を変えると、その場で最初から再生し直します。",
@@ -1597,6 +1647,7 @@ export default function TopTunePanel({
       attachPhoneMode(panel as unknown as Parameters<typeof attachPhoneMode>[0]);
       /* 最初の確認の窓は出るたびに作り直されるので、出た時に文字の行を当て直す（2026-10-28） */
       window.addEventListener(SOUND_DLG_SHOWN_EVENT, resyncFonts);
+      window.addEventListener(TUNE_RESYNC_EVENT, resyncFonts);
       /* 調整パネルから外して固めた値（2026-10-21）：ブラウザに残った古い保存値で変わらないよう、焼き込み（DEFAULTS）の値に戻す */
       params.msg = structuredClone(DEFAULTS.msg);
       params.scrollSpd = structuredClone(DEFAULTS.scrollSpd);
@@ -1654,6 +1705,7 @@ export default function TopTunePanel({
 
     return () => {
       window.removeEventListener(SOUND_DLG_SHOWN_EVENT, resyncFonts);
+      window.removeEventListener(TUNE_RESYNC_EVENT, resyncFonts);
       panel?.destroy();
       madeRef.current = false;
     };
