@@ -52,7 +52,10 @@
     "patchRed": false
   },
   "sound": {
-    "volume": 66
+    "volume": 66,
+    "dialog": 2,
+    "dlgGap": 0,
+    "dlgBlur": 40
   },
   "photos": {
     "set": 1

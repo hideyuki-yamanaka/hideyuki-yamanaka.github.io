@@ -22,6 +22,7 @@ import {
 } from "./bgmConfig";
 import { bgmGainAt } from "./bgmGain";
 import { BgmWaveIcon } from "./BgmIcons";
+import { SOUND_DLG_DEFAULT, SOUND_DLG_PREVIEW_EVENT, SOUND_DLG_SHOWN_EVENT, SOUND_DLG_VARIANTS } from "./soundDialogConfig";
 
 /** 白モック内のボタン置き場（TopPage / ExperienceFlow が用意する） */
 const SLOT_ID = "abashiri-sound-slot";
@@ -65,6 +66,148 @@ function SpeakerIcon({ on }: { on: boolean }) {
   );
 }
 
+/* 最初の確認の窓の案（soundDialogConfig.ts）。調整パネルが書く CSS 変数 --sound-dlg を読む */
+function useSoundDlg() {
+  const [v, setV] = useState(SOUND_DLG_DEFAULT);
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => {
+      const n = parseInt(getComputedStyle(root).getPropertyValue("--sound-dlg"), 10);
+      setV(SOUND_DLG_VARIANTS[n] ? n : SOUND_DLG_DEFAULT);
+    };
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(root, { attributes: true, attributeFilter: ["style"] });
+    return () => mo.disconnect();
+  }, []);
+  return v;
+}
+
+/* 最初の「再生しますか？」の窓。文言は全部の案で同じ（足さない）
+   【2026-10-28 ヒデさん】「抜け感があり、上品でゆったりした印象。キービジュアルの世界観に合わせて。3案ほど」
+   → 案1〜3 はキービジュアルの「ぼーっとしてみる」（白10%のすりガラス・白40%の細い縁・blur65・白い文字）が土台。
+   🟡仮置き：幕の濃さ・カードの濃さ・文字の太さ（細字 300／案2 は 200）・字間（スマホは1行目が折り返さないよう 0.02em）・カードの左右 24px・ボタンの高さ 48px・間 12px／16px */
+function ConsentDialog({ kind, onAnswer }: { kind: number; onAnswer: (on: boolean) => void }) {
+  const msg = (
+    <>
+      網走の環境音を楽しむことができます。
+      <br />
+      再生しますか？
+    </>
+  );
+  if (kind === 1) {
+    /* 案1 ガラスのカード：カードごとすりガラス・白い細字。ON は少し明るいガラス、OFF は文字だけ */
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-shadow/20 px-4 backdrop-blur-22">
+        <div className="flex w-[400px] max-w-full flex-col items-center gap-8 rounded-28 bg-white/10 px-6 py-10 text-center text-white ring-1 ring-inset ring-white/40 backdrop-blur-65">
+          <p className="text-body-16 font-light leading-[1.9] tracking-[0.02em] tab:tracking-[0.04em]">{msg}</p>
+          <div className="flex w-full items-center gap-3">
+            <button
+              onClick={() => onAnswer(true)}
+              className="h-12 flex-1 cursor-pointer rounded-full bg-white/20 text-body-16 font-medium leading-none ring-1 ring-inset ring-white/50 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/30"
+            >
+              ON
+            </button>
+            <button
+              onClick={() => onAnswer(false)}
+              className="h-12 flex-1 cursor-pointer rounded-full text-body-16 font-medium leading-none text-white/70 transition-colors duration-300 ease-standard hover:text-white"
+            >
+              OFF
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (kind === 2) {
+    /* 案2 言葉だけ：カードなし。ぼかした景色の上に、大きめの言葉とガラスのピル2つ（音の波のアイコン付き）
+       【2026-10-28 ヒデさん「案2の言葉だけでいきましょう。ただ、文字がちょっと弱々しく見にくいので、フォントウェイトやラインハイト、1行目、2行目のギャップなどを変えられる調整パネルを。背景のブラーの具合も変えられるように。もうちょっときつくして」】
+       → 文字の太さ 200→400・背景のブラー 22→40px に（🟡）。1行目と2行目は別の行にして、間を「1行目と2行目のギャップ」（--sound-msg-gap）で空ける。
+         調整パネル › サイト共通：基本 › 最初の確認の窓 › 1行目と2行目のギャップ／フォント › 最初の確認の窓 › 文字の行（大きさ・太さ・行間・字間・data-sound-msg）／
+         エフェクト＆テクスチャ › 最初の確認の窓 › 背景のブラー（--sound-dlg-blur） */
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-shadow/10 px-6"
+        style={{ backdropFilter: "blur(var(--sound-dlg-blur, 40px))", WebkitBackdropFilter: "blur(var(--sound-dlg-blur, 40px))" }}
+      >
+        <div className="flex flex-col items-center gap-10 text-center text-white">
+          <p
+            data-sound-msg=""
+            className="flex flex-col text-body-16 font-normal leading-[2] tracking-[0.08em] tab:text-body-20"
+            style={{ gap: "var(--sound-msg-gap, 0px)" }}
+          >
+            <span>網走の環境音を楽しむことができます。</span>
+            <span>再生しますか？</span>
+          </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => onAnswer(true)}
+              className="flex h-12 w-[136px] cursor-pointer items-center justify-center gap-2 rounded-full bg-white/10 text-body-16 font-medium leading-none ring-1 ring-inset ring-white/40 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/25"
+            >
+              <BgmWaveIcon kind="on" />
+              ON
+            </button>
+            <button
+              onClick={() => onAnswer(false)}
+              className="flex h-12 w-[136px] cursor-pointer items-center justify-center gap-2 rounded-full text-body-16 font-medium leading-none text-white/70 ring-1 ring-inset ring-white/25 transition-colors duration-300 ease-standard hover:text-white hover:ring-white/40"
+            >
+              <BgmWaveIcon kind="off" />
+              OFF
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (kind === 3) {
+    /* 案3 白い霞のカード：白70%のすりガラス・濃い灰色の細字。ON は送りボタンと同じ青いふちのガラス、OFF は文字だけ */
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/10 px-4 backdrop-blur-22">
+        <div className="flex w-[400px] max-w-full flex-col items-center gap-8 rounded-28 bg-white/70 px-6 py-10 text-center shadow-modal ring-1 ring-inset ring-white/80 backdrop-blur-65">
+          <p className="text-body-16 font-light leading-[1.9] tracking-[0.02em] text-ink/80 tab:tracking-[0.04em]">{msg}</p>
+          <div className="flex w-full items-center gap-3">
+            <button
+              onClick={() => onAnswer(true)}
+              className="h-12 flex-1 cursor-pointer rounded-full bg-white/30 text-body-16 font-medium leading-none text-brand ring-1 ring-inset ring-brand/25 backdrop-blur-65 transition-colors duration-300 ease-standard hover:bg-white/60"
+            >
+              ON
+            </button>
+            <button
+              onClick={() => onAnswer(false)}
+              className="h-12 flex-1 cursor-pointer rounded-full text-body-16 font-medium leading-none text-ink/50 transition-colors duration-300 ease-standard hover:text-ink/80"
+            >
+              OFF
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  /* 現行（白いカード）。一度「文言なし・白40%」へ変えたが、元のこの形に戻した（2026-08-22 ヒデさん指示） */
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-shadow/30 backdrop-blur-22">
+      <div className="mx-4 flex w-[400px] max-w-full flex-col items-center rounded-28 bg-white/90 p-8 text-center shadow-modal">
+        <p className="mb-6 text-body-16 font-bold leading-[1.6] text-ink">{msg}</p>
+        <div className="flex w-full items-center gap-3">
+          <button
+            onClick={() => onAnswer(true)}
+            className="flex-1 cursor-pointer rounded-full bg-brand py-3 text-body-16 font-black text-white transition-transform hover:scale-105"
+          >
+            ON
+          </button>
+          {/* OFF は塗りなし（ヒデさん指示 2026-08-21。白ベタをやめて文字だけ） */}
+          <button
+            onClick={() => onAnswer(false)}
+            className="flex-1 cursor-pointer rounded-full py-3 text-body-16 font-black text-ink transition-transform hover:scale-105"
+          >
+            OFF
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SoundUi({
   askConsent = false,
   alwaysAsk = false,
@@ -93,6 +236,19 @@ export default function SoundUi({
      「立ち上げ直後にグラデの画面だけが見える」（2026-08-21 ヒデさん指摘）の対策。
      同じタブで2回目以降（記憶あり）の時は、下の初期化ですぐ閉じる */
   const [showDialog, setShowDialog] = useState(askConsent);
+  /* 確認の窓の案（調整パネル › サイト共通 › 環境音（BGM）› 最初の確認の窓）。案を押すと窓を出し直す（2026-10-28） */
+  const dlgKind = useSoundDlg();
+  /* 窓が出たら調整パネルに知らせて、文字の行（太さ・行間など）を当て直してもらう */
+  useEffect(() => {
+    if (!showDialog) return;
+    const id = requestAnimationFrame(() => window.dispatchEvent(new CustomEvent(SOUND_DLG_SHOWN_EVENT)));
+    return () => cancelAnimationFrame(id);
+  }, [showDialog, dlgKind]);
+  useEffect(() => {
+    const again = () => setShowDialog(true);
+    window.addEventListener(SOUND_DLG_PREVIEW_EVENT, again);
+    return () => window.removeEventListener(SOUND_DLG_PREVIEW_EVENT, again);
+  }, []);
 
   /* ボタンの見た目（白の濃さ・背景ブラー）。調整パネルからライブで変えられる */
   const [btnTune, setBtnTune] = useState<SoundBtnTune>(DEFAULT_SOUND_BTN);
@@ -268,34 +424,8 @@ export default function SoundUi({
     <>
       <audio ref={audioRef} src="/audio/cape-sound.mp4" loop preload="auto" />
 
-      {/* 初回のON/OFF確認（白カードのモーダル）。
-          一度「文言なし・白40%」へ変えたが、元のこの形に戻した（2026-08-22 ヒデさん指示） */}
-      {showDialog && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-shadow/30 backdrop-blur-22">
-          <div className="mx-4 flex w-[400px] max-w-full flex-col items-center rounded-28 bg-white/90 p-8 text-center shadow-modal">
-            <p className="mb-6 text-body-16 font-bold leading-[1.6] text-ink">
-              網走の環境音を楽しむことができます。
-              <br />
-              再生しますか？
-            </p>
-            <div className="flex w-full items-center gap-3">
-              <button
-                onClick={() => answer(true)}
-                className="flex-1 cursor-pointer rounded-full bg-brand py-3 text-body-16 font-black text-white transition-transform hover:scale-105"
-              >
-                ON
-              </button>
-              {/* OFF は塗りなし（ヒデさん指示 2026-08-21。白ベタをやめて文字だけ） */}
-              <button
-                onClick={() => answer(false)}
-                className="flex-1 cursor-pointer rounded-full py-3 text-body-16 font-black text-ink transition-transform hover:scale-105"
-              >
-                OFF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 初回のON/OFF確認。見せ方は ConsentDialog（現行＋3案・2026-10-28） */}
+      {showDialog && <ConsentDialog kind={dlgKind} onAnswer={answer} />}
 
       {/* 常設のBGMスイッチ（カンプ 15492:21886・2026-08-22 ブラッシュアップ版）
           ピル型・ON/OFF表記・SF Pro（font-num）。今の状態の側が青いピルになる。

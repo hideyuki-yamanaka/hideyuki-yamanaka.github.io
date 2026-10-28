@@ -43,6 +43,7 @@ import {
   PT_DEFAULT,
 } from "./PageTransition";
 import { EV_FLOWS } from "./eventParts";
+import { SOUND_DLG_DEFAULT, SOUND_DLG_PREVIEW_EVENT, SOUND_DLG_SHOWN_EVENT, SOUND_DLG_VARIANTS } from "./soundDialogConfig";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
 import { PHOTO_SET_DEFAULT } from "./PhotoSetSwitch";
@@ -199,7 +200,7 @@ type Params = {
   anim: { boPattern: number; illustEnter: number; tamaranee: number; bouncePattern: number; bounceStrength: number; illustDelay: number };
   intro: { delay: number; hold: number };
   preview: { faceOn: boolean; patchRed: boolean };
-  sound: { volume: number };
+  sound: { volume: number; dialog: number; dlgGap: number; dlgBlur: number };
   /** 写真の組 1＝新しい（調整済み・既定）／0＝前の写真（PhotoSetSwitch・2026-10-20） */
   photos: { set: number };
   /** 写真のレタッチ（PhotoRetouch・2026-10-21）。写真ごとに10項目（露光量は EV、ほかは −100〜+100・0＝そのまま） */
@@ -297,7 +298,7 @@ export default function TopTunePanel({
       intro: { delay: 350, hold: 3000 },
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
-      sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100) },
+      sound: { volume: Math.round(DEFAULT_BGM_VOLUME * 100), dialog: SOUND_DLG_DEFAULT /* 2026-10-28 最初の確認の窓の案（soundDialogConfig.ts）。同日「案2 言葉だけでいきましょう」で既定は案2 */, dlgGap: 0, dlgBlur: 40 /* 案2 の1行目と2行目のギャップ(px)・背景のブラー(px)。同日「ブラーをもうちょっときつく」で 22→40🟡 */ },
       photos: { set: PHOTO_SET_DEFAULT },
       retouch: structuredClone(RETOUCH_ALL_DEFAULT),
       retouchPick: "notoro",
@@ -394,6 +395,10 @@ export default function TopTunePanel({
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
       root.style.setProperty("--sec-head", `${params.secHead}px`);
+      /* 最初の確認の窓の案（0＝現行・1〜3）。SoundUi の useSoundDlg が読む（2026-10-28） */
+      root.style.setProperty("--sound-dlg", String(params.sound.dialog ?? SOUND_DLG_DEFAULT));
+      root.style.setProperty("--sound-msg-gap", `${params.sound.dlgGap ?? 0}px`);
+      root.style.setProperty("--sound-dlg-blur", `${params.sound.dlgBlur ?? 40}px`);
       /* 写真の組（PhotoSetSwitch が <html data-photo-set> を見張って差し替える） */
       root.dataset.photoSet = (params.photos?.set ?? PHOTO_SET_DEFAULT) === 0 ? "prev" : "new";
       /* 写真のレタッチ（PhotoRetouch が <html data-retouch> を見張って写真を作り直す） */
@@ -435,6 +440,7 @@ export default function TopTunePanel({
       });
 
     let panel: { destroy: () => void; sync?: () => void } | null = null;
+    const resyncFonts = () => panel?.sync?.();
 
     /* 保存値を初期値の形に合わせて重ねる（知らないキー・型違いは捨てる） */
     const shapeMerge = (def: unknown, saved: unknown): unknown => {
@@ -578,6 +584,51 @@ export default function TopTunePanel({
               /* 【2026-09-26】ハンバーガーメニューの3案は「案1 空に浮かぶ作字」に確定したので、
                  ここにあった切り替えは外した（MobileHeader.tsx に固定） */
               /* 左上の音のスイッチのアイコンは 2026-10-20 に「音の波」に決定（5案の切り替えは外した・BgmIcons.tsx） */
+              /* 【2026-10-28 ヒデさん】「一番最初のサウンドのオンオフのUIをブラッシュアップ。3案ほど。抜け感があり、上品でゆったり。キービジュアルの世界観に」
+                 → 最初の確認の窓の見せ方を 現行＋3案 から選ぶ（soundDialogConfig.ts・SoundUi.tsx）。案の見比べなのでバリエーション（6-13・6-18） */
+              { sub: "環境音（BGM）", grp: "variation" },
+              {
+                pills: "最初の確認の窓",
+                path: "sound.dialog",
+                immediate: true,
+                values: false, /* 案ごとの値は持たない（下の案2 のつまみは案2 の時だけ出す） */
+                autoNum: "案",
+                hint: "ページを開いた時に出る「網走の環境音を楽しむことができます。再生しますか？」の窓の見せ方。案を押すと、その場で窓を出し直します（ON／OFF を押すと閉じます）。",
+                options: Object.entries(SOUND_DLG_VARIANTS).map(([v, d]) => ({
+                  name: d.name,
+                  value: Number(v),
+                  desc: d.note,
+                  ...(d.fixed ? { fixed: true } : {}),
+                })),
+              },
+              /* 【2026-10-28 ヒデさん「案2の言葉だけでいきましょう。ただ、文字がちょっと弱々しく見にくいので、フォントウェイトやラインハイト、1行目、2行目のギャップなどを変えられる調整パネルを。背景のブラーの具合も変えられるように。もうちょっときつくして」】
+                 → 案2 の時だけ出す（6-14）。余白は基本・ギャップ／文字はフォント・文字の行／ぼかしはエフェクト＆テクスチャ・ブラー（6-13・6-17・6-18） */
+              { sub: "最初の確認の窓", grp: "basic", when: (p: Params) => p.sound.dialog === 2 },
+              {
+                slider: "1行目と2行目のギャップ",
+                path: "sound.dlgGap",
+                min: 0,
+                max: 32,
+                step: 1,
+                unit: "px",
+                immediate: true,
+                when: (p: Params) => p.sound.dialog === 2,
+                hint: "「網走の環境音を楽しむことができます。」と「再生しますか？」の間。0 で行間だけ。",
+              },
+              { sub: "最初の確認の窓", grp: "font", when: (p: Params) => p.sound.dialog === 2 },
+              { font: "網走の環境音を…（案内の文）", sel: "[data-sound-msg]", id: "soundMsg", when: (p: Params) => p.sound.dialog === 2 },
+              { sub: "最初の確認の窓", grp: "fxtex", when: (p: Params) => p.sound.dialog === 2 },
+              {
+                slider: "背景のブラー",
+                path: "sound.dlgBlur",
+                min: 0,
+                max: 80,
+                step: 1,
+                unit: "px",
+                immediate: true,
+                when: (p: Params) => p.sound.dialog === 2,
+                hint: "窓の後ろの景色のぼかし。大きいほど強くぼける。",
+              },
               { sub: "環境音（BGM）", grp: "other" },
               {
                 slider: "音量",
@@ -1474,6 +1525,10 @@ export default function TopTunePanel({
           applyVars();
           applyVolume();
           /* イベントセクションのホバー案はイベントで直接届ける（ページ再構築なしで即反映） */
+          /* 最初の確認の窓の案を押したら、その場で窓を出し直して見比べられるように（2026-10-28） */
+          if (info?.path === "sound.dialog") {
+            window.dispatchEvent(new CustomEvent(SOUND_DLG_PREVIEW_EVENT));
+          }
           if (info?.path === "events.pattern") {
             window.dispatchEvent(
               new CustomEvent(EVENT_LAYOUT_EVENT, { detail: { v: params.events.pattern } })
@@ -1540,6 +1595,8 @@ export default function TopTunePanel({
       });
       /* スマホモードの QR・実機への反映（共通の phone-mode・開発中だけ） */
       attachPhoneMode(panel as unknown as Parameters<typeof attachPhoneMode>[0]);
+      /* 最初の確認の窓は出るたびに作り直されるので、出た時に文字の行を当て直す（2026-10-28） */
+      window.addEventListener(SOUND_DLG_SHOWN_EVENT, resyncFonts);
       /* 調整パネルから外して固めた値（2026-10-21）：ブラウザに残った古い保存値で変わらないよう、焼き込み（DEFAULTS）の値に戻す */
       params.msg = structuredClone(DEFAULTS.msg);
       params.scrollSpd = structuredClone(DEFAULTS.scrollSpd);
@@ -1596,6 +1653,7 @@ export default function TopTunePanel({
     }
 
     return () => {
+      window.removeEventListener(SOUND_DLG_SHOWN_EVENT, resyncFonts);
       panel?.destroy();
       madeRef.current = false;
     };
