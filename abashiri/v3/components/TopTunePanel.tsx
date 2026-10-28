@@ -536,6 +536,12 @@ export default function TopTunePanel({
         if (res.ok) {
           const baked = await res.json();
           const merged = shapeMerge(DEFAULTS, baked) as Params;
+          /* 文字の行の値（__font・共通の部品が持つ置き場）は DEFAULTS に元の形が無いので、shapeMerge では捨てられてしまう。
+             そのまま引き継ぐ（2026-10-28：最初の窓の文字の焼き込み 太さ300・字間4% が、初めて来た人に届いていなかった） */
+          const bakedFont = (baked as { __font?: unknown }).__font;
+          if (bakedFont && typeof bakedFont === "object" && !Array.isArray(bakedFont)) {
+            (merged as unknown as Record<string, unknown>).__font = bakedFont;
+          }
           Object.assign(DEFAULTS, merged);
           Object.assign(params, structuredClone(merged));
         }

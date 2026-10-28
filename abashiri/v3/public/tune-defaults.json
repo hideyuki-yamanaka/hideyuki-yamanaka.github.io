@@ -236,6 +236,17 @@
     "duration": 1.15,
     "blur": 18
   },
+  "expBtn": {
+    "fill": 20,
+    "lineW": 1,
+    "lineA": 20,
+    "blur": 198
+  },
+  "expGap": {
+    "para": 24,
+    "head": 56,
+    "btn": 64
+  },
   "expPick": {
     "pattern": 3
   },
@@ -269,16 +280,10 @@
     "show": 2.6,
     "swayFirst": true
   },
-  "__font": {},
-  "expBtn": {
-    "fill": 20,
-    "lineW": 1,
-    "lineA": 20,
-    "blur": 198
-  },
-  "expGap": {
-    "para": 24,
-    "head": 56,
-    "btn": 64
+  "__font": {
+    "soundMsg": {
+      "fw": 300,
+      "ls": 4
+    }
   }
 }
