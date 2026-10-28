@@ -133,7 +133,7 @@ function ConsentDialog({ kind, onAnswer }: { kind: number; onAnswer: (on: boolea
         <div className="flex flex-col items-center gap-10 text-center text-white">
           <p
             data-sound-msg=""
-            className="flex flex-col text-body-16 font-normal leading-[2] tracking-[0.08em] tab:text-body-20"
+            className="flex flex-col text-body-16 font-normal leading-[1.6] tracking-[0.08em] tab:text-body-20" /* 行間 1.6（2026-10-28 ヒデさん「line-height 1.6にしましょう」・前は 2.0） */
             style={{ gap: "var(--sound-msg-gap, 0px)" }}
           >
             <span>網走の環境音を楽しむことができます。</span>
