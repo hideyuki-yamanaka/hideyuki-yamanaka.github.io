@@ -165,8 +165,13 @@
      2026-10-29 ヒデさん「フッターを全体に上げられる調整パネルを。コンテンツの終わりからフッターまでの距離を、幅を持って調整したい」
      → 調整パネルの「位置 Y」（--ft-lift・マイナスで上へ）の分だけ深く／浅く重ねる。下の --ft-overlap-wide（詳しいページ・トップのスマホ）も同じ */
   --ft-overlap-base: 872px;
-  --ft-lift-pc: -180px; /* フッターの位置 Y（PC・フッターが横並びの幅）。調整パネル › サイト共通 › 基本 › フッター（全ページ共通）。2026-10-29 ヒデさん「PC版のフッターの位置は（パネルの）-340px の形に」→ 同日「指定の数字へ」で -180px */
+  --ft-lift-pc: -140px; /* フッターの位置 Y（PC・フッターが横並びの幅）。調整パネル › サイト共通 › 基本 › フッター（全ページ共通）。2026-10-29 ヒデさん「PC版のフッターの位置は（パネルの）-340px の形に」→ 同日「指定の数字へ」で -180px → 2026-10-30 ヒデさんがパネルで -140px にして焼き込み */
   --ft-lift-sp: 0px; /* 同 スマホ・タブレット（フッターが縦積みの幅） */
+  /* フッターの中身（ロゴと文字のリンク）だけの位置 Y。調整パネル › サイト共通 › 基本 › フッター（全ページ共通）› ロゴとリンクの位置 Y。
+     2026-10-29 ヒデさん「フッターのロゴとテキストリンクのコンテンツを10ピクセルぐらい上げたい」→ PC -10px🟡・スマホ 0 */
+  --ft-body-y-pc: 0px; /* 2026-10-29 -10 → 同日ヒデさんがパネルで -30px → 2026-10-30 ヒデさんがパネルで 0px にして焼き込み（tune-defaults.json と同じ値） */
+  --ft-body-y-sp: 0px;
+  --ft-body-y: var(--ft-body-y-sp);
   --ft-lift: var(--ft-lift-sp);
   --ft-overlap: calc(var(--ft-overlap-base) - var(--ft-lift));
   --ft-z: 0;              /* 同 フッターを上のセクションの後ろへ回す（体験のカードとボタンが手前） */
@@ -177,7 +182,7 @@
   /* 詳しいページ・トップのスマホ（overlap="wide"）のフッターの白いグラデのうち、真っ白のまま続く長さ（グラデの長さの%）。
      2026-10-29 ヒデさん「フッター直前のセクションのグラデーションの白をもう少しだけ長く。マップのカードUIが終わるぐらいまで。調整パネルで」🟡
      調整パネル › サイト共通 › エフェクト＆テクスチャ › フッター（全ページ共通）› 白のまま続く長さ。PC（1200px 以上）とスマホは別の値 */
-  --ft-solid-wide-pc: 40; /* 地図のカードの下で白 0.99 */
+  --ft-solid-wide-pc: 10; /* 2026-10-29 は 40（地図のカードの下で白 0.99）→ 同日 トップの PC にも効くようにした後、ヒデさんがパネルで 10 にして保存（全ページ） */
   --ft-solid-wide-sp: 30; /* 同 0.98 */
   --ft-solid-wide: var(--ft-solid-wide-sp);
   --ft-fade-h-narrow: 85; /* 詳しいページのスマホ・タブレットの、白→写真のグラデの長さ（画面の%）。2026-10-28「もうちょっと詰めてOK」で 100→85🟡 */
@@ -208,7 +213,19 @@
   --sound-dlg-blur: 40px; /* 同 案2 の背景のブラー。「もうちょっときつく」で 22→40px🟡（調整パネル） */
   --ev-shuf-pow: 3; /* 同 メリハリ（動き出し・止まり際のゆっくり具合）。🟡仮置き */
   --ev-mq-size: 80px; /* 同 後ろを流れる文字の大きさ（カンプ値）。調整パネル「流れる文字の大きさ」 */
-  --ev-shuf-card: 1; /* 同 カードの大きさ（倍率。パネルは%で持つ） */
+  /* 体験セクションの上のマージン（グルメとのあいだに足す余白）。調整パネル › トップページ › 基本 › 体験セクション（グルメの下）› 上のマージン。
+     2026-10-29 ヒデさん「グルメセクションと体験セクションの上下のギャップをもう少し上げたい」→ PC +64px🟡・スマホ 0 */
+  --ev-gap-top-pc: 80px; /* 2026-10-29 64px → 同日ヒデさんがパネルで 80px にして保存 */
+  --ev-gap-top-sp: 0px;
+  /* 体験セクション 案2 の登場（PC・2026-10-29 ヒデさん「白い画面で固定→文字→写真が1枚ずつ重なる」）。重なり方 1〜3・秒数🟡。調整パネル › アニメーション › 案2 カードを切る：登場 */
+  --ev-in-style: 1;
+  --ev-in-text: 0.4; /* 2026-10-30 0.8→0.4秒（ヒデさん「意外とおもろい網走の表示タイミングをもう少し早めて」）🟡 */
+  --ev-in-delay: 0.4; /* 2026-10-30 ヒデさん「もう少し遅く」「1.5秒ぐらいで」0.6→1.5 →「前に詰めましょう」1.1 →「0.4秒くらいにしましょう」0.4秒 */
+  --ev-in-gap: 0.4; /* 2026-10-30 0.45→0.8→0.6 → ヒデさん「出すタイミングがまばら。揃えて」で 写真のディレイと同じ 0.4秒おき🟡 */
+  --ev-in-dur: 0.8;
+  --ev-in-fade: 0.3; /* 2026-10-30 写真が透明から見えきるまで（ヒデさん「opacity 0→100% の時間をもう少し早めに」）🟡 */
+  --ev-stack-y: -32px; /* 同 束と送りボタンの上下の位置（PC・0＝カンプの位置）。2026-10-29 ヒデさん「束ごと上げる」で -32px🟡（調整パネル「位置 Y」） */
+  --ev-shuf-card: 1.15; /* 同 カードの大きさ（倍率。パネルは%で持つ）。2026-10-29 ヒデさん「115パーセントぐらいに」で 1→1.15（PC。スマホはパネルの spDefault 112%） */
   --ev-flow: 3; /* 2026-09-26 体験セクションの重ね写真の流れ方（物理の3案：1=床をすべる 2=惰性で長くすべる 3=角を押されて回る）。ヒデさん指示で既定=3 */
 
   /* スポット詳細ページの文字の大きさ（2026-09-16 ヒデさん「案11の本文が大きい」）。
@@ -555,6 +572,7 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
     /* トップ（872px）より浅く潜り込ませて、白が残る時間を長くする（2026-10-28 ヒデさん「もう少し白が続く時間を増やしたい」→ 872→600px🟡） */
     --ft-overlap-wide-base: 600px;
     --ft-lift: var(--ft-lift-pc);
+    --ft-body-y: var(--ft-body-y-pc);
     --ft-solid-wide: var(--ft-solid-wide-pc);
   }
 }
@@ -603,6 +621,37 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
     background-color: rgb(255 255 255 / calc((var(--glass-btn-fill) + 15) * 1%));
   }
 }
+/* ===== 体験セクション 案2 の送りボタン（CarouselArrow の onLight・EventNav.tsx） =====
+   【2026-10-30 ヒデさん「体験セクションの下のカルーセルのボタンが見にくいので、見やすくなるような5パターン。デザインの雰囲気やトンマナに気を使って」】
+   白〜うすい水色の地の上なので、今の白いガラス＋白い矢印だと見えにくい。サイトの決まりの色（Brand_Primary #0070c9・影は Shadow_Base の深い海の青）とガラスの質感だけで5案🟡。
+   どれにするかは html[data-ev-nav]（調整パネル › トップページ › バリエーション › 体験セクション › 案2 カードを切る：送りボタン）。
+   同日 ヒデさん「カルーセルの送りボタンは案1でいきましょう」→ 素の .ev-nav-btn（パネルが読み込まれる前・無し）を案1 にした。前の白いガラスは 0
+   ⚠️ @layer の外に置く（使う側の text-white などより勝たせるため） */
+/* 案1 青いふちのガラス＋浮き影（既定・2026-10-30 決定） */
+.ev-nav-btn {
+  color: var(--color-brand);
+  background-color: rgb(255 255 255 / 0.4);
+  box-shadow: inset 0 0 0 1px rgb(0 112 201 / 0.4), var(--shadow-floating);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition: background-color 0.3s, box-shadow 0.3s, color 0.3s;
+}
+.ev-nav-btn:hover { background-color: rgb(255 255 255 / 0.7); }
+/* 前の見た目（白いガラス・白い矢印＝キービジュアルの「ぼーっとしてみる」と同じ）。見比べ用 */
+html[data-ev-nav="0"] .ev-nav-btn { color: #fff; background-color: rgb(255 255 255 / calc(var(--glass-btn-fill) * 1%)); box-shadow: inset 0 0 0 calc(var(--glass-btn-line-w) * 1px) rgb(255 255 255 / calc(var(--glass-btn-line-a) * 1%)); -webkit-backdrop-filter: blur(calc(var(--glass-btn-blur) * 1px)); backdrop-filter: blur(calc(var(--glass-btn-blur) * 1px)); }
+html[data-ev-nav="0"] .ev-nav-btn:hover { background-color: rgb(255 255 255 / calc((var(--glass-btn-fill) + 15) * 1%)); }
+/* 案2 白い丸＋青い矢印（小石のように浮く） */
+html[data-ev-nav="2"] .ev-nav-btn { color: var(--color-brand); background-color: rgb(255 255 255 / 0.94); box-shadow: var(--shadow-floating); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-ev-nav="2"] .ev-nav-btn:hover { background-color: #fff; box-shadow: var(--shadow-modal); }
+/* 案3 ブランドの青の丸＋白い矢印 */
+html[data-ev-nav="3"] .ev-nav-btn { color: #fff; background-color: rgb(0 112 201 / 0.9); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35), var(--shadow-floating); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+html[data-ev-nav="3"] .ev-nav-btn:hover { background-color: rgb(0 112 201 / 1); }
+/* 案4 空色のすりガラス＋白い矢印 */
+html[data-ev-nav="4"] .ev-nav-btn { color: #fff; background-color: rgb(0 112 201 / 0.32); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.6), 0 6px 16px -6px rgb(0 95 179 / 0.35); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+html[data-ev-nav="4"] .ev-nav-btn:hover { background-color: rgb(0 112 201 / 0.45); }
+/* 案5 線だけの輪（地なし・青い細い輪） */
+html[data-ev-nav="5"] .ev-nav-btn { color: var(--color-brand); background-color: rgb(255 255 255 / 0); box-shadow: inset 0 0 0 1.5px var(--color-brand); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-ev-nav="5"] .ev-nav-btn:hover { background-color: rgb(0 112 201 / 0.08); }
 /* 詳細ページの段落の間は、スマホ（744px 未満）でスマホの値（行間を詰めた境目と同じ・2026-10-21） */
 @media (max-width: 743px) {
   :root {

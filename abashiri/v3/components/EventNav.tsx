@@ -36,8 +36,9 @@ export function EvNav({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <CarouselArrow dir="left" label="前の体験へ" tone="onLight" size={sp ? "nav-sm" : "nav"} onClick={() => onStep(-1)} />
-      <CarouselArrow dir="right" label="次の体験へ" tone="onLight" size={sp ? "nav-sm" : "nav"} onClick={() => onStep(1)} />
+      {/* 【2026-10-30 ヒデさん「カルーセルのボタンをもう少しサイズアップ。中のシェブロンも比率拡大」】PC は nav（56px・矢印 20px）→ md（68px・矢印 24px）。スマホは今のまま */}
+      <CarouselArrow dir="left" label="前の体験へ" tone="onLight" size={sp ? "nav-sm" : "md"} onClick={() => onStep(-1)} />
+      <CarouselArrow dir="right" label="次の体験へ" tone="onLight" size={sp ? "nav-sm" : "md"} onClick={() => onStep(1)} />
     </div>
   );
 }

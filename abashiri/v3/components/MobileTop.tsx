@@ -512,7 +512,11 @@ export default function MobileTop() {
               className="relative z-10 flex flex-col overflow-hidden px-6 py-16 tab:px-[80px] tab:py-[120px]"
               /* 白い地は下から --ft-overlap-wide の所まで。その下は透明にして、裏に潜り込ませたフッターのグラデを見せる
                  （2026-10-28 ヒデさん「いい感じ、これでいきましょう。他のページも同じようなものがあればそうしてください」→ 詳しいページと同じ作り） */
-              style={{ background: "linear-gradient(to bottom, #fff calc(100% - var(--ft-overlap-wide, 0px)), transparent calc(100% - var(--ft-overlap-wide, 0px)))" }}
+              style={{
+                background: "linear-gradient(to bottom, #fff calc(100% - var(--ft-overlap-wide, 0px)), transparent calc(100% - var(--ft-overlap-wide, 0px)))",
+                /* グルメとのあいだに足す余白（調整パネル「上のマージン」のスマホの値・2026-10-29。既定 0） */
+                marginTop: "var(--ev-gap-top-sp, 0px)",
+              }}
             >
               <MobileEvents active={active === FLOW_SCENE && eventsInView} gate={eventsGate} flow />
             </section>

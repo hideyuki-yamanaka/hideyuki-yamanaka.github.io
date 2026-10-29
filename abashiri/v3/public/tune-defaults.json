@@ -150,7 +150,7 @@
     "spotFrom": 260,
     "spotTo": 620,
     "spotBlur": 30,
-    "stepLen": 982,
+    "stepLen": 900,
     "hold": 500
   },
   "kvExit": {
@@ -170,12 +170,12 @@
   "msg": {
     "pattern": 1,
     "len": 2400,
-    "fadeIn": 60,
+    "fadeIn": 20,
     "minOpacity": 15,
     "soft": 1.3,
     "tail": 600,
     "titleOpacity": 80,
-    "titleDelay": 120,
+    "titleDelay": 60,
     "titleAppearSec": 1.4,
     "titleWeight": 100,
     "titleLeading": 1,
@@ -198,13 +198,26 @@
     "shufPow": 3,
     "mqSize": 80,
     "mqDur": 34,
-    "shufCard": 100
+    "shufCard": 115,
+    "inStyle": 1,
+    "inText": 0.4,
+    "inDelay": 0.4,
+    "inGap": 0.4,
+    "inDur": 0.8,
+    "inFade": 0.3,
+    "stackY": -32,
+    "navStyle": 1
   },
   "pageTrans": {
     "pattern": 7,
     "dur": 1040,
     "blur": 18,
     "peak": 100
+  },
+  "inertia": {
+    "on": 1,
+    "ease": 12,
+    "wheel": 100
   },
   "footer": {
     "padX": 60,
@@ -258,6 +271,15 @@
     "outMs": 620
   },
   "secHead": 36,
+  "ftSolid": 10,
+  "ftBodyY": 0,
+  "ftLift": -140,
+  "msgGap": 72,
+  "evGap": 80,
+  "msgFx": {
+    "titleA": 100,
+    "bodyA": 100
+  },
   "tips": {
     "delay": 5,
     "fade": 1.2,
@@ -286,28 +308,10 @@
       "ls": 4
     },
     "msgTitle": {
-      "fs": 88,
-      "fw": 100,
-      "lh": 1,
-      "ls": 0
+      "fw": 100
     },
     "msgBody": {
-      "fs": 20,
-      "fw": 200,
-      "lh": 2,
-      "ls": 2
+      "fw": 200
     }
-  },
-  "ftLift": -180,
-  "msgGap": 72,
-  "msgFx": {
-    "titleA": 100,
-    "bodyA": 100
-  },
-  "ftSolid": 40,
-  "inertia": {
-    "on": 1,
-    "ease": 12,
-    "wheel": 100
   }
 }

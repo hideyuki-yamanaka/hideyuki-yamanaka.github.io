@@ -75,6 +75,7 @@ function retouchItems(keys: RetouchKey[]) {
   return out;
 }
 import { DEFAULT_INTRO_PACE, type IntroPace } from "./ExperienceFlow";
+import { EV_IN_STYLES, EV_REPLAY_EVENT } from "./EventVariants4";
 import { DEFAULT_ENTER_TUNE, type EnterTune } from "./enterPatterns";
 
 export type TopTuneValues = {
@@ -220,7 +221,7 @@ type Params = {
   /** 体験セクション（グルメの下）のレイアウト案 1〜10 */
   /** shufDur/shufPow：案31（カードを切る）の秒数とメリハリ */
   /** mqSize/mqDur：案31 の後ろを流れる文字の大きさ(px)・1周の秒数。shufCard：カードの大きさ(%) */
-  events: { pattern: number; tailPad: number; cardRatio: number; flow: number; shufDur: number; shufPow: number; mqSize: number; mqDur: number; shufCard: number };
+  events: { pattern: number; tailPad: number; cardRatio: number; flow: number; shufDur: number; shufPow: number; mqSize: number; mqDur: number; shufCard: number; stackY: number; inStyle: number; inText: number; inDelay: number; inGap: number; inDur: number; inFade: number; navStyle: number };
   /** ページ遷移の演出 1〜5 */
   /** dur/blur/peak は案7（じんわり溶ける）だけの長さ(ms)・ぼかし(px)・白の濃さ(%) */
   pageTrans: { pattern: number; dur: number; blur: number; peak: number };
@@ -270,10 +271,14 @@ type Params = {
   /** 各セクションの大見出しの大きさ（2026-09-16） */
   /** フッターの位置 Y（px・マイナスで上へ＝本文の裏へ深く重ねる。PC とスマホは別の値・2026-10-29） */
   ftLift: number;
-  /** 詳しいページ・トップのスマホのフッターの白いグラデのうち、白のまま続く長さ（%・PC とスマホは別の値・2026-10-29） */
+  /** フッターの中身（ロゴと文字のリンク）だけの位置 Y（px・マイナスで上へ。PC とスマホは別の値・2026-10-29） */
+  ftBodyY: number;
+  /** フッターの白いグラデのうち、白のまま続く長さ（%・全ページ・PC とスマホは別の値・2026-10-29） */
   ftSolid: number;
   /** トップのメッセージ（PC）の見出しと本文のギャップ（px・2026-10-29） */
   msgGap: number;
+  /** 体験セクションの上のマージン（グルメとのあいだに足す余白・px。PC とスマホは別の値・2026-10-29） */
+  evGap: number;
   /** トップのメッセージの大きいコピー・本文の不透明度（%・100＝今の濃さ・2026-10-29） */
   msgFx: { titleA: number; bodyA: number };
   secHead: number;
@@ -332,7 +337,7 @@ export default function TopTunePanel({
               コンテンツを中央に寄せて。上下に余白ができる感じ」→ カンプの 140px から詰める。
               🟡仮置き 80px（詰める量はカンプに無いので、調整パネル「グルメの余白」で決める） */
       gourmet: { speed: 40, pauseOnHover: false /* 2026-10-14 ヒデさん「ホバーしてもカルーセルの移動は止まらないように」 */, gap: 80 },
-      events: { pattern: 31 /* 2026-10-14 ヒデさん「案2をデフォルトに」（パネルの表示は案2・値は31） */, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */, shufDur: 1.0, shufPow: 3 /* 2026-09-26 案31 カードを切る：ヒデさん「ゆったりすぎ・シャッと、でも急じゃなく」→ 1.0秒・メリハリ3（🟡仮置き） */, mqSize: 80, mqDur: 34, shufCard: 100 /* 同日 ヒデさん「後ろのテキストのサイズ・速度、カードのサイズも変えられるように」。既定はカンプ値(80px)・これまでの速さ(34秒)・等倍 */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
+      events: { pattern: 31 /* 2026-10-14 ヒデさん「案2をデフォルトに」（パネルの表示は案2・値は31） */, tailPad: DEFAULT_EVENT_TAIL, cardRatio: DEFAULT_CARD_RATIO, flow: 3 /* 2026-09-26 1回スクロール＝1枚。流れ方は物理の3案。ヒデさん「3番目でデフォルトに」→ 案3 角を押されて回る */, shufDur: 1.0, shufPow: 3 /* 2026-09-26 案31 カードを切る：ヒデさん「ゆったりすぎ・シャッと、でも急じゃなく」→ 1.0秒・メリハリ3（🟡仮置き） */, mqSize: 80, mqDur: 34, shufCard: 115 /* 同日 ヒデさん「後ろのテキストのサイズ・速度、カードのサイズも変えられるように」。既定はカンプ値(80px)・これまでの速さ(34秒)・等倍。2026-10-29 ヒデさん「カードを115パーセントぐらいに」で PC 100→115（スマホは spDefault の 112 のまま） */, inStyle: 1, inText: 0.4 /* 2026-10-30 ヒデさん「意外とおもろい網走の表示タイミングをもう少し早めて、その分詰まった秒数を前に詰めましょう」0.8→0.4秒🟡 */, inDelay: 0.4 /* 2026-10-30 ヒデさん「写真が入ってくるタイミングをもう少しディレイ。もう少し遅く」0.6→1.0 →「1.5秒ぐらいでいきましょう」で 1.5秒 → 文字を早めた 0.4秒ぶん前に詰めて 1.1秒 → 同日「写真が出てくるタイミングをもう少し早めたい」「0.4秒くらいにしましょう」で 0.4秒 */, inGap: 0.4 /* 2026-10-30 ヒデさん「写真のディレイに応じて、その後のアニメーションも全部後ろにずれる感じに。今、急に写真が全部重なるみたい」→ 0.45秒だと1枚が止まりきる前（0.8秒）に次が来て、後の3枚がまとめて重なって見えた → 0.8秒 → 同日「もう少し表示タイミングは早めて大丈夫」で 0.6秒 →「写真を出すタイミングがまばらな感じ。揃えて」で、文字→1枚目と同じ 0.4秒おきに🟡 */, inDur: 0.8, inFade: 0.3 /* 同日「画像自体の、透明から opacity 0→100% になる時間をもう少し早めに」→ 濃さだけ 0.3秒で見えきる（動きは inDur のまま）🟡 */ /* 2026-10-29 ヒデさん「体験セクションにアニメーション。白い画面で固定→文字→写真が1枚ずつ重なる」の登場🟡（PC・EventVariants4 の「案31 の登場」） */, navStyle: 1 /* 2026-10-30 ヒデさん「送りボタンが見にくい。見やすくなる5パターン」→ 同日「案1でいきましょう」で 案1 青いふちのガラス＋浮き影（0＝前の白いガラス・1〜5＝案。globals.css の .ev-nav-btn） */, stackY: -32 /* 2026-10-29 ヒデさん「束ごと上げる」：115% で送りボタンが画面の下まで 9px だったので、束とボタンを一緒に 32px 上へ🟡（PC だけ） */ } /* 2026-09-24: 見終わるまでが長いので 38→62（一定速度なのは変えない） */, /* 案10は削除したので案1。tailPad は既定0（2026-09-16） */
       /* ページ遷移の演出。2026-09-26 ヒデさん「全部統一・ほんの気持ちだけじんわり溶ける印象に」
          → 案7「じんわり溶ける」を既定に（それまでは案6「ディゾルブ」）。
          ⚠️ 値の住み家：ここ／PageTransition の PT_DEFAULT／tune-defaults.json */
@@ -379,9 +384,11 @@ export default function TopTunePanel({
       scrollSpd: { kvToMsg: 100 },
       nav: { inMs: 420, outMs: 620 },
       secHead: 36,
-      ftSolid: 40, /* PC。スマホは spDefault 30（地図のカードの下で白がほぼ残る値） */
-      ftLift: -180, /* PC。2026-10-29 ヒデさん -340px → 同日「指定の数字へ」で -180px（スマホは spDefault 0） */
+      ftSolid: 10, /* PC。2026-10-29 は 40 → 同日ヒデさんがパネルで 10 にして保存（全ページ・トップの PC も）。スマホは spDefault 30 */
+      ftBodyY: 0, /* PC。2026-10-30 ヒデさんがパネルで 0 にして焼き込み。2026-10-29 ヒデさん「フッターのロゴとテキストリンクのコンテンツを10ピクセルぐらい上げたい」-10 → 同日ヒデさんがパネルで -30 にして保存（スマホは spDefault 0） */
+      ftLift: -140, /* PC。2026-10-29 ヒデさん -340px → 同日「指定の数字へ」で -180px → 2026-10-30 ヒデさんがパネルで -140px にして焼き込み（スマホは spDefault 0） */
       msgGap: 72,
+      evGap: 80, /* PC。2026-10-29 ヒデさん「グルメセクションと体験セクションの上下のギャップをもう少し上げたい」→ 64px → 同日ヒデさんがパネルで 80px にして保存（232→312px）（スマホは spDefault 0） */
       msgFx: { titleA: 100, bodyA: 100 },
       tips: { delay: 5, fade: 1.2, pattern: 5 }, /* 出現は案5「下からゆっくり」で確定 */
       videoVol: { fadeIn: true, fadeSec: 3, uiHideSec: 2 },
@@ -418,6 +425,16 @@ export default function TopTunePanel({
       root.style.setProperty("--ev-mq-size", `${params.events.mqSize ?? 80}px`);
       /* --ev-mq-dur（流れる文字の1周の秒数）は 2026-10-29 にやめた：速さはグルメと共通の「1秒に何px」（marqueePace.ts）。ここからは書かない */
       root.style.setProperty("--ev-shuf-card", String((params.events.shufCard ?? 100) / 100));
+      root.style.setProperty("--ev-stack-y", `${params.events.stackY ?? -32}px`);
+      /* 案2 の登場（重なり方・秒数）。EventVariants4 が流し始める時に読む */
+      root.style.setProperty("--ev-in-style", String(params.events.inStyle ?? 1));
+      /* 送りボタンの見た目（0＝今のまま・1〜5＝案）。globals.css の html[data-ev-nav] */
+      root.dataset.evNav = String(params.events.navStyle ?? 1);
+      root.style.setProperty("--ev-in-text", String(params.events.inText ?? 0.4));
+      root.style.setProperty("--ev-in-delay", String(params.events.inDelay ?? 0.4));
+      root.style.setProperty("--ev-in-gap", String(params.events.inGap ?? 0.4));
+      root.style.setProperty("--ev-in-dur", String(params.events.inDur ?? 0.8));
+      root.style.setProperty("--ev-in-fade", String(params.events.inFade ?? 0.3));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
       root.style.setProperty("--nav-in", String(params.nav.inMs));
       root.style.setProperty("--nav-out", String(params.nav.outMs));
@@ -473,8 +490,18 @@ export default function TopTunePanel({
         const sp = phone ? pc : typeof mb.ftLift === "number" ? mb.ftLift : 0;
         if (!phone) root.style.setProperty("--ft-lift-pc", `${pc}px`);
         root.style.setProperty("--ft-lift-sp", `${sp}px`);
+        /* 体験セクションの上のマージン（グルメとのあいだ・同じ考え方で -pc／-sp・2026-10-29） */
+        const gpc = params.evGap ?? 80;
+        const gsp = phone ? gpc : typeof mb.evGap === "number" ? mb.evGap : 0;
+        if (!phone) root.style.setProperty("--ev-gap-top-pc", `${gpc}px`);
+        root.style.setProperty("--ev-gap-top-sp", `${gsp}px`);
+        /* 中身（ロゴと文字のリンク）だけの位置 Y（同じ考え方で -pc／-sp・2026-10-29） */
+        const bpc = params.ftBodyY ?? 0;
+        const bsp = phone ? bpc : typeof mb.ftBodyY === "number" ? mb.ftBodyY : 0;
+        if (!phone) root.style.setProperty("--ft-body-y-pc", `${bpc}px`);
+        root.style.setProperty("--ft-body-y-sp", `${bsp}px`);
         /* 白のまま続く長さ（同じ考え方で -pc／-sp） */
-        const spc = params.ftSolid ?? 40;
+        const spc = params.ftSolid ?? 10;
         const ssp = phone ? spc : typeof mb.ftSolid === "number" ? mb.ftSolid : 30;
         if (!phone) root.style.setProperty("--ft-solid-wide-pc", String(spc));
         root.style.setProperty("--ft-solid-wide-sp", String(ssp));
@@ -584,15 +611,85 @@ export default function TopTunePanel({
             }
             localStorage.setItem(MIG_ILLUST, curIllust);
           }
-          /* 【2026-10-29 移し替え】メッセージの出はじめ・見出しのディレイの既定を詰めた（120→60px・200→120px）。
+          /* 【2026-10-29 移し替え】メッセージの出はじめ・見出しのディレイの既定を詰めた（120→60→40→20px・200→120→100→60px・2026-10-30 まで）。
              パネルを外していた間も値はまるごと保存されていて、前の既定が残っていると新しい既定が見えない。
              保存が前の既定のままの時だけ、今の既定に置き換える（今の既定ごとに1回だけ・自分で動かした値は触らない） */
+          /* 【2026-10-29 移し替え】体験セクションのカードの大きさ（PC）の既定を 100→115% にした。前の既定のままの保存だけ置き換える（今の既定ごとに1回） */
+          const MIG_CARD = "abashiri-mig-ev-card";
+          const curCard = String(DEFAULTS.events.shufCard);
+          if (saved && saved.events && localStorage.getItem(MIG_CARD) !== curCard) {
+            if ([100].includes(saved.events.shufCard)) {
+              saved.events.shufCard = DEFAULTS.events.shufCard;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_CARD, curCard);
+          }
+          /* 【2026-10-30 移し替え】体験セクションの登場の「写真のディレイ」の既定を 0.6→1.0→1.5→1.1→0.4秒にした。前の既定のままの保存だけ置き換える（今の既定ごとに1回） */
+          const MIG_EVIN = "abashiri-mig-ev-in-delay";
+          const curEvIn = String(DEFAULTS.events.inDelay);
+          if (saved && saved.events && localStorage.getItem(MIG_EVIN) !== curEvIn) {
+            if ([0.6, 1, 1.5, 1.1].includes(saved.events.inDelay)) {
+              saved.events.inDelay = DEFAULTS.events.inDelay;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_EVIN, curEvIn);
+          }
+          /* 【2026-10-30 移し替え】同じく「写真の間隔」の既定を 0.45→0.8→0.6→0.4秒にした */
+          const MIG_EVGAP = "abashiri-mig-ev-in-gap";
+          const curEvGap = String(DEFAULTS.events.inGap);
+          if (saved && saved.events && localStorage.getItem(MIG_EVGAP) !== curEvGap) {
+            if ([0.45, 0.8, 0.6].includes(saved.events.inGap)) {
+              saved.events.inGap = DEFAULTS.events.inGap;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_EVGAP, curEvGap);
+          }
+          /* 【2026-10-30 移し替え】同じく「文字のアニメーション時間」の既定を 0.8→0.4秒にした */
+          const MIG_EVTXT = "abashiri-mig-ev-in-text";
+          const curEvTxt = String(DEFAULTS.events.inText);
+          if (saved && saved.events && localStorage.getItem(MIG_EVTXT) !== curEvTxt) {
+            if ([0.8].includes(saved.events.inText)) {
+              saved.events.inText = DEFAULTS.events.inText;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_EVTXT, curEvTxt);
+          }
+          /* 【2026-10-30 移し替え】グルメの余韻（spot.hold）の既定を 500→120px にして、同日 500px に戻した。前の既定のままの保存だけ置き換える（今の既定ごとに1回） */
+          const MIG_HOLD = "abashiri-mig-spot-hold";
+          const curHold = String(DEFAULTS.spot.hold);
+          if (saved && saved.spot && localStorage.getItem(MIG_HOLD) !== curHold) {
+            if ([120].includes(saved.spot.hold)) {
+              saved.spot.hold = DEFAULTS.spot.hold;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_HOLD, curHold);
+          }
+          /* 【2026-10-30 移し替え】ぼーっとスポットの「1枚あたりのスクロール量」（spot.stepLen）の既定を 982→880→940→900px にした */
+          const MIG_STEP = "abashiri-mig-spot-step";
+          const curStep = String(DEFAULTS.spot.stepLen);
+          if (saved && saved.spot && localStorage.getItem(MIG_STEP) !== curStep) {
+            if ([982, 880, 940].includes(saved.spot.stepLen)) {
+              saved.spot.stepLen = DEFAULTS.spot.stepLen;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_STEP, curStep);
+          }
+          /* 【2026-10-30 移し替え】送りボタンの見た目の既定を 0（白いガラス）→ 1（案1）にした */
+          const MIG_NAV = "abashiri-mig-ev-nav";
+          const curNav = String(DEFAULTS.events.navStyle);
+          if (saved && saved.events && localStorage.getItem(MIG_NAV) !== curNav) {
+            if ([0].includes(saved.events.navStyle)) {
+              saved.events.navStyle = DEFAULTS.events.navStyle;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_NAV, curNav);
+          }
           const MIG_MSG = "abashiri-mig-msg-delay";
           const curMsg = `${DEFAULTS.msg.fadeIn}/${DEFAULTS.msg.titleDelay}`;
           if (saved && saved.msg && localStorage.getItem(MIG_MSG) !== curMsg) {
             let changed = false;
-            if ([120].includes(saved.msg.fadeIn)) { saved.msg.fadeIn = DEFAULTS.msg.fadeIn; changed = true; }
-            if ([200].includes(saved.msg.titleDelay)) { saved.msg.titleDelay = DEFAULTS.msg.titleDelay; changed = true; }
+            if ([120, 60, 40].includes(saved.msg.fadeIn)) { saved.msg.fadeIn = DEFAULTS.msg.fadeIn; changed = true; }
+            if ([200, 120, 100].includes(saved.msg.titleDelay)) { saved.msg.titleDelay = DEFAULTS.msg.titleDelay; changed = true; }
             if (changed) localStorage.setItem(k, JSON.stringify(saved));
             localStorage.setItem(MIG_MSG, curMsg);
           }
@@ -761,8 +858,23 @@ export default function TopTunePanel({
                 immediate: true,
                 hint: "フッターを上下に動かす。マイナスで上へ（中身の終わりからフッターまでが近くなる）・プラスで下へ。トップと詳しいページの両方に効きます。PC とスマホは別の値。",
               },
+              /* 【2026-10-29 ヒデさん「フッターのロゴとテキストリンクのコンテンツを10ピクセルぐらい上げたい。その移動を調整パネルでもできるように」】
+                 → 中身だけの位置のずらしなので 基本 › 位置 Y（6-13・6-18）。上の「位置 Y」（フッター全体）と同じ作りで、PC とスマホは別の値 */
+              {
+                slider: "ロゴとリンクの位置 Y",
+                path: "ftBodyY",
+                min: -120,
+                max: 120,
+                step: 2,
+                unit: "px",
+                signed: true,
+                spDefault: 0,
+                immediate: true,
+                hint: "フッターの中身（左のロゴと右の文字のリンク）だけを上下に動かす。マイナスで上へ。写真やフッターの大きさは変わりません。PC とスマホは別の値（PC の既定は 0px）。",
+              },
               /* 【2026-10-29 ヒデさん「フッター直前のセクションのグラデーションの白をもう少しだけ長く。マップのカードUIが終わるぐらいまで。調整パネルで」】
-                 → グラデなので エフェクト＆テクスチャ（6-13・6-18）。効くのは詳しいページ・トップのスマホ（本文の裏へ潜り込ませるフッター） */
+                 → グラデなので エフェクト＆テクスチャ（6-13・6-18）。効くのは詳しいページ・トップのスマホ（本文の裏へ潜り込ませるフッター）。
+                 同日「体験セクションの下の白と透過の割合…サイト共通に効くように」で、トップの PC にも効くようにした（全ページ） */
               { sub: "フッター（全ページ共通）", grp: "fxtex" },
               {
                 slider: "白のまま続く長さ",
@@ -773,7 +885,7 @@ export default function TopTunePanel({
                 unit: "%",
                 spDefault: 30,
                 immediate: true,
-                hint: "フッターの手前の白いグラデのうち、真っ白のまま続く長さ（グラデの長さの%）。大きいほど白が長く続いてから空へ移る。詳しいページ（PC・スマホ）とトップのスマホに効きます。PC とスマホは別の値。",
+                hint: "フッターの手前の白いグラデのうち、真っ白のまま続く長さ（グラデの長さの%）。大きいほど白が長く続いてから空へ移る。全ページ（トップ・詳しいページ・一覧）の PC とスマホに効きます。PC とスマホは別の値。",
               },
               { sub: "最初の確認の窓", grp: "other" },
               {
@@ -1364,7 +1476,7 @@ export default function TopTunePanel({
                 max: 2000,
                 step: 10,
                 fmt: "px",
-                hint: "グルメが出たあと、下に残しておくスクロールの余白です。",
+                hint: "グルメが出たあと、グルメの画面が貼りついたまま進むスクロールの長さ。長いほど、回しても画面が動かない区間が長くなる（2026-10-30 に 120px を試して、見過ごしやすいので 500px に戻した）。",
               },
               { sub: "写真の切替", deep: true },
               {
@@ -1377,7 +1489,7 @@ export default function TopTunePanel({
                 max: 1600,
                 step: 20,
                 fmt: "px",
-                hint: "このぶんスクロールするごとに次の写真へ。982でちょうど1画面ぶんです。",
+                hint: "このぶんスクロールするごとに次の写真へ。982でちょうど1画面ぶん。既定は 900（2026-10-30「切り替わるタイミングをほんの気持ちだけ早めに」→ 880・940 を試して「900ぐらいでいい」）。",
               },
               /* ── グルメ｜余白（2026-09-26 ヒデさん依頼）。画面の上から下の順なので、カルーセルの動きより先 ── */
               { sub: "グルメの余白", grp: "basic" },
@@ -1412,9 +1524,42 @@ export default function TopTunePanel({
                   desc: p.note,
                 })),
               },
+              /* 【2026-10-30 ヒデさん「体験セクションの下のカルーセルのボタンが見にくいので、見やすくなるような5パターン」】
+                 見た目の見比べなので バリエーション（6-13・6-18）。どの案でも同じ値（shared）。案2 を選んでいる時だけ出す */
+              { sub: "案2 カードを切る：送りボタン", deep: true, when: (p: Params) => p.events.pattern === 31 },
+              {
+                pills: "送りボタン",
+                path: "events.navStyle",
+                shared: true,
+                immediate: true,
+                autoNum: false,
+                when: (p: Params) => p.events.pattern === 31,
+                options: [
+                  { name: "前の", value: 0, desc: "白いガラス・白い矢印（キービジュアルの「ぼーっとしてみる」と同じ）" },
+                  { name: "案1", value: 1, desc: "【決定・2026-10-30】青いふちのガラス＋浮き影：白いすりガラスに青い細い縁・青い矢印・青みの影" },
+                  { name: "案2", value: 2, desc: "白い丸＋青い矢印：ほぼ白い丸が青みの影で浮く。いちばん素直" },
+                  { name: "案3", value: 3, desc: "ブランドの青の丸：青い丸に白い矢印・白い細い縁。いちばんはっきり" },
+                  { name: "案4", value: 4, desc: "空色のすりガラス：うすい青のすりガラスに白い縁・白い矢印。空の写真になじむ" },
+                  { name: "案5", value: 5, desc: "線だけの輪：地なし・青い細い輪・青い矢印。細い文字のトンマナに合わせたミニマル" },
+                ],
+              },
               /* 送りボタンの形は 2026-10-21 に見比べて「案9 青いふちのガラス」に決定し、調整パネルの「送りボタン」の行は消した
                  （ヒデさん「ボタンは9番でいきましょう。それ以外の案は、調整パネルからも全部削除して大丈夫です」・EventNav.tsx） */
               { sub: "体験セクション（グルメの下）", grp: "basic" },
+              /* 【2026-10-29 ヒデさん「体験セクションのカードを大きくした分、グルメセクションと体験セクションの上下のギャップをもう少し上げたい」「それも調整パネルで変えられるように」】
+                 → 余白なので 基本 › マージン（6-13・6-18）。すぐ下の「下のマージン」と対。どの案でも同じ値（shared）・PC とスマホは別の値 */
+              {
+                slider: "上のマージン",
+                path: "evGap",
+                shared: true,
+                min: -160,
+                max: 400,
+                step: 8,
+                unit: "px",
+                spDefault: 0,
+                immediate: true,
+                hint: "グルメと体験セクションのあいだに足す余白。0 で前のまま（PC はカルーセルの下からカードの上まで 232px）。PC の既定は 80px・スマホは 0。PC とスマホは別の値。",
+              },
               {
                 slider: "下のマージン",
                 path: "events.tailPad",
@@ -1439,7 +1584,22 @@ export default function TopTunePanel({
                 spDefault: 112,
                 immediate: true,
                 when: (p: Params) => p.events.pattern === 31,
-                hint: "重なったカードの大きさ（432×616px＝L判の縦の比率が100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。スマホは上書きが無い間 112%。",
+                hint: "重なったカードの大きさ（432×616px＝L判の縦の比率が100%。PC の既定は 115%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。スマホは上書きが無い間 112%。",
+              },
+              /* 【2026-10-29 ヒデさん「束ごと上げる」】カード 115% で送りボタンが画面の下まで 9px しかなかった → 束と送りボタンを一緒に上へ。
+                 位置のずらしなので 基本 › 位置 Y（6-13・6-18）。0＝カンプの位置・マイナスで上へ。カードと送りボタンの間（32px）は変わらない。PC だけ */
+              {
+                slider: "位置 Y",
+                path: "events.stackY",
+                variant: "events.pattern",
+                min: -200,
+                max: 200,
+                step: 4,
+                unit: "px",
+                signed: true,
+                immediate: true,
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "重なったカードと送りボタンを、一緒に上下へ動かす（PC だけ）。0＝カンプの位置・マイナスで上へ。カードと送りボタンの間は変わりません。既定は -32px。",
               },
               { sub: "案5 3Dカルーセル：カード", deep: true, when: (p: Params) => p.events.pattern >= 34 },
               {
@@ -1491,8 +1651,38 @@ export default function TopTunePanel({
               /* ── 案31（パネル表示は案2）を選んだ時だけ出るつまみ。画面の奥から手前の順 ──
                  【2026-09-26 ヒデさん指示】「この案を選んだら動的に出てきて、後ろのカルーセル
                    テキストのサイズ感や速度感、カードのサイズ感を変えられるように」 */
+              /* 【2026-10-29 ヒデさん「体験セクションにアニメーションをつけたい。グルメから1スクロールで真っ白い画面にたどり着いて固定。
+                   文字のカルーセルが出て、その上に写真が1枚、2枚、3枚、4枚と重なっていく。見終わったら下にスクロールできる」】
+                 → 動きなので アニメーション（6-13）。重なり方は見比べの3案（ピル・6-18）。PC だけ（スマホは今のまま） */
+              { sub: "案2 カードを切る：登場", deep: true, when: (p: Params) => p.events.pattern === 31 },
+              {
+                note: "グルメのあと、体験セクションの白い画面の上端で止まり（止まる少し手前から流れ始める）、流れる文字 → 写真（④→③→②→①）の順に出ます。写真が重なりきるまで下へは行けません。ページを開くたびに1回だけ（PC）。",
+                when: (p: Params) => p.events.pattern === 31,
+              },
+              {
+                pills: "重なり方",
+                path: "events.inStyle",
+                variant: "events.pattern",
+                immediate: true,
+                autoNum: "案",
+                when: (p: Params) => p.events.pattern === 31,
+                options: Object.entries(EV_IN_STYLES).map(([v, s]) => ({ name: s.name, value: Number(v), desc: s.note })),
+              },
+              { slider: "文字のアニメーション時間", path: "events.inText", variant: "events.pattern", min: 0, max: 3, step: 0.1, unit: "秒", immediate: true, when: (p: Params) => p.events.pattern === 31, hint: "流れる文字がふわっと出るまでの時間。" },
+              { slider: "写真のディレイ", path: "events.inDelay", variant: "events.pattern", min: 0, max: 3, step: 0.1, unit: "秒", immediate: true, when: (p: Params) => p.events.pattern === 31, hint: "白い画面で止まって流れる文字が出はじめてから、1枚目の写真が出はじめるまで。" },
+              { slider: "写真の間隔", path: "events.inGap", variant: "events.pattern", min: 0.1, max: 2, step: 0.05, unit: "秒", immediate: true, when: (p: Params) => p.events.pattern === 31, hint: "写真が1枚ずつ重なっていく間隔。" },
+              { slider: "写真のアニメーション時間", path: "events.inDur", variant: "events.pattern", min: 0.2, max: 3, step: 0.1, unit: "秒", immediate: true, when: (p: Params) => p.events.pattern === 31, hint: "写真1枚が出てきて止まるまでの時間（位置とぼかし）。" },
+              { slider: "写真が見えきる時間", path: "events.inFade", variant: "events.pattern", min: 0.05, max: 3, step: 0.05, unit: "秒", immediate: true, when: (p: Params) => p.events.pattern === 31, hint: "写真が透明から100%見えるまでの時間。上の「写真のアニメーション時間」より短いと、先に見えきってから止まる。" },
               /* 案2 カードを切る：流れる文字の速さ 34秒・切る速さ PC 1.0秒／スマホ 0.6秒・メリハリ 3：固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」。
                  切る速さのスマホの値は globals.css の --ev-shuf-dur の 744px 未満で持つ） */
+              /* 登場を流し直す押しボタン（確認用なので その他・6-13・6-18） */
+              { sub: "体験セクション（グルメの下）", grp: "other" },
+              {
+                button: "登場をもう一度見る（確認用）",
+                when: (p: Params) => p.events.pattern === 31,
+                hint: "体験セクションの登場（文字→写真が重なる）を、いまの設定でもう一度流します。体験セクションにいない時は、次に着いた時に流れます。",
+                onClick: () => window.dispatchEvent(new CustomEvent(EV_REPLAY_EVENT)),
+              },
             ],
           },
           {
@@ -1827,6 +2017,8 @@ export default function TopTunePanel({
       params.face.mouthStroke = 2;
       params.preview = { faceOn: false, patchRed: false };
       params.gourmet.speed = 40;
+      /* フッターの下の余白は globals.css の --ft-pad-bottom（48px）だけが効く。古いブラウザの保存（112）が保存のたびに焼き込みへ書き戻されていたので固める（2026-10-30） */
+      params.footer.padBottom = 48;
       params.gourmet.pauseOnHover = false;
       params.events.mqDur = 34;
       params.events.shufPow = 3;

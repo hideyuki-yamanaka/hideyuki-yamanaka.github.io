@@ -18,8 +18,8 @@
  *     ③ 同日「ボタンは9番でいきましょう。青い枠線で、シェブロンも青のやつ。それ以外の案は調整パネルからも全部削除」
  *       ＝案9 青いふちのガラス に決定。白30%のすりガラスに、縁だけブランドの青 25%（白い地でも縁で丸だと分かる）・矢印もブランドの青
  *     （その前は 地 white/70・線 black/20・矢印 black/80＝灰色の丸）
- * 大きさ：md＝68px・矢印 24px（既定・場所えらび）／sm＝48px・矢印 20px
- *         nav＝56px・矢印 20px／nav-sm＝44px・矢印 16px（体験セクションの送りボタンの PC／スマホ。2026-10-21 案9 で見比べた大きさ🟡）
+ * 大きさ：md＝68px・矢印 24px（既定・場所えらび・2026-10-30 から体験セクションの送りボタンの PC も）／sm＝48px・矢印 20px
+ *         nav＝56px・矢印 20px（2026-10-30 まで体験セクションの送りボタンの PC）／nav-sm＝44px・矢印 16px（同 スマホ）
  * 置き場所（どこに出すか）は使う側が className / style で決める
  */
 const SIZE = {
@@ -56,8 +56,10 @@ export default function CarouselArrow({
       style={style}
       className={`${className} flex ${s.box} cursor-pointer items-center justify-center rounded-full transition-colors duration-300 ease-standard ${
         /* 【2026-10-29 ヒデさん「体験セクションの下のカルーセルのシェブロンのボタンは、キービジュアルの『ぼーっとしてみる』のボタンに合わせる。中身のシェブロンも白で」】
-           → onLight（体験セクションの送りボタン）も onDark と同じ全ページ共通のガラスのボタン（.glass-btn）・白い矢印に。前は 案9 青いふちのガラス */
-        "glass-btn glass-hover text-white"
+           → onLight も onDark と同じ全ページ共通のガラスのボタン・白い矢印にした
+           【2026-10-30 ヒデさん「体験セクションの下のカルーセルのボタンが見にくいので、見やすくなるような5パターン。トンマナに気を使って」】
+           → onLight は見た目を globals.css の .ev-nav-btn に任せる（既定＝今のガラス。html[data-ev-nav]＝1〜5 で5つの案・調整パネル） */
+        tone === "onLight" ? "ev-nav-btn" : "glass-btn glass-hover text-white"
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" className={s.icon} aria-hidden>

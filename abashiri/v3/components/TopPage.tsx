@@ -616,6 +616,16 @@ export default function TopPage({
           next = stop; /* 上から来た操作は、グルメで一度止める */
           stopGid = gid;
         }
+        /* 【2026-10-30 ヒデさん「画面が白くスクロールして、下の方で真っ白な領域に行ったら固定するだけ」→ 同日いったん固定をやめた →「やっぱりビューポートの固定版あった方が良さそう。戻す」】
+           体験セクションの場面の上端（data-ev-stop）を越えないように止めるだけ。そこまではふつうの速さのスクロール。
+           止まったら登場が流れ、見終わるまでは場面の関所が引き継ぐ（EventVariants4 の「案31 の登場」）。見せる前（data-ev-phase="wait"）だけ。
+           ⚠️ 2026-10-29 の「グルメで止まった次の1回で、場面の上端までぴったり送る」は速すぎた（1回で約1060px）ので戻さない */
+        const evEl = document.querySelector<HTMLElement>("[data-ev-stop]");
+        if (evEl && evEl.dataset.evPhase === "wait") {
+          const ev = evEl.closest<HTMLElement>("#events");
+          const evStop = (ev ? ev.offsetTop : 0) + evEl.offsetTop;
+          if (targetY <= evStop + 0.5 && next > evStop) next = evStop;
+        }
       }
       targetY = next;
       kick();

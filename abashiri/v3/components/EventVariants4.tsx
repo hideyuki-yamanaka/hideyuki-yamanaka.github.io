@@ -335,12 +335,18 @@ function LoopCard({
   i,
   pos,
   pow,
+  hidden = false,
+  innerRef,
 }: {
   it: EventItem;
   i: number;
   /** 切った回数（小数＝途中） */
   pos: MotionValue<number>;
   pow: number;
+  /** 登場の前（PC・2026-10-29）。見えない・押せない */
+  hidden?: boolean;
+  /** 登場の動きを付ける中の箱（PC の MarqueeStack が受け取る） */
+  innerRef?: (el: HTMLDivElement | null) => void;
 }) {
   const N = ITEMS.length;
   /* いまの段（0＝いちばん下〜N-1＝いちばん上）・右へ出ている量・束の裏にいるか */
@@ -378,7 +384,7 @@ function LoopCard({
   });
   return (
     <motion.div
-      className="group absolute"
+      className={`group absolute ${hidden ? "pointer-events-none" : ""}`}
       style={{
         left: STACK_CX - CARD_W / 2,
         top: STACK_CY - CARD_H / 2,
@@ -390,7 +396,11 @@ function LoopCard({
         zIndex: z,
       }}
     >
-      <div className="relative size-full overflow-hidden bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_60px_rgba(0,0,0,.28)]">
+      <div
+        ref={innerRef}
+        className="relative size-full overflow-hidden bg-white shadow-[0_2px_10px_rgba(0,0,0,.06)] transition-shadow duration-500 ease-out group-hover:shadow-[0_24px_60px_rgba(0,0,0,.28)]"
+        style={hidden ? { opacity: 0 } : undefined}
+      >
         <img
           src={it.img}
           alt={it.title}
@@ -400,6 +410,32 @@ function LoopCard({
       </div>
     </motion.div>
   );
+}
+
+/* ═══════════ 案31（パネル表示は案2）の登場（PC）═══════════
+   【2026-10-29 ヒデさん】「体験セクションにアニメーションをつけたい。グルメセクションを1スクロールすると、まず真っ白い画面に
+     たどり着いて、そこで固定。そこで文字のテキストのカルーセルスライダーが出てきて、その上に写真が1枚、2枚、3枚、4枚と
+     上に重なっていく。見終わったら下にスクロールできる」
+   ・着くまで：ふつうの速さのスクロール。この場面の上端（data-ev-stop）を越えないように止めるだけ（TopPage の moveY）。
+     止まりきったら流し始め、写真が重なりきるまでは下へ行かせない（関所 window.__abashiriScrollGate）。上へは戻れる。
+     ⚠️ 2026-10-29「グルメで止まった次の1回で上端まで送る」→ 10-30 朝「異常に速い」で「上端で止めるだけ」→ 同日「固定なし・画面に入ったら流す」を試して
+        →「やっぱりビューポートの固定版あった方が良さそう。戻す」で、上端で止める形に戻した
+   ・入ってきたら：流れる文字がふわっと出る → 写真がいちばん下の④から ③・②・① の順に重なる（最後に①がいちばん上＝今までと同じ重なり）
+     → 送りボタンが出る
+   ・ページを開くたびに1回だけ（🟡）。見せ終わったら、ふつうのスクロールに戻す（上端で止める仕掛けも外れる）
+   ・重なり方3案・秒数は調整パネル（--ev-in-*）。「もう一度見る」ボタンで流し直せる（EV_REPLAY_EVENT）
+   🟡仮置き：重なる順・重なり方・秒数（文字 0.8秒・写真のディレイ 0.6秒・間隔 0.45秒・1枚 0.8秒） */
+export const EV_REPLAY_EVENT = "abashiri:ev-replay";
+/** 重なり方（調整パネルのピル）。1枚ごとに、ここから元の場所へ動く */
+export const EV_IN_STYLES: Record<number, { name: string; note: string; from: string; blur: number }> = {
+  1: { name: "上からふわっと置く", note: "少し大きく・上から、ぼかしが晴れながら、机に置くように重なる", from: "translateY(-48px) scale(1.12)", blur: 8 },
+  2: { name: "下からせり上がる", note: "下から少し傾いて上がってきて、元の傾きに収まる", from: "translateY(120px) rotate(4deg)", blur: 0 },
+  3: { name: "右から滑り込む", note: "右から回りながら滑り込む（送りボタンでカードを切る動きの逆）", from: "translateX(240px) rotate(10deg)", blur: 0 },
+};
+/** 場面の上端のスクロール位置（体験セクションの位置＋場面の位置。どちらもレイアウトの px なので紙の縮みに関係しない） */
+function evStopOf(el: HTMLElement): number {
+  const ev = el.closest<HTMLElement>("#events");
+  return (ev ? ev.offsetTop : 0) + el.offsetTop;
 }
 
 /** 束を回す仕組み（PC とスマホで同じ）。
@@ -443,13 +479,147 @@ function MarqueeStack() {
   const mqTrack = useRef<HTMLDivElement>(null);
   useMarqueePace(mqTrack, MARQUEE_PXS.pc);
   const pow = useShufPow();
+  /* ── 登場（上の「案31 の登場」の説明）── wait＝まだ（隠れている）／play＝流している／done＝見せ終わった */
+  const [phase, setPhase] = useState<"wait" | "play" | "done">("wait");
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const mqWrap = useRef<HTMLDivElement>(null);
+  const navWrap = useRef<HTMLDivElement>(null);
+  const cardEls = useRef<(HTMLDivElement | null)[]>([]);
+  const anims = useRef<Animation[]>([]);
+  const gateVal = useRef<number | null>(null);
+  const freeGate = () => {
+    const w = window as unknown as { __abashiriScrollGate?: number };
+    if (gateVal.current !== null && w.__abashiriScrollGate === gateVal.current) delete w.__abashiriScrollGate;
+    gateVal.current = null;
+  };
+  const play = (stop: number, y: number) => {
+    phaseRef.current = "play";
+    setPhase("play");
+    /* 写真が重なりきるまで、下へ行かせない（上へは戻れる）。2026-10-30 にいったん外して、同日ヒデさん「固定版あった方が良さそう。戻す」で戻した */
+    const w = window as unknown as { __abashiriScrollGate?: number };
+    gateVal.current = Math.max(stop, y);
+    w.__abashiriScrollGate = gateVal.current;
+    const cs = getComputedStyle(document.documentElement);
+    const n = (k: string, d: number) => {
+      const v = parseFloat(cs.getPropertyValue(k));
+      return Number.isFinite(v) && v >= 0 ? v : d;
+    };
+    const st = EV_IN_STYLES[Math.round(n("--ev-in-style", 1))] ?? EV_IN_STYLES[1];
+    const tText = n("--ev-in-text", 0.4) * 1000; /* 2026-10-30 0.8→0.4秒（ヒデさん「意外とオモロい網走の表示タイミングをもう少し早めて」） */
+    const tDelay = n("--ev-in-delay", 0.4) * 1000; /* 2026-10-30 0.6→1.5秒（ヒデさん「もう少し遅く」「1.5秒ぐらいで」）→「前に詰めましょう」1.1秒 →「0.4秒くらいにしましょう」0.4秒 */
+    const tGap = n("--ev-in-gap", 0.4) * 1000; /* 2026-10-30 0.45→0.8→0.6 →「出すタイミングがまばら。揃えて」で、文字→1枚目（写真のディレイ 0.4秒）と同じ 0.4秒おき */
+    const tDur = n("--ev-in-dur", 0.8) * 1000;
+    /* 透明から見えきるまで（2026-10-30 ヒデさん「画像自体の、透明から opacity 0→100% になる時間をもう少し早めに」）。
+       前は動きと同じ 0.8秒で濃くなっていた → 濃さだけ先に見えきる。動き（位置・ぼかし）は tDur のまま */
+    const tFade = n("--ev-in-fade", 0.3) * 1000;
+    const ease = "cubic-bezier(0.22, 1, 0.36, 1)";
+    anims.current.forEach((a) => a.cancel());
+    const list: Animation[] = [];
+    const mq = mqWrap.current?.animate(
+      [{ opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)" }],
+      { duration: tText, easing: ease, fill: "both" }
+    );
+    if (mq) list.push(mq);
+    /* いちばん下（④）から順に重ねる＝最後の①がいちばん上 */
+    const order = ITEMS.map((_, i) => ITEMS.length - 1 - i);
+    let last: Animation[] = [];
+    order.forEach((i, k) => {
+      const el = cardEls.current[i];
+      if (!el) return;
+      const delay = tDelay + k * tGap;
+      const move = el.animate(
+        [
+          { transform: st.from, filter: `blur(${st.blur}px)` },
+          { transform: "none", filter: "blur(0px)" },
+        ],
+        { duration: tDur, delay, easing: ease, fill: "both" }
+      );
+      const fade = el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: tFade, delay, easing: "ease-out", fill: "both" });
+      list.push(move, fade);
+      last = [move, fade];
+    });
+    const endMs = tDelay + (ITEMS.length - 1) * tGap + Math.max(tDur, tFade);
+    const nav = navWrap.current?.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 400,
+      delay: Math.max(0, endMs - 200),
+      easing: "ease-out",
+      fill: "both",
+    });
+    if (nav) list.push(nav);
+    anims.current = list;
+    const done = () => {
+      if (anims.current !== list) return; /* 途中で流し直した時は、古い方の終わりは無視 */
+      freeGate();
+      phaseRef.current = "done";
+      setPhase("done");
+      /* 終わりの見た目＝ふだんの見た目なので、動きを外しても変わらない（描き直しのあとで外す） */
+      requestAnimationFrame(() => requestAnimationFrame(() => list.forEach((a) => a.cancel())));
+    };
+    if (last.length) Promise.all(last.map((a) => a.finished)).then(done, () => {});
+    else done();
+  };
+  /* 着いたかどうかを毎フレーム見る（見るのは数字2つだけ） */
+  const lastY = useRef(-1);
+  const still = useRef(0);
+  useAnimationFrame(() => {
+    if (phaseRef.current !== "wait") return;
+    const el = rootRef.current;
+    const sc = document.querySelector<HTMLElement>("[data-abashiri-scroller]");
+    if (!el || !sc) return;
+    const stop = evStopOf(el);
+    const y = sc.scrollTop;
+    if (y > stop + el.offsetHeight) {
+      /* 場面がまるごと画面の上へ抜けている（下から戻ってきた・その位置で開き直した）→ 動きなしで見せておく */
+      phaseRef.current = "done";
+      setPhase("done");
+      return;
+    }
+    /* 「まず真っ白い画面で止まって、それから文字」（ヒデさん）なので、止まりきってから流す。
+       ぴったり着いた時か、場面の上端が画面の上から 200px 以内で止まっている時（ナビで体験セクションの頭へ飛んだ時など）。
+       ⚠️ 2026-10-30 に「画面の真ん中まで入ってきたら流す（固定なし）」をいったん試して、同日ヒデさん「固定版あった方が良さそう。戻す」でこちらに戻した */
+    /* 【2026-10-30 ヒデさん「体験セクションのテキストの出すタイミングをもうちょっと早めにしていい。その分全部後のやつを詰める」】
+       ぴったり止まりきる（残り 2px）のを待たず、残り 48px（止まる約0.4秒前・ゆっくり止まっていく最後のあたり）で流し始める🟡。
+       写真もそのぶん前に詰まる（全部この時からの秒数なので） */
+    still.current = Math.abs(y - lastY.current) < 0.5 ? still.current + 1 : 0;
+    lastY.current = y;
+    if (y >= stop - 48 || (y >= stop - 200 && still.current >= 8)) play(stop, y);
+  });
+  /* 調整パネルの「もう一度見る」：隠して、いま場面にいればその場で流し直す（いなければ次に着いた時） */
+  useEffect(() => {
+    const onReplay = () => {
+      anims.current.forEach((a) => a.cancel());
+      anims.current = [];
+      freeGate();
+      phaseRef.current = "wait";
+      setPhase("wait");
+    };
+    window.addEventListener(EV_REPLAY_EVENT, onReplay);
+    return () => {
+      window.removeEventListener(EV_REPLAY_EVENT, onReplay);
+      anims.current.forEach((a) => a.cancel());
+      freeGate();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const hidden = phase === "wait";
   /* カードの大きさ（--ev-shuf-card）を変えても、ボタンは束の下に同じすき間で付いてくる。
-     大きくしすぎてボタンが画面の下へはみ出す時は、フレームの下から64pxの所で止める */
-  const navTop = `min(calc(${STACK_CY.toFixed(1)}px + ${STACK_BOTTOM.toFixed(1)}px * var(--ev-shuf-card, 1) + ${NAV_GAP}px), ${FRAME_H - 64}px)`;
+     大きくしすぎてボタンが画面の下へはみ出す時だけ、画面（1512×982 の紙）の下から 64px の所で止める。
+     ⚠️ 2026-10-29 まではフレーム（920）の下から 64px で止めていて、カード 115% でボタンがカードに 14px 重なった
+        （ヒデさん「カードを115パーセントぐらいに。下のカルーセルボタンも今の余白感と同じぐらい開けて」） */
+  /* --ev-stack-y：束と送りボタンを一緒に上下へ（PC・2026-10-29 ヒデさん「束ごと上げる」。調整パネル「位置 Y」） */
+  const navTop = `min(calc(${STACK_CY.toFixed(1)}px + ${STACK_BOTTOM.toFixed(1)}px * var(--ev-shuf-card, 1) + ${NAV_GAP}px + var(--ev-stack-y, 0px)), ${FRAME_H + (CANVAS_H - FRAME_H) / 2 - 64}px)`;
   return (
     /* ⚠️ -mt-[180px]：体験セクションの上パディングを打ち消して、場面をちょうど画面いっぱい（1512×982）に
        （前は PinStage がやっていた。貼りつけはしないので、高さは1画面ぶんだけ） */
-    <div className="relative -mt-[180px] h-[982px] w-full overflow-hidden" style={{ background: EV_CANVAS_BG }} /* 4-7例外（PCのキャンバス 1512×982 の高さ） */>
+    <div
+      ref={rootRef}
+      data-ev-stop=""
+      data-ev-phase={phase}
+      className="relative -mt-[180px] h-[982px] w-full overflow-hidden"
+      style={{ background: EV_CANVAS_BG }} /* 4-7例外（PCのキャンバス 1512×982 の高さ） */
+    >
       <Frame
         full={
           /* 後ろを流れ続ける文字。右から左へ無限ループ（CSSアニメ＝スクロールと無関係）。
@@ -461,10 +631,12 @@ function MarqueeStack() {
                （--ev-mq-size。調整パネルの「案2 カードを切る」）。速さは 2026-10-29 から marqueePace.ts（グルメと共通）。
              ⚠️ 大きさを変えても文字の【中心の高さ】はカンプの位置（上から 31+398+40＝469px）に保つ */
           <div
+            ref={mqWrap}
             className="pointer-events-none absolute inset-x-0 overflow-hidden"
             style={{
               top: `calc(${(CANVAS_H - FRAME_H) / 2 + 398 + 40}px - var(--ev-mq-size, 80px) / 2)`,
               height: "var(--ev-mq-size, 80px)",
+              opacity: hidden ? 0 : undefined,
             }}
           >
             {/* 【2026-10-29】速さはグルメのカルーセルと同じ「1秒に何px」（marqueePace.ts）。1周の秒数は帯の長さから出す。
@@ -489,18 +661,29 @@ function MarqueeStack() {
         <div
           className="absolute inset-0"
           style={{
-            transform: `translateX(${STACK_SHIFT.toFixed(1)}px) scale(var(--ev-shuf-card, 1))`,
+            transform: `translate(${STACK_SHIFT.toFixed(1)}px, var(--ev-stack-y, 0px)) scale(var(--ev-shuf-card, 1))`,
             transformOrigin: `${STACK_GX.toFixed(1)}px ${STACK_CY}px`,
           }}
         >
           {ITEMS.map((it, i) => (
-            <LoopCard key={it.title} it={it} i={i} pos={pos} pow={pow} />
+            <LoopCard
+              key={it.title}
+              it={it}
+              i={i}
+              pos={pos}
+              pow={pow}
+              hidden={hidden}
+              innerRef={(el) => {
+                cardEls.current[i] = el;
+              }}
+            />
           ))}
         </div>
         {/* 送りボタン：丸いボタン2つを、束の下の真ん中（＝画面の左右の真ん中・2026-10-29）に並べる。カードより手前 */}
         <div
-          className="absolute z-50 flex -translate-x-1/2 justify-center"
-          style={{ left: FRAME_W / 2, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))` }}
+          ref={navWrap}
+          className={`absolute z-50 flex -translate-x-1/2 justify-center ${hidden ? "pointer-events-none" : ""}`}
+          style={{ left: FRAME_W / 2, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))`, opacity: hidden ? 0 : undefined }}
         >
           <EvNav onStep={step} />
         </div>

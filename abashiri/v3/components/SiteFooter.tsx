@@ -315,7 +315,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeNarrow: 85, solid: 0, solidWide: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeNarrow: 85, solidWide: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -369,7 +369,6 @@ function PhotoStage({
         stageH: num("--ft-stage-h", 120),
         fadeH: num("--ft-fade-h", 80),
         fadeNarrow: num("--ft-fade-h-narrow", 85),
-        solid: num0("--ft-fade-solid", 6),
         solidWide: num0("--ft-solid-wide", 0),
         padTop: num0("--ft-pad-top", 64),
         curve: Math.round(num("--ft-fade-curve", 1)),
@@ -460,11 +459,12 @@ function PhotoStage({
   }, []);
   const stageH = cfg.stageH / 100;
   const fadeH = cfg.fadeH / 100;
-  const solid = cfg.solid;
   /* PC の白→写真のグラデ。solid％までは真っ白、そこから先はグラデのパターン（FADE_CURVES）の曲線で薄くなる */
-  /* 詳しいページ・トップのスマホ（overlap="wide"）は「白のまま続く長さ」（--ft-solid-wide・調整パネル）を使う（2026-10-29）。
-     ヒデさん「フッター直前のセクションのグラデーションの白をもう少しだけ長く。マップのカードUIが終わるぐらいまで。調整パネルで」 */
-  const pcFade = fadeGradient(cfg.curve, overlap === "wide" ? cfg.solidWide : solid);
+  /* 白のまま続く長さは、全ページ（トップの PC も）サイト共通のつまみ「白のまま続く長さ」（--ft-solid-wide）を使う。
+     2026-10-29 ヒデさん「フッター直前のセクションのグラデーションの白をもう少しだけ長く。マップのカードUIが終わるぐらいまで。調整パネルで」（詳しいページ・トップのスマホ）
+     → 同日「体験セクションの写真の下の白と透過のグラデの割合を、もう少しだけ白を多めに。サイト共通でフッターに入ってくるので、サイト共通に効くように」
+       トップの PC は別の固定値（--ft-fade-solid 0%）だったのを、同じつまみ（PC 40%）にそろえた。トップは重ねる長さが長いので、40% でも見え方は「少し白が多い」くらい */
+  const pcFade = fadeGradient(cfg.curve, cfg.solidWide);
   const padCls = pad === "wide" ? "px-6 @min-[640px]:px-[var(--ft-pad-x)]" : "px-6 @min-[640px]:px-[120px]";
   const alignCls = align === "end" ? "justify-end pb-[56px] @min-[640px]:pb-[var(--ft-pad-bottom)]" : "justify-center";
 
@@ -709,7 +709,11 @@ function Body({ overlap = false }: { overlap?: boolean | "wide" }) {
     <PhotoStage align="end" pad="wide" overlap={overlap}>
       {/* 横並び（左に作字・右にサイトマップ）はフッターの幅が 1200px 以上の時だけ（1024px だとサイトマップの列が66pxまで細くなった）。
           それより狭い時は作字を中央・その下にサイトマップ（2026-09-26 タブレット対応） */}
-      <div className="flex w-full flex-col gap-14 @min-[1200px]:flex-row @min-[1200px]:items-center @min-[1200px]:justify-between @min-[1200px]:gap-[var(--ft-col-gap)]">
+      {/* 中身（ロゴと文字のリンク）だけを上下にずらす（--ft-body-y・調整パネル「ロゴとリンクの位置 Y」・2026-10-29）。transform なので写真やフッターの大きさは変わらない */}
+      <div
+        className="flex w-full flex-col gap-14 @min-[1200px]:flex-row @min-[1200px]:items-center @min-[1200px]:justify-between @min-[1200px]:gap-[var(--ft-col-gap)]"
+        style={{ transform: "translateY(var(--ft-body-y, 0px))" }}
+      >
         {/* 左の作字。サイトの顔なので大きく出す。SNS アイコンは無し */}
         <div className="flex shrink-0 flex-col items-center @min-[1200px]:items-start">
           <Logo light />
