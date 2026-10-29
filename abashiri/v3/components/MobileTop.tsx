@@ -82,7 +82,7 @@ const FLOW_SCENE = 6;
 /** メニュー・別ページから来る番号（6 グルメ／7 体験／8 フッター。前の場面の番号のまま）→ 流れの中のどこへ */
 const FLOW_ANCHOR: Record<number, "gourmet" | "events" | "footer"> = { 6: "gourmet", 7: "events", 8: "footer" };
 /** フッターのサイトマップ見出し・別ページからの「セクションへ」の行き先 → 番号 */
-const KEY_TO_SCENE: Record<string, number> = { spotAt: 2, gourmetAt: 6, eventsAt: 7 };
+const KEY_TO_SCENE: Record<string, number> = { topAt: 0, spotAt: 2, gourmetAt: 6, eventsAt: 7 }; /* topAt＝キービジュアル（フッターのロゴから・2026-10-29） */
 
 /* KV / メッセージ / スポット×4 / グルメ〜体験〜フッター（ふつうのスクロール）
    （2026-09-16 ヒデさん指示で体験とフッターを追加。PCと同じ中身をスマホでも見せる） */
@@ -380,10 +380,11 @@ export default function MobileTop() {
       >
         {/* タブレットは行が長くなりすぎるので、柱の幅を決めて中央に置く */}
         <div className="w-full tab:mx-auto tab:max-w-[680px]">
-          <h2 className="text-title-28 font-thin leading-[1.5] tab:text-title-44">
+          {/* 調整パネルの「文字の行」（[data-msg-title]・[data-msg-body]）と「不透明度」が当たる（PC の MessageSection と同じ目印・2026-10-29） */}
+          <h2 data-msg-title="" className="text-title-28 font-thin leading-[1.5] tab:text-title-44" style={{ opacity: "var(--msg-title-opacity, 1)" }}>
             {MSG_TITLE}
           </h2>
-          <div className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.0214em] max-tab:leading-[1.8] tab:mt-12 tab:space-y-8 tab:text-body-18 tab:tracking-[0.0167em]">
+          <div data-msg-body="" style={{ opacity: "var(--msg-body-opacity, 1)" }} className="mt-9 space-y-6 text-body-14 font-light leading-[2] tracking-[0.0214em] max-tab:leading-[1.8] tab:mt-12 tab:space-y-8 tab:text-body-18 tab:tracking-[0.0167em]">
             {MSG_BLOCKS.map((lines, i) => (
               <p key={i}>
                 {lines.map((l, j) => (

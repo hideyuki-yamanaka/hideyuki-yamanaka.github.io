@@ -14,9 +14,10 @@
  *
  * 出方は5案（msgConfig.ts）。スクロール駆動なので、戻せば巻き戻る。
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMotionValueEvent, type MotionValue } from "framer-motion";
 import { mergeMsg, parseMsgBody, type MsgTune } from "./msgConfig";
+import { TUNE_RESYNC_EVENT } from "./tuneKeys";
 
 /* 文言は msgConfig.ts の DEFAULT_MSG（title / body）から取り、
    パネルの「メッセージ｜文言」で編集できる（2026-08-30 ヒデさん依頼）。
@@ -57,7 +58,14 @@ export default function MessageSection({
   /* 見た目（透過率・ウェイト・行間）はパネルから（2026-08-23 ヒデさん依頼） */
   const titleBase = M.titleOpacity / 100;
 
-  if (shellOpacity <= 0.001) return null;
+  /* 見えるようになるたびに作り直されるので、調整パネルの文字の行（大きさ・太さ・行間・字間）を当て直してもらう（2026-10-29） */
+  const visible = shellOpacity > 0.001;
+  useEffect(() => {
+    if (!visible) return;
+    const id = requestAnimationFrame(() => window.dispatchEvent(new CustomEvent(TUNE_RESYNC_EVENT)));
+    return () => cancelAnimationFrame(id);
+  }, [visible]);
+  if (!visible) return null;
 
   /* 「読む順」の通し番号：見出し=0、本文の行=1〜。案ごとの出しどころに使う。
      soft（にじみ幅）が大きいほど、1つの行が出るのに深いスクロールを使う
@@ -155,13 +163,20 @@ export default function MessageSection({
             ...titleStyle(),
           }}
         >
-          {TITLE}
+          {/* 【2026-10-29 ヒデさん「メッセージの大きいコピー・本文の透過率やフォントのサイズ・ウェイトなどを変えられるように。既存のフォント調整のパネルで」】
+              調整パネルの「文字の行」（[data-msg-title]）と「不透明度」（--msg-title-opacity）が当たる箱。外側の <p> は登場の動きを持つので触らない */}
+          <span data-msg-title="" className="block" style={{ opacity: "var(--msg-title-opacity, 1)" }}>
+            {TITLE}
+          </span>
         </p>
         {/* 本文：カンプ 15480:23019 の実測（Noto Sans JP Light 20px / 行間2 / 字間0.4px / 白） */}
         <div
-          className="mt-[120px] text-body-20 tracking-[0.02em]"
-          style={{ fontWeight: M.bodyWeight, lineHeight: M.bodyLeading }}
+          className="text-body-20 tracking-[0.02em]"
+          /* 見出しと本文のギャップ。2026-10-29 ヒデさん「網走は何もない。の下をもう少し詰めて、本文を少し上に」→ 120→72px🟡（調整パネル › トップページ › 基本 › メッセージ） */
+          style={{ marginTop: "var(--msg-head-gap, 72px)", fontWeight: M.bodyWeight, lineHeight: M.bodyLeading }}
         >
+          {/* 調整パネルの「文字の行」（[data-msg-body]）と「不透明度」（--msg-body-opacity）が当たる箱（2026-10-29） */}
+          <div data-msg-body="" style={{ opacity: "var(--msg-body-opacity, 1)" }}>
           {BLOCKS.map((lines, bi) => (
             <div key={bi} className={bi === 0 ? "" : "mt-[40px]"}>
               {lines.map((l) => {
@@ -174,6 +189,7 @@ export default function MessageSection({
               })}
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

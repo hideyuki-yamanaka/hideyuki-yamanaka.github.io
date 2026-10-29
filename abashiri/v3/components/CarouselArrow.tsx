@@ -9,6 +9,7 @@
  * 地の色は2通り
  *   onDark … 青い地や写真の上。地 white/10・線 white/40・矢印 白（場所えらび。キービジュアルの「ぼーっとしてみる」と同じ）
  *     2026-10-28 から地・線・ぼかしは全ページ共通のガラスのボタン（globals.css の .glass-btn。調整パネルで一括に変わる）
+ *   2026-10-29 から onLight も同じ見た目（白いガラス・白い矢印）。tone は置き場所の目印として残している
  *   onLight … 白い地・薄い水色の地の上。地 white/30・線 ブランドの青 25%・矢印 ブランドの青・すりガラス（blur65）
  *     【2026-10-21 ヒデさん】①「グレーの惑星みたいな感じではなく、キービジュアルのぼーっとしてみるのボタンみたいに。見にくければ視認性を」
  *       → いったん ブランドの青 80% の丸に白い矢印にした
@@ -46,7 +47,6 @@ export default function CarouselArrow({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const onLight = tone === "onLight";
   const s = SIZE[size];
   return (
     <button
@@ -55,9 +55,9 @@ export default function CarouselArrow({
       aria-label={label}
       style={style}
       className={`${className} flex ${s.box} cursor-pointer items-center justify-center rounded-full transition-colors duration-300 ease-standard ${
-        onLight
-          ? "bg-white/30 text-brand ring-1 ring-inset ring-brand/25 backdrop-blur-65 hover:bg-white/50"
-          : "glass-btn glass-hover text-white"
+        /* 【2026-10-29 ヒデさん「体験セクションの下のカルーセルのシェブロンのボタンは、キービジュアルの『ぼーっとしてみる』のボタンに合わせる。中身のシェブロンも白で」】
+           → onLight（体験セクションの送りボタン）も onDark と同じ全ページ共通のガラスのボタン（.glass-btn）・白い矢印に。前は 案9 青いふちのガラス */
+        "glass-btn glass-hover text-white"
       }`}
     >
       <svg viewBox="0 0 24 24" fill="none" className={s.icon} aria-hidden>

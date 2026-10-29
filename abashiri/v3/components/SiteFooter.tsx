@@ -122,11 +122,29 @@ function jumpTo(key: "spotAt" | "gourmetAt" | "eventsAt") {
       ブロックごと拡大縮小するので、位置関係は崩れない */
 const LOGO_W = 415;
 const LOGO_H = 379;
+/** フッターのロゴを押した時：トップのいちばん上（キービジュアル）へ。
+    2026-10-29 ヒデさん「フッターの左カラムのロゴをもう少しだけ小さくして、クリックできるように。ホームに飛ぶように」。
+    トップにいる時は ナビの「ホーム」と同じ幕つきで上へ（PC）／キービジュアルの場面へ（スマホ）、ほかのページからはトップへ移る */
+function goHome() {
+  if (window.location.pathname === "/") {
+    if (document.querySelector("[data-abashiri-scroller]")) {
+      window.dispatchEvent(new CustomEvent("abashiri:scroll-to", { detail: { y: 0 } }));
+    } else {
+      window.dispatchEvent(new CustomEvent("abashiri:goto-key", { detail: { key: "topAt" } }));
+    }
+    return;
+  }
+  navigateTo("/");
+}
+
 function Logo({ light = false }: { light?: boolean }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={goHome}
+      aria-label="トップへ"
       /* 【2026-09-26 ヒデさん指示】スマホのフッターでは作字を中央に。PC は左のまま */
-      className="relative shrink-0 self-center @min-[1200px]:self-start"
+      className="relative block shrink-0 cursor-pointer self-center transition-opacity duration-300 ease-standard hover:opacity-80 @min-[1200px]:self-start"
       style={{
         /* 高さはつまみ（--ft-logo-h）。幅は比率から出す */
         height: "var(--ft-logo-h)",
@@ -157,7 +175,7 @@ function Logo({ light = false }: { light?: boolean }) {
           style={{ left: -28, top: 13.1, width: 471, height: 390 }} /* 4-7例外（作字の画像の実寸 471×390） */
         />
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -297,7 +315,7 @@ function PhotoStage({
   /** 調整パネルから変えられる値（CSS変数）。
       高さとグラデはレイアウトに関わるので、変わった時だけ描き直す。
       curve＝グラデのパターン（FADE_CURVES の番号・2026-10-20） */
-  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeNarrow: 85, solid: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
+  const [cfg, setCfg] = useState({ stageH: 120, fadeH: 72, fadeNarrow: 85, solid: 0, solidWide: 0, padTop: 64, curve: 1, overlap: 400, tone: 1, bright: 100, sat: 100, shade: 0, shadeH: 40, light: 0 });
 
   useEffect(() => {
     /* このフッターが入っているスクロールの箱を探す
@@ -312,9 +330,13 @@ function PhotoStage({
       return null;
     };
     let id = 0;
+    /* 【2026-10-29】見つけたスクロールの箱は覚えておく。前は毎コマ（1秒に60回）親をたどって探し直していて、
+       そのたびにページ全体の配置計算をさせていた（ページ移動の幕がカクつく原因の1つ・遅いパソコンで約56ms） */
+    let scroller: HTMLElement | null = null;
     const tick = () => {
       const el = ref.current;
-      const sc = findScroller();
+      if (!scroller || !scroller.isConnected) scroller = findScroller();
+      const sc = scroller;
       if (el && sc) {
         const H = sc.clientHeight;
         setVh((p) => (Math.abs(p - H) > 1 ? H : p));
@@ -340,6 +362,7 @@ function PhotoStage({
           fadeH: num("--ft-fade-h", 80),
           fadeNarrow: num("--ft-fade-h-narrow", 85),
           solid: num0("--ft-fade-solid", 6),
+          solidWide: num0("--ft-solid-wide", 0),
           padTop: num0("--ft-pad-top", 64),
           curve: Math.round(num("--ft-fade-curve", 1)),
           overlap: num0("--ft-overlap", 0),
@@ -357,6 +380,7 @@ function PhotoStage({
           o.solid === nc.solid &&
           o.padTop === nc.padTop &&
           o.fadeNarrow === nc.fadeNarrow &&
+          o.solidWide === nc.solidWide &&
           o.curve === nc.curve &&
           o.overlap === nc.overlap &&
           o.tone === nc.tone &&
@@ -371,8 +395,18 @@ function PhotoStage({
       }
       id = requestAnimationFrame(tick);
     };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
+    /* 測り始めは、ページが出た瞬間を避けて手が空いてから（フッターはページのいちばん下なので、出た瞬間には要らない） */
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    let idle = 0;
+    const to = window.setTimeout(() => {
+      if (w.requestIdleCallback) idle = w.requestIdleCallback(() => { id = requestAnimationFrame(tick); }, { timeout: 1200 });
+      else id = requestAnimationFrame(tick);
+    }, 300);
+    return () => {
+      window.clearTimeout(to);
+      if (idle && w.cancelIdleCallback) w.cancelIdleCallback(idle);
+      cancelAnimationFrame(id);
+    };
   }, []);
 
   /* 高さが測れるまでは 1画面ぶんを仮に置く（描画のちらつき防止） */
@@ -397,7 +431,9 @@ function PhotoStage({
   const fadeH = cfg.fadeH / 100;
   const solid = cfg.solid;
   /* PC の白→写真のグラデ。solid％までは真っ白、そこから先はグラデのパターン（FADE_CURVES）の曲線で薄くなる */
-  const pcFade = fadeGradient(cfg.curve, solid);
+  /* 詳しいページ・トップのスマホ（overlap="wide"）は「白のまま続く長さ」（--ft-solid-wide・調整パネル）を使う（2026-10-29）。
+     ヒデさん「フッター直前のセクションのグラデーションの白をもう少しだけ長く。マップのカードUIが終わるぐらいまで。調整パネルで」 */
+  const pcFade = fadeGradient(cfg.curve, overlap === "wide" ? cfg.solidWide : solid);
   const padCls = pad === "wide" ? "px-6 @min-[640px]:px-[var(--ft-pad-x)]" : "px-6 @min-[640px]:px-[120px]";
   const alignCls = align === "end" ? "justify-end pb-[56px] @min-[640px]:pb-[var(--ft-pad-bottom)]" : "justify-center";
 
@@ -594,7 +630,8 @@ function MapColumn({
     <div className="flex min-w-0 flex-col">
       <div className={`border-b pb-3 ${line}`}>{Head}</div>
       {/* 【2026-09-26 ヒデさん指示】小項目の字下げ（pl-4）はやめ、見出しと左をそろえる（PC・スマホ共通） */}
-      <ul className="mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]">
+      {/* ft-list：スマホでは項目を横に並べて折り返す（globals.css の .ft-list・2026-10-29 決定） */}
+      <ul className="ft-list mt-[var(--ft-head-gap)] flex flex-col gap-[var(--ft-item-gap)]">
         {col.items.map((n) => (
           <li key={n.label}>
             {n.href ? (
@@ -624,7 +661,7 @@ function MapColumn({
 function SiteMapGrid({ light = false }: { light?: boolean }) {
   return (
     /* 3列にするのはフッターの幅が 640px 以上の時（画面の幅ではなくフッター自身の幅。2026-09-26） */
-    <div className="grid w-full grid-cols-1 gap-x-8 gap-y-[var(--ft-map-gap-y)] @min-[640px]:grid-cols-3 @min-[640px]:gap-x-[var(--ft-map-gap-x)]">
+    <div className="ft-map grid w-full grid-cols-1 gap-x-8 gap-y-[var(--ft-map-gap-y)] @min-[640px]:grid-cols-3 @min-[640px]:gap-x-[var(--ft-map-gap-x)]">
       {SITEMAP.map((c) => (
         <MapColumn key={c.title} col={c} light={light} />
       ))}

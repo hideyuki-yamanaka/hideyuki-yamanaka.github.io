@@ -202,13 +202,13 @@
   },
   "pageTrans": {
     "pattern": 7,
-    "dur": 1000,
-    "blur": 3,
-    "peak": 88
+    "dur": 1040,
+    "blur": 18,
+    "peak": 100
   },
   "footer": {
     "padX": 60,
-    "padBottom": 112,
+    "padBottom": 48,
     "colGap": 248,
     "mapGapX": 84,
     "mapGapY": 48,
@@ -284,6 +284,25 @@
     "soundMsg": {
       "fw": 300,
       "ls": 4
+    },
+    "msgTitle": {
+      "fs": 88,
+      "fw": 100,
+      "lh": 1,
+      "ls": 0
+    },
+    "msgBody": {
+      "fs": 20,
+      "fw": 200,
+      "lh": 2,
+      "ls": 2
     }
-  }
+  },
+  "ftLift": -180,
+  "msgGap": 72,
+  "msgFx": {
+    "titleA": 100,
+    "bodyA": 100
+  },
+  "ftSolid": 40
 }

@@ -265,6 +265,14 @@ type Params = {
   scrollSpd: { kvToMsg: number };
   nav: { inMs: number; outMs: number };
   /** 各セクションの大見出しの大きさ（2026-09-16） */
+  /** フッターの位置 Y（px・マイナスで上へ＝本文の裏へ深く重ねる。PC とスマホは別の値・2026-10-29） */
+  ftLift: number;
+  /** 詳しいページ・トップのスマホのフッターの白いグラデのうち、白のまま続く長さ（%・PC とスマホは別の値・2026-10-29） */
+  ftSolid: number;
+  /** トップのメッセージ（PC）の見出しと本文のギャップ（px・2026-10-29） */
+  msgGap: number;
+  /** トップのメッセージの大きいコピー・本文の不透明度（%・100＝今の濃さ・2026-10-29） */
+  msgFx: { titleA: number; bodyA: number };
   secHead: number;
   tips: { delay: number; fade: number; pattern: number };
   videoVol: { fadeIn: boolean; fadeSec: number; uiHideSec: number };
@@ -330,7 +338,7 @@ export default function TopTunePanel({
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
         padX: 160,
-        padBottom: 112, /* 2026-09-27 4-7 で 110→112（globals.css の --ft-pad-bottom・tune-defaults.json と同じ値） */
+        padBottom: 48, /* 2026-09-27 4-7 で 110→112・2026-10-28「フッターの中身をもう少し下に」で 112→48（globals.css の --ft-pad-bottom・tune-defaults.json と同じ値） */
         colGap: 140,
         mapGapX: 40,
         mapGapY: 48,
@@ -367,6 +375,10 @@ export default function TopTunePanel({
       scrollSpd: { kvToMsg: 100 },
       nav: { inMs: 420, outMs: 620 },
       secHead: 36,
+      ftSolid: 40, /* PC。スマホは spDefault 30（地図のカードの下で白がほぼ残る値） */
+      ftLift: -180, /* PC。2026-10-29 ヒデさん -340px → 同日「指定の数字へ」で -180px（スマホは spDefault 0） */
+      msgGap: 72,
+      msgFx: { titleA: 100, bodyA: 100 },
       tips: { delay: 5, fade: 1.2, pattern: 5 }, /* 出現は案5「下からゆっくり」で確定 */
       videoVol: { fadeIn: true, fadeSec: 3, uiHideSec: 2 },
       expEnter: { ...DEFAULT_ENTER_TUNE },
@@ -434,6 +446,25 @@ export default function TopTunePanel({
         }
       }
       root.style.setProperty("--sound-msg-gap", `${params.sound.dlgGap ?? 0}px`);
+      root.style.setProperty("--msg-head-gap", `${params.msgGap ?? 72}px`);
+      /* メッセージの不透明度（いまの濃さに掛ける倍率。スマホの端末ではスマホの値が params に入っている） */
+      root.style.setProperty("--msg-title-opacity", String((params.msgFx?.titleA ?? 100) / 100));
+      root.style.setProperty("--msg-body-opacity", String((params.msgFx?.bodyA ?? 100) / 100));
+      /* フッターの位置 Y（PC とスマホは別の変数・ガラスのボタンと同じ考え方） */
+      {
+        const phone = window.matchMedia("(max-width: 600px)").matches;
+        let mb: Record<string, unknown> = {};
+        try { mb = JSON.parse(localStorage.getItem(`tp:${TOP_TUNE_KEY}:v${TOP_TUNE_VERSION}:mb`) || "{}"); } catch {}
+        const pc = params.ftLift ?? 0;
+        const sp = phone ? pc : typeof mb.ftLift === "number" ? mb.ftLift : 0;
+        if (!phone) root.style.setProperty("--ft-lift-pc", `${pc}px`);
+        root.style.setProperty("--ft-lift-sp", `${sp}px`);
+        /* 白のまま続く長さ（同じ考え方で -pc／-sp） */
+        const spc = params.ftSolid ?? 40;
+        const ssp = phone ? spc : typeof mb.ftSolid === "number" ? mb.ftSolid : 30;
+        if (!phone) root.style.setProperty("--ft-solid-wide-pc", String(spc));
+        root.style.setProperty("--ft-solid-wide-sp", String(ssp));
+      }
       root.style.setProperty("--sound-dlg-blur", `${params.sound.dlgBlur ?? 40}px`);
       /* 写真の組（PhotoSetSwitch が <html data-photo-set> を見張って差し替える） */
       root.dataset.photoSet = (params.photos?.set ?? PHOTO_SET_DEFAULT) === 0 ? "prev" : "new";
@@ -628,6 +659,7 @@ export default function TopTunePanel({
               /* 左上の音のスイッチのアイコンは 2026-10-20 に「音の波」に決定（5案の切り替えは外した・BgmIcons.tsx） */
               /* 【2026-10-28 ヒデさん】「一番最初のサウンドのオンオフのUIをブラッシュアップ。3案ほど。抜け感があり、上品でゆったり。キービジュアルの世界観に」
                  → 最初の確認の窓の見せ方を 現行＋3案 から選ぶ（soundDialogConfig.ts・SoundUi.tsx）。案の見比べなのでバリエーション（6-13・6-18） */
+              /* スマホのフッターの並べ方の2案（2026-10-29）は、同日ヒデさん「スマホのフッターは1でいきましょう」で「横に並べて折り返す」に決めて、ピルは外した（globals.css の .ft-list） */
               { sub: "環境音（BGM）", grp: "variation" },
               {
                 pills: "最初の確認の窓",
@@ -674,6 +706,35 @@ export default function TopTunePanel({
               /* 【2026-10-28 ヒデさん「サウンドオフの画面が一時的に調整パネル上で出せると嬉しい。毎回キャッシュクリアして出すのが手間なので」】
                  → 最初の確認の窓を、その場で出し直す押しボタン（共通の部品の { button }）。確認用なので その他（6-13・6-18）。
                    どの案を選んでいても出せる。窓の ON／OFF を押すと閉じる（押した方が音の設定として残るのは、ふだんと同じ） */
+              /* 【2026-10-29 ヒデさん「フッターセクションを全体を上に上げられるような調整パネルを。コンテンツの終わりからフッターまでの距離が長いので、ある程度数値にゆとり・幅を持って」】
+                 → 位置のずらしなので 基本 › 位置 Y（6-13・6-18）。0＝いま・マイナスで上へ（本文の裏へ深く重ねる）・プラスで下へ。全ページのフッター（トップ・詳しいページ）に効く。PC とスマホは別の値 */
+              { sub: "フッター（全ページ共通）", grp: "basic" },
+              {
+                slider: "位置 Y",
+                path: "ftLift",
+                min: -400,
+                max: 240,
+                step: 4,
+                unit: "px",
+                signed: true,
+                spDefault: 0,
+                immediate: true,
+                hint: "フッターを上下に動かす。マイナスで上へ（中身の終わりからフッターまでが近くなる）・プラスで下へ。トップと詳しいページの両方に効きます。PC とスマホは別の値。",
+              },
+              /* 【2026-10-29 ヒデさん「フッター直前のセクションのグラデーションの白をもう少しだけ長く。マップのカードUIが終わるぐらいまで。調整パネルで」】
+                 → グラデなので エフェクト＆テクスチャ（6-13・6-18）。効くのは詳しいページ・トップのスマホ（本文の裏へ潜り込ませるフッター） */
+              { sub: "フッター（全ページ共通）", grp: "fxtex" },
+              {
+                slider: "白のまま続く長さ",
+                path: "ftSolid",
+                min: 0,
+                max: 80,
+                step: 1,
+                unit: "%",
+                spDefault: 30,
+                immediate: true,
+                hint: "フッターの手前の白いグラデのうち、真っ白のまま続く長さ（グラデの長さの%）。大きいほど白が長く続いてから空へ移る。詳しいページ（PC・スマホ）とトップのスマホに効きます。PC とスマホは別の値。",
+              },
               { sub: "最初の確認の窓", grp: "other" },
               {
                 button: "窓を出す（確認用）",
@@ -765,6 +826,20 @@ export default function TopTunePanel({
                   { name: "前の写真", value: 0, desc: "調整する前の写真（-prev のファイル）" },
                 ],
               },
+              /* 【2026-10-29 ヒデさん「網走は何もない。メッセージセクションの網走は何もないの下はもう少し詰められる？下の本文を少し上に上げるイメージ」】
+                 → PC の見出しと本文のギャップ 120→72px🟡。余白なので 基本 › ギャップ（6-13・6-18）。スマホは元から 36px なので触っていない */
+              { sub: "メッセージ（網走は何もない。）", grp: "basic" },
+              { slider: "見出しと本文のギャップ", path: "msgGap", min: 0, max: 200, step: 4, unit: "px", immediate: true, hint: "「網走は何もない。」と本文の間（PC）。前は 120px。" },
+              /* 【2026-10-29 ヒデさん「メッセージの大きいコピー・本文の透過率やフォントのサイズ・ウェイトなどを変えられるように。既存のフォント調整のパネルで。新しく作らない。必要な物だけ新機能として」】
+                 → 文字は今ある「文字の行」に2行足す（6-17）。濃さだけは文字の行に無いので、エフェクト＆テクスチャの「不透明度」を2つ（6-13・6-18）。
+                   PC（MessageSection）とスマホ（MobileTop）は同じ目印。PC とスマホは別の値 */
+              { sub: "メッセージ（網走は何もない。）", grp: "font" },
+              { font: "網走は何もない。（大きいコピー）", sel: "[data-msg-title]", id: "msgTitle" },
+              { font: "よくそんなことを…（本文）", sel: "[data-msg-body]", id: "msgBody" },
+              { sub: "メッセージ（網走は何もない。）", grp: "fxtex" },
+              { slider: "不透明度（大きいコピー）", path: "msgFx.titleA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 100, immediate: true, hint: "100% で今の濃さ（白80%）のまま。下げるほど薄く。" },
+              { slider: "不透明度（本文）", path: "msgFx.bodyA", min: 0, max: 100, step: 1, unit: "%", clamp: true, spDefault: 100, immediate: true, hint: "100% で今の濃さのまま。下げるほど薄く。" },
+              /* 水平線の3案（2026-10-29）は、同日ヒデさん「水平線は一旦なしで大丈夫。調整パネルからも削除して大丈夫」で外した（戻す時は git の記録：bg-hero-hz1〜3.jpg・horizonConfig.ts） */
               /* 【2026-10-21 ヒデさん】「キービジュアルの写真も、彩度とか露光量とか、一通りのレタッチできる項目を調整できるように、
                  エフェクト＆テクスチャのパネルにキービジュアルという項目を一番最初につけて」→「調整パネルにある写真の調整は、同じ10項目を入れて」。
                  写真の色・明るさなのでエフェクト＆テクスチャ（6-13・6-18）。写真そのものを計算し直して差し替える（幕・フィルターは重ねない・PhotoRetouch） */
@@ -1687,6 +1762,8 @@ export default function TopTunePanel({
       params.expPick = { pattern: 3 };
       params.videoVol.fadeIn = true;
       params.videoVol.fadeSec = 3;
+      /* ページ移動の幕は、ヘッダーのナビの幕と同じ値に固める（2026-10-29 ヒデさん「サイト全体のページ遷移のトランジションを統一」・PageTransition の PT_DEFAULT） */
+      params.pageTrans = { pattern: 7, dur: PT_DEFAULT.dur, blur: PT_DEFAULT.blur, peak: PT_DEFAULT.peak };
       /* 保存されていた値を最初の1回だけ反映する */
       applyVars();
       applyVolume();

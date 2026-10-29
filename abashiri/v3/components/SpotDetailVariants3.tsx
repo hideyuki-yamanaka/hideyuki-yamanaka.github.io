@@ -137,12 +137,33 @@ function headsOf(spot: SpotDetail): { heading: string; text: string }[] {
 }
 
 /** 目次に出す項目（本文の見出し＋下の3ブロック） */
+/** 見出しの頭の番号（左の目次の番号と同じ・2026-10-29）。
+    ヒデさん「詳細ページの見出しに、目次のナンバリングと連動した数字を置いて。同じような文字の大きさのバランスで」
+    → 目次は 番号18px：文字14px（約1.3倍）・細い Inter（font-num）なので、見出しも 番号＝見出しの 4/3 倍（24px → 32px）・細い Inter。
+      大きさは em で持つので、調整パネルの文字の行で見出しの大きさを変えても、番号が一緒に変わってバランスが崩れない🟡 */
+function HeadNum({ n }: { n: number }) {
+  return (
+    <span aria-hidden className="mr-4 inline-block font-num font-thin leading-none" style={{ fontSize: "1.3333em" }}>
+      {String(n).padStart(2, "0")}
+    </span>
+  );
+}
+
+/** 下の3ブロックのうち、中身があるものだけ（2026-10-29 ヒデさん「コンテンツが揃っていなくて中身がないものは、見出し自体を非表示にして、
+    インデックスのナンバリングも詰めて、次のコンテンツを2番として扱う。表示・非表示で扱う形に」）。
+    目次（tocOf）と見出し（QuietBlocks）の両方がここを見るので、番号と data-sec がずれない */
+function quietOf(spot: SpotDetail) {
+  return [
+    { id: "pt", label: "おすすめポイント", has: spot.points.some((p) => p.trim() !== "") },
+    { id: "info", label: "基本情報", has: spot.info.some((r) => (r.value ?? "").trim() !== "") },
+    { id: "map", label: "周辺マップ", has: !!spot.map?.query },
+  ].filter((b) => b.has);
+}
+
 function tocOf(spot: SpotDetail) {
   return [
     ...headsOf(spot).map((s, i) => ({ id: `s${i}`, label: s.heading })),
-    { id: "pt", label: "おすすめポイント" },
-    { id: "info", label: "基本情報" },
-    { id: "map", label: "周辺マップ" },
+    ...quietOf(spot).map((b) => ({ id: b.id, label: b.label })),
   ];
 }
 
@@ -238,26 +259,16 @@ function QuietBlocks({
           【2026-10-21 ヒデさん「スマホで写真が縦に積んだ時の上下のマージン・段落ごとの間・基本情報や周辺マップなどセクションの間を詰めて」】
           → スマホ（768px 未満）だけ、セクションの前を 本文の間 40px＋頭の余白 24px＝64px に（前は 56＋88＝144px）🟡。
             タブレット・PC は md: で今までの値のまま */}
-      <motion.section data-sec={from} className="flex flex-col gap-7 pt-6 md:pt-0" {...V}>
-        <h2 className={head} {...hd}>担当者からのおすすめポイント</h2>
-        <Points spot={spot} />
-      </motion.section>
-      <motion.section
-        data-sec={from + 1}
-        className="flex flex-col gap-7 pt-6 md:pt-[88px]"
-        {...V}
-      >
-        <h2 className={head} {...hd}>基本情報</h2>
-        <InfoTable spot={spot} />
-      </motion.section>
-      <motion.section
-        data-sec={from + 2}
-        className="flex flex-col gap-7 pt-6 md:pt-[88px]"
-        {...V}
-      >
-        <h2 className={head} {...hd}>周辺マップ</h2>
-        <MapEmbed spot={spot} />
-      </motion.section>
+      {/* 2026-10-29 下の3ブロックの頭の余白（スマホ 24px・PC 88px の上乗せ）は外し、ブロックの間はセクションのギャップ（--dt-sec）1つに */}
+      {quietOf(spot).map((b, k) => (
+        <motion.section key={b.id} data-sec={from + k} className="flex flex-col gap-7" {...V}>
+          <h2 className={head} {...hd}>
+            <HeadNum n={from + k + 1} />
+            {b.id === "pt" ? "担当者からのおすすめポイント" : b.label}
+          </h2>
+          {b.id === "pt" ? <Points spot={spot} /> : b.id === "info" ? <InfoTable spot={spot} /> : <MapEmbed spot={spot} />}
+        </motion.section>
+      ))}
     </>
   );
 }
@@ -684,7 +695,8 @@ function TocLayout({
           </aside>
 
           {/* 右カラム：本文 */}
-          <div className="flex min-w-0 flex-1 flex-col gap-10 md:gap-[56px] lg:gap-[96px]">
+          {/* セクションどうしのギャップは --dt-sec（調整パネル › 基本 › 本文 › セクションのギャップ・2026-10-29。前は 40／56／96px） */}
+          <div className="flex min-w-0 flex-1 flex-col" style={{ gap: "var(--dt-sec)" }}>
             {heads.map((s, i) => (
               <motion.section
                 key={i}
@@ -699,6 +711,7 @@ function TocLayout({
                   data-dt-head=""
                   className="text-[length:var(--dt-head)] font-thin leading-[1.5] text-ink [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]"
                 >
+                  <HeadNum n={i + 1} />
                   {s.heading}
                 </h3>
                 {/* 【2026-09-26 ヒデさん指示】「段落がコンテンツ幅より手前で折り返す。
@@ -721,7 +734,9 @@ function TocLayout({
               </motion.section>
             ))}
             {/* 写真は1つのまとまりにして、スマホだけ写真どうしを 8px に詰める（タブレット・PC は本文の間と同じ 56／96px のまま） */}
-            <div className="flex flex-col gap-2 md:gap-[56px] lg:gap-[96px]">
+            {/* 写真どうしのギャップは --dt-photo（調整パネル › 基本 › 本文 › 写真どうしのギャップ・2026-10-29。前は 8／56／96px） */}
+            {/* 本文の終わり→写真 は --dt-tophoto（まわりのセクションのギャップ --dt-sec との差を上に足し引きする・2026-10-29） */}
+            <div className="flex flex-col" style={{ gap: "var(--dt-photo)", marginTop: "calc(var(--dt-tophoto) - var(--dt-sec))" }}>
               {spot.photos.map((p, i) => (
                 <Photo key={i} src={p} root={ref} className="aspect-[3/2] w-full" />
               ))}

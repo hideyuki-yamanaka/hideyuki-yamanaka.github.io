@@ -64,12 +64,17 @@ export const SPOT_DETAIL_PATTERNS: Record<
   },
 };
 
+/** 詳しいページの既定の案（今使っている形）。
+    【2026-10-29】前は useState(1) で、ページが出るたびに まず案1 を丸ごと描いてから、調整パネルができた瞬間に案40 へ作り直していた
+    （重いページを2回組み立てる＝ページ移動の幕がカクつく原因の1つ）。最初からこの案で描く */
+const DEFAULT_PATTERN = 40;
+
 export default function SpotDetailPage({ slug }: { slug: string }) {
   /* ぼーっとスポット／体験と、素朴なグルメを同じテンプレで出す
      （2026-09-20 ヒデさん指示「グルメも同じテンプレのフォーマットの詳細ページでOK」）。
      slug は両方あわせて重複が無いので、まとめて引ける */
   const spot = SPOT_DETAILS[slug] ?? GOURMET_DETAILS[slug];
-  const [pattern, setPattern] = useState(1);
+  const [pattern, setPattern] = useState(DEFAULT_PATTERN);
   const madeRef = useRef(false);
   /* 案を切り替えると本文の要素が作り直されるので、文字の行（行間など）を当て直すために部品を持っておく（2026-10-21） */
   const panelRef = useRef<{ sync?: () => void } | null>(null);
@@ -101,14 +106,14 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               部品がスマホの値を流し込むのは 600px 以下の端末だけなので、PC の画面ではスマホの値を
               保存値（スマホの上書き）から読んで --dt-*-sp に入れる（readSp） */
     const SIZE0 = { head: 24, body: 14 }; /* 2026-09-27 本文 15→14・見出し 26→24（4-7。globals.css の --dt-body・--dt-head と同じ値） */
-    const SP_DEFAULT = { fv: 52, fade: 8, paraGap: 12 };
+    const SP_DEFAULT = { fv: 52, fade: 8, paraGap: 12, photoGap: 8, secGap: 40, toPhoto: 24 };
     const params = {
       /* 【2026-09-24 ヒデさん指示】「ブラーで白くなる案を採用していきたい」
          → 既定を値40（写真そのものがぼけて白くなり、白い本文へ溶ける）に。
          ⚠️ 既定を変えたら version も上げる。上げないと、前の案を
             おぼえているブラウザ（＝ヒデさんの手元）では変わらない */
       detail: {
-        pattern: 40,
+        pattern: DEFAULT_PATTERN,
         headSize: SIZE0.head,
         bodySize: SIZE0.body,
         /* 写真から本文への渡り（PC の値）。単位は「画面の高さの何%」 */
@@ -116,12 +121,15 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
         fade: 12,
         /* 本文の段落の間（px）。2026-10-21 ヒデさん「同じセクション内の改行が広すぎるので詰めて」🟡 */
         paraGap: 16,
+        photoGap: 12, /* 2026-10-29 写真どうしのギャップ（PC）。96→32→ ヒデさん「写真同士のギャップは12ピクセルで」 */
+        secGap: 72, /* 同 セクションどうしのギャップ（PC・前は 96〜184px）🟡 */
+        toPhoto: 40, /* 同 本文の終わり→写真のギャップ（PC・前は 72px＝セクションのギャップと同じ）🟡 */
       },
     };
     const STORAGE_KEY = "abashiri-spot-detail-tune";
     const VERSION = 18;
     /* PC の画面で「スマホで効く値」を読む：スマホモード中は部品に聞き、それ以外は保存値（スマホの上書き）→ 既定 */
-    const readSp = (path: "detail.fv" | "detail.fade" | "detail.paraGap", def: number) => {
+    const readSp = (path: "detail.fv" | "detail.fade" | "detail.paraGap" | "detail.photoGap" | "detail.secGap" | "detail.toPhoto", def: number) => {
       if (document.documentElement.classList.contains("phone-mode")) {
         const v = panel?.value?.(path);
         if (typeof v === "number") return v;
@@ -144,6 +152,12 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       r.style.setProperty("--dt-fade-sp", String(phone ? params.detail.fade : readSp("detail.fade", SP_DEFAULT.fade)));
       r.style.setProperty("--dt-para-pc", String(params.detail.paraGap));
       r.style.setProperty("--dt-para-sp", String(phone ? params.detail.paraGap : readSp("detail.paraGap", SP_DEFAULT.paraGap)));
+      r.style.setProperty("--dt-photo-pc", String(params.detail.photoGap));
+      r.style.setProperty("--dt-photo-sp", String(phone ? params.detail.photoGap : readSp("detail.photoGap", SP_DEFAULT.photoGap)));
+      r.style.setProperty("--dt-sec-pc", String(params.detail.secGap));
+      r.style.setProperty("--dt-sec-sp", String(phone ? params.detail.secGap : readSp("detail.secGap", SP_DEFAULT.secGap)));
+      r.style.setProperty("--dt-tophoto-pc", String(params.detail.toPhoto));
+      r.style.setProperty("--dt-tophoto-sp", String(phone ? params.detail.toPhoto : readSp("detail.toPhoto", SP_DEFAULT.toPhoto)));
     };
 
     const build = () => {
@@ -244,6 +258,11 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 immediate: true,
                 hint: "本文の段落と段落の間（元のサイトの空行の代わり）。スマホの上書きが無い間は 12px。",
               },
+              /* 【2026-10-29 ヒデさん「写真を複数並べる場合の上下のギャップが広すぎる。各セクションのブロックの上下も広すぎる。調整パネルに」】→ 余白なので基本・ギャップ（6-13・6-18） */
+              /* 同日「写真が入るまでの本文との上下のギャップが広い。調整できるように・狭く」 */
+              { slider: "本文と写真のギャップ", path: "detail.toPhoto", min: 0, max: 160, step: 4, unit: "px", spDefault: SP_DEFAULT.toPhoto, immediate: true, hint: "本文の終わりから写真までの間。前は PC 72px（セクションのギャップと同じ）。スマホの上書きが無い間は 24px。" },
+              { slider: "写真どうしのギャップ", path: "detail.photoGap", min: 0, max: 120, step: 4, unit: "px", spDefault: SP_DEFAULT.photoGap, immediate: true, hint: "写真を縦に並べた時の、写真と写真の間。前は PC 96px。スマホの上書きが無い間は 8px。" },
+              { slider: "セクションのギャップ", path: "detail.secGap", min: 0, max: 200, step: 4, unit: "px", spDefault: SP_DEFAULT.secGap, immediate: true, hint: "見出しのまとまり（この場所のこと・写真・おすすめポイント・基本情報・周辺マップ）どうしの間。前は PC 96〜184px。スマホの上書きが無い間は 40px。" },
               { sub: "文字（大きさ・太さ・行間・字間）", grp: "font" },
               {
                 note: "本文と見出しの文字。空欄はページの作りのまま（本文 14px・行間 2.4〔スマホ 2.2〕、見出し 24px）。【案ごと・PC/スマホごとに別々の値を持ちます】",
@@ -270,14 +289,29 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
       setPattern(params.detail.pattern);
     };
 
-    if ((window as unknown as { TunePanel?: PanelLib }).TunePanel) build();
-    else {
-      const s = document.createElement("script");
-      s.src = "/tune-panel.js";
-      s.onload = build;
-      document.head.appendChild(s);
-    }
-    return () => panel?.destroy();
+    /* 【2026-10-29 ヒデさん「ページ遷移で止まってカクつく」】パネルの組み立て（隠れていても中身を全部作る・遅いパソコンで約90ms）を、
+       ページが出た瞬間ではなく、ページ移動の幕を引き終わってから（1.6秒後・手が空いた時）にする。値の既定は globals.css にあるので見た目は変わらない */
+    let idle = 0;
+    let to = 0;
+    const start = () => {
+      if ((window as unknown as { TunePanel?: PanelLib }).TunePanel) build();
+      else {
+        const s = document.createElement("script");
+        s.src = "/tune-panel.js";
+        s.onload = build;
+        document.head.appendChild(s);
+      }
+    };
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    to = window.setTimeout(() => {
+      if (w.requestIdleCallback) idle = w.requestIdleCallback(start, { timeout: 1500 });
+      else start();
+    }, 1600); /* 幕を引き終わる（約1.1〜1.4秒）より後。遅いパソコンでも幕の動きと重ならないように */
+    return () => {
+      window.clearTimeout(to);
+      if (idle && w.cancelIdleCallback) w.cancelIdleCallback(idle);
+      panel?.destroy();
+    };
   }, []);
 
   if (!spot) {

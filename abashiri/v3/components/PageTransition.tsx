@@ -58,7 +58,11 @@ export type PageTransitionPattern = {
 
 /** 案7（既定）の長さ・ぼかし・白の濃さの既定。
     ⚠️ 値の住み家：ここ／TopTunePanel の既定／tune-defaults.json（3つとも同じ値に） */
-export const PT_DEFAULT = { dur: 1000, blur: 3, peak: 88 };
+/* 【2026-10-29 ヒデさん「サイト全体のページ遷移のトランジションを統一。理想はヘッダーのナビからリンクを踏んだ時の滑らかな挙動」】
+   ナビの幕（TopPage の data-nav-veil）と同じにそろえた：白100%（完全に隠す）・ぼかし18px・拡大1.12・
+   かぶせる 0.42秒／引く 0.62秒（合計 1040ms を 4:6 で分ける≒ 416／624ms）・ゆっくり入ってゆっくり出る（smoothstep）。
+   前は 白88%・ぼかし3px・1000ms で、ページが入れ替わる瞬間（新しいページを描く一瞬の止まり）が白の向こうに透けて、カクつきに見えていた */
+export const PT_DEFAULT = { dur: 1040, blur: 18, peak: 100 };
 
 export const PAGE_TRANSITION_PATTERNS: Record<number, PageTransitionPattern> = {
   /* 【2026-09-26 ヒデさん指示】「もう少しじんわり溶けて変わる印象を、ほんの気持ちだけ」
@@ -130,8 +134,10 @@ const DEFAULT_PAT = 7;
 
 /* 溶けて消える方は「ゆっくり始まって、ゆっくり覆いきる」、
    現れる方は「すっと引き始めて、最後はじんわり」 */
-const EASE_IN = [0.45, 0, 0.55, 1] as const;
-const EASE_OUT = [0.25, 0.1, 0.25, 1] as const;
+/* ナビの幕と同じ smoothstep（3t²−2t³）。cubic-bezier(1/3, 0, 2/3, 1) がちょうど同じ曲線になる */
+const EASE_IN = [1 / 3, 0, 2 / 3, 1] as const;
+/* 幕を引く動きも、ナビの幕と同じ smoothstep（2026-10-29 統一） */
+const EASE_OUT = [1 / 3, 0, 2 / 3, 1] as const;
 
 /** 案ごとの「入り」「いちばん濃い所」「抜け」 */
 function variantsOf(p: PageTransitionPattern, peak: number) {
@@ -312,6 +318,28 @@ export default function PageTransition() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* 【2026-10-28】行き先を裏で先読みしておく（ページを開いて少し落ち着いてから・1回だけ）。
+     ボタンからの移動（navigateTo：ぼーっとスポットのパネル・スマホのスポット など）は <Link> と違って自動で先読みされないので、
+     ここで先に読んでおく＝幕が濃くなりきった時にはもう入れ替えられる（幕が止まらない）。
+     データは別の塊として後から読む（どのページにも載る部品なので、最初の読み込みを重くしない） */
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      void Promise.all([import("./spotDetailData"), import("./gourmetDetailData")])
+        .then(([s, g]) => {
+          const urls = [
+            ...Object.keys(s.SPOT_DETAILS).map((k) => `/spot/${k}`),
+            ...Object.keys(g.GOURMET_DETAILS).map((k) => `/gourmet/${k}`),
+            "/experience",
+            "/",
+          ].filter((u) => u !== window.location.pathname);
+          urls.forEach((u) => router.prefetch(u));
+        })
+        .catch(() => {});
+    }, 1500);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   /* 着いたら（新しいページが描かれてから）現す */
   useEffect(() => {
     if (!pending.current || pathname !== pending.current) return;
@@ -339,7 +367,7 @@ export default function PageTransition() {
         opacity: 0,
         backdropFilter: blurPx ? `blur(${blurPx}px)` : undefined,
         WebkitBackdropFilter: blurPx ? `blur(${blurPx}px)` : undefined,
-        scale: blurPx ? 1.06 : 1,
+        scale: blurPx ? 1.12 : 1, /* ナビの幕と同じ拡大（ぼかしで薄れる四隅を画面の外へ逃がす・2026-10-29 統一） */
       }}
     >
       {kind === "blue" && (
