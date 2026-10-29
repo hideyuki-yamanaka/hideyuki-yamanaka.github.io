@@ -507,7 +507,7 @@ function MarqueeStack() {
       return Number.isFinite(v) && v >= 0 ? v : d;
     };
     const st = EV_IN_STYLES[Math.round(n("--ev-in-style", 1))] ?? EV_IN_STYLES[1];
-    const tText = n("--ev-in-text", 0.4) * 1000; /* 2026-10-30 0.8→0.4秒（ヒデさん「意外とオモロい網走の表示タイミングをもう少し早めて」） */
+    const tText = n("--ev-in-text", 1.0) * 1000; /* 2026-10-30 0.8→0.4秒（ヒデさん「表示タイミングをもう少し早めて」）→ 同日「出てくるのが急な感じ。もう少し滑らかに」で 1.0秒・ゆるやかに始まって止まる動き */
     const tDelay = n("--ev-in-delay", 0.4) * 1000; /* 2026-10-30 0.6→1.5秒（ヒデさん「もう少し遅く」「1.5秒ぐらいで」）→「前に詰めましょう」1.1秒 →「0.4秒くらいにしましょう」0.4秒 */
     const tGap = n("--ev-in-gap", 0.4) * 1000; /* 2026-10-30 0.45→0.8→0.6 →「出すタイミングがまばら。揃えて」で、文字→1枚目（写真のディレイ 0.4秒）と同じ 0.4秒おき */
     const tDur = n("--ev-in-dur", 0.8) * 1000;
@@ -517,9 +517,10 @@ function MarqueeStack() {
     const ease = "cubic-bezier(0.22, 1, 0.36, 1)";
     anims.current.forEach((a) => a.cancel());
     const list: Animation[] = [];
+    /* 流れる文字は、ゆるやかに始まってゆるやかに止まる（前は写真と同じ「出だしが速い」動きで、急に見えた・2026-10-30） */
     const mq = mqWrap.current?.animate(
-      [{ opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)" }],
-      { duration: tText, easing: ease, fill: "both" }
+      [{ opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)" }],
+      { duration: tText, easing: "cubic-bezier(0.45, 0, 0.25, 1)", fill: "both" }
     );
     if (mq) list.push(mq);
     /* いちばん下（④）から順に重ねる＝最後の①がいちばん上 */
@@ -561,8 +562,6 @@ function MarqueeStack() {
     else done();
   };
   /* 着いたかどうかを毎フレーム見る（見るのは数字2つだけ） */
-  const lastY = useRef(-1);
-  const still = useRef(0);
   useAnimationFrame(() => {
     if (phaseRef.current !== "wait") return;
     const el = rootRef.current;
@@ -580,11 +579,10 @@ function MarqueeStack() {
        ぴったり着いた時か、場面の上端が画面の上から 200px 以内で止まっている時（ナビで体験セクションの頭へ飛んだ時など）。
        ⚠️ 2026-10-30 に「画面の真ん中まで入ってきたら流す（固定なし）」をいったん試して、同日ヒデさん「固定版あった方が良さそう。戻す」でこちらに戻した */
     /* 【2026-10-30 ヒデさん「体験セクションのテキストの出すタイミングをもうちょっと早めにしていい。その分全部後のやつを詰める」】
-       ぴったり止まりきる（残り 2px）のを待たず、残り 48px（止まる約0.4秒前・ゆっくり止まっていく最後のあたり）で流し始める🟡。
-       写真もそのぶん前に詰まる（全部この時からの秒数なので） */
-    still.current = Math.abs(y - lastY.current) < 0.5 ? still.current + 1 : 0;
-    lastY.current = y;
-    if (y >= stop - 48 || (y >= stop - 200 && still.current >= 8)) play(stop, y);
+       → 残り 48px で流し始めた →「表示タイミングをもっと早めて、その分後のアニメーションを詰める」で 残り 400px（体験の場面が画面の6割ほど上がってきた所。
+       グルメから1回目のスクロールで止まる所＝残り約340px より手前）🟡。写真もそのぶん前に詰まる（全部この時からの秒数なので）。
+       下へ行かせない関所は場面の上端（stop）のまま＝上端までは進める */
+    if (y >= stop - 400) play(stop, y);
   });
   /* 調整パネルの「もう一度見る」：隠して、いま場面にいればその場で流し直す（いなければ次に着いた時） */
   useEffect(() => {
