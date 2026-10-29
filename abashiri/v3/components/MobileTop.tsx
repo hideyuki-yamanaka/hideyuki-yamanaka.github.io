@@ -15,6 +15,7 @@
  *     KV〜スポットはこれまでどおり1枚ずつのブラーの切り替え。流れの一番上で下へスワイプすると、スポット④へ戻る。
  * コピー・写真はデスクトップ実装と同じ実データ。
  */
+import { useMarqueePace, useMobileMarqueePxs } from "./marqueePace";
 import InlineSvg from "./InlineSvg";
 import { navigateTo } from "./PageTransition";
 import MobileEvents from "./MobileEvents";
@@ -116,6 +117,9 @@ export default function MobileTop() {
   const anchorEls = useRef<Record<string, HTMLElement | null>>({});
   /** 流れの場面へ入る時に、どこを開くか（メニューから来た時だけ入る） */
   const pendingAnchor = useRef<"gourmet" | "events" | "footer" | null>(null);
+  /* グルメのカルーセルの流れる速さ。体験セクションの流れる文字と同じ「1秒に何px」（marqueePace.ts・2026-10-29） */
+  const gourmetTrack = useRef<HTMLDivElement>(null);
+  useMarqueePace(gourmetTrack, useMobileMarqueePxs());
   /* 体験セクションが画面に入ったか（案1・案33 の「出てくる動き」の合図。場面式の時の active の代わり） */
   const [eventsInView, setEventsInView] = useState(false);
   const lockRef = useRef(false);
@@ -466,7 +470,9 @@ export default function MobileTop() {
                 シームレスにループさせるためカードを2周ぶん並べる */}
             <div className="-mx-6 mt-8 overflow-hidden tab:-mx-[80px] tab:mt-12">
               <div
+                ref={gourmetTrack}
                 className="gourmet-marquee flex w-max gap-3 pl-6 tab:gap-5 tab:pl-[80px]"
+                /* 28s は測り終わるまでの仮。本当の1周の秒数は useMarqueePace が帯の長さから出す */
                 style={{ ["--gourmet-speed" as string]: "28s" }}
               >
                 {[...GOURMET, ...GOURMET].map((card, idx) => (

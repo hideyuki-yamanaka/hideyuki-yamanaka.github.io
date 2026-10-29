@@ -25,7 +25,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ITEMS, type EventItem } from "./eventParts";
 import { EVENT_LAYOUT_EVENT, EVENT_LAYOUT_PATTERNS } from "./EventSection";
-import { MobileStack, type DeckApi } from "./EventVariants4";
+import { CARD_W, MobileStack, type DeckApi } from "./EventVariants4";
+import { useMarqueePace, useMobileMarqueePxs } from "./marqueePace";
 import { EvNav } from "./EventNav";
 import { Carousel3D } from "./Carousels";
 import { CARDS, useCardRatio } from "./EventVariants5";
@@ -173,8 +174,9 @@ function Grow({ active }: { active: boolean }) {
 /* ── 案31・32 重ね写真 ────────────────────── */
 function StackScene({ kind, gate, flow }: { kind: "shuffle" | "peel"; gate: EventsGate; flow?: boolean }) {
   const vp = useViewport();
-  /* 束（420×616）を画面に収める倍率。幅は5割・高さは46%まで
-     （幅6割だと、案31 の後ろを流れる文字がほとんど隠れた。2026-09-26 実測） */
+  /* 束（カンプの 420×616）を画面に収める倍率。幅は5割・高さは46%まで
+     （幅6割だと、案31 の後ろを流れる文字がほとんど隠れた。2026-09-26 実測）。
+     ⚠️ 2026-10-29 にカードを L判の縦（432×616・CARD_W）にしたが、倍率の基準は 420 のまま＝高さは変えず、PC と同じく幅だけ少し広がる */
   const scale = Math.min((vp.w * 0.5) / 420, (vp.h * 0.46) / 616);
   const boxH = Math.round(616 * scale * 1.12);
   /* いちばん上のカード。案31（カードを切る）は体験①が上（2026-10-14）・案32 は④が上のまま */
@@ -183,8 +185,11 @@ function StackScene({ kind, gate, flow }: { kind: "shuffle" | "peel"; gate: Even
      束の左右に置くと後ろを流れる文字の帯と同じ高さになるので、束の下に丸いボタンを2つ置く
      （同日 5案を見比べて「案4 丸いボタンを下に」に決定・ほかの案は消した）。束を回すのは MobileStack の api から */
   const api = useRef<DeckApi | null>(null);
+  /* 流れる文字の帯（案31 だけ） */
+  const mqTrack = useRef<HTMLDivElement>(null);
+  useMarqueePace(mqTrack, useMobileMarqueePxs());
   /* 束の半分の幅（カードの大きさのつまみにも付いてくる） */
-  const half = `${210 * scale}px * var(--ev-shuf-card, 1)`;
+  const half = `${(CARD_W / 2) * scale}px * var(--ev-shuf-card, 1)`;
   return (
     <div className="flex size-full flex-col justify-center gap-6 tab:gap-10">
       {kind === "peel" && (
@@ -197,12 +202,13 @@ function StackScene({ kind, gate, flow }: { kind: "shuffle" | "peel"; gate: Even
       <div className="relative w-full" style={{ height: boxH }}>
         {kind === "shuffle" && (
           /* 後ろを流れる文字。画面の端から端まで（左右の余白の外まで）流す。
-             大きさ・速さは PC と同じつまみ（--ev-mq-size の6割／--ev-mq-dur） */
+             大きさは PC と同じつまみ（--ev-mq-size の6割） */
           <div
             className="pointer-events-none absolute -inset-x-6 top-1/2 -translate-y-1/2 overflow-hidden tab:-inset-x-[80px]"
             style={{ height: "calc(var(--ev-mq-size, 80px) * 0.6)" }}
           >
-            <div className="tp-marquee flex whitespace-nowrap" style={{ animationDuration: "var(--ev-mq-dur, 34s)" }}>
+            {/* 速さはグルメのカルーセルと同じ「1秒に何px」（marqueePace.ts・2026-10-29）。w-max は必須（PC の EventVariants4 と同じ理由） */}
+            <div ref={mqTrack} className="tp-marquee flex w-max whitespace-nowrap">
               {[0, 1].map((k) => (
                 <span
                   key={k}

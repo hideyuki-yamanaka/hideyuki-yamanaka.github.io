@@ -34,9 +34,11 @@
  *   ・カルーセルの速さ（1周40秒）はカンプに指定が無いため仮
  *   ・番号の表記はスポットの「ぼーっとスポット 01」に合わせて半角スペース入り
  */
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import { navigateTo } from "./PageTransition";
 import { GOURMET_DETAILS } from "./gourmetDetailData";
+import { MARQUEE_PXS, useMarqueePace } from "./marqueePace";
 
 type GourmetCard = {
   id: string;
@@ -124,6 +126,9 @@ function Card({ card }: { card: GourmetCard }) {
 }
 
 export default function GourmetSection() {
+  /* 流れる速さは体験セクションの流れる文字と同じ「1秒に何px」（marqueePace.ts・2026-10-29） */
+  const track = useRef<HTMLDivElement>(null);
+  useMarqueePace(track, MARQUEE_PXS.pc);
   return (
     /* 全画面の1場面（982の中に収まる）。スポットからブラーで切り替わって現れる。
        中身は「見出しの文字 → カルーセル」の順で出る（場面が出てから時間差） */
@@ -184,7 +189,7 @@ export default function GourmetSection() {
           },
         }}
       >
-        <div className="gourmet-marquee flex w-max items-center gap-2 pr-2">
+        <div ref={track} className="gourmet-marquee flex w-max items-center gap-2 pr-2">
           {[...CARDS, ...CARDS].map((c, i) => (
             <Card key={`${c.id}-${i}`} card={c} />
           ))}

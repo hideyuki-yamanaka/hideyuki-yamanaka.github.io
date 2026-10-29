@@ -18,7 +18,7 @@
  *                    「網走」 x=1135 y=394（180×90）
  *  案33 コピー     : Noto Sans JP ExtraLight(200) / 60px / 行間1.6 / 中央 / 不透明度.8
  *                    x=426 y=412（660×96）
- *  カード（案31・32 共通）: 420×616。カンプの外形から回転角を逆算した
+ *  カード（案31・32 共通）: 420×616 → 2026-10-29 に 432×616（L判の縦の比率。下の CARD_W）。カンプの外形から回転角を逆算した
  *    1枚目 中心(773,478) 0°     2枚目 中心(836,478) 2.66°
  *    3枚目 中心(765,519) 5.68°  4枚目 中心(844,478) 4.43°
  *  案33 写真: 始点は4枚とも x≈680 y=395（166×115）＝コピーの裏
@@ -40,6 +40,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { EvNav } from "./EventNav";
+import { MARQUEE_PXS, useMarqueePace } from "./marqueePace";
 import {
   ITEMS,
   PinStage,
@@ -75,11 +76,27 @@ const STACK = [
   { cx: 809.5, cy: 477.0, rot: 2.53 },
   { cx: 783.5, cy: 483.2, rot: 2.48 },
 ];
-const CARD_W = 420;
+/* 【2026-10-29 ヒデさん「カードの比率を実際の写真の縦横比に」→「横にする必要はなく、縦の写真比率でOK」「L判の縦のイメージOK」】
+   カンプの 420×616（0.682）→ L判（89×127mm）を縦に置いた比率 0.701 に。高さはカンプの 616 のまま、幅だけ 420→432（4の倍数）🟡 */
+export const CARD_W = 432;
 const CARD_H = 616;
 /** 束の中心（4枚の中心の平均）。案31 のカードの大きさを変える時の基準点 */
 const STACK_CX = STACK.reduce((a, s) => a + s.cx, 0) / STACK.length;
 const STACK_CY = STACK.reduce((a, s) => a + s.cy, 0) / STACK.length;
+/** 束の外形（4枚を回した外周）の左右の真ん中。
+    【2026-10-29 ヒデさん「写真が重なってまばらなレイアウトはそのままで、カードグループ自体が左右中央揃えじゃないか」】
+    カンプの並びは外形の真ん中が画面の真ん中より 23px 右（送りボタンは 33px 右）だった（実測）。
+    重なり方（STACK）は変えずに、束ごとこの点が画面の真ん中に来るよう動かす（案2 の PC・スマホ） */
+export const STACK_GX = (() => {
+  const ends = STACK.map((s) => {
+    const r = (s.rot * Math.PI) / 180;
+    const hx = (CARD_W / 2) * Math.abs(Math.cos(r)) + (CARD_H / 2) * Math.abs(Math.sin(r));
+    return [s.cx - hx, s.cx + hx];
+  });
+  return (Math.min(...ends.map((e) => e[0])) + Math.max(...ends.map((e) => e[1]))) / 2;
+})();
+/** 束を画面の真ん中へ寄せる量(px)。左へ約23px */
+const STACK_SHIFT = FRAME_W / 2 - STACK_GX;
 
 /* ── ホバーの中身（グルメのカードと同じ言葉遣い）───────── */
 function HoverInfo({ it }: { it: EventItem }) {
@@ -423,6 +440,8 @@ const STACK_BOTTOM =
 
 function MarqueeStack() {
   const { pos, step } = useLoopDeck();
+  const mqTrack = useRef<HTMLDivElement>(null);
+  useMarqueePace(mqTrack, MARQUEE_PXS.pc);
   const pow = useShufPow();
   /* カードの大きさ（--ev-shuf-card）を変えても、ボタンは束の下に同じすき間で付いてくる。
      大きくしすぎてボタンが画面の下へはみ出す時は、フレームの下から64pxの所で止める */
@@ -438,8 +457,8 @@ function MarqueeStack() {
                横幅いっぱいに文字が伸びる感じに」→ カンプの1512枠の外に出して、
                画面の横幅いっぱいに流す */
           /* 【2026-09-26 ヒデさん指示】「この案を選んだら、後ろのテキストのサイズ感や
-               速度感、カードのサイズ感を変えられるように」→ 大きさ・1周の秒数は CSS 変数
-               （--ev-mq-size / --ev-mq-dur。調整パネルの「案2 カードを切る」）。
+               速度感、カードのサイズ感を変えられるように」→ 大きさは CSS 変数
+               （--ev-mq-size。調整パネルの「案2 カードを切る」）。速さは 2026-10-29 から marqueePace.ts（グルメと共通）。
              ⚠️ 大きさを変えても文字の【中心の高さ】はカンプの位置（上から 31+398+40＝469px）に保つ */
           <div
             className="pointer-events-none absolute inset-x-0 overflow-hidden"
@@ -448,10 +467,10 @@ function MarqueeStack() {
               height: "var(--ev-mq-size, 80px)",
             }}
           >
-            <div
-              className="tp-marquee flex whitespace-nowrap"
-              style={{ animationDuration: "var(--ev-mq-dur, 34s)" }}
-            >
+            {/* 【2026-10-29】速さはグルメのカルーセルと同じ「1秒に何px」（marqueePace.ts）。1周の秒数は帯の長さから出す。
+                ⚠️ w-max は必須。無いと帯の幅が画面の幅になり、-50% が「画面の半分」になって
+                   ①速さが画面の幅で変わる ②文字1つぶんとずれた所で先頭へ戻るので34秒ごとに文字が飛ぶ（前はこうだった・実測） */}
+            <div ref={mqTrack} className="tp-marquee flex w-max whitespace-nowrap">
               {[0, 1].map((k) => (
                 <span
                   key={k}
@@ -465,22 +484,23 @@ function MarqueeStack() {
           </div>
         }
       >
-        {/* カードの大きさは束の中心を基準に束ごと拡大縮小（--ev-shuf-card。右へ出る距離も比例） */}
+        {/* カードの大きさは束の中心を基準に束ごと拡大縮小（--ev-shuf-card。右へ出る距離も比例）。
+            束ごと左右の真ん中へ寄せる（STACK_SHIFT・2026-10-29）。拡大縮小の基準も外形の真ん中にして、大きさを変えても真ん中のまま */}
         <div
           className="absolute inset-0"
           style={{
-            transform: "scale(var(--ev-shuf-card, 1))",
-            transformOrigin: `${STACK_CX}px ${STACK_CY}px`,
+            transform: `translateX(${STACK_SHIFT.toFixed(1)}px) scale(var(--ev-shuf-card, 1))`,
+            transformOrigin: `${STACK_GX.toFixed(1)}px ${STACK_CY}px`,
           }}
         >
           {ITEMS.map((it, i) => (
             <LoopCard key={it.title} it={it} i={i} pos={pos} pow={pow} />
           ))}
         </div>
-        {/* 送りボタン：丸いボタン2つを、束の下の真ん中に並べる。カードより手前 */}
+        {/* 送りボタン：丸いボタン2つを、束の下の真ん中（＝画面の左右の真ん中・2026-10-29）に並べる。カードより手前 */}
         <div
           className="absolute z-50 flex -translate-x-1/2 justify-center"
-          style={{ left: STACK_CX, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))` }}
+          style={{ left: FRAME_W / 2, top: navTop, width: `calc(${CARD_W}px * var(--ev-shuf-card, 1))` }}
         >
           <EvNav onStep={step} />
         </div>
@@ -684,16 +704,17 @@ export function MobileStack({
         style={{
           width: FRAME_W,
           height: FRAME_H,
-          /* 束の中心を、この箱の中心へ。縮めるのも束の中心が基準 */
-          transform: `translate(${-STACK_CX}px, ${-STACK_CY}px) scale(${scale})`,
-          transformOrigin: `${STACK_CX}px ${STACK_CY}px`,
+          /* 束の外形の左右の真ん中（STACK_GX・2026-10-29。前は4枚の中心の平均で、外形は約10px 左だった）を、
+             この箱の中心へ。縮めるのも同じ点が基準 */
+          transform: `translate(${-STACK_GX}px, ${-STACK_CY}px) scale(${scale})`,
+          transformOrigin: `${STACK_GX}px ${STACK_CY}px`,
         }}
       >
         <div
           className="pointer-events-auto absolute inset-0"
           style={
             kind === "shuffle"
-              ? { transform: "scale(var(--ev-shuf-card, 1))", transformOrigin: `${STACK_CX}px ${STACK_CY}px` }
+              ? { transform: "scale(var(--ev-shuf-card, 1))", transformOrigin: `${STACK_GX}px ${STACK_CY}px` }
               : undefined
           }
         >

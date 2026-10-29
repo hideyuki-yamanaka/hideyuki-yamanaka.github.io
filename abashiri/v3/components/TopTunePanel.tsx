@@ -394,7 +394,8 @@ export default function TopTunePanel({
     /* ① 位置・大きさは CSS 変数へ直書き */
     const applyVars = () => {
       const root = document.documentElement;
-      /* グルメのカルーセル：1周の秒数とホバー停止（その場で反映） */
+      /* グルメのカルーセル：1周の秒数とホバー停止（その場で反映）。
+         ⚠️ 2026-10-29 から速さは marqueePace.ts（1秒に何px・体験の流れる文字と共通）が帯に直接書く。--gourmet-speed は測り終わるまでの仮 */
       root.style.setProperty("--gourmet-speed", `${params.gourmet.speed}s`);
       root.style.setProperty("--gourmet-gap", `${params.gourmet.gap}px`);
       root.dataset.gourmetPause = params.gourmet.pauseOnHover ? "1" : "0";
@@ -415,7 +416,7 @@ export default function TopTunePanel({
       /* --ev-shuf-dur（切る速さ）は 2026-10-21 に固めた：globals.css で PC 1.0秒／スマホ 0.6秒。ここからは書かない */
       root.style.setProperty("--ev-shuf-pow", String(params.events.shufPow ?? 3));
       root.style.setProperty("--ev-mq-size", `${params.events.mqSize ?? 80}px`);
-      root.style.setProperty("--ev-mq-dur", `${params.events.mqDur ?? 34}s`);
+      /* --ev-mq-dur（流れる文字の1周の秒数）は 2026-10-29 にやめた：速さはグルメと共通の「1秒に何px」（marqueePace.ts）。ここからは書かない */
       root.style.setProperty("--ev-shuf-card", String((params.events.shufCard ?? 100) / 100));
       /* ヘッダーのアンカー移動（単位なしの数。TopPage が ms として読む） */
       root.style.setProperty("--nav-in", String(params.nav.inMs));
@@ -1403,7 +1404,7 @@ export default function TopTunePanel({
                 spDefault: 112,
                 immediate: true,
                 when: (p: Params) => p.events.pattern === 31,
-                hint: "重なったカードの大きさ（カンプの420×616pxが100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。スマホは上書きが無い間 112%。",
+                hint: "重なったカードの大きさ（432×616px＝L判の縦の比率が100%）。束の中心を基準に、束ごと大きく・小さくなります。右へ出る距離も同じ割合で変わります。スマホは上書きが無い間 112%。",
               },
               { sub: "案5 3Dカルーセル：カード", deep: true, when: (p: Params) => p.events.pattern >= 34 },
               {
