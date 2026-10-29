@@ -15,11 +15,12 @@ type GlobalNavProps = {
 const ITEMS: { label: string; href?: string; anchor?: string }[] = [
   /* ホームは一番左。押すと TOP ページへ戻る */
   { label: "ホーム", href: "/" },
-  { label: "ぼーっとスポット", anchor: "#spot" },
-  { label: "グルメ", anchor: "#gourmet" },
-  /* 「体験」＝トップ下部の体験セクション（旧イベント）へ。
-     体験フロー（/experience）ではなくセクションへ飛ばす（2026-09-15 ヒデさん指示） */
-  { label: "体験", anchor: "#events" },
+  /* 【2026-10-29 ヒデさん「ヘッダーのメニューから今アンカーリンクでつないでいるが、下層ページ（一覧のページ）に飛ばせるように」】
+     ぼーっとスポット・グルメ・体験は、トップの中への移動から 一覧ページ（/list/〜）への移動に変えた。
+     前は #spot・#gourmet・#events（トップのスクロール位置へジャンプ）。体験は 2026-09-15 から体験セクションへ飛ばしていた */
+  { label: "ぼーっとスポット", href: "/list/spot" },
+  { label: "グルメ", href: "/list/gourmet" },
+  { label: "体験", href: "/list/event" },
 ];
 
 export default function GlobalNav({ theme, size = "md" }: GlobalNavProps) {

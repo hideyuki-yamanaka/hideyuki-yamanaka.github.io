@@ -232,7 +232,7 @@
   /* 詳細ページの本文の段落の間（px）。2026-10-21 ヒデさん「同じセクション内の改行が広すぎるので詰めて」→ 元のサイトの空行（1行ぶん）をやめて、この値で空ける。
      値の住み家はここと SpotDetailPage の params（detail.paraGap・スマホは spDefault）の2つ🟡 */
   --dt-para-pc: 16;
-  --dt-para-sp: 12;
+  --dt-para-sp: 8; /* 2026-10-29 ヒデさん「スマホ版は（パネルの）青文字の数値」12→8 */
   --dt-para: calc(var(--dt-para-pc) * 1px);
   /* 詳細ページの 写真どうし・セクションどうし のギャップ（px）。2026-10-29 ヒデさん「写真を複数並べる場合の上下のギャップが広すぎる。各セクションのブロックの上下も広すぎる。調整パネルに」
      → 写真どうし PC 96→32・スマホ 8 のまま／セクションどうし PC 96〜184→72・スマホ 40〜64→40（下の3ブロックの頭の余白 88px の上乗せは外して1つにまとめた）🟡。
@@ -241,9 +241,17 @@
   --dt-photo-sp: 8;
   --dt-photo: calc(var(--dt-photo-pc) * 1px);
   --dt-sec-pc: 72;
-  --dt-sec-sp: 40;
+  --dt-sec-sp: 64; /* 2026-10-29 同 40→64 */
   --dt-sec: calc(var(--dt-sec-pc) * 1px);
   /* 同 本文の終わり→写真 のギャップ。2026-10-29 ヒデさん「写真が入るまでの本文との上下のギャップが広い。調整できるように・狭く」→ PC 72→40・スマホ 40→24🟡 */
+  /* 一覧ページ（/list/〜・2×2）の 左右の余白（px）・写真の高さ（幅に対する%）・横と縦のギャップ（px）。2026-10-29 調整パネル（一覧ページ）で変える🟡 */
+  --list-pad-x-pc: 100; --list-ratio-pc: 75; --list-gap-x-pc: 40; --list-gap-y-pc: 80; --list-w-pc: 78;
+  --list-pad-x-sp: 24; --list-ratio-sp: 75; --list-gap-x-sp: 16; --list-gap-y-sp: 64; --list-w-sp: 100;
+  --list-pad-x: calc(var(--list-pad-x-pc) * 1px);
+  --list-ratio-n: var(--list-ratio-pc);
+  --list-gap-x: calc(var(--list-gap-x-pc) * 1px);
+  --list-gap-y: calc(var(--list-gap-y-pc) * 1px);
+  --list-w-n: var(--list-w-pc); /* カードの並びの幅＝画面の幅に対する %（2026-10-29 レスポンシブ想定に） */
   --dt-tophoto-pc: 40;
   --dt-tophoto-sp: 24;
   --dt-tophoto: calc(var(--dt-tophoto-pc) * 1px);
@@ -547,7 +555,7 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
   }
 }
 /* ガラスのボタンは、スマホ・タブレットの作り（MobileTop・MobileExperience に切り替わる境目＝useIsMobile と同じ条件）でスマホの値（2026-10-28） */
-@media (max-width: 900px), (max-width: 1280px) and (orientation: portrait) {
+@media (max-width: 900px), (max-width: 1280px) and (orientation: portrait), (max-width: 1440px) and (max-aspect-ratio: 3/2) { /* useIsMobile と同じ条件（2026-10-29 縦長の画面も足した） */
   :root {
     --glass-btn-fill: var(--glass-btn-fill-sp); --glass-btn-line-w: var(--glass-btn-line-w-sp);
     --glass-btn-line-a: var(--glass-btn-line-a-sp); --glass-btn-blur: var(--glass-btn-blur-sp);
@@ -568,7 +576,7 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
   height: min(100vh, 100vw * 982 / 1512);
   top: calc((100vh - min(100vh, 100vw * 982 / 1512)) / 2);
 }
-@media (max-width: 900px), (max-width: 1280px) and (orientation: portrait) {
+@media (max-width: 900px), (max-width: 1280px) and (orientation: portrait), (max-width: 1440px) and (max-aspect-ratio: 3/2) { /* useIsMobile と同じ条件（2026-10-29 縦長の画面も足した） */
   .kv-backdrop {
     top: 0;
     height: 100dvh;
@@ -598,6 +606,11 @@ html[data-gourmet-pause="1"] .gourmet-marquee:hover {
     --dt-photo: calc(var(--dt-photo-sp) * 1px);
     --dt-sec: calc(var(--dt-sec-sp) * 1px);
     --dt-tophoto: calc(var(--dt-tophoto-sp) * 1px);
+    --list-pad-x: calc(var(--list-pad-x-sp) * 1px);
+    --list-ratio-n: var(--list-ratio-sp);
+    --list-gap-x: calc(var(--list-gap-x-sp) * 1px);
+    --list-gap-y: calc(var(--list-gap-y-sp) * 1px);
+    --list-w-n: var(--list-w-sp);
   }
 }
 

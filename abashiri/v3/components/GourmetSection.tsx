@@ -154,9 +154,9 @@ export default function GourmetSection() {
           <br />
           そこの味が沁みちゃうんです。
         </p>
+        {/* 2026-10-29 ヒデさん「グルメセクションは、トップページのもっと見るのボタンを押すと、（グルメの一覧ページに）飛ぶように」 */}
         <a
-          href="#"
-          onClick={(e) => e.preventDefault()}
+          href="/list/gourmet"
           className="group flex cursor-pointer items-center gap-1 pb-2 transition-transform duration-300 ease-standard hover:translate-x-[10px]"
         >
           <span className="whitespace-nowrap text-body-16 font-extralight leading-[1.2] text-ink">

@@ -18,11 +18,12 @@ import SiteLogo from "./SiteLogo";
  *    この部品を出すときは、ほかに置き場を作らないこと（IDは1画面に1つ）。
  */
 
-export const MOBILE_NAV: { label: string; scene: number }[] = [
+/* 2026-10-29 ヒデさん「ヘッダーのメニューから下層ページ（一覧のページ）に飛ばせるように」→ ぼーっとスポット・グルメ・体験は一覧ページへ（href）。ホームは今まで通りトップの場面0 */
+export const MOBILE_NAV: { label: string; scene: number; href?: string }[] = [
   { label: "ホーム", scene: 0 },
-  { label: "ぼーっとスポット", scene: 2 },
-  { label: "グルメ", scene: 6 },
-  { label: "体験", scene: 7 },
+  { label: "ぼーっとスポット", scene: 2, href: "/list/spot" },
+  { label: "グルメ", scene: 6, href: "/list/gourmet" },
+  { label: "体験", scene: 7, href: "/list/event" },
 ];
 
 /** トップ以外のページからメニューで飛ぶ時の行き先の預け先 */
@@ -132,7 +133,12 @@ export default function MobileHeader({
                     <motion.li key={item.label} {...itemIn(i + 1)}>
                       <button
                         type="button"
-                        onClick={() => go(item.scene)}
+                        onClick={() => {
+                          if (item.href) {
+                            setOpen(false);
+                            navigateTo(item.href);
+                          } else go(item.scene);
+                        }}
                         className="text-body-18 font-light leading-none tracking-[0.12em] text-white"
                       >
                         {item.label}

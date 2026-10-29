@@ -106,7 +106,7 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
               部品がスマホの値を流し込むのは 600px 以下の端末だけなので、PC の画面ではスマホの値を
               保存値（スマホの上書き）から読んで --dt-*-sp に入れる（readSp） */
     const SIZE0 = { head: 24, body: 14 }; /* 2026-09-27 本文 15→14・見出し 26→24（4-7。globals.css の --dt-body・--dt-head と同じ値） */
-    const SP_DEFAULT = { fv: 52, fade: 8, paraGap: 12, photoGap: 8, secGap: 40, toPhoto: 24 };
+    const SP_DEFAULT = { fv: 52, fade: 8, paraGap: 8, photoGap: 8, secGap: 64, toPhoto: 24 }; /* 2026-10-29 ヒデさん「スマホ版は青文字の数値」→ 段落 12→8・セクション 40→64 */
     const params = {
       /* 【2026-09-24 ヒデさん指示】「ブラーで白くなる案を採用していきたい」
          → 既定を値40（写真そのものがぼけて白くなり、白い本文へ溶ける）に。
@@ -256,13 +256,13 @@ export default function SpotDetailPage({ slug }: { slug: string }) {
                 unit: "px",
                 spDefault: SP_DEFAULT.paraGap,
                 immediate: true,
-                hint: "本文の段落と段落の間（元のサイトの空行の代わり）。スマホの上書きが無い間は 12px。",
+                hint: "本文の段落と段落の間（元のサイトの空行の代わり）。スマホの上書きが無い間は 8px。",
               },
               /* 【2026-10-29 ヒデさん「写真を複数並べる場合の上下のギャップが広すぎる。各セクションのブロックの上下も広すぎる。調整パネルに」】→ 余白なので基本・ギャップ（6-13・6-18） */
               /* 同日「写真が入るまでの本文との上下のギャップが広い。調整できるように・狭く」 */
               { slider: "本文と写真のギャップ", path: "detail.toPhoto", min: 0, max: 160, step: 4, unit: "px", spDefault: SP_DEFAULT.toPhoto, immediate: true, hint: "本文の終わりから写真までの間。前は PC 72px（セクションのギャップと同じ）。スマホの上書きが無い間は 24px。" },
               { slider: "写真どうしのギャップ", path: "detail.photoGap", min: 0, max: 120, step: 4, unit: "px", spDefault: SP_DEFAULT.photoGap, immediate: true, hint: "写真を縦に並べた時の、写真と写真の間。前は PC 96px。スマホの上書きが無い間は 8px。" },
-              { slider: "セクションのギャップ", path: "detail.secGap", min: 0, max: 200, step: 4, unit: "px", spDefault: SP_DEFAULT.secGap, immediate: true, hint: "見出しのまとまり（この場所のこと・写真・おすすめポイント・基本情報・周辺マップ）どうしの間。前は PC 96〜184px。スマホの上書きが無い間は 40px。" },
+              { slider: "セクションのギャップ", path: "detail.secGap", min: 0, max: 200, step: 4, unit: "px", spDefault: SP_DEFAULT.secGap, immediate: true, hint: "見出しのまとまり（この場所のこと・写真・おすすめポイント・基本情報・周辺マップ）どうしの間。前は PC 96〜184px。スマホの上書きが無い間は 64px。" },
               { sub: "文字（大きさ・太さ・行間・字間）", grp: "font" },
               {
                 note: "本文と見出しの文字。空欄はページの作りのまま（本文 14px・行間 2.4〔スマホ 2.2〕、見出し 24px）。【案ごと・PC/スマホごとに別々の値を持ちます】",

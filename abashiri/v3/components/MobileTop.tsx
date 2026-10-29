@@ -368,7 +368,9 @@ export default function MobileTop() {
           <img
             src="/img/illust-main.png"
             alt=""
-            className="pointer-events-none absolute -bottom-[30px] right-3 w-[88px]"
+            /* 【2026-10-29 ヒデさん「タブレットで右下のキャラクターが小さくて右に寄りすぎ。右からもう少し離して、サイズも大きく」】
+               → タブレット（744px 以上）だけ 幅 88→160px・右から 12→48px・下 -30→-48px🟡。スマホは今まで通り */
+            className="pointer-events-none absolute -bottom-[30px] right-3 w-[88px] tab:-bottom-[48px] tab:right-[48px] tab:w-[160px]"
           />
         </div>
       </section>

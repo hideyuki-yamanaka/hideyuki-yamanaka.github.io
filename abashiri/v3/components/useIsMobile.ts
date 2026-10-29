@@ -20,7 +20,11 @@ import { useEffect, useState } from "react";
  * そこで「縦長ならば 1280px まで」を条件に足し、縦長用レイアウトへ回す。
  */
 export function useIsMobile(
-  query = "(max-width: 900px), (max-width: 1280px) and (orientation: portrait)",
+  /* 【2026-10-29 ヒデさん「ディスプレイ幅が狭くなったら、あるウィンドウサイズの幅では上下に余白ができて変な感じ。画面いっぱいに写真が出るように」】
+     固定キャンバス（1512×982＝横÷縦 1.54）より縦長の画面では、幅で縮むので上下に帯が出ていた。
+     → 横幅 1440px 以下で 横÷縦 が 1.5 以下の画面も、画面いっぱいに出る縦長用レイアウト（MobileTop 等）へ回す🟡。
+       ⚠️ globals.css の同じ条件（ガラスのボタン・リロードの写真）も一緒に変えること */
+  query = "(max-width: 900px), (max-width: 1280px) and (orientation: portrait), (max-width: 1440px) and (max-aspect-ratio: 3/2)",
 ) {
   /* SSR/初回は false（デスクトップ）。クライアントで確定させる */
   const [isMobile, setIsMobile] = useState(false);

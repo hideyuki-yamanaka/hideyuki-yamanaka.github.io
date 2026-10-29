@@ -330,6 +330,7 @@ export default function PageTransition() {
             ...Object.keys(s.SPOT_DETAILS).map((k) => `/spot/${k}`),
             ...Object.keys(g.GOURMET_DETAILS).map((k) => `/gourmet/${k}`),
             "/experience",
+            "/list/spot", "/list/gourmet", "/list/event", /* 一覧ページ（2026-10-29） */
             "/",
           ].filter((u) => u !== window.location.pathname);
           urls.forEach((u) => router.prefetch(u));
