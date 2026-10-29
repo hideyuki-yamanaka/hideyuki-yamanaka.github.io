@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import InlineSvg from "./InlineSvg";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { readInertia, wheelPx } from "./inertiaScroll";
 import { preload } from "react-dom";
 import Link from "next/link";
 import {
@@ -36,16 +37,16 @@ type CardData = { src: string; alt: string; title: string };
 /* タイトルは仮のものあり。正式名称が決まったら差し替える。
    v1.1: スポットのカード列は SpotShowcase（KV直下の全画面セクション）に置き換わった */
 const GOURMET_CARDS: CardData[] = [
-  { src: "/img/gourmet-1.jpg", alt: "わかさぎの唐揚げ", title: "わかさぎの唐揚げ" },
-  { src: "/img/gourmet-2.jpg", alt: "浜の海鮮焼き", title: "浜の海鮮焼き" },
-  { src: "/img/gourmet-3.jpg", alt: "地魚の御膳", title: "地魚の御膳" },
-  { src: "/img/gourmet-4.jpg", alt: "浜のちゃんこ鍋", title: "浜のちゃんこ鍋" },
+  { src: "/img/gourmet-1.webp", alt: "わかさぎの唐揚げ", title: "わかさぎの唐揚げ" },
+  { src: "/img/gourmet-2.webp", alt: "浜の海鮮焼き", title: "浜の海鮮焼き" },
+  { src: "/img/gourmet-3.webp", alt: "地魚の御膳", title: "地魚の御膳" },
+  { src: "/img/gourmet-4.webp", alt: "浜のちゃんこ鍋", title: "浜のちゃんこ鍋" },
 ];
 const EVENT_CARDS: CardData[] = [
-  { src: "/img/event-1.jpg", alt: "監獄食体験", title: "監獄食体験" },
-  { src: "/img/event-2.jpg", alt: "タオルが凍る極寒体験", title: "タオルが凍る極寒体験" },
-  { src: "/img/event-3.jpg", alt: "流氷カヤック", title: "流氷カヤック" },
-  { src: "/img/event-4.jpg", alt: "流氷ウォーク", title: "流氷ウォーク" },
+  { src: "/img/event-1.webp", alt: "監獄食体験", title: "監獄食体験" },
+  { src: "/img/event-2.webp", alt: "タオルが凍る極寒体験", title: "タオルが凍る極寒体験" },
+  { src: "/img/event-3.webp", alt: "流氷カヤック", title: "流氷カヤック" },
+  { src: "/img/event-4.webp", alt: "流氷ウォーク", title: "流氷ウォーク" },
 ];
 
 /* No.付き楕円カード（ホバーで中の写真がズーム）
@@ -267,7 +268,7 @@ export default function TopPage({
   /* 背景写真はファーストビューの土台。読み込みが他と同列だと
      空色グラデの下地だけが先に見えてしまうため、最優先で先読みする
      （2026-08-21 ヒデさん指摘：立ち上げ時のグラデ画面をなくす） */
-  preload("/img/bg-hero.jpg", { as: "image", fetchPriority: "high" });
+  preload("/img/bg-hero.webp", { as: "image", fetchPriority: "high" });
 
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -478,18 +479,28 @@ export default function TopPage({
     },
     []
   );
+  /* 【2026-10-29 ヒデさん「カクカクして重い部分を改善」】前はスクロールの1コマごとに
+     ヘッダーの色の state を書き直し・人物の濃さの合図を出していた（値が同じでもトップ全体の描き直しの予約が入る）。
+     変わった時だけ書くようにした */
+  const lastNav = useRef<{ dark: boolean | null; fade: number }>({ dark: null, fade: -1 });
   useMotionValueEvent(scrollY, "change", (v) => {
     /* 人物はスポット写真の入れ替わりと「同時に」消える（2026-08-21 ヒデさん指示。
        時間差はつけない＝スポットのブラーが晴れる区間そのものでフェード） */
     const from = useExit ? msgEnd : kvRange * 0.4;
     const span = useExit ? Math.max(1, T.spotTo - T.spotFrom) : kvRange * 0.6;
     const t = Math.max(0, Math.min(1, (v - from) / span));
-    window.dispatchEvent(
-      new CustomEvent("abashiri:illust-fade", { detail: { v: 1 - t } })
-    );
+    if (t !== lastNav.current.fade) {
+      lastNav.current.fade = t;
+      window.dispatchEvent(
+        new CustomEvent("abashiri:illust-fade", { detail: { v: 1 - t } })
+      );
+    }
     const dark = v >= gourmetStart;
-    setNavDark(dark);
-    document.documentElement.dataset.headerDark = dark ? "1" : "0";
+    if (dark !== lastNav.current.dark) {
+      lastNav.current.dark = dark;
+      setNavDark(dark);
+      document.documentElement.dataset.headerDark = dark ? "1" : "0";
+    }
   });
   /* 背景写真も同じ：ぼかしが 0 の時は "none"（写真が別の層に描かれて荒れて見えるのを防ぐ・2026-10-20） */
   const bgFilter = useTransform(bgBlur, (v: number) => (v > 0.01 ? `blur(${v}px)` : "none"));
@@ -640,10 +651,11 @@ export default function TopPage({
         targetY = gateTop;
         if (posY < gateTop) posY = gateTop;
       }
-      /* 縦の慣性 */
+      /* 縦の慣性。追いかけの速さは サイト共通の値（inertiaScroll.ts・調整パネル）。前は 0.12 の直書き。オフの時は一気に追いつく */
+      const it = readInertia();
       const dy = targetY - posY;
       if (Math.abs(dy) > 0.5) {
-        posY += dy * 0.12;
+        posY += it.on ? dy * (it.ease / 100) : dy;
         sc.scrollTop = Math.round(posY);
         busy = true;
       } else if (dy !== 0) {
@@ -803,9 +815,12 @@ export default function TopPage({
         }
       }
 
-      /* KV→メッセージ区間はスクロール速度の倍率をかける（パネル「スクロール速度」） */
+      /* KV→メッセージ区間はスクロール速度の倍率をかける（パネル「スクロール速度」）。
+         ホイールの量（サイト共通の慣性スクロール・2026-10-29）も掛ける */
       const g = wheelGainRef.current;
-      const dY = targetY < g.until ? e.deltaY * g.gain : e.deltaY;
+      const itw = readInertia();
+      const wheelY = wheelPx(e, sc) * (itw.on ? itw.wheel / 100 : 1);
+      const dY = targetY < g.until ? wheelY * g.gain : wheelY;
 
       /* 帯の外に出たらロック解除して、縦は慣性スクロール */
       if (!row) {
@@ -933,7 +948,7 @@ export default function TopPage({
           {/* Figmaのトリミング・色加工を焼き込み、角丸の縁を切り落とした四角い書き出し画像。
               角丸はCSS側だけで付けるので、継ぎ目やズレが出ない */}
           <motion.img
-            src="/img/bg-hero.jpg"
+            src="/img/bg-hero.webp"
             data-kv-photo="" /* 写真のレタッチ（PhotoRetouch）が中身を差し替える目印（キービジュアルとフッターに付ける） */
             alt=""
             loading="eager"

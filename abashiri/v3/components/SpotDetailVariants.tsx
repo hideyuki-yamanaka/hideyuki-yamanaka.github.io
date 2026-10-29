@@ -25,6 +25,7 @@ import GlobalNav from "./GlobalNav";
 import { useStageScale } from "./useStageScale";
 import MobileHeader from "./MobileHeader";
 import { useIsMobile } from "./useIsMobile";
+import { useInertiaScroll } from "./inertiaScroll";
 
 /* ゆったり共通のイージング（既存サイトと同じ緩急） */
 export const EASE = [0.22, 1, 0.36, 1] as const;
@@ -220,24 +221,17 @@ export function InfoTable({
 }
 
 export function Points({ spot, light }: { spot: SpotDetail; light?: boolean }) {
+  /* 【2026-10-29 ヒデさん「担当者のおすすめも箇条書きで複数分かれていることもあるが、2、3行の文章にまとめて、最初の青丸は取って」】
+     箇条書き（青い丸＋1行ずつ）をやめて、1つの文章として出す。データも1つの文章にまとめた（複数入っていても、つなげて1段落にする） */
+  const text = spot.points.map((p) => p.trim()).filter(Boolean).join("");
   return (
-    <ul className="flex flex-col gap-3">
-      {spot.points.map((p) => (
-        <li
-          key={p}
-          className={`flex gap-3 text-body-14 font-extralight leading-[2] tracking-[0.05em] max-tab:leading-[1.8] ${
-            light ? "text-white" : "text-ink"
-          }`}
-        >
-          <span
-            className={`mt-[12px] size-[6px] shrink-0 rounded-full ${
-              light ? "bg-white/80" : "bg-brand"
-            }`}
-          />
-          {p}
-        </li>
-      ))}
-    </ul>
+    <p
+      className={`text-body-14 font-extralight leading-[2] tracking-[0.05em] max-tab:leading-[1.8] ${
+        light ? "text-white" : "text-ink"
+      }`}
+    >
+      {text}
+    </p>
   );
 }
 
@@ -419,6 +413,8 @@ export const VEIL =
    スクロールしても写真が一気に消えないので「風景に居るまま読む」感じになる */
 export function V1Parallax({ spot }: VProps) {
   const ref = useRef<HTMLElement>(null);
+  /* 慣性スクロール（サイト共通・2026-10-29） */
+  useInertiaScroll(ref);
   const { scrollYProgress } = useScroll({ container: ref });
   /* 最初の1画面ぶんで、写真は0.35倍の速さでしか動かない＝視差 */
   /* 視差は控えめに。18%/1.12倍は「効きすぎて酔う」と指摘があったので

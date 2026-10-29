@@ -65,12 +65,12 @@ export type Spot = {
    ⚠️ label はトップ（SpotShowcase）の呼び方に統一する
       （2026-09-20 ヒデさん指示「表記は統一してあげてください」）。 */
 const SPOTS: Spot[] = [
-  { id: "notoro", label: "能取岬", src: "/img/scene-notoro.jpg" },
+  { id: "notoro", label: "能取岬", src: "/img/scene-notoro.webp" },
   { id: "sango", label: "能取湖サンゴ草群落地", src: "/img/scene-sango.jpg" },
   /* 静止画は動画と同じ「流氷の海」を使う。
      scene-ryuhyo.jpg は船が写っていて動画と絵が違うため、遷移の途中で
      船の写真が挟まって見えてしまう。ice.jpg なら動画の絵とつながる */
-  { id: "ryuhyo", label: "流氷クルーズ", src: "/img/ice.jpg", video: "/video/ryuhyo.mp4" },
+  { id: "ryuhyo", label: "流氷クルーズ", src: "/img/ice.webp", video: "/video/ryuhyo.mp4" },
   /* トップのひまわり畑と同じ写真にそろえる（2026-09-20） */
   { id: "himawari", label: "大曲湖畔園地ひまわり畑", src: "/img/spot/himawari-1.webp" },
 ];

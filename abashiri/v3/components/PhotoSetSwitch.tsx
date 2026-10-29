@@ -19,7 +19,7 @@ import { TOP_TUNE_KEY, TOP_TUNE_VERSION } from "./tuneKeys";
 
 /** 差し替えた写真（今の名前＝新しい写真 → 前の写真の控え）。差し替える写真が増えたらここに1行足す */
 export const PHOTO_SWAPS: Record<string, string> = {
-  "/img/bg-hero.jpg": "/img/bg-hero-prev.jpg", /* キービジュアル・フッター・メニューの背景 */
+  "/img/bg-hero.webp": "/img/bg-hero-prev.jpg", /* キービジュアル・フッター・メニューの背景 */
   "/img/spot-notoro.webp": "/img/spot-notoro-prev.webp", /* 能取岬（トップ・詳しいページの大きい写真） */
   "/img/spot/notoro-1.webp": "/img/spot/notoro-1-prev.webp", /* 能取岬の詳しいページの写真1枚目（前は海と崖・今は灯台） */
   "/img/spot-sangoso.webp": "/img/spot-sangoso-prev.webp", /* サンゴ草 */

@@ -19,7 +19,7 @@ import BoTips, { DEFAULT_BO_TIPS } from "./BoTips";
 const PICKS = [
   { id: "notoro", label: "能取岬", no: "01", img: "/img/spot-notoro.webp" },
   { id: "sangoso", label: "能取湖サンゴ草群落地", no: "02", img: "/img/spot-sangoso.webp" },
-  { id: "ryuhyo", label: "流氷クルーズ", no: "03", img: "/img/ice.jpg", video: "/video/ryuhyo.mp4" },
+  { id: "ryuhyo", label: "流氷クルーズ", no: "03", img: "/img/ice.webp", video: "/video/ryuhyo.mp4" },
   { id: "himawari", label: "大曲湖畔園地ひまわり畑", no: "04", img: "/img/spot/himawari-1.webp" },
 ];
 const VIDEO_IDX = PICKS.findIndex((p) => p.video);
@@ -164,7 +164,7 @@ export default function MobileExperience() {
       {step === "intro" && (
         <>
           <img
-            src="/img/bg-hero.jpg"
+            src="/img/bg-hero.webp"
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
           />

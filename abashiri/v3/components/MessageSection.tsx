@@ -43,7 +43,27 @@ export default function MessageSection({
   const BLOCKS = parseMsgBody(M.body);
   const ALL_LINES = BLOCKS.flat();
   const [v, setV] = useState(0);
-  useMotionValueEvent(scrollY, "change", (val) => setV(val));
+  /* 【2026-10-29 ヒデさん「カクカクして重い部分を改善」】前はスクロールの1コマごとに必ず書き直していて、
+     メッセージが見えていない所（スポット・グルメ・体験…）でも毎コマ作り直しが起きていた（7秒のスクロールで約650回）。
+     見た目が変わるのは「出はじめの少し前〜退場し終わる」の間だけなので、その外では値を端に止める（同じ値なら作り直さない） */
+  useMotionValueEvent(scrollY, "change", (val) => {
+    const lo = start - 1;
+    const hi = start + M.len + M.tail + 301;
+    let x = Math.round(Math.max(lo, Math.min(hi, val)));
+    /* 読んでいる途中（出はじめのふわっと〜余韻の終わり）は、文字が出る・出ないの「区切り」でしか見た目が変わらない
+       （出方はどれも「区切りを越えたら時間でふわっと」）→ いちばん近い手前の区切りに止める */
+    const enterEnd = start + M.len * 0.05;
+    const exitFrom = start + M.len + M.tail;
+    if (x > enterEnd && x < exitFrom) {
+      const units = 1 + ALL_LINES.length;
+      const marks = [enterEnd, start + M.titleDelay];
+      for (let u = 0; u <= units; u++) marks.push(start + M.len * (u / units) * 0.88);
+      let snap = enterEnd;
+      for (const m of marks) if (m <= x && m > snap) snap = m;
+      x = Math.ceil(snap);
+    }
+    setV(x);
+  });
 
   /* 読みの進捗 0〜1（超えても計算は続く）。
      読み終わったあとは M.tail ぶんの「余韻」区間：最後の段落を見せたまま

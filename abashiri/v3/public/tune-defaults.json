@@ -304,5 +304,10 @@
     "titleA": 100,
     "bodyA": 100
   },
-  "ftSolid": 40
+  "ftSolid": 40,
+  "inertia": {
+    "on": 1,
+    "ease": 12,
+    "wheel": 100
+  }
 }

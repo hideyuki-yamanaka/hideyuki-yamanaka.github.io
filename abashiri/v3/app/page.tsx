@@ -81,7 +81,7 @@ export default function Home() {
        スマホ … 画面いっぱいに真ん中ぞろえ（MobileTop の写真と同じ） */
   const kvBackdrop = backdrop && (
     <img
-      src="/img/bg-hero.jpg"
+      src="/img/bg-hero.webp"
       alt=""
       aria-hidden
       fetchPriority="high"

@@ -46,6 +46,7 @@ import { EV_FLOWS } from "./eventParts";
 import { SOUND_DLG_DEFAULT, SOUND_DLG_PREVIEW_EVENT, SOUND_DLG_SHOWN_EVENT, SOUND_DLG_VARIANTS } from "./soundDialogConfig";
 import { TOP_TUNE_KEY, TOP_TUNE_VERSION, TUNE_RESYNC_EVENT } from "./tuneKeys";
 import { attachPhoneMode } from "./phoneMode";
+import { INERTIA_DEFAULT, refreshInertia } from "./inertiaScroll";
 import { PHOTO_SET_DEFAULT } from "./PhotoSetSwitch";
 import { RETOUCH_ALL_DEFAULT, RETOUCH_ITEMS, RETOUCH_TARGETS, type RetouchAll, type RetouchKey } from "./PhotoRetouch";
 
@@ -223,6 +224,8 @@ type Params = {
   /** ページ遷移の演出 1〜5 */
   /** dur/blur/peak は案7（じんわり溶ける）だけの長さ(ms)・ぼかし(px)・白の濃さ(%) */
   pageTrans: { pattern: number; dur: number; blur: number; peak: number };
+  /** 慣性スクロール（全ページ共通・inertiaScroll.ts）：on 1/0・追いかけの速さ%・ホイールの量%（2026-10-29） */
+  inertia: { on: number; ease: number; wheel: number };
   /** 全ページ共通フッターのデザイン 1〜5 */
   footer: {
     padX: number;
@@ -334,6 +337,7 @@ export default function TopTunePanel({
          → 案7「じんわり溶ける」を既定に（それまでは案6「ディゾルブ」）。
          ⚠️ 値の住み家：ここ／PageTransition の PT_DEFAULT／tune-defaults.json */
       pageTrans: { pattern: 7, dur: PT_DEFAULT.dur, blur: PT_DEFAULT.blur, peak: PT_DEFAULT.peak },
+      inertia: { ...INERTIA_DEFAULT },
       /* フッター（階層＝A罫線／組み＝Aゆったり2カラム）。
          余白・間隔の既定は globals.css の --ft-* と同じ値にそろえる */
       footer: {
@@ -446,6 +450,15 @@ export default function TopTunePanel({
         }
       }
       root.style.setProperty("--sound-msg-gap", `${params.sound.dlgGap ?? 0}px`);
+      /* 慣性スクロール（全ページ共通）。このパネルのあるページでは CSS 変数がいちばん新しい値（inertiaScroll.ts が読む） */
+      {
+        const it = { ...INERTIA_DEFAULT, ...(params.inertia || {}) };
+        root.style.setProperty("--inertia-on", String(it.on ? 1 : 0));
+        root.style.setProperty("--inertia-ease", String(it.ease));
+        root.style.setProperty("--inertia-wheel", String(it.wheel));
+        root.dataset.inertiaLive = "1";
+        refreshInertia();
+      }
       root.style.setProperty("--msg-head-gap", `${params.msgGap ?? 72}px`);
       /* メッセージの不透明度（いまの濃さに掛ける倍率。スマホの端末ではスマホの値が params に入っている） */
       root.style.setProperty("--msg-title-opacity", String((params.msgFx?.titleA ?? 100) / 100));
@@ -754,6 +767,13 @@ export default function TopTunePanel({
               {
                 note: "その場で反映されます。",
               },
+              /* 【2026-10-29 ヒデさん「慣性スクロールの値も調整パネルでいじれるように。サイト全体、サイト共通で」】
+                 回した量を目標に貯めて、すーっと追いつく動き。前はトップだけ（追いかけの速さ 0.12 を TopPage に直書き）。
+                 今は inertiaScroll.ts で1つにまとめ、トップ・詳しいページ・一覧ページが同じ値を使う。動きなのでアニメーション（6-13・6-18） */
+              { sub: "慣性スクロール（全ページ共通）", grp: "anim" },
+              { toggle: "慣性スクロール", path: "inertia.on", hint: "オフにすると、ブラウザのふつうのスクロールになります（トップの横に流れるカードの送りは今まで通り）。PC のホイール・トラックパッドだけに効き、スマホの指のスクロールには掛かりません。" },
+              { slider: "速さ（追いかけ）", path: "inertia.ease", min: 2, max: 40, step: 1, unit: "%", immediate: true, when: (p: Params) => !!p.inertia?.on, hint: "回した所へ追いつく速さ。1コマで残りの何%を詰めるか。大きいほどキビキビ止まり、小さいほどゆったり長く滑ります。今までは 12%。" },
+              { slider: "ホイールの量", path: "inertia.wheel", min: 40, max: 250, step: 5, unit: "%", immediate: true, when: (p: Params) => !!p.inertia?.on, hint: "1回回した時に進む量の倍率。100% でブラウザと同じ。大きいほど1回で遠くまで進みます。トップの「スクロール速度（KV→メッセージ）」とは掛け算になります。" },
               /* ヘッダーのアンカー移動（幕）：かぶる 420ms・引く 620ms で固めて外した（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」・値は下の「固めた値」） */
               /* 【2026-10-21 ヒデさん】「ページ遷移の演出から フッター（全ページ共通）は、今の案をデフォルトにして削除して大丈夫。案・セクションごと」
                  → ページ遷移の演出は 案7「じんわり溶ける」・長さ1000ms・ぼかし3px・白の濃さ88% で固定（PageTransition の PT_DEFAULT・tune-defaults.json）。

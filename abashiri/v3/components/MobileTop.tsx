@@ -121,7 +121,7 @@ export default function MobileTop() {
   const lockRef = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
 
-  preload("/img/bg-hero.jpg", { as: "image", fetchPriority: "high" });
+  preload("/img/bg-hero.webp", { as: "image", fetchPriority: "high" });
 
   /** 流れの中の行き先の位置（スクロールの箱の中での上端） */
   const anchorTop = (a: "gourmet" | "events" | "footer") => {
@@ -304,7 +304,7 @@ export default function MobileTop() {
         style={scene(0)}
       >
         <img
-          src="/img/bg-hero.jpg"
+          src="/img/bg-hero.webp"
           data-kv-photo="" /* 写真のレタッチ（PhotoRetouch）が中身を差し替える目印（キービジュアルとフッターに付ける） */
           alt=""
           className="absolute inset-0 h-full w-full object-cover"

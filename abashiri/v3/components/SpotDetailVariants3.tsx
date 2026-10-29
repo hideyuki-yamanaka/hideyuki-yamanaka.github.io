@@ -22,7 +22,8 @@
  *   （Noto Thin/ExtraLight・本文 body-16 行間2.4 字間0.5px・罫線は ink/12）
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useAnimationFrame, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useInertiaScroll } from "./inertiaScroll";
 import {
   InfoTable,
   MapEmbed,
@@ -70,6 +71,8 @@ function Shell({
   children: React.ReactNode;
   refEl: React.RefObject<HTMLElement | null>;
 }) {
+  /* 慣性スクロール（サイト共通・2026-10-29。値は inertiaScroll.ts） */
+  useInertiaScroll(refEl);
   return (
     <main
       ref={refEl}
@@ -503,22 +506,40 @@ function TocLayout({
         その白さ（heroWhite）が半分を超えた時点でも黒へ。
      ⚠️ data-hdr-owned を立てている間、DetailHeader は自分で判定しない。 */
   const grad = useRef<HTMLDivElement>(null);
-  useAnimationFrame(() => {
+  /* 【2026-10-29 ヒデさん「カクカクして重い部分を改善」】前は止まっている時も1秒に60回、箱の位置を測っていた。
+     色が変わるのはスクロールした時だけなので、スクロールした時（とページを開いた時・画面の大きさが変わった時）だけ測る */
+  useEffect(() => {
     if (!pinnedHero) return;
     const el = ref.current;
-    const g = grad.current;
-    if (!el || !g) return;
-    const line = el.clientHeight * 0.33; /* この高さまで白が来たら白背景とみなす */
-    const r = g.getBoundingClientRect();
-    /* グラデは上が透明・下が白なので、真ん中あたりで「白」と見なす */
-    const covered = r.top + r.height * 0.55 <= line;
-    const whitened = blurHero && heroWhite.get() >= 0.5;
-    const white = covered || whitened;
-    const root = document.documentElement;
-    const now = white ? "1" : "";
-    if (root.dataset.headerDark !== now) root.dataset.headerDark = now;
-    if (root.dataset.hdrOwned !== "1") root.dataset.hdrOwned = "1";
-  });
+    if (!el) return;
+    let raf = 0;
+    const judge = () => {
+      raf = 0;
+      const g = grad.current;
+      if (!g) return;
+      const line = el.clientHeight * 0.33; /* この高さまで白が来たら白背景とみなす */
+      const r = g.getBoundingClientRect();
+      /* グラデは上が透明・下が白なので、真ん中あたりで「白」と見なす */
+      const covered = r.top + r.height * 0.55 <= line;
+      const whitened = blurHero && heroWhite.get() >= 0.5;
+      const white = covered || whitened;
+      const root = document.documentElement;
+      const now = white ? "1" : "";
+      if (root.dataset.headerDark !== now) root.dataset.headerDark = now;
+      if (root.dataset.hdrOwned !== "1") root.dataset.hdrOwned = "1";
+    };
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(judge);
+    };
+    kick();
+    el.addEventListener("scroll", kick, { passive: true });
+    window.addEventListener("resize", kick);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", kick);
+      window.removeEventListener("resize", kick);
+    };
+  }, [pinnedHero, blurHero, heroWhite]);
   useEffect(() => {
     if (!pinnedHero) return;
     return () => {

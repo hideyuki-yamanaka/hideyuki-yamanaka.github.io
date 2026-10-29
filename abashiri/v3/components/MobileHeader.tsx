@@ -107,7 +107,7 @@ export default function MobileHeader({
           >
             {/* 背景：網走の空と海の写真に、青を重ねて文字を読みやすく */}
             <div className="pointer-events-none fixed inset-0">
-              <img src="/img/bg-hero.jpg" alt="" className="size-full object-cover" />
+              <img src="/img/bg-hero.webp" alt="" className="size-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-b from-brand/70 via-brand/35 to-brand/80" />
             </div>
 

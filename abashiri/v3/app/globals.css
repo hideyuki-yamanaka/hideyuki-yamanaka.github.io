@@ -245,6 +245,8 @@
   --dt-sec: calc(var(--dt-sec-pc) * 1px);
   /* 同 本文の終わり→写真 のギャップ。2026-10-29 ヒデさん「写真が入るまでの本文との上下のギャップが広い。調整できるように・狭く」→ PC 72→40・スマホ 40→24🟡 */
   /* 一覧ページ（/list/〜・2×2）の 左右の余白（px）・写真の高さ（幅に対する%）・横と縦のギャップ（px）。2026-10-29 調整パネル（一覧ページ）で変える🟡 */
+  /* 慣性スクロール（全ページ共通・components/inertiaScroll.ts）。住み家は inertiaScroll.ts の INERTIA_DEFAULT／ここ／tune-defaults.json の inertia（3つとも同じ値）。調整パネル › サイト共通 › アニメーション › 慣性スクロール（2026-10-29） */
+  --inertia-on: 1; --inertia-ease: 12; --inertia-wheel: 100;
   --list-pad-x-pc: 40; --list-ratio-pc: 64; --list-gap-x-pc: 44; --list-gap-y-pc: 64; --list-w-pc: 86; --list-head-gap-pc: 80; --list-gap-name-pc: 0; --list-gap-lead-pc: 4;
   --list-pad-x-sp: 24; --list-ratio-sp: 75; --list-gap-x-sp: 16; --list-gap-y-sp: 64; --list-w-sp: 100; --list-head-gap-sp: 40; --list-gap-name-sp: 4; --list-gap-lead-sp: 4;
   --list-pad-x: calc(var(--list-pad-x-pc) * 1px);

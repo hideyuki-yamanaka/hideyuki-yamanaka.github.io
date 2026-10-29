@@ -64,7 +64,7 @@ export const RETOUCH_ITEMS: { key: keyof RetouchValues; name: string; group: "�
 
 /** 直せる写真。srcs＝同じ写真のファイル（今の名前＝新しい写真）。kvOnly＝キービジュアルの印の付いた <img> だけ */
 export const RETOUCH_TARGETS = {
-  kv: { name: "キービジュアル", srcs: ["/img/bg-hero.jpg"], kvOnly: true }, /* キービジュアルとフッター（data-kv-photo の付いた写真） */
+  kv: { name: "キービジュアル", srcs: ["/img/bg-hero.webp"], kvOnly: true }, /* キービジュアルとフッター（data-kv-photo の付いた写真） */
   notoro: { name: "能取岬", srcs: ["/img/spot-notoro.webp", "/img/spot/notoro-1.webp"], kvOnly: false },
   sango: { name: "サンゴ草", srcs: ["/img/spot-sangoso.webp"], kvOnly: false },
   ryuhyo: { name: "流氷", srcs: ["/img/spot-ryuhyo.webp"], kvOnly: false },

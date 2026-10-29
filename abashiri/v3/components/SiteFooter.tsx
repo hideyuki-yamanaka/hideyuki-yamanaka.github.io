@@ -329,85 +329,116 @@ function PhotoStage({
       }
       return null;
     };
-    let id = 0;
-    /* 【2026-10-29】見つけたスクロールの箱は覚えておく。前は毎コマ（1秒に60回）親をたどって探し直していて、
-       そのたびにページ全体の配置計算をさせていた（ページ移動の幕がカクつく原因の1つ・遅いパソコンで約56ms） */
+    /* 【2026-10-29 ヒデさん「サイトがカクカクして重い部分を改善」】
+       前は1秒に60回（毎コマ）ずっと、①写真がどれくらい顔を出したか ②パネルの値（CSS変数14個）を測り直し、
+       値が少し変わるたびにフッターを描き直していた（見えていない時も・遅いパソコンで詳しいページのスクロール中に約235ms）。
+       ・①は「写真を寄せる演出（zoom）」の時しか使っていない → zoom の時だけスクロールに合わせて測る
+       ・1画面の高さは、箱の大きさが変わった時だけ測る（ResizeObserver）
+       ・パネルの値は、フッターが画面に見えている間だけ 0.3秒おきに読む（パネルで動かすとすぐ追いつく） */
     let scroller: HTMLElement | null = null;
-    const tick = () => {
-      const el = ref.current;
-      if (!scroller || !scroller.isConnected) scroller = findScroller();
+    let visible = false;
+    let iv = 0;
+    let raf = 0;
+    const readT = () => {
+      raf = 0;
+      const el = ref.current, sc = scroller;
+      if (!el || !sc) return;
+      /* ⚠️ 進み具合は getBoundingClientRect（縮小後のpx）ではなく、
+         offsetTop と scrollTop（どちらも縮小前のpx）で出す。混ぜると比率が狂う */
+      const top = el.offsetTop - sc.scrollTop;
+      const v = 1 - top / Math.max(1, sc.clientHeight);
+      const next = Math.max(0, Math.min(1, v));
+      setT((p) => (Math.abs(p - next) > 0.004 ? next : p));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(readT);
+    };
+    const readCfg = () => {
+      /* パネルのつまみ（CSS変数）を読み直す。変わった時だけ state を更新する */
+      const cs = getComputedStyle(document.documentElement);
+      const num = (n: string, d: number) => {
+        const x = parseFloat(cs.getPropertyValue(n));
+        return isFinite(x) && x > 0 ? x : d;
+      };
+      /* ⚠️ 白のままの割合は 0 もあり得るので、0 を既定に戻さない読み方にする */
+      const num0 = (n: string, d: number) => {
+        const x = parseFloat(cs.getPropertyValue(n));
+        return isFinite(x) && x >= 0 ? x : d;
+      };
+      const nc = {
+        stageH: num("--ft-stage-h", 120),
+        fadeH: num("--ft-fade-h", 80),
+        fadeNarrow: num("--ft-fade-h-narrow", 85),
+        solid: num0("--ft-fade-solid", 6),
+        solidWide: num0("--ft-solid-wide", 0),
+        padTop: num0("--ft-pad-top", 64),
+        curve: Math.round(num("--ft-fade-curve", 1)),
+        overlap: num0("--ft-overlap", 0),
+        /* 写真の明るさの案（PHOTO_TONES・2026-10-20） */
+        tone: Math.round(num0("--ft-tone", 0)),
+        bright: num("--ft-photo-bright", 100),
+        sat: num0("--ft-sat", 100),
+        shade: num0("--ft-shade", 35),
+        shadeH: num("--ft-shade-h", 50),
+        light: num0("--ft-light", 0),
+      };
+      setCfg((o) => ((Object.keys(nc) as (keyof typeof nc)[]).every((k) => o[k] === nc[k]) ? o : nc));
+    };
+    let ro: ResizeObserver | null = null;
+    let io: IntersectionObserver | null = null;
+    let tries = 0;
+    let retry = 0;
+    const start = () => {
+      scroller = findScroller();
       const sc = scroller;
-      if (el && sc) {
+      readCfg();
+      if (!sc || !ref.current) {
+        /* まだ中身が読み込み中でスクロールの箱が決まらない時は、少し待って探し直す（最大10回） */
+        if (++tries <= 10) retry = window.setTimeout(start, 500);
+        return;
+      }
+      const measureH = () => {
         const H = sc.clientHeight;
         setVh((p) => (Math.abs(p - H) > 1 ? H : p));
-        /* ⚠️ 進み具合は getBoundingClientRect（縮小後のpx）ではなく、
-           offsetTop と scrollTop（どちらも縮小前のpx）で出す。混ぜると比率が狂う */
-        const top = el.offsetTop - sc.scrollTop;
-        const v = 1 - top / Math.max(1, H);
-        const next = Math.max(0, Math.min(1, v));
-        setT((p) => (Math.abs(p - next) > 0.004 ? next : p));
-        /* パネルのつまみ（CSS変数）を読み直す。変わった時だけ state を更新する */
-        const cs = getComputedStyle(document.documentElement);
-        const num = (n: string, d: number) => {
-          const x = parseFloat(cs.getPropertyValue(n));
-          return isFinite(x) && x > 0 ? x : d;
-        };
-        /* ⚠️ 白のままの割合は 0 もあり得るので、0 を既定に戻さない読み方にする */
-        const num0 = (n: string, d: number) => {
-          const x = parseFloat(cs.getPropertyValue(n));
-          return isFinite(x) && x >= 0 ? x : d;
-        };
-        const nc = {
-          stageH: num("--ft-stage-h", 120),
-          fadeH: num("--ft-fade-h", 80),
-          fadeNarrow: num("--ft-fade-h-narrow", 85),
-          solid: num0("--ft-fade-solid", 6),
-          solidWide: num0("--ft-solid-wide", 0),
-          padTop: num0("--ft-pad-top", 64),
-          curve: Math.round(num("--ft-fade-curve", 1)),
-          overlap: num0("--ft-overlap", 0),
-          /* 写真の明るさの案（PHOTO_TONES・2026-10-20） */
-          tone: Math.round(num0("--ft-tone", 0)),
-          bright: num("--ft-photo-bright", 100),
-          sat: num0("--ft-sat", 100),
-          shade: num0("--ft-shade", 35),
-          shadeH: num("--ft-shade-h", 50),
-          light: num0("--ft-light", 0),
-        };
-        setCfg((o) =>
-          o.stageH === nc.stageH &&
-          o.fadeH === nc.fadeH &&
-          o.solid === nc.solid &&
-          o.padTop === nc.padTop &&
-          o.fadeNarrow === nc.fadeNarrow &&
-          o.solidWide === nc.solidWide &&
-          o.curve === nc.curve &&
-          o.overlap === nc.overlap &&
-          o.tone === nc.tone &&
-          o.bright === nc.bright &&
-          o.sat === nc.sat &&
-          o.shade === nc.shade &&
-          o.shadeH === nc.shadeH &&
-          o.light === nc.light
-            ? o
-            : nc
-        );
+      };
+      measureH();
+      ro = new ResizeObserver(measureH);
+      ro.observe(sc);
+      if (zoom) {
+        sc.addEventListener("scroll", onScroll, { passive: true });
+        readT();
       }
-      id = requestAnimationFrame(tick);
+      io = new IntersectionObserver(
+        ([e]) => {
+          visible = e.isIntersecting;
+          window.clearInterval(iv);
+          if (visible) {
+            readCfg();
+            iv = window.setInterval(readCfg, 300);
+          }
+        },
+        { root: sc, rootMargin: "200px 0px" }
+      );
+      io.observe(ref.current);
     };
     /* 測り始めは、ページが出た瞬間を避けて手が空いてから（フッターはページのいちばん下なので、出た瞬間には要らない） */
     const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
     let idle = 0;
     const to = window.setTimeout(() => {
-      if (w.requestIdleCallback) idle = w.requestIdleCallback(() => { id = requestAnimationFrame(tick); }, { timeout: 1200 });
-      else id = requestAnimationFrame(tick);
+      if (w.requestIdleCallback) idle = w.requestIdleCallback(start, { timeout: 1200 });
+      else start();
     }, 300);
     return () => {
       window.clearTimeout(to);
+      window.clearTimeout(retry);
       if (idle && w.cancelIdleCallback) w.cancelIdleCallback(idle);
-      cancelAnimationFrame(id);
+      window.clearInterval(iv);
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      io?.disconnect();
+      scroller?.removeEventListener("scroll", onScroll);
     };
-  }, []);
+  }, [zoom]);
 
   /* 高さが測れるまでは 1画面ぶんを仮に置く（描画のちらつき防止） */
   const H = vh || 900;
@@ -473,7 +504,7 @@ function PhotoStage({
       <div ref={ref} className="relative w-full overflow-hidden">
         {/* 写真は帯いっぱい（止めない）。帯が横長になるので、水平線と海が残るよう下を基準に切り抜く🟡 */}
         <img
-          src="/img/bg-hero.jpg"
+          src="/img/bg-hero.webp"
           data-kv-photo="" /* 2026-10-21 ヒデさん「フッターはキービジュアルのやつを使って」→ キービジュアルのレタッチ（PhotoRetouch）がフッターにも同じく効く */
           alt=""
           className="absolute inset-0 size-full object-cover object-bottom"
@@ -481,7 +512,7 @@ function PhotoStage({
         />
         {cfg.curve === 4 && (
           <img
-            src="/img/bg-hero.jpg"
+            src="/img/bg-hero.webp"
             data-kv-photo=""
             alt=""
             aria-hidden
@@ -523,7 +554,7 @@ function PhotoStage({
         style={{ height: isNarrow ? undefined : H }}
       >
         <img
-          src="/img/bg-hero.jpg"
+          src="/img/bg-hero.webp"
           data-kv-photo="" /* 2026-10-21 ヒデさん「フッターはキービジュアルのやつを使って」→ キービジュアルのレタッチ（PhotoRetouch）がフッターにも同じく効く */
           alt=""
           className="size-full object-cover"

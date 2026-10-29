@@ -21,6 +21,7 @@ import SiteFooter from "./SiteFooter";
 import { SPOT_DETAILS, type SpotDetail } from "./spotDetailData";
 import { GOURMET_DETAILS, GOURMET_ORDER } from "./gourmetDetailData";
 import { attachPhoneMode } from "./phoneMode";
+import { useInertiaScroll } from "./inertiaScroll";
 
 export type ListKind = "spot" | "gourmet" | "event";
 
@@ -138,8 +139,11 @@ export default function ListPage({ kind }: { kind: ListKind }) {
   const data: Record<string, SpotDetail> = kind === "gourmet" ? GOURMET_DETAILS : SPOT_DETAILS;
   const items: Item[] = k.slugs.filter((s) => data[s]).map((s, idx) => ({ ...data[s], href: k.base + s, idx }));
   useListPanel();
+  /* 慣性スクロール（サイト共通・2026-10-29。値は inertiaScroll.ts） */
+  const mainRef = useRef<HTMLElement>(null);
+  useInertiaScroll(mainRef);
   return (
-    <main className="h-dvh overflow-y-auto overflow-x-hidden overscroll-contain bg-white [container-type:inline-size]">
+    <main ref={mainRef} className="h-dvh overflow-y-auto overflow-x-hidden overscroll-contain bg-white [container-type:inline-size]">
       <DetailHeader />
       {/* 白い地は下から --ft-overlap-wide の所まで。その下は透明にして、裏に潜り込ませたフッターのグラデを見せる（詳しいページと同じ作り） */}
       <div
