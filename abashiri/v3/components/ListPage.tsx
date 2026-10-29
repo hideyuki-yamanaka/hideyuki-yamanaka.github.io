@@ -43,8 +43,9 @@ function useListPanel() {
     if (made.current) return;
     let panel: { destroy: () => void; value?: (key: string) => unknown } | null = null;
     /* PC の値は params、スマホの値は spDefault（スマホモードで上書き）。🟡 既定は見比べの時の値のまま */
-    const params = { list: { padX: 100, w: 78, ratio: 75, gapX: 40, gapY: 80 } };
-    const SP = { padX: 24, w: 100, ratio: 75, gapX: 16, gapY: 64 };
+    /* 2026-10-29 ヒデさんの設定ファイル（abashiri-list-tune-settings.json）を焼き込み：パディング 40・幅 90%・ギャップ 横60／縦60 */
+    const params = { list: { padX: 40, w: 90, headGap: 64, ratio: 75, gapX: 60, gapY: 60 } };
+    const SP = { padX: 24, w: 100, headGap: 40, ratio: 75, gapX: 16, gapY: 64 };
     const STORAGE_KEY = "abashiri-list-tune";
     const VERSION = 1;
     const readSp = (k: keyof typeof SP) => {
@@ -61,8 +62,8 @@ function useListPanel() {
     const apply = () => {
       const r = document.documentElement.style;
       const phone = window.matchMedia("(max-width: 600px)").matches;
-      for (const k of ["padX", "w", "ratio", "gapX", "gapY"] as const) {
-        const name = { padX: "pad-x", w: "w", ratio: "ratio", gapX: "gap-x", gapY: "gap-y" }[k];
+      for (const k of ["padX", "w", "headGap", "ratio", "gapX", "gapY"] as const) {
+        const name = { padX: "pad-x", w: "w", headGap: "head-gap", ratio: "ratio", gapX: "gap-x", gapY: "gap-y" }[k];
         if (!phone) r.setProperty(`--list-${name}-pc`, String(params.list[k]));
         r.setProperty(`--list-${name}-sp`, String(phone ? params.list[k] : readSp(k)));
       }
@@ -90,6 +91,8 @@ function useListPanel() {
               /* 2026-10-29 ヒデさん「数値を変えたらカードが広がって画面を埋めていくように」「ピクセルでなく、レスポンシブを想定した調整パネルに」
                  → カードの並びの幅を「画面の幅に対する %」にした。どの画面幅でも同じ割合で伸び縮みする。100% で画面いっぱい（左右はパディング分だけ残る） */
               { slider: "幅（画面に対して）", path: "list.w", min: 40, max: 100, step: 1, unit: "%", spDefault: SP.w, immediate: true, hint: "カードの並び全体の幅を、画面の幅に対する割合で。上げるほどカードが広がり、100% で画面いっぱい（左右はパディング分だけ）。画面の幅が変わっても同じ割合のまま。" },
+              /* 2026-10-29 ヒデさん「タイトルとコンテンツのギャップをもう少し詰めたい。調整パネルで指定できるように」→ 96→64px（スマホ 64→40px・🟡） */
+              { slider: "ギャップ（見出しとカード）", path: "list.headGap", min: 0, max: 160, step: 4, unit: "px", spDefault: SP.headGap, immediate: true, hint: "大見出し（ぼーっとスポットなど）と、その下のカードの並びの間。スマホの上書きが無い間は 40px。" },
               { slider: "写真の高さ（幅に対して）", path: "list.ratio", min: 40, max: 150, step: 1, unit: "%", spDefault: SP.ratio, immediate: true, hint: "写真の縦横の比率。75% で 4:3、56% で 16:9、100% で正方形、133% で縦長 3:4。" },
               { slider: "ギャップ（横）", path: "list.gapX", min: 0, max: 160, step: 4, unit: "px", spDefault: SP.gapX, immediate: true, hint: "左右に並んだカードの間（十字の縦の線）。スマホは1列なので効かない。" },
               { slider: "ギャップ（縦）", path: "list.gapY", min: 0, max: 200, step: 4, unit: "px", spDefault: SP.gapY, immediate: true, hint: "上下に並んだカードの間（十字の横の線）。スマホの上書きが無い間は 64px。" },
@@ -144,7 +147,7 @@ export default function ListPage({ kind }: { kind: ListKind }) {
       >
         {/* 幅は画面（main）の幅に対する %。cqw＝画面の幅の 1%。パディングより外には出ない */}
         <div className="mx-auto" style={{ width: "min(100%, calc(var(--list-w-n) * 1cqw))" }}>
-          <h1 className="mb-16 text-title-44 font-thin leading-[1.3] text-ink tab:mb-24 tab:text-title-56">{k.title}</h1>
+          <h1 className="text-title-44 font-thin leading-[1.3] text-ink tab:text-title-56" style={{ marginBottom: "var(--list-head-gap)" }}>{k.title}</h1>
           <div className="grid grid-cols-1 tab:grid-cols-2" style={{ columnGap: "var(--list-gap-x)", rowGap: "var(--list-gap-y)" }}>
             {items.map((it) => (
               <Link key={it.slug} href={it.href} className="group flex flex-col gap-6">
