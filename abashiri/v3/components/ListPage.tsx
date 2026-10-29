@@ -43,8 +43,8 @@ function useListPanel() {
     if (made.current) return;
     let panel: { destroy: () => void; value?: (key: string) => unknown } | null = null;
     /* PC の値は params、スマホの値は spDefault（スマホモードで上書き）。🟡 既定は見比べの時の値のまま */
-    /* 2026-10-29 ヒデさんの設定ファイル（abashiri-list-tune-settings.json）を焼き込み：パディング 40・幅 90%・ギャップ 横60／縦60 */
-    const params = { list: { padX: 40, w: 90, headGap: 64, ratio: 75, gapX: 60, gapY: 60, gapName: 4, gapLead: 4 } };
+    /* 2026-10-29 ヒデさんの設定ファイル（abashiri-list-tune-settings (1).json）を焼き込み：パディング 40・幅 86%・見出しとカード 80・写真 64%・ギャップ 横44／縦64・番号と名前 0・名前と説明 4 */
+    const params = { list: { padX: 40, w: 86, headGap: 80, ratio: 64, gapX: 44, gapY: 64, gapName: 0, gapLead: 4 } };
     const SP = { padX: 24, w: 100, headGap: 40, ratio: 75, gapX: 16, gapY: 64, gapName: 4, gapLead: 4 };
     const STORAGE_KEY = "abashiri-list-tune";
     const VERSION = 1;
