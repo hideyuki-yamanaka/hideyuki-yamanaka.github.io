@@ -310,7 +310,7 @@ export default function TopTunePanel({
 
     const DEFAULTS: Params = {
       pos: { ...POS_DEFAULTS },
-      anim: { boPattern: DEFAULT_BO, illustEnter: 3, tamaranee: 1, bouncePattern: 1, bounceStrength: 100, illustDelay: 0 }, /* illustDelay 0.5→0（2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早め」） */
+      anim: { boPattern: DEFAULT_BO, illustEnter: 3, tamaranee: 1, bouncePattern: 1, bounceStrength: 100, illustDelay: 0.6 }, /* illustDelay 0.5→0→0.6（2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早め」→「もう少しだけ遅く」「0.6秒ぐらいで」） */
       intro: { delay: 350, hold: 3000 },
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
@@ -569,16 +569,19 @@ export default function TopTunePanel({
             delete saved.footer.pattern;
             localStorage.setItem(k, JSON.stringify(saved));
           }
-          /* 【2026-10-29 一回限りの移し替え】人物の出現ディレイの既定を 0.5→0s にした（ヒデさん「人物が出てくるタイミングをちょっと早めましょう」）。
-             パネルは値をまるごと保存するので、前の既定 0.5 が保存に残っていると新しい既定が見えない。
-             前の既定のまま（0.5）の時だけ、1回だけ置き換える（自分で 0.5 に戻した後は触らない） */
-          const MIG_ILLUST = "abashiri-mig-illust-delay-20261029";
-          if (saved && saved.anim && !localStorage.getItem(MIG_ILLUST)) {
-            if (saved.anim.illustDelay === 0.5) {
+          /* 【2026-10-29 移し替え】人物の出現ディレイの既定を変えた（0.5→0s「ちょっと早めましょう」→ 0→0.6s「もう少しだけ遅く」「0.6秒ぐらいで」）。
+             パネルは値をまるごと保存するので、前の既定が保存に残っていると新しい既定が見えない。
+             保存が「前の既定のどれか」のままの時だけ、今の既定に置き換える。今の既定ごとに1回だけ（自分で動かした値は触らない）。
+             既定をまた変えたら、前の既定を OLD_ILLUST に足す */
+          const MIG_ILLUST = "abashiri-mig-illust-delay";
+          const OLD_ILLUST = [0.5, 0, 0.3]; /* 0.3 は手元で一瞬だけ既定にした値 */
+          const curIllust = String(DEFAULTS.anim.illustDelay);
+          if (saved && saved.anim && localStorage.getItem(MIG_ILLUST) !== curIllust) {
+            if (OLD_ILLUST.includes(saved.anim.illustDelay)) {
               saved.anim.illustDelay = DEFAULTS.anim.illustDelay;
               localStorage.setItem(k, JSON.stringify(saved));
             }
-            localStorage.setItem(MIG_ILLUST, "1");
+            localStorage.setItem(MIG_ILLUST, curIllust);
           }
         }
       } catch {}
@@ -1102,7 +1105,7 @@ export default function TopTunePanel({
                 path: "anim.illustDelay",
                 min: 0,
                 max: 10,
-                step: 0.5,
+                step: 0.1, /* 0.5→0.1（2026-10-29 既定を 0.6秒にしたので、細かく止まるように） */
                 fmt: "s",
                 hint: "ボタンが出てから人物が登場するまでの待ち時間。上げると登場が遅くなり「間」ができ、下げるとすぐ出ます。変えると人物登場の直前から再生し直します。",
               },

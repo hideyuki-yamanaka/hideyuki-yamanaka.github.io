@@ -27,7 +27,7 @@ export default function Home() {
     illustEnter: 3,
     bouncePattern: 1,
     bounceStrength: 100,
-    illustDelay: 0, /* 2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早めましょう」0.5→0（tune-defaults.json・TopTunePanel の既定と同じ値） */
+    illustDelay: 0.6, /* 2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早めましょう」0.5→0 →「もう少しだけ遅く」「0.6秒ぐらいで」0→0.6（tune-defaults.json・TopTunePanel の既定と同じ値） */
     loop: { cycle: 10, show: 2.6, swayFirst: false },
     tamaranee: 1,
     tamaIntro: { delay: 350, hold: 3000 },
