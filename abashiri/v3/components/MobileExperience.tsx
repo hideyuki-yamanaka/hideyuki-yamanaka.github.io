@@ -12,6 +12,7 @@ import { TUNE_RESYNC_EVENT } from "./tuneKeys";
 import { navigateTo } from "./PageTransition";
 import { useEffect, useRef, useState } from "react";
 import BoTips, { DEFAULT_BO_TIPS } from "./BoTips";
+import VideoSources from "./VideoSources";
 
 /* 【2026-09-20】PC版（ExperienceFlow）と同じ中身・同じ並びにそろえる。
    網走駅は削除済みなのにここだけ残っていた。ひまわりも追加し、
@@ -341,11 +342,12 @@ export default function MobileExperience() {
         <div className="absolute inset-0" onClick={poke}>
           <video
             ref={videoRef}
-            src={active.video}
             playsInline
             loop
             className="absolute inset-0 h-full w-full object-cover"
-          />
+          >
+            {active.video && <VideoSources src={active.video} />}
+          </video>
           {/* 後ろ向きの人物（PCと同じ illust-video.png）。右下・下ベタ付け */}
           <img
             src="/img/illust-video.png"

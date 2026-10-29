@@ -562,7 +562,7 @@ export default function HeroBlurSeq({
       blurIn(
         lower.map((i) => i.p),
         t2,
-        1100,
+        timing.tamaranai.duration,
         timing.kotoba.blur
       );
 

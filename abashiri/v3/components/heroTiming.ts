@@ -25,6 +25,8 @@ export type HeroTiming = {
   tamaranai: {
     /** な〜んにもないの出現開始からのディレイ */
     delay: number;
+    /** 出るのにかける時間（HeroBlurSeq のブラー出現） */
+    duration: number;
   };
   /** 下の曲線のあしらい（「い」の書き始めと同時に走る） */
   flourish: {
@@ -51,9 +53,11 @@ export const DEFAULT_HERO_TIMING: HeroTiming = {
   start: 500,
   header: { extraDelay: 0 },
   kotoba: { delay: 300, duration: 1450, blur: 16 },
-  tamaranai: { delay: 950 },
+  /* 【2026-10-29 ヒデさん「たまらないも出るのをもうちょっと速く。全体的に3秒ぐらいで収まるように。人物が出てくるまで」】
+     たまらないの出る時間 1100→800ms、ボタン 間150→100・出る時間1100→600ms（人物はボタンが出きってから出るので、ここも詰めた）🟡 */
+  tamaranai: { delay: 950, duration: 800 },
   flourish: { offset: 0 },
-  button: { gap: 150, duration: 1100, blur: 16 },
+  button: { gap: 100, duration: 600, blur: 16 },
   illust: { gap: 250, duration: 1100, blur: 16 },
 };
 

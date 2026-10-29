@@ -58,7 +58,8 @@ export const DEFAULT_BUBBLE: BubbleTune = {
   smooth: { passes: 2, points: 72 },
   /* 「な〜んにもない」が出はじめる頃から伸び出し、
      「たまらない」が出るタイミングで伸びきって、ぷるんと落ち着く */
-  tail: { delay: 600, duration: 950, retract: 100, overshoot: 12, sharp: 55 },
+  /* 【2026-10-29 ヒデさん「何もないが出てから、吹き出しが伸びるところをもう少し速く」】伸び出し 600→300ms・伸びる時間 950→600ms 🟡 */
+  tail: { delay: 300, duration: 600, retract: 100, overshoot: 12, sharp: 55 },
   puni: { ampX: 3.5, ampY: 3, period: 2.6 },
   /* パスの曲線に沿ってゆっくり波が伝わる（採用候補） */
   wave: { amp: 3, waves: 6, period: 3.2 },

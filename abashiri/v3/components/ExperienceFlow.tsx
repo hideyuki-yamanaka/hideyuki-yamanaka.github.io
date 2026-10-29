@@ -28,6 +28,7 @@ import { TUNE_RESYNC_EVENT } from "./tuneKeys";
 import GlobalNav from "./GlobalNav";
 import { devSilent } from "./devSound";
 import { findEnter, type EnterPattern } from "./enterPatterns";
+import VideoSources from "./VideoSources";
 
 declare global {
   interface Window {
@@ -555,7 +556,6 @@ function SpotCard({
       {spot.video && (
         <video
           ref={videoRef}
-          src={spot.video}
           loop
           playsInline
           preload="metadata"
@@ -564,7 +564,9 @@ function SpotCard({
           className={`pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-700 ease-standard ${
             active ? "opacity-100" : "opacity-0"
           }`}
-        />
+        >
+          <VideoSources src={spot.video} />
+        </video>
       )}
       {/* カンプ 15152:29231: カード内 top 464。中央のカードにだけ出す。
           2026-08-22 ヒデさん指示：動画が実在するスポット（いまは流氷クルーズだけ）に
@@ -638,14 +640,15 @@ function MediaLayer({
       {spot.video && (
         <video
           ref={videoRef}
-          src={spot.video}
           playsInline
           loop /* 再生ページの本編は繰り返す（2026-08-31 ヒデさん指示。付け忘れで1周で止まっていた） */
           preload="auto"
           poster={spot.src}
           onLoadedMetadata={sync}
           className="absolute inset-0 size-full object-cover"
-        />
+        >
+          <VideoSources src={spot.video} />
+        </video>
       )}
     </>
   );
