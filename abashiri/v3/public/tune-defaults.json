@@ -41,7 +41,7 @@
     "tamaranee": 1,
     "bouncePattern": 1,
     "bounceStrength": 10,
-    "illustDelay": 0.5
+    "illustDelay": 0
   },
   "intro": {
     "delay": 350,

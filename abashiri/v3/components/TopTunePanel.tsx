@@ -310,7 +310,7 @@ export default function TopTunePanel({
 
     const DEFAULTS: Params = {
       pos: { ...POS_DEFAULTS },
-      anim: { boPattern: DEFAULT_BO, illustEnter: 3, tamaranee: 1, bouncePattern: 1, bounceStrength: 100, illustDelay: 0.5 },
+      anim: { boPattern: DEFAULT_BO, illustEnter: 3, tamaranee: 1, bouncePattern: 1, bounceStrength: 100, illustDelay: 0 }, /* illustDelay 0.5→0（2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早め」🟡） */
       intro: { delay: 350, hold: 3000 },
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */
@@ -568,6 +568,17 @@ export default function TopTunePanel({
             Object.assign(saved.footer, { evPadBottom: 96, fadeH: 64, fadeSolid: 0, fadeCurve: 1, overlap: 400, padTop: 64 });
             delete saved.footer.pattern;
             localStorage.setItem(k, JSON.stringify(saved));
+          }
+          /* 【2026-10-29 一回限りの移し替え】人物の出現ディレイの既定を 0.5→0s にした（ヒデさん「人物が出てくるタイミングをちょっと早めましょう」）。
+             パネルは値をまるごと保存するので、前の既定 0.5 が保存に残っていると新しい既定が見えない。
+             前の既定のまま（0.5）の時だけ、1回だけ置き換える（自分で 0.5 に戻した後は触らない） */
+          const MIG_ILLUST = "abashiri-mig-illust-delay-20261029";
+          if (saved && saved.anim && !localStorage.getItem(MIG_ILLUST)) {
+            if (saved.anim.illustDelay === 0.5) {
+              saved.anim.illustDelay = DEFAULTS.anim.illustDelay;
+              localStorage.setItem(k, JSON.stringify(saved));
+            }
+            localStorage.setItem(MIG_ILLUST, "1");
           }
         }
       } catch {}
