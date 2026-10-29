@@ -584,6 +584,18 @@ export default function TopTunePanel({
             }
             localStorage.setItem(MIG_ILLUST, curIllust);
           }
+          /* 【2026-10-29 移し替え】メッセージの出はじめ・見出しのディレイの既定を詰めた（120→60px・200→120px）。
+             パネルを外していた間も値はまるごと保存されていて、前の既定が残っていると新しい既定が見えない。
+             保存が前の既定のままの時だけ、今の既定に置き換える（今の既定ごとに1回だけ・自分で動かした値は触らない） */
+          const MIG_MSG = "abashiri-mig-msg-delay";
+          const curMsg = `${DEFAULTS.msg.fadeIn}/${DEFAULTS.msg.titleDelay}`;
+          if (saved && saved.msg && localStorage.getItem(MIG_MSG) !== curMsg) {
+            let changed = false;
+            if ([120].includes(saved.msg.fadeIn)) { saved.msg.fadeIn = DEFAULTS.msg.fadeIn; changed = true; }
+            if ([200].includes(saved.msg.titleDelay)) { saved.msg.titleDelay = DEFAULTS.msg.titleDelay; changed = true; }
+            if (changed) localStorage.setItem(k, JSON.stringify(saved));
+            localStorage.setItem(MIG_MSG, curMsg);
+          }
         }
       } catch {}
 
@@ -1264,7 +1276,30 @@ export default function TopTunePanel({
                  数値は heroEnterConfig.ts / kvExitConfig.ts の既定値で固定 */
               /* 【2026-10-21 ヒデさん】「トップページの調整パネルのメッセージ（作字のあと）は、今のやつをデフォルトにして削除して構いません」
                  → 案・文言・見出しと本文の太さ／行間／不透明度・出てくる動き（スクロール量・時間）・スクロール速度（KV→メッセージ）を
-                 焼き込みの値で固めて、調整パネルから見出しごと外した（値は tune-defaults.json の msg・scrollSpd と、下の pinFixed） */
+                 焼き込みの値で固めて、調整パネルから見出しごと外した（値は tune-defaults.json の msg・scrollSpd と、下の pinFixed）。
+                 2026-10-29 に「出はじめ」「見出し」のディレイの2つだけ、すぐ下の見出しで戻した */
+              /* 【2026-10-29 ヒデさん「作字が消えて、網走は何もないが出てくるまでの長さがちょっと長い。もう少しだけ詰めたい」「それも変えられるような形で調整パネルにも」】
+                 スクロール量で進む演出の位置なので アニメーション（6-13）。見出しは基本・フォントと同じ「メッセージ（網走は何もない。）」。
+                 PC だけ（スマホのメッセージは場面ごとの切り替えで、この間が無い） */
+              { sub: "メッセージ（網走は何もない。）", grp: "anim" },
+              {
+                slider: "出はじめのディレイ",
+                path: "msg.fadeIn",
+                min: 0,
+                max: 400,
+                step: 10,
+                fmt: "px",
+                hint: "作字が消えきってから、メッセージが出はじめるまでのスクロール量（PC）。ここはスクロールが 40% の速さなので、ホイールでは約2.5倍回す。前は 120px。",
+              },
+              {
+                slider: "見出しのディレイ",
+                path: "msg.titleDelay",
+                min: 0,
+                max: 400,
+                step: 10,
+                fmt: "px",
+                hint: "メッセージが出はじめてから、「網走は何もない。」が出るまでのスクロール量（PC）。前は 200px。",
+              },
               { sub: "ぼーっとスポット", grp: "anim" },
               { sub: "入り", deep: true },
               {
@@ -1784,7 +1819,8 @@ export default function TopTunePanel({
       window.addEventListener(SOUND_DLG_SHOWN_EVENT, resyncFonts);
       window.addEventListener(TUNE_RESYNC_EVENT, resyncFonts);
       /* 調整パネルから外して固めた値（2026-10-21）：ブラウザに残った古い保存値で変わらないよう、焼き込み（DEFAULTS）の値に戻す */
-      params.msg = structuredClone(DEFAULTS.msg);
+      /* ただしメッセージの「出はじめ」「見出し」のディレイは 2026-10-29 にパネルへ戻した（つまみで変えた値を残す） */
+      params.msg = { ...structuredClone(DEFAULTS.msg), fadeIn: params.msg.fadeIn, titleDelay: params.msg.titleDelay };
       params.scrollSpd = structuredClone(DEFAULTS.scrollSpd);
       /* 同日 2回目（2026-10-21 ヒデさん「画像の箇所の調整パネルは削除で大丈夫です」）：画面写真の値で固めた */
       params.nav = { inMs: 420, outMs: 620 };

@@ -46,13 +46,16 @@ export type MsgTune = {
 export const DEFAULT_MSG: MsgTune = {
   pattern: 1,
   len: 2400,
-  fadeIn: 120,
+  /* 【2026-10-29 ヒデさん「キービジュアルでスクロールして作字が消えて、網走は何もないが出てくるまでの長さがちょっと長い。もう少しだけ詰めたい」「それも調整パネルに」】
+     作字が消えきってから見出しが出るまでは何も映らない間だった（120px＋200px。ここは KV→メッセージのスクロールが 40% の速さなので、ホイールでは約500px）
+     → 120→60px・見出しのディレイ 200→120px（ホイールで約270px）🟡。調整パネル › トップページ › アニメーション › メッセージ（網走は何もない。） */
+  fadeIn: 60,
   minOpacity: 15,
   /* 3 にしたら「ゆったりしすぎ」（2026-08-22 ヒデさん）。最初のテンポ相当へ戻した */
   soft: 1.3,
   tail: 600,
   titleOpacity: 80,
-  titleDelay: 200,
+  titleDelay: 120, /* 2026-10-29 200→120（上の fadeIn と同じ指示） */
   titleAppearSec: 1.4,
   titleWeight: 100,
   titleLeading: 1,
