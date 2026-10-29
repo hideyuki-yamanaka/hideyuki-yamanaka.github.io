@@ -310,7 +310,7 @@ export default function TopTunePanel({
 
     const DEFAULTS: Params = {
       pos: { ...POS_DEFAULTS },
-      anim: { boPattern: DEFAULT_BO, illustEnter: 3, tamaranee: 1, bouncePattern: 1, bounceStrength: 100, illustDelay: 0 }, /* illustDelay 0.5→0（2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早め」🟡） */
+      anim: { boPattern: DEFAULT_BO, illustEnter: 3, tamaranee: 1, bouncePattern: 1, bounceStrength: 100, illustDelay: 0 }, /* illustDelay 0.5→0（2026-10-29 ヒデさん「人物が出てくるタイミングをちょっと早め」） */
       intro: { delay: 350, hold: 3000 },
       preview: { faceOn: false, patchRed: false },
       /* 音量は % で持つ（スライダーが扱いやすいので）。0〜100 = 0〜1 */

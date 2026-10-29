@@ -557,8 +557,9 @@ export default function HeroBlurSeq({
           if (!aborted) startBubbleAnim(bubble, svg, bubbleAnim, bubbleTune);
         }, tailEndAt);
       }
-      /* 2. たまらない（あしらい込み）。しっぽが伸びきってから、間を置いて出る */
-      const t2 = tailEndAt + tamaGap;
+      /* 2. たまらない（あしらい込み）。しっぽが伸びきってから、間を置いて出る。
+         ぷるんが落ち着ききる tail.tamaLead ぶん前から出し始める（2026-10-29 ヒデさん「たまらないの出始め、もうちょっと速く」） */
+      const t2 = Math.max(t0, tailEndAt - (tailPlan ? tail.tamaLead : 0) + tamaGap);
       blurIn(
         lower.map((i) => i.p),
         t2,
