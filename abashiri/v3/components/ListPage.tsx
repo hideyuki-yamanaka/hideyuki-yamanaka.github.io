@@ -44,8 +44,8 @@ function useListPanel() {
     let panel: { destroy: () => void; value?: (key: string) => unknown } | null = null;
     /* PC の値は params、スマホの値は spDefault（スマホモードで上書き）。🟡 既定は見比べの時の値のまま */
     /* 2026-10-29 ヒデさんの設定ファイル（abashiri-list-tune-settings.json）を焼き込み：パディング 40・幅 90%・ギャップ 横60／縦60 */
-    const params = { list: { padX: 40, w: 90, headGap: 64, ratio: 75, gapX: 60, gapY: 60 } };
-    const SP = { padX: 24, w: 100, headGap: 40, ratio: 75, gapX: 16, gapY: 64 };
+    const params = { list: { padX: 40, w: 90, headGap: 64, ratio: 75, gapX: 60, gapY: 60, gapName: 4, gapLead: 4 } };
+    const SP = { padX: 24, w: 100, headGap: 40, ratio: 75, gapX: 16, gapY: 64, gapName: 4, gapLead: 4 };
     const STORAGE_KEY = "abashiri-list-tune";
     const VERSION = 1;
     const readSp = (k: keyof typeof SP) => {
@@ -62,8 +62,8 @@ function useListPanel() {
     const apply = () => {
       const r = document.documentElement.style;
       const phone = window.matchMedia("(max-width: 600px)").matches;
-      for (const k of ["padX", "w", "headGap", "ratio", "gapX", "gapY"] as const) {
-        const name = { padX: "pad-x", w: "w", headGap: "head-gap", ratio: "ratio", gapX: "gap-x", gapY: "gap-y" }[k];
+      for (const k of ["padX", "w", "headGap", "ratio", "gapX", "gapY", "gapName", "gapLead"] as const) {
+        const name = { padX: "pad-x", w: "w", headGap: "head-gap", ratio: "ratio", gapX: "gap-x", gapY: "gap-y", gapName: "gap-name", gapLead: "gap-lead" }[k];
         if (!phone) r.setProperty(`--list-${name}-pc`, String(params.list[k]));
         r.setProperty(`--list-${name}-sp`, String(phone ? params.list[k] : readSp(k)));
       }
@@ -96,6 +96,10 @@ function useListPanel() {
               { slider: "写真の高さ（幅に対して）", path: "list.ratio", min: 40, max: 150, step: 1, unit: "%", spDefault: SP.ratio, immediate: true, hint: "写真の縦横の比率。75% で 4:3、56% で 16:9、100% で正方形、133% で縦長 3:4。" },
               { slider: "ギャップ（横）", path: "list.gapX", min: 0, max: 160, step: 4, unit: "px", spDefault: SP.gapX, immediate: true, hint: "左右に並んだカードの間（十字の縦の線）。スマホは1列なので効かない。" },
               { slider: "ギャップ（縦）", path: "list.gapY", min: 0, max: 200, step: 4, unit: "px", spDefault: SP.gapY, immediate: true, hint: "上下に並んだカードの間（十字の横の線）。スマホの上書きが無い間は 64px。" },
+              /* 2026-10-29 ヒデさん「カードの下の文字（素朴なグルメ 01／横山蒲鉾店／その下の文章）の上下の余白を変えられるように」「詰める」→ どちらも 8→4px（🟡） */
+              { sub: "カードの文字", grp: "basic" },
+              { slider: "ギャップ（番号と名前）", path: "list.gapName", min: 0, max: 64, step: 2, unit: "px", spDefault: SP.gapName, immediate: true, hint: "「素朴なグルメ 01」と、その下の名前（横山蒲鉾店など）の間。" },
+              { slider: "ギャップ（名前と説明）", path: "list.gapLead", min: 0, max: 64, step: 2, unit: "px", spDefault: SP.gapLead, immediate: true, hint: "名前と、その下の説明の文章の間。" },
             ],
           },
         ],
@@ -158,13 +162,13 @@ export default function ListPage({ kind }: { kind: ListKind }) {
                     className="absolute inset-0 size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                   />
                 </div>
-                <div className="flex flex-col gap-2 text-ink">
+                <div className="flex flex-col text-ink">
                   {/* トップページのカードと同じ表記（ぼーっとスポット 01 など） */}
                   <span className="text-body-14 font-extralight tracking-[0.05em] opacity-70">
                     {k.label} {num(it.idx)}
                   </span>
-                  <h3 className="text-title-24 font-thin leading-[1.4] tab:text-title-28">{it.name}</h3>
-                  <p className="text-body-14 font-light leading-[1.8] opacity-80">{it.lead}</p>
+                  <h3 className="text-title-24 font-thin leading-[1.4] tab:text-title-28" style={{ marginTop: "var(--list-gap-name)" }}>{it.name}</h3>
+                  <p className="text-body-14 font-light leading-[1.8] opacity-80" style={{ marginTop: "var(--list-gap-lead)" }}>{it.lead}</p>
                 </div>
               </Link>
             ))}
