@@ -51,6 +51,8 @@ export type Spot = {
   src: string;
   /** そのスポット自身の動画。まだ無いスポットは未設定にしておく */
   video?: string;
+  /** カルーセルのカードにだけ出す写真（無ければ src）。拡大〜再生画面は src のまま */
+  card?: string;
   /** カンプに無く仮置きしている素材かどうか（報告用） */
   placeholder?: boolean;
 };
@@ -71,7 +73,10 @@ const SPOTS: Spot[] = [
   /* 静止画は動画と同じ「流氷の海」を使う。
      scene-ryuhyo.jpg は船が写っていて動画と絵が違うため、遷移の途中で
      船の写真が挟まって見えてしまう。ice.jpg なら動画の絵とつながる */
-  { id: "ryuhyo", label: "流氷クルーズ", src: "/img/ice.webp", video: "/video/ryuhyo.mp4" },
+  /* カードの絵だけは、スポット詳細ページのいちばん上の船の写真（2026-10-30 ヒデさん
+     「流氷の動画のところは最初にスポット詳細ページの船の画像を入れて、カードをホバーすると動画が流れる」
+     「一番上のサムネイルの、でかい船の写真でいいです」）。拡大〜再生画面は上の理由で ice のまま */
+  { id: "ryuhyo", label: "流氷クルーズ", src: "/img/ice.webp", video: "/video/ryuhyo.mp4", card: "/img/spot/ryuhyo-1.webp" },
   /* トップのひまわり畑と同じ写真にそろえる（2026-09-20） */
   { id: "himawari", label: "大曲湖畔園地ひまわり畑", src: "/img/spot/himawari-1.webp" },
 ];
@@ -495,18 +500,21 @@ function SpotCard({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hover, setHover] = useState(false);
 
-  /* 中央にいる間だけ動画プレビューを流す（そのスポットの動画がある時だけ） */
+  /* 中央のカードに、マウスを乗せている間だけ動画プレビューを流す（そのスポットの動画がある時だけ）。
+     外したら止めて写真（spot.card）に戻す。もう一度乗せたら続きから。中央から外れたら頭に戻す
+     【2026-10-30 ヒデさん「カードをホバーすると動画が流れるという仕様に」】
+       それまでは中央に来ただけで流していた */
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !spot.video) return;
-    if (active) {
+    if (active && hover) {
       v.muted = true; /* プレビューは常に無音。音は動画再生画面から */
-      v.currentTime = 0;
       v.play().catch(() => {});
     } else {
       v.pause();
+      if (!active) v.currentTime = 0;
     }
-  }, [active]);
+  }, [active, hover]);
 
   /* 遷移プレビュー：パネルで遷移を調整すると、この合図で
      「この場所にする」を自動で押す（2026-08-23 ヒデさん依頼のリアルタイム確認）。
@@ -552,17 +560,18 @@ function SpotCard({
         zIndex: active ? 10 : 1,
       }}
     >
-      <img src={spot.src} alt={spot.label} className="absolute inset-0 size-full object-cover" />
+      <img src={spot.card ?? spot.src} alt={spot.label} className="absolute inset-0 size-full object-cover" />
       {spot.video && (
         <video
           ref={videoRef}
           loop
           playsInline
-          preload="metadata"
-          poster={spot.src}
+          /* 中央に来たら先に読み込んでおく（マウスを乗せてすぐ流れるように） */
+          preload={active ? "auto" : "metadata"}
+          poster={spot.card ?? spot.src}
           /* 見せるだけの飾りなので、クリックは全部すり抜けさせる */
           className={`pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-700 ease-standard ${
-            active ? "opacity-100" : "opacity-0"
+            active && hover ? "opacity-100" : "opacity-0"
           }`}
         >
           <VideoSources src={spot.video} />
