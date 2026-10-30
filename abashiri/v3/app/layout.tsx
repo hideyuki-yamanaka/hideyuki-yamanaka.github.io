@@ -33,10 +33,37 @@ const inter = Inter({
    実測（本番・トップページ）: フォント 245ファイル / 3.06MB。
    ヒデさん「サイトがのっそり重い」の主因はここ。 */
 
+/* 【2026-10-30 ヒデさん「設定としてノーインデックスにして、OGP の画像をキービジュアルを元に作成して」】
+   - 検索に出さない：robots で noindex・nofollow（全ページ。下のページで上書きしていない）
+     robots.txt で締め出すと、X や LINE などがリンクの見本（OGP）を読みに来られなくなるので、robots.txt は置かない
+   - OGP 画像：app/opengraph-image.jpg・twitter-image.jpg（1200×630）。PC のキービジュアル（1512×982）を
+     操作の部品（ナビ・音の切り替え・ぼーっとしてみる）を隠して撮り、上から 120〜914 の帯を切り出した。
+     キービジュアルを変えたら撮り直す
+   - metadataBase：OGP 画像の住所を本番の URL で書くため */
 export const metadata: Metadata = {
+  metadataBase: new URL("https://abashiri-site-v3.vercel.app"),
   title: "網走観光サイト｜な〜んにもない たまらない",
   description:
     "な〜んにもない、たまらない。北海道・網走でぼーっとする旅の観光サイト。",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    siteName: "網走観光サイト",
+    title: "網走観光サイト｜な〜んにもない たまらない",
+    description:
+      "な〜んにもない、たまらない。北海道・網走でぼーっとする旅の観光サイト。",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "網走観光サイト｜な〜んにもない たまらない",
+    description:
+      "な〜んにもない、たまらない。北海道・網走でぼーっとする旅の観光サイト。",
+  },
 };
 
 export default function RootLayout({

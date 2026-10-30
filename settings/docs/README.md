@@ -40,6 +40,7 @@
 | [general/FIGMA-EFFECTS-RULES.md](general/FIGMA-EFFECTS-RULES.md) | ブラー/影を正しく実装（🔴 backdrop-blurはSVG/PNGに焼けない＝ライブCSS必須。値はFigma実測） | Figmaのガラス/影を実装する時 |
 | [general/FIGMA-OUTPUT-WORKFLOW.md](general/FIGMA-OUTPUT-WORKFLOW.md) | Web→Figma出力の手順とハマり所（ベクターはSVG取込・惑星等は2倍PNG・🔴セクションの子は相対座標で範囲内へ→appendChild・7章に書き出しのチェックリスト）。決まりは RULES.md の★場面C と3章 | **作った画面をFigmaに書き出す時は着手前に必ず** |
 | [../design-check/design-check.mjs](../design-check/design-check.mjs) | デザインの数値の検査の道具（RULES 4-7・4-13）。決まり（4と8の倍数）から外れた値・似た色・1回しか使っていない近い値・使っている値の種類を表にする。`node settings/design-check/design-check.mjs <フォルダ>`。書いた直後の見張りは `.claude/settings.json` の PostToolUse から自動 | **完了と言う前に必ず**・値を整理したい時 |
+| [../mobile-check/mobile-input-check.mjs](../mobile-check/mobile-input-check.mjs) | スマホの入力まわりの検査の道具（RULES 5-3）。iPhone の大きさで開き、キーボードを出した状態を作って、キーボードの裏に隠れる入力欄・ボタン、16px 未満の入力欄（iPhone が勝手に拡大）、種類の合わない欄、押しにくい物を表にする。`node settings/mobile-check/mobile-input-check.mjs <URL> --step "click:編集"` | **入力欄・下から出るシートを作ったり直したりした時は、渡す前に必ず** |
 | [general/DESIGN-SYSTEM-WORKFLOW.md](general/DESIGN-SYSTEM-WORKFLOW.md) | 既存サイトを棚卸ししてデザインシステムに整える手順 | スタイルを整理する時 |
 | [general/VERCEL-PROJECTS.md](general/VERCEL-PROJECTS.md) | 各プロジェクトの本番 URL・Vercel 設定・デプロイ手順 | デプロイ・本番反映の確認 |
 | [general/FOLDER-RESTRUCTURE-RUNBOOK.md](general/FOLDER-RESTRUCTURE-RUNBOOK.md) | フォルダ構成の整理手順（settings/ への集約・バージョンフォルダの親子化。Vercel 設定の直し方つき） | フォルダを動かす時 |
