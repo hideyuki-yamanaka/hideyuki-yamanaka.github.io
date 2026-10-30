@@ -654,6 +654,9 @@ function MediaLayer({
   );
 }
 
+/* 再生ボタンの上で手を止めた時に、ふだん（uiHideSec）より余分に待つ秒数（2026-10-30・🟡仮置き） */
+const HOVER_GRACE_SEC = 3;
+
 /* ═══════════ 動画再生 ═══════════ */
 /* v1.0 と同じ挙動：最初は止まっていて、再生ボタンを押すと動画とタイマーが同時に始まる。
    再生中は3秒さわらないと操作系が消えて、動かすとまた出てくる。 */
@@ -683,15 +686,21 @@ function Watch({
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* 再生ボタンの上にカーソルがある間は自動で消さない（2026-08-31 ヒデさん指示。
-     消えた後にボタンへ向かうと、着いた瞬間また消える事象の対策） */
+     消えた後にボタンへ向かうと、着いた瞬間また消える事象の対策）
+     【2026-10-30 ヒデさん「マウスを動かさなくなったら再生マークが消える仕様だったのが、なくなってる」】
+       原因：真ん中の再生マークを押すと、カーソルがボタンの上に残ったままになり、上の「消さない」がずっと効いていた
+       → ① ボタンを押したら「着いた」ので、消さない扱いをやめる（いつも通り uiHideSec 後に消える）
+         ② 押さずにボタンの上で手を止めていても、uiHideSec＋HOVER_GRACE_SEC 秒たったら消す */
   const hoverUiRef = useRef(false);
-  /* 再生中だけ、3秒放置で操作系を隠す。ホバー中なら隠さず様子見を続ける */
+  const lastMoveRef = useRef(0);
+  /* 再生中だけ、uiHideSec 秒放置で操作系を隠す。ホバー中は HOVER_GRACE_SEC 秒だけ長く待つ */
   const pokeUi = useCallback(() => {
     setUiVisible(true);
+    lastMoveRef.current = performance.now();
     if (hideTimer.current) clearTimeout(hideTimer.current);
     const tick = () => {
-      if (hoverUiRef.current) {
-        hideTimer.current = setTimeout(tick, 500);
+      if (hoverUiRef.current && performance.now() - lastMoveRef.current < (uiHideSec + HOVER_GRACE_SEC) * 1000) {
+        hideTimer.current = setTimeout(tick, 250);
         return;
       }
       setUiVisible(false);
@@ -791,16 +800,20 @@ function Watch({
         <button
           type="button"
           onClick={() => {
+            /* 押したら「着いた」ので、ホバー中の消さない扱いをやめる（2026-10-30） */
+            hoverUiRef.current = false;
             setPlaying((v) => !v);
             pokeUi();
           }}
+          /* 出入りでは「上にいるか」の印を付け替えるだけ。ここで pokeUi（出し直し）はしない（2026-10-30）。
+             再生マークが消えると押せない状態になり、マウスが止まっていてもブラウザが「出た」→ 出し直すと「入った」と
+             合図を出すため、「消える→出た→出し直す→入った→消さない」がぐるぐる回って消えなくなっていた。
+             マウスを動かした時の出し直しは、外側の onPointerMove がしている */
           onPointerEnter={() => {
             hoverUiRef.current = true;
-            pokeUi();
           }}
           onPointerLeave={() => {
             hoverUiRef.current = false;
-            pokeUi();
           }}
           aria-label={playing ? "一時停止" : "再生"}
           className={`absolute left-1/2 top-1/2 z-10 flex size-[192px] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full transition-all duration-500 ease-standard hover:scale-110 ${
