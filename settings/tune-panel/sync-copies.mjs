@@ -22,6 +22,11 @@ export const COPIES = [
   { name: '網走V3', site: 'abashiri/v3', files: [
     ['tune-panel.js', 'public/tune-panel.js'],
     ['phone-mode/phone-mode.client.js', 'public/phone-mode.client.js']
+  ] },
+  // 家庭訪問アプリは 見本 (/mock/…) で使うだけ (2026-11-16 情報の段をコンパクトにする見本)。公開の組み立てでは写さない (Vercel には settings が届かないため)
+  { name: '家庭訪問アプリ', site: 'houmon-app', files: [
+    ['tune-panel.js', 'public/tune-panel.js'],
+    ['phone-mode/phone-mode.client.js', 'public/phone-mode.client.js']
   ] }
 ];
 
