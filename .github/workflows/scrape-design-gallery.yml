@@ -20,7 +20,13 @@ concurrency:
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest
+    # ⚠️ ubuntu-latest にしない（2026-11-16 ヒデさんの調査依頼で発覚）。
+    #    2026-10-22 に GitHub 側の ubuntu-latest が Ubuntu 26.04 へ上がり、
+    #    Playwright のブラウザ導入が「ubuntu26.04 は非対応」で必ず失敗していた。
+    #    26日間（52回）毎回失敗し、データが 10-21 で止まっていた。
+    #    Playwright も最新に上げたが、新しい OS への対応は毎回遅れるので、
+    #    バージョンを固定して不意に壊れないようにする。
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
