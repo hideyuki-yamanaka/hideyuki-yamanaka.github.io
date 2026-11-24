@@ -13168,6 +13168,34 @@
     "lastCheckedAt": "2026-11-02T08:53:04.617Z"
   },
   {
+    "id": "3dddc79ad694",
+    "title": "Rikoutaku（リコウタク）",
+    "url": "https://www.rikoutaku.work/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261124_02-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "ポートフォリオ"
+    ],
+    "taste": [],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-16T07:11:14.790Z"
+  },
+  {
+    "id": "2093f7baa5cc",
+    "title": "INOGU — UX × AI × TEAM",
+    "url": "https://inogu.archeco.co.jp/",
+    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20261124_01-498x328.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "デザイン事務所・制作会社"
+    ],
+    "taste": [],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-16T07:11:14.790Z"
+  },
+  {
     "id": "2bf3b0c5cc85",
     "title": "一般社団法人 オンライン臨床",
     "url": "https://online-clinical.com/",
@@ -17276,20 +17304,6 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-11-02T08:53:50.990Z"
-  },
-  {
-    "id": "336098dbc8a3",
-    "title": "LUMISTAGE",
-    "url": "https://lumistage.co.jp/",
-    "thumbnailUrl": "https://webdesignclip.com/wp-content/uploads/jp20260210_01-498x328.jpg",
-    "source": "webdesignclip",
-    "category": [
-      "企業サイト・事務所・ビジネス"
-    ],
-    "taste": [],
-    "date": "2026-02",
-    "starred": false,
-    "firstSeen": "2026-11-16T07:11:14.790Z"
   },
   {
     "id": "513a118919c4",
@@ -23708,6 +23722,20 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": true,
     "lastCheckedAt": "2026-11-02T08:55:03.106Z"
+  },
+  {
+    "id": "b02899974213",
+    "title": "学校法人 聖英学園・聖英会｜採用サイト",
+    "url": "https://www.seiei.ed.jp/recruit/",
+    "thumbnailUrl": "https://lp.webdesignclip.com/wp-content/uploads/lp20261124_01-500x817.jpg",
+    "source": "webdesignclip",
+    "category": [
+      "採用サイト・転職・求人"
+    ],
+    "taste": [],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-24T08:28:05.229Z"
   },
   {
     "id": "4ec259edce1d",
@@ -30192,6 +30220,24 @@
     "firstSeen": "2026-04-19T11:40:43.578Z",
     "isDead": false,
     "lastCheckedAt": "2026-11-02T08:56:43.828Z"
+  },
+  {
+    "id": "1ddf74570a9e",
+    "title": "株式会社ジェイ・プラッカ [イベント企画・警備、会場設営・運営］",
+    "url": "https://www.j-placa.jp/",
+    "thumbnailUrl": "https://data.81-web.com/wp-content/uploads/2026/11/261124-640x480.jpg",
+    "source": "81web",
+    "category": [
+      "コーポレートサイト",
+      "企画",
+      "制作",
+      "開発"
+    ],
+    "taste": [],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-10-18T15:31:01.988Z",
+    "lastCheckedAt": "2026-11-02T09:00:15.615Z"
   },
   {
     "id": "83baafa88ea8",
@@ -42332,6 +42378,69 @@
     "firstSeen": "2026-11-20T05:50:55.674Z"
   },
   {
+    "id": "7ba53cce812e",
+    "title": "CREWパドルウェルネススタジオ | KAYAK・SUP・YOGA",
+    "url": "https://www.crew-pws.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/imudvox0japq-1400x1050.webp",
+    "source": "s5style",
+    "category": [
+      "BtoCコーポレートサイト",
+      "学校･教育･医療･福祉",
+      "旅行･観光･航空･海運･交通",
+      "地方自治体･世界･地域",
+      "その他"
+    ],
+    "taste": [
+      "アイコン･ピクトグラム",
+      "グラフィカル･コラージュ",
+      "イラスト",
+      "写真･フォトディレクション",
+      "ロゴデザイン"
+    ],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-24T08:28:05.229Z"
+  },
+  {
+    "id": "fe1fa1b161d4",
+    "title": "ISHIKAWA Takaaki Portfolio",
+    "url": "https://ds-drop.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/swt4o9ui8qjc-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "ポートフォリオ･アーティストサイト",
+      "IT･コンピューター･テクノロジー",
+      "その他"
+    ],
+    "taste": [
+      "スクロールエフェクト",
+      "グリッドデザイン"
+    ],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-24T08:28:05.229Z"
+  },
+  {
+    "id": "878c7eb5201b",
+    "title": "株式会社プラスニド・デザイン　コーポレートサイト",
+    "url": "https://plus-nido.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/25jy6slic4gh-2800x2100.webp",
+    "source": "s5style",
+    "category": [
+      "BtoBコーポレートサイト",
+      "デザイン･制作･開発会社",
+      "IT･コンピューター･テクノロジー"
+    ],
+    "taste": [
+      "グラフィカル･コラージュ",
+      "UI フラット",
+      "モチーフ 円•曲線"
+    ],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-21T18:50:20.022Z"
+  },
+  {
     "id": "be717d2641c8",
     "title": "UltraLMTM",
     "url": "https://ultralmtm.com/",
@@ -42658,23 +42767,6 @@
     ],
     "taste": [
       "動画･映像"
-    ],
-    "date": "2026-11",
-    "starred": false,
-    "firstSeen": "2026-11-21T18:50:20.022Z"
-  },
-  {
-    "id": "878c7eb5201b",
-    "title": "PLUS NIDO DESIGN プラスニド・デザイン",
-    "url": "https://plus-nido.com/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/lf9kn7x6evur-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "デザイン･制作･開発会社"
-    ],
-    "taste": [
-      "3Dアニメーション･3Dモデル",
-      "スクロールエフェクト"
     ],
     "date": "2026-11",
     "starred": false,
@@ -43203,22 +43295,6 @@
     "source": "s5style",
     "category": [
       "uncategorized"
-    ],
-    "taste": [],
-    "date": "2026-11",
-    "starred": false,
-    "firstSeen": "2026-11-16T07:11:14.790Z"
-  },
-  {
-    "id": "7fc17f7c702c",
-    "title": "INOGU — UX × AI × TEAM",
-    "url": "https://inogu.archeco.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/56hezqyoac4l-1400x1050.webp",
-    "source": "s5style",
-    "category": [
-      "ランディングページ",
-      "デザイン･制作･開発会社",
-      "IT･コンピューター･テクノロジー"
     ],
     "taste": [],
     "date": "2026-11",
@@ -43829,30 +43905,6 @@
     "firstSeen": "2026-11-16T07:11:14.790Z"
   },
   {
-    "id": "92bc9dd0d5d8",
-    "title": "RI.Studio",
-    "url": "https://www.rikoutaku.work/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/dsr1cwe4knvt-1600x1200.webp",
-    "source": "s5style",
-    "category": [
-      "オウンドメディアサイト",
-      "デザイン･制作･開発会社",
-      "モバイルサイト",
-      "IT･コンピューター･テクノロジー",
-      "その他"
-    ],
-    "taste": [
-      "UI ニューモーフィズム",
-      "3Dアニメーション･3Dモデル",
-      "UI スキュアモーフィック",
-      "スクロールエフェクト",
-      "グリッドデザイン"
-    ],
-    "date": "2026-11",
-    "starred": false,
-    "firstSeen": "2026-11-16T07:11:14.790Z"
-  },
-  {
     "id": "b7a26c2daecc",
     "title": "HONDA GRAPHICS | MAMI HONDA",
     "url": "https://mamihonda.com/",
@@ -44126,26 +44178,6 @@
     "firstSeen": "2026-10-18T15:31:01.988Z",
     "isDead": false,
     "lastCheckedAt": "2026-11-02T09:00:16.817Z"
-  },
-  {
-    "id": "082cd2062420",
-    "title": "ジェイ・プラッカ",
-    "url": "https://www.j-placa.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/tkzd2fg1i7he-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "美術館･イベント"
-    ],
-    "taste": [
-      "タイポグラフィー･文字",
-      "UI フラット",
-      "モチーフ 線"
-    ],
-    "date": "2026-11",
-    "starred": false,
-    "firstSeen": "2026-10-18T15:31:01.988Z",
-    "lastCheckedAt": "2026-11-02T09:00:15.615Z"
   },
   {
     "id": "7c20b59427a8",
