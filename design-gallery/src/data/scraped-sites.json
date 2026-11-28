@@ -42097,6 +42097,23 @@
     "firstSeen": "2026-11-20T05:50:55.674Z"
   },
   {
+    "id": "637abc8cc333",
+    "title": "sandra/bamboo",
+    "url": "https://sandrabamboo.com/",
+    "thumbnailUrl": "https://api.s5-style.com/media/post-images/87ndveofksxl-1600x1200.webp",
+    "source": "s5style",
+    "category": [
+      "ポートフォリオ･アーティストサイト"
+    ],
+    "taste": [
+      "3Dアニメーション･3Dモデル",
+      "タイポグラフィー･文字"
+    ],
+    "date": "2026-11",
+    "starred": false,
+    "firstSeen": "2026-11-28T06:22:40.718Z"
+  },
+  {
     "id": "3f773815060e",
     "title": "Auspia",
     "url": "https://auspia.ai/",
@@ -44103,25 +44120,6 @@
     "firstSeen": "2026-10-16T16:09:28.784Z",
     "isDead": false,
     "lastCheckedAt": "2026-11-02T09:00:17.347Z"
-  },
-  {
-    "id": "7a5f79cbeab2",
-    "title": "日本デザインセンター オンスクリーン制作室",
-    "url": "https://ndcosd.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/wspky6bmizj9-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "デザイン･制作･開発会社",
-      "IT･コンピューター･テクノロジー"
-    ],
-    "taste": [
-      "UI フラット",
-      "グリッドデザイン",
-      "モチーフ 線"
-    ],
-    "date": "2026-11",
-    "starred": false,
-    "firstSeen": "2026-11-27T20:48:17.923Z"
   },
   {
     "id": "edf911a9bfd1",
@@ -46697,26 +46695,6 @@
     "firstSeen": "2026-07-05T03:50:53.818Z",
     "isDead": false,
     "lastCheckedAt": "2026-11-02T09:00:52.167Z"
-  },
-  {
-    "id": "0f8cba8d5a58",
-    "title": "スターキャット | 法人のお客様向けサービスサイト",
-    "url": "https://biz.starcat.co.jp/",
-    "thumbnailUrl": "https://api.s5-style.com/media/post-images/ebrytxl8dzch-2800x2100.webp",
-    "source": "s5style",
-    "category": [
-      "BtoBコーポレートサイト",
-      "Webアプリ･SaaS･サービスサイト",
-      "IT･コンピューター･テクノロジー"
-    ],
-    "taste": [
-      "グリッドデザイン"
-    ],
-    "date": "2026-11",
-    "starred": false,
-    "firstSeen": "2026-07-04T03:32:25.345Z",
-    "isDead": false,
-    "lastCheckedAt": "2026-11-02T09:00:52.889Z"
   },
   {
     "id": "aca6228b5e3b",
